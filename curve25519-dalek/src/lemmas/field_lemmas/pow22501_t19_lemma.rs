@@ -61,7 +61,7 @@ verus! {
 /// * t0, t1, t2, t3 satisfy the t3 checkpoint properties
 ///
 /// # Postconditions
-/// * as_nat(t19_limbs) % p() == pow(as_nat(self_limbs) as int, (pow2(250) - 1) as nat) as nat % p()
+/// * u64_5_as_nat(t19_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, (pow2(250) - 1) as nat) as nat % p()
 /// * Also proves all intermediate values through the chain
 pub proof fn lemma_pow22501_prove_t19(
     self_limbs: [u64; 5],
@@ -91,50 +91,68 @@ pub proof fn lemma_pow22501_prove_t19(
 
         forall|i: int| 0 <= i < 5 ==> self_limbs[i] < 1u64 << 54,
         // Already established by lemma_pow22501_prove_t3
-        as_nat(t2_limbs) % p() == pow(as_nat(self_limbs) as int, 9) as nat % p(),
-        as_nat(t3_limbs) % p() == pow(as_nat(self_limbs) as int, 11) as nat % p(),
+        u64_5_as_nat(t2_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, 9) as nat % p(),
+        u64_5_as_nat(t3_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, 11) as nat % p(),
         // Postconditions from square operations
-        as_nat(t0_limbs) % p() == pow(as_nat(self_limbs) as int, 2) as nat % p(),
-        as_nat(t1_limbs) % p() == pow(as_nat(self_limbs) as int, 8) as nat % p(),
-        as_nat(t4_limbs) % p() == pow(as_nat(t3_limbs) as int, 2) as nat % p(),
+        u64_5_as_nat(t0_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, 2) as nat % p(),
+        u64_5_as_nat(t1_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, 8) as nat % p(),
+        u64_5_as_nat(t4_limbs) % p() == pow(u64_5_as_nat(t3_limbs) as int, 2) as nat % p(),
         // Postconditions from pow2k operations
-        as_nat(t6_limbs) % p() == pow(as_nat(t5_limbs) as int, pow2(5)) as nat % p(),
-        as_nat(t8_limbs) % p() == pow(as_nat(t7_limbs) as int, pow2(10)) as nat % p(),
-        as_nat(t10_limbs) % p() == pow(as_nat(t9_limbs) as int, pow2(20)) as nat % p(),
-        as_nat(t12_limbs) % p() == pow(as_nat(t11_limbs) as int, pow2(10)) as nat % p(),
-        as_nat(t14_limbs) % p() == pow(as_nat(t13_limbs) as int, pow2(50)) as nat % p(),
-        as_nat(t16_limbs) % p() == pow(as_nat(t15_limbs) as int, pow2(100)) as nat % p(),
-        as_nat(t18_limbs) % p() == pow(as_nat(t17_limbs) as int, pow2(50)) as nat % p(),
+        u64_5_as_nat(t6_limbs) % p() == pow(u64_5_as_nat(t5_limbs) as int, pow2(5)) as nat % p(),
+        u64_5_as_nat(t8_limbs) % p() == pow(u64_5_as_nat(t7_limbs) as int, pow2(10)) as nat % p(),
+        u64_5_as_nat(t10_limbs) % p() == pow(u64_5_as_nat(t9_limbs) as int, pow2(20)) as nat % p(),
+        u64_5_as_nat(t12_limbs) % p() == pow(u64_5_as_nat(t11_limbs) as int, pow2(10)) as nat % p(),
+        u64_5_as_nat(t14_limbs) % p() == pow(u64_5_as_nat(t13_limbs) as int, pow2(50)) as nat % p(),
+        u64_5_as_nat(t16_limbs) % p() == pow(u64_5_as_nat(t15_limbs) as int, pow2(100)) as nat
+            % p(),
+        u64_5_as_nat(t18_limbs) % p() == pow(u64_5_as_nat(t17_limbs) as int, pow2(50)) as nat % p(),
         // Postconditions from mul operations
-        as_nat(t5_limbs) % p() == (as_nat(t2_limbs) * as_nat(t4_limbs)) % p(),
-        as_nat(t7_limbs) % p() == (as_nat(t6_limbs) * as_nat(t5_limbs)) % p(),
-        as_nat(t9_limbs) % p() == (as_nat(t8_limbs) * as_nat(t7_limbs)) % p(),
-        as_nat(t11_limbs) % p() == (as_nat(t10_limbs) * as_nat(t9_limbs)) % p(),
-        as_nat(t13_limbs) % p() == (as_nat(t12_limbs) * as_nat(t7_limbs)) % p(),
-        as_nat(t15_limbs) % p() == (as_nat(t14_limbs) * as_nat(t13_limbs)) % p(),
-        as_nat(t17_limbs) % p() == (as_nat(t16_limbs) * as_nat(t15_limbs)) % p(),
-        as_nat(t19_limbs) % p() == (as_nat(t18_limbs) * as_nat(t13_limbs)) % p(),
+        u64_5_as_nat(t5_limbs) % p() == (u64_5_as_nat(t2_limbs) * u64_5_as_nat(t4_limbs)) % p(),
+        u64_5_as_nat(t7_limbs) % p() == (u64_5_as_nat(t6_limbs) * u64_5_as_nat(t5_limbs)) % p(),
+        u64_5_as_nat(t9_limbs) % p() == (u64_5_as_nat(t8_limbs) * u64_5_as_nat(t7_limbs)) % p(),
+        u64_5_as_nat(t11_limbs) % p() == (u64_5_as_nat(t10_limbs) * u64_5_as_nat(t9_limbs)) % p(),
+        u64_5_as_nat(t13_limbs) % p() == (u64_5_as_nat(t12_limbs) * u64_5_as_nat(t7_limbs)) % p(),
+        u64_5_as_nat(t15_limbs) % p() == (u64_5_as_nat(t14_limbs) * u64_5_as_nat(t13_limbs)) % p(),
+        u64_5_as_nat(t17_limbs) % p() == (u64_5_as_nat(t16_limbs) * u64_5_as_nat(t15_limbs)) % p(),
+        u64_5_as_nat(t19_limbs) % p() == (u64_5_as_nat(t18_limbs) * u64_5_as_nat(t13_limbs)) % p(),
     ensures
-        as_nat(t19_limbs) % p() == pow(as_nat(self_limbs) as int, (pow2(250) - 1) as nat) as nat
-            % p(),
-        as_nat(t2_limbs) % p() == pow(as_nat(self_limbs) as int, 9) as nat % p(),
-        as_nat(t3_limbs) % p() == pow(as_nat(self_limbs) as int, 11) as nat % p(),
-        as_nat(t4_limbs) % p() == pow(as_nat(self_limbs) as int, 22) as nat % p(),
-        as_nat(t5_limbs) % p() == pow(as_nat(self_limbs) as int, (pow2(5) - 1) as nat) as nat % p(),
-        as_nat(t7_limbs) % p() == pow(as_nat(self_limbs) as int, (pow2(10) - 1) as nat) as nat
-            % p(),
-        as_nat(t9_limbs) % p() == pow(as_nat(self_limbs) as int, (pow2(20) - 1) as nat) as nat
-            % p(),
-        as_nat(t11_limbs) % p() == pow(as_nat(self_limbs) as int, (pow2(40) - 1) as nat) as nat
-            % p(),
-        as_nat(t13_limbs) % p() == pow(as_nat(self_limbs) as int, (pow2(50) - 1) as nat) as nat
-            % p(),
-        as_nat(t15_limbs) % p() == pow(as_nat(self_limbs) as int, (pow2(100) - 1) as nat) as nat
-            % p(),
-        as_nat(t17_limbs) % p() == pow(as_nat(self_limbs) as int, (pow2(200) - 1) as nat) as nat
-            % p(),
+        u64_5_as_nat(t19_limbs) % p() == pow(
+            u64_5_as_nat(self_limbs) as int,
+            (pow2(250) - 1) as nat,
+        ) as nat % p(),
+        u64_5_as_nat(t2_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, 9) as nat % p(),
+        u64_5_as_nat(t3_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, 11) as nat % p(),
+        u64_5_as_nat(t4_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, 22) as nat % p(),
+        u64_5_as_nat(t5_limbs) % p() == pow(
+            u64_5_as_nat(self_limbs) as int,
+            (pow2(5) - 1) as nat,
+        ) as nat % p(),
+        u64_5_as_nat(t7_limbs) % p() == pow(
+            u64_5_as_nat(self_limbs) as int,
+            (pow2(10) - 1) as nat,
+        ) as nat % p(),
+        u64_5_as_nat(t9_limbs) % p() == pow(
+            u64_5_as_nat(self_limbs) as int,
+            (pow2(20) - 1) as nat,
+        ) as nat % p(),
+        u64_5_as_nat(t11_limbs) % p() == pow(
+            u64_5_as_nat(self_limbs) as int,
+            (pow2(40) - 1) as nat,
+        ) as nat % p(),
+        u64_5_as_nat(t13_limbs) % p() == pow(
+            u64_5_as_nat(self_limbs) as int,
+            (pow2(50) - 1) as nat,
+        ) as nat % p(),
+        u64_5_as_nat(t15_limbs) % p() == pow(
+            u64_5_as_nat(self_limbs) as int,
+            (pow2(100) - 1) as nat,
+        ) as nat % p(),
+        u64_5_as_nat(t17_limbs) % p() == pow(
+            u64_5_as_nat(self_limbs) as int,
+            (pow2(200) - 1) as nat,
+        ) as nat % p(),
 {
-    let base = as_nat(self_limbs) as int;
+    let base = u64_5_as_nat(self_limbs) as int;
 
     assert(p() > 0) by {
         pow255_gt_19();
@@ -165,7 +183,7 @@ pub proof fn lemma_pow22501_prove_t19(
         lemma_pow_nonnegative(base, 11);
     }
 
-    let t3_val = as_nat(t3_limbs) as int;
+    let t3_val = u64_5_as_nat(t3_limbs) as int;
     assert(t3_val >= 0);
     assert(pow(t3_val, 2) >= 0) by {
         lemma_pow_even_nonnegative(t3_val, 1);
@@ -174,35 +192,41 @@ pub proof fn lemma_pow22501_prove_t19(
         lemma_pow_even_nonnegative(base, 11);
     }
 
-    assert((pow(as_nat(t3_limbs) as int, 2) as nat) % p() == (pow(as_nat(t3_limbs) as int, 2) % (
-    p() as int)) as nat);
+    assert((pow(u64_5_as_nat(t3_limbs) as int, 2) as nat) % p() == (pow(
+        u64_5_as_nat(t3_limbs) as int,
+        2,
+    ) % (p() as int)) as nat);
     assert((pow(base, 22) as nat) % p() == (pow(base, 22) % (p() as int)) as nat);
 
-    assert((pow(as_nat(t3_limbs) as int, 2) % (p() as int)) as nat == (pow(pow(base, 11), 2) % (
-    p() as int)) as nat) by {
-        lemma_pow_mod_congruent(as_nat(t3_limbs) as int, pow(base, 11), 2, p() as int);
+    assert((pow(u64_5_as_nat(t3_limbs) as int, 2) % (p() as int)) as nat == (pow(pow(base, 11), 2)
+        % (p() as int)) as nat) by {
+        lemma_pow_mod_congruent(u64_5_as_nat(t3_limbs) as int, pow(base, 11), 2, p() as int);
     }
 
     assert(pow(pow(base, 11), 2) == pow(base, 22)) by {
         lemma_pow_multiplies(base, 11, 2);
     }
 
-    assert(as_nat(t4_limbs) % p() == pow(base, 22) as nat % p());
+    assert(u64_5_as_nat(t4_limbs) % p() == pow(base, 22) as nat % p());
 
     // ========================================================================
     // Prove t5 = x^31 = x^(2^5-1)
     // ========================================================================
     // t5 = t2 * t4 = x^9 * x^22 = x^31
 
-    assert(as_nat(t5_limbs) % p() == ((as_nat(t2_limbs) % p()) * (as_nat(t4_limbs) % p())) % p())
-        by {
-        lemma_mul_mod_noop_general(as_nat(t2_limbs) as int, as_nat(t4_limbs) as int, p() as int);
+    assert(u64_5_as_nat(t5_limbs) % p() == ((u64_5_as_nat(t2_limbs) % p()) * (u64_5_as_nat(t4_limbs)
+        % p())) % p()) by {
+        lemma_mul_mod_noop_general(
+            u64_5_as_nat(t2_limbs) as int,
+            u64_5_as_nat(t4_limbs) as int,
+            p() as int,
+        );
     }
 
-    assert(as_nat(t5_limbs) % p() == ((pow(base, 9) as nat % p()) * (pow(base, 22) as nat % p()))
-        % p());
+    assert(u64_5_as_nat(t5_limbs) % p() == ((pow(base, 9) as nat % p()) * (pow(base, 22) as nat
+        % p())) % p());
 
-    assert(as_nat(t5_limbs) % p() == (pow(base, 9) as nat * pow(base, 22) as nat) % p()) by {
+    assert(u64_5_as_nat(t5_limbs) % p() == (pow(base, 9) as nat * pow(base, 22) as nat) % p()) by {
         lemma_mul_mod_noop_general(
             pow(base, 9) as nat as int,
             pow(base, 22) as nat as int,
@@ -225,7 +249,7 @@ pub proof fn lemma_pow22501_prove_t19(
         lemma2_to64();
     }
 
-    assert(as_nat(t5_limbs) % p() == pow(base, (pow2(5) - 1) as nat) as nat % p());
+    assert(u64_5_as_nat(t5_limbs) % p() == pow(base, (pow2(5) - 1) as nat) as nat % p());
 
     // ========================================================================
     // Prove t6 = x^((2^5-1)*2^5)
@@ -234,7 +258,13 @@ pub proof fn lemma_pow22501_prove_t19(
     assert(pow2(5) > 0) by {
         lemma_pow2_pos(5);
     }
-    lemma_prove_pow2k_step(base, as_nat(t5_limbs), as_nat(t6_limbs), (pow2(5) - 1) as nat, pow2(5));
+    lemma_prove_pow2k_step(
+        base,
+        u64_5_as_nat(t5_limbs),
+        u64_5_as_nat(t6_limbs),
+        (pow2(5) - 1) as nat,
+        pow2(5),
+    );
 
     // ========================================================================
     // Prove t7 = x^(2^10-1)
@@ -242,9 +272,9 @@ pub proof fn lemma_pow22501_prove_t19(
     // t7 = t6 * t5 = x^((2^5-1)*2^5) * x^(2^5-1) = x^(2^10-1)
     lemma_prove_geometric_mul_step(
         base,
-        as_nat(t6_limbs),
-        as_nat(t5_limbs),
-        as_nat(t7_limbs),
+        u64_5_as_nat(t6_limbs),
+        u64_5_as_nat(t5_limbs),
+        u64_5_as_nat(t7_limbs),
         ((pow2(5) - 1) * pow2(5)) as nat,
         (pow2(5) - 1) as nat,
     );
@@ -259,8 +289,8 @@ pub proof fn lemma_pow22501_prove_t19(
     }
     lemma_prove_pow2k_step(
         base,
-        as_nat(t7_limbs),
-        as_nat(t8_limbs),
+        u64_5_as_nat(t7_limbs),
+        u64_5_as_nat(t8_limbs),
         (pow2(10) - 1) as nat,
         pow2(10),
     );
@@ -271,9 +301,9 @@ pub proof fn lemma_pow22501_prove_t19(
     // t9 = t8 * t7 = x^((2^10-1)*2^10) * x^(2^10-1) = x^(2^20-1)
     lemma_prove_geometric_mul_step(
         base,
-        as_nat(t8_limbs),
-        as_nat(t7_limbs),
-        as_nat(t9_limbs),
+        u64_5_as_nat(t8_limbs),
+        u64_5_as_nat(t7_limbs),
+        u64_5_as_nat(t9_limbs),
         ((pow2(10) - 1) * pow2(10)) as nat,
         (pow2(10) - 1) as nat,
     );
@@ -288,8 +318,8 @@ pub proof fn lemma_pow22501_prove_t19(
     }
     lemma_prove_pow2k_step(
         base,
-        as_nat(t9_limbs),
-        as_nat(t10_limbs),
+        u64_5_as_nat(t9_limbs),
+        u64_5_as_nat(t10_limbs),
         (pow2(20) - 1) as nat,
         pow2(20),
     );
@@ -300,9 +330,9 @@ pub proof fn lemma_pow22501_prove_t19(
     // t11 = t10 * t9 = x^((2^20-1)*2^20) * x^(2^20-1) = x^(2^40-1)
     lemma_prove_geometric_mul_step(
         base,
-        as_nat(t10_limbs),
-        as_nat(t9_limbs),
-        as_nat(t11_limbs),
+        u64_5_as_nat(t10_limbs),
+        u64_5_as_nat(t9_limbs),
+        u64_5_as_nat(t11_limbs),
         ((pow2(20) - 1) * pow2(20)) as nat,
         (pow2(20) - 1) as nat,
     );
@@ -317,8 +347,8 @@ pub proof fn lemma_pow22501_prove_t19(
     }
     lemma_prove_pow2k_step(
         base,
-        as_nat(t11_limbs),
-        as_nat(t12_limbs),
+        u64_5_as_nat(t11_limbs),
+        u64_5_as_nat(t12_limbs),
         (pow2(40) - 1) as nat,
         pow2(10),
     );
@@ -329,9 +359,9 @@ pub proof fn lemma_pow22501_prove_t19(
     // t13 = t12 * t7 = x^((2^40-1)*2^10) * x^(2^10-1) = x^(2^50-1)
     lemma_prove_geometric_mul_step(
         base,
-        as_nat(t12_limbs),
-        as_nat(t7_limbs),
-        as_nat(t13_limbs),
+        u64_5_as_nat(t12_limbs),
+        u64_5_as_nat(t7_limbs),
+        u64_5_as_nat(t13_limbs),
         ((pow2(40) - 1) * pow2(10)) as nat,
         (pow2(10) - 1) as nat,
     );
@@ -346,8 +376,8 @@ pub proof fn lemma_pow22501_prove_t19(
     }
     lemma_prove_pow2k_step(
         base,
-        as_nat(t13_limbs),
-        as_nat(t14_limbs),
+        u64_5_as_nat(t13_limbs),
+        u64_5_as_nat(t14_limbs),
         (pow2(50) - 1) as nat,
         pow2(50),
     );
@@ -358,9 +388,9 @@ pub proof fn lemma_pow22501_prove_t19(
     // t15 = t14 * t13 = x^((2^50-1)*2^50) * x^(2^50-1) = x^(2^100-1)
     lemma_prove_geometric_mul_step(
         base,
-        as_nat(t14_limbs),
-        as_nat(t13_limbs),
-        as_nat(t15_limbs),
+        u64_5_as_nat(t14_limbs),
+        u64_5_as_nat(t13_limbs),
+        u64_5_as_nat(t15_limbs),
         ((pow2(50) - 1) * pow2(50)) as nat,
         (pow2(50) - 1) as nat,
     );
@@ -375,8 +405,8 @@ pub proof fn lemma_pow22501_prove_t19(
     }
     lemma_prove_pow2k_step(
         base,
-        as_nat(t15_limbs),
-        as_nat(t16_limbs),
+        u64_5_as_nat(t15_limbs),
+        u64_5_as_nat(t16_limbs),
         (pow2(100) - 1) as nat,
         pow2(100),
     );
@@ -387,9 +417,9 @@ pub proof fn lemma_pow22501_prove_t19(
     // t17 = t16 * t15 = x^((2^100-1)*2^100) * x^(2^100-1) = x^(2^200-1)
     lemma_prove_geometric_mul_step(
         base,
-        as_nat(t16_limbs),
-        as_nat(t15_limbs),
-        as_nat(t17_limbs),
+        u64_5_as_nat(t16_limbs),
+        u64_5_as_nat(t15_limbs),
+        u64_5_as_nat(t17_limbs),
         ((pow2(100) - 1) * pow2(100)) as nat,
         (pow2(100) - 1) as nat,
     );
@@ -404,8 +434,8 @@ pub proof fn lemma_pow22501_prove_t19(
     }
     lemma_prove_pow2k_step(
         base,
-        as_nat(t17_limbs),
-        as_nat(t18_limbs),
+        u64_5_as_nat(t17_limbs),
+        u64_5_as_nat(t18_limbs),
         (pow2(200) - 1) as nat,
         pow2(50),
     );
@@ -416,9 +446,9 @@ pub proof fn lemma_pow22501_prove_t19(
     // t19 = t18 * t13 = x^((2^200-1)*2^50) * x^(2^50-1) = x^(2^250-1)
     lemma_prove_geometric_mul_step(
         base,
-        as_nat(t18_limbs),
-        as_nat(t13_limbs),
-        as_nat(t19_limbs),
+        u64_5_as_nat(t18_limbs),
+        u64_5_as_nat(t13_limbs),
+        u64_5_as_nat(t19_limbs),
         ((pow2(200) - 1) * pow2(50)) as nat,
         (pow2(50) - 1) as nat,
     );

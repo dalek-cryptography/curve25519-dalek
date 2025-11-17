@@ -39,7 +39,7 @@ verus! {
 /// * Each step follows the correct field operation postconditions
 ///
 /// # Postconditions
-/// * as_nat(t3_limbs) % p() == pow(as_nat(self_limbs) as int, 11) as nat % p()
+/// * u64_5_as_nat(t3_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, 11) as nat % p()
 /// * Also proves intermediate values: t0_sq = x^4, t1 = x^8, t2 = x^9
 pub proof fn lemma_pow22501_prove_t3(
     self_limbs: [u64; 5],
@@ -59,18 +59,18 @@ pub proof fn lemma_pow22501_prove_t3(
         forall|i: int| 0 <= i < 5 ==> t2_limbs[i] < 1u64 << 54,
         forall|i: int| 0 <= i < 5 ==> t3_limbs[i] < 1u64 << 54,
         // Computational relationships (from field operation postconditions)
-        as_nat(t0_limbs) % p() == pow(as_nat(self_limbs) as int, 2) as nat % p(),
-        as_nat(t0_sq_limbs) % p() == pow(as_nat(t0_limbs) as int, 2) as nat % p(),
-        as_nat(t1_limbs) % p() == pow(as_nat(t0_sq_limbs) as int, 2) as nat % p(),
-        as_nat(t2_limbs) % p() == (as_nat(self_limbs) * as_nat(t1_limbs)) % p(),
-        as_nat(t3_limbs) % p() == (as_nat(t0_limbs) * as_nat(t2_limbs)) % p(),
+        u64_5_as_nat(t0_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, 2) as nat % p(),
+        u64_5_as_nat(t0_sq_limbs) % p() == pow(u64_5_as_nat(t0_limbs) as int, 2) as nat % p(),
+        u64_5_as_nat(t1_limbs) % p() == pow(u64_5_as_nat(t0_sq_limbs) as int, 2) as nat % p(),
+        u64_5_as_nat(t2_limbs) % p() == (u64_5_as_nat(self_limbs) * u64_5_as_nat(t1_limbs)) % p(),
+        u64_5_as_nat(t3_limbs) % p() == (u64_5_as_nat(t0_limbs) * u64_5_as_nat(t2_limbs)) % p(),
     ensures
-        as_nat(t3_limbs) % p() == pow(as_nat(self_limbs) as int, 11) as nat % p(),
-        as_nat(t0_sq_limbs) % p() == pow(as_nat(self_limbs) as int, 4) as nat % p(),
-        as_nat(t1_limbs) % p() == pow(as_nat(self_limbs) as int, 8) as nat % p(),
-        as_nat(t2_limbs) % p() == pow(as_nat(self_limbs) as int, 9) as nat % p(),
+        u64_5_as_nat(t3_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, 11) as nat % p(),
+        u64_5_as_nat(t0_sq_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, 4) as nat % p(),
+        u64_5_as_nat(t1_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, 8) as nat % p(),
+        u64_5_as_nat(t2_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, 9) as nat % p(),
 {
-    let base = as_nat(self_limbs) as int;
+    let base = u64_5_as_nat(self_limbs) as int;
 
     assert(p() > 0) by {
         pow255_gt_19();
@@ -80,15 +80,15 @@ pub proof fn lemma_pow22501_prove_t3(
     // Prove t0_sq = x^4 using lemma_prove_pow2k_step
     // ========================================================================
     // t0_sq = (x^2)^2 = x^(2*2) = x^4
-    lemma_prove_pow2k_step(base, as_nat(t0_limbs), as_nat(t0_sq_limbs), 2, 2);
-    assert(as_nat(t0_sq_limbs) % p() == pow(base, 4) as nat % p());
+    lemma_prove_pow2k_step(base, u64_5_as_nat(t0_limbs), u64_5_as_nat(t0_sq_limbs), 2, 2);
+    assert(u64_5_as_nat(t0_sq_limbs) % p() == pow(base, 4) as nat % p());
 
     // ========================================================================
     // Prove t1 = x^8 using lemma_prove_pow2k_step
     // ========================================================================
     // t1 = (x^4)^2 = x^(4*2) = x^8
-    lemma_prove_pow2k_step(base, as_nat(t0_sq_limbs), as_nat(t1_limbs), 4, 2);
-    assert(as_nat(t1_limbs) % p() == pow(base, 8) as nat % p());
+    lemma_prove_pow2k_step(base, u64_5_as_nat(t0_sq_limbs), u64_5_as_nat(t1_limbs), 4, 2);
+    assert(u64_5_as_nat(t1_limbs) % p() == pow(base, 8) as nat % p());
 
     // ========================================================================
     // Prove t2 = x^9 using lemma_prove_geometric_mul_step
@@ -97,16 +97,16 @@ pub proof fn lemma_pow22501_prove_t3(
     assert(pow(base, 1) == base) by {
         lemma_pow1(base);
     }
-    assert(pow(base, 1) as nat == as_nat(self_limbs));
+    assert(pow(base, 1) as nat == u64_5_as_nat(self_limbs));
     lemma_prove_geometric_mul_step(
         base,
-        as_nat(self_limbs),
-        as_nat(t1_limbs),
-        as_nat(t2_limbs),
+        u64_5_as_nat(self_limbs),
+        u64_5_as_nat(t1_limbs),
+        u64_5_as_nat(t2_limbs),
         1,
         8,
     );
-    assert(as_nat(t2_limbs) % p() == pow(base, 9) as nat % p());
+    assert(u64_5_as_nat(t2_limbs) % p() == pow(base, 9) as nat % p());
 
     // ========================================================================
     // Prove t3 = x^11 using lemma_prove_geometric_mul_step
@@ -114,13 +114,13 @@ pub proof fn lemma_pow22501_prove_t3(
     // t3 = x^2 * x^9 = x^(2+9) = x^11
     lemma_prove_geometric_mul_step(
         base,
-        as_nat(t0_limbs),
-        as_nat(t2_limbs),
-        as_nat(t3_limbs),
+        u64_5_as_nat(t0_limbs),
+        u64_5_as_nat(t2_limbs),
+        u64_5_as_nat(t3_limbs),
         2,
         9,
     );
-    assert(as_nat(t3_limbs) % p() == pow(base, 11) as nat % p());
+    assert(u64_5_as_nat(t3_limbs) % p() == pow(base, 11) as nat % p());
 }
 
 } // verus!

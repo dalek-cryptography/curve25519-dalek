@@ -53,7 +53,7 @@ pub open spec fn spec_sub_limbs(a: &FieldElement51, b: &FieldElement51) -> Field
 }
 
 pub open spec fn spec_field_element_as_nat(fe: &FieldElement51) -> nat {
-    as_nat(fe.limbs)
+    u64_5_as_nat(fe.limbs)
 }
 
 /// Returns the canonical mathematical value of a field element in [0, p)
@@ -66,7 +66,7 @@ pub open spec fn spec_field_element(fe: &FieldElement51) -> nat {
 /// The bytes are interpreted as a little-endian integer with the high bit of byte[31] ignored.
 /// The result is the canonical value in [0, p) where p = 2^255 - 19.
 pub open spec fn spec_field_element_from_bytes(bytes: &[u8; 32]) -> nat {
-    (as_nat_32_u8(bytes) % pow2(255)) % p()
+    (u8_32_as_nat(bytes) % pow2(255)) % p()
 }
 
 /// Spec function: Get the sign bit of a field element
@@ -133,15 +133,15 @@ pub open spec fn spec_fe51_from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
         limbs: [
         // load bits [  0, 64), mask to 51 bits
 
-            (load8_at_spec(bytes, 0) as u64) & low_51_bit_mask,
+            (spec_load8_at(bytes, 0) as u64) & low_51_bit_mask,
             // load bits [ 48,112), shift right by 3, mask to 51 bits
-            ((load8_at_spec(bytes, 6) as u64) >> 3) & low_51_bit_mask,
+            ((spec_load8_at(bytes, 6) as u64) >> 3) & low_51_bit_mask,
             // load bits [ 96,160), shift right by 6, mask to 51 bits
-            ((load8_at_spec(bytes, 12) as u64) >> 6) & low_51_bit_mask,
+            ((spec_load8_at(bytes, 12) as u64) >> 6) & low_51_bit_mask,
             // load bits [152,216), shift right by 1, mask to 51 bits
-            ((load8_at_spec(bytes, 19) as u64) >> 1) & low_51_bit_mask,
+            ((spec_load8_at(bytes, 19) as u64) >> 1) & low_51_bit_mask,
             // load bits [192,256), shift right by 12, mask to 51 bits (this ignores high bit)
-            ((load8_at_spec(bytes, 24) as u64) >> 12) & low_51_bit_mask,
+            ((spec_load8_at(bytes, 24) as u64) >> 12) & low_51_bit_mask,
         ],
     }
 }

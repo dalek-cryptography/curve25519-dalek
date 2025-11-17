@@ -175,7 +175,7 @@ proof fn lemma_load8_at_plus_version_is_spec_aux(input: &[u8], i: usize, j: nat)
 
 pub proof fn lemma_load8_at_plus_version_is_spec(input: &[u8], i: usize)
     ensures
-        load8_at_plus_version_rec(input, i, 7) == load8_at_spec(input, i),
+        load8_at_plus_version_rec(input, i, 7) == spec_load8_at(input, i),
 {
     assert(load8_at_plus_version_rec(input, i, 0) == input[i as int] as u64);
 
@@ -287,11 +287,11 @@ pub proof fn lemma_load8_at_plus_fits_u64(input: &[u8], i: usize, k: nat)
     }
 }
 
-pub proof fn lemma_load8_at_spec_fits_u64(input: &[u8], i: usize)
+pub proof fn lemma_spec_load8_at_fits_u64(input: &[u8], i: usize)
     requires
         i + 7 < input.len(),
     ensures
-        load8_at_spec(input, i) <= u64::MAX,
+        spec_load8_at(input, i) <= u64::MAX,
 {
     lemma_load8_at_plus_version_is_spec(input, i);
     lemma_load8_at_plus_fits_u64(input, i, 7);
@@ -439,7 +439,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
         s64 < 64,
         t < 64,
     ensures
-        (load8_at_spec(input, i) as u64 >> s64) & (low_bits_mask(t) as u64) == ((pow2(0 * 8)
+        (spec_load8_at(input, i) as u64 >> s64) & (low_bits_mask(t) as u64) == ((pow2(0 * 8)
             * input[i + 0]) as u64 / (pow2(s64 as nat) as u64)) % (pow2(t) as u64) + ((pow2(1 * 8)
             * input[i + 1]) as u64 / (pow2(s64 as nat) as u64)) % (pow2(t) as u64) + ((pow2(2 * 8)
             * input[i + 2]) as u64 / (pow2(s64 as nat) as u64)) % (pow2(t) as u64) + ((pow2(3 * 8)
@@ -449,7 +449,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
             * input[i + 6]) as u64 / (pow2(s64 as nat) as u64)) % (pow2(t) as u64) + ((pow2(7 * 8)
             * input[i + 7]) as u64 / (pow2(s64 as nat) as u64)) % (pow2(t) as u64),
 {
-    let x = load8_at_spec(input, i) as u64;
+    let x = spec_load8_at(input, i) as u64;
     let y = load8_at_plus_version_rec(input, i, 7);
     let s = s64 as nat;
     let ps64 = pow2(s) as u64;
@@ -665,8 +665,8 @@ pub proof fn lemma_load8_at_limb_base(input: &[u8], i: usize, k: u64)
         k < 64,
     ensures
         0 < pow2(51) <= u64::MAX,
-        load8_at_spec(input, i) <= u64::MAX,
-        ((load8_at_spec(input, i) as u64) >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64)
+        spec_load8_at(input, i) <= u64::MAX,
+        ((spec_load8_at(input, i) as u64) >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64)
             / (pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 1] * pow2(1 * 8)) as u64)
             / (pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 2] * pow2(2 * 8)) as u64)
             / (pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 3] * pow2(3 * 8)) as u64)
@@ -693,11 +693,11 @@ pub proof fn lemma_load8_at_limb_base(input: &[u8], i: usize, k: u64)
         l51_bit_mask_lt();
     }
 
-    assert(load8_at_spec(input, i) <= u64::MAX) by {
-        lemma_load8_at_spec_fits_u64(input, i);
+    assert(spec_load8_at(input, i) <= u64::MAX) by {
+        lemma_spec_load8_at_fits_u64(input, i);
     }
 
-    assert((load8_at_spec(input, i) as u64 >> k) & (low_bits_mask(51) as u64) == (((input[i + 0]
+    assert((spec_load8_at(input, i) as u64 >> k) & (low_bits_mask(51) as u64) == (((input[i + 0]
         * pow2(0 * 8)) as u64) / pk) % p51 + (((input[i + 1] * pow2(1 * 8)) as u64) / pk) % p51 + ((
     (input[i + 2] * pow2(2 * 8)) as u64) / pk) % p51 + (((input[i + 3] * pow2(3 * 8)) as u64) / pk)
         % p51 + (((input[i + 4] * pow2(4 * 8)) as u64) / pk) % p51 + (((input[i + 5] * pow2(
@@ -767,7 +767,7 @@ pub proof fn lemma_load8_at_limb_X(
             j_shift <= j < 8 ==> #[trigger] ((input[(i + j) as int] * pow2(j * 8)) as u64 / (pow2(
                 k,
             ) as u64)) % (pow2(51) as u64) == 0,
-        (load8_at_spec(input, i) as u64 >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64) / (
+        (spec_load8_at(input, i) as u64 >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64) / (
         pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 1] * pow2(1 * 8)) as u64) / (
         pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 2] * pow2(2 * 8)) as u64) / (
         pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 3] * pow2(3 * 8)) as u64) / (
@@ -826,7 +826,7 @@ pub proof fn lemma_load8_at_limb0(input: &[u8])
     requires
         0 + 7 < input.len(),
     ensures
-        (load8_at_spec(input, 0) as u64) & mask51 == (input[0] * pow2(0 * 8)) + (input[1] * pow2(
+        (spec_load8_at(input, 0) as u64) & mask51 == (input[0] * pow2(0 * 8)) + (input[1] * pow2(
             1 * 8,
         )) + (input[2] * pow2(2 * 8)) + (input[3] * pow2(3 * 8)) + (input[4] * pow2(4 * 8)) + (
         input[5] * pow2(5 * 8)) + ((input[6] as nat % pow2(3)) * pow2(6 * 8)),
@@ -838,14 +838,14 @@ pub proof fn lemma_load8_at_limb0(input: &[u8])
     let j_id = 6;
     let j_shift = 7;
 
-    assert(load8_at_spec(input, 0) as u64 == (load8_at_spec(input, 0) as u64 >> 0)) by {
-        lemma_shr_zero_is_id(load8_at_spec(input, 0) as u64);
+    assert(spec_load8_at(input, 0) as u64 == (spec_load8_at(input, 0) as u64 >> 0)) by {
+        lemma_shr_zero_is_id(spec_load8_at(input, 0) as u64);
     }
 
     lemma_load8_at_limb_X(input, i, k, j_div, j_id, j_shift);
 
     // Sanity check
-    assert((load8_at_spec(input, i) as u64 >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64)
+    assert((spec_load8_at(input, i) as u64 >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64)
         / (pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 1] * pow2(1 * 8)) as u64) / (
     pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 2] * pow2(2 * 8)) as u64) / (pow2(
         k as nat,
@@ -873,7 +873,7 @@ pub proof fn lemma_load8_at_limb1(input: &[u8])
     requires
         6 + 7 < input.len(),
     ensures
-        ((load8_at_spec(input, 6) as u64) >> 3) & mask51 == (input[6] as nat / pow2(3)) + (input[7]
+        ((spec_load8_at(input, 6) as u64) >> 3) & mask51 == (input[6] as nat / pow2(3)) + (input[7]
             * pow2((1 * 8 - 3) as nat)) + (input[8] * pow2((2 * 8 - 3) as nat)) + (input[9] * pow2(
             (3 * 8 - 3) as nat,
         )) + (input[10] * pow2((4 * 8 - 3) as nat)) + (input[11] * pow2((5 * 8 - 3) as nat)) + ((
@@ -889,7 +889,7 @@ pub proof fn lemma_load8_at_limb1(input: &[u8])
     lemma_load8_at_limb_X(input, i, k, j_div, j_id, j_shift);
 
     // Sanity check
-    assert((load8_at_spec(input, i) as u64 >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64)
+    assert((spec_load8_at(input, i) as u64 >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64)
         / (pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 1] * pow2(1 * 8)) as u64) / (
     pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 2] * pow2(2 * 8)) as u64) / (pow2(
         k as nat,
@@ -910,7 +910,7 @@ pub proof fn lemma_load8_at_limb2(input: &[u8])
     requires
         12 + 7 < input.len(),
     ensures
-        ((load8_at_spec(input, 12) as u64) >> 6) & mask51 == (input[12] as nat / pow2(6)) + (
+        ((spec_load8_at(input, 12) as u64) >> 6) & mask51 == (input[12] as nat / pow2(6)) + (
         input[13] * pow2((1 * 8 - 6) as nat)) + (input[14] * pow2((2 * 8 - 6) as nat)) + (input[15]
             * pow2((3 * 8 - 6) as nat)) + (input[16] * pow2((4 * 8 - 6) as nat)) + (input[17]
             * pow2((5 * 8 - 6) as nat)) + (input[18] * pow2((6 * 8 - 6) as nat)) + ((
@@ -926,7 +926,7 @@ pub proof fn lemma_load8_at_limb2(input: &[u8])
     lemma_load8_at_limb_X(input, i, k, j_div, j_id, j_shift);
 
     // Sanity check
-    assert((load8_at_spec(input, i) as u64 >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64)
+    assert((spec_load8_at(input, i) as u64 >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64)
         / (pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 1] * pow2(1 * 8)) as u64) / (
     pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 2] * pow2(2 * 8)) as u64) / (pow2(
         k as nat,
@@ -947,7 +947,7 @@ pub proof fn lemma_load8_at_limb3(input: &[u8])
     requires
         19 + 7 < input.len(),
     ensures
-        ((load8_at_spec(input, 19) as u64) >> 1) & mask51 == (input[19] as nat / pow2(1)) + (
+        ((spec_load8_at(input, 19) as u64) >> 1) & mask51 == (input[19] as nat / pow2(1)) + (
         input[20] * pow2((1 * 8 - 1) as nat)) + (input[21] * pow2((2 * 8 - 1) as nat)) + (input[22]
             * pow2((3 * 8 - 1) as nat)) + (input[23] * pow2((4 * 8 - 1) as nat)) + (input[24]
             * pow2((5 * 8 - 1) as nat)) + ((input[25] as nat % pow2(4)) * pow2((6 * 8 - 1) as nat)),
@@ -962,7 +962,7 @@ pub proof fn lemma_load8_at_limb3(input: &[u8])
     lemma_load8_at_limb_X(input, i, k, j_div, j_id, j_shift);
 
     // Sanity check
-    assert((load8_at_spec(input, i) as u64 >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64)
+    assert((spec_load8_at(input, i) as u64 >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64)
         / (pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 1] * pow2(1 * 8)) as u64) / (
     pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 2] * pow2(2 * 8)) as u64) / (pow2(
         k as nat,
@@ -983,7 +983,7 @@ pub proof fn lemma_load8_at_limb4(input: &[u8])
     requires
         24 + 7 < input.len(),
     ensures
-        ((load8_at_spec(input, 24) as u64) >> 12) & mask51 == (input[25] as nat / pow2(4)) + (
+        ((spec_load8_at(input, 24) as u64) >> 12) & mask51 == (input[25] as nat / pow2(4)) + (
         input[26] * pow2((2 * 8 - 12) as nat)) + (input[27] * pow2((3 * 8 - 12) as nat)) + (
         input[28] * pow2((4 * 8 - 12) as nat)) + (input[29] * pow2((5 * 8 - 12) as nat)) + (
         input[30] * pow2((6 * 8 - 12) as nat)) + ((input[31] as nat % pow2(7)) * pow2(
@@ -1000,7 +1000,7 @@ pub proof fn lemma_load8_at_limb4(input: &[u8])
     lemma_load8_at_limb_X(input, i, k, j_div, j_id, j_shift);
 
     // Sanity check
-    assert((load8_at_spec(input, i) as u64 >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64)
+    assert((spec_load8_at(input, i) as u64 >> k) & mask51 == (((input[i + 0] * pow2(0 * 8)) as u64)
         / (pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 1] * pow2(1 * 8)) as u64) / (
     pow2(k as nat) as u64)) % (pow2(51) as u64) + (((input[i + 2] * pow2(2 * 8)) as u64) / (pow2(
         k as nat,

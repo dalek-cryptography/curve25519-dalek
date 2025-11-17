@@ -86,8 +86,8 @@ pub proof fn proof_reduce(limbs: [u64; 5])
         // IOW, e(reduce(l)) = e(l) (mod p)
         // additionally, if all limbs are below 2^51, reduce(l) = l
         (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (spec_reduce(limbs) =~= limbs),
-        as_nat(spec_reduce(limbs)) == as_nat(limbs) - p() * (limbs[4] >> 51),
-        as_nat(spec_reduce(limbs)) % p() == as_nat(limbs) % p(),
+        u64_5_as_nat(spec_reduce(limbs)) == u64_5_as_nat(limbs) - p() * (limbs[4] >> 51),
+        u64_5_as_nat(spec_reduce(limbs)) % p() == u64_5_as_nat(limbs) % p(),
 {
     // -----
     // reduce identity for small limbs
@@ -112,7 +112,7 @@ pub proof fn proof_reduce(limbs: [u64; 5])
         }
     }
 
-    // -- as_nat identity
+    // -- u64_5_as_nat identity
 
     // ai = limbs[i] / 2^52
     let a0 = (limbs[0] >> 51);
@@ -131,8 +131,9 @@ pub proof fn proof_reduce(limbs: [u64; 5])
     lemma_reduce_boundaries(limbs);
 
     // distribute
-    assert(as_nat(rr) == 19 * a4 + b0 + pow2(51) * a0 + pow2(51) * b1 + pow2(102) * a1 + pow2(102)
-        * b2 + pow2(153) * a2 + pow2(153) * b3 + pow2(204) * a3 + pow2(204) * b4) by {
+    assert(u64_5_as_nat(rr) == 19 * a4 + b0 + pow2(51) * a0 + pow2(51) * b1 + pow2(102) * a1 + pow2(
+        102,
+    ) * b2 + pow2(153) * a2 + pow2(153) * b3 + pow2(204) * a3 + pow2(204) * b4) by {
         lemma_mul_is_distributive_add(pow2(51) as int, a0 as int, b1 as int);
         lemma_mul_is_distributive_add(pow2(102) as int, a1 as int, b2 as int);
         lemma_mul_is_distributive_add(pow2(153) as int, a2 as int, b3 as int);
@@ -140,24 +141,25 @@ pub proof fn proof_reduce(limbs: [u64; 5])
     }
 
     // factor out
-    assert(as_nat(rr) == 19 * a4 + b0 + pow2(51) * a0 + pow2(51) * b1 + pow2(51) * (pow2(51) * a1)
-        + pow2(102) * b2 + pow2(102) * (pow2(51) * a2) + pow2(153) * b3 + pow2(153) * (pow2(51)
-        * a3) + pow2(204) * b4) by {
+    assert(u64_5_as_nat(rr) == 19 * a4 + b0 + pow2(51) * a0 + pow2(51) * b1 + pow2(51) * (pow2(51)
+        * a1) + pow2(102) * b2 + pow2(102) * (pow2(51) * a2) + pow2(153) * b3 + pow2(153) * (pow2(
+        51,
+    ) * a3) + pow2(204) * b4) by {
         lemma_two_factoring_51(51, a1);
         lemma_two_factoring_51(102, a2);
         lemma_two_factoring_51(153, a3);
     }
 
     // change groupings
-    assert(as_nat(rr) == (b0 + pow2(51) * a0) + pow2(51) * (b1 + pow2(51) * a1) + pow2(102) * (b2
-        + pow2(51) * a2) + pow2(153) * (b3 + pow2(51) * a3) + pow2(204) * b4 + 19 * a4) by {
+    assert(u64_5_as_nat(rr) == (b0 + pow2(51) * a0) + pow2(51) * (b1 + pow2(51) * a1) + pow2(102)
+        * (b2 + pow2(51) * a2) + pow2(153) * (b3 + pow2(51) * a3) + pow2(204) * b4 + 19 * a4) by {
         lemma_mul_is_distributive_add(pow2(51) as int, b1 as int, pow2(51) * a1);
         lemma_mul_is_distributive_add(pow2(102) as int, b2 as int, pow2(51) * a2);
         lemma_mul_is_distributive_add(pow2(153) as int, b3 as int, pow2(51) * a3);
     }
 
     // invoke div/mod identity
-    assert(as_nat(rr) == limbs[0] + pow2(51) * limbs[1] + pow2(102) * limbs[2] + pow2(153)
+    assert(u64_5_as_nat(rr) == limbs[0] + pow2(51) * limbs[1] + pow2(102) * limbs[2] + pow2(153)
         * limbs[3] + pow2(204) * b4 + 19 * a4) by {
         lemma_div_and_mod_51(a0, b0, limbs[0]);
         lemma_div_and_mod_51(a1, b1, limbs[1]);
@@ -166,7 +168,7 @@ pub proof fn proof_reduce(limbs: [u64; 5])
     }
 
     // Add missing limbs[4] parts
-    assert(as_nat(rr) == limbs[0] + pow2(51) * limbs[1] + pow2(102) * limbs[2] + pow2(153)
+    assert(u64_5_as_nat(rr) == limbs[0] + pow2(51) * limbs[1] + pow2(102) * limbs[2] + pow2(153)
         * limbs[3] + pow2(204) * limbs[4] - pow2(204) * (pow2(51) * a4) + 19 * a4) by {
         lemma_div_and_mod_51(a4, b4, limbs[4]);
         assert(pow2(204) * limbs[4] == pow2(204) * b4 + pow2(204) * (pow2(51) * a4)) by {
@@ -174,10 +176,10 @@ pub proof fn proof_reduce(limbs: [u64; 5])
         }
     }
 
-    // The solver can collect components of as_nat(limbs) automatically:
-    // as_nat(rr) == as_nat(limbs) - pow2(204) * (pow2(51) * a4 ) + 19 * a4
+    // The solver can collect components of u64_5_as_nat(limbs) automatically:
+    // u64_5_as_nat(rr) == u64_5_as_nat(limbs) - pow2(204) * (pow2(51) * a4 ) + 19 * a4
     // ... as well as pull in minus
-    // as_nat(rr) == as_nat(limbs) - (pow2(204) * (pow2(51) * a4 ) - 19 * a4)
+    // u64_5_as_nat(rr) == u64_5_as_nat(limbs) - (pow2(204) * (pow2(51) * a4 ) - 19 * a4)
 
     // collect components of p() * a4
     assert(pow2(204) * (pow2(51) * a4) - 19 * a4 == p() * a4) by {
@@ -190,19 +192,19 @@ pub proof fn proof_reduce(limbs: [u64; 5])
     pow255_gt_19();
     lemma_mod_multiples_vanish(
         (limbs[4] >> 51) as int,
-        as_nat(spec_reduce(limbs)) as int,
+        u64_5_as_nat(spec_reduce(limbs)) as int,
         p() as int,
     );
 }
 
-/// Proves that reduce() ensures as_nat < 2*p()
+/// Proves that reduce() ensures u64_5_as_nat < 2*p()
 ///
 /// This is the key property needed for to_bytes(): after reduce(),
 /// the value is bounded by 2*p = 2^256 - 38, not just by the loose
 /// bound from individual limb sizes.
 pub proof fn lemma_reduce_bound_2p(limbs: [u64; 5])
     ensures
-        as_nat(spec_reduce(limbs)) < 2 * p(),
+        u64_5_as_nat(spec_reduce(limbs)) < 2 * p(),
 {
     lemma2_to64();
     pow255_gt_19();
@@ -277,7 +279,7 @@ pub proof fn lemma_reduce_bound_2p(limbs: [u64; 5])
     // write out i * 51s explicitly to trigger forall match
     let tail = (pow2(18) + pow2(51) + pow2(64) + pow2(102) + pow2(115) + pow2(153) + pow2(166)
         + pow2(204) + pow2(217));
-    assert(as_nat(r) == r[0] + pow2(1 * 51) * r[1] + pow2(2 * 51) * r[2] + pow2(3 * 51) * r[3]
+    assert(u64_5_as_nat(r) == r[0] + pow2(1 * 51) * r[1] + pow2(2 * 51) * r[2] + pow2(3 * 51) * r[3]
         + pow2(4 * 51) * r[4] < tail + pow2(255)) by {
         lemma_pow2_adds(51, 13);
         lemma_pow2_adds(102, 13);

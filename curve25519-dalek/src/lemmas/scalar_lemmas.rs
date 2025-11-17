@@ -1561,8 +1561,8 @@ pub proof fn lemma_bytes_to_nat_lower_bound(bytes: &[u8; 32], index: usize)
 {
     // bytes_to_nat is defined recursively as a sum of non-negative terms
     // Therefore the sum is >= any individual term
-    use crate::specs::core_specs::as_nat_32_u8;
-    assert(bytes_to_nat(bytes) == as_nat_32_u8(bytes));
+    use crate::specs::core_specs::u8_32_as_nat;
+    assert(bytes_to_nat(bytes) == u8_32_as_nat(bytes));
     lemma_bytes_to_nat_rec_bound(bytes, 0, index);
 }
 

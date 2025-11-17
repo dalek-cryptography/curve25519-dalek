@@ -36,12 +36,16 @@ pub proof fn l51_bit_mask_lt()
 }
 
 // Evaluation function, given a field element as limbs, reconstruct the nat value it represents.
-pub open spec fn as_nat(limbs: [u64; 5]) -> nat {
-    (limbs[0] as nat) + pow2(51) * (limbs[1] as nat) + pow2(102) * (limbs[2] as nat) + pow2(153) * (
-    limbs[3] as nat) + pow2(204) * (limbs[4] as nat)
+#[verusfmt::skip]
+pub open spec fn u64_5_as_nat(limbs: [u64; 5]) -> nat {
+                (limbs[0] as nat) +
+    pow2( 51) * (limbs[1] as nat) +
+    pow2(102) * (limbs[2] as nat) +
+    pow2(153) * (limbs[3] as nat) +
+    pow2(204) * (limbs[4] as nat)
 }
 
-// Note: as_nat_32_u8, as_nat_32_u8_rec, and load8_at_spec have been moved to core_specs
+// Note: u8_32_as_nat, u8_32_as_nat_rec, and spec_load8_at have been moved to core_specs
 // They are now shared between field and scalar implementations
 pub open spec fn spec_reduce(limbs: [u64; 5]) -> (r: [u64; 5]) {
     let r = [

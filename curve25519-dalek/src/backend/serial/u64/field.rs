@@ -51,8 +51,6 @@ use crate::lemmas::common_lemmas::shift_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::as_bytes_lemmas::*;
 #[allow(unused_imports)]
-use crate::lemmas::field_lemmas::as_nat_lemmas::*;
-#[allow(unused_imports)]
 use crate::lemmas::field_lemmas::compute_q_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::from_bytes_lemmas::*;
@@ -70,6 +68,8 @@ use crate::lemmas::field_lemmas::pow2k_lemmas::*;
 use crate::lemmas::field_lemmas::reduce_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::to_bytes_reduction_lemmas::*;
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::u64_5_as_nat_lemmas::*;
 #[allow(unused_imports)]
 use crate::specs::core_specs::*;
 
@@ -135,7 +135,7 @@ const fn load8_at(input: &[u8], i: usize) -> (r: u64)
     requires
         i + 7 < input.len(),
     ensures
-        r as nat == load8_at_spec(input, i),
+        r as nat == spec_load8_at(input, i),
 {
     proof {
         lemma_load8_at_rec_version_is_exec(input, i);
@@ -726,16 +726,16 @@ impl FieldElement51 {
             //   36028797018963952u64 - l3,
             //   36028797018963952u64 - l4 )
             // is just 16 * (c0, c, c, c, c) - l (in vector notation)
-            // Further, as_nat((c0, c, c, c, c)) = p, so
-            // as_nat(16 * (c0, c, c, c, c) - l) is 16p - as_nat(l)
-            // We know as_nat(reduce(v)) = as_nat(v) - p * (v4 >> 51) for any v.
+            // Further, u64_5_as_nat((c0, c, c, c, c)) = p, so
+            // u64_5_as_nat(16 * (c0, c, c, c, c) - l) is 16p - u64_5_as_nat(l)
+            // We know u64_5_as_nat(reduce(v)) = u64_5_as_nat(v) - p * (v4 >> 51) for any v.
             // This gives us the identity
-            // as_nat(negate(l)) = as_nat(reduce(16 * (c0, c, c, c, c) - l))
-            //                   = 16p - as_nat(l) - p * ((16c - l4) >> 51)
+            // u64_5_as_nat(negate(l)) = u64_5_as_nat(reduce(16 * (c0, c, c, c, c) - l))
+            //                   = 16p - u64_5_as_nat(l) - p * ((16c - l4) >> 51)
             // Note that (16c - l4) >> 51 is either 14 or 15, in either case < 16.
-            as_nat(self.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * ((36028797018963952u64
-                - old(self).limbs[4]) as u64 >> 51),
-            (as_nat(self.limbs) + as_nat(old(self).limbs)) % p() == 0,
+            u64_5_as_nat(self.limbs) == 16 * p() - u64_5_as_nat(old(self).limbs) - p() * ((
+            36028797018963952u64 - old(self).limbs[4]) as u64 >> 51),
+            (u64_5_as_nat(self.limbs) + u64_5_as_nat(old(self).limbs)) % p() == 0,
     {
         proof {
             lemma_neg_no_underflow(self.limbs);
@@ -773,9 +773,9 @@ impl FieldElement51 {
             r.limbs == spec_reduce(limbs),
             forall|i: int| 0 <= i < 5 ==> r.limbs[i] < (1u64 << 52),
             (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs),
-            as_nat(r.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51),
-            as_nat(r.limbs) % p() == as_nat(limbs) % p(),
-            as_nat(r.limbs) < 2 * p(),
+            u64_5_as_nat(r.limbs) == u64_5_as_nat(limbs) - p() * (limbs[4] >> 51),
+            u64_5_as_nat(r.limbs) % p() == u64_5_as_nat(limbs) % p(),
+            u64_5_as_nat(r.limbs) < 2 * p(),
     {
         proof {
             lemma_reduce_boundaries(limbs);
@@ -834,7 +834,7 @@ impl FieldElement51 {
         ensures
     // last bit is ignored
 
-            as_nat(r.limbs) == as_nat_32_u8(bytes) % pow2(255),
+            u64_5_as_nat(r.limbs) == u8_32_as_nat(bytes) % pow2(255),
     {
         /* MANUALLY moved outside */
         /*
@@ -852,19 +852,19 @@ impl FieldElement51 {
         proof {
             assert(mask51 == (1u64 << 51) - 1) by (compute);
 
-            let l0 = load8_at_spec(bytes, 0);
-            let l1 = load8_at_spec(bytes, 6);
-            let l2 = load8_at_spec(bytes, 12);
-            let l3 = load8_at_spec(bytes, 19);
-            let l4 = load8_at_spec(bytes, 24);
+            let l0 = spec_load8_at(bytes, 0);
+            let l1 = spec_load8_at(bytes, 6);
+            let l2 = spec_load8_at(bytes, 12);
+            let l3 = spec_load8_at(bytes, 19);
+            let l4 = spec_load8_at(bytes, 24);
 
             assert(l0 <= u64::MAX && l1 <= u64::MAX && l2 <= u64::MAX && l3 <= u64::MAX && l4
                 <= u64::MAX) by {
-                lemma_load8_at_spec_fits_u64(bytes, 0);
-                lemma_load8_at_spec_fits_u64(bytes, 6);
-                lemma_load8_at_spec_fits_u64(bytes, 12);
-                lemma_load8_at_spec_fits_u64(bytes, 19);
-                lemma_load8_at_spec_fits_u64(bytes, 24);
+                lemma_spec_load8_at_fits_u64(bytes, 0);
+                lemma_spec_load8_at_fits_u64(bytes, 6);
+                lemma_spec_load8_at_fits_u64(bytes, 12);
+                lemma_spec_load8_at_fits_u64(bytes, 19);
+                lemma_spec_load8_at_fits_u64(bytes, 24);
             }
 
             let rr = [
@@ -875,7 +875,7 @@ impl FieldElement51 {
                 (l4 as u64 >> 12) & mask51,
             ];
 
-            assert(as_nat(rr) == as_nat_32_u8(bytes) % pow2(255)) by {
+            assert(u64_5_as_nat(rr) == u8_32_as_nat(bytes) % pow2(255)) by {
                 lemma_from_bytes_as_nat(bytes);
                 lemma_as_nat_32_mod_255(bytes);
             }
@@ -914,7 +914,7 @@ impl FieldElement51 {
         ensures
     // canonical encoding, i.e. mod p value
 
-            as_nat_32_u8(&r) == as_nat(self.limbs) % p(),
+            u8_32_as_nat(&r) == u64_5_as_nat(self.limbs) % p(),
     {
         proof {
             // No overflows
@@ -930,8 +930,9 @@ impl FieldElement51 {
             let q = compute_q_spec(limbs);
 
             // Step 2: Prove that q is the correct quotient
-            assert((q == 0 || q == 1) && (as_nat(limbs) >= p() <==> q == 1) && (as_nat(limbs) < p()
-                <==> q == 0)) by {
+            assert((q == 0 || q == 1) && (u64_5_as_nat(limbs) >= p() <==> q == 1) && (u64_5_as_nat(
+                limbs,
+            ) < p() <==> q == 0)) by {
                 lemma_compute_q(limbs, q);
             }
 
@@ -1040,7 +1041,10 @@ impl FieldElement51 {
             ,
         ensures
             forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 54,
-            as_nat(r.limbs) % p() == pow(as_nat(self.limbs) as int, pow2(k as nat)) as nat % p(),
+            u64_5_as_nat(r.limbs) % p() == pow(
+                u64_5_as_nat(self.limbs) as int,
+                pow2(k as nat),
+            ) as nat % p(),
     {
         #[cfg(not(verus_keep_ghost))]
         debug_assert!( k > 0 );
@@ -1057,21 +1061,26 @@ impl FieldElement51 {
         let ghost k0 = k;
         // pre-loop invariant, i = 0
         proof {
-            assert(as_nat(a) == pow(as_nat(self.limbs) as int, pow2(0))) by {
+            assert(u64_5_as_nat(a) == pow(u64_5_as_nat(self.limbs) as int, pow2(0))) by {
                 lemma2_to64();  // pow2(0) = 1
-                lemma_pow1(as_nat(self.limbs) as int);
+                lemma_pow1(u64_5_as_nat(self.limbs) as int);
             }
         }
         loop
             invariant_except_break
                 forall|j: int| 0 <= j < 5 ==> a[j] < 1u64 << 54,
-                as_nat(a) % p() == pow(as_nat(self.limbs) as int, pow2((k0 - k) as nat)) as nat
-                    % p(),
+                u64_5_as_nat(a) % p() == pow(
+                    u64_5_as_nat(self.limbs) as int,
+                    pow2((k0 - k) as nat),
+                ) as nat % p(),
                 0 < k <= k0,
             ensures
                 k == 0,
                 forall|j: int| 0 <= j < 5 ==> a[j] < 1u64 << 54,
-                as_nat(a) % p() == pow(as_nat(self.limbs) as int, pow2(k0 as nat)) as nat % p(),
+                u64_5_as_nat(a) % p() == pow(
+                    u64_5_as_nat(self.limbs) as int,
+                    pow2(k0 as nat),
+                ) as nat % p(),
             decreases k,
         {
             proof {
@@ -1187,7 +1196,7 @@ impl FieldElement51 {
     //needed for pow22501
 
             forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 54,
-            as_nat(r.limbs) % p() == pow(as_nat(self.limbs) as int, 2) as nat % p(),
+            u64_5_as_nat(r.limbs) % p() == pow(u64_5_as_nat(self.limbs) as int, 2) as nat % p(),
     {
         proof {
             // pow2(1) == 2
@@ -1203,7 +1212,8 @@ impl FieldElement51 {
 
             forall|i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54,
         ensures
-            as_nat(r.limbs) % p() == (2 * pow(as_nat(self.limbs) as int, 2)) as nat % p(),
+            u64_5_as_nat(r.limbs) % p() == (2 * pow(u64_5_as_nat(self.limbs) as int, 2)) as nat
+                % p(),
     {
         let mut square = self.pow2k(1);
 
@@ -1226,35 +1236,37 @@ impl FieldElement51 {
                 (2 * square.limbs[4]) as u64,
             ];
 
-            // as_nat(ka) == 2 * as_nat(square.limbs)
+            // u64_5_as_nat(ka) == 2 * u64_5_as_nat(square.limbs)
             // and
-            // as_nat(ka) % p() == (2 * as_nat(square.limbs)) % p()
-            lemma_as_nat_k(square.limbs, 2);
+            // u64_5_as_nat(ka) % p() == (2 * u64_5_as_nat(square.limbs)) % p()
+            lemma_u64_5_as_nat_k(square.limbs, 2);
 
             // By pow2k ensures:
-            // as_nat(square.limbs) % p() == pow(as_nat(self.limbs) as int, pow2(1)) as nat % p()
+            // u64_5_as_nat(square.limbs) % p() == pow(u64_5_as_nat(self.limbs) as int, pow2(1)) as nat % p()
             // We just need pow2(1) == 2
             lemma2_to64();
 
             // p > 0
             pow255_gt_19();
 
-            assert(as_nat(ka) % p() == ((2nat % p()) * (as_nat(square.limbs) % p())) % p() == ((2nat
-                % p()) * (pow(as_nat(self.limbs) as int, 2) as nat % p())) % p()) by {
-                lemma_mul_mod_noop(2, as_nat(square.limbs) as int, p() as int);
+            assert(u64_5_as_nat(ka) % p() == ((2nat % p()) * (u64_5_as_nat(square.limbs) % p()))
+                % p() == ((2nat % p()) * (pow(u64_5_as_nat(self.limbs) as int, 2) as nat % p()))
+                % p()) by {
+                lemma_mul_mod_noop(2, u64_5_as_nat(square.limbs) as int, p() as int);
             }
 
-            // as_nat(self.limbs)^2 >= 0
-            assert(pow(as_nat(self.limbs) as int, 2) >= 0) by {
-                lemma_pow_nat_is_nat(as_nat(self.limbs), 1);
+            // u64_5_as_nat(self.limbs)^2 >= 0
+            assert(pow(u64_5_as_nat(self.limbs) as int, 2) >= 0) by {
+                lemma_pow_nat_is_nat(u64_5_as_nat(self.limbs), 1);
             }
 
-            assert(((2nat % p()) * (pow(as_nat(self.limbs) as int, 2) as nat % p())) % p() == (2 * (
-            pow(as_nat(self.limbs) as int, 2))) as nat % p()) by {
-                lemma_mul_mod_noop(2, pow(as_nat(self.limbs) as int, 2) as int, p() as int);
+            assert(((2nat % p()) * (pow(u64_5_as_nat(self.limbs) as int, 2) as nat % p())) % p()
+                == (2 * (pow(u64_5_as_nat(self.limbs) as int, 2))) as nat % p()) by {
+                lemma_mul_mod_noop(2, pow(u64_5_as_nat(self.limbs) as int, 2) as int, p() as int);
             }
 
-            assert(as_nat(ka) % p() == (2 * (pow(as_nat(self.limbs) as int, 2))) as nat % p());
+            assert(u64_5_as_nat(ka) % p() == (2 * (pow(u64_5_as_nat(self.limbs) as int, 2))) as nat
+                % p());
         }
 
         for i in 0..5

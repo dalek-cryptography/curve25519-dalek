@@ -4,7 +4,7 @@
 //  - It defines or reasons about a spec function relevant only to `field_verus`
 pub mod as_bytes_lemmas;
 
-pub mod as_nat_lemmas;
+pub mod u64_5_as_nat_lemmas;
 
 pub mod from_bytes_lemmas;
 

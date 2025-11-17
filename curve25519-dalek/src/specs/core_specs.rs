@@ -19,7 +19,7 @@ verus! {
 ///
 /// Used by both field and scalar implementations for byte serialization.
 #[verusfmt::skip]
-pub open spec fn as_nat_32_u8(bytes: &[u8; 32]) -> nat {
+pub open spec fn u8_32_as_nat(bytes: &[u8; 32]) -> nat {
     // Verus error: `core::iter::range::impl&%15::fold` is not supported
     // we write them out manually
     (bytes[ 0] as nat) * pow2( 0 * 8) +
@@ -59,14 +59,14 @@ pub open spec fn as_nat_32_u8(bytes: &[u8; 32]) -> nat {
 /// Recursive helper for converting a 32-byte array to nat.
 ///
 /// This version is useful for proofs that need structural induction.
-/// It produces the same result as `as_nat_32_u8` but in recursive form.
-pub open spec fn as_nat_32_u8_rec(bytes: &[u8; 32], index: nat) -> nat
+/// It produces the same result as `u8_32_as_nat` but in recursive form.
+pub open spec fn u8_32_as_nat_rec(bytes: &[u8; 32], index: nat) -> nat
     decreases 32 - index,
 {
     if index >= 32 {
         0
     } else {
-        (bytes[index as int] as nat) * pow2(index * 8) + as_nat_32_u8_rec(bytes, index + 1)
+        (bytes[index as int] as nat) * pow2(index * 8) + u8_32_as_nat_rec(bytes, index + 1)
     }
 }
 
@@ -76,7 +76,7 @@ pub open spec fn as_nat_32_u8_rec(bytes: &[u8; 32], index: nat) -> nat
 ///
 /// This is commonly used when unpacking byte arrays into larger word-sized limbs.
 #[verusfmt::skip]
-pub open spec fn load8_at_spec(input: &[u8], i: usize) -> nat {
+pub open spec fn spec_load8_at(input: &[u8], i: usize) -> nat {
     (pow2(0 * 8) * input[i + 0] +
      pow2(1 * 8) * input[i + 1] +
      pow2(2 * 8) * input[i + 2] +
@@ -85,6 +85,17 @@ pub open spec fn load8_at_spec(input: &[u8], i: usize) -> nat {
      pow2(5 * 8) * input[i + 5] +
      pow2(6 * 8) * input[i + 6] +
      pow2(7 * 8) * input[i + 7]) as nat
+}
+
+#[verusfmt::skip]
+pub open spec fn u64_5_as_nat_generic_radix(arr: [u64;5], radix: nat) -> nat {
+    (
+                          arr[0] +
+        pow2(1 * radix) * arr[1] +
+        pow2(2 * radix) * arr[2] +
+        pow2(3 * radix) * arr[3] +
+        pow2(4 * radix) * arr[4]
+    ) as nat
 }
 
 } // verus!

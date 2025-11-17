@@ -38,7 +38,7 @@ verus! {
 /// * t21 = self * t20 mod p
 ///
 /// # Postconditions
-/// * as_nat(t21_limbs) % p() == pow(as_nat(self_limbs) as int, (pow2(252) - 3) as nat) % p()
+/// * u64_5_as_nat(t21_limbs) % p() == pow(u64_5_as_nat(self_limbs) as int, (pow2(252) - 3) as nat) % p()
 pub proof fn lemma_pow_p58_prove(
     self_limbs: [u64; 5],
     t19_limbs: [u64; 5],
@@ -48,17 +48,21 @@ pub proof fn lemma_pow_p58_prove(
     requires
 // t19 = x^(2^250-1) from pow22501
 
-        as_nat(t19_limbs) % p() == pow(as_nat(self_limbs) as int, (pow2(250) - 1) as nat) as nat
-            % p(),
+        u64_5_as_nat(t19_limbs) % p() == pow(
+            u64_5_as_nat(self_limbs) as int,
+            (pow2(250) - 1) as nat,
+        ) as nat % p(),
         // t20 = t19^4 (from pow2k(2))
-        as_nat(t20_limbs) % p() == pow(as_nat(t19_limbs) as int, pow2(2)) as nat % p(),
+        u64_5_as_nat(t20_limbs) % p() == pow(u64_5_as_nat(t19_limbs) as int, pow2(2)) as nat % p(),
         // t21 = self * t20
-        as_nat(t21_limbs) % p() == (as_nat(self_limbs) * as_nat(t20_limbs)) % p(),
+        u64_5_as_nat(t21_limbs) % p() == (u64_5_as_nat(self_limbs) * u64_5_as_nat(t20_limbs)) % p(),
     ensures
-        as_nat(t21_limbs) % p() == pow(as_nat(self_limbs) as int, (pow2(252) - 3) as nat) as nat
-            % p(),
+        u64_5_as_nat(t21_limbs) % p() == pow(
+            u64_5_as_nat(self_limbs) as int,
+            (pow2(252) - 3) as nat,
+        ) as nat % p(),
 {
-    let base = as_nat(self_limbs) as int;
+    let base = u64_5_as_nat(self_limbs) as int;
 
     assert(p() > 0) by {
         pow255_gt_19();
@@ -113,9 +117,15 @@ pub proof fn lemma_pow_p58_prove(
     assert(pow2(2) > 0) by {
         lemma_pow2_pos(2);
     }
-    lemma_prove_pow2k_step(base, as_nat(t19_limbs), as_nat(t20_limbs), exp_250_m1, pow2(2));
+    lemma_prove_pow2k_step(
+        base,
+        u64_5_as_nat(t19_limbs),
+        u64_5_as_nat(t20_limbs),
+        exp_250_m1,
+        pow2(2),
+    );
 
-    assert(as_nat(t20_limbs) % p() == pow(base, exp_252_m4) as nat % p());
+    assert(u64_5_as_nat(t20_limbs) % p() == pow(base, exp_252_m4) as nat % p());
 
     // ========================================================================
     // Prove t21 = x^(2^252-3) using lemma_prove_geometric_mul_step
@@ -126,7 +136,7 @@ pub proof fn lemma_pow_p58_prove(
     assert(pow(base, 1) == base) by {
         lemma_pow1(base);
     }
-    assert(pow(base, 1) as nat == as_nat(self_limbs));
+    assert(pow(base, 1) as nat == u64_5_as_nat(self_limbs));
 
     // Prove the arithmetic: 1 + (2^252 - 4) = 2^252 - 3
     assert(1 + exp_252_m4 == exp_252_m3) by {
@@ -144,14 +154,14 @@ pub proof fn lemma_pow_p58_prove(
     // Apply the helper lemma
     lemma_prove_geometric_mul_step(
         base,
-        as_nat(self_limbs),
-        as_nat(t20_limbs),
-        as_nat(t21_limbs),
+        u64_5_as_nat(self_limbs),
+        u64_5_as_nat(t20_limbs),
+        u64_5_as_nat(t21_limbs),
         1,
         exp_252_m4,
     );
 
-    assert(as_nat(t21_limbs) % p() == pow(base, exp_252_m3) as nat % p());
+    assert(u64_5_as_nat(t21_limbs) % p() == pow(base, exp_252_m3) as nat % p());
 }
 
 } // verus!

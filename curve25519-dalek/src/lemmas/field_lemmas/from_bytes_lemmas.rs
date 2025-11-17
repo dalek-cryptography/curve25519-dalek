@@ -80,7 +80,7 @@ pub proof fn lemma_assemble_pow_a_pow(a: nat, j: nat, k: nat, l: nat)
 
 pub proof fn lemma_from_bytes_as_nat_01(bytes: &[u8; 32])
     ensures
-        (load8_at_spec(bytes, 0) as u64 & mask51) + pow2(51) * ((load8_at_spec(bytes, 6) as u64
+        (spec_load8_at(bytes, 0) as u64 & mask51) + pow2(51) * ((spec_load8_at(bytes, 6) as u64
             >> 3) & mask51) == (bytes[0] * pow2(0 * 8)) + (bytes[1] * pow2(1 * 8)) + (bytes[2]
             * pow2(2 * 8)) + (bytes[3] * pow2(3 * 8)) + (bytes[4] * pow2(4 * 8)) + (bytes[5] * pow2(
             5 * 8,
@@ -88,14 +88,14 @@ pub proof fn lemma_from_bytes_as_nat_01(bytes: &[u8; 32])
         bytes[9] * pow2(9 * 8)) + (bytes[10] * pow2(10 * 8)) + (bytes[11] * pow2(11 * 8)) + ((
         bytes[12] as nat % pow2(6)) * pow2((12 * 8) as nat)),
 {
-    assert((load8_at_spec(bytes, 0) as u64) & mask51 == (bytes[0] * pow2(0 * 8)) + (bytes[1] * pow2(
+    assert((spec_load8_at(bytes, 0) as u64) & mask51 == (bytes[0] * pow2(0 * 8)) + (bytes[1] * pow2(
         1 * 8,
     )) + (bytes[2] * pow2(2 * 8)) + (bytes[3] * pow2(3 * 8)) + (bytes[4] * pow2(4 * 8)) + (bytes[5]
         * pow2(5 * 8)) + ((bytes[6] as nat % pow2(3)) * pow2(6 * 8))) by {
         lemma_load8_at_limb0(bytes);
     }
 
-    assert(((load8_at_spec(bytes, 6) as u64) >> 3) & mask51 == (bytes[6] as nat / pow2(3)) + (
+    assert(((spec_load8_at(bytes, 6) as u64) >> 3) & mask51 == (bytes[6] as nat / pow2(3)) + (
     bytes[7] * pow2((1 * 8 - 3) as nat)) + (bytes[8] * pow2((2 * 8 - 3) as nat)) + (bytes[9] * pow2(
         (3 * 8 - 3) as nat,
     )) + (bytes[10] * pow2((4 * 8 - 3) as nat)) + (bytes[11] * pow2((5 * 8 - 3) as nat)) + ((
@@ -103,7 +103,7 @@ pub proof fn lemma_from_bytes_as_nat_01(bytes: &[u8; 32])
         lemma_load8_at_limb1(bytes);
     }
 
-    assert(pow2(51) * ((load8_at_spec(bytes, 6) as u64 >> 3) & mask51) == pow2(51) * (
+    assert(pow2(51) * ((spec_load8_at(bytes, 6) as u64 >> 3) & mask51) == pow2(51) * (
     bytes[6] as nat / pow2(3)) + pow2(51) * (bytes[7] * pow2((1 * 8 - 3) as nat)) + pow2(51) * (
     bytes[8] * pow2((2 * 8 - 3) as nat)) + pow2(51) * (bytes[9] * pow2((3 * 8 - 3) as nat)) + pow2(
         51,
@@ -146,8 +146,8 @@ pub proof fn lemma_from_bytes_as_nat_01(bytes: &[u8; 32])
 
 pub proof fn lemma_from_bytes_as_nat_012(bytes: &[u8; 32])
     ensures
-        (load8_at_spec(bytes, 0) as u64 & mask51) + pow2(51) * ((load8_at_spec(bytes, 6) as u64
-            >> 3) & mask51) + pow2(102) * ((load8_at_spec(bytes, 12) as u64 >> 6) & mask51) == (
+        (spec_load8_at(bytes, 0) as u64 & mask51) + pow2(51) * ((spec_load8_at(bytes, 6) as u64
+            >> 3) & mask51) + pow2(102) * ((spec_load8_at(bytes, 12) as u64 >> 6) & mask51) == (
         bytes[0] * pow2(0 * 8)) + (bytes[1] * pow2(1 * 8)) + (bytes[2] * pow2(2 * 8)) + (bytes[3]
             * pow2(3 * 8)) + (bytes[4] * pow2(4 * 8)) + (bytes[5] * pow2(5 * 8)) + (bytes[6] * pow2(
             6 * 8,
@@ -157,7 +157,7 @@ pub proof fn lemma_from_bytes_as_nat_012(bytes: &[u8; 32])
         bytes[16] * pow2(16 * 8)) + (bytes[17] * pow2(17 * 8)) + (bytes[18] * pow2(18 * 8)) + ((
         bytes[19] as nat % pow2(1)) * pow2((19 * 8) as nat)),
 {
-    assert((load8_at_spec(bytes, 0) as u64 & mask51) + pow2(51) * ((load8_at_spec(bytes, 6) as u64
+    assert((spec_load8_at(bytes, 0) as u64 & mask51) + pow2(51) * ((spec_load8_at(bytes, 6) as u64
         >> 3) & mask51) == (bytes[0] * pow2(0 * 8)) + (bytes[1] * pow2(1 * 8)) + (bytes[2] * pow2(
         2 * 8,
     )) + (bytes[3] * pow2(3 * 8)) + (bytes[4] * pow2(4 * 8)) + (bytes[5] * pow2(5 * 8)) + (bytes[6]
@@ -168,7 +168,7 @@ pub proof fn lemma_from_bytes_as_nat_012(bytes: &[u8; 32])
         lemma_from_bytes_as_nat_01(bytes);
     }
 
-    assert(((load8_at_spec(bytes, 12) as u64) >> 6) & mask51 == (bytes[12] as nat / pow2(6)) + (
+    assert(((spec_load8_at(bytes, 12) as u64) >> 6) & mask51 == (bytes[12] as nat / pow2(6)) + (
     bytes[13] * pow2((1 * 8 - 6) as nat)) + (bytes[14] * pow2((2 * 8 - 6) as nat)) + (bytes[15]
         * pow2((3 * 8 - 6) as nat)) + (bytes[16] * pow2((4 * 8 - 6) as nat)) + (bytes[17] * pow2(
         (5 * 8 - 6) as nat,
@@ -178,7 +178,7 @@ pub proof fn lemma_from_bytes_as_nat_012(bytes: &[u8; 32])
         lemma_load8_at_limb2(bytes);
     }
 
-    assert(pow2(102) * ((load8_at_spec(bytes, 12) as u64 >> 6) & mask51) == pow2(102) * (
+    assert(pow2(102) * ((spec_load8_at(bytes, 12) as u64 >> 6) & mask51) == pow2(102) * (
     bytes[12] as nat / pow2(6)) + pow2(102) * (bytes[13] * pow2((1 * 8 - 6) as nat)) + pow2(102) * (
     bytes[14] * pow2((2 * 8 - 6) as nat)) + pow2(102) * (bytes[15] * pow2((3 * 8 - 6) as nat))
         + pow2(102) * (bytes[16] * pow2((4 * 8 - 6) as nat)) + pow2(102) * (bytes[17] * pow2(
@@ -228,10 +228,10 @@ pub proof fn lemma_from_bytes_as_nat_012(bytes: &[u8; 32])
 
 pub proof fn lemma_from_bytes_as_nat_0123(bytes: &[u8; 32])
     ensures
-        (load8_at_spec(bytes, 0) as u64 & mask51) + pow2(51) * ((load8_at_spec(bytes, 6) as u64
-            >> 3) & mask51) + pow2(102) * ((load8_at_spec(bytes, 12) as u64 >> 6) & mask51) + pow2(
+        (spec_load8_at(bytes, 0) as u64 & mask51) + pow2(51) * ((spec_load8_at(bytes, 6) as u64
+            >> 3) & mask51) + pow2(102) * ((spec_load8_at(bytes, 12) as u64 >> 6) & mask51) + pow2(
             153,
-        ) * ((load8_at_spec(bytes, 19) as u64 >> 1) & mask51) == (bytes[0] * pow2(0 * 8)) + (
+        ) * ((spec_load8_at(bytes, 19) as u64 >> 1) & mask51) == (bytes[0] * pow2(0 * 8)) + (
         bytes[1] * pow2(1 * 8)) + (bytes[2] * pow2(2 * 8)) + (bytes[3] * pow2(3 * 8)) + (bytes[4]
             * pow2(4 * 8)) + (bytes[5] * pow2(5 * 8)) + (bytes[6] * pow2(6 * 8)) + (bytes[7] * pow2(
             7 * 8,
@@ -243,8 +243,8 @@ pub proof fn lemma_from_bytes_as_nat_0123(bytes: &[u8; 32])
         bytes[23] * pow2(23 * 8)) + (bytes[24] * pow2(24 * 8)) + ((bytes[25] as nat % pow2(4))
             * pow2((25 * 8) as nat)),
 {
-    assert((load8_at_spec(bytes, 0) as u64 & mask51) + pow2(51) * ((load8_at_spec(bytes, 6) as u64
-        >> 3) & mask51) + pow2(102) * ((load8_at_spec(bytes, 12) as u64 >> 6) & mask51) == (bytes[0]
+    assert((spec_load8_at(bytes, 0) as u64 & mask51) + pow2(51) * ((spec_load8_at(bytes, 6) as u64
+        >> 3) & mask51) + pow2(102) * ((spec_load8_at(bytes, 12) as u64 >> 6) & mask51) == (bytes[0]
         * pow2(0 * 8)) + (bytes[1] * pow2(1 * 8)) + (bytes[2] * pow2(2 * 8)) + (bytes[3] * pow2(
         3 * 8,
     )) + (bytes[4] * pow2(4 * 8)) + (bytes[5] * pow2(5 * 8)) + (bytes[6] * pow2(6 * 8)) + (bytes[7]
@@ -258,7 +258,7 @@ pub proof fn lemma_from_bytes_as_nat_0123(bytes: &[u8; 32])
         lemma_from_bytes_as_nat_012(bytes);
     }
 
-    assert(((load8_at_spec(bytes, 19) as u64) >> 1) & mask51 == (bytes[19] as nat / pow2(1)) + (
+    assert(((spec_load8_at(bytes, 19) as u64) >> 1) & mask51 == (bytes[19] as nat / pow2(1)) + (
     bytes[20] * pow2((1 * 8 - 1) as nat)) + (bytes[21] * pow2((2 * 8 - 1) as nat)) + (bytes[22]
         * pow2((3 * 8 - 1) as nat)) + (bytes[23] * pow2((4 * 8 - 1) as nat)) + (bytes[24] * pow2(
         (5 * 8 - 1) as nat,
@@ -266,7 +266,7 @@ pub proof fn lemma_from_bytes_as_nat_0123(bytes: &[u8; 32])
         lemma_load8_at_limb3(bytes);
     }
 
-    assert(pow2(153) * (((load8_at_spec(bytes, 19) as u64) >> 1) & mask51) == pow2(153) * (
+    assert(pow2(153) * (((spec_load8_at(bytes, 19) as u64) >> 1) & mask51) == pow2(153) * (
     bytes[19] as nat / pow2(1)) + pow2(153) * (bytes[20] * pow2((1 * 8 - 1) as nat)) + pow2(153) * (
     bytes[21] * pow2((2 * 8 - 1) as nat)) + pow2(153) * (bytes[22] * pow2((3 * 8 - 1) as nat))
         + pow2(153) * (bytes[23] * pow2((4 * 8 - 1) as nat)) + pow2(153) * (bytes[24] * pow2(
@@ -309,10 +309,10 @@ pub proof fn lemma_from_bytes_as_nat_0123(bytes: &[u8; 32])
 
 pub proof fn lemma_from_bytes_as_nat_01234(bytes: &[u8; 32])
     ensures
-        (load8_at_spec(bytes, 0) as u64 & mask51) + pow2(51) * ((load8_at_spec(bytes, 6) as u64
-            >> 3) & mask51) + pow2(102) * ((load8_at_spec(bytes, 12) as u64 >> 6) & mask51) + pow2(
+        (spec_load8_at(bytes, 0) as u64 & mask51) + pow2(51) * ((spec_load8_at(bytes, 6) as u64
+            >> 3) & mask51) + pow2(102) * ((spec_load8_at(bytes, 12) as u64 >> 6) & mask51) + pow2(
             153,
-        ) * ((load8_at_spec(bytes, 19) as u64 >> 1) & mask51) + pow2(204) * ((load8_at_spec(
+        ) * ((spec_load8_at(bytes, 19) as u64 >> 1) & mask51) + pow2(204) * ((spec_load8_at(
             bytes,
             24,
         ) as u64 >> 12) & mask51) == (bytes[0] * pow2(0 * 8)) + (bytes[1] * pow2(1 * 8)) + (bytes[2]
@@ -328,9 +328,9 @@ pub proof fn lemma_from_bytes_as_nat_01234(bytes: &[u8; 32])
         bytes[27] * pow2(27 * 8)) + (bytes[28] * pow2(28 * 8)) + (bytes[29] * pow2(29 * 8)) + (
         bytes[30] * pow2(30 * 8)) + ((bytes[31] as nat % pow2(7)) * pow2((31 * 8) as nat)),
 {
-    assert((load8_at_spec(bytes, 0) as u64 & mask51) + pow2(51) * ((load8_at_spec(bytes, 6) as u64
-        >> 3) & mask51) + pow2(102) * ((load8_at_spec(bytes, 12) as u64 >> 6) & mask51) + pow2(153)
-        * ((load8_at_spec(bytes, 19) as u64 >> 1) & mask51) == (bytes[0] * pow2(0 * 8)) + (bytes[1]
+    assert((spec_load8_at(bytes, 0) as u64 & mask51) + pow2(51) * ((spec_load8_at(bytes, 6) as u64
+        >> 3) & mask51) + pow2(102) * ((spec_load8_at(bytes, 12) as u64 >> 6) & mask51) + pow2(153)
+        * ((spec_load8_at(bytes, 19) as u64 >> 1) & mask51) == (bytes[0] * pow2(0 * 8)) + (bytes[1]
         * pow2(1 * 8)) + (bytes[2] * pow2(2 * 8)) + (bytes[3] * pow2(3 * 8)) + (bytes[4] * pow2(
         4 * 8,
     )) + (bytes[5] * pow2(5 * 8)) + (bytes[6] * pow2(6 * 8)) + (bytes[7] * pow2(7 * 8)) + (bytes[8]
@@ -344,7 +344,7 @@ pub proof fn lemma_from_bytes_as_nat_01234(bytes: &[u8; 32])
         lemma_from_bytes_as_nat_0123(bytes);
     }
 
-    assert(((load8_at_spec(bytes, 24) as u64) >> 12) & mask51 == (bytes[25] as nat / pow2(4)) + (
+    assert(((spec_load8_at(bytes, 24) as u64) >> 12) & mask51 == (bytes[25] as nat / pow2(4)) + (
     bytes[26] * pow2((2 * 8 - 12) as nat)) + (bytes[27] * pow2((3 * 8 - 12) as nat)) + (bytes[28]
         * pow2((4 * 8 - 12) as nat)) + (bytes[29] * pow2((5 * 8 - 12) as nat)) + (bytes[30] * pow2(
         (6 * 8 - 12) as nat,
@@ -352,7 +352,7 @@ pub proof fn lemma_from_bytes_as_nat_01234(bytes: &[u8; 32])
         lemma_load8_at_limb4(bytes);
     }
 
-    assert(pow2(204) * (((load8_at_spec(bytes, 24) as u64) >> 12) & mask51) == pow2(204) * (
+    assert(pow2(204) * (((spec_load8_at(bytes, 24) as u64) >> 12) & mask51) == pow2(204) * (
     bytes[25] as nat / pow2(4)) + pow2(204) * (bytes[26] * pow2((2 * 8 - 12) as nat)) + pow2(204)
         * (bytes[27] * pow2((3 * 8 - 12) as nat)) + pow2(204) * (bytes[28] * pow2(
         (4 * 8 - 12) as nat,
@@ -396,13 +396,13 @@ pub proof fn lemma_from_bytes_as_nat_01234(bytes: &[u8; 32])
 
 pub proof fn lemma_from_bytes_as_nat(bytes: &[u8; 32])
     ensures
-        as_nat(
+        u64_5_as_nat(
             [
-                load8_at_spec(bytes, 0) as u64 & mask51,
-                (load8_at_spec(bytes, 6) as u64 >> 3) & mask51,
-                (load8_at_spec(bytes, 12) as u64 >> 6) & mask51,
-                (load8_at_spec(bytes, 19) as u64 >> 1) & mask51,
-                (load8_at_spec(bytes, 24) as u64 >> 12) & mask51,
+                spec_load8_at(bytes, 0) as u64 & mask51,
+                (spec_load8_at(bytes, 6) as u64 >> 3) & mask51,
+                (spec_load8_at(bytes, 12) as u64 >> 6) & mask51,
+                (spec_load8_at(bytes, 19) as u64 >> 1) & mask51,
+                (spec_load8_at(bytes, 24) as u64 >> 12) & mask51,
             ],
         ) == (bytes[0] * pow2(0 * 8)) + (bytes[1] * pow2(1 * 8)) + (bytes[2] * pow2(2 * 8)) + (
         bytes[3] * pow2(3 * 8)) + (bytes[4] * pow2(4 * 8)) + (bytes[5] * pow2(5 * 8)) + (bytes[6]
@@ -422,7 +422,7 @@ pub proof fn lemma_from_bytes_as_nat(bytes: &[u8; 32])
 
 pub proof fn lemma_as_nat_32_mod_255(bytes: &[u8; 32])
     ensures
-        as_nat_32_u8(bytes) % pow2(255) == (bytes[0] * pow2(0 * 8)) + (bytes[1] * pow2(1 * 8)) + (
+        u8_32_as_nat(bytes) % pow2(255) == (bytes[0] * pow2(0 * 8)) + (bytes[1] * pow2(1 * 8)) + (
         bytes[2] * pow2(2 * 8)) + (bytes[3] * pow2(3 * 8)) + (bytes[4] * pow2(4 * 8)) + (bytes[5]
             * pow2(5 * 8)) + (bytes[6] * pow2(6 * 8)) + (bytes[7] * pow2(7 * 8)) + (bytes[8] * pow2(
             8 * 8,
@@ -435,7 +435,7 @@ pub proof fn lemma_as_nat_32_mod_255(bytes: &[u8; 32])
         bytes[27] * pow2(27 * 8)) + (bytes[28] * pow2(28 * 8)) + (bytes[29] * pow2(29 * 8)) + (
         bytes[30] * pow2(30 * 8)) + ((bytes[31] as nat % pow2(7)) * pow2(31 * 8)),
 {
-    assert(as_nat_32_u8(bytes) == (bytes[0] * pow2(0 * 8)) + (bytes[1] * pow2(1 * 8)) + (bytes[2]
+    assert(u8_32_as_nat(bytes) == (bytes[0] * pow2(0 * 8)) + (bytes[1] * pow2(1 * 8)) + (bytes[2]
         * pow2(2 * 8)) + (bytes[3] * pow2(3 * 8)) + (bytes[4] * pow2(4 * 8)) + (bytes[5] * pow2(
         5 * 8,
     )) + (bytes[6] * pow2(6 * 8)) + (bytes[7] * pow2(7 * 8)) + (bytes[8] * pow2(8 * 8)) + (bytes[9]
@@ -456,7 +456,7 @@ pub proof fn lemma_as_nat_32_mod_255(bytes: &[u8; 32])
         }
         reveal_with_fuel(pow2_sum, 31);
     }
-    assert(as_nat_32_u8(bytes) % pow2(255) == (pow2_sum(bytes, 0, 8, 30) + bytes[31] * pow2(
+    assert(u8_32_as_nat(bytes) % pow2(255) == (pow2_sum(bytes, 0, 8, 30) + bytes[31] * pow2(
         31 * 8,
     )) as nat % pow2(255));
 

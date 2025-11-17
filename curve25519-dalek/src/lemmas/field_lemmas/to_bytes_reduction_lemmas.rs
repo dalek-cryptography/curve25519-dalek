@@ -21,7 +21,7 @@ verus! {
 // ============================================================================
 // LEMMA 2: Value preservation through modular reduction
 // ============================================================================
-/// Telescoping lemma for reduction: expands as_nat through the carry propagation
+/// Telescoping lemma for reduction: expands u64_5_as_nat through the carry propagation
 /// This is analogous to lemma_radix51_telescoping_direct but for the reduction case
 pub proof fn lemma_reduction_telescoping(
     input_limbs: [u64; 5],
@@ -48,9 +48,8 @@ pub proof fn lemma_reduction_telescoping(
         final_limbs[3] < (1u64 << 51),
         final_limbs[4] < (1u64 << 51),
     ensures
-        as_nat(input_limbs) as int + 19 * q as int == as_nat(final_limbs) as int + c4 * pow2(
-            255,
-        ) as int,
+        u64_5_as_nat(input_limbs) as int + 19 * q as int == u64_5_as_nat(final_limbs) as int + c4
+            * pow2(255) as int,
 {
     // Establish power-of-2 relationships
     lemma_pow2_pos(51);
@@ -59,16 +58,16 @@ pub proof fn lemma_reduction_telescoping(
     lemma_pow2_adds(51, 153);
     lemma_pow2_adds(51, 204);
 
-    // Expand as_nat(input_limbs) + 19*q
-    let lhs = as_nat(input_limbs) as int + 19 * q as int;
+    // Expand u64_5_as_nat(input_limbs) + 19*q
+    let lhs = u64_5_as_nat(input_limbs) as int + 19 * q as int;
 
-    // Explicitly expand as_nat using its definition
-    assert(as_nat(input_limbs) == (input_limbs[0] as nat) + pow2(51) * (input_limbs[1] as nat)
+    // Explicitly expand u64_5_as_nat using its definition
+    assert(u64_5_as_nat(input_limbs) == (input_limbs[0] as nat) + pow2(51) * (input_limbs[1] as nat)
         + pow2(102) * (input_limbs[2] as nat) + pow2(153) * (input_limbs[3] as nat) + pow2(204) * (
     input_limbs[4] as nat));
 
     // Convert to int with commutativity
-    assert(as_nat(input_limbs) as int == input_limbs[0] as int + input_limbs[1] as int * pow2(
+    assert(u64_5_as_nat(input_limbs) as int == input_limbs[0] as int + input_limbs[1] as int * pow2(
         51,
     ) as int + input_limbs[2] as int * pow2(102) as int + input_limbs[3] as int * pow2(153) as int
         + input_limbs[4] as int * pow2(204) as int) by {
@@ -277,13 +276,13 @@ proof fn lemma_geometric_sum_5_terms()
     // The middle terms cancel, leaving: pow2(255) - 1
 }
 
-/// Helper lemma: as_nat bound for 51-bit limbs
-/// If each limb < 2^51, then as_nat < 2^255
+/// Helper lemma: u64_5_as_nat bound for 51-bit limbs
+/// If each limb < 2^51, then u64_5_as_nat < 2^255
 pub proof fn lemma_as_nat_bound_from_51bit_limbs(limbs: [u64; 5])
     requires
         forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51),
     ensures
-        as_nat(limbs) < pow2(255),
+        u64_5_as_nat(limbs) < pow2(255),
 {
     // Strategy: Prove that the maximum value (when all limbs = 2^51 - 1) equals 2^255 - 1
     // We'll prove this by showing the algebraic identity directly using bit manipulation
@@ -296,8 +295,8 @@ pub proof fn lemma_as_nat_bound_from_51bit_limbs(limbs: [u64; 5])
     lemma_pow2_adds(51, 153);  // 2^204 = 2^51 * 2^153
     lemma_pow2_adds(51, 204);  // 2^255 = 2^51 * 2^204
 
-    // Expand as_nat definition
-    assert(as_nat(limbs) == limbs[0] as nat + pow2(51) * limbs[1] as nat + pow2(102)
+    // Expand u64_5_as_nat definition
+    assert(u64_5_as_nat(limbs) == limbs[0] as nat + pow2(51) * limbs[1] as nat + pow2(102)
         * limbs[2] as nat + pow2(153) * limbs[3] as nat + pow2(204) * limbs[4] as nat);
 
     // Each limb < 2^51, so limbs[i] <= 2^51 - 1
@@ -313,8 +312,8 @@ pub proof fn lemma_as_nat_bound_from_51bit_limbs(limbs: [u64; 5])
 
     lemma_mul_upper_bound(pow2(204), limbs[4] as nat, max_limb);
 
-    // Therefore, as_nat(limbs) <= sum of maximum values
-    // as_nat(limbs) <= max_limb + pow2(51)*max_limb + pow2(102)*max_limb + pow2(153)*max_limb + pow2(204)*max_limb
+    // Therefore, u64_5_as_nat(limbs) <= sum of maximum values
+    // u64_5_as_nat(limbs) <= max_limb + pow2(51)*max_limb + pow2(102)*max_limb + pow2(153)*max_limb + pow2(204)*max_limb
     //                = max_limb * (1 + pow2(51) + pow2(102) + pow2(153) + pow2(204))
 
     // Since each term is maximized at max_limb = 2^51 - 1, we have:
@@ -338,7 +337,7 @@ pub proof fn lemma_as_nat_bound_from_51bit_limbs(limbs: [u64; 5])
     // Now use the geometric series identity: (2^51 - 1) * (1 + 2^51 + 2^102 + 2^153 + 2^204) = 2^255 - 1
     lemma_geometric_sum_5_terms();
 
-    // Since as_nat(limbs) <= max_val = 2^255 - 1 < 2^255, we're done
+    // Since u64_5_as_nat(limbs) <= max_val = 2^255 - 1 < 2^255, we're done
     assert(pow2(255) - 1 < pow2(255)) by {
         lemma_pow2_pos(255);
     }
@@ -359,7 +358,7 @@ pub proof fn lemma_reduction_carry_propagation_is_division(input_limbs: [u64; 5]
             l4 >> 51
         }),
     ensures
-        c4 as int == (as_nat(input_limbs) as int + 19 * q as int) / (pow2(255) as int),
+        c4 as int == (u64_5_as_nat(input_limbs) as int + 19 * q as int) / (pow2(255) as int),
 {
     let l0 = (input_limbs[0] + 19 * q) as u64;
     let l1 = (input_limbs[1] + (l0 >> 51)) as u64;
@@ -415,36 +414,36 @@ pub proof fn lemma_reduction_carry_propagation_is_division(input_limbs: [u64; 5]
         c4 as int,
     );
 
-    // From telescoping: as_nat(input_limbs) + 19*q == as_nat(final_limbs) + c4*2^255
-    // Therefore: c4 = (as_nat(input_limbs) + 19*q - as_nat(final_limbs)) / 2^255
+    // From telescoping: u64_5_as_nat(input_limbs) + 19*q == u64_5_as_nat(final_limbs) + c4*2^255
+    // Therefore: c4 = (u64_5_as_nat(input_limbs) + 19*q - u64_5_as_nat(final_limbs)) / 2^255
 
-    // Since final_limbs[i] < 2^51 for all i, as_nat(final_limbs) < 2^255
+    // Since final_limbs[i] < 2^51 for all i, u64_5_as_nat(final_limbs) < 2^255
     // This is a fundamental property of radix-2^51 representation with 5 limbs
     lemma_as_nat_bound_from_51bit_limbs(final_limbs);
 
     // From the telescoping identity:
-    // as_nat(input_limbs) + 19*q = as_nat(final_limbs) + c4*2^255
-    // Since 0 <= as_nat(final_limbs) < 2^255, and this is the unique representation,
-    // c4 = (as_nat(input_limbs) + 19*q) / 2^255
+    // u64_5_as_nat(input_limbs) + 19*q = u64_5_as_nat(final_limbs) + c4*2^255
+    // Since 0 <= u64_5_as_nat(final_limbs) < 2^255, and this is the unique representation,
+    // c4 = (u64_5_as_nat(input_limbs) + 19*q) / 2^255
 
-    let dividend = as_nat(input_limbs) as int + 19 * q as int;
+    let dividend = u64_5_as_nat(input_limbs) as int + 19 * q as int;
     let divisor = pow2(255) as int;
 
     lemma_fundamental_div_mod(dividend, divisor);
     lemma_pow2_pos(255);
 
-    // From telescoping: dividend = c4 * divisor + as_nat(final_limbs)
-    // where 0 <= as_nat(final_limbs) < divisor (from the assume at line 1322)
+    // From telescoping: dividend = c4 * divisor + u64_5_as_nat(final_limbs)
+    // where 0 <= u64_5_as_nat(final_limbs) < divisor (from the assume at line 1322)
 
     // Use the uniqueness lemma for division to prove: dividend / divisor == c4
     // We have:
-    // - dividend = c4 * divisor + as_nat(final_limbs)
-    // - 0 <= as_nat(final_limbs) < divisor
+    // - dividend = c4 * divisor + u64_5_as_nat(final_limbs)
+    // - 0 <= u64_5_as_nat(final_limbs) < divisor
     // Therefore: dividend / divisor == c4
 
-    let remainder = as_nat(final_limbs) as int;
+    let remainder = u64_5_as_nat(final_limbs) as int;
 
-    lemma_div_multiples_vanish_fancy(c4 as int, as_nat(final_limbs) as int, divisor);
+    lemma_div_multiples_vanish_fancy(c4 as int, u64_5_as_nat(final_limbs) as int, divisor);
 }
 
 /// Helper lemma: Show that the carry out of l4 equals q
@@ -452,8 +451,8 @@ pub proof fn lemma_carry_out_equals_q(input_limbs: [u64; 5], q: u64)
     requires
         forall|i: int| 0 <= i < 5 ==> input_limbs[i] < (1u64 << 52),
         q == 0 || q == 1,
-        as_nat(input_limbs) >= p() <==> q == 1,
-        as_nat(input_limbs) < 2 * p(),  // From reduce()'s postcondition
+        u64_5_as_nat(input_limbs) >= p() <==> q == 1,
+        u64_5_as_nat(input_limbs) < 2 * p(),  // From reduce()'s postcondition
 
     ensures
         ({
@@ -473,7 +472,7 @@ pub proof fn lemma_carry_out_equals_q(input_limbs: [u64; 5], q: u64)
     let c4 = l4 >> 51;
 
     // We need to prove c4 == q
-    // Strategy: Use the fact that the carry propagation computes (as_nat(input_limbs) + 19*q) / 2^255
+    // Strategy: Use the fact that the carry propagation computes (u64_5_as_nat(input_limbs) + 19*q) / 2^255
 
     // This is analogous to lemma_carry_propagation_is_division, but with input_limbs and 19*q instead of limbs and 19
     // The computation is:
@@ -483,58 +482,59 @@ pub proof fn lemma_carry_out_equals_q(input_limbs: [u64; 5], q: u64)
     // Stage 4: (input_limbs[4] + c3) = c4*2^51 + r4
 
     // By the same telescoping argument as in lemma_carry_propagation_is_division:
-    // c4 = (as_nat(input_limbs) + 19*q) / 2^255
+    // c4 = (u64_5_as_nat(input_limbs) + 19*q) / 2^255
 
     pow255_gt_19();
     lemma_pow2_pos(255);
 
     // Case analysis on q:
     if q == 0 {
-        // When q == 0, we have as_nat(input_limbs) < p() = 2^255 - 19
-        // So: as_nat(input_limbs) + 19*0 < 2^255
-        // Therefore: (as_nat(input_limbs) + 0) / 2^255 == 0
+        // When q == 0, we have u64_5_as_nat(input_limbs) < p() = 2^255 - 19
+        // So: u64_5_as_nat(input_limbs) + 19*0 < 2^255
+        // Therefore: (u64_5_as_nat(input_limbs) + 0) / 2^255 == 0
         // Invoke the division computation
         lemma_reduction_carry_propagation_is_division(input_limbs, q, c4);
 
-        lemma_div_strictly_bounded(as_nat(input_limbs) as int, pow2(255) as int, 1);
+        lemma_div_strictly_bounded(u64_5_as_nat(input_limbs) as int, pow2(255) as int, 1);
     } else {
         // q == 1
         // Simplified reasoning: c4 = q by computing the division
         //
         // From lemma_reduction_carry_propagation_is_division:
-        //   c4 = ⌊(as_nat(input_limbs) + 19*q) / 2^255⌋
+        //   c4 = ⌊(u64_5_as_nat(input_limbs) + 19*q) / 2^255⌋
         //
         // Substituting q = 1:
-        //   c4 = ⌊(as_nat(input_limbs) + 19) / 2^255⌋
+        //   c4 = ⌊(u64_5_as_nat(input_limbs) + 19) / 2^255⌋
         //
         // We prove this equals 1 using the bounds:
-        //   Since q == 1, we have as_nat(input_limbs) >= p() = 2^255 - 19
-        //   So: as_nat(input_limbs) + 19 >= 2^255
-        //   Also: as_nat(input_limbs) < 2*p() < 2*2^255
-        //   So: as_nat(input_limbs) + 19 < 2*2^255
-        //   Therefore: 2^255 ≤ as_nat(input_limbs) + 19 < 2*2^255
-        //   Which gives: ⌊(as_nat(input_limbs) + 19) / 2^255⌋ = 1
+        //   Since q == 1, we have u64_5_as_nat(input_limbs) >= p() = 2^255 - 19
+        //   So: u64_5_as_nat(input_limbs) + 19 >= 2^255
+        //   Also: u64_5_as_nat(input_limbs) < 2*p() < 2*2^255
+        //   So: u64_5_as_nat(input_limbs) + 19 < 2*2^255
+        //   Therefore: 2^255 ≤ u64_5_as_nat(input_limbs) + 19 < 2*2^255
+        //   Which gives: ⌊(u64_5_as_nat(input_limbs) + 19) / 2^255⌋ = 1
         //
         // Therefore: c4 = 1 = q
-        // Invoke the division computation to establish c4 = (as_nat + 19*q) / 2^255
-        assert(c4 as int == (as_nat(input_limbs) as int + 19 * q as int) / (pow2(255) as int)) by {
+        // Invoke the division computation to establish c4 = (u64_5_as_nat + 19*q) / 2^255
+        assert(c4 as int == (u64_5_as_nat(input_limbs) as int + 19 * q as int) / (pow2(255) as int))
+            by {
             lemma_reduction_carry_propagation_is_division(input_limbs, q, c4);
         }
 
-        assert((as_nat(input_limbs) as int + 19 * q as int) / (pow2(255) as int) == 1) by {
-            // Prove (as_nat(input_limbs) + 19) / 2^255 = 1 using bounds
-            let val = as_nat(input_limbs) as int + 19 * q as int;
+        assert((u64_5_as_nat(input_limbs) as int + 19 * q as int) / (pow2(255) as int) == 1) by {
+            // Prove (u64_5_as_nat(input_limbs) + 19) / 2^255 = 1 using bounds
+            let val = u64_5_as_nat(input_limbs) as int + 19 * q as int;
             assert(19 == 19 * q as int) by {
                 lemma_mul_basics_3(19);
             }
             let divisor = pow2(255) as int;
 
-            // From q == 1, we have as_nat(input_limbs) >= p()
+            // From q == 1, we have u64_5_as_nat(input_limbs) >= p()
             // So val >= 2^255
-            assert(as_nat(input_limbs) >= p());
+            assert(u64_5_as_nat(input_limbs) >= p());
             assert(val >= pow2(255));
 
-            // From as_nat(input_limbs) < 2*p() < 2*2^255
+            // From u64_5_as_nat(input_limbs) < 2*p() < 2*2^255
             // We have val < 2*2^255, so val / divisor < 2
             assert(val / divisor < 2) by {
                 lemma_div_strictly_bounded(val, divisor, 2);
@@ -556,17 +556,17 @@ pub proof fn lemma_carry_out_equals_q(input_limbs: [u64; 5], q: u64)
 }
 
 /// Proves that after adding 19*q and propagating carries while masking to 51 bits,
-/// the result equals as_nat(input_limbs) mod p
+/// the result equals u64_5_as_nat(input_limbs) mod p
 pub proof fn lemma_to_bytes_reduction(input_limbs: [u64; 5], final_limbs: [u64; 5], q: u64)
     requires
         forall|i: int| 0 <= i < 5 ==> input_limbs[i] < (1u64 << 52),
         q == 0 || q == 1,
-        as_nat(input_limbs) >= p() <==> q == 1,
-        as_nat(input_limbs) < 2 * p(),  // From reduce()'s postcondition
+        u64_5_as_nat(input_limbs) >= p() <==> q == 1,
+        u64_5_as_nat(input_limbs) < 2 * p(),  // From reduce()'s postcondition
         final_limbs == reduce_with_q_spec(input_limbs, q),
     ensures
         forall|i: int| 0 <= i < 5 ==> final_limbs[i] < (1u64 << 51),
-        as_nat(final_limbs) == as_nat(input_limbs) % p(),
+        u64_5_as_nat(final_limbs) == u64_5_as_nat(input_limbs) % p(),
 {
     // Extract intermediate values from the spec
     let l0 = (input_limbs[0] + 19 * q) as u64;
@@ -588,9 +588,9 @@ pub proof fn lemma_to_bytes_reduction(input_limbs: [u64; 5], final_limbs: [u64; 
     lemma_masked_lt_51(l3);
     lemma_masked_lt_51(l4);
 
-    // Part 2: Prove that as_nat(final_limbs) == as_nat(input_limbs) % p()
-    // Strategy: Show that the carry propagation computes as_nat(input_limbs) + 19*q - 2^255*q
-    //           which equals as_nat(input_limbs) - q*(2^255 - 19) = as_nat(input_limbs) - q*p()
+    // Part 2: Prove that u64_5_as_nat(final_limbs) == u64_5_as_nat(input_limbs) % p()
+    // Strategy: Show that the carry propagation computes u64_5_as_nat(input_limbs) + 19*q - 2^255*q
+    //           which equals u64_5_as_nat(input_limbs) - q*(2^255 - 19) = u64_5_as_nat(input_limbs) - q*p()
 
     // Use lemma_div_and_mod_51 to relate the shift and mask operations to division and modulo
     lemma_div_and_mod_51(l0 >> 51, l0 & mask51, l0);
@@ -628,7 +628,7 @@ pub proof fn lemma_to_bytes_reduction(input_limbs: [u64; 5], final_limbs: [u64; 
 
     lemma_shr_le_u64(l3, ((1u64 << 52) + 2) as u64, 51);
 
-    // Now use the telescoping lemma to relate as_nat(input_limbs) + 19*q to as_nat(final_limbs) + c4*2^255
+    // Now use the telescoping lemma to relate u64_5_as_nat(input_limbs) + 19*q to u64_5_as_nat(final_limbs) + c4*2^255
     // The division-mod relationships give us the preconditions needed:
 
     // All final_limbs are bounded by 2^51 (already proven above)
@@ -646,38 +646,38 @@ pub proof fn lemma_to_bytes_reduction(input_limbs: [u64; 5], final_limbs: [u64; 
     // Prove that c4 == q
     lemma_carry_out_equals_q(input_limbs, q);
 
-    // Therefore: as_nat(input_limbs) + 19*q = as_nat(final_limbs) + q*2^255
-    // Rearranging: as_nat(final_limbs) = as_nat(input_limbs) + 19*q - q*2^255
-    //                                    = as_nat(input_limbs) - q*(2^255 - 19)
-    //                                    = as_nat(input_limbs) - q*p()
+    // Therefore: u64_5_as_nat(input_limbs) + 19*q = u64_5_as_nat(final_limbs) + q*2^255
+    // Rearranging: u64_5_as_nat(final_limbs) = u64_5_as_nat(input_limbs) + 19*q - q*2^255
+    //                                    = u64_5_as_nat(input_limbs) - q*(2^255 - 19)
+    //                                    = u64_5_as_nat(input_limbs) - q*p()
 
     pow255_gt_19();
 
     // Case analysis on q
     if q == 0 {
-        // as_nat(final_limbs) = as_nat(input_limbs) - 0*p() = as_nat(input_limbs)
-        // Since q == 0, we have as_nat(input_limbs) < p()
+        // u64_5_as_nat(final_limbs) = u64_5_as_nat(input_limbs) - 0*p() = u64_5_as_nat(input_limbs)
+        // Since q == 0, we have u64_5_as_nat(input_limbs) < p()
         // For values < p, x % p = x
-        // Since as_nat(input_limbs) < p(), we have as_nat(input_limbs) % p() = as_nat(input_limbs)
+        // Since u64_5_as_nat(input_limbs) < p(), we have u64_5_as_nat(input_limbs) % p() = u64_5_as_nat(input_limbs)
         lemma_pow2_pos(255);
-        lemma_small_mod(as_nat(input_limbs), p());
+        lemma_small_mod(u64_5_as_nat(input_limbs), p());
 
     } else {
         // q == 1
-        // as_nat(final_limbs) = as_nat(input_limbs) - 1*p() = as_nat(input_limbs) - p()
-        // Need to prove: as_nat(input_limbs) % p() = as_nat(input_limbs) - p()
-        // This holds when p <= as_nat(input_limbs) < 2*p
-        // We have as_nat(input_limbs) >= p() (from q==1) and as_nat(input_limbs) < 2*p() (from precondition)
+        // u64_5_as_nat(final_limbs) = u64_5_as_nat(input_limbs) - 1*p() = u64_5_as_nat(input_limbs) - p()
+        // Need to prove: u64_5_as_nat(input_limbs) % p() = u64_5_as_nat(input_limbs) - p()
+        // This holds when p <= u64_5_as_nat(input_limbs) < 2*p
+        // We have u64_5_as_nat(input_limbs) >= p() (from q==1) and u64_5_as_nat(input_limbs) < 2*p() (from precondition)
         // For values in [p, 2*p), x % p = x - p
-        lemma_fundamental_div_mod(as_nat(input_limbs) as int, p() as int);
+        lemma_fundamental_div_mod(u64_5_as_nat(input_limbs) as int, p() as int);
         lemma_pow2_pos(255);
 
-        // Since p <= as_nat < 2*p, the quotient is 1
-        lemma_div_strictly_bounded(as_nat(input_limbs) as int, p() as int, 2);
+        // Since p <= u64_5_as_nat < 2*p, the quotient is 1
+        lemma_div_strictly_bounded(u64_5_as_nat(input_limbs) as int, p() as int, 2);
 
         // From div-mod: x = d * (x/d) + (x%d)
         // lemma_fundamental_div_mod establishes this with multiplication on the left
-        let x = as_nat(input_limbs) as int;
+        let x = u64_5_as_nat(input_limbs) as int;
         let divisor = p() as int;
         let quotient = x / divisor;
         let remainder = x % divisor;

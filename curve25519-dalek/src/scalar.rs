@@ -2627,8 +2627,8 @@ impl UnpackedScalar {
 
                 let v = bytes_to_nat(&result.bytes);
 
-                use crate::specs::core_specs::as_nat_32_u8;
-                assert(bytes_to_nat(&result.bytes) == as_nat_32_u8(&result.bytes));
+                use crate::specs::core_specs::u8_32_as_nat;
+                assert(bytes_to_nat(&result.bytes) == u8_32_as_nat(&result.bytes));
 
                 assert(v == bytes_to_nat(&result.bytes));
                 assert(v < group_order());

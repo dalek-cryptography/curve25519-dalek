@@ -5,8 +5,8 @@ use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
 
-use super::as_nat_lemmas::*;
 use super::reduce_lemmas::*;
+use super::u64_5_as_nat_lemmas::*;
 
 use super::super::common_lemmas::shift_lemmas::*;
 
@@ -48,16 +48,16 @@ pub proof fn proof_negate(limbs: [u64; 5])
         //   36028797018963952u64 - l3,
         //   36028797018963952u64 - l4 )
         // is just 16 * (c0, c, c, c, c) - l (in vector notation)
-        // Further, as_nat((c0, c, c, c, c)) = p, so
-        // as_nat(16 * (c0, c, c, c, c) - l) is 16p - as_nat(l)
-        // We know as_nat(reduce(v)) = as_nat(v) - p * (v4 >> 51) for any v.
+        // Further, u64_5_as_nat((c0, c, c, c, c)) = p, so
+        // u64_5_as_nat(16 * (c0, c, c, c, c) - l) is 16p - u64_5_as_nat(l)
+        // We know u64_5_as_nat(reduce(v)) = u64_5_as_nat(v) - p * (v4 >> 51) for any v.
         // This gives us the identity
-        // as_nat(negate(l)) = as_nat(reduce(16 * (c0, c, c, c, c) - l))
-        //                   = 16p - as_nat(l) - p * ((16c - l4) >> 51)
+        // u64_5_as_nat(negate(l)) = u64_5_as_nat(reduce(16 * (c0, c, c, c, c) - l))
+        //                   = 16p - u64_5_as_nat(l) - p * ((16c - l4) >> 51)
         // Note that (16c - l4) >> 51 is either 14 or 15, in either case < 16.
-        as_nat(spec_negate(limbs)) == 16 * p() - as_nat(limbs) - p() * ((36028797018963952u64
-            - limbs[4]) as u64 >> 51),
-        (as_nat(spec_negate(limbs)) + as_nat(limbs)) % p() == 0,
+        u64_5_as_nat(spec_negate(limbs)) == 16 * p() - u64_5_as_nat(limbs) - p() * ((
+        36028797018963952u64 - limbs[4]) as u64 >> 51),
+        (u64_5_as_nat(spec_negate(limbs)) + u64_5_as_nat(limbs)) % p() == 0,
 {
     proof_reduce(pre_reduce_limbs(limbs));
 
@@ -72,10 +72,10 @@ pub proof fn proof_negate(limbs: [u64; 5])
     // Introduce 16p as a vector
     let v = [(16 * c0) as u64, (16 * c) as u64, (16 * c) as u64, (16 * c) as u64, (16 * c) as u64];
 
-    assert(as_nat(v) == 16 * p()) by {
-        // by definition of as_nat
-        assert(as_nat(v) == 16 * c0 + pow2(51) * (16 * c) + pow2(102) * (16 * c) + pow2(153) * (16
-            * c) + pow2(204) * (16 * c));
+    assert(u64_5_as_nat(v) == 16 * p()) by {
+        // by definition of u64_5_as_nat
+        assert(u64_5_as_nat(v) == 16 * c0 + pow2(51) * (16 * c) + pow2(102) * (16 * c) + pow2(153)
+            * (16 * c) + pow2(204) * (16 * c));
 
         // solver can reorder factors and pull out 16 on its own
         // ...
@@ -95,7 +95,7 @@ pub proof fn proof_negate(limbs: [u64; 5])
     let l3 = limbs[3];
     let l4 = limbs[4];
 
-    assert(as_nat(
+    assert(u64_5_as_nat(
         [
             (16 * c0 - l0) as u64,
             (16 * c - l1) as u64,
@@ -103,13 +103,13 @@ pub proof fn proof_negate(limbs: [u64; 5])
             (16 * c - l3) as u64,
             (16 * c - l4) as u64,
         ],
-    ) == as_nat(v) - as_nat(limbs)) by {
-        lemma_as_nat_sub(v, limbs);
+    ) == u64_5_as_nat(v) - u64_5_as_nat(limbs)) by {
+        lemma_u64_5_as_nat_sub(v, limbs);
     }
 
     let k = (16 * c - l4) as u64 >> 51;
 
-    assert(16 * p() - as_nat(limbs) - p() * k + as_nat(limbs) == p() * (16 - k)) by {
+    assert(16 * p() - u64_5_as_nat(limbs) - p() * k + u64_5_as_nat(limbs) == p() * (16 - k)) by {
         lemma_mul_is_distributive_sub(p() as int, 16, k as int)
     }
 

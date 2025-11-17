@@ -10,10 +10,10 @@ use crate::specs::core_specs::*;
 
 verus! {
 
-pub proof fn as_nat_32_u8_le_pow2_256(bytes: &[u8; 32])
+pub proof fn u8_32_as_nat_le_pow2_256(bytes: &[u8; 32])
     ensures
-        as_nat_32_u8(&bytes) < pow2(256),
-        as_nat_32_u8(&bytes) == as_nat_32_u8(&bytes) % pow2(256),
+        u8_32_as_nat(&bytes) < pow2(256),
+        u8_32_as_nat(&bytes) == u8_32_as_nat(&bytes) % pow2(256),
 {
     assert forall|i: nat| 0 <= i <= 31 implies #[trigger] bytes[i as int] * pow2(i * 8) <= pow2(
         (i + 1) * 8,
@@ -30,8 +30,8 @@ pub proof fn as_nat_32_u8_le_pow2_256(bytes: &[u8; 32])
     assert(pow2(0 * 8) == 1) by {
         lemma2_to64();
     }
-    assert(as_nat_32_u8(&bytes) % pow2(256) == as_nat_32_u8(&bytes)) by {
-        lemma_small_mod(as_nat_32_u8(&bytes), pow2(256));
+    assert(u8_32_as_nat(&bytes) % pow2(256) == u8_32_as_nat(&bytes)) by {
+        lemma_small_mod(u8_32_as_nat(&bytes), pow2(256));
     }
 }
 

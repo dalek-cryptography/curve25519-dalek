@@ -125,10 +125,10 @@ proof fn lemma_radix51_telescoping_expansion(
 }
 
 /// Direct proof of telescoping division for radix-51 representation
-/// Uses repeated substitution to show q4 = (as_nat(limbs) + 19) / 2^255
+/// Uses repeated substitution to show q4 = (u64_5_as_nat(limbs) + 19) / 2^255
 ///
 /// Proof strategy:
-/// 1. Express as_nat(limbs) + 19 as a sum using radix-51: Σ limbs[i] * 2^(51*i) + 19
+/// 1. Express u64_5_as_nat(limbs) + 19 as a sum using radix-51: Σ limbs[i] * 2^(51*i) + 19
 /// 2. Substitute each limb using the division theorem equations (from requires clause)
 /// 3. Expand and observe that intermediate q_i terms telescope (cancel out):
 ///    - q0 appears as: +q0*2^51 - q0*2^51 = 0
@@ -160,7 +160,7 @@ pub proof fn lemma_radix51_telescoping_direct(
         0 <= r3 < pow2(51) as int,
         0 <= r4 < pow2(51) as int,
     ensures
-        q4 == (as_nat(limbs) as int + 19) / pow2(255) as int,
+        q4 == (u64_5_as_nat(limbs) as int + 19) / pow2(255) as int,
 {
     // Establish power-of-2 relationships: 2^51 * 2^k = 2^(51+k)
     lemma_pow2_pos(51);
@@ -169,12 +169,12 @@ pub proof fn lemma_radix51_telescoping_direct(
     lemma_pow2_adds(51, 153);
     lemma_pow2_adds(51, 204);
 
-    // Step 1: Express value = as_nat(limbs) + 19 in radix-51 form
+    // Step 1: Express value = u64_5_as_nat(limbs) + 19 in radix-51 form
     let value = limbs[0] as int + limbs[1] as int * pow2(51) as int + limbs[2] as int * pow2(
         102,
     ) as int + limbs[3] as int * pow2(153) as int + limbs[4] as int * pow2(204) as int + 19;
 
-    assert(as_nat(limbs) == (limbs[0] as nat) + pow2(51) * (limbs[1] as nat) + pow2(102) * (
+    assert(u64_5_as_nat(limbs) == (limbs[0] as nat) + pow2(51) * (limbs[1] as nat) + pow2(102) * (
     limbs[2] as nat) + pow2(153) * (limbs[3] as nat) + pow2(204) * (limbs[4] as nat));
 
     assert((limbs[0] as nat) + pow2(51) * (limbs[1] as nat) + pow2(102) * (limbs[2] as nat) + pow2(
@@ -361,7 +361,7 @@ pub proof fn lemma_stage_division_theorem(limb: u64, carry_in: int, carry_out: i
 }
 
 /// Helper lemma: proves that the carry propagation computes the division by 2^255
-/// This shows that q represents (as_nat(limbs) + 19) / 2^255
+/// This shows that q represents (u64_5_as_nat(limbs) + 19) / 2^255
 ///
 /// Refactored into smaller pieces for better readability and maintainability.
 pub proof fn lemma_carry_propagation_is_division(limbs: [u64; 5], q: u64)
@@ -369,7 +369,7 @@ pub proof fn lemma_carry_propagation_is_division(limbs: [u64; 5], q: u64)
         forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
         q == compute_q_spec(limbs),
     ensures
-        q as nat == (as_nat(limbs) + 19) / pow2(255),
+        q as nat == (u64_5_as_nat(limbs) + 19) / pow2(255),
 {
     // Setup: establish basic power-of-2 facts (needed for overflow checks)
     lemma_carry_propagation_setup();
@@ -406,7 +406,7 @@ pub proof fn lemma_carry_propagation_is_division(limbs: [u64; 5], q: u64)
     lemma_single_stage_division(limbs[4], q3, (limbs[4] + q3) as u64, q4);
     let r4 = lemma_stage_division_theorem(limbs[4], q3 as int, q4 as int);
 
-    // Telescoping property: show that q4 = (as_nat(limbs) + 19) / 2^255
+    // Telescoping property: show that q4 = (u64_5_as_nat(limbs) + 19) / 2^255
     // Use the remainders we just computed to directly prove the telescoping division
     lemma_radix51_telescoping_direct(
         limbs,
@@ -472,12 +472,12 @@ pub proof fn lemma_all_carries_bounded_by_3(limbs: [u64; 5])
 pub proof fn lemma_q_is_binary(limbs: [u64; 5], q: u64)
     requires
         forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
-        as_nat(limbs) < 2 * p(),  // From reduce()'s postcondition
+        u64_5_as_nat(limbs) < 2 * p(),  // From reduce()'s postcondition
         q == compute_q_spec(limbs),
         q < 3,
     ensures
         q == 0 || q == 1,
-        q as nat == (as_nat(limbs) + 19) / pow2(255),  // Export for reuse
+        q as nat == (u64_5_as_nat(limbs) + 19) / pow2(255),  // Export for reuse
 {
     lemma_carry_propagation_is_division(limbs, q);
 
@@ -488,93 +488,93 @@ pub proof fn lemma_q_is_binary(limbs: [u64; 5], q: u64)
 
     // Simplified reasoning:
     // Since p() = 2^255 - 19 < 2^255, we have:
-    // as_nat(limbs) < 2*p() < 2*2^255
-    // Therefore: as_nat(limbs) + 19 < 2*2^255
+    // u64_5_as_nat(limbs) < 2*p() < 2*2^255
+    // Therefore: u64_5_as_nat(limbs) + 19 < 2*2^255
     assert(p() < pow2(255)) by {
         pow255_gt_19();
     }
 
     // By integer division: if x < 2 * d, then x / d < 2
     lemma_pow2_pos(255);
-    lemma_div_strictly_bounded((as_nat(limbs) + 19) as int, pow2(255) as int, 2);
+    lemma_div_strictly_bounded((u64_5_as_nat(limbs) + 19) as int, pow2(255) as int, 2);
 
-    // Since q = (as_nat(limbs) + 19) / 2^255, we have q < 2
+    // Since q = (u64_5_as_nat(limbs) + 19) / 2^255, we have q < 2
 }
 
-/// Unified helper: Proves the biconditional relationship between as_nat and q
+/// Unified helper: Proves the biconditional relationship between u64_5_as_nat and q
 ///
-/// With the tight bound as_nat(limbs) < 2*p(), the value is either in [0, p) or [p, 2*p),
+/// With the tight bound u64_5_as_nat(limbs) < 2*p(), the value is either in [0, p) or [p, 2*p),
 /// which maps directly to q=0 or q=1. This makes the biconditional proofs straightforward.
 pub proof fn lemma_q_biconditional(limbs: [u64; 5], q: u64)
     requires
         forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
-        as_nat(limbs) < 2 * p(),  // Tight bound from reduce()
+        u64_5_as_nat(limbs) < 2 * p(),  // Tight bound from reduce()
         q == compute_q_spec(limbs),
-        q as nat == (as_nat(limbs) + 19) / pow2(255),
+        q as nat == (u64_5_as_nat(limbs) + 19) / pow2(255),
         q == 0 || q == 1,
     ensures
-        as_nat(limbs) >= p() <==> q == 1,
-        as_nat(limbs) < p() <==> q == 0,
+        u64_5_as_nat(limbs) >= p() <==> q == 1,
+        u64_5_as_nat(limbs) < p() <==> q == 0,
 {
     pow255_gt_19();
     lemma2_to64();
     lemma_pow2_pos(255);
 
-    // The key insight: with as_nat(limbs) < 2*p() and p() < 2^255, we have two cases:
-    // Case 1: as_nat(limbs) < p() ⟺ as_nat(limbs) + 19 < 2^255 ⟺ q = 0
-    // Case 2: p() ≤ as_nat(limbs) < 2*p() ⟺ 2^255 ≤ as_nat(limbs) + 19 < 2*2^255 ⟺ q = 1
+    // The key insight: with u64_5_as_nat(limbs) < 2*p() and p() < 2^255, we have two cases:
+    // Case 1: u64_5_as_nat(limbs) < p() ⟺ u64_5_as_nat(limbs) + 19 < 2^255 ⟺ q = 0
+    // Case 2: p() ≤ u64_5_as_nat(limbs) < 2*p() ⟺ 2^255 ≤ u64_5_as_nat(limbs) + 19 < 2*2^255 ⟺ q = 1
 
-    // Forward direction: as_nat(limbs) < p() ==> q == 0
-    if as_nat(limbs) < p() {
-        lemma_div_strictly_bounded((as_nat(limbs) + 19) as int, pow2(255) as int, 1);
+    // Forward direction: u64_5_as_nat(limbs) < p() ==> q == 0
+    if u64_5_as_nat(limbs) < p() {
+        lemma_div_strictly_bounded((u64_5_as_nat(limbs) + 19) as int, pow2(255) as int, 1);
     }
-    // Backward direction: q == 0 ==> as_nat(limbs) < p()
+    // Backward direction: q == 0 ==> u64_5_as_nat(limbs) < p()
 
     if q == 0 {
-        lemma_fundamental_div_mod((as_nat(limbs) + 19) as int, pow2(255) as int);
-        lemma_mod_bound((as_nat(limbs) + 19) as int, pow2(255) as int);
+        lemma_fundamental_div_mod((u64_5_as_nat(limbs) + 19) as int, pow2(255) as int);
+        lemma_mod_bound((u64_5_as_nat(limbs) + 19) as int, pow2(255) as int);
     }
-    // Forward direction: as_nat(limbs) >= p() ==> q == 1
+    // Forward direction: u64_5_as_nat(limbs) >= p() ==> q == 1
 
-    if as_nat(limbs) >= p() {
-        // Since q is 0 or 1, and we know as_nat + 19 >= 2^255, q cannot be 0
+    if u64_5_as_nat(limbs) >= p() {
+        // Since q is 0 or 1, and we know u64_5_as_nat + 19 >= 2^255, q cannot be 0
         if q == 0 {
-            lemma_fundamental_div_mod((as_nat(limbs) + 19) as int, pow2(255) as int);
-            lemma_mod_bound((as_nat(limbs) + 19) as int, pow2(255) as int);
+            lemma_fundamental_div_mod((u64_5_as_nat(limbs) + 19) as int, pow2(255) as int);
+            lemma_mod_bound((u64_5_as_nat(limbs) + 19) as int, pow2(255) as int);
         }
     }
-    // Backward direction: q == 1 ==> as_nat(limbs) >= p()
+    // Backward direction: q == 1 ==> u64_5_as_nat(limbs) >= p()
 
     if q == 1 {
-        lemma_fundamental_div_mod((as_nat(limbs) + 19) as int, pow2(255) as int);
+        lemma_fundamental_div_mod((u64_5_as_nat(limbs) + 19) as int, pow2(255) as int);
     }
 }
 
 /// Proves that q computed via successive carry propagation equals 1 iff h >= p, 0 otherwise
-/// where h = as_nat(limbs) and limbs[i] < 2^52 for all i
+/// where h = u64_5_as_nat(limbs) and limbs[i] < 2^52 for all i
 ///
-/// The precondition `as_nat(limbs) < 2 * p()` is satisfied when limbs come from
+/// The precondition `u64_5_as_nat(limbs) < 2 * p()` is satisfied when limbs come from
 /// `reduce()` output, which now ensures this property in its postcondition.
 pub proof fn lemma_compute_q(limbs: [u64; 5], q: u64)
     requires
         forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
-        as_nat(limbs) < 2 * p(),  // From reduce()'s postcondition
+        u64_5_as_nat(limbs) < 2 * p(),  // From reduce()'s postcondition
         q == compute_q_spec(limbs),
     ensures
         q == 0 || q == 1,
-        as_nat(limbs) >= p() <==> q == 1,
-        as_nat(limbs) < p() <==> q == 0,
+        u64_5_as_nat(limbs) >= p() <==> q == 1,
+        u64_5_as_nat(limbs) < p() <==> q == 0,
 {
     // Step 1: Prove q < 3 (all carries bounded)
     lemma_all_carries_bounded_by_3(limbs);
 
     // Step 2: Prove q can only be 0 or 1 (not 2)
-    // Note: This also establishes q as nat == (as_nat(limbs) + 19) / pow2(255)
+    // Note: This also establishes q as nat == (u64_5_as_nat(limbs) + 19) / pow2(255)
     // internally by calling lemma_carry_propagation_is_division
     lemma_q_is_binary(limbs, q);
 
     // Step 3: Prove the biconditionals
-    // With the tight bound as_nat < 2*p(), this is now straightforward
+    // With the tight bound u64_5_as_nat < 2*p(), this is now straightforward
     lemma_q_biconditional(limbs, q);
 }
 

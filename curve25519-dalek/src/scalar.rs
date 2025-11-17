@@ -2427,7 +2427,6 @@ pub fn unpack(&self) -> (result:
     ensures
         limbs_bounded(&result),
         to_nat(&result.limbs) == bytes_to_nat(&self.bytes),
-        to_nat(&result.limbs) < group_order(),
 {
     UnpackedScalar::from_bytes(&self.bytes)
 }

@@ -21,9 +21,8 @@ This crate is `#[no_std]` compatible with `default-features = false`.
 | `fast`                 | ✓        | Enables the use of precomputed tables for curve arithmetic. Makes key generation, signing, and verifying faster. |
 | `zeroize`              | ✓        | Implements `Zeroize` and `ZeroizeOnDrop` for `SigningKey` |
 | `rand_core`            |          | Enables `SigningKey::generate` |
-| `batch`                |          | Enables `verify_batch` for verifying many signatures quickly. Also enables `rand_core`. |
-| `digest`               |          | Enables `Context`, `SigningKey::{with_context, sign_prehashed}` and `VerifyingKey::{with_context, verify_prehashed, verify_prehashed_strict}` for Ed25519ph prehashed signatures. Also implements `KeySizeUser` for `SigningKey` and `VerifyingKey`, and implements `KeyInit` for `SigningKey`. |
-| `asm`                  |          | Enables assembly optimizations in the SHA-512 compression functions |
+| `batch`                |          | Enables `verify_batch` for verifying many signatures quickly. Also enables `alloc` and `rand_core`. |
+| `digest`               |          | Enables `Context`, `SigningKey::{with_context, sign_prehashed}` and `VerifyingKey::{with_context, verify_prehashed, verify_prehashed_strict}` for Ed25519ph prehashed signatures. Also implements `KeySizeUser` for `SigningKey` and `VerifyingKey`. |
 | `pkcs8`                |          | Enables [PKCS#8](https://en.wikipedia.org/wiki/PKCS_8) serialization/deserialization for `SigningKey` and `VerifyingKey` |
 | `pem`                  |          | Enables PEM serialization support for PKCS#8 private keys and SPKI public keys. Also enables `alloc`. |
 | `legacy_compatibility` |          | **Unsafe:** Disables certain signature checks. See [below](#malleability-and-the-legacy_compatibility-feature) |

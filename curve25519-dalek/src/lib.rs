@@ -10,18 +10,6 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 #![no_std]
-#![cfg_attr(
-    all(
-        curve25519_dalek_backend = "simd",
-        nightly,
-        any(target_arch = "x86", target_arch = "x86_64")
-    ),
-    feature(stdarch_x86_avx512)
-)]
-#![cfg_attr(
-    all(curve25519_dalek_backend = "simd", nightly),
-    feature(avx512_target_feature)
-)]
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
 #![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
 //------------------------------------------------------------------------
@@ -36,6 +24,7 @@
 //------------------------------------------------------------------------
 #![cfg_attr(allow_unused_unsafe, allow(unused_unsafe))]
 #![warn(
+    clippy::mod_module_files,
     clippy::unwrap_used,
     missing_docs,
     rust_2018_idioms,
@@ -101,6 +90,9 @@ pub(crate) mod backend;
 
 // Generic code for window lookups
 pub(crate) mod window;
+
+#[cfg(feature = "lizard")]
+pub mod lizard;
 
 pub use crate::{
     edwards::EdwardsPoint, montgomery::MontgomeryPoint, ristretto::RistrettoPoint, scalar::Scalar,

@@ -9,7 +9,7 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-#![doc = include_str!("../../../docs/parallel-formulas.md")]
+#![doc = include_str!("../../docs/parallel-formulas.md")]
 
 #[allow(missing_docs)]
 pub mod packed_simd;

@@ -1,4 +1,5 @@
 import binascii
+from hashlib import sha256
 class InvalidEncodingException(Exception): pass
 class NotOnCurveException(Exception): pass
 class SpecException(Exception): pass
@@ -6,7 +7,7 @@ class SpecException(Exception): pass
 def lobit(x): return int(x) & 1
 def hibit(x): return lobit(2*x)
 def negative(x): return lobit(x)
-def enc_le(x,n): return bytearray([int(x)>>(8*i) & 0xFF for i in xrange(n)])
+def enc_le(x,n): return bytearray([int(x)>>(8*i) & 0xFF for i in range(n)])
 def dec_le(x): return sum(b<<(8*i) for i,b in enumerate(x))
 def randombytes(n): return bytearray([randint(0,255) for _ in range(n)])
 
@@ -22,17 +23,17 @@ def optimized_version_of(spec):
             try: opt_ans = f(self,*args,**kwargs),None
             except Exception as e: opt_ans = None,e
             if spec_ans[1] is None and opt_ans[1] is not None:
-                raise
+                raise opt_ans[1]
                 #raise SpecException("Mismatch in %s: spec returned %s but opt threw %s"
                 #    % (f.__name__,str(spec_ans[0]),str(opt_ans[1])))
             if spec_ans[1] is not None and opt_ans[1] is None:
-                raise
+                raise spec_ans[1]
                 #raise SpecException("Mismatch in %s: spec threw %s but opt returned %s"
                 #    % (f.__name__,str(spec_ans[1]),str(opt_ans[0])))
             if spec_ans[0] != opt_ans[0]:
                 raise SpecException("Mismatch in %s: %s != %s"
                     % (f.__name__,pr(spec_ans[0]),pr(opt_ans[0])))
-            if opt_ans[1] is not None: raise
+            if opt_ans[1] is not None: raise opt_ans[1]
             else: return opt_ans[0]
         wrapper.__name__ = f.__name__
         return wrapper
@@ -64,7 +65,7 @@ def isqrt_i(x):
     else: return False,1/sqrt(x*gen)
 
 class QuotientEdwardsPoint(object):
-    """Abstract class for point an a quotiented Edwards curve; needs F,a,d,cofactor to work"""
+    """Abstract class for point on a quotiented Edwards curve; needs F,a,d,cofactor to work"""
     def __init__(self,x=0,y=1):
         x = self.x = self.F(x)
         y = self.y = self.F(y)
@@ -133,7 +134,7 @@ class QuotientEdwardsPoint(object):
         s = dec_le(bytes)
         if mustBeProper and s >= cls.F.order():
             raise InvalidEncodingException("%d out of range!" % s)
-        bitlen = int(ceil(log(cls.F.order())/log(2)))
+        bitlen = cls.F.order().bit_length()
         if maskHiBits: s &= 2^bitlen-1
         s = cls.F(s)
         if mustBePositive and negative(s):
@@ -463,8 +464,8 @@ class Decaf_1_1_Point(QuotientEdwardsPoint):
                         if negative(sr) != toggle_r: sr = -sr
                         ret = self.gfToBytes(sr)
                         if self.elligator(ret) != self and self.elligator(ret) != -self:
-                            print "WRONG!",[toggle_rotation,toggle_altx,toggle_s]
-                        if self.elligator(ret) == -self and self != -self: print "Negated!",[toggle_rotation,toggle_altx,toggle_s]
+                            print("WRONG!",[toggle_rotation,toggle_altx,toggle_s])
+                        if self.elligator(ret) == -self and self != -self: print("Negated!",[toggle_rotation,toggle_altx,toggle_s])
                         rets.append(bytes(ret))
         return rets
 
@@ -590,7 +591,7 @@ class Decaf_1_1_Point(QuotientEdwardsPoint):
     def elligatorInverseBruteForce(self):
         """Invert Elligator using SAGE's polynomial solver"""
         a,d = self.a,self.d
-        R.<r0> = self.F[]
+        R = self.F["r0"]
         r = self.qnr * r0^2
         den = (d*r-(d-a))*((d-a)*r-d)
         n1 = (r+1)*(a-2*d)/den
@@ -602,7 +603,7 @@ class Decaf_1_1_Point(QuotientEdwardsPoint):
             y = (1-a*s2) / t
 
             selfT = self
-            for i in xrange(self.cofactor/2):
+            for i in range(self.cofactor/2):
                 xT,yT = selfT
                 polyX = xT^2-x2
                 polyY = yT-y
@@ -721,7 +722,7 @@ class IsoEd25519Point(Decaf_1_1_Point):
 class TestFailedException(Exception): pass
 
 def test(cls,n):
-    print "Testing curve %s" % cls.__name__
+    print("Testing curve %s" % cls.__name__)
     
     specials = [1]
     ii = cls.F(-1)
@@ -744,7 +745,7 @@ def test(cls,n):
     
     P = cls.base()
     Q = cls()
-    for i in xrange(n):
+    for i in range(n):
         #print binascii.hexlify(Q.encode())
         QE = Q.encode()
         QQ = cls.decode(QE)
@@ -766,7 +767,7 @@ def test(cls,n):
                     raise TestFailedException("s -> 1/s should work for cofactor 4")
         
         QT = Q
-        for h in xrange(cls.cofactor):
+        for h in range(cls.cofactor):
             QT = QT.torque()
             if QT.encode() != QE:
                 raise TestFailedException("Can't torque %s,%d" % (str(Q),h+1))
@@ -782,19 +783,19 @@ def test(cls,n):
         Q = Q1
         
 def testElligator(cls,n):
-    print "Testing elligator on %s" % cls.__name__
-    for i in xrange(n):
+    print("Testing elligator on %s" % cls.__name__)
+    for i in range(n):
         r = randombytes(cls.encLen)
         P = cls.elligator(r)
         if hasattr(P,"invertElligator"):
             iv = P.invertElligator()
             modr = bytes(cls.gfToBytes(cls.bytesToGf(r,mustBeProper=False,maskHiBits=True)))
             iv2 = P.torque().invertElligator()
-            if modr not in iv: print "Failed to invert Elligator!"
+            if modr not in iv: print("Failed to invert Elligator!")
             if len(iv) != len(set(iv)):
-                print "Elligator inverses not unique!", len(set(iv)), len(iv)
+                print("Elligator inverses not unique!", len(set(iv)), len(iv))
             if iv != iv2:
-                print "Elligator is untorqueable!"
+                print("Elligator is untorqueable!")
                 #print [binascii.hexlify(j) for j in iv]
                 #print [binascii.hexlify(j) for j in iv2]
                 #break
@@ -802,7 +803,7 @@ def testElligator(cls,n):
             pass # TODO
 
 def gangtest(classes,n):
-    print "Gang test",[cls.__name__ for cls in classes]
+    print("Gang test",[cls.__name__ for cls in classes])
     specials = [1]
     ii = classes[0].F(-1)
     while is_square(ii):
@@ -810,31 +811,53 @@ def gangtest(classes,n):
         ii = sqrt(ii)
     specials.append(ii)
     
-    for i in xrange(n):
+    for i in range(n):
         rets = [bytes((cls.base()*i).encode()) for cls in classes]
         if len(set(rets)) != 1:
-            print "Divergence in encode at %d" % i
+            print("Divergence in encode at %d" % i)
             for c,ret in zip(classes,rets):
-                print c,binascii.hexlify(ret)
-            print
+                print(c,binascii.hexlify(ret))
+            print()
         
         if i < len(specials): r0 = enc_le(specials[i],classes[0].encLen)
         else: r0 = randombytes(classes[0].encLen)
         
         rets = [bytes((cls.elligator(r0)*i).encode()) for cls in classes]
         if len(set(rets)) != 1:
-            print "Divergence in elligator at %d" % i
+            print("Divergence in elligator at %d" % i)
             for c,ret in zip(classes,rets):
-                print c,binascii.hexlify(ret)
-            print
+                print(c,binascii.hexlify(ret))
+            print()
 
 def testDoubleAndEncode(cls,n):
-    print "Testing doubleAndEncode on %s" % cls.__name__
-    for i in xrange(n):
+    print("Testing doubleAndEncode on %s" % cls.__name__)
+    for i in range(n):
         r1 = randombytes(cls.encLen)
         r2 = randombytes(cls.encLen)
         u = cls.elligator(r1) + cls.elligator(r2)
         u.doubleAndEncode()
+
+# Prints test vectors for the Lizard encoding function. Output is the encoding of a compressed
+# Ristretto point
+def testLizard():
+    # 16-byte strings, in hex
+    inputs = [
+        "00000000000000000000000000000000",
+        "01010101010101010101010101010101",
+        "000102030405060708090a0b0c0d0e0f",
+        "dddddddddddddddddddddddddddddddd",
+    ]
+
+    for payload in map(binascii.unhexlify, inputs):
+        # Do the lizard encoding of the field element
+        data = bytearray(sha256(payload).digest())
+        data[8:24] = payload
+        data[0] &= 0b11111110
+        data[31] &= 0b00111111
+
+        # Encode to Ristretto (Ed25519Point is actually Ristretto), and print the byte repr
+        pt = Ed25519Point.elligator(data)
+        print("lizard({}) = {}".format(binascii.hexlify(payload), binascii.hexlify(pt.encode())))
 
 testDoubleAndEncode(Ed25519Point,100)
 testDoubleAndEncode(NegEd25519Point,100)
@@ -853,5 +876,6 @@ testDoubleAndEncode(TwistedEd448GoldilocksPoint,100)
 #testElligator(IsoEd448Point,100)
 #testElligator(Ed448GoldilocksPoint,100)
 #testElligator(TwistedEd448GoldilocksPoint,100)
+#testLizard()
 #gangtest([IsoEd448Point,TwistedEd448GoldilocksPoint,Ed448GoldilocksPoint],100)
 #gangtest([Ed25519Point,IsoEd25519Point],100)

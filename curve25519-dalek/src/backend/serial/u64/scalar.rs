@@ -118,7 +118,7 @@ impl Scalar52 {
     /// Pack the limbs of this `Scalar52` into 32 bytes
     #[rustfmt::skip] // keep alignment of s[*] calculations
     #[allow(clippy::identity_op)]
-    pub fn as_bytes(&self) -> [u8; 32] {
+    pub fn to_bytes(self) -> [u8; 32] {
         let mut s = [0u8; 32];
 
         s[ 0] =  (self.0[ 0] >>  0)                      as u8;
@@ -186,15 +186,34 @@ impl Scalar52 {
         }
 
         // conditionally add l if the difference is negative
+        difference.conditional_add_l(Choice::from((borrow >> 63) as u8));
+        difference
+    }
+
+    pub(crate) fn conditional_add_l(&mut self, condition: Choice) -> u64 {
         let mut carry: u64 = 0;
+        let mask = (1u64 << 52) - 1;
+
         for i in 0..5 {
-            let underflow = Choice::from((borrow >> 63) as u8);
-            let addend = u64::conditional_select(&0, &constants::L[i], underflow);
-            carry = (carry >> 52) + difference[i] + addend;
-            difference[i] = carry & mask;
+            let addend = u64::conditional_select(&0, &constants::L[i], condition);
+            carry = (carry >> 52) + self[i] + addend;
+            self[i] = carry & mask;
         }
 
-        difference
+        carry
+    }
+
+    /// Compute a raw in-place carrying right shift over the limbs.
+    #[inline(always)]
+    pub(crate) fn shr1_assign(&mut self) -> u64 {
+        let mut carry: u64 = 0;
+        for i in (0..5).rev() {
+            let limb = self[i];
+            let next_carry = limb & 1;
+            self[i] = (limb >> 1) | (carry << 51);
+            carry = next_carry;
+        }
+        carry
     }
 
     /// Compute `a * b`

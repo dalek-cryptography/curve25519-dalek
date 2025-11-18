@@ -35,6 +35,14 @@ use subtle::ConstantTimeEq;
 use crate::backend;
 use crate::constants;
 
+#[cfg(feature = "digest")]
+use digest::{
+    Digest, FixedOutput, HashMarker,
+    array::{Array, typenum::U64},
+    block_api::BlockSizeUser,
+    typenum::{IsGreater, True},
+};
+
 cfg_if! {
     if #[cfg(curve25519_dalek_backend = "fiat")] {
         /// A `FieldElement` represents an element of the field
@@ -86,11 +94,58 @@ impl ConstantTimeEq for FieldElement {
     /// internal representation is not canonical, the field elements
     /// are normalized to wire format before comparison.
     fn ct_eq(&self, other: &FieldElement) -> Choice {
-        self.as_bytes().ct_eq(&other.as_bytes())
+        self.to_bytes().ct_eq(&other.to_bytes())
+    }
+}
+
+impl Default for FieldElement {
+    fn default() -> Self {
+        FieldElement::ZERO
     }
 }
 
 impl FieldElement {
+    /// Load a `FieldElement` from 64 bytes, by reducing modulo q.
+    #[cfg(feature = "digest")]
+    pub(crate) fn from_bytes_wide(bytes: &[u8; 64]) -> Self {
+        let mut fl = [0u8; 32];
+        let mut gl = [0u8; 32];
+        fl.copy_from_slice(&bytes[..32]);
+        gl.copy_from_slice(&bytes[32..]);
+        // Mask off the top bits of both halves, since from_bytes masks them off anyway. We'll add
+        // them back in later.
+        let fl_top_bit = (fl[31] >> 7) as u16;
+        let gl_top_bit = (gl[31] >> 7) as u16;
+        fl[31] &= 0x7f;
+        gl[31] &= 0x7f;
+
+        // Interpret both sides as field elements
+        let mut fe_f = Self::from_bytes(&fl);
+        let fe_g = Self::from_bytes(&gl);
+
+        // The full field elem is now fe_f + 2²⁵⁵ fl_top_bit + 2²⁵⁶ fe_g + 2⁵¹¹ gl_top_bit
+
+        // Add the masked off bits back to fe_f. fl_top_bit, if set, is 2^255 ≡ 19 (mod q).
+        // gl_top_bit, if set, is 2^511 ≡ 722 (mod q)
+        let top_bits_sum = {
+            // This only need to be a u16 because the max value is 741
+            let addend: u16 = fl_top_bit * 19 + gl_top_bit * 722;
+            let mut addend_bytes = [0u8; 32];
+            addend_bytes[..2].copy_from_slice(&addend.to_le_bytes());
+            Self::from_bytes(&addend_bytes)
+        };
+        fe_f += &top_bits_sum;
+
+        // Now add the high half into fe_f. The RHS is multiplied by 2^256 ≡ 38 (mod q)
+        const THIRTY_EIGHT: FieldElement = FieldElement::from_bytes(&[
+            38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ]);
+        fe_f += &(&THIRTY_EIGHT * &fe_g);
+
+        fe_f
+    }
+
     /// Determine if this `FieldElement` is negative, in the sense
     /// used in the ed25519 paper: `x` is negative if the low bit is
     /// set.
@@ -99,7 +154,7 @@ impl FieldElement {
     ///
     /// If negative, return `Choice(1)`.  Otherwise, return `Choice(0)`.
     pub(crate) fn is_negative(&self) -> Choice {
-        let bytes = self.as_bytes();
+        let bytes = self.to_bytes();
         (bytes[0] & 1).into()
     }
 
@@ -110,7 +165,7 @@ impl FieldElement {
     /// If zero, return `Choice(1)`.  Otherwise, return `Choice(0)`.
     pub(crate) fn is_zero(&self) -> Choice {
         let zero = [0u8; 32];
-        let bytes = self.as_bytes();
+        let bytes = self.to_bytes();
 
         bytes.ct_eq(&zero)
     }
@@ -217,7 +272,7 @@ impl FieldElement {
     /// Raise this field element to the power (p-5)/8 = 2^252 -3.
     #[rustfmt::skip] // keep alignment of explanatory comments
     #[allow(clippy::let_and_return)]
-    fn pow_p58(&self) -> FieldElement {
+    pub(crate) fn pow_p58(&self) -> FieldElement {
         // The bits of (p-5)/8 are 101111.....11.
         //
         //                                 nonzero bits of exponent
@@ -303,6 +358,139 @@ impl FieldElement {
     pub(crate) fn invsqrt(&self) -> (Choice, FieldElement) {
         FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)
     }
+
+    #[cfg(feature = "digest")]
+    /// Hashes the given message and domain separator to produce `COUNT` [`FieldElement`]s, per RFC
+    /// 9380. The hash's input is the concatenation of the elements of `msg`. Likewise for the
+    /// domain separator with `domain_sep`. At least one element of `domain_sep`, MUST be nonempty,
+    /// its concatenation MUST NOT exceed 255 bytes, and `COUNT` MUST be 1 or 2.
+    ///
+    /// The specification names SHA-512 as an example of a secure hash to use with this function,
+    /// but you may use any 512-bit hash within reason (see the
+    /// [`spec`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) for details).
+    ///
+    /// # Panics
+    /// Panics if `domain_sep.collect().len() == 0` or `> 255`. Also panics if `COUNT > 2` or
+    /// `COUNT == 0`.
+    pub fn hash_to_field<D, const COUNT: usize>(
+        msg: &[&[u8]],
+        domain_sep: &[&[u8]],
+    ) -> [Self; COUNT]
+    where
+        D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
+        D::BlockSize: IsGreater<D::OutputSize, Output = True>,
+    {
+        // We only use `hash_to_field` for Elligator2, which uses 0 < COUNT <= 2
+        assert!(COUNT == 1 || COUNT == 2);
+
+        // §5.2, we generate count * m * L = COUNT * 1 * (256 + 128)/8 bytes
+        let len_in_bytes = COUNT * 48;
+        // Buffer should hold however many digests we need to produce len_in_bytes bytes.
+        // len_in_bytes is at most 2*48=96, and the digest is 64B. So that's 2 digests, or 128B
+        let mut buf = [0u8; 128];
+        // We can call this without worrying about panics: len_in_bytes is at most 96, and buf is
+        // bigger than it. Further, if `domain_sep` is too large, that's also a panic condition of
+        // this function so it's fine
+        let uniform_bytes = expand_msg_xmd::<D>(msg, domain_sep, &mut buf, len_in_bytes);
+
+        let mut result = [FieldElement::ONE; COUNT];
+        for i in 0..COUNT {
+            let mut bytes_wide = [0u8; 64];
+            bytes_wide[..48].copy_from_slice(&uniform_bytes[48 * i..48 * (i + 1)]);
+            bytes_wide[..48].reverse();
+
+            result[i] = FieldElement::from_bytes_wide(&bytes_wide);
+        }
+
+        result
+    }
+}
+
+/// Hashes the concatenation of the elements of `msg` with domain separator equal to the
+/// concatenation of `domain_sep`. The output is an `outlen`-length slice into `buf`. Follows
+/// https://www.rfc-editor.org/rfc/rfc9380.html#section-5.3.1
+///
+/// # Panics
+/// Panics if the domain separator is empty, if the total length of the domain separator is more
+/// than 255 bytes, if `outlen` is more than `255 * D::output_size()`, if `outlen is more than
+/// 65535, or if `dst.len() < outlen`.
+#[cfg(feature = "digest")]
+fn expand_msg_xmd<'a, D>(
+    msg: &[&[u8]],
+    domain_sep: &[&[u8]],
+    buf: &'a mut [u8],
+    outlen: usize,
+) -> &'a [u8]
+where
+    D: BlockSizeUser + Default + FixedOutput + HashMarker,
+{
+    use core::iter::once;
+
+    // The notation we use in this function is the same as in the spec
+    let len_in_bytes = u16::try_from(outlen).expect("outlen must not exceed 65535");
+
+    assert!(buf.len() >= outlen);
+    let ell = u8::try_from((len_in_bytes as usize).div_ceil(D::output_size()))
+        .expect("output length cannot exceed 255 times digest size");
+    let domain_sep_len = u8::try_from(domain_sep.iter().map(|c| c.len()).sum::<usize>())
+        .expect("unexpected overflow from domain separator's size.");
+    assert_ne!(
+        domain_sep_len, 0,
+        "domain separator MUST have nonzero length."
+    );
+
+    let domain_sep_len_slice = &[domain_sep_len][..];
+    let dst_prime = domain_sep.iter().copied().chain(once(domain_sep_len_slice));
+    let z_pad = Array::<u8, D::BlockSize>::default();
+    let l_i_b_str = len_in_bytes.to_be_bytes();
+
+    // Collect the components of msg_prime
+    let msg_prime = once(z_pad.as_slice())
+        .chain(msg.iter().copied())
+        .chain(once(l_i_b_str.as_slice()))
+        .chain(once(&[0u8][..]))
+        .chain(dst_prime.clone());
+    // Hash all of msg_prime
+    let b_0 = msg_prime
+        .fold(D::new(), |h, slice| h.chain_update(slice))
+        .finalize();
+
+    // Collect the input components for the b_1 hash
+    let b_1_input = once(b_0.as_slice())
+        .chain(once(&[1u8][..]))
+        .chain(dst_prime.clone());
+    let b_1 = b_1_input
+        .fold(D::new(), |h, slice| h.chain_update(slice))
+        .finalize();
+    // Write b_1 to the output buffer
+    buf[..D::output_size()].copy_from_slice(&b_1);
+
+    for i in 2..=ell {
+        // Get the last digest we produced
+        let i_ = i as usize;
+        let last_b = &buf[(i_ - 2) * D::output_size()..(i_ - 1) * D::output_size()];
+        // XOR it with b_0
+        let mut xor_bs = b_0.clone();
+        xor_bs
+            .as_mut_slice()
+            .iter_mut()
+            .zip(last_b)
+            .for_each(|(l, r)| *l ^= *r);
+
+        // Hash (b_0 ^ b_{i-1}) || i || dst_prime
+        let i_slice = &[i][..];
+        let b_i_input = once(xor_bs.as_slice())
+            .chain(once(i_slice))
+            .chain(dst_prime.clone());
+        let b_i = b_i_input
+            .fold(D::new(), |h, slice| h.chain_update(slice))
+            .finalize();
+
+        // Write b_i to the output buffer
+        buf[(i_ - 1) * D::output_size()..i_ * D::output_size()].copy_from_slice(&b_i);
+    }
+
+    &buf[..outlen]
 }
 
 #[cfg(test)]
@@ -480,7 +668,7 @@ mod test {
         // Decode to a field element
         let one = FieldElement::from_bytes(&one_encoded_wrongly_bytes);
         // .. then check that the encoding is correct
-        let one_bytes = one.as_bytes();
+        let one_bytes = one.to_bytes();
         assert_eq!(one_bytes[0], 1);
         for byte in &one_bytes[1..] {
             assert_eq!(*byte, 0);
@@ -491,5 +679,239 @@ mod test {
     #[cfg(feature = "alloc")]
     fn batch_invert_empty() {
         FieldElement::batch_invert(&mut []);
+    }
+
+    // The following two consts were generated with the following sage script:
+    //
+    // import random
+    //
+    // F = GF(2**255 - 19)
+    // # Use a seed to make sure we produce the same test vectors every time
+    // random.seed("Ozamataz Buckshank")
+    //
+    // # Generates test vectors, each of the form (input_bytes, reduced_field_elem_bytes),
+    // # where input_bytes is length input_bytes_len
+    // def gen_example(input_bytes_len):
+    //     # Generate random bytes
+    //     input_bytes = [random.randint(0, 255) for _ in range(input_bytes_len)]
+    //
+    //     # Now convert to a field element and get the reduced byte representation
+    //     elem = F(int.from_bytes(input_bytes, byteorder='little'))
+    //     reduced_bytes = list(int(elem).to_bytes(32, byteorder='little'))
+    //
+    //     # Format input and output as hex strings
+    //     input_bytes_hex = ''.join(f'{byte:02x}' for byte in input_bytes)
+    //     reduced_bytes_hex = ''.join(f'{byte:02x}' for byte in reduced_bytes)
+    //     return f"(\"{input_bytes_hex}\", \"{reduced_bytes_hex}\")"
+    //
+    // print("SET 1: Input bytes are length 64")
+    // for _ in range(5):
+    //     print(gen_example(64))
+    //
+    // print("SET 2: Input bytes are length 48")
+    // for _ in range(5):
+    //     print(gen_example(48))
+
+    /// Test vectors for FieldElement::from_bytes_wide. Elements are of the form (len-64 bytestring,
+    /// reduced field element)
+    #[cfg(feature = "digest")]
+    const FROM_BYTES_WIDE_KAT_BIG: &[(&str, &str)] = &[
+        (
+            "77b663085cac0e916f40dbeea5116f201816406e68ccf01b32a97162ae1d5bf95d0d01c2c72fbeeb27a63\
+            5b85b715d5ce6f74118a60a7aec53c798ad648a482f",
+            "62b38bd402c4498f5cead14643e54dd649e20a0810610e36a73f1f27a0a81f7e",
+        ),
+        (
+            "d437c75ec79886650243a79c62933bb307eb12ff16d05db4a6a8a877f4a91abb6eeb64d2e20519c021799\
+            3a1dc5639283a06639985a2c892208171503335afb5",
+            "3d2ec29972783de9043e8b982278beaba9d7c5c3ebef257e7cd38168928f1c33",
+        ),
+        (
+            "6daa9e1abe6c604fb6e841c04bf90a6ef88aef6b1eab17dd44f7207ef472cd2d54bac849f703e64f36e56\
+            77e7e86b82be7d26aa220daf1f208bb36dcc1a12338",
+            "28546a0e7303852bc6eead8312f06eeb48d9ca87f60bfeec98ba402ebb751703",
+        ),
+        (
+            "c3920e326dbf806a50105be78263c1dc9390fb4741587b250cd758c2bfa3ed70faedbbc5f9b1d024e00fe\
+            7d7daf796866853f42e72d638e6533c5eb5b7caf3c6",
+            "40eaf38b802a7be1956ba7f3fe2d2ad717f23f40342deb5180cb55ae04bb1d79",
+        ),
+        (
+            "23f143c72ead6c0f336b4e746a06921f0eb180002e8ce916d196de16216788617c6aeb90a074a85196f03\
+            81375011248927c1215e9ec65b382a6ec556fb3f504",
+            "b1bf354a04fd6d2e8321c24ecb3d3ed2c42e3f21c7b60ab8374effd7a709011e",
+        ),
+    ];
+
+    /// Test vectors for FieldElement::from_bytes_wide. Elements are of the form (len-48 bytestring,
+    /// reduced field element)
+    #[cfg(feature = "digest")]
+    const FROM_BYTES_WIDE_KAT_MEDIUM: &[(&str, &str)] = &[
+        (
+            "82e9cbe4928e3d0bbf1f91824a91acfb30d929f7a2fa5cbcc967c63ea0f3357c29c19f1bc9dcad69d85c1\
+            c6265970685",
+            "989582fe6c540cbbdee7c612570aa7ba44d929f7a2fa5cbcc967c63ea0f3357c",
+        ),
+        (
+            "5480494df4fb3a3b19da17e1c8b9192ccb09ec76720321977079300c42c17b9e95b01eb37ffe7048fcd1c\
+            9e6094da6c4",
+            "85b6d7e3e8c200fc8b050d234129c95ce809ec76720321977079300c42c17b1e",
+        ),
+        (
+            "93ec8a480dde098f74bcd341ef4f248f6440cc6e631d7000784f66975a4fd628438bb1350ba4c1421fec3\
+            670decced06",
+            "8598e540b737c87718c9fae9f3b870966540cc6e631d7000784f66975a4fd628",
+        ),
+        (
+            "fd0154ff9a5c4c9ee4e8183c23db97018e0e6201a812f6d4faedda50652d51f65c110b9a1a100a3fc3ff1\
+            c4ea3cf22e4",
+            "b895f8dc8dc0caf9dfdf66d460adc2deaf0e6201a812f6d4faedda50652d5176",
+        ),
+        (
+            "0e829dc955e0a1e0dbda9849cb2022b295275782348bd6308b3d0c5836f3ca0130911a17fd54054c3a0f8\
+            b2486f8ce85",
+            "2e0f8f37e77d6c29831d3db6b404db8ea9275782348bd6308b3d0c5836f3ca01",
+        ),
+    ];
+
+    #[cfg(feature = "digest")]
+    #[test]
+    fn from_bytes_wide() {
+        // Do the 64-byte input ones first
+        for (input_bytes, expected_reduced) in FROM_BYTES_WIDE_KAT_BIG {
+            let reduce_fe = FieldElement::from_bytes_wide(
+                &hex::decode(input_bytes)
+                    .unwrap()
+                    .as_slice()
+                    .try_into()
+                    .unwrap(),
+            );
+            assert_eq!(
+                &reduce_fe.to_bytes(),
+                hex::decode(expected_reduced).unwrap().as_slice()
+            );
+        }
+
+        // Now do the 48-byte inputs
+        for (input_bytes, expected_reduced) in FROM_BYTES_WIDE_KAT_MEDIUM {
+            let mut padded_input_bytes = [0u8; 64];
+            padded_input_bytes[..48].copy_from_slice(&hex::decode(input_bytes).unwrap());
+            let reduce_fe = FieldElement::from_bytes_wide(&padded_input_bytes);
+            assert_eq!(
+                &reduce_fe.to_bytes(),
+                hex::decode(expected_reduced).unwrap().as_slice()
+            );
+        }
+    }
+
+    #[cfg(feature = "digest")]
+    fn fe_from_test_vector(expected_hex: &str) -> FieldElement {
+        let mut expected_hash = hex::decode(expected_hex).unwrap();
+        expected_hash.reverse();
+        FieldElement::from_bytes(&expected_hash.try_into().unwrap())
+    }
+
+    /// Hash to field test vectors from
+    /// https://www.rfc-editor.org/rfc/rfc9380.html#appendix-J.5.2
+    /// These are of the form (input_msg, output_field_elem)
+    #[cfg(feature = "digest")]
+    const RFC_HASH_TO_FIELD_KAT: &[(&[u8], &str)] = &[
+        (
+            b"",
+            "7f3e7fb9428103ad7f52db32f9df32505d7b427d894c5093f7a0f0374a30641d"
+        ),
+        (
+            b"abc",
+            "09cfa30ad79bd59456594a0f5d3a76f6b71c6787b04de98be5cd201a556e253b"
+        ),
+        (
+            b"abcdef0123456789",
+            "475ccff99225ef90d78cc9338e9f6a6bb7b17607c0c4428937de75d33edba941",
+        ),
+        (
+            b"q128_qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\
+            qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+            "049a1c8bd51bcb2aec339f387d1ff51428b88d0763a91bcdf6929814ac95d03d"
+        ),
+        (
+            b"a512_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "3cb0178a8137cefa5b79a3a57c858d7eeeaa787b2781be4a362a2f0750d24fa0"
+        )
+    ];
+
+    #[test]
+    #[cfg(feature = "digest")]
+    fn hash_to_field() {
+        use sha2::Sha512;
+        let dst = "QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_NU_";
+
+        for (msg, expected_hash_hex) in RFC_HASH_TO_FIELD_KAT {
+            let fe = FieldElement::hash_to_field::<Sha512, 1>(&[msg], &[dst.as_bytes()])[0];
+            let expected_fe = fe_from_test_vector(expected_hash_hex);
+
+            assert_eq!(fe, expected_fe);
+        }
+    }
+
+    /// Hash to field test vectors from
+    /// https://www.rfc-editor.org/rfc/rfc9380.html#appendix-J.5.1
+    /// These are of the form (input_msg, output_field_elem, output_field_elem)
+    #[cfg(feature = "digest")]
+    const RFC_HASH_TO_FIELD_KAT_2: &[(&[u8], &str, &str)] = &[
+        (
+            b"",
+            "03fef4813c8cb5f98c6eef88fae174e6e7d5380de2b007799ac7ee712d203f3a",
+            "780bdddd137290c8f589dc687795aafae35f6b674668d92bf92ae793e6a60c75"
+        ),
+        (
+            b"abc",
+            "5081955c4141e4e7d02ec0e36becffaa1934df4d7a270f70679c78f9bd57c227",
+            "005bdc17a9b378b6272573a31b04361f21c371b256252ae5463119aa0b925b76"
+        ),
+        (
+            b"abcdef0123456789",
+            "285ebaa3be701b79871bcb6e225ecc9b0b32dff2d60424b4c50642636a78d5b3",
+            "2e253e6a0ef658fedb8e4bd6a62d1544fd6547922acb3598ec6b369760b81b31"
+        ),
+        (
+            b"q128_qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\
+            qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+            "4fedd25431c41f2a606952e2945ef5e3ac905a42cf64b8b4d4a83c533bf321af",
+            "02f20716a5801b843987097a8276b6d869295b2e11253751ca72c109d37485a9"
+        ),
+        (
+            b"a512_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "6e34e04a5106e9bd59f64aba49601bf09d23b27f7b594e56d5de06df4a4ea33b",
+            "1c1c2cb59fc053f44b86c5d5eb8c1954b64976d0302d3729ff66e84068f5fd96"
+        )
+    ];
+
+    #[test]
+    #[cfg(feature = "digest")]
+    fn hash_to_field_2() {
+        use sha2::Sha512;
+        let dst = "QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_RO_";
+
+        for (msg, expected_hash_hex_1, expected_hash_hex_2) in
+            crate::field::test::RFC_HASH_TO_FIELD_KAT_2
+        {
+            let fe = FieldElement::hash_to_field::<Sha512, 2>(&[msg], &[dst.as_bytes()]);
+
+            let expected_fe_1 = fe_from_test_vector(expected_hash_hex_1);
+            assert_eq!(fe[0], expected_fe_1);
+
+            let expected_fe_2 = fe_from_test_vector(expected_hash_hex_2);
+            assert_eq!(fe[1], expected_fe_2);
+        }
     }
 }

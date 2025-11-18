@@ -9,7 +9,7 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-#![doc = include_str!("../../../../docs/avx2-notes.md")]
+#![doc = include_str!("../../../docs/avx2-notes.md")]
 
 pub(crate) mod field;
 

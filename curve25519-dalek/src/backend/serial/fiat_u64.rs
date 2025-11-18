@@ -19,10 +19,10 @@
 //! (allowing the CPU to compute two carry chains in parallel).  These
 //! will be used if available.
 
-#[path = "../u64/scalar.rs"]
+#[path = "./u64/scalar.rs"]
 pub mod scalar;
 
 pub mod field;
 
-#[path = "../u64/constants.rs"]
+#[path = "./u64/constants.rs"]
 pub mod constants;

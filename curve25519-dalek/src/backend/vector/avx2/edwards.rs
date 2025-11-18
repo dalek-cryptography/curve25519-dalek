@@ -360,7 +360,7 @@ mod test {
 
         macro_rules! print_var {
             ($x:ident) => {
-                println!("{} = {:?}", stringify!($x), $x.as_bytes());
+                println!("{} = {:?}", stringify!($x), $x.to_bytes());
             };
         }
 
@@ -472,7 +472,7 @@ mod test {
 
         macro_rules! print_var {
             ($x:ident) => {
-                println!("{} = {:?}", stringify!($x), $x.as_bytes());
+                println!("{} = {:?}", stringify!($x), $x.to_bytes());
             };
         }
 

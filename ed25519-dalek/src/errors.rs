@@ -13,11 +13,9 @@
 // Display) should be snake cased, for some reason.
 #![allow(non_snake_case)]
 
+use core::error::Error;
 use core::fmt;
 use core::fmt::Display;
-
-#[cfg(feature = "std")]
-use std::error::Error;
 
 /// Internal errors.  Most application-level developers will likely not
 /// need to pay any attention to these.
@@ -87,7 +85,6 @@ impl Display for InternalError {
     }
 }
 
-#[cfg(feature = "std")]
 impl Error for InternalError {}
 
 /// Errors which may occur while processing signatures and keypairs.
@@ -107,12 +104,12 @@ impl Error for InternalError {}
 pub type SignatureError = ed25519::signature::Error;
 
 impl From<InternalError> for SignatureError {
-    #[cfg(not(feature = "std"))]
+    #[cfg(not(feature = "alloc"))]
     fn from(_err: InternalError) -> SignatureError {
         SignatureError::new()
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     fn from(err: InternalError) -> SignatureError {
         SignatureError::from_source(err)
     }

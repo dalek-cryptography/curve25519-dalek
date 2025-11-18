@@ -78,14 +78,14 @@ jobs:
       - name: no_std / no feat ${{ matrix.crate }}
         run: cargo build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --no-default-features
       - name: no_std / cargo hack ${{ matrix.crate }}
-        run: cargo hack build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --each-feature --exclude-features default,std,getrandom
+        run: cargo hack build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --each-feature --exclude-features default,std,os_rng
 
   clippy:
     name: Check that clippy is happy
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@1.73.0
+    - uses: dtolnay/rust-toolchain@1.87.0
       with:
         components: clippy
     - run: cargo clippy --target x86_64-unknown-linux-gnu --all-features
@@ -109,3 +109,10 @@ jobs:
         with:
           toolchain: stable
       - run: cargo doc --all-features
+
+  typos:
+    name: Check for typos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: crate-ci/typos@v1.33.1

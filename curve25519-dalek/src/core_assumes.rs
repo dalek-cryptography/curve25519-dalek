@@ -297,4 +297,16 @@ pub fn zeroize_limbs5(limbs: &mut [u64; 5])
     limbs.zeroize();
 }
 
+#[cfg(feature = "zeroize")]
+// Wrapper for zeroize on bool values
+// After zeroizing, the bool should be false
+#[verifier::external_body]
+pub fn zeroize_bool(b: &mut bool)
+    ensures
+        *b == false,
+{
+    use zeroize::Zeroize;
+    b.zeroize();
+}
+
 } // verus!

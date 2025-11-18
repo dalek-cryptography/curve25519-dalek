@@ -227,4 +227,34 @@ pub fn conditional_negate_field<T>(a: &mut T, choice: Choice) where
     a.conditional_negate(choice);
 }
 
+/*** ConditionallySelectable specification for ProjectivePoint ***/
+
+/// Wrapper for conditional_swap on Montgomery ProjectivePoint
+/// This is needed because assume_specification doesn't work on provided trait methods
+#[verifier::external_body]
+pub fn conditional_swap_montgomery_projective(
+    a: &mut crate::montgomery::ProjectivePoint,
+    b: &mut crate::montgomery::ProjectivePoint,
+    choice: Choice,
+)
+    ensures
+// If choice is false, points remain unchanged
+
+        !choice_is_true(choice) ==> {
+            &&& a.U == old(a).U
+            &&& a.W == old(a).W
+            &&& b.U == old(b).U
+            &&& b.W == old(b).W
+        },
+        // If choice is true, points are swapped
+        choice_is_true(choice) ==> {
+            &&& a.U == old(b).U
+            &&& a.W == old(b).W
+            &&& b.U == old(a).U
+            &&& b.W == old(a).W
+        },
+{
+    crate::montgomery::ProjectivePoint::conditional_swap(a, b, choice)
+}
+
 } // verus!

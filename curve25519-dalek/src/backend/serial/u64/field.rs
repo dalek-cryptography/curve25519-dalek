@@ -170,8 +170,7 @@ impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
     // VERIFICATION NOTE: PROOF BYPASS
 
         requires
-            forall|i: int|
-                0 <= i < 5 ==> #[trigger] (old(self).limbs[i] + _rhs.limbs[i]) <= u64::MAX,
+            sum_of_limbs_bounded(old(self), _rhs, u64::MAX),
         ensures
             *self == spec_add_fe51_limbs(old(self), _rhs),
             spec_field_element(self) == math_field_add(
@@ -214,7 +213,7 @@ impl vstd::std_specs::ops::AddSpecImpl<&FieldElement51> for &FieldElement51 {
 
     // Pre-condition of add
     open spec fn add_req(self, rhs: &FieldElement51) -> bool {
-        forall|i: int| 0 <= i < 5 ==> #[trigger] (self.limbs[i] + rhs.limbs[i]) <= u64::MAX
+        sum_of_limbs_bounded(self, rhs, u64::MAX)
     }
 
     // Postcondition of add - delegates to spec_add_fe51_limbs for consistency

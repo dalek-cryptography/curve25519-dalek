@@ -34,6 +34,12 @@ pub open spec fn scalar_to_nat(s: &Scalar) -> nat {
     bytes_to_nat(&s.bytes)
 }
 
+/// Returns the mathematical value of a Scalar modulo the group order.
+/// This is the value used in scalar multiplication: [n]P where n = spec_scalar(s).
+pub open spec fn spec_scalar(s: &Scalar) -> nat {
+    bytes_to_nat(&s.bytes) % group_order()
+}
+
 /// Checks if a Scalar satisfies the canonical representation invariants:
 /// - Invariant #1: High bit (bit 255) is clear, ensuring s < 2^255
 /// - Invariant #2: Scalar is reduced modulo group order, i.e., s < ℓ
@@ -168,6 +174,26 @@ pub open spec fn reconstruct_radix_16(digits: Seq<i8>) -> int {
 /// This is just radix-2^w with w=4
 pub open spec fn is_valid_radix_16(digits: &[i8; 64]) -> bool {
     is_valid_radix_2w(digits, 4, 64)
+}
+
+/// Convert a boolean slice (bits in big-endian order) to a natural number
+/// This interprets bits[0] as the most significant bit
+/// Used for scalar multiplication where bits are processed MSB first
+pub open spec fn bits_be_to_nat(bits: &[bool], len: int) -> nat
+    recommends
+        0 <= len <= bits.len(),
+    decreases len,
+{
+    if len <= 0 {
+        0
+    } else {
+        let bit_value = if bits[len - 1] {
+            1nat
+        } else {
+            0nat
+        };
+        bit_value + 2 * bits_be_to_nat(bits, len - 1)
+    }
 }
 
 } // verus!

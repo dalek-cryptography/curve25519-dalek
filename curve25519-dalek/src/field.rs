@@ -40,6 +40,8 @@ use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power::*;
 use vstd::arithmetic::power2::*;
 
+use crate::lemmas::field_lemmas::as_bytes_lemmas::*;
+
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 
@@ -57,6 +59,8 @@ use crate::specs::field_specs_u64::*;
 
 #[allow(unused_imports)]
 use crate::lemmas::common_lemmas::pow_lemmas::*;
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::as_bytes_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::pow22501_t19_lemma::*;
 #[allow(unused_imports)]
@@ -95,9 +99,9 @@ impl vstd::std_specs::cmp::PartialEqSpecImpl for FieldElement {
 impl PartialEq for FieldElement {
     fn eq(&self, other: &FieldElement) -> (result:
         bool)/* VERIFICATION NOTE:
-     - PROOF BYPASS
      - DRAFT SPEC: spec_fe51_to_bytes is a complex spec function that should correspond to as_bytes()
      - PartialEqSpecImpl trait provides the external specification
+     - Proof follows from ct_eq and choice_into postconditions
      */
 
         ensures
@@ -112,8 +116,18 @@ impl PartialEq for FieldElement {
         let choice = self.ct_eq(other);
         let result = choice_into(choice);
 
-        // VERIFICATION NOTE: Need to prove the postcondition
-        assume(result == (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other)));
+        proof {
+            // Proof chain:
+            // 1. ct_eq ensures: choice_is_true(choice) == (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other))
+            // 2. choice_into ensures: result == choice_is_true(choice)
+            // 3. Therefore: result == (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other))
+            // This is a direct consequence of the two postconditions
+            assert(result == choice_is_true(choice));  // from choice_into
+            assert(choice_is_true(choice) == (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(
+                other,
+            )));  // from ct_eq
+            assert(result == (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other)));
+        }
 
         result
     }
@@ -125,9 +139,9 @@ impl ConstantTimeEq for FieldElement {
     /// are normalized to wire format before comparison.
     fn ct_eq(&self, other: &FieldElement) -> (result:
         Choice)/* <VERIFICATION NOTE>
-     - PROOF BYPASS
      - Use wrapper functions for ConstantTimeEq and CtOption
      - DRAFT SPEC: spec_fe51_to_bytes is a complex spec function that should correspond to as_bytes()
+     - Proof uses lemma_as_bytes_equals_spec_fe51_to_bytes
     </VERIFICATION NOTE> */
 
         ensures
@@ -139,8 +153,53 @@ impl ConstantTimeEq for FieldElement {
         /* <ORIGINAL CODE>
          self.as_bytes().ct_eq(&other.as_bytes())
          </ORIGINAL CODE> */
-        let result = ct_eq_bytes32(&self.as_bytes(), &other.as_bytes());
-        assume(choice_is_true(result) == (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other)));
+        // Call as_bytes() in exec mode (outside proof block)
+        let self_bytes = self.as_bytes();
+        let other_bytes = other.as_bytes();
+        let result = ct_eq_bytes32(&self_bytes, &other_bytes);
+
+        proof {
+            // Proof chain:
+            // 1. ct_eq_bytes32 ensures: choice_is_true(result) == (self_bytes == other_bytes)
+            // 2. Array equality <==> sequence equality
+            // 3. as_bytes postcondition: u8_32_as_nat(&bytes) == u64_5_as_nat(fe.limbs) % p()
+            // 4. lemma_as_bytes_equals_spec_fe51_to_bytes: seq_from32(&bytes) == spec_fe51_to_bytes(fe)
+            //    when u8_32_as_nat(&bytes) == u64_5_as_nat(fe.limbs) % p()
+            // 5. Therefore: choice_is_true(result) == (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other))
+            // From as_bytes() postcondition, we know:
+            // - u8_32_as_nat(&self_bytes) == u64_5_as_nat(self.limbs) % p()
+            // - u8_32_as_nat(&other_bytes) == u64_5_as_nat(other.limbs) % p()
+            // Apply lemmas with the bytes and the postcondition requirement
+            lemma_as_bytes_equals_spec_fe51_to_bytes(self, &self_bytes);
+            lemma_as_bytes_equals_spec_fe51_to_bytes(other, &other_bytes);
+
+            // Now we have:
+            // - seq_from32(&self_bytes) == spec_fe51_to_bytes(self)
+            // - seq_from32(&other_bytes) == spec_fe51_to_bytes(other)
+
+            // Prove the bidirectional implication:
+            // (self_bytes == other_bytes) <==> (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other))
+
+            // Forward direction: array equality implies spec equality
+            if self_bytes == other_bytes {
+                // Arrays equal => all elements equal => sequences equal
+                assert forall|i: int| 0 <= i < 32 implies self_bytes[i] == other_bytes[i] by {}
+                assert(seq_from32(&self_bytes) == seq_from32(&other_bytes));
+                assert(spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other));
+            }
+            // Backward direction: spec equality implies array equality
+
+            if spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other) {
+                assert(seq_from32(&self_bytes) == seq_from32(&other_bytes));
+                lemma_seq_eq_implies_array_eq(&self_bytes, &other_bytes);
+                assert(self_bytes == other_bytes);
+            }
+            // Therefore: (self_bytes == other_bytes) <==> (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other))
+            // And since ct_eq_bytes32 ensures: choice_is_true(result) == (self_bytes == other_bytes)
+            // We conclude: choice_is_true(result) == (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other))
+
+        }
+
         result
     }
 }

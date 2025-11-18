@@ -128,4 +128,54 @@ pub proof fn lemma_u8_cast_is_mod_256(x: u64)
     assert((x as u8) == x % 256) by (bit_vector);
 }
 
+/// Helper: Sum of two numbers both divisible by d is divisible by d
+///
+/// Mathematical property: Closure of divisibility under addition
+/// If d | a and d | b, then d | (a + b)
+pub proof fn lemma_mod_sum_both_divisible(a: nat, b: nat, d: nat)
+    requires
+        d > 0,
+        a % d == 0,
+        b % d == 0,
+    ensures
+        (a + b) % d == 0,
+{
+    // Since a % d == 0 and b % d == 0, we have (0 + 0) % d == (a + b) % d
+    assert((a + b) % d == 0) by {
+        lemma_add_mod_noop(a as int, b as int, d as int);
+        assert((0 + 0) % d == 0) by (nonlinear_arith)
+            requires
+                d > 0,
+        ;
+    }
+}
+
+/// Helper: Divisibility factorization
+///
+/// If n is divisible by (a·b), then (n/a) is divisible by b.
+///
+/// Mathematical property: Divisibility distribution across division
+pub proof fn lemma_divisibility_factor(n: nat, a: nat, b: nat)
+    requires
+        n % (a * b) == 0,
+        a > 0,
+        b > 0,
+    ensures
+        (n / a) % b == 0,
+{
+    // Use lemma_mod_breakdown: n % (a * b) = a * ((n / a) % b) + n % a
+    // Since n % (a * b) == 0: 0 = a * ((n / a) % b) + n % a
+    // Both terms are non-negative and sum to 0, so both must be 0
+    assert((n / a) % b == 0) by {
+        lemma_mod_breakdown(n as int, a as int, b as int);
+        assert(0 == a * ((n / a) % b) + n % a);
+        // Since a > 0 and a * ((n / a) % b) = 0, we have (n / a) % b = 0
+        assert((n / a) % b == 0) by (nonlinear_arith)
+            requires
+                a > 0,
+                a * ((n / a) % b) == 0,
+        ;
+    }
+}
+
 } // verus!

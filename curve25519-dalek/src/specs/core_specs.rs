@@ -70,6 +70,20 @@ pub open spec fn u8_32_as_nat_rec(bytes: &[u8; 32], index: nat) -> nat
     }
 }
 
+/// Lemma: u8_32_as_nat equals u8_32_as_nat_rec starting at index 0
+/// Both represent the complete sum of all 32 bytes
+pub proof fn lemma_u8_32_as_nat_equals_rec(bytes: &[u8; 32])
+    ensures
+        u8_32_as_nat(bytes) == u8_32_as_nat_rec(bytes, 0),
+{
+    // Reveal the recursive definition with enough fuel to unfold from 0 to 32
+    reveal_with_fuel(u8_32_as_nat_rec, 33);
+
+    // u8_32_as_nat is defined explicitly as the sum
+    // u8_32_as_nat_rec(bytes, 0) unfolds recursively to the same sum
+    assert(u8_32_as_nat_rec(bytes, 32) == 0);
+}
+
 /// Load 8 consecutive bytes from a byte array and interpret as a little-endian u64.
 ///
 /// Returns: bytes[i] + bytes[i+1] * 2^8 + ... + bytes[i+7] * 2^56

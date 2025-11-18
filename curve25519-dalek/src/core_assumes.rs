@@ -79,6 +79,10 @@ pub open spec fn seq_from16(b: &[u8; 16]) -> Seq<u8> {
     Seq::new(16, |i: int| b[i])
 }
 
+pub open spec fn seq_from32(b: &[u8; 32]) -> Seq<u8> {
+    b@
+}
+
 #[verifier::external_body]
 pub fn u16_to_le_bytes(x: u16) -> (bytes: [u8; 2])
     ensures

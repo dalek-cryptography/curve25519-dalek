@@ -116,6 +116,38 @@ pub proof fn lemma_bridge_pow_as_nat_to_spec(
     assert((pow(x as int, exp) as nat) % p() == (pow(y as int, exp) as nat) % p());
 }
 
+pub proof fn lemma_u64_5_as_nat_add(a: [u64; 5], b: [u64; 5])
+    requires
+        forall|i: int| 0 <= i < 5 ==> b[i] as nat + a[i] as nat <= u64::MAX,
+    ensures
+        u64_5_as_nat(
+            [
+                (a[0] + b[0]) as u64,
+                (a[1] + b[1]) as u64,
+                (a[2] + b[2]) as u64,
+                (a[3] + b[3]) as u64,
+                (a[4] + b[4]) as u64,
+            ],
+        ) == u64_5_as_nat(a) + u64_5_as_nat(b),
+{
+    let c: [u64; 5] = [
+        (a[0] + b[0]) as u64,
+        (a[1] + b[1]) as u64,
+        (a[2] + b[2]) as u64,
+        (a[3] + b[3]) as u64,
+        (a[4] + b[4]) as u64,
+    ];
+    // distribute pow2
+    assert(u64_5_as_nat(c) == (a[0] + b[0]) + pow2(51) * a[1] + pow2(51) * b[1] + pow2(102) * a[2]
+        + pow2(102) * b[2] + pow2(153) * a[3] + pow2(153) * b[3] + pow2(204) * a[4] + pow2(204)
+        * b[4]) by {
+        lemma_mul_is_distributive_add(pow2(1 * 51) as int, a[1] as int, b[1] as int);
+        lemma_mul_is_distributive_add(pow2(2 * 51) as int, a[2] as int, b[2] as int);
+        lemma_mul_is_distributive_add(pow2(3 * 51) as int, a[3] as int, b[3] as int);
+        lemma_mul_is_distributive_add(pow2(4 * 51) as int, a[4] as int, b[4] as int);
+    }
+}
+
 // Lemma: If a > b pointwise, then u64_5_as_nat(a - b) = u64_5_as_nat(a) - u64_5_as_nat(b)
 pub proof fn lemma_u64_5_as_nat_sub(a: [u64; 5], b: [u64; 5])
     requires

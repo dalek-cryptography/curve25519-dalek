@@ -2,6 +2,8 @@
 // A lemma should be in this module instead of `common_lemmas` if:
 //  - It references some constant prominent in `field_verus` (e.g. 51 for bit operations, 2^255 -19)
 //  - It defines or reasons about a spec function relevant only to `field_verus`
+pub mod add_lemmas;
+
 pub mod as_bytes_lemmas;
 
 pub mod u64_5_as_nat_lemmas;

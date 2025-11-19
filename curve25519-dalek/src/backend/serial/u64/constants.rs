@@ -173,6 +173,38 @@ pub const ED25519_BASEPOINT_POINT: EdwardsPoint = EdwardsPoint {
     ]),
 };
 
+/// The Ed25519 basepoint, mul by 2^128, as an `EdwardsPoint`.
+pub const ED25519_BASEPOINT_128_POINT: EdwardsPoint = EdwardsPoint {
+    X: FieldElement51([
+        1573694877509226,
+        2118644427590872,
+        940662180141619,
+        707110682864191,
+        1255997186674731,
+    ]),
+    Y: FieldElement51([
+        1162474291335259,
+        820106152083656,
+        523232807607258,
+        2134608004007539,
+        729879497843472,
+    ]),
+    Z: FieldElement51([
+        445134475408207,
+        1820906444767788,
+        40212681131971,
+        1448661247201044,
+        965705781338211,
+    ]),
+    T: FieldElement51([
+        1855274855831337,
+        1818119365171423,
+        269991889323070,
+        1370944576683708,
+        140790155072480,
+    ]),
+};
+
 /// The 8-torsion subgroup \\(\mathcal E \[8\]\\).
 ///
 /// In the case of Curve25519, it is cyclic; the \\(i\\)-th element of

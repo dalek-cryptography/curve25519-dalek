@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use rand::{rngs::OsRng, thread_rng};
+use rand::{rngs::OsRng, thread_rng, Rng};
 
 use criterion::{
     criterion_main, measurement::Measurement, BatchSize, BenchmarkGroup, BenchmarkId, Criterion,
@@ -56,6 +56,38 @@ mod edwards_benches {
         });
     }
 
+    fn vartime_triple_base_scalar_mul_128<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        c.bench_function("Variable-time a1*A1+a2*A2+b*B (128-bit a1,a2)", |bench| {
+            let mut rng = thread_rng();
+            let A1 = EdwardsPoint::mul_base(&Scalar::random(&mut rng));
+            let A2 = EdwardsPoint::mul_base(&Scalar::random(&mut rng));
+
+            bench.iter_batched(
+                || {
+                    // Generate 128-bit scalars for a1 and a2
+                    let mut a1_bytes = [0u8; 32];
+                    let mut a2_bytes = [0u8; 32];
+
+                    // Fill lower 16 bytes with random data, upper 16 bytes are zero
+                    for i in 0..16 {
+                        a1_bytes[i] = rng.gen();
+                        a2_bytes[i] = rng.gen();
+                    }
+
+                    let a1 = Scalar::from_bytes_mod_order(a1_bytes);
+                    let a2 = Scalar::from_bytes_mod_order(a2_bytes);
+                    let b = Scalar::random(&mut rng);
+
+                    (a1, a2, b)
+                },
+                |(a1, a2, b)| {
+                    EdwardsPoint::vartime_triple_scalar_mul_basepoint(&a1, &A1, &a2, &A2, &b)
+                },
+                BatchSize::SmallInput,
+            );
+        });
+    }
+
     pub(crate) fn edwards_benches() {
         let mut c = Criterion::default();
         let mut g = c.benchmark_group("edwards benches");
@@ -65,6 +97,7 @@ mod edwards_benches {
         consttime_fixed_base_scalar_mul(&mut g);
         consttime_variable_base_scalar_mul(&mut g);
         vartime_double_base_scalar_mul(&mut g);
+        vartime_triple_base_scalar_mul_128(&mut g);
     }
 }
 

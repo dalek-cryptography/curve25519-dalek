@@ -247,16 +247,37 @@ impl FieldElement {
     </VERIFICATION NOTE> */
 
         ensures
-            choice_is_true(result) == (spec_fe51_to_bytes(self)
-                == seq![0u8; 32]),
     // SPEC BYPASS through placeholder spec_fe51_to_bytes
 
+            choice_is_true(result) == (spec_fe51_to_bytes(self) == seq![0u8; 32]),
     {
         let zero = [0u8;32];
         let bytes = self.as_bytes();
 
         let result = ct_eq_bytes32(&bytes, &zero);
-        assume(choice_is_true(result) == (spec_fe51_to_bytes(self) == seq![0u8; 32]));
+
+        proof {
+            // Proof: choice_is_true(result) == (spec_fe51_to_bytes(self) == seq![0u8; 32])
+            //
+            // From ct_eq_bytes32 postcondition: choice_is_true(result) == (bytes == zero)
+            // From as_bytes() postcondition: u8_32_as_nat(&bytes) == u64_5_as_nat(self.limbs) % p()
+            //
+            // Apply lemma to establish: seq_from32(&bytes) == spec_fe51_to_bytes(self)
+            lemma_as_bytes_equals_spec_fe51_to_bytes(self, &bytes);
+
+            // Prove bidirectional implication: (bytes == zero) <==> (spec_fe51_to_bytes(self) == seq![0u8; 32])
+
+            if bytes == zero {
+                // Forward: byte array equality implies spec equality
+                assert(spec_fe51_to_bytes(self) == seq![0u8; 32]);
+            }
+            if spec_fe51_to_bytes(self) == seq![0u8; 32] {
+                // Backward: spec equality implies byte array equality
+                assert(seq_from32(&bytes) == seq_from32(&zero));
+                assert(bytes == zero);
+            }
+        }
+
         result
     }
 

@@ -87,7 +87,11 @@ pub mod spec {
     impl VartimeMultiscalarMul for Straus {
         type Point = EdwardsPoint;
 
-        fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
+        fn optional_multiscalar_mul<I, J>(
+            scalars: I,
+            points: J,
+            scalar_bits: Option<usize>,
+        ) -> Option<EdwardsPoint>
         where
             I: IntoIterator,
             I::Item: Borrow<Scalar>,
@@ -104,7 +108,8 @@ pub mod spec {
 
             let mut Q = ExtendedPoint::identity();
 
-            for i in (0..256).rev() {
+            let scalar_bits = scalar_bits.unwrap_or(256);
+            for i in (0..scalar_bits).rev() {
                 Q = Q.double();
 
                 for (naf, lookup_table) in nafs.iter().zip(lookup_tables.iter()) {

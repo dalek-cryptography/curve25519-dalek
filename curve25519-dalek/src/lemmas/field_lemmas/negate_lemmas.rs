@@ -10,6 +10,8 @@ use super::u64_5_as_nat_lemmas::*;
 
 use super::super::common_lemmas::shift_lemmas::*;
 
+use crate::backend::serial::u64::field::FieldElement51;
+use crate::specs::field_specs::*;
 use crate::specs::field_specs_u64::*;
 
 verus! {
@@ -122,6 +124,100 @@ pub proof fn proof_negate(limbs: [u64; 5])
             assert(((16 * 0x8000000000000) as u64 >> 51) == 16) by (compute);
         }
         lemma_mod_multiples_basic((16 - k) as int, p() as int);
+    }
+}
+
+pub proof fn lemma_neg(elem: &FieldElement51)
+    requires
+// negate postcondition
+
+        (u64_5_as_nat(spec_negate(elem.limbs)) + u64_5_as_nat(elem.limbs)) % p() == 0,
+    ensures
+        u64_5_as_nat(spec_negate(elem.limbs)) % p() == math_field_neg(spec_field_element(elem)),
+{
+    let x = spec_field_element(elem);
+    let y = u64_5_as_nat(spec_negate(elem.limbs)) % p();
+
+    assert(p() > 0) by {
+        pow255_gt_19();
+    }
+
+    assert(x < p()) by {
+        lemma_mod_bound(u64_5_as_nat(elem.limbs) as int, p() as int);
+    }
+    assert(y < p()) by {
+        lemma_mod_bound(u64_5_as_nat(spec_negate(elem.limbs)) as int, p() as int);
+    }
+
+    assert((y + x) % p() == 0) by {
+        lemma_add_mod_noop(
+            u64_5_as_nat(spec_negate(elem.limbs)) as int,
+            u64_5_as_nat(elem.limbs) as int,
+            p() as int,
+        );
+    }
+    assert(y == (p() - (x % p())) as nat % p()) by {
+        assert(p() - (x % p()) >= 0) by {
+            lemma_mod_bound(x as int, p() as int);
+        }
+        assert(x % p() == x) by {
+            lemma_mod_twice(spec_field_element_as_nat(elem) as int, p() as int);
+        }
+        if (x == 0) {
+            assert(y % p() == 0);  // follows from (y + x) % p == 0
+            assert(y == 0) by {
+                // contradiction proof
+                if (y > 0) {
+                    assert(y >= p()) by {
+                        lemma_mod_is_zero(y, p());
+                    }
+                }
+            }
+            assert(p() % p() == 0) by {
+                lemma_mod_self_0(p() as int);
+            }
+        } else {
+            // x > 0
+            // consequences:
+            assert(p() - (x % p()) < p());
+            assert(y + x > 0);
+
+            assert((p() - (x % p())) as nat % p() == p() - x) by {
+                lemma_small_mod((p() - (x % p())) as nat, p());
+            }
+
+            assert(y + x == p()) by {
+                let z = y + x;
+                assert(z == p() * (z / p())) by {
+                    // we know z % p == 0
+                    lemma_fundamental_div_mod(z as int, p() as int);
+                }
+                assert(z / p() == 1) by {
+                    assert(z / p() >= 1) by {
+                        assert(z >= p()) by {
+                            lemma_mod_is_zero(z, p());
+                        }
+                    }
+                    assert(z / p() < 2) by {
+                        assert(z <= 2 * p()) by {
+                            // known
+                            assert(x < p());
+                            assert(y < p());
+                        }
+                        assert(2 * p() / p() == 2) by {
+                            lemma_div_by_multiple(2, p() as int);
+                        }
+                        lemma_div_by_multiple_is_strongly_ordered(
+                            z as int,
+                            (2 * p()) as int,
+                            2,
+                            p() as int,
+                        );
+                    }
+                }
+            }
+
+        }
     }
 }
 

@@ -567,19 +567,18 @@ impl vstd::std_specs::ops::NegSpecImpl for &FieldElement51 {
 impl Neg for &FieldElement51 {
     type Output = FieldElement51;
 
-    fn neg(self) -> (output:
-        FieldElement51)/*  VERIFICATION NOTE:
-    - PROOF BYPASS
-    - REVIEW SPEC WHILE DOING THE PROOF
-    */
-
+    fn neg(self) -> (output: FieldElement51)
         ensures
             spec_field_element(&output) == math_field_neg(spec_field_element(self)),
+            forall|i: int| 0 <= i < 5 ==> output.limbs[i] < (1u64 << 52),
     {
         let mut output = *self;
-        assume(forall|i: int| 0 <= i < 5 ==> output.limbs[i] < (1u64 << 51));
         output.negate();
-        assume(spec_field_element(&output) == math_field_neg(spec_field_element(self)));
+
+        proof {
+            lemma_neg(self);
+        }
+
         output
     }
 }
@@ -733,6 +732,7 @@ impl FieldElement51 {
             u64_5_as_nat(self.limbs) == 16 * p() - u64_5_as_nat(old(self).limbs) - p() * ((
             36028797018963952u64 - old(self).limbs[4]) as u64 >> 51),
             (u64_5_as_nat(self.limbs) + u64_5_as_nat(old(self).limbs)) % p() == 0,
+            self.limbs == spec_negate(old(self).limbs),
     {
         proof {
             lemma_neg_no_underflow(self.limbs);

@@ -214,8 +214,8 @@ impl FieldElement {
     /// If negative, return `Choice(1)`.  Otherwise, return `Choice(0)`.
     pub(crate) fn is_negative(&self) -> (result:
         Choice)/* VERIFICATION NOTE:
-    - PROOF BYPASS
     - DRAFT SPEC: spec_fe51_to_bytes is a complex spec function that should correspond to as_bytes()
+    - Proof uses lemma_as_bytes_equals_spec_fe51_to_bytes to connect as_bytes() with spec_fe51_to_bytes()
     </VERIFICATION NOTE> */
 
         ensures
@@ -223,7 +223,13 @@ impl FieldElement {
     {
         let bytes = self.as_bytes();
         let result = Choice::from(bytes[0] & 1);
-        assume(choice_is_true(result) == (spec_fe51_to_bytes(self)[0] & 1 == 1));
+
+        proof {
+            // From as_bytes() postcondition: u8_32_as_nat(&bytes) == u64_5_as_nat(self.limbs) % p()
+            // Apply lemma to establish that bytes matches spec_fe51_to_bytes
+            lemma_as_bytes_equals_spec_fe51_to_bytes(self, &bytes);
+        }
+
         result
     }
 

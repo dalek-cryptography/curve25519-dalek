@@ -76,7 +76,11 @@ fn get_selected_backend() -> BackendKind {
 
 #[allow(missing_docs)]
 #[cfg(feature = "alloc")]
-pub fn pippenger_optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
+pub fn pippenger_optional_multiscalar_mul<I, J>(
+    scalars: I,
+    points: J,
+    scalar_bits: Option<usize>,
+) -> Option<EdwardsPoint>
 where
     I: IntoIterator,
     I::Item: core::borrow::Borrow<Scalar>,
@@ -87,12 +91,12 @@ where
     match get_selected_backend() {
         #[cfg(curve25519_dalek_backend = "simd")]
         BackendKind::Avx2 =>
-            vector::scalar_mul::pippenger::spec_avx2::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
+            vector::scalar_mul::pippenger::spec_avx2::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points, scalar_bits),
         #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
         BackendKind::Avx512 =>
-            vector::scalar_mul::pippenger::spec_avx512ifma_avx512vl::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
+            vector::scalar_mul::pippenger::spec_avx512ifma_avx512vl::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points, scalar_bits),
         BackendKind::Serial =>
-            serial::scalar_mul::pippenger::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
+            serial::scalar_mul::pippenger::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points, scalar_bits),
     }
 }
 
@@ -195,7 +199,11 @@ where
 
 #[allow(missing_docs)]
 #[cfg(feature = "alloc")]
-pub fn straus_optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
+pub fn straus_optional_multiscalar_mul<I, J>(
+    scalars: I,
+    points: J,
+    scalar_bits: Option<usize>,
+) -> Option<EdwardsPoint>
 where
     I: IntoIterator,
     I::Item: core::borrow::Borrow<Scalar>,
@@ -207,7 +215,9 @@ where
         #[cfg(curve25519_dalek_backend = "simd")]
         BackendKind::Avx2 => {
             vector::scalar_mul::straus::spec_avx2::Straus::optional_multiscalar_mul::<I, J>(
-                scalars, points,
+                scalars,
+                points,
+                scalar_bits,
             )
         }
         #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
@@ -215,10 +225,14 @@ where
             vector::scalar_mul::straus::spec_avx512ifma_avx512vl::Straus::optional_multiscalar_mul::<
                 I,
                 J,
-            >(scalars, points)
+            >(scalars, points, scalar_bits)
         }
         BackendKind::Serial => {
-            serial::scalar_mul::straus::Straus::optional_multiscalar_mul::<I, J>(scalars, points)
+            serial::scalar_mul::straus::Straus::optional_multiscalar_mul::<I, J>(
+                scalars,
+                points,
+                scalar_bits,
+            )
         }
     }
 }

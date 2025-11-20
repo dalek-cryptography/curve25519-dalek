@@ -829,7 +829,11 @@ impl MultiscalarMul for EdwardsPoint {
 impl VartimeMultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
 
-    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
+    fn optional_multiscalar_mul<I, J>(
+        scalars: I,
+        points: J,
+        scalar_bits: Option<usize>,
+    ) -> Option<EdwardsPoint>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
@@ -853,9 +857,9 @@ impl VartimeMultiscalarMul for EdwardsPoint {
         let size = s_lo;
 
         if size < 190 {
-            crate::backend::straus_optional_multiscalar_mul(scalars, points)
+            crate::backend::straus_optional_multiscalar_mul(scalars, points, scalar_bits)
         } else {
-            crate::backend::pippenger_optional_multiscalar_mul(scalars, points)
+            crate::backend::pippenger_optional_multiscalar_mul(scalars, points, scalar_bits)
         }
     }
 }
@@ -2045,7 +2049,7 @@ mod test {
         // Compute H1 = <xs, Gs> (consttime)
         let H1 = EdwardsPoint::multiscalar_mul(&xs, &Gs);
         // Compute H2 = <xs, Gs> (vartime)
-        let H2 = EdwardsPoint::vartime_multiscalar_mul(&xs, &Gs);
+        let H2 = EdwardsPoint::vartime_multiscalar_mul(&xs, &Gs, None);
         // Compute H3 = <xs, Gs> = sum(xi^2) * B
         let H3 = EdwardsPoint::mul_base(&check);
 
@@ -2132,6 +2136,7 @@ mod test {
         let Q = EdwardsPoint::vartime_multiscalar_mul(
             static_scalars.iter().chain(dynamic_scalars.iter()),
             static_points.iter().chain(dynamic_points.iter()),
+            None,
         );
 
         let R = EdwardsPoint::mul_base(&check_scalar);
@@ -2160,6 +2165,7 @@ mod test {
             let result = EdwardsPoint::vartime_multiscalar_mul(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT],
+                None,
             );
             assert_eq!(result.compress(), DOUBLE_SCALAR_MULT_RESULT);
         }
@@ -2171,6 +2177,7 @@ mod test {
             let result_vartime = EdwardsPoint::vartime_multiscalar_mul(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT],
+                None,
             );
             let result_consttime = EdwardsPoint::multiscalar_mul(
                 &[A_SCALAR, B_SCALAR],

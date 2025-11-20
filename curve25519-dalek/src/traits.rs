@@ -149,6 +149,10 @@ pub trait VartimeMultiscalarMul {
     /// involving compressed points.  Accepting `Option<Point>` allows
     /// inlining point decompression into the multiscalar call,
     /// avoiding the need for temporary buffers.
+    ///
+    /// It optionally takes a `scalar_bits` parameter, which can be used for early
+    /// termination if the scalars are known to be smaller than `2^scalar_bits`.
+    ///
     /// ```
     /// #[cfg(feature = "alloc")]
     /// # {
@@ -172,12 +176,13 @@ pub trait VartimeMultiscalarMul {
     /// let compressed = [P.compress(), Q.compress(), R.compress()];
     ///
     /// // Now we can compute A1 = a*P + b*Q + c*R using P, Q, R:
-    /// let A1 = RistrettoPoint::vartime_multiscalar_mul(&abc, &PQR);
+    /// let A1 = RistrettoPoint::vartime_multiscalar_mul(&abc, &PQR, None);
     ///
     /// // Or using the compressed points:
     /// let A2 = RistrettoPoint::optional_multiscalar_mul(
     ///     &abc,
     ///     compressed.iter().map(|pt| pt.decompress()),
+    ///     None,
     /// );
     ///
     /// assert_eq!(A2, Some(A1));
@@ -188,12 +193,17 @@ pub trait VartimeMultiscalarMul {
     ///         .chain(abc.iter()),
     ///     compressed.iter().map(|pt| pt.decompress())
     ///         .chain(PQR.iter().map(|&pt| Some(pt))),
+    ///     None,
     /// );
     ///
     /// assert_eq!(A3, Some(A1+A1));
     /// # }
     /// ```
-    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<Self::Point>
+    fn optional_multiscalar_mul<I, J>(
+        scalars: I,
+        points: J,
+        scalar_bits: Option<usize>,
+    ) -> Option<Self::Point>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
@@ -205,6 +215,9 @@ pub trait VartimeMultiscalarMul {
     /// Q = c\_1 P\_1 + \cdots + c\_n P\_n,
     /// $$
     /// using variable-time operations.
+    ///
+    /// It optionally takes a `scalar_bits` parameter, which can be used for early
+    /// termination if the scalars are known to be smaller than `2^scalar_bits`.
     ///
     /// It is an error to call this function with two iterators of different lengths.
     ///
@@ -235,18 +248,22 @@ pub trait VartimeMultiscalarMul {
     ///
     /// // A1 = a*P + b*Q + c*R
     /// let abc = [a,b,c];
-    /// let A1 = RistrettoPoint::vartime_multiscalar_mul(&abc, &[P,Q,R]);
+    /// let A1 = RistrettoPoint::vartime_multiscalar_mul(&abc, &[P,Q,R], None);
     /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
     ///
     /// // A2 = (-a)*P + (-b)*Q + (-c)*R
     /// let minus_abc = abc.iter().map(|x| -x);
-    /// let A2 = RistrettoPoint::vartime_multiscalar_mul(minus_abc, &[P,Q,R]);
+    /// let A2 = RistrettoPoint::vartime_multiscalar_mul(minus_abc, &[P,Q,R], None);
     /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
     ///
     /// assert_eq!(A1.compress(), (-A2).compress());
     /// # }
     /// ```
-    fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> Self::Point
+    fn vartime_multiscalar_mul<I, J>(
+        scalars: I,
+        points: J,
+        scalar_bits: Option<usize>,
+    ) -> Self::Point
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
@@ -257,6 +274,7 @@ pub trait VartimeMultiscalarMul {
         Self::optional_multiscalar_mul(
             scalars,
             points.into_iter().map(|P| Some(P.borrow().clone())),
+            scalar_bits,
         )
         .expect("should return some point")
     }

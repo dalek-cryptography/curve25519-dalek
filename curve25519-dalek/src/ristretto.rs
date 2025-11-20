@@ -994,7 +994,11 @@ impl MultiscalarMul for RistrettoPoint {
 impl VartimeMultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
 
-    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<RistrettoPoint>
+    fn optional_multiscalar_mul<I, J>(
+        scalars: I,
+        points: J,
+        scalar_bits: Option<usize>,
+    ) -> Option<RistrettoPoint>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
@@ -1002,7 +1006,8 @@ impl VartimeMultiscalarMul for RistrettoPoint {
     {
         let extended_points = points.into_iter().map(|opt_P| opt_P.map(|P| P.0));
 
-        EdwardsPoint::optional_multiscalar_mul(scalars, extended_points).map(RistrettoPoint)
+        EdwardsPoint::optional_multiscalar_mul(scalars, extended_points, scalar_bits)
+            .map(RistrettoPoint)
     }
 }
 
@@ -1862,6 +1867,7 @@ mod test {
         let Q = RistrettoPoint::vartime_multiscalar_mul(
             static_scalars.iter().chain(dynamic_scalars.iter()),
             static_points.iter().chain(dynamic_points.iter()),
+            None,
         );
 
         let R = RistrettoPoint::mul_base(&check_scalar);

@@ -160,7 +160,7 @@ mod multiscalar_benches {
                     // benchmark into the highest cache levels).
                     b.iter_batched(
                         || construct_scalars(size),
-                        |scalars| EdwardsPoint::vartime_multiscalar_mul(&scalars, &points, None),
+                        |scalars| EdwardsPoint::vartime_multiscalar_mul(&scalars, &points),
                         BatchSize::SmallInput,
                     );
                 },

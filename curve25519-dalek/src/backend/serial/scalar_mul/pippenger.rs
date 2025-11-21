@@ -64,11 +64,7 @@ pub struct Pippenger;
 impl VartimeMultiscalarMul for Pippenger {
     type Point = EdwardsPoint;
 
-    fn optional_multiscalar_mul<I, J>(
-        scalars: I,
-        points: J,
-        _scalar_bits: Option<usize>,
-    ) -> Option<EdwardsPoint>
+    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
@@ -193,7 +189,7 @@ mod test {
             let points = &points[0..n].to_vec();
             let control: EdwardsPoint = premultiplied[0..n].iter().sum();
 
-            let subject = Pippenger::vartime_multiscalar_mul(scalars.clone(), points.clone(), None);
+            let subject = Pippenger::vartime_multiscalar_mul(scalars.clone(), points.clone());
 
             assert_eq!(subject.compress(), control.compress());
 

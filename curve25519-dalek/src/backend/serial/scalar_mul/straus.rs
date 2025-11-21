@@ -156,11 +156,7 @@ impl VartimeMultiscalarMul for Straus {
     /// The non-adjacent form has signed, odd digits.  Using only odd
     /// digits halves the table size (since we only need odd
     /// multiples), or gives fewer additions for the same table size.
-    fn optional_multiscalar_mul<I, J>(
-        scalars: I,
-        points: J,
-        scalar_bits: Option<usize>,
-    ) -> Option<EdwardsPoint>
+    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
@@ -184,8 +180,7 @@ impl VartimeMultiscalarMul for Straus {
 
         let mut r = ProjectivePoint::identity();
 
-        let scalar_bits = scalar_bits.unwrap_or(256);
-        for i in (0..scalar_bits).rev() {
+        for i in (0..256).rev() {
             let mut t: CompletedPoint = r.double();
 
             for (naf, lookup_table) in nafs.iter().zip(lookup_tables.iter()) {
@@ -202,69 +197,5 @@ impl VartimeMultiscalarMul for Straus {
         }
 
         Some(r.as_extended())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    // Tests for Straus multiscalar multiplication behavior
-    // Ensures scalars < 128 bits behave the same when passing
-    // `scalar_bits = Some(128)` and `None` to the Straus implementation.
-
-    use std::vec::Vec;
-
-    use crate::{edwards::EdwardsPoint, scalar::Scalar, traits::VartimeMultiscalarMul};
-
-    fn scalar_from_u128(x: u128) -> Scalar {
-        let mut bytes = [0u8; 32];
-        bytes[..16].copy_from_slice(&x.to_le_bytes());
-        Scalar::from_bytes_mod_order(bytes)
-    }
-
-    #[test]
-    fn straus_multiscalar_mul_128bit_same_as_default() {
-        // Construct a small set of scalars all less than 2^128.
-        let scalar_values: [u128; 8] = [
-            1,
-            2,
-            3,
-            0xFFFF_FFFF_FFFF_FFFFu128,
-            (1u128 << 127) - 1,
-            0x1234_5678_9ABC_DEF0u128,
-            0x0F0F_F0F0_F0F0_0F0Fu128,
-            0xDEAD_BEEF_DEAD_BEEFu128,
-        ];
-
-        let scalars: Vec<Scalar> = scalar_values.iter().map(|&v| scalar_from_u128(v)).collect();
-
-        // Create a corresponding list of points (multiples of basepoint).
-        let mut points: Vec<EdwardsPoint> = Vec::with_capacity(scalars.len());
-        for (i, _s) in scalars.iter().enumerate() {
-            // Use different base multipliers (i+10) to diversify points.
-            let bp = EdwardsPoint::mul_base(&scalar_from_u128((i as u128) + 10));
-            points.push(bp);
-        }
-
-        // Prepare iterators for the backend function: scalars and Option<EdwardsPoint>
-        let scalar_iter = scalars.iter().cloned();
-        let point_opts_some = points.iter().cloned().map(Some);
-
-        // Compute with explicit 128 bits
-        let res_with_128 = EdwardsPoint::optional_multiscalar_mul(
-            scalar_iter.clone(),
-            point_opts_some.clone(),
-            Some(128),
-        )
-        .expect("optional_multiscalar_mul returned None with Some(128) flag");
-
-        // Compute with default (None)
-        let res_default = EdwardsPoint::optional_multiscalar_mul(
-            scalar_iter.clone(),
-            point_opts_some.clone(),
-            None,
-        )
-        .expect("optional_multiscalar_mul returned None with None flag");
-
-        assert_eq!(res_with_128.compress(), res_default.compress());
     }
 }

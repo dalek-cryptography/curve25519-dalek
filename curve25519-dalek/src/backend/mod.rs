@@ -76,11 +76,7 @@ fn get_selected_backend() -> BackendKind {
 
 #[allow(missing_docs)]
 #[cfg(feature = "alloc")]
-pub fn pippenger_optional_multiscalar_mul<I, J>(
-    scalars: I,
-    points: J,
-    scalar_bits: Option<usize>,
-) -> Option<EdwardsPoint>
+pub fn pippenger_optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
 where
     I: IntoIterator,
     I::Item: core::borrow::Borrow<Scalar>,
@@ -91,12 +87,12 @@ where
     match get_selected_backend() {
         #[cfg(curve25519_dalek_backend = "simd")]
         BackendKind::Avx2 =>
-            vector::scalar_mul::pippenger::spec_avx2::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points, scalar_bits),
+            vector::scalar_mul::pippenger::spec_avx2::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
         #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
         BackendKind::Avx512 =>
-            vector::scalar_mul::pippenger::spec_avx512ifma_avx512vl::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points, scalar_bits),
+            vector::scalar_mul::pippenger::spec_avx512ifma_avx512vl::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
         BackendKind::Serial =>
-            serial::scalar_mul::pippenger::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points, scalar_bits),
+            serial::scalar_mul::pippenger::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
     }
 }
 
@@ -199,11 +195,7 @@ where
 
 #[allow(missing_docs)]
 #[cfg(feature = "alloc")]
-pub fn straus_optional_multiscalar_mul<I, J>(
-    scalars: I,
-    points: J,
-    scalar_bits: Option<usize>,
-) -> Option<EdwardsPoint>
+pub fn straus_optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
 where
     I: IntoIterator,
     I::Item: core::borrow::Borrow<Scalar>,
@@ -228,11 +220,7 @@ where
             >(scalars, points, scalar_bits)
         }
         BackendKind::Serial => {
-            serial::scalar_mul::straus::Straus::optional_multiscalar_mul::<I, J>(
-                scalars,
-                points,
-                scalar_bits,
-            )
+            serial::scalar_mul::straus::Straus::optional_multiscalar_mul::<I, J>(scalars, points)
         }
     }
 }

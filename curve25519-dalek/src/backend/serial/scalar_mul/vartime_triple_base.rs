@@ -146,94 +146,6 @@ pub fn mul_128_128_256(
     r.as_extended()
 }
 
-/// Compute \\(a_1 A_1 + a_2 A_2 + b B\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
-///
-/// This is a general-purpose version that handles arbitrary scalar sizes.
-///
-/// # Example
-///
-/// ```ignore
-/// use curve25519_dalek::scalar::Scalar;
-/// use curve25519_dalek::constants;
-/// use curve25519_dalek::backend::serial::scalar_mul::vartime_triple_base;
-///
-/// let a1 = Scalar::from(123u64);
-/// let a2 = Scalar::from(456u64);
-/// let b = Scalar::from(789u64);
-///
-/// let A1 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(2u64);
-/// let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(3u64);
-///
-/// // Compute a1*A1 + a2*A2 + b*B
-/// let result = vartime_triple_base::mul(&a1, &A1, &a2, &A2, &b);
-/// ```
-#[cfg(test)]
-fn mul(a1: &Scalar, A1: &EdwardsPoint, a2: &Scalar, A2: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
-    // Compute NAF representations
-    let a1_naf = a1.non_adjacent_form(5);
-    let a2_naf = a2.non_adjacent_form(5);
-
-    #[cfg(feature = "precomputed-tables")]
-    let b_naf = b.non_adjacent_form(8);
-    #[cfg(not(feature = "precomputed-tables"))]
-    let b_naf = b.non_adjacent_form(5);
-
-    // Find starting index
-    let mut i: usize = 255;
-    for j in (0..256).rev() {
-        i = j;
-        if a1_naf[i] != 0 || a2_naf[i] != 0 || b_naf[i] != 0 {
-            break;
-        }
-    }
-
-    // Create lookup tables
-    let table_A1 = NafLookupTable5::<ProjectiveNielsPoint>::from(A1);
-    let table_A2 = NafLookupTable5::<ProjectiveNielsPoint>::from(A2);
-
-    #[cfg(feature = "precomputed-tables")]
-    let table_B = &constants::AFFINE_ODD_MULTIPLES_OF_BASEPOINT;
-    #[cfg(not(feature = "precomputed-tables"))]
-    let table_B =
-        &NafLookupTable5::<ProjectiveNielsPoint>::from(&constants::ED25519_BASEPOINT_POINT);
-
-    let mut r = ProjectivePoint::identity();
-
-    loop {
-        let mut t = r.double();
-
-        // Add contributions from a1*A1
-        match a1_naf[i].cmp(&0) {
-            Ordering::Greater => t = &t.as_extended() + &table_A1.select(a1_naf[i] as usize),
-            Ordering::Less => t = &t.as_extended() - &table_A1.select(-a1_naf[i] as usize),
-            Ordering::Equal => {}
-        }
-
-        // Add contributions from a2*A2
-        match a2_naf[i].cmp(&0) {
-            Ordering::Greater => t = &t.as_extended() + &table_A2.select(a2_naf[i] as usize),
-            Ordering::Less => t = &t.as_extended() - &table_A2.select(-a2_naf[i] as usize),
-            Ordering::Equal => {}
-        }
-
-        // Add contributions from b*B
-        match b_naf[i].cmp(&0) {
-            Ordering::Greater => t = &t.as_extended() + &table_B.select(b_naf[i] as usize),
-            Ordering::Less => t = &t.as_extended() - &table_B.select(-b_naf[i] as usize),
-            Ordering::Equal => {}
-        }
-
-        r = t.as_projective();
-
-        if i == 0 {
-            break;
-        }
-        i -= 1;
-    }
-
-    r.as_extended()
-}
-
 #[cfg(test)]
 mod test {
     use rand::thread_rng;
@@ -253,7 +165,7 @@ mod test {
         let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(3u64);
 
         // Compute using the optimized triple-base function
-        let result = mul(&a1, &A1, &a2, &A2, &b);
+        let result = mul_128_128_256(&a1, &A1, &a2, &A2, &b);
 
         // Compute using naive addition
         let expected = &(&(&a1 * &A1) + &(&a2 * &A2)) + &(&b * &constants::ED25519_BASEPOINT_POINT);
@@ -289,18 +201,10 @@ mod test {
         // Test the optimized 128-bit version
         let result_128 = mul_128_128_256(&a1, &A1, &a2, &A2, &b);
 
-        // Test the general version
-        let result_general = mul(&a1, &A1, &a2, &A2, &b);
-
         // Compute expected result
         let expected = &(&(&a1 * &A1) + &(&a2 * &A2)) + &(&b * &constants::ED25519_BASEPOINT_POINT);
 
         assert_eq!(result_128, expected, "Optimized 128-bit version failed");
-        assert_eq!(result_general, expected, "General version failed");
-        assert_eq!(
-            result_128, result_general,
-            "Both versions should produce same result"
-        );
     }
 
     #[test]
@@ -312,7 +216,7 @@ mod test {
         let A1 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(2u64);
         let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(3u64);
 
-        let result = mul(&a1, &A1, &a2, &A2, &b);
+        let result = mul_128_128_256(&a1, &A1, &a2, &A2, &b);
         let expected = &(&a2 * &A2) + &(&b * &constants::ED25519_BASEPOINT_POINT);
 
         assert_eq!(result, expected);
@@ -327,7 +231,7 @@ mod test {
         let A1 = EdwardsPoint::identity();
         let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(3u64);
 
-        let result = mul(&a1, &A1, &a2, &A2, &b);
+        let result = mul_128_128_256(&a1, &A1, &a2, &A2, &b);
         let expected = &(&a2 * &A2) + &(&b * &constants::ED25519_BASEPOINT_POINT);
 
         assert_eq!(result, expected);
@@ -344,7 +248,8 @@ mod test {
         let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(13u64);
 
         let result_optimized = mul_128_128_256(&a1, &A1, &a2, &A2, &b);
-        let result_general = mul(&a1, &A1, &a2, &A2, &b);
+        let result_general =
+            &(&(&a1 * &A1) + &(&a2 * &A2)) + &(&b * &constants::ED25519_BASEPOINT_POINT);
 
         assert_eq!(result_optimized, result_general);
     }
@@ -352,10 +257,16 @@ mod test {
     #[test]
     fn test_triple_base_large_scalars() {
         // Test with large scalars
-        let a1_bytes = [0xFFu8; 32];
+        let mut a1_bytes = [0xFFu8; 32];
+        for i in 16..32 {
+            a1_bytes[i] = 0x00;
+        }
         let a1 = Scalar::from_bytes_mod_order(a1_bytes);
 
-        let a2_bytes = [0xAAu8; 32];
+        let mut a2_bytes = [0xAAu8; 32];
+        for i in 16..32 {
+            a2_bytes[i] = 0x00;
+        }
         let a2 = Scalar::from_bytes_mod_order(a2_bytes);
 
         let b = Scalar::random(&mut thread_rng());
@@ -363,7 +274,7 @@ mod test {
         let A1 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(17u64);
         let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(19u64);
 
-        let result = mul(&a1, &A1, &a2, &A2, &b);
+        let result = mul_128_128_256(&a1, &A1, &a2, &A2, &b);
         let expected = &(&(&a1 * &A1) + &(&a2 * &A2)) + &(&b * &constants::ED25519_BASEPOINT_POINT);
 
         assert_eq!(result, expected);

@@ -689,7 +689,10 @@ impl ConditionallySelectable for FieldElement51 {
 verus! {
 
 impl FieldElement51 {
-    pub(crate) const fn from_limbs(limbs: [u64; 5]) -> FieldElement51 {
+    pub(crate) const fn from_limbs(limbs: [u64; 5]) -> (result: FieldElement51)
+        ensures
+            (result == FieldElement51 { limbs }),
+    {
         FieldElement51 { limbs }
     }
 

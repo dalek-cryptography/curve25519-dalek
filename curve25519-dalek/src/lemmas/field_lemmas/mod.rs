@@ -26,6 +26,7 @@ pub mod compute_q_lemmas;
 pub mod limbs_to_bytes_lemmas;
 pub mod to_bytes_reduction_lemmas;
 
+pub mod invert_lemmas;
 pub mod pow22501_t19_lemma;
 pub mod pow22501_t3_lemma;
 pub mod pow_chain_lemmas;

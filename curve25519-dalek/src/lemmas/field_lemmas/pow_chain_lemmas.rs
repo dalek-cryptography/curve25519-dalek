@@ -65,12 +65,7 @@ pub proof fn lemma_prove_pow2k_step(
 
     // Prove pow(val_in as int, exp_power) >= 0 to bridge the conversion
     assert(pow(val_in as int, exp_power) >= 0) by {
-        if val_in > 0 {
-            lemma_pow_positive(val_in as int, exp_power);
-        } else {
-            // val_in == 0, so pow(0, exp_power) == 0
-            lemma0_pow(exp_power);
-        }
+        lemma_pow_nonnegative(val_in as int, exp_power);
     }
 
     // Chain the equalities to prove the postcondition

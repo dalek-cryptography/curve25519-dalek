@@ -7,6 +7,12 @@ use crate::backend::serial::u64::field::FieldElement51;
 #[allow(unused_imports)]
 use crate::constants;
 #[allow(unused_imports)]
+use vstd::arithmetic::div_mod::*;
+#[allow(unused_imports)]
+use vstd::arithmetic::mul::*;
+#[allow(unused_imports)]
+use vstd::arithmetic::power::*;
+#[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
 
 use vstd::prelude::*;
@@ -106,12 +112,19 @@ pub open spec fn math_field_square(a: nat) -> nat {
 }
 
 /// Math-level field inversion: returns w such that (a * w) % p == 1
-/// We use `choose` to pick the unique inverse that exists for non-zero field elements
-pub open spec fn math_field_inv(a: nat) -> nat
-    recommends
-        a % p() != 0,
-{
-    choose|w: nat| w < p() && #[trigger] ((a % p()) * w) % p() == 1
+///
+/// For non-zero elements (a % p() != 0), this returns the unique multiplicative
+/// inverse modulo p. By convention, when a % p() == 0, this returns 0.
+///
+/// The existence of inverses for non-zero elements is guaranteed by field_inv_axiom,
+/// which relies on p being prime.
+pub open spec fn math_field_inv(a: nat) -> nat {
+    if a % p() == 0 {
+        0  // Convention: inverse of 0 is defined as 0
+
+    } else {
+        choose|w: nat| w < p() && #[trigger] ((a % p()) * w) % p() == 1
+    }
 }
 
 /// Axiom: For non-zero field elements, the inverse exists and satisfies the inverse property
@@ -123,6 +136,140 @@ pub proof fn field_inv_axiom(a: nat)
         ((a % p()) * math_field_inv(a)) % p() == 1,
 {
     admit();  // This would be proven from field theory or assumed as axiom
+}
+
+/// Helper lemma: If a*w ≡ 1 (mod p) and a*z ≡ 1 (mod p), and both w,z < p, then w = z
+///
+/// This is the core uniqueness property of multiplicative inverses in modular arithmetic.
+/// The proof follows the standard field theory argument:
+///   w = w * 1 = w * (a * z) = (w * a) * z = 1 * z = z
+proof fn lemma_inverse_unique_core(a: nat, w: nat, z: nat, p: nat)
+    requires
+        p > 0,
+        a % p != 0,
+        w < p,
+        z < p,
+        (a * w) % p == 1,
+        (a * z) % p == 1,
+    ensures
+        w == z,
+{
+    // Step 1: Since w < p and z < p, they are their own remainders mod p
+    assert(w % p == w) by {
+        lemma_small_mod(w, p);
+    };
+    assert(z % p == z) by {
+        lemma_small_mod(z, p);
+    };
+
+    // Step 2: Compute (a * w * z) % p by multiplying first equation by z
+    // From (a * w) % p == 1, we get ((a * w) % p * z) % p == z
+    assert((a * w * z) % p == z) by {
+        lemma_mul_mod_noop_general((a * w) as int, z as int, p as int);
+        // This gives us: ((a * w) % p * z) % p == (a * w * z) % p
+        assert(((a * w) % p * z) % p == (a * w * z) % p);
+        // Since (a * w) % p == 1, we have: (1 * z) % p == (a * w * z) % p
+        assert(((a * w) % p * z) % p == (1 * z) % p);
+        // And (1 * z) % p == z since z < p
+        assert((1 * z) % p == z);
+    };
+
+    // Step 3: Compute (a * z * w) % p by multiplying second equation by w
+    // From (a * z) % p == 1, we get ((a * z) % p * w) % p == w
+    assert((a * z * w) % p == w) by {
+        lemma_mul_mod_noop_general((a * z) as int, w as int, p as int);
+        // This gives us: ((a * z) % p * w) % p == (a * z * w) % p
+        assert(((a * z) % p * w) % p == (a * z * w) % p);
+        // Since (a * z) % p == 1, we have: (1 * w) % p == (a * z * w) % p
+        assert(((a * z) % p * w) % p == (1 * w) % p);
+        // And (1 * w) % p == w since w < p
+        assert((1 * w) % p == w);
+    };
+
+    // Step 4: Show a * w * z == a * z * w by commutativity
+    assert(a * w * z == a * z * w) by {
+        lemma_mul_is_associative(a as int, w as int, z as int);
+        lemma_mul_is_associative(a as int, z as int, w as int);
+        // a * w * z = a * (w * z) = a * (z * w) = a * z * w
+        assert(a * w * z == a * (w * z));
+        assert(w * z == z * w);
+        assert(a * (w * z) == a * (z * w));
+        assert(a * (z * w) == a * z * w);
+    };
+
+    // Step 5: Conclude w == z
+    // We have: z == (a * w * z) % p == (a * z * w) % p == w
+    assert(w == z);
+}
+
+/// Theorem: Uniqueness of multiplicative inverse
+///
+/// If a value w satisfies the inverse property for a, then w equals math_field_inv(a).
+/// This captures the uniqueness of the multiplicative inverse in a field.
+///
+/// Proof: Standard field theory argument using modular arithmetic:
+/// w = w * 1 = w * (a * z) = (w * a) * z = 1 * z = z, where z = math_field_inv(a)
+///
+/// Note: This theorem only requires modular arithmetic properties; it does NOT
+/// require p to be prime (though the existence from field_inv_axiom does).
+pub proof fn field_inv_unique(a: nat, w: nat)
+    requires
+        a % p() != 0,
+        w < p(),
+        ((a % p()) * w) % p() == 1,
+    ensures
+        w == math_field_inv(a),
+{
+    let a_red = a % p();
+    let z = math_field_inv(a);
+    // Show a_red < p()
+    assert(a_red < p()) by {
+        lemma_mod_bound(a as int, p() as int);
+    };
+    // Show a_red % p() == a_red, which means a_red is in canonical form
+    assert(a_red % p() == a_red) by {
+        lemma_small_mod(a_red, p());
+    };
+    // Apply the core uniqueness lemma
+    // Both w and z are inverses of a_red in the canonical range [0, p)
+    lemma_inverse_unique_core(a_red, w, z, p());
+}
+
+/// Theorem: By convention, math_field_inv(0) returns 0
+///
+/// This is proven directly from the definition of math_field_inv.
+/// When the input is 0 (which has no multiplicative inverse),
+/// we conventionally define the result to be 0.
+pub proof fn field_inv_zero()
+    ensures
+        math_field_inv(0nat) == 0,
+{
+    // Proof: By definition of math_field_inv, when a % p() == 0, it returns 0
+    assert(p() > 0) by {
+        pow255_gt_19();
+    };
+
+    // Since p() > 0, we have 0 % p() == 0
+    assert(0nat % p() == 0);
+
+    // By the if-branch in math_field_inv's definition: math_field_inv(0) == 0
+}
+
+/// Axiom: Fermat's Little Theorem for the specific prime p() = 2^255 - 19
+///
+/// For any non-zero element x in the field ℤ/p()ℤ, we have x^(p-1) ≡ 1 (mod p).
+/// This is a fundamental property of prime fields and the basis for computing
+/// multiplicative inverses as x^(p-2) (since x * x^(p-2) = x^(p-1) ≡ 1).
+///
+/// Note: This axiom is specific to p() = 2^255 - 19, not a general statement
+/// about all primes. The name reflects this specificity.
+pub proof fn axiom_fermat_little_for_p25519(x: nat)
+    requires
+        x % p() != 0,
+    ensures
+        (pow(x as int, (p() - 1) as nat) as nat) % p() == 1,
+{
+    admit();  // Requires p() to be prime
 }
 
 /// Spec function for FieldElement::from_bytes

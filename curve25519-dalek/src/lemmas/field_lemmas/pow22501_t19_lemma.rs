@@ -186,10 +186,10 @@ pub proof fn lemma_pow22501_prove_t19(
     let t3_val = u64_5_as_nat(t3_limbs) as int;
     assert(t3_val >= 0);
     assert(pow(t3_val, 2) >= 0) by {
-        lemma_pow_even_nonnegative(t3_val, 1);
+        lemma_pow_nonnegative(t3_val, 2);
     }
     assert(pow(base, 22) >= 0) by {
-        lemma_pow_even_nonnegative(base, 11);
+        lemma_pow_nonnegative(base, 22);
     }
 
     assert((pow(u64_5_as_nat(t3_limbs) as int, 2) as nat) % p() == (pow(

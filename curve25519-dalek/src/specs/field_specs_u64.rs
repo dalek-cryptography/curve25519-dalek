@@ -21,6 +21,18 @@ pub proof fn pow255_gt_19()
     lemma_pow2_strictly_increases(5, 255);
 }
 
+/// Proof that p() > 2 (which implies (p() - 2) > 0)
+///
+/// Since p() = 2^255 - 19 and 2^255 > 2^5 = 32, we have p() > 32 - 19 = 13 > 2.
+pub proof fn p_gt_2()
+    ensures
+        p() > 2,
+        (p() - 2) > 0,
+{
+    lemma2_to64();  // 2^5 = 32
+    lemma_pow2_strictly_increases(5, 255);  // 2^255 > 2^5 = 32
+}
+
 pub open spec const mask51: u64 = 2251799813685247u64;
 
 // Basic properties of mask51:

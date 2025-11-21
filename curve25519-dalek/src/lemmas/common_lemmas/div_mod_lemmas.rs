@@ -178,4 +178,28 @@ pub proof fn lemma_divisibility_factor(n: nat, a: nat, b: nat)
     }
 }
 
+/// Lemma: int modulo and nat modulo are equivalent for non-negative values
+///
+/// For v >= 0 and m > 0, computing v % m gives the same result whether
+/// we use int modulo or nat modulo operations.
+///
+/// This bridges the type-level gap between `int % int` and `nat % nat`.
+pub proof fn lemma_int_nat_mod_equiv(v: int, m: nat)
+    requires
+        v >= 0,
+        m > 0,
+    ensures
+        v % (m as int) == ((v as nat) % m) as int,
+{
+    let v_nat = v as nat;
+    let r_nat = v_nat % m;
+    let q_nat = v_nat / m;
+
+    assert(v_nat == q_nat * m + r_nat) by {
+        lemma_fundamental_div_mod(v, m as int);
+    }
+
+    lemma_fundamental_div_mod_converse_mod(v, m as int, q_nat as int, r_nat as int);
+}
+
 } // verus!

@@ -62,6 +62,8 @@ use crate::lemmas::common_lemmas::pow_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::as_bytes_lemmas::*;
 #[allow(unused_imports)]
+use crate::lemmas::field_lemmas::invert_lemmas::*;
+#[allow(unused_imports)]
 use crate::lemmas::field_lemmas::pow22501_t19_lemma::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::pow22501_t3_lemma::*;
@@ -668,8 +670,10 @@ impl FieldElement {
     #[rustfmt::skip]  // keep alignment of explanatory comments
     #[allow(clippy::let_and_return)]
     pub(crate) fn invert(&self) -> (result:
-        FieldElement)
-    // VERIFICATION NOTE: PROOF BYPASS
+        FieldElement)/* VERIFICATION NOTE:
+    - Computes self^(p-2) using Fermat's Little Theorem: a^(p-1) ≡ 1 (mod p) => a^(p-2) * a ≡ 1 (mod p)
+    - p-2 = 2^255 - 21 = (2^250 - 1) * 2^5 + 11
+    */
 
         requires
             limbs_bounded(self, 54),
@@ -687,10 +691,13 @@ impl FieldElement {
         // The bits of p-2 = 2^255 -19 -2 are 11010111111...11.
         //
         //                                 nonzero bits of exponent
-        assume(false);
         let (t19, t3) = self.pow22501();  // t19: 249..0 ; t3: 3,1,0
         let t20 = t19.pow2k(5);  // 254..5
         let t21 = &t20 * &t3;  // 254..5,3,1,0
+
+        proof {
+            lemma_invert_correctness(self, &t19, &t3, &t20, &t21);
+        }
 
         t21
     }

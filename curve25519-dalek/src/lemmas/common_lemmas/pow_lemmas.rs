@@ -958,4 +958,172 @@ pub proof fn lemma_pow_even_nonnegative(x: int, k: nat)
     }
 }
 
+/// Lemma: Modular exponentiation composition
+///
+/// Proves: ((x^a % m)^b % m) = (x^(a*b) % m)
+///
+/// This is essential for chaining power operations in modular arithmetic.
+/// For example, in the invert proof we compute: (x^(2^250-1))^(2^5) = x^((2^250-1)*2^5)
+pub proof fn lemma_pow_mod_composition(x: nat, a: nat, b: nat, m: nat)
+    requires
+        a > 0,
+        b > 0,
+        m > 0,
+    ensures
+        (pow(((pow(x as int, a) as nat) % m) as int, b) as nat) % m == (pow(x as int, a * b) as nat)
+            % m,
+{
+    // =================================================================
+    // PART 1: Core mathematical proof on int level
+    // =================================================================
+    // Prove: pow(pow(x, a) % m, b) % m == pow(pow(x, a), b) % m
+    assert(pow(pow(x as int, a) % (m as int), b) % (m as int) == pow(pow(x as int, a), b) % (
+    m as int)) by {
+        lemma_pow_mod_noop(pow(x as int, a), b, m as int);
+    }
+
+    // Prove: pow(pow(x, a), b) == pow(x, a*b)
+    assert(pow(pow(x as int, a), b) == pow(x as int, a * b)) by {
+        lemma_pow_multiplies(x as int, a, b);
+    }
+
+    // Combining the above: pow(pow(x, a) % m, b) % m == pow(x, a*b) % m (on int level)
+
+    // =================================================================
+    // PART 2: Bridge int-level proof to nat-level postcondition
+    // =================================================================
+    // The mathematical proof is complete on the int level:
+    //   pow(pow(x, a) % m, b) % m == pow(x, a*b) % m  (on int)
+    //
+    // To bridge to the nat-level postcondition, we prove int/nat modulo equivalence:
+    //   For v >= 0, m > 0: v % (m as int) == ((v as nat) % m) as int
+
+    // Bridge 1: pow(x, a) % m on int is same as ((pow(x, a) as nat) % m) as int
+    assert(pow(x as int, a) % (m as int) == ((pow(x as int, a) as nat) % m) as int) by {
+        assert(pow(x as int, a) >= 0) by {
+            lemma_pow_nonnegative(x as int, a);
+        }
+        lemma_int_nat_mod_equiv(pow(x as int, a), m);
+    }
+
+    // Bridge 2: pow((pow(x, a) % m), b) % m
+    let base_int = pow(x as int, a) % (m as int);
+    assert(pow(base_int, b) % (m as int) == ((pow(base_int, b) as nat) % m) as int) by {
+        assert(base_int >= 0) by {
+            lemma_fundamental_div_mod(pow(x as int, a), m as int);
+        }
+        assert(pow(base_int, b) >= 0) by {
+            lemma_pow_nonnegative(base_int, b);
+        }
+        lemma_int_nat_mod_equiv(pow(base_int, b), m);
+    }
+
+    // Bridge 3: pow(x, a*b) % m on int is same as ((pow(x, a*b) as nat) % m) as int
+    assert(pow(x as int, a * b) % (m as int) == ((pow(x as int, a * b) as nat) % m) as int) by {
+        assert(a * b > 0) by {
+            assert(a >= 1 && b >= 1);
+            assert(a * b >= 1) by (nonlinear_arith)
+                requires
+                    a >= 1,
+                    b >= 1,
+            ;
+        }
+        assert(pow(x as int, a * b) >= 0) by {
+            lemma_pow_nonnegative(x as int, a * b);
+        }
+        lemma_int_nat_mod_equiv(pow(x as int, a * b), m);
+    }
+
+    // The int-level equality now carries over to the nat-level postcondition ✓
+}
+
+/// Lemma: Modular power addition
+///
+/// Proves that (x^a % m * x^b % m) % m == x^(a+b) % m
+///
+/// This lemma combines:
+/// - Power addition: x^(a+b) = x^a * x^b (from lemma_pow_adds)
+/// - Modular multiplication property (from lemma_mul_mod_noop_general)
+/// - Int/nat modulo equivalence (via lemma_int_nat_mod_equiv)
+pub proof fn lemma_modular_power_addition(x: nat, a: nat, b: nat, m: nat)
+    requires
+        a > 0,
+        b > 0,
+        m > 0,
+    ensures
+        ((pow(x as int, a) as nat) % m) * ((pow(x as int, b) as nat) % m) % m == (pow(
+            x as int,
+            a + b,
+        ) as nat) % m,
+{
+    // =================================================================
+    // PART 1: Core mathematical proof on int level
+    // =================================================================
+    // Prove: pow(x, a + b) == pow(x, a) * pow(x, b)
+    assert(pow(x as int, a + b) == pow(x as int, a) * pow(x as int, b)) by {
+        lemma_pow_adds(x as int, a, b);
+    }
+
+    // Prove: (pow(x, a) * pow(x, b)) % m == ((pow(x, a) % m) * (pow(x, b) % m)) % m
+    assert((pow(x as int, a) * pow(x as int, b)) % (m as int) == ((pow(x as int, a) % (m as int))
+        * (pow(x as int, b) % (m as int))) % (m as int)) by {
+        lemma_mul_mod_noop_general(pow(x as int, a), pow(x as int, b), m as int);
+    }
+
+    // Combining the above: pow(x, a+b) % m == ((pow(x, a) % m) * (pow(x, b) % m)) % m (on int level)
+
+    // =================================================================
+    // PART 2: Bridge int-level proof to nat-level postcondition
+    // =================================================================
+
+    // Bridge 1: pow(x, a) % m on int is same as ((pow(x, a) as nat) % m) as int
+    assert(pow(x as int, a) % (m as int) == ((pow(x as int, a) as nat) % m) as int) by {
+        assert(pow(x as int, a) >= 0) by {
+            lemma_pow_nonnegative(x as int, a);
+        }
+        lemma_int_nat_mod_equiv(pow(x as int, a), m);
+    }
+
+    // Bridge 2: pow(x, b) % m on int is same as ((pow(x, b) as nat) % m) as int
+    assert(pow(x as int, b) % (m as int) == ((pow(x as int, b) as nat) % m) as int) by {
+        assert(pow(x as int, b) >= 0) by {
+            lemma_pow_nonnegative(x as int, b);
+        }
+        lemma_int_nat_mod_equiv(pow(x as int, b), m);
+    }
+
+    // Bridge 3: pow(x, a+b) % m on int is same as ((pow(x, a+b) as nat) % m) as int
+    assert(pow(x as int, a + b) % (m as int) == ((pow(x as int, a + b) as nat) % m) as int) by {
+        assert(pow(x as int, a + b) >= 0) by {
+            lemma_pow_nonnegative(x as int, a + b);
+        }
+        lemma_int_nat_mod_equiv(pow(x as int, a + b), m);
+    }
+
+    // Bridge 4: The product (pow(x, a) % m) * (pow(x, b) % m) on int
+    let pow_a_mod = pow(x as int, a) % (m as int);
+    let pow_b_mod = pow(x as int, b) % (m as int);
+
+    // Prove the product is non-negative
+    assert(pow_a_mod >= 0) by {
+        lemma_fundamental_div_mod(pow(x as int, a), m as int);
+    }
+    assert(pow_b_mod >= 0) by {
+        lemma_fundamental_div_mod(pow(x as int, b), m as int);
+    }
+    assert(pow_a_mod * pow_b_mod >= 0) by (nonlinear_arith)
+        requires
+            pow_a_mod >= 0,
+            pow_b_mod >= 0,
+    ;
+
+    // Bridge the product modulo
+    assert((pow_a_mod * pow_b_mod) % (m as int) == (((pow_a_mod * pow_b_mod) as nat) % m) as int)
+        by {
+        lemma_int_nat_mod_equiv(pow_a_mod * pow_b_mod, m);
+    }
+
+    // The int-level equality now carries over to the nat-level postcondition ✓
+}
+
 } // verus!

@@ -104,8 +104,7 @@ pub mod spec {
 
             let mut Q = ExtendedPoint::identity();
 
-            let scalar_bits = scalar_bits.unwrap_or(256);
-            for i in (0..scalar_bits).rev() {
+            for i in (0..256).rev() {
                 Q = Q.double();
 
                 for (naf, lookup_table) in nafs.iter().zip(lookup_tables.iter()) {

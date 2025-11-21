@@ -87,11 +87,7 @@ pub mod spec {
     impl VartimeMultiscalarMul for Straus {
         type Point = EdwardsPoint;
 
-        fn optional_multiscalar_mul<I, J>(
-            scalars: I,
-            points: J,
-            scalar_bits: Option<usize>,
-        ) -> Option<EdwardsPoint>
+        fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
         where
             I: IntoIterator,
             I::Item: Borrow<Scalar>,

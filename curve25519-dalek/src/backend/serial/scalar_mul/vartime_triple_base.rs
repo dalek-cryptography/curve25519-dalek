@@ -99,8 +99,11 @@ pub fn mul_128_128_256(
     // TODO: For additional speedup, create a precomputed NAF-8 table for B'
     // similar to AFFINE_ODD_MULTIPLES_OF_BASEPOINT, containing [B', 3B', 5B', ..., 127B']
     // as AffineNielsPoint values. This would allow using width-8 NAF for b_hi.
+    #[cfg(feature = "precomputed-tables")]
+    let table_B_128 = &constants::AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128;
+    #[cfg(not(feature = "precomputed-tables"))]
     let table_B_128 =
-        NafLookupTable5::<ProjectiveNielsPoint>::from(&constants::ED25519_BASEPOINT_128_POINT);
+        &NafLookupTable5::<ProjectiveNielsPoint>::from(&constants::ED25519_BASEPOINT_128_POINT);
 
     let mut r = ProjectivePoint::identity();
 

@@ -41,7 +41,6 @@ FieldElement51::pow2k,curve25519_dalek::backend::serial::u64::field
 FieldElement51::square,curve25519_dalek::backend::serial::u64::field
 FieldElement51::square2,curve25519_dalek::backend::serial::u64::field
 index,curve25519_dalek::backend::serial::u64::scalar
-index_mut,curve25519_dalek::backend::serial::u64::scalar
 m,curve25519_dalek::backend::serial::u64::scalar
 Scalar52::from_bytes,curve25519_dalek::backend::serial::u64::scalar
 Scalar52::from_bytes_wide,curve25519_dalek::backend::serial::u64::scalar

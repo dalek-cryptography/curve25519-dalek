@@ -253,11 +253,6 @@ pub fn vartime_double_base_mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> Edwa
 /// Compute \\(a_1 A_1 + a_2 A_2 + b B\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
 ///
 /// This function is optimized for the case where \\(a_1\\) and \\(a_2\\) are less than \\(2^{128}\\).
-///
-/// # Note
-///
-/// Currently only the serial backend implementation is available. SIMD backends will fall back
-/// to the serial implementation.
 #[allow(non_snake_case)]
 pub fn vartime_triple_base_mul_128_128_256(
     a1: &Scalar,
@@ -269,11 +264,13 @@ pub fn vartime_triple_base_mul_128_128_256(
     match get_selected_backend() {
         #[cfg(curve25519_dalek_backend = "simd")]
         BackendKind::Avx2 => {
-            serial::scalar_mul::vartime_triple_base::mul_128_128_256(a1, A1, a2, A2, b)
+            vector::scalar_mul::vartime_triple_base::spec_avx2::mul_128_128_256(a1, A1, a2, A2, b)
         }
         #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
         BackendKind::Avx512 => {
-            serial::scalar_mul::vartime_triple_base::mul_128_128_256(a1, A1, a2, A2, b)
+            vector::scalar_mul::vartime_triple_base::spec_avx512ifma_avx512vl::mul_128_128_256(
+                a1, A1, a2, A2, b,
+            )
         }
         BackendKind::Serial => {
             serial::scalar_mul::vartime_triple_base::mul_128_128_256(a1, A1, a2, A2, b)

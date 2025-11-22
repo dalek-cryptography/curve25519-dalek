@@ -5,9 +5,10 @@ major series.
 
 ## 5.x series
 
-## Unreleased
+## 5.0.0-pre.2
 
 * Add Lizard bytes-to-point injection for Ristretto. Gated under `lizard`.
+* Upgrade `rand_core` to v0.10.0-rc-2
 
 ## 5.0.0-pre.1
 

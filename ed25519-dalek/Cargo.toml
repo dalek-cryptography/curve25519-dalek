@@ -57,7 +57,7 @@ bincode = "1.0"
 serde_json = "1.0"
 criterion = { version = "0.5", features = ["html_reports"] }
 hex-literal = "0.4"
-rand = { version = "0.10.0-rc.1", features = ["chacha"] }
+rand = { version = "0.10.0-rc.5", features = ["chacha"] }
 serde = { version = "1.0", features = ["derive"] }
 strobe-rs = "0.5"
 toml = { version = "0.9" }

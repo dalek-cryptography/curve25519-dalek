@@ -6,7 +6,7 @@ edition = "2024"
 # - update html_root_url
 # - update CHANGELOG
 # - if any changes were made to README.md, mirror them in src/lib.rs docs
-version = "3.0.0-pre.1"
+version = "3.0.0-pre.2"
 authors = [
     "Isis Lovecruft <isis@patternsinthevoid.net>",
     "DebugSteven <debugsteven@gmail.com>",
@@ -42,7 +42,7 @@ rustdoc-args = [
 features = ["reusable_secrets", "serde", "static_secrets"]
 
 [dependencies]
-curve25519-dalek = { version = "=5.0.0-pre.1", default-features = false }
+curve25519-dalek = { version = "=5.0.0-pre.2", default-features = false }
 rand_core = { version = "0.10.0-rc-2", default-features = false }
 
 # optional dependencies

@@ -54,8 +54,8 @@ required-features = ["alloc", "rand_core"]
 
 [dependencies]
 cfg-if = "1"
-ff = { version = "=0.14.0-pre.0", default-features = false, optional = true }
-group = { version = "=0.14.0-pre.0", default-features = false, optional = true }
+ff = { version = "=0.14.0-pre.0", package = "rustcrypto-ff", default-features = false, optional = true }
+group = { version = "=0.14.0-pre.0", package = "rustcrypto-group", default-features = false, optional = true }
 rand_core = { version = "0.10.0-rc-2", default-features = false, optional = true }
 digest = { version = "0.11.0-rc.4", default-features = false, optional = true, features = [
     "block-api",

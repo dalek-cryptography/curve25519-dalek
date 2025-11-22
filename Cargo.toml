@@ -14,6 +14,3 @@ opt-level = 2
 curve25519-dalek-derive = { path = "./curve25519-dalek-derive" }
 curve25519-dalek = { path = "./curve25519-dalek" }
 x25519-dalek = { path = "./x25519-dalek" }
-
-ff = { git = "https://github.com/tarcieri/ff", branch = "rand_core/v0.10.0-rc-2" }
-group = { git = "https://github.com/tarcieri/group", branch = "rand_core/v0.10.0-rc-2" }

@@ -14,7 +14,7 @@ use core::fmt::Debug;
 #[cfg(feature = "pkcs8")]
 use ed25519::pkcs8;
 
-#[cfg(any(test, feature = "rand_core"))]
+#[cfg(feature = "rand_core")]
 use rand_core::CryptoRng;
 
 #[cfg(feature = "serde")]
@@ -201,7 +201,7 @@ impl SigningKey {
     /// # Input
     ///
     /// A CSPRNG with a `fill_bytes()` method, e.g. `rand_os::OsRng`.
-    #[cfg(any(test, feature = "rand_core"))]
+    #[cfg(feature = "rand_core")]
     pub fn generate<R: CryptoRng + ?Sized>(csprng: &mut R) -> SigningKey {
         let mut secret = SecretKey::default();
         csprng.fill_bytes(&mut secret);

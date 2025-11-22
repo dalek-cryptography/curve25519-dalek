@@ -13,7 +13,7 @@
 
 use criterion::{Criterion, criterion_group, criterion_main};
 
-use rand_core::{OsRng, TryRngCore};
+use rand::{TryRngCore, rngs::OsRng};
 
 use x25519_dalek::EphemeralSecret;
 use x25519_dalek::PublicKey;

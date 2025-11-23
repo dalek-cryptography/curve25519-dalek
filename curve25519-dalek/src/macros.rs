@@ -10,6 +10,9 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 //! Internal macros.
 /// Define borrow and non-borrow variants of `Add`.
+///
+use vstd::prelude::*;
+
 macro_rules! define_add_variants {
     (LHS = $lhs:ty, RHS = $rhs:ty, Output = $out:ty) => {
         impl<'b> Add<&'b $rhs> for $lhs {
@@ -105,6 +108,35 @@ macro_rules! define_mul_variants {
             fn mul(self, rhs: $rhs) -> $out {
                 &self * &rhs
             }
+        }
+    };
+}
+
+/// This is the same as define_mul_variants,
+/// except it's for types where we've specified what mul does
+macro_rules! define_mul_variants_verus {
+    (LHS = $lhs:ty, RHS = $rhs:ty, Output = $out:ty) => {
+        verus!{
+        impl<'b> Mul<&'b $rhs> for $lhs {
+            type Output = $out;
+            fn mul(self, rhs: &'b $rhs) -> $out {
+                &self * rhs
+            }
+        }
+
+        impl<'a> Mul<$rhs> for &'a $lhs {
+            type Output = $out;
+            fn mul(self, rhs: $rhs) -> $out {
+                self * &rhs
+            }
+        }
+
+        impl Mul<$rhs> for $lhs {
+            type Output = $out;
+            fn mul(self, rhs: $rhs) -> $out {
+                &self * &rhs
+            }
+        }
         }
     };
 }

@@ -1109,14 +1109,86 @@ impl EdwardsPoint {
     }
 }
 
-} // verus!
 // ------------------------------------------------------------------------
 // Addition and Subtraction
 // ------------------------------------------------------------------------
+/// Spec for &EdwardsPoint + &EdwardsPoint
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::AddSpecImpl<&EdwardsPoint> for &EdwardsPoint {
+    open spec fn obeys_add_spec() -> bool {
+        false  // Set to false since we use ensures clause instead of concrete spec
+
+    }
+
+    open spec fn add_req(self, rhs: &EdwardsPoint) -> bool {
+        is_valid_edwards_point(*self) && is_valid_edwards_point(*rhs)
+            &&
+        // limb bounds needed because of arithmetic inside:
+        limbs_bounded(&self.X, 54) && limbs_bounded(&self.Y, 54) && limbs_bounded(&self.Z, 54)
+            && limbs_bounded(&self.T, 54) && limbs_bounded(&rhs.X, 54) && limbs_bounded(&rhs.Y, 54)
+            && limbs_bounded(&rhs.Z, 54) && limbs_bounded(&rhs.T, 54)
+    }
+
+    open spec fn add_spec(self, rhs: &EdwardsPoint) -> EdwardsPoint {
+        arbitrary()  // Placeholder - actual spec is in ensures clause
+
+    }
+}
+
 impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
     type Output = EdwardsPoint;
-    fn add(self, other: &'b EdwardsPoint) -> EdwardsPoint {
+
+    fn add(self, other: &'b EdwardsPoint) -> (result: EdwardsPoint)
+        ensures
+            is_valid_edwards_point(result),
+            // Semantic correctness: affine addition law
+            ({
+                let (x1, y1) = affine_edwards_point(*self);
+                let (x2, y2) = affine_edwards_point(*other);
+                affine_edwards_point(result) == edwards_add(x1, y1, x2, y2)
+            }),
+    {
+        /* ORIGINAL CODE
         (self + &other.as_projective_niels()).as_extended()
+        */
+        let other_niels = other.as_projective_niels();
+
+        proof {
+            // Preconditions for EdwardsPoint + ProjectiveNielsPoint addition
+            // The limb bounds for self are inherited from the outer function's add_req
+            // We need to assume the sum_of_limbs_bounded precondition
+            assume(sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX));
+
+            // Assume limb bounds for other_niels (from as_projective_niels postconditions)
+            assume(limbs_bounded(&other_niels.Y_plus_X, 54));
+            assume(limbs_bounded(&other_niels.Y_minus_X, 54));
+            assume(limbs_bounded(&other_niels.Z, 54));
+            assume(limbs_bounded(&other_niels.T2d, 54));
+        }
+
+        let sum = self + &other_niels;
+
+        proof {
+            // preconditions for CompletedPoint.as_extended()
+            assume(is_valid_completed_point(sum));
+            assume(limbs_bounded(&sum.X, 54) && limbs_bounded(&sum.Y, 54) && limbs_bounded(
+                &sum.Z,
+                54,
+            ) && limbs_bounded(&sum.T, 54));
+        }
+
+        let result = sum.as_extended();
+
+        proof {
+            // Assume postconditions
+            assume(is_valid_edwards_point(result));
+            assume({
+                let (x1, y1) = affine_edwards_point(*self);
+                let (x2, y2) = affine_edwards_point(*other);
+                affine_edwards_point(result) == edwards_add(x1, y1, x2, y2)
+            });
+        }
+        result
     }
 }
 
@@ -1127,17 +1199,111 @@ define_add_variants!(
 );
 
 impl<'b> AddAssign<&'b EdwardsPoint> for EdwardsPoint {
-    fn add_assign(&mut self, _rhs: &'b EdwardsPoint) {
+    fn add_assign(&mut self, _rhs: &'b EdwardsPoint)
+        ensures
+            is_valid_edwards_point(*self),
+            // Semantic correctness: result is the addition of old(self) + rhs
+            ({
+                let (x1, y1) = affine_edwards_point(*old(self));
+                let (x2, y2) = affine_edwards_point(*_rhs);
+                affine_edwards_point(*self) == edwards_add(x1, y1, x2, y2)
+            }),
+    {
+        /* ORIGINAL CODE
         *self = (self as &EdwardsPoint) + _rhs;
+        CAST TO &EdwardsPoint UNSUPPORTED */
+        proof {
+            // Assume preconditions from AddSpecImpl are satisfied
+            assume(is_valid_edwards_point(*self) && is_valid_edwards_point(*_rhs));
+            assume(limbs_bounded(&self.X, 54) && limbs_bounded(&self.Y, 54) && limbs_bounded(
+                &self.Z,
+                54,
+            ) && limbs_bounded(&self.T, 54));
+            assume(limbs_bounded(&_rhs.X, 54) && limbs_bounded(&_rhs.Y, 54) && limbs_bounded(
+                &_rhs.Z,
+                54,
+            ) && limbs_bounded(&_rhs.T, 54));
+        }
+        *self = &*self + _rhs;
     }
 }
 
 define_add_assign_variants!(LHS = EdwardsPoint, RHS = EdwardsPoint);
 
+// ------------------------------------------------------------------------
+// Subtraction
+// ------------------------------------------------------------------------
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::SubSpecImpl<&EdwardsPoint> for &EdwardsPoint {
+    open spec fn obeys_sub_spec() -> bool {
+        false
+    }
+
+    open spec fn sub_req(self, rhs: &EdwardsPoint) -> bool {
+        is_valid_edwards_point(*self) && is_valid_edwards_point(*rhs)
+            &&
+        // limb bounds needed because of arithmetic inside:
+        limbs_bounded(&self.X, 54) && limbs_bounded(&self.Y, 54) && limbs_bounded(&self.Z, 54)
+            && limbs_bounded(&self.T, 54) && limbs_bounded(&rhs.X, 54) && limbs_bounded(&rhs.Y, 54)
+            && limbs_bounded(&rhs.Z, 54) && limbs_bounded(&rhs.T, 54)
+    }
+
+    open spec fn sub_spec(self, rhs: &EdwardsPoint) -> EdwardsPoint {
+        arbitrary()
+    }
+}
+
 impl<'a, 'b> Sub<&'b EdwardsPoint> for &'a EdwardsPoint {
     type Output = EdwardsPoint;
-    fn sub(self, other: &'b EdwardsPoint) -> EdwardsPoint {
+
+    fn sub(self, other: &'b EdwardsPoint) -> (result: EdwardsPoint)
+        ensures
+            is_valid_edwards_point(result),
+            // Semantic correctness: affine subtraction law
+            ({
+                let (x1, y1) = affine_edwards_point(*self);
+                let (x2, y2) = affine_edwards_point(*other);
+                affine_edwards_point(result) == edwards_sub(x1, y1, x2, y2)
+            }),
+    {
+        /* ORIGINAL CODE
         (self - &other.as_projective_niels()).as_extended()
+        */
+        let other_niels = other.as_projective_niels();
+
+        proof {
+            // Preconditions for EdwardsPoint - ProjectiveNielsPoint subtraction
+            assume(sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX));
+            assume(limbs_bounded(&other_niels.Y_plus_X, 54));
+            assume(limbs_bounded(&other_niels.Y_minus_X, 54));
+            assume(limbs_bounded(&other_niels.Z, 54));
+            assume(limbs_bounded(&other_niels.T2d, 54));
+        }
+
+        let diff = self - &other_niels;
+
+        proof {
+            // Preconditions for CompletedPoint.as_extended()
+            assume(is_valid_completed_point(diff));
+            assume(limbs_bounded(&diff.X, 54) && limbs_bounded(&diff.Y, 54) && limbs_bounded(
+                &diff.Z,
+                54,
+            ) && limbs_bounded(&diff.T, 54));
+        }
+
+        let result = diff.as_extended();
+
+        proof {
+            // Assume postconditions
+            assume(is_valid_edwards_point(result));
+            assume({
+                let (x1, y1) = affine_edwards_point(*self);
+                let (x2, y2) = affine_edwards_point(*other);
+                affine_edwards_point(result) == edwards_sub(x1, y1, x2, y2)
+            });
+        }
+
+        result
     }
 }
 
@@ -1148,11 +1314,36 @@ define_sub_variants!(
 );
 
 impl<'b> SubAssign<&'b EdwardsPoint> for EdwardsPoint {
-    fn sub_assign(&mut self, _rhs: &'b EdwardsPoint) {
+    fn sub_assign(&mut self, _rhs: &'b EdwardsPoint)
+        ensures
+            is_valid_edwards_point(*self),
+            // Semantic correctness: result is the subtraction of old(self) - rhs
+            ({
+                let (x1, y1) = affine_edwards_point(*old(self));
+                let (x2, y2) = affine_edwards_point(*_rhs);
+                affine_edwards_point(*self) == edwards_sub(x1, y1, x2, y2)
+            }),
+    {
+        /* ORIGINAL CODE
         *self = (self as &EdwardsPoint) - _rhs;
+        CAST TO &EdwardsPoint UNSUPPORTED */
+        proof {
+            // Assume preconditions from SubSpecImpl are satisfied
+            assume(is_valid_edwards_point(*self) && is_valid_edwards_point(*_rhs));
+            assume(limbs_bounded(&self.X, 54) && limbs_bounded(&self.Y, 54) && limbs_bounded(
+                &self.Z,
+                54,
+            ) && limbs_bounded(&self.T, 54));
+            assume(limbs_bounded(&_rhs.X, 54) && limbs_bounded(&_rhs.Y, 54) && limbs_bounded(
+                &_rhs.Z,
+                54,
+            ) && limbs_bounded(&_rhs.T, 54));
+        }
+        *self = &*self - _rhs;
     }
 }
 
+} // verus!
 define_sub_assign_variants!(LHS = EdwardsPoint, RHS = EdwardsPoint);
 
 impl<T> Sum<T> for EdwardsPoint
@@ -1206,14 +1397,20 @@ impl<'b> MulAssign<&'b Scalar> for EdwardsPoint {
 define_mul_assign_variants!(LHS = EdwardsPoint, RHS = Scalar);
 
 define_mul_variants!(LHS = EdwardsPoint, RHS = Scalar, Output = EdwardsPoint);
-define_mul_variants!(LHS = Scalar, RHS = EdwardsPoint, Output = EdwardsPoint);
+
+define_mul_variants_verus!(LHS = Scalar, RHS = EdwardsPoint, Output = EdwardsPoint);
+
+verus! {
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
     type Output = EdwardsPoint;
+
     /// Scalar multiplication: compute `scalar * self`.
     ///
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
+    /// Delegates to backend::variable_base_mul
+    #[verifier::external_body]
     fn mul(self, scalar: &'b Scalar) -> EdwardsPoint {
         crate::backend::variable_base_mul(self, scalar)
     }
@@ -1222,10 +1419,11 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
 impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
     type Output = EdwardsPoint;
 
-    /// Scalar multiplication: compute `scalar * self`.
+    /// Scalar multiplication: compute `scalar * point`.
     ///
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
+    #[verifier::external_body]  // Delegates to &EdwardsPoint * &Scalar which calls external variable_base_mul
     fn mul(self, point: &'b EdwardsPoint) -> EdwardsPoint {
         point * self
     }
@@ -1236,16 +1434,12 @@ impl EdwardsPoint {
     ///
     /// Uses precomputed basepoint tables when the `precomputed-tables` feature
     /// is enabled, trading off increased code size for ~4x better performance.
+    #[verifier::external_body]  // Calls external multiplication operations
     pub fn mul_base(scalar: &Scalar) -> Self {
         #[cfg(not(feature = "precomputed-tables"))]
-        {
-            scalar * constants::ED25519_BASEPOINT_POINT
-        }
-
+        { scalar * constants::ED25519_BASEPOINT_POINT }
         #[cfg(feature = "precomputed-tables")]
-        {
-            scalar * constants::ED25519_BASEPOINT_TABLE
-        }
+        { scalar * constants::ED25519_BASEPOINT_TABLE }
     }
 
     /// Multiply this point by `clamp_integer(bytes)`. For a description of clamping, see
@@ -1258,9 +1452,7 @@ impl EdwardsPoint {
         // Further, we don't do any reduction or arithmetic with this clamped value, so there's no
         // issues arising from the fact that the curve point is not necessarily in the prime-order
         // subgroup.
-        let s = Scalar {
-            bytes: clamp_integer(bytes),
-        };
+        let s = Scalar { bytes: clamp_integer(bytes) };
         s * self
     }
 
@@ -1270,20 +1462,17 @@ impl EdwardsPoint {
         // See reasoning in Self::mul_clamped why it is OK to make an unreduced Scalar here. We
         // note that fixed-base multiplication is also defined for all values of `bytes` less than
         // 2^255.
-        let s = Scalar {
-            bytes: clamp_integer(bytes),
-        };
+        let s = Scalar { bytes: clamp_integer(bytes) };
         Self::mul_base(&s)
     }
 }
 
+} // verus!
 // ------------------------------------------------------------------------
 // Multiscalar Multiplication impls
 // ------------------------------------------------------------------------
-
 // These use the iterator's size hint and the target settings to
 // forward to a specific backend implementation.
-
 #[cfg(feature = "alloc")]
 impl MultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;

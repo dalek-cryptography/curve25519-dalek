@@ -99,6 +99,9 @@ pub mod field;
 pub(crate) mod lemmas;
 pub(crate) mod specs;
 
+// Multiplication specifications for Verus verification
+pub(crate) mod mul_specs;
+
 // External type specifications for core Rust types
 pub(crate) mod core_assumes;
 

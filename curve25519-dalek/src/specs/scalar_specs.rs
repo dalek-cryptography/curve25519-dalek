@@ -107,6 +107,53 @@ pub open spec fn is_clamped_integer(bytes: &[u8; 32]) -> bool {
      && bytes[31] & 0b0100_0000 == 0b0100_0000
 }
 
+/// Spec function for clamping a byte array to produce a valid X25519 scalar.
+/// This is the spec-level version of the `clamp_integer` exec function.
+///
+/// The clamping operation:
+/// - Clears the 3 least significant bits (bits 0-2 of byte 0)
+/// - Clears bit 255 (bit 7 of byte 31)
+/// - Sets bit 6 of byte 31)
+///
+/// This produces a value in the range [2^254, 2^255) that is divisible by 8.
+pub open spec fn spec_clamp_integer(bytes: [u8; 32]) -> [u8; 32] {
+    // Build the result array element by element
+    [
+        bytes[0] & 0b1111_1000,  // Clear low 3 bits of byte 0
+        bytes[1],
+        bytes[2],
+        bytes[3],
+        bytes[4],
+        bytes[5],
+        bytes[6],
+        bytes[7],
+        bytes[8],
+        bytes[9],
+        bytes[10],
+        bytes[11],
+        bytes[12],
+        bytes[13],
+        bytes[14],
+        bytes[15],
+        bytes[16],
+        bytes[17],
+        bytes[18],
+        bytes[19],
+        bytes[20],
+        bytes[21],
+        bytes[22],
+        bytes[23],
+        bytes[24],
+        bytes[25],
+        bytes[26],
+        bytes[27],
+        bytes[28],
+        bytes[29],
+        bytes[30],
+        (bytes[31] & 0b0111_1111) | 0b0100_0000,  // Clear bit 7 and set bit 6 of byte 31
+    ]
+}
+
 // spec functions for NAF
 // integer value of a NAF, little-endian
 pub open spec fn reconstruct(naf: Seq<i8>) -> int

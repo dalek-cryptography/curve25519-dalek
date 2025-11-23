@@ -3004,6 +3004,8 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 // Result is a valid clamped integer for X25519
 
         is_clamped_integer(&result),
+        // The result matches the spec function
+        result == spec_clamp_integer(bytes),
         // All bytes except 0 and 31 remain unchanged
         forall|i: int| 1 <= i < 31 ==> #[trigger] result[i] == bytes[i],
         // Low byte preserves bits 3-7
@@ -3025,6 +3027,8 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
     proof {
         // The bitwise operations above produce a clamped integer
         assume(is_clamped_integer(&result));
+        // The result matches the spec function
+        assume(result == spec_clamp_integer(bytes));
         // Bits 3-7 of byte 0 are preserved
         assume(result[0] & 0b1111_1000 == bytes[0] & 0b1111_1000);
         // Bits 0-5 of byte 31 are preserved

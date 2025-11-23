@@ -336,6 +336,14 @@ pub open spec fn edwards_double(x: nat, y: nat) -> (nat, nat) {
     edwards_add(x, y, x, y)
 }
 
+/// Affine Edwards subtraction for twisted Edwards curves.
+/// Given (x1,y1) and (x2,y2) on the curve, returns (x3,y3) = (x1,y1) - (x2,y2).
+/// Subtraction is defined as addition with the negation of the second point.
+/// For twisted Edwards curves, the negation of (x, y) is (-x, y).
+pub open spec fn edwards_sub(x1: nat, y1: nat, x2: nat, y2: nat) -> (nat, nat) {
+    edwards_add(x1, y1, math_field_neg(x2), y2)
+}
+
 /// Check if a CompletedPoint is valid
 /// A CompletedPoint ((X:Z), (Y:T)) in P¹ × P¹ is valid if:
 /// 1. The affine point (X/Z, Y/T) lies on the Edwards curve

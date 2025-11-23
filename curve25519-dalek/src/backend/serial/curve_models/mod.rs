@@ -548,7 +548,6 @@ impl ProjectivePoint {
     }
 }
 
-} // verus!
 // ------------------------------------------------------------------------
 // Addition and Subtraction
 // ------------------------------------------------------------------------
@@ -556,6 +555,30 @@ impl ProjectivePoint {
 // public API docs.
 // However, that prevents them being used with --document-private-items,
 // so comment out the doc(hidden) for now until this is resolved
+/// Spec for &EdwardsPoint + &ProjectiveNielsPoint
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::AddSpecImpl<&ProjectiveNielsPoint> for &EdwardsPoint {
+    open spec fn obeys_add_spec() -> bool {
+        false
+    }
+
+    open spec fn add_req(self, rhs: &ProjectiveNielsPoint) -> bool {
+        // Preconditions needed for field operations
+        sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX) && limbs_bounded(&self.X, 54)
+            && limbs_bounded(&self.Y, 54) && limbs_bounded(&self.Z, 54) && limbs_bounded(
+            &self.T,
+            54,
+        ) && limbs_bounded(&rhs.Y_plus_X, 54) && limbs_bounded(&rhs.Y_minus_X, 54) && limbs_bounded(
+            &rhs.Z,
+            54,
+        ) && limbs_bounded(&rhs.T2d, 54)
+    }
+
+    open spec fn add_spec(self, rhs: &ProjectiveNielsPoint) -> CompletedPoint {
+        arbitrary()
+    }
+}
+
 //
 // upstream rust issue: https://github.com/rust-lang/rust/issues/46380
 //#[doc(hidden)]
@@ -565,18 +588,60 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     fn add(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
+        proof {
+            assume(sum_of_limbs_bounded(&Y_plus_X, &Y_minus_X, u64::MAX));  // for PP = &Y_plus_X * &other.Y_plus_X and MM = &Y_minus_X * &other.Y_minus_X
+            assume(limbs_bounded(&Y_plus_X, 54) && limbs_bounded(&Y_minus_X, 54));  // for PP = &Y_plus_X * &other.Y_plus_X and MM = &Y_minus_X * &other.Y_minus_X
+        }
         let PP = &Y_plus_X * &other.Y_plus_X;
         let MM = &Y_minus_X * &other.Y_minus_X;
         let TT2d = &self.T * &other.T2d;
         let ZZ = &self.Z * &other.Z;
+        proof {
+            assume(sum_of_limbs_bounded(&ZZ, &ZZ, u64::MAX));  // for ZZ2 = &ZZ + &ZZ
+        }
         let ZZ2 = &ZZ + &ZZ;
-
-        CompletedPoint {
+        proof {
+            assume(limbs_bounded(&ZZ2, 54));  // for ZZ2 = &ZZ + &ZZ
+            assume(sum_of_limbs_bounded(&ZZ2, &TT2d, u64::MAX));  // for Z and T operations
+            assume(sum_of_limbs_bounded(&PP, &MM, u64::MAX));  // for Y = &PP + &MM
+            // Preconditions for subtractions
+            assume(limbs_bounded(&PP, 54) && limbs_bounded(&MM, 54));  // for X = &PP - &MM
+            assume(limbs_bounded(&TT2d, 54));  // for T = &ZZ2 - &TT2d (ZZ2 already bounded above)
+        }
+        let result = CompletedPoint {
             X: &PP - &MM,
             Y: &PP + &MM,
             Z: &ZZ2 + &TT2d,
             T: &ZZ2 - &TT2d,
+        };
+        proof {
+            assume(is_valid_completed_point(result));
         }
+        result
+    }
+}
+
+/// Spec for &EdwardsPoint - &ProjectiveNielsPoint
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::SubSpecImpl<&ProjectiveNielsPoint> for &EdwardsPoint {
+    open spec fn obeys_sub_spec() -> bool {
+        false
+    }
+
+    open spec fn sub_req(self, rhs: &ProjectiveNielsPoint) -> bool {
+        // Preconditions needed for field operations
+        sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX) && limbs_bounded(&self.X, 54)
+            && limbs_bounded(&self.Y, 54) && limbs_bounded(&self.Z, 54) && limbs_bounded(
+            &self.T,
+            54,
+        ) && limbs_bounded(&rhs.Y_plus_X, 54) && limbs_bounded(&rhs.Y_minus_X, 54) && limbs_bounded(
+            &rhs.Z,
+            54,
+        ) && limbs_bounded(&rhs.T2d, 54)
+    }
+
+    open spec fn sub_spec(self, rhs: &ProjectiveNielsPoint) -> CompletedPoint {
+        arbitrary()
     }
 }
 
@@ -587,21 +652,39 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     fn sub(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
+        proof {
+            assume(limbs_bounded(&Y_plus_X, 54) && limbs_bounded(&Y_minus_X, 54));  // for PM = &Y_plus_X * &other.Y_minus_X and MP = &Y_minus_X * &other.Y_plus_X
+        }
         let PM = &Y_plus_X * &other.Y_minus_X;
         let MP = &Y_minus_X * &other.Y_plus_X;
         let TT2d = &self.T * &other.T2d;
         let ZZ = &self.Z * &other.Z;
+        proof {
+            assume(sum_of_limbs_bounded(&ZZ, &ZZ, u64::MAX));  // for ZZ2 = &ZZ + &ZZ
+        }
         let ZZ2 = &ZZ + &ZZ;
+        proof {
+            assume(sum_of_limbs_bounded(&PM, &MP, u64::MAX));  // for Y = &PM + &MP
+            assume(sum_of_limbs_bounded(&ZZ2, &TT2d, u64::MAX));  // for Z and T operations
+            // Preconditions for subtractions
+            assume(limbs_bounded(&PM, 54) && limbs_bounded(&MP, 54));  // for X = &PM - &MP
+            assume(limbs_bounded(&ZZ2, 54) && limbs_bounded(&TT2d, 54));  // for Z = &ZZ2 - &TT2d
+        }
 
-        CompletedPoint {
+        let result = CompletedPoint {
             X: &PM - &MP,
             Y: &PM + &MP,
             Z: &ZZ2 - &TT2d,
             T: &ZZ2 + &TT2d,
+        };
+        proof {
+            assume(is_valid_completed_point(result));
         }
+        result
     }
 }
 
+} // verus!
 //#[doc(hidden)]
 impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;

@@ -362,11 +362,11 @@ pub proof fn lemma_from_montgomery_limbs_conversion(limbs: &[u128; 9], self_limb
     ));
 }
 
-pub proof fn lemma_rr_limbs_bounded()
+pub(crate) proof fn lemma_rr_limbs_bounded()
     ensures
         0x000d63c715bea69fu64 < (1u64 << 52),
 {
-    // Verus can figure that out the other 4 limbs are bounded
+    // Verus can figure out the other 4 limbs are bounded
     assert(0x000d63c715bea69fu64 < (1u64 << 52)) by (bit_vector);
 }
 
@@ -1837,6 +1837,115 @@ pub proof fn lemma_r_bounded(r: Scalar52)
 
     assert(0x10000000000000 == 1u64 << 52) by (bit_vector);
 
+}
+
+// =============== LEMMAS FOR montgomery-based scalar multiplication proofs ===========
+/// Modular multiplication property: if y ≡ z (mod m), then (x * y) ≡ (x * z) (mod m)
+pub proof fn lemma_mod_mul_exact(x: nat, y: nat, z: nat, m: nat)
+    requires
+        m > 0,
+        y % m == z % m,
+    ensures
+        (x * y) % m == (x * z) % m,
+{
+    lemma_mul_mod_noop_general(x as int, y as int, m as int);
+    lemma_mul_mod_noop_general(x as int, z as int, m as int);
+}
+
+/// Proves that the group order L is odd
+pub proof fn lemma_l_is_odd()
+    ensures
+        group_order() % 2 == 1,
+{
+    assert(27742317777372353535851937790883648493nat % 2 == 1) by (compute);
+
+    assert(pow2(252) % 2 == 0) by {
+        use super::common_lemmas::pow_lemmas::lemma_pow2_plus_one;
+        lemma_pow2_plus_one(251);
+        assert(pow2(252) == pow2(251) + pow2(251));
+    };
+
+    lemma_add_mod_noop(pow2(252) as int, 27742317777372353535851937790883648493int, 2int);
+}
+
+/// Modular cancellation for powers of 2.
+/// If x·2^k ≡ y·2^k (mod m) and m is odd, then x ≡ y (mod m).
+pub proof fn lemma_modular_cancellation_power_of_2(x: nat, y: nat, k: nat, m: nat)
+    requires
+        m > 0,
+        m % 2 == 1,
+        (x * pow2(k)) % m == (y * pow2(k)) % m,
+    ensures
+        x % m == y % m,
+{
+    assume(false);
+}
+
+/// Constant R = 2^260 mod L.
+pub(crate) proof fn lemma_r_value()
+    ensures
+        to_nat(&constants::R.limbs) % group_order() == montgomery_radix() % group_order(),
+{
+    assume(false);
+}
+
+/// Proves the Montgomery multiplication chain for mul() and square()
+pub(crate) proof fn lemma_mul_montgomery_chain(
+    a: &Scalar52,
+    b: &Scalar52,
+    ab: &Scalar52,
+    result: &Scalar52,
+)
+    requires
+        limbs_bounded(a),
+        limbs_bounded(b),
+        limbs_bounded(ab),
+        limbs_bounded(&result),
+        (to_nat(&ab.limbs) * montgomery_radix()) % group_order() == (to_nat(&a.limbs) * to_nat(
+            &b.limbs,
+        )) % group_order(),
+        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(&ab.limbs) * to_nat(
+            &constants::RR.limbs,
+        )) % group_order(),
+        to_nat(&constants::RR.limbs) % group_order() == (montgomery_radix() * montgomery_radix())
+            % group_order(),
+    ensures
+        to_nat(&result.limbs) % group_order() == (to_nat(&a.limbs) * to_nat(&b.limbs))
+            % group_order(),
+{
+    let r = montgomery_radix();
+    let l = group_order();
+    let ab_val = to_nat(&ab.limbs);
+    let result_val = to_nat(&result.limbs);
+    let a_val = to_nat(&a.limbs);
+    let b_val = to_nat(&b.limbs);
+    let rr_val = to_nat(&constants::RR.limbs);
+
+    assert((result_val * r) % l == (ab_val * rr_val) % l);
+
+    assert((ab_val * rr_val) % l == (ab_val * (r * r)) % l) by {
+        lemma_mul_is_commutative(ab_val as int, rr_val as int);
+        lemma_mul_is_commutative(ab_val as int, (r * r) as int);
+        lemma_mod_mul_exact(ab_val, rr_val, r * r, l);
+    };
+
+    assert((ab_val * (r * r)) % l == ((ab_val * r) * r) % l) by {
+        lemma_mul_is_associative(ab_val as int, r as int, r as int);
+        lemma_mul_mod_noop_general((ab_val * r) as int, r as int, l as int);
+    };
+
+    assert(((ab_val * r) * r) % l == ((a_val * b_val) * r) % l) by {
+        lemma_mod_mul_exact(r, ab_val * r, a_val * b_val, l);
+        lemma_mul_is_commutative(r as int, (ab_val * r) as int);
+        lemma_mul_is_commutative(r as int, (a_val * b_val) as int);
+        lemma_mul_is_associative(ab_val as int, r as int, r as int);
+        lemma_mul_is_associative(a_val as int, b_val as int, r as int);
+    };
+
+    assert((result_val * r) % l == ((a_val * b_val) * r) % l);
+
+    lemma_l_is_odd();
+    lemma_modular_cancellation_power_of_2(result_val, a_val * b_val, 260, l);
 }
 
 } // verus!

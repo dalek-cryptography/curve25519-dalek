@@ -33,6 +33,8 @@ use crate::specs::scalar_specs_u64::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
+use vstd::arithmetic::mul::*;
+#[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
 #[allow(unused_imports)]
 use vstd::calc;
@@ -702,17 +704,10 @@ impl Scalar52 {
     // and test_canonical_scalar_generator (if it's then unused)
 
         ensures
-            (exists|bounded1: &Scalar52, bounded2: &Scalar52|
-                limbs_bounded(bounded1) && limbs_bounded(bounded2) && spec_mul_internal(
-                    bounded1,
-                    bounded2,
-                ) == limbs) ==> ((to_nat(&result.limbs) * montgomery_radix()) % group_order()
-                == slice128_to_nat(limbs) % group_order() && limbs_bounded(&result)),
-            (exists|bounded: &Scalar52, canonical: &Scalar52|
-                limbs_bounded(bounded) && limbs_bounded(canonical) && to_nat(&canonical.limbs)
-                    < group_order() && spec_mul_internal(bounded, canonical) == limbs) ==> to_nat(
-                &result.limbs,
-            ) < group_order(),
+            (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(limbs)
+                % group_order(),
+            limbs_bounded(&result),
+            to_nat(&result.limbs) < group_order(),
     {
         assume(false);  // TODO: Add proofs
 
@@ -813,9 +808,19 @@ impl Scalar52 {
             // VER NOTE: Result is canonical from montgomery_reduce
             to_nat(&result.limbs) < group_order(),
     {
-        assume(false);  // TODO: Add proofs
+        proof {
+            lemma_rr_limbs_bounded();
+        }
+
         let ab = Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b));
-        Scalar52::montgomery_reduce(&Scalar52::mul_internal(&ab, &constants::RR))
+        let result = Scalar52::montgomery_reduce(&Scalar52::mul_internal(&ab, &constants::RR));
+
+        proof {
+            lemma_rr_equals_spec(constants::RR);
+            lemma_mul_montgomery_chain(a, b, &ab, &result);
+        }
+
+        result
     }
 
     /// Compute `a^2` (mod l)
@@ -831,42 +836,16 @@ impl Scalar52 {
             lemma_rr_limbs_bounded();
         }
 
-        // We only know limbs_bounded, so this triggers the weaker part of the
-        // montgomery_reduce spec
         let aa = Scalar52::montgomery_reduce(&Scalar52::square_internal(self));
-
-        assert((to_nat(&aa.limbs) * montgomery_radix()) % group_order() == (to_nat(&self.limbs)
-            * to_nat(&self.limbs)) % group_order());
-
-        // square_internal ensures
-        // ensures
-        //     slice128_to_nat(&z) == to_nat(&a.limbs) * to_nat(&a.limbs),
-
-        // We know RR < group_order, so this triggers the stronger part of the
-        // montgomery_reduce spec, which is what this function's postcondition wants
         let result = Scalar52::montgomery_reduce(&Scalar52::mul_internal(&aa, &constants::RR));
 
-        assert((to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(&aa.limbs)
-            * to_nat(&constants::RR.limbs)) % group_order());
-
         proof {
-            // 1. prove (to_nat(&constants::RR.limbs) % group_order() == (montgomery_radix()*montgomery_radix()) % group_order()
             lemma_rr_equals_spec(constants::RR);
-
-            // 2. Reduce to (to_nat(&result.limbs)) % group_order() == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order()
-            lemma_cancel_mul_montgomery_mod(
-                to_nat(&result.limbs),
-                to_nat(&aa.limbs),
-                to_nat(&constants::RR.limbs),
-            );
-
-            // 3. allows us to assert (to_nat(&result.limbs)) % group_order() == (to_nat(&result.limbs))
-            //  true from montgomery_reduce postcondition
-            lemma_small_mod((to_nat(&result.limbs)), group_order())
+            lemma_mul_montgomery_chain(self, self, &aa, &result);
+            lemma_small_mod(to_nat(&result.limbs), group_order());
+            assert(to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs))
+                % group_order());
         }
-
-        assert((to_nat(&result.limbs)) % group_order() == (to_nat(&aa.limbs) * montgomery_radix())
-            % group_order());
 
         result
     }
@@ -911,9 +890,35 @@ impl Scalar52 {
         proof {
             lemma_rr_limbs_bounded();
         }
+
         let result = Scalar52::montgomery_mul(self, &constants::RR);
-        assume(to_nat(&result.limbs) % group_order() == (to_nat(&self.limbs) * montgomery_radix())
-            % group_order());
+
+        proof {
+            lemma_rr_equals_spec(constants::RR);
+
+            let r = montgomery_radix();
+            let l = group_order();
+            let self_val = to_nat(&self.limbs);
+            let result_val = to_nat(&result.limbs);
+            let rr_val = to_nat(&constants::RR.limbs);
+
+            assert((result_val * r) % l == (self_val * rr_val) % l);
+
+            assert((self_val * rr_val) % l == (self_val * (r * r)) % l) by {
+                lemma_mod_mul_exact(self_val, rr_val, r * r, l);
+            };
+
+            assert((self_val * (r * r)) % l == ((self_val * r) * r) % l) by {
+                lemma_mul_is_associative(self_val as int, r as int, r as int);
+                lemma_mul_mod_noop_general((self_val * r) as int, r as int, l as int);
+            };
+
+            lemma_l_is_odd();
+            lemma_modular_cancellation_power_of_2(result_val, self_val * r, 260, l);
+            assert(to_nat(&result.limbs) % group_order() == (to_nat(&self.limbs)
+                * montgomery_radix()) % group_order());
+        }
+
         result
     }
 

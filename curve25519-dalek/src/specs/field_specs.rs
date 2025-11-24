@@ -7,6 +7,10 @@ use crate::backend::serial::u64::field::FieldElement51;
 #[allow(unused_imports)]
 use crate::constants;
 #[allow(unused_imports)]
+use crate::lemmas::common_lemmas::number_theory_lemmas::*;
+#[allow(unused_imports)]
+use crate::specs::primality_specs::*;
+#[allow(unused_imports)]
 use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
@@ -255,21 +259,26 @@ pub proof fn field_inv_zero()
     // By the if-branch in math_field_inv's definition: math_field_inv(0) == 0
 }
 
-/// Axiom: Fermat's Little Theorem for the specific prime p() = 2^255 - 19
+/// Lemma: Fermat's Little Theorem applied to p() = 2^255 - 19
 ///
 /// For any non-zero element x in the field ℤ/p()ℤ, we have x^(p-1) ≡ 1 (mod p).
 /// This is a fundamental property of prime fields and the basis for computing
 /// multiplicative inverses as x^(p-2) (since x * x^(p-2) = x^(p-1) ≡ 1).
 ///
-/// Note: This axiom is specific to p() = 2^255 - 19, not a general statement
-/// about all primes. The name reflects this specificity.
-pub proof fn axiom_fermat_little_for_p25519(x: nat)
+/// This lemma is proven by:
+/// 1. Invoking axiom_p_is_prime() to establish that p() is prime
+/// 2. Applying the general lemma_fermat_little_theorem with p()
+///
+/// The general Fermat's Little Theorem is still admitted (requires group theory),
+/// but this specific application to p() is now a proven lemma rather than an axiom.
+pub proof fn lemma_fermat_for_p(x: nat)
     requires
         x % p() != 0,
     ensures
         (pow(x as int, (p() - 1) as nat) as nat) % p() == 1,
 {
-    admit();  // Requires p() to be prime
+    axiom_p_is_prime();
+    lemma_fermat_little_theorem(x, p());
 }
 
 /// Check if a value is a quadratic residue (square) modulo p

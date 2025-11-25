@@ -463,7 +463,8 @@ impl<'a> MulAssign<&'a Scalar> for Scalar {
             assert(to_nat(&result_unpacked.limbs) == to_nat(&result_unpacked.limbs) % pow2(256))
                 by {
                 assert(group_order() < pow2(256)) by {
-                    assume(false);
+                    lemma_group_order_bound();
+                    lemma_pow2_strictly_increases(255, 256);
                 }
                 lemma_small_mod(to_nat(&result_unpacked.limbs), pow2(256));
             }
@@ -523,7 +524,8 @@ impl<'b> Mul<&'b Scalar> for &Scalar {
             assert(to_nat(&result_unpacked.limbs) == to_nat(&result_unpacked.limbs) % pow2(256))
                 by {
                 assert(group_order() < pow2(256)) by {
-                    assume(false);
+                    lemma_group_order_bound();
+                    lemma_pow2_strictly_increases(255, 256);
                 }
                 lemma_small_mod(to_nat(&result_unpacked.limbs), pow2(256));
             }

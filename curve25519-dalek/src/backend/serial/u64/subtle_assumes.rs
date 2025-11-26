@@ -83,6 +83,15 @@ pub fn ct_eq_u8(a: &u8, b: &u8) -> (c: Choice)
     a.ct_eq(b)
 }
 
+/// Wrapper for ct_eq on u16
+#[verifier::external_body]
+pub fn ct_eq_u16(a: &u16, b: &u16) -> (c: Choice)
+    ensures
+        choice_is_true(c) == (*a == *b),
+{
+    a.ct_eq(b)
+}
+
 /// Wrapper for Choice::into (converts Choice to bool)
 #[verifier::external_body]
 pub fn choice_into(c: Choice) -> (b: bool)
@@ -225,6 +234,14 @@ pub fn conditional_negate_field<T>(a: &mut T, choice: Choice) where
     T: subtle::ConditionallyNegatable,
  {
     a.conditional_negate(choice);
+}
+
+/// Generic wrapper for ConditionallySelectable::conditional_assign()
+#[verifier::external_body]
+pub fn conditional_assign_generic<T>(a: &mut T, b: &T, choice: Choice) where
+    T: subtle::ConditionallySelectable,
+ {
+    a.conditional_assign(b, choice)
 }
 
 /*** ConditionallySelectable specification for ProjectivePoint ***/

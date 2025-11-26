@@ -235,14 +235,19 @@ use crate::traits::Identity;
 verus! {
 
 impl Identity for ProjectivePoint {
-    fn identity() -> (result: ProjectivePoint) {
+    fn identity() -> (result: ProjectivePoint)
+        ensures
+            result == identity_projective_point_edwards(),
+    {
         ProjectivePoint { X: FieldElement::ZERO, Y: FieldElement::ONE, Z: FieldElement::ONE }
     }
 }
 
-} // verus!
 impl Identity for ProjectiveNielsPoint {
-    fn identity() -> ProjectiveNielsPoint {
+    fn identity() -> (result: ProjectiveNielsPoint)
+        ensures
+            result == identity_projective_niels(),
+    {
         ProjectiveNielsPoint {
             Y_plus_X: FieldElement::ONE,
             Y_minus_X: FieldElement::ONE,
@@ -253,13 +258,19 @@ impl Identity for ProjectiveNielsPoint {
 }
 
 impl Default for ProjectiveNielsPoint {
-    fn default() -> ProjectiveNielsPoint {
+    fn default() -> (result: ProjectiveNielsPoint)
+        ensures
+            result == identity_projective_niels(),
+    {
         ProjectiveNielsPoint::identity()
     }
 }
 
 impl Identity for AffineNielsPoint {
-    fn identity() -> AffineNielsPoint {
+    fn identity() -> (result: AffineNielsPoint)
+        ensures
+            result == identity_affine_niels(),
+    {
         AffineNielsPoint {
             y_plus_x: FieldElement::ONE,
             y_minus_x: FieldElement::ONE,
@@ -269,15 +280,18 @@ impl Identity for AffineNielsPoint {
 }
 
 impl Default for AffineNielsPoint {
-    fn default() -> AffineNielsPoint {
+    fn default() -> (result: AffineNielsPoint)
+        ensures
+            result == identity_affine_niels(),
+    {
         AffineNielsPoint::identity()
     }
 }
 
+} // verus!
 // ------------------------------------------------------------------------
 // Validity checks (for debugging, not CT)
 // ------------------------------------------------------------------------
-
 verus! {
 
 impl ValidityCheck for ProjectivePoint {
@@ -398,7 +412,7 @@ impl ProjectivePoint {
         ensures
             is_valid_edwards_point(result),
             spec_edwards_point(result) == spec_projective_to_extended(*self),
-            affine_edwards_point(result) == affine_projective_point_edwards(*self),
+            edwards_point_as_affine(result) == projective_point_as_affine_edwards(*self),
     {
         let result = EdwardsPoint {
             X: &self.X * &self.Z,
@@ -410,7 +424,7 @@ impl ProjectivePoint {
             // postconditions
             assume(is_valid_edwards_point(result));
             assume(spec_edwards_point(result) == spec_projective_to_extended(*self));
-            assume(affine_edwards_point(result) == affine_projective_point_edwards(*self));
+            assume(edwards_point_as_affine(result) == projective_point_as_affine_edwards(*self));
         }
         result
     }
@@ -432,7 +446,7 @@ impl CompletedPoint {
         ensures
             is_valid_projective_point(result),
             spec_projective_point_edwards(result) == spec_completed_to_projective(*self),
-            affine_projective_point_edwards(result) == affine_completed_point(*self),
+            projective_point_as_affine_edwards(result) == completed_point_as_affine_edwards(*self),
     {
         let result = ProjectivePoint {
             X: &self.X * &self.T,
@@ -443,7 +457,9 @@ impl CompletedPoint {
             // postconditions
             assume(is_valid_projective_point(result));
             assume(spec_projective_point_edwards(result) == spec_completed_to_projective(*self));
-            assume(affine_projective_point_edwards(result) == affine_completed_point(*self));
+            assume(projective_point_as_affine_edwards(result) == completed_point_as_affine_edwards(
+                *self,
+            ));
         }
         result
     }
@@ -463,7 +479,7 @@ impl CompletedPoint {
         ensures
             is_valid_edwards_point(result),
             spec_edwards_point(result) == spec_completed_to_extended(*self),
-            affine_edwards_point(result) == affine_completed_point(*self),
+            edwards_point_as_affine(result) == completed_point_as_affine_edwards(*self),
     {
         let result = EdwardsPoint {
             X: &self.X * &self.T,
@@ -475,7 +491,7 @@ impl CompletedPoint {
             // postconditions
             assume(is_valid_edwards_point(result));
             assume(spec_edwards_point(result) == spec_completed_to_extended(*self));
-            assume(affine_edwards_point(result) == affine_completed_point(*self));
+            assume(edwards_point_as_affine(result) == completed_point_as_affine_edwards(*self));
         }
         result
     }
@@ -497,8 +513,8 @@ impl ProjectivePoint {
         ensures
             is_valid_completed_point(result),
             // The result represents the affine doubling of self
-            affine_completed_point(result) == ({
-                let (x, y) = affine_projective_point_edwards(*self);
+            completed_point_as_affine_edwards(result) == ({
+                let (x, y) = projective_point_as_affine_edwards(*self);
                 edwards_double(x, y)
             }),
             limbs_bounded(&result.X, 54),
@@ -538,9 +554,9 @@ impl ProjectivePoint {
         proof {
             // postconditions
             assume(is_valid_completed_point(result));
-            assume(affine_completed_point(result) == edwards_double(
-                affine_projective_point_edwards(*self).0,
-                affine_projective_point_edwards(*self).1,
+            assume(completed_point_as_affine_edwards(result) == edwards_double(
+                projective_point_as_affine_edwards(*self).0,
+                projective_point_as_affine_edwards(*self).1,
             ));
         }
 
@@ -575,6 +591,7 @@ impl vstd::std_specs::ops::AddSpecImpl<&ProjectiveNielsPoint> for &EdwardsPoint 
     }
 
     open spec fn add_spec(self, rhs: &ProjectiveNielsPoint) -> CompletedPoint {
+        // Placeholder - actual spec is in the ensures clause of the add function
         arbitrary()
     }
 }
@@ -585,7 +602,16 @@ impl vstd::std_specs::ops::AddSpecImpl<&ProjectiveNielsPoint> for &EdwardsPoint 
 impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn add(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
+    fn add(self, other: &'b ProjectiveNielsPoint) -> (result: CompletedPoint)
+        ensures
+    // The result represents the Edwards addition of the affine forms of self and other
+
+            is_valid_completed_point(result),
+            completed_point_as_affine_edwards(result) == spec_edwards_add_projective_niels(
+                *self,
+                *other,
+            ),
+    {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         proof {
@@ -615,7 +641,12 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
             T: &ZZ2 - &TT2d,
         };
         proof {
+            // postconditions
             assume(is_valid_completed_point(result));
+            assume(completed_point_as_affine_edwards(result) == spec_edwards_add_projective_niels(
+                *self,
+                *other,
+            ));
         }
         result
     }
@@ -684,28 +715,82 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     }
 }
 
-} // verus!
+/// Spec for &EdwardsPoint + &AffineNielsPoint
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::AddSpecImpl<&AffineNielsPoint> for &EdwardsPoint {
+    open spec fn obeys_add_spec() -> bool {
+        false
+    }
+
+    open spec fn add_req(self, rhs: &AffineNielsPoint) -> bool {
+        // Preconditions needed for field operations
+        sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX) && sum_of_limbs_bounded(
+            &self.Z,
+            &self.Z,
+            u64::MAX,
+        )  // for Z2 = &self.Z + &self.Z
+         && limbs_bounded(&self.X, 54) && limbs_bounded(&self.Y, 54) && limbs_bounded(&self.Z, 54)
+            && limbs_bounded(&self.T, 54) && limbs_bounded(&rhs.y_plus_x, 54) && limbs_bounded(
+            &rhs.y_minus_x,
+            54,
+        ) && limbs_bounded(&rhs.xy2d, 54)
+    }
+
+    open spec fn add_spec(self, rhs: &AffineNielsPoint) -> CompletedPoint {
+        // Placeholder - actual spec is in the ensures clause of the add function
+        arbitrary()
+    }
+}
+
 //#[doc(hidden)]
 impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn add(self, other: &'b AffineNielsPoint) -> CompletedPoint {
+    fn add(self, other: &'b AffineNielsPoint) -> (result: CompletedPoint)
+        ensures
+    // The result represents the Edwards addition of the affine forms of self and other
+
+            is_valid_completed_point(result),
+            completed_point_as_affine_edwards(result) == spec_edwards_add_affine_niels(
+                *self,
+                *other,
+            ),
+    {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
+        proof {
+            assume(sum_of_limbs_bounded(&Y_plus_X, &Y_minus_X, u64::MAX));
+            assume(limbs_bounded(&Y_plus_X, 54) && limbs_bounded(&Y_minus_X, 54));
+        }
         let PP = &Y_plus_X * &other.y_plus_x;
         let MM = &Y_minus_X * &other.y_minus_x;
         let Txy2d = &self.T * &other.xy2d;
         let Z2 = &self.Z + &self.Z;
-
-        CompletedPoint {
+        proof {
+            assume(sum_of_limbs_bounded(&Z2, &Txy2d, u64::MAX));
+            assume(sum_of_limbs_bounded(&PP, &MM, u64::MAX));
+            assume(limbs_bounded(&PP, 54) && limbs_bounded(&MM, 54));
+            assume(limbs_bounded(&Z2, 54) && limbs_bounded(&Txy2d, 54));
+        }
+        let result = CompletedPoint {
             X: &PP - &MM,
             Y: &PP + &MM,
             Z: &Z2 + &Txy2d,
             T: &Z2 - &Txy2d,
+        };
+        proof {
+            // postconditions
+            assume(is_valid_completed_point(result));
+            assume(completed_point_as_affine_edwards(result) == spec_edwards_add_affine_niels(
+                *self,
+                *other,
+            ));
         }
+        result
     }
 }
 
+} // verus!
 //#[doc(hidden)]
 impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;

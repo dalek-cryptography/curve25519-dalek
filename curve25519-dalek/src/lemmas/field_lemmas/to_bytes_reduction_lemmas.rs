@@ -3,6 +3,7 @@ use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power2::*;
 use vstd::bits::*;
+use vstd::calc;
 use vstd::prelude::*;
 
 use super::compute_q_lemmas::*;
@@ -691,6 +692,169 @@ pub proof fn lemma_to_bytes_reduction(input_limbs: [u64; 5], final_limbs: [u64; 
         // We proved quotient == 1
 
         // Convert back to original terms
+    }
+}
+
+/// Proves that the subtraction constants expand to 16 * p() in radix-2^51 form.
+pub proof fn lemma_sub_constants_equal_16p()
+    ensures
+        (36028797018963664u64 as nat + pow2(51) * (36028797018963952u64 as nat) + pow2(102) * (
+        36028797018963952u64 as nat) + pow2(153) * (36028797018963952u64 as nat) + pow2(204) * (
+        36028797018963952u64 as nat)) == (16 as nat) * p(),
+{
+    lemma2_to64_rest();
+    assert(pow2(51) == 0x8000000000000);
+
+    assert(36028797018963664u64 as nat == 16 * (pow2(51) - 19)) by {
+        assert(16 * (pow2(51) - 19) == 16 * (0x8000000000000 - 19)) by {
+            assert(pow2(51) == 0x8000000000000);
+        }
+        assert(16 * (0x8000000000000 - 19) == 36028797018963664) by (compute);
+    }
+
+    assert(36028797018963952u64 as nat == 16 * (pow2(51) - 1)) by {
+        assert(16 * (pow2(51) - 1) == 16 * (0x8000000000000 - 1)) by {
+            assert(pow2(51) == 0x8000000000000);
+        }
+        assert(16 * (0x8000000000000 - 1) == 36028797018963952) by (compute);
+    }
+
+    calc! {
+        (==)
+        36028797018963664u64 as nat + pow2(51) * (36028797018963952u64 as nat) + pow2(102) * (
+        36028797018963952u64 as nat) + pow2(153) * (36028797018963952u64 as nat) + pow2(204) * (
+        36028797018963952u64 as nat); {
+            // Substitute the constant definitions for clarity
+        }
+        (16 * (pow2(51) - 19) + pow2(51) * (16 * (pow2(51) - 1)) + pow2(102) * (16 * (pow2(51) - 1))
+            + pow2(153) * (16 * (pow2(51) - 1)) + pow2(204) * (16 * (pow2(51) - 1))) as nat; {
+            lemma_mul_is_distributive_add(
+                16,
+                pow2(51) - 19,
+                pow2(51) * (pow2(51) - 1) + pow2(102) * (pow2(51) - 1) + pow2(153) * (pow2(51) - 1)
+                    + pow2(204) * (pow2(51) - 1),
+            );
+        }
+        (16 * ((pow2(51) - 19) + pow2(51) * (pow2(51) - 1) + pow2(102) * (pow2(51) - 1) + pow2(153)
+            * (pow2(51) - 1) + pow2(204) * (pow2(51) - 1))) as nat; {
+            lemma_p_radix_representation();
+        }
+        (16 * p()) as nat;
+    }
+}
+
+/// Helper lemma establishing the radix-2^51 expansion of p().
+pub proof fn lemma_p_radix_representation()
+    ensures
+        (pow2(51) - 19) + pow2(51) * (pow2(51) - 1) + pow2(102) * (pow2(51) - 1) + pow2(153) * (
+        pow2(51) - 1) + pow2(204) * (pow2(51) - 1) == p(),
+{
+    let r1 = pow2(51);
+    let r2 = pow2(102);
+    let r3 = pow2(153);
+    let r4 = pow2(204);
+    let r5 = pow2(255);
+
+    assert(pow2(51) * (pow2(51) - 1) == r2 - r1) by {
+        calc! {
+            (==)
+            r1 * (r1 - 1); {
+                lemma_mul_is_commutative(r1 as int, (r1 - 1) as int);
+            }
+            (r1 - 1) * r1; {
+                lemma_mul_is_distributive_sub(r1 as int, r1 as int, 1);
+            }
+            r1 * r1 - r1 * 1; {
+                lemma_pow2_adds(51, 51);
+                lemma_mul_basics(r1 as int);
+                assert(r1 * r1 == r2);
+                assert(r1 * 1 == r1);
+            }
+            r2 - r1;
+        }
+    }
+
+    assert(pow2(102) * (pow2(51) - 1) == r3 - r2) by {
+        calc! {
+            (==)
+            r2 * (r1 - 1); {
+                lemma_mul_is_distributive_sub(r2 as int, r1 as int, 1);
+            }
+            r2 * r1 - r2 * 1; {
+                lemma_pow2_adds(102, 51);
+                lemma_mul_is_commutative(r2 as int, r1 as int);
+                lemma_mul_basics(r2 as int);
+                assert(r2 * r1 == r3);
+                assert(r2 * 1 == r2);
+            }
+            r3 - r2;
+        }
+    }
+
+    assert(pow2(153) * (pow2(51) - 1) == r4 - r3) by {
+        calc! {
+            (==)
+            r3 * (r1 - 1); {
+                lemma_mul_is_distributive_sub(r3 as int, r1 as int, 1);
+            }
+            r3 * r1 - r3 * 1; {
+                lemma_pow2_adds(153, 51);
+                lemma_mul_is_commutative(r3 as int, r1 as int);
+                lemma_mul_basics(r3 as int);
+                assert(r3 * r1 == r4);
+                assert(r3 * 1 == r3);
+            }
+            r4 - r3;
+        }
+    }
+
+    assert(pow2(204) * (pow2(51) - 1) == r5 - r4) by {
+        calc! {
+            (==)
+            r4 * (r1 - 1); {
+                lemma_mul_is_distributive_sub(r4 as int, r1 as int, 1);
+            }
+            r4 * r1 - r4 * 1; {
+                lemma_pow2_adds(204, 51);
+                lemma_mul_is_commutative(r4 as int, r1 as int);
+                lemma_mul_basics(r4 as int);
+                assert(r4 * r1 == r5);
+                assert(r4 * 1 == r4);
+            }
+            r5 - r4;
+        }
+    }
+
+    calc! {
+        (==)
+        (pow2(51) - 19) + pow2(51) * (pow2(51) - 1) + pow2(102) * (pow2(51) - 1) + pow2(153) * (
+        pow2(51) - 1) + pow2(204) * (pow2(51) - 1); {}
+        (r1 - 19) + (r2 - r1) + (r3 - r2) + (r4 - r3) + (r5 - r4); {
+            assert(pow2(51) * (pow2(51) - 1) == r2 - r1);
+            assert(pow2(102) * (pow2(51) - 1) == r3 - r2);
+            assert(pow2(153) * (pow2(51) - 1) == r4 - r3);
+            assert(pow2(204) * (pow2(51) - 1) == r5 - r4);
+        }
+        r5 - 19;
+    }
+
+    assert(r5 - 19 == p()) by {
+        assert(r5 == pow2(255));
+        pow255_gt_19();
+        assert(pow2(255) >= 19) by {
+            assert(pow2(255) > 19);
+        }
+        assert(pow2(255) - 19 == p()) by {
+            assert(pow2(255) - 19 == (pow2(255) - 19) as nat) by {
+                assert(pow2(255) - 19 >= 0) by {
+                    assert(pow2(255) >= 19);
+                }
+            }
+            assert(p() == (pow2(255) - 19) as nat);
+        }
+        assert(r5 - 19 == pow2(255) - 19) by {
+            assert(r5 == pow2(255));
+        }
     }
 }
 

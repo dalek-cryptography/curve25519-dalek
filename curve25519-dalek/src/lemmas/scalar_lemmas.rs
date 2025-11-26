@@ -27,6 +27,8 @@ use vstd::prelude::*;
 use super::common_lemmas::pow_lemmas::*;
 #[allow(unused_imports)]
 use super::common_lemmas::shift_lemmas::*;
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::u8_32_as_nat_injectivity_lemmas::*;
 
 verus! {
 
@@ -1837,6 +1839,71 @@ pub proof fn lemma_r_bounded(r: Scalar52)
 
     assert(0x10000000000000 == 1u64 << 52) by (bit_vector);
 
+}
+
+/// Proves correctness of is_canonical check
+///
+/// This lemma establishes that comparing a scalar to its reduced form
+/// correctly determines whether it is canonical (i.e., already in the range [0, group_order())).
+///
+/// The proof works by cases:
+/// - If self_bytes == reduced_bytes, then self is already canonical
+/// - If self_bytes != reduced_bytes, then they have different nat values (by injectivity),
+///   but equal nat values mod group_order (by reduce's postcondition).
+///   This is only possible if self_bytes represents a value >= group_order.
+pub proof fn lemma_is_canonical_correctness(self_bytes: &[u8; 32], reduced_bytes: &[u8; 32])
+    requires
+// reduced is canonical
+
+        bytes_to_nat(reduced_bytes) < group_order(),
+        // reduced has the same value mod group_order as self
+        bytes_to_nat(reduced_bytes) % group_order() == bytes_to_nat(self_bytes) % group_order(),
+    ensures
+// Bytes are equal iff self is canonical
+
+        (self_bytes == reduced_bytes) == (bytes_to_nat(self_bytes) < group_order()),
+{
+    if self_bytes == reduced_bytes {
+        // Case 1: Bytes are equal
+        // Then nat values are equal and self is canonical
+        assert(bytes_to_nat(self_bytes) == bytes_to_nat(reduced_bytes));
+        assert(bytes_to_nat(self_bytes) < group_order());
+    } else {
+        // Case 2: Bytes differ
+        // Step 1: Different bytes imply different nat values (by injectivity)
+        assert(bytes_to_nat(reduced_bytes) != bytes_to_nat(self_bytes)) by {
+            if bytes_to_nat(reduced_bytes) == bytes_to_nat(self_bytes) {
+                lemma_canonical_bytes_equal(reduced_bytes, self_bytes);
+                assert(reduced_bytes =~= self_bytes);  // contradiction
+            }
+        }
+
+        // Step 2: Canonical value equals itself mod group_order
+        assert(bytes_to_nat(reduced_bytes) == bytes_to_nat(reduced_bytes) % group_order()) by {
+            lemma_fundamental_div_mod_converse_mod(
+                bytes_to_nat(reduced_bytes) as int,
+                group_order() as int,
+                0int,
+                bytes_to_nat(reduced_bytes) as int,
+            );
+        }
+
+        // Step 3: From Step 1, Step 2, and requires, deduce self_bytes differs from its mod
+        // reduced == reduced % L (Step 2) and reduced % L == self % L (requires)
+        // implies reduced == self % L, but reduced != self (Step 1)
+        // therefore self % L != self
+        assert(bytes_to_nat(self_bytes) % group_order() != bytes_to_nat(self_bytes));
+
+        // Step 4: By contradiction - if self_bytes < group_order, it would equal itself mod group_order
+        assert(!(bytes_to_nat(self_bytes) < group_order())) by {
+            if bytes_to_nat(self_bytes) < group_order() {
+                assert(bytes_to_nat(self_bytes) % group_order() == bytes_to_nat(self_bytes)) by {
+                    lemma_small_mod(bytes_to_nat(self_bytes), group_order());
+                }
+            }
+        }
+        // Therefore self_bytes >= group_order, so it's not canonical
+    }
 }
 
 } // verus!

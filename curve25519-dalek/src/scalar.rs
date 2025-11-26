@@ -2523,16 +2523,18 @@ impl Scalar {
 
     /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). This is not
     /// public because any `Scalar` that is publicly observed is reduced, by scalar invariant #2.
-    // VERIFICATION NOTE: PROOF BYPASS
     fn is_canonical(&self) -> (result: Choice)
         ensures
     // Result is true iff the scalar satisfies Scalar invariants #1 and #2
 
             choice_is_true(result) == is_canonical_scalar(self),
     {
-        let result = self.ct_eq(&self.reduce());
-        // TODO: Prove the postcondition from ct_eq and reduce specs
-        assume(choice_is_true(result) == is_canonical_scalar(self));
+        let x = &self.reduce();
+        let result = self.ct_eq(x);
+
+        proof {
+            lemma_is_canonical_correctness(&self.bytes, &x.bytes);
+        }
         result
     }
 }

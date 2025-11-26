@@ -792,6 +792,7 @@ impl Neg for &Scalar {
             // Preconditions for mul_internal and sub
             assume(limbs_bounded(&constants::R));
             assume(limbs_bounded(&UnpackedScalar::ZERO));
+            // Also prove that to_nat(R) < group order
         }
 
         let self_R = UnpackedScalar::mul_internal(&self.unpack(), &constants::R);
@@ -800,6 +801,10 @@ impl Neg for &Scalar {
         proof {
             assume(limbs_bounded(&self_mod_l));
             // sub requires: -group_order() <= 0 - to_nat(&self_mod_l.limbs) < group_order()
+            // Hence we need to know that to_nat(self_mod_l) < group_order.
+            // From the spec of montgomery_reduce, that only happens if self_R can be written
+            // as the product of something bounded and something canonical. R is canonical,
+            // so we need self.unpack() to be bounded, which unpack's postcondition gives us
             assume(-group_order() <= to_nat(&UnpackedScalar::ZERO.limbs) - to_nat(
                 &self_mod_l.limbs,
             ));
@@ -843,9 +848,6 @@ impl Neg for Scalar {
             (scalar_to_nat(&self) + scalar_to_nat(&result)) % group_order() == 0,
     {
         let result = (&self).neg();
-        proof {
-            assume((scalar_to_nat(&self) + scalar_to_nat(&result)) % group_order() == 0);
-        }
         result
     }/* <ORIGINAL CODE>
     fn neg(self) -> Scalar {

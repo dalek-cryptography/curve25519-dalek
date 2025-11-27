@@ -212,4 +212,24 @@ impl VartimeMultiscalarMul for Straus {
 
         Some(r.as_extended())
     }
+
+    fn vartime_multiscalar_mul_with_scalar_bits<I, J>(
+        scalars: I,
+        points: J,
+        scalar_bits: Option<usize>,
+    ) -> Self::Point
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<Self::Point>,
+        Self::Point: Clone,
+    {
+        Self::optional_multiscalar_mul_with_scalar_bits(
+            scalars,
+            points.into_iter().map(|P| Some(P.borrow().clone())),
+            scalar_bits,
+        )
+        .expect("should return some point")
+    }
 }

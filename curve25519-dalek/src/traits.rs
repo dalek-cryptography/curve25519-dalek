@@ -336,6 +336,72 @@ pub trait VartimeMultiscalarMul {
         )
         .expect("should return some point")
     }
+
+    /// Given an iterator of public scalars and an iterator of
+    /// public points, compute
+    /// $$
+    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n,
+    /// $$
+    /// using variable-time operations.
+    ///
+    /// It is an error to call this function with two iterators of different lengths.
+    ///
+    /// It additionally accepts a `scalar_bits` parameter, which is the number of bits
+    /// in the scalars.  This might be used to optimize the algorithm when applicable.
+    ///
+    /// # Examples
+    ///
+    /// The trait bound aims for maximum flexibility: the inputs must be
+    /// convertable to iterators (`I: IntoIter`), and the iterator's items
+    /// must be `Borrow<Scalar>` (or `Borrow<Point>`), to allow
+    /// iterators returning either `Scalar`s or `&Scalar`s.
+    ///
+    /// ```
+    /// #[cfg(feature = "alloc")]
+    /// # {
+    /// use curve25519_dalek::constants;
+    /// use curve25519_dalek::traits::VartimeMultiscalarMul;
+    /// use curve25519_dalek::ristretto::RistrettoPoint;
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// // Some scalars
+    /// let a = Scalar::from(87329482u64);
+    /// let b = Scalar::from(37264829u64);
+    /// let c = Scalar::from(98098098u64);
+    ///
+    /// // Some points
+    /// let P = constants::RISTRETTO_BASEPOINT_POINT;
+    /// let Q = P + P;
+    /// let R = P + Q;
+    ///
+    /// // A1 = a*P + b*Q + c*R
+    /// let abc = [a,b,c];
+    /// let A1 = RistrettoPoint::vartime_multiscalar_mul_with_scalar_bits(&abc, &[P,Q,R], None);
+    /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
+    ///
+    /// // A2 = (-a)*P + (-b)*Q + (-c)*R
+    /// let minus_abc = abc.iter().map(|x| -x);
+    /// let A2 = RistrettoPoint::vartime_multiscalar_mul_with_scalar_bits(minus_abc, &[P,Q,R], None);
+    /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
+    ///
+    /// assert_eq!(A1.compress(), (-A2).compress());
+    /// # }
+    /// ```
+    fn vartime_multiscalar_mul_with_scalar_bits<I, J>(
+        scalars: I,
+        points: J,
+        _scalar_bits: Option<usize>,
+    ) -> Self::Point
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<Self::Point>,
+        Self::Point: Clone,
+    {
+        // Default implementation: ignore scalar_bits
+        Self::vartime_multiscalar_mul(scalars, points)
+    }
 }
 
 /// A trait for variable-time multiscalar multiplication with precomputation.

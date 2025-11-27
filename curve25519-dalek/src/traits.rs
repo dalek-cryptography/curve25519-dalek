@@ -201,6 +201,81 @@ pub trait VartimeMultiscalarMul {
         J: IntoIterator<Item = Option<Self::Point>>;
 
     /// Given an iterator of public scalars and an iterator of
+    /// `Option`s of points, compute either `Some(Q)`, where
+    /// $$
+    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n,
+    /// $$
+    /// if all points were `Some(P_i)`, or else return `None`.
+    ///
+    /// It additionally accepts a `scalar_bits` parameter, which is the number of bits
+    /// in the scalars.  This might be used to optimize the algorithm when applicable.
+    ///
+    /// This function is particularly useful when verifying statements
+    /// involving compressed points.  Accepting `Option<Point>` allows
+    /// inlining point decompression into the multiscalar call,
+    /// avoiding the need for temporary buffers.
+    ///
+    /// ```
+    /// #[cfg(feature = "alloc")]
+    /// # {
+    /// use curve25519_dalek::constants;
+    /// use curve25519_dalek::traits::VartimeMultiscalarMul;
+    /// use curve25519_dalek::ristretto::RistrettoPoint;
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// // Some scalars
+    /// let a = Scalar::from(87329482u64);
+    /// let b = Scalar::from(37264829u64);
+    /// let c = Scalar::from(98098098u64);
+    /// let abc = [a,b,c];
+    ///
+    /// // Some points
+    /// let P = constants::RISTRETTO_BASEPOINT_POINT;
+    /// let Q = P + P;
+    /// let R = P + Q;
+    /// let PQR = [P, Q, R];
+    ///
+    /// let compressed = [P.compress(), Q.compress(), R.compress()];
+    ///
+    /// // Now we can compute A1 = a*P + b*Q + c*R using P, Q, R:
+    /// let A1 = RistrettoPoint::vartime_multiscalar_mul(&abc, &PQR);
+    ///
+    /// // Or using the compressed points:
+    /// let A2 = RistrettoPoint::optional_multiscalar_mul_with_scalar_bits(
+    ///     &abc,
+    ///     compressed.iter().map(|pt| pt.decompress()),
+    ///     None,
+    /// );
+    ///
+    /// assert_eq!(A2, Some(A1));
+    ///
+    /// // It's also possible to mix compressed and uncompressed points:
+    /// let A3 = RistrettoPoint::optional_multiscalar_mul_with_scalar_bits(
+    ///     abc.iter()
+    ///         .chain(abc.iter()),
+    ///     compressed.iter().map(|pt| pt.decompress())
+    ///         .chain(PQR.iter().map(|&pt| Some(pt))),
+    ///     None,
+    /// );
+    ///
+    /// assert_eq!(A3, Some(A1+A1));
+    /// # }
+    /// ```
+    fn optional_multiscalar_mul_with_scalar_bits<I, J>(
+        scalars: I,
+        points: J,
+        _scalar_bits: Option<usize>,
+    ) -> Option<Self::Point>
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator<Item = Option<Self::Point>>,
+    {
+        // Default implementation: ingore scalar_bits
+        Self::optional_multiscalar_mul(scalars, points)
+    }
+
+    /// Given an iterator of public scalars and an iterator of
     /// public points, compute
     /// $$
     /// Q = c\_1 P\_1 + \cdots + c\_n P\_n,

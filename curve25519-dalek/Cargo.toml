@@ -49,9 +49,9 @@ rustc_version = "0.4.0"
 # required-features = ["alloc", "rand_core"]
 
 [dependencies]
-vstd = { git = "https://github.com/verus-lang/verus", rev = "bf8e97e852e95f277333ecd7c6515d5c1adfbf0c"}
-verus_builtin = { git = "https://github.com/verus-lang/verus", rev = "bf8e97e852e95f277333ecd7c6515d5c1adfbf0c"}
-verus_builtin_macros = { git = "https://github.com/verus-lang/verus", rev = "bf8e97e852e95f277333ecd7c6515d5c1adfbf0c"}
+vstd = { git = "https://github.com/verus-lang/verus", rev = "41c5885"}
+verus_builtin = { git = "https://github.com/verus-lang/verus", rev = "41c5885"}
+verus_builtin_macros = { git = "https://github.com/verus-lang/verus", rev = "41c5885"}
 cfg-if = "1"
 ff = { version = "0.13", default-features = false, optional = true }
 group = { version = "0.13", default-features = false, optional = true }

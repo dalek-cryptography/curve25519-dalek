@@ -40,7 +40,7 @@ This repo is based on the `signal-curve25519-4.1.3` tag of https://github.com/si
 
 # Setup
 1. Install Rust: https://rust-lang.org/learn/get-started/
-2. Download and unzip a verus binary from https://github.com/verus-lang/verus/releases/tag/release%2F0.2025.10.05.bf8e97e. It's important to use exactly this version
+2. Download and unzip a verus binary from https://github.com/verus-lang/verus/releases/tag/release%2F0.2025.11.23.41c5885. It's important to use exactly this version
 3. The unzipped verus folder will contains a file called `verus` and a file called `cargo-verus`. Run these commands:
 
 ``` sh

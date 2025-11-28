@@ -23,6 +23,8 @@ use crate::constants;
 #[allow(unused_imports)]
 use crate::lemmas::core_lemmas::*;
 #[allow(unused_imports)]
+use crate::lemmas::montgomery_lemmas::*;
+#[allow(unused_imports)]
 use crate::lemmas::scalar_byte_lemmas::scalar_to_bytes_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::scalar_lemmas::*;
@@ -905,15 +907,28 @@ impl Scalar52 {
             limbs_bounded(self),
         ensures
             limbs_bounded(&result),
-            to_nat(&result.limbs) % group_order() == (to_nat(&self.limbs) * montgomery_radix())
-                % group_order(),
+            #[trigger] (to_nat(&result.limbs) % group_order()) == #[trigger] ((to_nat(&self.limbs)
+                * montgomery_radix()) % group_order()),
     {
         proof {
             lemma_rr_limbs_bounded();
+            assert(group_order() > 0);
         }
         let result = Scalar52::montgomery_mul(self, &constants::RR);
-        assume(to_nat(&result.limbs) % group_order() == (to_nat(&self.limbs) * montgomery_radix())
-            % group_order());
+        proof {
+            // From montgomery_mul's ensures clause:
+            // (to_nat(&result.limbs) * montgomery_radix()) % group_order() ==
+            // (to_nat(&self.limbs) * to_nat(&constants::RR.limbs)) % group_order()
+            // Prove that RR = R² mod L
+            lemma_rr_equals_radix_squared();
+
+            // Now we can apply the cancellation lemma
+            lemma_cancel_mul_montgomery_mod(
+                to_nat(&result.limbs),
+                to_nat(&self.limbs),
+                to_nat(&constants::RR.limbs),
+            );
+        }
         result
     }
 

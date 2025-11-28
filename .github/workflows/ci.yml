@@ -16,11 +16,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@1.88.0
+      uses: dtolnay/rust-toolchain@1.91.0
     - name: Install Verus
       run: |
-        wget https://github.com/verus-lang/verus/releases/download/release%2F0.2025.10.05.bf8e97e/verus-0.2025.10.05.bf8e97e-x86-linux.zip
-        unzip verus-0.2025.10.05.bf8e97e-x86-linux.zip
+        wget https://github.com/verus-lang/verus/releases/download/release%2F0.2025.11.23.41c5885/verus-0.2025.11.23.41c5885-x86-linux.zip
+        unzip verus-0.2025.11.23.41c5885-x86-linux.zip
         mv verus-x86-linux ~/.cargo/bin
         cd ~/.cargo/bin
         ln -s verus-x86-linux/cargo-verus
@@ -78,7 +78,7 @@ jobs:
         cd ..
         git clone https://github.com/Beneficial-AI-Foundation/libsignal
         cd libsignal
-        git checkout frozen_for_ci
+        git checkout frozen_for_ci_verus_41c5885
     - name: Patch libsignal's Cargo.toml with current dalek-lite commit
       run: |
         DALEK_COMMIT=$(git rev-parse HEAD)
@@ -101,11 +101,11 @@ jobs:
     - name: Checkout dalek-lite
       uses: actions/checkout@v4
     - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@1.88.0
+      uses: dtolnay/rust-toolchain@1.91.0
     - name: Install Verus
       run: |
-        wget https://github.com/verus-lang/verus/releases/download/release%2F0.2025.10.05.bf8e97e/verus-0.2025.10.05.bf8e97e-x86-linux.zip
-        unzip verus-0.2025.10.05.bf8e97e-x86-linux.zip
+        wget https://github.com/verus-lang/verus/releases/download/release%2F0.2025.11.23.41c5885/verus-0.2025.11.23.41c5885-x86-linux.zip
+        unzip verus-0.2025.11.23.41c5885-x86-linux.zip
         mv verus-x86-linux ~/.cargo/bin
         cd ~/.cargo/bin
         ln -s verus-x86-linux/cargo-verus
@@ -116,7 +116,7 @@ jobs:
         cd ..
         git clone https://github.com/Beneficial-AI-Foundation/libsignal
         cd libsignal
-        git checkout frozen_for_ci_v0.84.0
+        git checkout frozen_for_ci_v0.84.0_verus_41c5885
     - name: Patch libsignal's Cargo.toml with current dalek-lite commit
       run: |
         DALEK_COMMIT=$(git rev-parse HEAD)

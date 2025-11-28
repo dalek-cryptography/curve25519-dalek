@@ -941,6 +941,62 @@ impl Default for Scalar {
     }
 }
 
+// vstd FromSpecImpl implementations for Scalar
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::convert::FromSpecImpl<u8> for Scalar {
+    open spec fn obeys_from_spec() -> bool {
+        false
+    }
+
+    open spec fn from_spec(x: u8) -> Scalar {
+        arbitrary()
+    }
+}
+
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::convert::FromSpecImpl<u16> for Scalar {
+    open spec fn obeys_from_spec() -> bool {
+        false
+    }
+
+    open spec fn from_spec(x: u16) -> Scalar {
+        arbitrary()
+    }
+}
+
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::convert::FromSpecImpl<u32> for Scalar {
+    open spec fn obeys_from_spec() -> bool {
+        false
+    }
+
+    open spec fn from_spec(x: u32) -> Scalar {
+        arbitrary()
+    }
+}
+
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::convert::FromSpecImpl<u64> for Scalar {
+    open spec fn obeys_from_spec() -> bool {
+        false
+    }
+
+    open spec fn from_spec(x: u64) -> Scalar {
+        arbitrary()
+    }
+}
+
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::convert::FromSpecImpl<u128> for Scalar {
+    open spec fn obeys_from_spec() -> bool {
+        false
+    }
+
+    open spec fn from_spec(x: u128) -> Scalar {
+        arbitrary()
+    }
+}
+
 impl From<u8> for Scalar {
     // VERIFICATION NOTE: PROOF BYPASS
     fn from(x: u8) -> (result: Scalar)

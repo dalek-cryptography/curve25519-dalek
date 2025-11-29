@@ -111,6 +111,7 @@
 //! has been enabled.
 
 use crate::lemmas::common_lemmas::mask_lemmas::*;
+use crate::lemmas::common_lemmas::pow_lemmas::*;
 use crate::lemmas::common_lemmas::shift_lemmas::*;
 use core::borrow::Borrow;
 use core::fmt::Debug;
@@ -121,6 +122,7 @@ use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
 use vstd::arithmetic::div_mod::*;
+use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power::*;
 use vstd::arithmetic::power2::*;
 use vstd::bits::*;
@@ -2617,35 +2619,94 @@ fn square_multiply(
     ensures
         limbs_bounded(y),
         limbs_bounded(x),
-        (to_nat(&y.limbs) * montgomery_radix()) % group_order() == (pow(
-            to_nat(&old(y).limbs) as int,
-            pow2(squarings as nat),
-        ) * to_nat(&x.limbs)) % (group_order() as int),
+        // VERIFICATION NOTE: Changed postcondition from the original incorrect version
+        // which used `montgomery_radix()` instead of `pow(montgomery_radix(), pow2(squarings))`
+        (to_nat(&y.limbs) * pow(montgomery_radix() as int, pow2(squarings as nat)) as nat)
+            % group_order() == (pow(to_nat(&old(y).limbs) as int, pow2(squarings as nat)) * to_nat(
+            &x.limbs,
+        )) % (group_order() as int),
 {
-    assume(false);
-    let ghost mut i: int = 0;  // Ghost variable: tracks iterations for proof
-    for _ in 0..squarings
+    let ghost y0: nat = to_nat(&y.limbs);
+    let ghost xv: nat = to_nat(&x.limbs);
+    let ghost R: nat = montgomery_radix();
+    let ghost L: nat = group_order();
+
+    proof {
+        lemma_pow2_pos(260);
+        lemma2_to64();
+        lemma_pow0(R as int);
+        lemma_pow1(y0 as int);
+        assert(pow(R as int, 0nat) == 1);
+        assert((y0 * 1) as nat == y0);
+    }
+
+    // VERIFICATION NOTE: Named loop variable allows tracking iteration count
+    for idx in 0..squarings
         invariant
             limbs_bounded(y),
             limbs_bounded(x),
-            i <= squarings,
-            pow(to_nat(&old(y).limbs) as int, pow2(i as nat)) < group_order() as int,
+            L == group_order(),
+            R == montgomery_radix(),
+            L > 0,
+            R > 0,
+            (to_nat(&y.limbs) * pow(R as int, (pow2(idx as nat) - 1) as nat) as nat) % L == (pow(
+                y0 as int,
+                pow2(idx as nat),
+            ) as nat) % L,
     {
-        proof {
-            i = i + 1;
-            assume(i <= squarings);
-            assume(pow(to_nat(&old(y).limbs) as int, pow2(i as nat)) < group_order() as int);
-        }
+        let ghost y_before: nat = to_nat(&y.limbs);
         *y = y.montgomery_square();
+        proof {
+            lemma_square_multiply_step(to_nat(&y.limbs), y_before, y0, R, L, idx as nat);
+        }
     }
+
+    let ghost y_after: nat = to_nat(&y.limbs);
+    let ghost exp_final: nat = (pow2(squarings as nat) - 1) as nat;
+
     *y = UnpackedScalar::montgomery_mul(y, x);
+
     proof {
-        assume(limbs_bounded(y));
-        assume(limbs_bounded(x));
-        assume((to_nat(&y.limbs) * montgomery_radix()) % group_order() == (pow(
-            to_nat(&old(y).limbs) as int,
+        // After loop, i == squarings (from ensures), so invariant gives us:
+        assert((y_after * pow(R as int, exp_final) as nat) % L == (pow(
+            y0 as int,
             pow2(squarings as nat),
-        ) * to_nat(&x.limbs)) % (group_order() as int));
+        ) as nat) % L);
+
+        let final_y: nat = to_nat(&y.limbs);
+        let n: nat = squarings as nat;
+        let R_exp: int = pow(R as int, exp_final);
+        let R_pow2n: int = pow(R as int, pow2(n));
+        let y0_pow: int = pow(y0 as int, pow2(n));
+
+        lemma_pow2_pos(n);
+        lemma_pow_adds(R as int, 1nat, exp_final);
+        lemma_pow1(R as int);
+        lemma_pow_nonnegative(R as int, exp_final);
+        lemma_pow_nonnegative(y0 as int, pow2(n));
+
+        assert((y_after as int * xv as int) * R_exp == (y_after as int * R_exp) * xv as int)
+            by (nonlinear_arith)
+            requires
+                R_exp >= 0,
+        ;
+
+        calc! {
+            (==)
+            (final_y as int * R_pow2n) % (L as int); {
+                lemma_mul_is_associative(final_y as int, R as int, R_exp);
+            }
+            ((final_y * R) as int * R_exp) % (L as int); {
+                lemma_mul_mod_noop((final_y * R) as int, R_exp, L as int);
+                lemma_mul_mod_noop((y_after * xv) as int, R_exp, L as int);
+            }
+            ((y_after * xv) as int * R_exp) % (L as int); {}
+            ((y_after * R_exp as nat) as int * xv as int) % (L as int); {
+                lemma_mul_mod_noop((y_after * R_exp as nat) as int, xv as int, L as int);
+                lemma_mul_mod_noop(y0_pow, xv as int, L as int);
+            }
+            (y0_pow * xv as int) % (L as int);
+        }
     }
 }
 

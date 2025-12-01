@@ -55,12 +55,10 @@ def main():
     result = subprocess.run(
         [
             str(script_dir / "plot_progress_over_time.py"),
-            "--since",
-            "2025-10-09",
-            "--max-commits",
-            "10000",
-            "--sample",
-            "1",
+            "--history",
+            str(repo_root / "outputs" / "stats_history.jsonl"),
+            "--output-dir",
+            str(repo_root / "outputs"),
         ],
         cwd=repo_root,
         capture_output=True,

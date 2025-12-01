@@ -30,6 +30,48 @@ SPECIAL_MODULES = {
 
 
 @beartype
+def extract_impl_signature(content: str, fn_start: int) -> Optional[str]:
+    """
+    Extract the full impl block signature for a function.
+
+    For example, if the function is inside:
+        impl Identity for ProjectivePoint {
+    Returns "Identity for ProjectivePoint"
+
+    For trait implementations like:
+        impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
+    Returns "Add<&'b Scalar> for &'a Scalar"
+
+    For inherent implementations:
+        impl Scalar {
+    Returns "Scalar"
+    """
+    # Look backwards from fn_start to find the impl block
+    look_back = content[:fn_start]
+    lines = look_back.split("\n")
+
+    # Search backwards for impl block
+    for i in range(len(lines) - 1, -1, -1):
+        line = lines[i].strip()
+
+        # Stop at verus! blocks or module boundaries
+        if line.startswith("verus!") or line.startswith("mod "):
+            break
+
+        # Look for impl blocks
+        if line.startswith("impl"):
+            # Extract everything between 'impl' and '{'
+            # Pattern: impl<...> TraitName<...> for TypeName { or impl TypeName {
+            match = re.search(r"impl\s*(?:<[^>]+>)?\s*(.+?)\s*\{", line)
+            if match:
+                impl_part = match.group(1).strip()
+                # Note: lifetime params are cleaned up later in normalize_impl()
+                return impl_part
+
+    return None
+
+
+@beartype
 def extract_impl_context(content: str, fn_start: int) -> Optional[str]:
     """
     Extract the impl block context for a function.
@@ -113,10 +155,16 @@ def extract_module_from_path(file_path: Path, repo_root: Path) -> str:
 
 @beartype
 def parse_function_in_file(
-    file_path: Path, function_name: str, old_link: str = ""
+    file_path: Path, function_name: str, old_link: str = "", impl_block: str = ""
 ) -> Tuple[bool, bool, bool, int, str]:
     """
     Parse a Rust file to find a function and check if it has Verus specs and proofs.
+
+    Args:
+        file_path: Path to the Rust source file
+        function_name: Bare function name (without type prefix or signature)
+        old_link: Optional GitHub link with line number hint
+        impl_block: Optional impl block context for disambiguation (e.g., "Add for FieldElement51")
 
     Returns:
         Tuple[bool, bool, bool, int, str]: (has_spec, has_proof, is_external_body, line_number, qualified_name)
@@ -155,6 +203,60 @@ def parse_function_in_file(
             matches_with_lines.append((distance, match))
         matches_with_lines.sort(key=lambda x: x[0])
         matches = [m[1] for m in matches_with_lines]
+
+    # If we have impl_block for disambiguation and multiple matches, filter by impl context
+    if impl_block and len(matches) > 1:
+        filtered_matches = []
+        for match in matches:
+            fn_start = match.start()
+            found_impl_sig = extract_impl_signature(content, fn_start)
+            if found_impl_sig:
+                # Normalize both for comparison (remove lifetimes but preserve &)
+                def normalize_impl(s):
+                    # Remove lifetime annotations while preserving & references
+                    # Pattern 1: <'a> → "" (standalone lifetime generics like Deserialize<'de>)
+                    # Pattern 2: 'a → "" (lifetimes in mixed contexts like &'b Scalar → & Scalar)
+                    # Both patterns together ensure consistent normalization for matching
+                    s = re.sub(r"<'\w+>", "", s)
+                    s = re.sub(r"'\w+\b", "", s)
+                    return " ".join(s.split())
+
+                norm_found = normalize_impl(found_impl_sig)
+                norm_expected = normalize_impl(impl_block)
+
+                # Check if they match exactly
+                if norm_found == norm_expected:
+                    filtered_matches.append(match)
+                    continue
+
+                # Check for reference vs owned type distinction
+                # "Neg for &EdwardsPoint" vs "Neg for EdwardsPoint"
+                # Only applies when trait names match (e.g., both are "Neg")
+                if " for " in impl_block and " for " in norm_found:
+                    expected_trait = impl_block.split(" for ")[0].strip()
+                    found_trait = norm_found.split(" for ")[0].strip()
+                    # Extract base trait name (e.g., "Neg" from "Neg", "From<u8>" stays as is)
+                    expected_trait_base = expected_trait.split("<")[0]
+                    found_trait_base = found_trait.split("<")[0]
+
+                    # Only do ref vs owned check if traits match and have no type params
+                    # (e.g., Neg for &T vs Neg for T, not From<u8> vs From<u16>)
+                    if (
+                        expected_trait_base == found_trait_base
+                        and "<" not in expected_trait
+                    ):
+                        expected_type = impl_block.split(" for ")[-1].strip()
+                        found_type = norm_found.split(" for ")[-1].strip()
+                        expected_is_ref = expected_type.startswith("&")
+                        found_is_ref = found_type.startswith("&")
+                        if expected_is_ref == found_is_ref:
+                            expected_base = expected_type.lstrip("&").strip()
+                            found_base = found_type.lstrip("&").strip()
+                            if expected_base == found_base:
+                                filtered_matches.append(match)
+                                continue
+        if filtered_matches:
+            matches = filtered_matches
 
     # For each match, check if it has specs
     for match in matches:
@@ -376,15 +478,16 @@ def extract_file_path_from_link(link: str, src_dir: Path) -> Path:
 
 @beartype
 def discover_function_in_module(
-    qualified_func: str, module: str, src_dir: Path
+    qualified_func: str, module: str, src_dir: Path, impl_block: str = ""
 ) -> Optional[Tuple[Path, int, str]]:
     """
     Discover a function in the codebase given its qualified name and module.
 
     Args:
-        qualified_func: Function name, possibly qualified (e.g., "FieldElement51::mul" or "mul")
+        qualified_func: Function name, possibly qualified (e.g., "FieldElement51::mul(args)" or "mul")
         module: Module path (e.g., "curve25519_dalek::backend::serial::u64::field")
         src_dir: Root source directory
+        impl_block: Optional impl block context for disambiguation (e.g., "Add for FieldElement51")
 
     Returns:
         Tuple of (file_path, line_number, github_link) if found, None otherwise
@@ -412,17 +515,19 @@ def discover_function_in_module(
             ]
         )
 
-    # Extract just the function name (without Type:: prefix if present)
-    func_name = (
+    # Extract just the function name (without Type:: prefix and signature if present)
+    func_part = (
         qualified_func.split("::")[-1] if "::" in qualified_func else qualified_func
     )
+    # Strip signature if present: "method(args)" -> "method"
+    func_name = func_part.split("(")[0] if "(" in func_part else func_part
 
     for file_path in possible_paths:
         if not file_path.exists():
             continue
 
-        # Try to find the function in this file
-        result = parse_function_in_file(file_path, func_name, "")
+        # Try to find the function in this file, passing impl_block for disambiguation
+        result = parse_function_in_file(file_path, func_name, "", impl_block)
         has_spec, has_proof, is_external_body, line_number, found_qualified = result
         if line_number > 0:
             # Generate GitHub link
@@ -436,16 +541,16 @@ def discover_function_in_module(
 @beartype
 def analyze_functions(
     seed_path: Path, src_dir: Path
-) -> Dict[str, Tuple[bool, bool, bool, int, str, str, str]]:
+) -> Dict[str, Tuple[bool, bool, bool, int, str, str, str, str]]:
     """
     Analyze all functions in the seed file and check their Verus status.
 
     Args:
-        seed_path: Path to functions_to_track.csv (just function,module columns)
+        seed_path: Path to functions_to_track.csv (function, module, impl_block columns)
         src_dir: Root source directory
 
     Returns:
-        Dict mapping function_module_key to (has_spec, has_proof, is_external_body, line_number, github_link, qualified_name, module_name)
+        Dict mapping function_module_impl_key to (has_spec, has_proof, is_external_body, line_number, github_link, qualified_name, module_name, impl_block)
     """
     # Read the seed CSV to get function names and modules
     with open(seed_path, "r") as f:
@@ -460,16 +565,22 @@ def analyze_functions(
     for row in rows:
         qualified_func = row["function"]
         module = row["module"]
+        impl_block = row.get("impl_block", "")  # New column for disambiguation
 
         # Extract just the function name for searching
-        func_name = (
+        # Handle new format: "Type::method(signature)" -> extract "method"
+        func_part = (
             qualified_func.split("::")[-1] if "::" in qualified_func else qualified_func
         )
+        # Strip signature if present: "method(args)" -> "method"
+        func_name = func_part.split("(")[0] if "(" in func_part else func_part
 
         print(f"Discovering: {qualified_func} in {module}")
 
         # Discover the function in the codebase
-        discovery = discover_function_in_module(qualified_func, module, src_dir)
+        discovery = discover_function_in_module(
+            qualified_func, module, src_dir, impl_block
+        )
         if not discovery:
             print("  WARNING: Function not found in codebase, skipping")
             continue
@@ -477,14 +588,14 @@ def analyze_functions(
         target_file, line_number, github_link = discovery
 
         # Re-analyze to get full details (spec, proof, etc.)
-        result = parse_function_in_file(target_file, func_name, github_link)
+        result = parse_function_in_file(target_file, func_name, github_link, impl_block)
         has_spec, has_proof, is_external_body, line_number, found_qualified = result
         if line_number == 0:
             print("  WARNING: Could not re-analyze function, skipping")
             continue
 
-        # Check for macro-generated duplicates (same file, same function name, same line)
-        func_key = f"{target_file}::{found_qualified}::{line_number}"
+        # Check for macro-generated duplicates (same file, same function name, same line, same impl_block)
+        func_key = f"{target_file}::{found_qualified}::{line_number}::{impl_block}"
         if func_key in seen_functions:
             print(
                 f"  Skipping duplicate (macro-generated): {found_qualified} at line {line_number}"
@@ -492,8 +603,8 @@ def analyze_functions(
             continue
         seen_functions[func_key] = True
 
-        # Use a unique key for results (function + module)
-        result_key = f"{qualified_func}::{module}"
+        # Use a unique key for results (function + module + impl_block)
+        result_key = f"{qualified_func}::{module}::{impl_block}"
         results[result_key] = (
             has_spec,
             has_proof,
@@ -502,6 +613,7 @@ def analyze_functions(
             github_link,  # Use the link we generated during discovery
             qualified_func,  # Use the qualified name from seed file
             module,  # Use the module from seed file
+            impl_block,  # Include impl_block for disambiguation
         )
         ext_marker = " [external_body]" if is_external_body else ""
         print(f"  Found: {qualified_func} in module {module}")
@@ -582,7 +694,7 @@ def update_links_to_main_branch(csv_path: Path):
 
 @beartype
 def update_csv(
-    csv_path: Path, results: Dict[str, Tuple[bool, bool, bool, int, str, str, str]]
+    csv_path: Path, results: Dict[str, Tuple[bool, bool, bool, int, str, str, str, str]]
 ):
     """Generate the CSV file with Verus analysis results."""
     # CSV format
@@ -598,6 +710,7 @@ def update_csv(
         github_link,
         qualified_name,
         module_name,
+        impl_block,
     ) in results.items():
         new_row = {
             "function": qualified_name,
@@ -619,14 +732,14 @@ def update_csv(
 
     # Print summary
     spec_count = sum(
-        1 for _, (has_spec, _, _, _, _, _, _) in results.items() if has_spec
+        1 for _, (has_spec, _, _, _, _, _, _, _) in results.items() if has_spec
     )
     proof_count = sum(
-        1 for _, (_, has_proof, _, _, _, _, _) in results.items() if has_proof
+        1 for _, (_, has_proof, _, _, _, _, _, _) in results.items() if has_proof
     )
     external_count = sum(
         1
-        for _, (has_spec, _, is_ext, _, _, _, _) in results.items()
+        for _, (has_spec, _, is_ext, _, _, _, _, _) in results.items()
         if has_spec and is_ext
     )
     full_spec_count = spec_count - external_count

@@ -1,213 +1,239 @@
-function,module
-fmt,curve25519_dalek::build
-is_capable_simd,curve25519_dalek::build
-determine_curve25519_dalek_bits_warning,curve25519_dalek::build
-determine_curve25519_dalek_bits,curve25519_dalek::build
-get_selected_backend,curve25519_dalek::backend
-pippenger_optional_multiscalar_mul,curve25519_dalek::backend
-VartimePrecomputedStraus::straus_multiscalar_mul,curve25519_dalek::backend
-VartimePrecomputedStraus::straus_optional_multiscalar_mul,curve25519_dalek::backend
-VartimePrecomputedStraus::variable_base_mul,curve25519_dalek::backend
-VartimePrecomputedStraus::vartime_double_base_mul,curve25519_dalek::backend
-ProjectivePoint::identity,curve25519_dalek::backend::serial::curve_models
-ProjectiveNielsPoint::default,curve25519_dalek::backend::serial::curve_models
-ProjectiveNielsPoint::conditional_select,curve25519_dalek::backend::serial::curve_models
-ProjectivePoint::as_extended,curve25519_dalek::backend::serial::curve_models
-CompletedPoint::as_projective,curve25519_dalek::backend::serial::curve_models
-ProjectivePoint::double,curve25519_dalek::backend::serial::curve_models
-ProjectivePoint::add,curve25519_dalek::backend::serial::curve_models
-ProjectivePoint::sub,curve25519_dalek::backend::serial::curve_models
-ProjectivePoint::neg,curve25519_dalek::backend::serial::curve_models
-Pippenger::optional_multiscalar_mul,curve25519_dalek::backend::serial::scalar_mul::pippenger
-Straus::multiscalar_mul,curve25519_dalek::backend::serial::scalar_mul::straus
-Straus::optional_multiscalar_mul,curve25519_dalek::backend::serial::scalar_mul::straus
-mul,curve25519_dalek::backend::serial::scalar_mul::variable_base
-mul,curve25519_dalek::backend::serial::scalar_mul::vartime_double_base
-FieldElement51::fmt,curve25519_dalek::backend::serial::u64::field
-FieldElement51::add_assign,curve25519_dalek::backend::serial::u64::field
-FieldElement51::add,curve25519_dalek::backend::serial::u64::field
-FieldElement51::sub,curve25519_dalek::backend::serial::u64::field
-FieldElement51::mul,curve25519_dalek::backend::serial::u64::field
-FieldElement51::m,curve25519_dalek::backend::serial::u64::field
-FieldElement51::neg,curve25519_dalek::backend::serial::u64::field
-FieldElement51::conditional_select,curve25519_dalek::backend::serial::u64::field
-FieldElement51::from_limbs,curve25519_dalek::backend::serial::u64::field
-FieldElement51::negate,curve25519_dalek::backend::serial::u64::field
-FieldElement51::reduce,curve25519_dalek::backend::serial::u64::field
-FieldElement51::from_bytes,curve25519_dalek::backend::serial::u64::field
-FieldElement51::load8_at,curve25519_dalek::backend::serial::u64::field
-FieldElement51::as_bytes,curve25519_dalek::backend::serial::u64::field
-FieldElement51::pow2k,curve25519_dalek::backend::serial::u64::field
-FieldElement51::square,curve25519_dalek::backend::serial::u64::field
-FieldElement51::square2,curve25519_dalek::backend::serial::u64::field
-index,curve25519_dalek::backend::serial::u64::scalar
-m,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::from_bytes,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::from_bytes_wide,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::as_bytes,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::add,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::sub,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::mul_internal,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::square_internal,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::montgomery_reduce,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::part1,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::part2,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::mul,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::montgomery_mul,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::montgomery_square,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::as_montgomery,curve25519_dalek::backend::serial::u64::scalar
-Scalar52::from_montgomery,curve25519_dalek::backend::serial::u64::scalar
-CompressedEdwardsY::as_bytes,curve25519_dalek::edwards
-CompressedEdwardsY::decompress,curve25519_dalek::edwards
-step_1,curve25519_dalek::edwards
-step_2,curve25519_dalek::edwards
-CompressedEdwardsY::identity,curve25519_dalek::edwards
-EdwardsPoint::conditional_select,curve25519_dalek::edwards
-CompressedEdwardsY::ct_eq,curve25519_dalek::edwards
-EdwardsPoint::as_projective_niels,curve25519_dalek::edwards
-EdwardsPoint::as_projective,curve25519_dalek::edwards
-EdwardsPoint::as_affine_niels,curve25519_dalek::edwards
-EdwardsPoint::to_montgomery,curve25519_dalek::edwards
-EdwardsPoint::compress,curve25519_dalek::edwards
-EdwardsPoint::double,curve25519_dalek::edwards
-EdwardsPoint::add,curve25519_dalek::edwards
-EdwardsPoint::add_assign,curve25519_dalek::edwards
-EdwardsPoint::sub,curve25519_dalek::edwards
-EdwardsPoint::sub_assign,curve25519_dalek::edwards
-EdwardsPoint::neg,curve25519_dalek::edwards
-EdwardsPoint::mul_assign,curve25519_dalek::edwards
-EdwardsPoint::mul,curve25519_dalek::edwards
-EdwardsPoint::mul_base,curve25519_dalek::edwards
-EdwardsPoint::mul_base_clamped,curve25519_dalek::edwards
-EdwardsPoint::multiscalar_mul,curve25519_dalek::edwards
-EdwardsPoint::optional_multiscalar_mul,curve25519_dalek::edwards
-EdwardsPoint::vartime_double_scalar_mul_basepoint,curve25519_dalek::edwards
-EdwardsPoint::create,curve25519_dalek::edwards
-EdwardsPoint::basepoint,curve25519_dalek::edwards
-EdwardsPoint::mul_by_pow_2,curve25519_dalek::edwards
-EdwardsPoint::is_torsion_free,curve25519_dalek::edwards
-CompressedEdwardsY::fmt,curve25519_dalek::edwards
-FieldElement::eq,curve25519_dalek::field
-FieldElement::ct_eq,curve25519_dalek::field
-FieldElement::is_negative,curve25519_dalek::field
-FieldElement::is_zero,curve25519_dalek::field
-FieldElement::pow22501,curve25519_dalek::field
-FieldElement::batch_invert,curve25519_dalek::field
-FieldElement::invert,curve25519_dalek::field
-FieldElement::pow_p58,curve25519_dalek::field
-FieldElement::sqrt_ratio_i,curve25519_dalek::field
-FieldElement::invsqrt,curve25519_dalek::field
-JacobiPoint::elligator_inv,curve25519_dalek::lizard::jacobi_quartic
-JacobiPoint::dual,curve25519_dalek::lizard::jacobi_quartic
-RistrettoPoint::from_uniform_bytes_single_elligator,curve25519_dalek::lizard::lizard_ristretto
-RistrettoPoint::lizard_encode,curve25519_dalek::lizard::lizard_ristretto
-RistrettoPoint::lizard_decode,curve25519_dalek::lizard::lizard_ristretto
-RistrettoPoint::decode_253_bits,curve25519_dalek::lizard::lizard_ristretto
-RistrettoPoint::elligator_ristretto_flavor_inverse,curve25519_dalek::lizard::lizard_ristretto
-RistrettoPoint::to_jacobi_quartic_ristretto,curve25519_dalek::lizard::lizard_ristretto
-field_element,curve25519_dalek::lizard::u64_constants
-add,curve25519_dalek::macros
-add_assign,curve25519_dalek::macros
-sub,curve25519_dalek::macros
-sub_assign,curve25519_dalek::macros
-mul,curve25519_dalek::macros
-mul_assign,curve25519_dalek::macros
-MontgomeryPoint::ct_eq,curve25519_dalek::montgomery
-MontgomeryPoint::eq,curve25519_dalek::montgomery
-MontgomeryPoint::hash,curve25519_dalek::montgomery
-MontgomeryPoint::zeroize,curve25519_dalek::montgomery
-MontgomeryPoint::mul_clamped,curve25519_dalek::montgomery
-MontgomeryPoint::mul_bits_be,curve25519_dalek::montgomery
-MontgomeryPoint::as_bytes,curve25519_dalek::montgomery
-MontgomeryPoint::to_edwards,curve25519_dalek::montgomery
-MontgomeryPoint::identity,curve25519_dalek::montgomery
-ProjectivePoint::conditional_select,curve25519_dalek::montgomery
-ProjectivePoint::as_affine,curve25519_dalek::montgomery
-ProjectivePoint::differential_add_and_double,curve25519_dalek::montgomery
-ProjectivePoint::mul,curve25519_dalek::montgomery
-ProjectivePoint::mul_assign,curve25519_dalek::montgomery
-CompressedRistretto::to_bytes,curve25519_dalek::ristretto
-CompressedRistretto::as_bytes,curve25519_dalek::ristretto
-CompressedRistretto::from_slice,curve25519_dalek::ristretto
-CompressedRistretto::decompress,curve25519_dalek::ristretto
-step_1,curve25519_dalek::ristretto
-step_2,curve25519_dalek::ristretto
-CompressedRistretto::identity,curve25519_dalek::ristretto
-RistrettoPoint::serialize,curve25519_dalek::ristretto
-CompressedRistretto::deserialize,curve25519_dalek::ristretto
-CompressedRistretto::expecting,curve25519_dalek::ristretto
-RistrettoPoint::compress,curve25519_dalek::ristretto
-RistrettoPoint::double_and_compress_batch,curve25519_dalek::ristretto
-BatchCompressState::efgh,curve25519_dalek::ristretto
-BatchCompressState::from,curve25519_dalek::ristretto
-BatchCompressState::coset4,curve25519_dalek::ristretto
-BatchCompressState::elligator_ristretto_flavor,curve25519_dalek::ristretto
-BatchCompressState::from_uniform_bytes,curve25519_dalek::ristretto
-CompressedRistretto::default,curve25519_dalek::ristretto
-RistrettoPoint::eq,curve25519_dalek::ristretto
-CompressedRistretto::ct_eq,curve25519_dalek::ristretto
-RistrettoPoint::add,curve25519_dalek::ristretto
-RistrettoPoint::add_assign,curve25519_dalek::ristretto
-RistrettoPoint::sub,curve25519_dalek::ristretto
-RistrettoPoint::sub_assign,curve25519_dalek::ristretto
-RistrettoPoint::sum,curve25519_dalek::ristretto
-RistrettoPoint::neg,curve25519_dalek::ristretto
-RistrettoPoint::mul_assign,curve25519_dalek::ristretto
-RistrettoPoint::mul,curve25519_dalek::ristretto
-RistrettoPoint::mul_base,curve25519_dalek::ristretto
-RistrettoPoint::multiscalar_mul,curve25519_dalek::ristretto
-RistrettoPoint::optional_multiscalar_mul,curve25519_dalek::ristretto
-RistrettoPoint::conditional_select,curve25519_dalek::ristretto
-CompressedRistretto::fmt,curve25519_dalek::ristretto
-Scalar::from_bytes_mod_order,curve25519_dalek::scalar
-Scalar::from_bytes_mod_order_wide,curve25519_dalek::scalar
-Scalar::from_canonical_bytes,curve25519_dalek::scalar
-Scalar::eq,curve25519_dalek::scalar
-Scalar::ct_eq,curve25519_dalek::scalar
-Scalar::index,curve25519_dalek::scalar
-Scalar::mul_assign,curve25519_dalek::scalar
-Scalar::mul,curve25519_dalek::scalar
-Scalar::add_assign,curve25519_dalek::scalar
-Scalar::add,curve25519_dalek::scalar
-Scalar::sub,curve25519_dalek::scalar
-Scalar::neg,curve25519_dalek::scalar
-Scalar::serialize,curve25519_dalek::scalar
-Scalar::deserialize,curve25519_dalek::scalar
-Scalar::expecting,curve25519_dalek::scalar
-Scalar::sum,curve25519_dalek::scalar
-Scalar::default,curve25519_dalek::scalar
-Scalar::from,curve25519_dalek::scalar
-Scalar::hash_from_bytes,curve25519_dalek::scalar
-Scalar::from_hash,curve25519_dalek::scalar
-Scalar::to_bytes,curve25519_dalek::scalar
-Scalar::as_bytes,curve25519_dalek::scalar
-Scalar::invert,curve25519_dalek::scalar
-Scalar::bits_le,curve25519_dalek::scalar
-non_adjacent_form,curve25519_dalek::scalar
-bot_half,curve25519_dalek::scalar
-top_half,curve25519_dalek::scalar
-as_radix_16,curve25519_dalek::scalar
-to_radix_2w_size_hint,curve25519_dalek::scalar
-as_radix_2w,curve25519_dalek::scalar
-unpack,curve25519_dalek::scalar
-reduce,curve25519_dalek::scalar
-is_canonical,curve25519_dalek::scalar
-square_multiply,curve25519_dalek::scalar
-UnpackedScalar::pack,curve25519_dalek::scalar
-UnpackedScalar::montgomery_invert,curve25519_dalek::scalar
-read_le_u64_into,curve25519_dalek::scalar
-clamp_integer,curve25519_dalek::scalar
-identity,curve25519_dalek::traits
-is_identity,curve25519_dalek::traits
-create,curve25519_dalek::traits
-basepoint,curve25519_dalek::traits
-mul_base,curve25519_dalek::traits
-multiscalar_mul,curve25519_dalek::traits
-optional_multiscalar_mul,curve25519_dalek::traits
-vartime_multiscalar_mul,curve25519_dalek::traits
-new,curve25519_dalek::traits
-optional_mixed_multiscalar_mul,curve25519_dalek::traits
-is_valid,curve25519_dalek::traits
-select,curve25519_dalek::window
-default,curve25519_dalek::window
-from,curve25519_dalek::window
+function,module,impl_block
+MontgomeryPoint::ct_eq(&MontgomeryPoint),curve25519_dalek::montgomery,ConstantTimeEq for MontgomeryPoint
+MontgomeryPoint::hash(&H),curve25519_dalek::montgomery,Hash for MontgomeryPoint
+MontgomeryPoint::identity(),curve25519_dalek::montgomery,Identity for MontgomeryPoint
+MontgomeryPoint::zeroize(&self),curve25519_dalek::montgomery,Zeroize for MontgomeryPoint
+MontgomeryPoint::mul_base(&Scalar),curve25519_dalek::montgomery,MontgomeryPoint
+MontgomeryPoint::mul_clamped([u8; 32]),curve25519_dalek::montgomery,MontgomeryPoint
+MontgomeryPoint::mul_base_clamped([u8; 32]),curve25519_dalek::montgomery,MontgomeryPoint
+MontgomeryPoint::mul_bits_be(impl Iterator<Item = bool>),curve25519_dalek::montgomery,MontgomeryPoint
+MontgomeryPoint::as_bytes(&self),curve25519_dalek::montgomery,MontgomeryPoint
+MontgomeryPoint::to_bytes(&self),curve25519_dalek::montgomery,MontgomeryPoint
+MontgomeryPoint::to_edwards(u8),curve25519_dalek::montgomery,MontgomeryPoint
+elligator_encode(&FieldElement),curve25519_dalek::montgomery,
+ProjectivePoint::identity(),curve25519_dalek::montgomery,Identity for ProjectivePoint
+ProjectivePoint::as_affine(&self),curve25519_dalek::montgomery,ProjectivePoint
+"differential_add_and_double(&ProjectivePoint, &ProjectivePoint, &FieldElement)",curve25519_dalek::montgomery,
+MontgomeryPoint::mul(&Scalar),curve25519_dalek::montgomery,Mul<&Scalar> for MontgomeryPoint
+MontgomeryPoint::mul_assign(&Scalar),curve25519_dalek::montgomery,MulAssign<&Scalar> for MontgomeryPoint
+Scalar::mul(&MontgomeryPoint),curve25519_dalek::montgomery,Mul<&MontgomeryPoint> for Scalar
+Scalar::from_bytes_mod_order([u8; 32]),curve25519_dalek::scalar,Scalar
+Scalar::from_bytes_mod_order_wide(&[u8; 64]),curve25519_dalek::scalar,Scalar
+Scalar::from_canonical_bytes([u8; 32]),curve25519_dalek::scalar,Scalar
+Scalar::from_bits([u8; 32]),curve25519_dalek::scalar,Scalar
+Scalar::fmt(&core),curve25519_dalek::scalar,Debug for Scalar
+Scalar::ct_eq(&Self),curve25519_dalek::scalar,ConstantTimeEq for Scalar
+Scalar::index(usize),curve25519_dalek::scalar,Index<usize> for Scalar
+Scalar::mul_assign(&Scalar),curve25519_dalek::scalar,MulAssign<&'b Scalar> for Scalar
+Scalar::mul(&Scalar),curve25519_dalek::scalar,Mul<&'b Scalar> for Scalar
+Scalar::add_assign(&Scalar),curve25519_dalek::scalar,AddAssign<&'b Scalar> for Scalar
+Scalar::add(&Scalar),curve25519_dalek::scalar,Add<&'b Scalar> for Scalar
+Scalar::sub_assign(&Scalar),curve25519_dalek::scalar,SubAssign<&'b Scalar> for Scalar
+Scalar::sub(&Scalar),curve25519_dalek::scalar,Sub<&'b Scalar> for Scalar
+Scalar::neg(self),curve25519_dalek::scalar,Neg for &Scalar
+Scalar::neg(self),curve25519_dalek::scalar,Neg for Scalar
+Scalar::serialize(S),curve25519_dalek::scalar,Serialize for Scalar
+Scalar::deserialize(D),curve25519_dalek::scalar,Deserialize<'de> for Scalar
+product(I),curve25519_dalek::scalar,
+Scalar::from(u8),curve25519_dalek::scalar,From<u8> for Scalar
+Scalar::from(u16),curve25519_dalek::scalar,From<u16> for Scalar
+Scalar::from(u32),curve25519_dalek::scalar,From<u32> for Scalar
+Scalar::from(u64),curve25519_dalek::scalar,From<u64> for Scalar
+Scalar::from(u128),curve25519_dalek::scalar,From<u128> for Scalar
+Scalar::zeroize(&self),curve25519_dalek::scalar,Zeroize for Scalar
+Scalar::random(&R),curve25519_dalek::scalar,Scalar
+Scalar::hash_from_bytes(&[u8]),curve25519_dalek::scalar,Scalar
+Scalar::from_hash(D),curve25519_dalek::scalar,Scalar
+Scalar::to_bytes(&self),curve25519_dalek::scalar,Scalar
+Scalar::as_bytes(&self),curve25519_dalek::scalar,Scalar
+Scalar::invert(&self),curve25519_dalek::scalar,Scalar
+Scalar::batch_invert(&[Scalar]),curve25519_dalek::scalar,Scalar
+Scalar::bits_le(&self),curve25519_dalek::scalar,Scalar
+Scalar::non_adjacent_form(usize),curve25519_dalek::scalar,Scalar
+Scalar::as_radix_16(&self),curve25519_dalek::scalar,Scalar
+Scalar::to_radix_2w_size_hint(usize),curve25519_dalek::scalar,Scalar
+Scalar::as_radix_2w(usize),curve25519_dalek::scalar,Scalar
+Scalar::unpack(&self),curve25519_dalek::scalar,Scalar
+Scalar::reduce(&self),curve25519_dalek::scalar,Scalar
+Scalar::is_canonical(&self),curve25519_dalek::scalar,Scalar
+UnpackedScalar::pack(&self),curve25519_dalek::scalar,UnpackedScalar
+UnpackedScalar::montgomery_invert(&self),curve25519_dalek::scalar,UnpackedScalar
+UnpackedScalar::invert(&self),curve25519_dalek::scalar,UnpackedScalar
+"read_le_u64_into(&[u8], &[u64])",curve25519_dalek::scalar,
+clamp_integer([u8; 32]),curve25519_dalek::scalar,
+NafLookupTable5::select(usize),curve25519_dalek::window,NafLookupTable5<T>
+NafLookupTable5::fmt(&core),curve25519_dalek::window,Debug for NafLookupTable5<T>
+NafLookupTable8::select(usize),curve25519_dalek::window,NafLookupTable8<T>
+NafLookupTable8::fmt(&core),curve25519_dalek::window,Debug for NafLookupTable8<T>
+FieldElement::ct_eq(&FieldElement),curve25519_dalek::field,ConstantTimeEq for FieldElement
+FieldElement::is_negative(&self),curve25519_dalek::field,FieldElement
+FieldElement::is_zero(&self),curve25519_dalek::field,FieldElement
+FieldElement::pow22501(&self),curve25519_dalek::field,FieldElement
+FieldElement::batch_invert(&[FieldElement]),curve25519_dalek::field,FieldElement
+FieldElement::invert(&self),curve25519_dalek::field,FieldElement
+FieldElement::pow_p58(&self),curve25519_dalek::field,FieldElement
+"FieldElement::sqrt_ratio_i(&FieldElement, &FieldElement)",curve25519_dalek::field,FieldElement
+FieldElement::invsqrt(&self),curve25519_dalek::field,FieldElement
+CompressedEdwardsY::ct_eq(&CompressedEdwardsY),curve25519_dalek::edwards,ConstantTimeEq for CompressedEdwardsY
+CompressedEdwardsY::fmt(&core),curve25519_dalek::edwards,Debug for CompressedEdwardsY
+CompressedEdwardsY::as_bytes(&self),curve25519_dalek::edwards,CompressedEdwardsY
+CompressedEdwardsY::to_bytes(&self),curve25519_dalek::edwards,CompressedEdwardsY
+CompressedEdwardsY::decompress(&self),curve25519_dalek::edwards,CompressedEdwardsY
+step_1(&CompressedEdwardsY),curve25519_dalek::edwards,
+"step_2(&CompressedEdwardsY, FieldElement, FieldElement, FieldElement)",curve25519_dalek::edwards,
+EdwardsPoint::serialize(S),curve25519_dalek::edwards,Serialize for EdwardsPoint
+CompressedEdwardsY::serialize(S),curve25519_dalek::edwards,Serialize for CompressedEdwardsY
+CompressedEdwardsY::identity(),curve25519_dalek::edwards,Identity for CompressedEdwardsY
+EdwardsPoint::identity(),curve25519_dalek::edwards,Identity for EdwardsPoint
+CompressedEdwardsY::zeroize(&self),curve25519_dalek::edwards,Zeroize for CompressedEdwardsY
+EdwardsPoint::zeroize(&self),curve25519_dalek::edwards,Zeroize for EdwardsPoint
+EdwardsPoint::is_valid(&self),curve25519_dalek::edwards,ValidityCheck for EdwardsPoint
+"EdwardsPoint::conditional_select(&EdwardsPoint, &EdwardsPoint, Choice)",curve25519_dalek::edwards,ConditionallySelectable for EdwardsPoint
+EdwardsPoint::ct_eq(&EdwardsPoint),curve25519_dalek::edwards,ConstantTimeEq for EdwardsPoint
+EdwardsPoint::as_projective_niels(&self),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::as_projective(&self),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::as_affine_niels(&self),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::to_montgomery(&self),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::compress(&self),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::nonspec_map_to_curve(&[u8]),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::double(&self),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::add(&EdwardsPoint),curve25519_dalek::edwards,Add<&'b EdwardsPoint> for EdwardsPoint
+EdwardsPoint::add_assign(&EdwardsPoint),curve25519_dalek::edwards,AddAssign<&'b EdwardsPoint> for EdwardsPoint
+EdwardsPoint::sub(&EdwardsPoint),curve25519_dalek::edwards,Sub<&'b EdwardsPoint> for EdwardsPoint
+EdwardsPoint::sub_assign(&EdwardsPoint),curve25519_dalek::edwards,SubAssign<&'b EdwardsPoint> for EdwardsPoint
+EdwardsPoint::neg(self),curve25519_dalek::edwards,Neg for &EdwardsPoint
+EdwardsPoint::neg(self),curve25519_dalek::edwards,Neg for EdwardsPoint
+EdwardsPoint::mul_assign(&Scalar),curve25519_dalek::edwards,MulAssign<&'b Scalar> for EdwardsPoint
+EdwardsPoint::mul(&Scalar),curve25519_dalek::edwards,Mul<&'b Scalar> for EdwardsPoint
+Scalar::mul(&EdwardsPoint),curve25519_dalek::edwards,Mul<&'b EdwardsPoint> for Scalar
+EdwardsPoint::mul_base(&Scalar),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::mul_clamped([u8; 32]),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::mul_base_clamped([u8; 32]),curve25519_dalek::edwards,EdwardsPoint
+VartimeEdwardsPrecomputation::new(I),curve25519_dalek::edwards,VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation
+"VartimeEdwardsPrecomputation::optional_mixed_multiscalar_mul(I, J, K)",curve25519_dalek::edwards,VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation
+"EdwardsPoint::vartime_double_scalar_mul_basepoint(&Scalar, &EdwardsPoint, &Scalar)",curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::mul_by_cofactor(&self),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::mul_by_pow_2(u32),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::is_small_order(&self),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::is_torsion_free(&self),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::fmt(&core),curve25519_dalek::edwards,Debug for EdwardsPoint
+CompressedRistretto::ct_eq(&CompressedRistretto),curve25519_dalek::ristretto,ConstantTimeEq for CompressedRistretto
+CompressedRistretto::to_bytes(&self),curve25519_dalek::ristretto,CompressedRistretto
+CompressedRistretto::as_bytes(&self),curve25519_dalek::ristretto,CompressedRistretto
+CompressedRistretto::from_slice(&[u8]),curve25519_dalek::ristretto,CompressedRistretto
+CompressedRistretto::decompress(&self),curve25519_dalek::ristretto,CompressedRistretto
+step_1(&CompressedRistretto),curve25519_dalek::ristretto,
+step_2(FieldElement),curve25519_dalek::ristretto,
+CompressedRistretto::identity(),curve25519_dalek::ristretto,Identity for CompressedRistretto
+RistrettoPoint::serialize(S),curve25519_dalek::ristretto,Serialize for RistrettoPoint
+CompressedRistretto::serialize(S),curve25519_dalek::ristretto,Serialize for CompressedRistretto
+RistrettoPoint::compress(&self),curve25519_dalek::ristretto,RistrettoPoint
+RistrettoPoint::double_and_compress_batch(I),curve25519_dalek::ristretto,RistrettoPoint
+BatchCompressState::efgh(&self),curve25519_dalek::ristretto,BatchCompressState
+BatchCompressState::from(&RistrettoPoint),curve25519_dalek::ristretto,From<&'a RistrettoPoint> for BatchCompressState
+coset4(&self),curve25519_dalek::ristretto,
+elligator_ristretto_flavor(&FieldElement),curve25519_dalek::ristretto,
+RistrettoPoint::random(&R),curve25519_dalek::ristretto,RistrettoPoint
+hash_from_bytes(&[u8]),curve25519_dalek::ristretto,
+from_hash(D),curve25519_dalek::ristretto,
+from_uniform_bytes(&[u8; 64]),curve25519_dalek::ristretto,
+RistrettoPoint::identity(),curve25519_dalek::ristretto,Identity for RistrettoPoint
+RistrettoPoint::default(),curve25519_dalek::ristretto,Default for RistrettoPoint
+RistrettoPoint::ct_eq(&RistrettoPoint),curve25519_dalek::ristretto,ConstantTimeEq for RistrettoPoint
+RistrettoPoint::add(&RistrettoPoint),curve25519_dalek::ristretto,Add<&'b RistrettoPoint> for RistrettoPoint
+RistrettoPoint::add_assign(&RistrettoPoint),curve25519_dalek::ristretto,AddAssign<&'b RistrettoPoint> for RistrettoPoint
+RistrettoPoint::sub(&RistrettoPoint),curve25519_dalek::ristretto,Sub<&'b RistrettoPoint> for RistrettoPoint
+RistrettoPoint::sub_assign(&RistrettoPoint),curve25519_dalek::ristretto,SubAssign<&'b RistrettoPoint> for RistrettoPoint
+RistrettoPoint::neg(self),curve25519_dalek::ristretto,Neg for &RistrettoPoint
+RistrettoPoint::neg(self),curve25519_dalek::ristretto,Neg for RistrettoPoint
+RistrettoPoint::mul_assign(&Scalar),curve25519_dalek::ristretto,MulAssign<&'b Scalar> for RistrettoPoint
+RistrettoPoint::mul(&Scalar),curve25519_dalek::ristretto,Mul<&'b Scalar> for RistrettoPoint
+Scalar::mul(&RistrettoPoint),curve25519_dalek::ristretto,Mul<&'b RistrettoPoint> for Scalar
+RistrettoPoint::mul_base(&Scalar),curve25519_dalek::ristretto,RistrettoPoint
+VartimeRistrettoPrecomputation::new(I),curve25519_dalek::ristretto,VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation
+"VartimeRistrettoPrecomputation::optional_mixed_multiscalar_mul(I, J, K)",curve25519_dalek::ristretto,VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation
+RistrettoBasepointTable::mul(&Scalar),curve25519_dalek::ristretto,Mul<&'b Scalar> for RistrettoBasepointTable
+Scalar::mul(&RistrettoBasepointTable),curve25519_dalek::ristretto,Mul<&'a RistrettoBasepointTable> for Scalar
+RistrettoBasepointTable::create(&RistrettoPoint),curve25519_dalek::ristretto,RistrettoBasepointTable
+RistrettoBasepointTable::basepoint(&self),curve25519_dalek::ristretto,RistrettoBasepointTable
+"RistrettoPoint::conditional_select(&RistrettoPoint, &RistrettoPoint, Choice)",curve25519_dalek::ristretto,ConditionallySelectable for RistrettoPoint
+CompressedRistretto::fmt(&core),curve25519_dalek::ristretto,Debug for CompressedRistretto
+RistrettoPoint::fmt(&core),curve25519_dalek::ristretto,Debug for RistrettoPoint
+CompressedRistretto::zeroize(&self),curve25519_dalek::ristretto,Zeroize for CompressedRistretto
+RistrettoPoint::zeroize(&self),curve25519_dalek::ristretto,Zeroize for RistrettoPoint
+is_identity(&self),curve25519_dalek::traits,
+mul_base_clamped([u8; 32]),curve25519_dalek::traits,
+vartime_multiscalar_mul(I),curve25519_dalek::traits,
+"vartime_mixed_multiscalar_mul(I, J, K)",curve25519_dalek::traits,
+Scalar52::fmt(&core),curve25519_dalek::backend::serial::u64::scalar,Debug for Scalar52
+Scalar52::zeroize(&self),curve25519_dalek::backend::serial::u64::scalar,Zeroize for Scalar52
+Scalar52::index(usize),curve25519_dalek::backend::serial::u64::scalar,Index<usize> for Scalar52
+"m(u64, u64)",curve25519_dalek::backend::serial::u64::scalar,
+Scalar52::from_bytes(&[u8; 32]),curve25519_dalek::backend::serial::u64::scalar,Scalar52
+Scalar52::from_bytes_wide(&[u8; 64]),curve25519_dalek::backend::serial::u64::scalar,Scalar52
+Scalar52::as_bytes(&self),curve25519_dalek::backend::serial::u64::scalar,Scalar52
+"Scalar52::add(&Scalar52, &Scalar52)",curve25519_dalek::backend::serial::u64::scalar,Scalar52
+"Scalar52::sub(&Scalar52, &Scalar52)",curve25519_dalek::backend::serial::u64::scalar,Scalar52
+"Scalar52::mul_internal(&Scalar52, &Scalar52)",curve25519_dalek::backend::serial::u64::scalar,Scalar52
+Scalar52::square_internal(&Scalar52),curve25519_dalek::backend::serial::u64::scalar,Scalar52
+Scalar52::montgomery_reduce(&[u128; 9]),curve25519_dalek::backend::serial::u64::scalar,Scalar52
+"Scalar52::mul(&Scalar52, &Scalar52)",curve25519_dalek::backend::serial::u64::scalar,Scalar52
+Scalar52::square(&self),curve25519_dalek::backend::serial::u64::scalar,Scalar52
+"Scalar52::montgomery_mul(&Scalar52, &Scalar52)",curve25519_dalek::backend::serial::u64::scalar,Scalar52
+Scalar52::montgomery_square(&self),curve25519_dalek::backend::serial::u64::scalar,Scalar52
+Scalar52::as_montgomery(&self),curve25519_dalek::backend::serial::u64::scalar,Scalar52
+Scalar52::from_montgomery(&self),curve25519_dalek::backend::serial::u64::scalar,Scalar52
+FieldElement51::fmt(&core),curve25519_dalek::backend::serial::u64::field,Debug for FieldElement51
+FieldElement51::zeroize(&self),curve25519_dalek::backend::serial::u64::field,Zeroize for FieldElement51
+FieldElement51::add_assign(&FieldElement51),curve25519_dalek::backend::serial::u64::field,AddAssign<&'b FieldElement51> for FieldElement51
+FieldElement51::add(&FieldElement51),curve25519_dalek::backend::serial::u64::field,Add<&'b FieldElement51> for FieldElement51
+FieldElement51::sub_assign(&FieldElement51),curve25519_dalek::backend::serial::u64::field,SubAssign<&'b FieldElement51> for FieldElement51
+FieldElement51::sub(&FieldElement51),curve25519_dalek::backend::serial::u64::field,Sub<&'b FieldElement51> for FieldElement51
+FieldElement51::mul_assign(&FieldElement51),curve25519_dalek::backend::serial::u64::field,MulAssign<&'b FieldElement51> for FieldElement51
+FieldElement51::mul(&FieldElement51),curve25519_dalek::backend::serial::u64::field,Mul<&'b FieldElement51> for FieldElement51
+FieldElement51::neg(self),curve25519_dalek::backend::serial::u64::field,Neg for FieldElement51
+"FieldElement51::conditional_assign(&FieldElement51, Choice)",curve25519_dalek::backend::serial::u64::field,ConditionallySelectable for FieldElement51
+FieldElement51::from_limbs([u64; 5]),curve25519_dalek::backend::serial::u64::field,FieldElement51
+FieldElement51::negate(&self),curve25519_dalek::backend::serial::u64::field,FieldElement51
+FieldElement51::reduce([u64; 5]),curve25519_dalek::backend::serial::u64::field,FieldElement51
+FieldElement51::as_bytes(&self),curve25519_dalek::backend::serial::u64::field,FieldElement51
+FieldElement51::pow2k(u32),curve25519_dalek::backend::serial::u64::field,FieldElement51
+FieldElement51::square(&self),curve25519_dalek::backend::serial::u64::field,FieldElement51
+FieldElement51::square2(&self),curve25519_dalek::backend::serial::u64::field,FieldElement51
+"mul(&EdwardsPoint, &Scalar)",curve25519_dalek::backend::serial::scalar_mul::variable_base,
+VartimePrecomputedStraus::new(I),curve25519_dalek::backend::serial::scalar_mul::precomputed_straus,VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus
+"VartimePrecomputedStraus::optional_mixed_multiscalar_mul(I, J, K)",curve25519_dalek::backend::serial::scalar_mul::precomputed_straus,VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus
+"mul(&Scalar, &EdwardsPoint, &Scalar)",curve25519_dalek::backend::serial::scalar_mul::vartime_double_base,
+AffineNielsPoint::zeroize(&self),curve25519_dalek::backend::serial::curve_models,Zeroize for AffineNielsPoint
+ProjectiveNielsPoint::zeroize(&self),curve25519_dalek::backend::serial::curve_models,Zeroize for ProjectiveNielsPoint
+ProjectiveNielsPoint::identity(),curve25519_dalek::backend::serial::curve_models,Identity for ProjectiveNielsPoint
+AffineNielsPoint::identity(),curve25519_dalek::backend::serial::curve_models,Identity for AffineNielsPoint
+ProjectivePoint::is_valid(&self),curve25519_dalek::backend::serial::curve_models,ValidityCheck for ProjectivePoint
+"ProjectiveNielsPoint::conditional_assign(&Self, Choice)",curve25519_dalek::backend::serial::curve_models,ConditionallySelectable for ProjectiveNielsPoint
+"AffineNielsPoint::conditional_assign(&Self, Choice)",curve25519_dalek::backend::serial::curve_models,ConditionallySelectable for AffineNielsPoint
+ProjectivePoint::as_extended(&self),curve25519_dalek::backend::serial::curve_models,ProjectivePoint
+CompletedPoint::as_projective(&self),curve25519_dalek::backend::serial::curve_models,CompletedPoint
+CompletedPoint::as_extended(&self),curve25519_dalek::backend::serial::curve_models,CompletedPoint
+ProjectivePoint::double(&self),curve25519_dalek::backend::serial::curve_models,ProjectivePoint
+EdwardsPoint::add(&ProjectiveNielsPoint),curve25519_dalek::backend::serial::curve_models,Add<&'b ProjectiveNielsPoint> for EdwardsPoint
+EdwardsPoint::sub(&ProjectiveNielsPoint),curve25519_dalek::backend::serial::curve_models,Sub<&'b ProjectiveNielsPoint> for EdwardsPoint
+EdwardsPoint::add(&AffineNielsPoint),curve25519_dalek::backend::serial::curve_models,Add<&'b AffineNielsPoint> for EdwardsPoint
+EdwardsPoint::sub(&AffineNielsPoint),curve25519_dalek::backend::serial::curve_models,Sub<&'b AffineNielsPoint> for EdwardsPoint
+ProjectiveNielsPoint::neg(self),curve25519_dalek::backend::serial::curve_models,Neg for ProjectiveNielsPoint
+AffineNielsPoint::neg(self),curve25519_dalek::backend::serial::curve_models,Neg for AffineNielsPoint
+ProjectivePoint::fmt(&core),curve25519_dalek::backend::serial::curve_models,Debug for ProjectivePoint
+CompletedPoint::fmt(&core),curve25519_dalek::backend::serial::curve_models,Debug for CompletedPoint
+AffineNielsPoint::fmt(&core),curve25519_dalek::backend::serial::curve_models,Debug for AffineNielsPoint
+ProjectiveNielsPoint::fmt(&core),curve25519_dalek::backend::serial::curve_models,Debug for ProjectiveNielsPoint
+"load8_at(&[u8], usize)",curve25519_dalek::backend::serial::u64::field,
+bot_half(u8),curve25519_dalek::scalar,
+top_half(u8),curve25519_dalek::scalar,
+"square_multiply(&mut UnpackedScalar, usize, &UnpackedScalar)",curve25519_dalek::scalar,
+part1(u128),curve25519_dalek::backend::serial::u64::scalar,
+part2(u128),curve25519_dalek::backend::serial::u64::scalar,
+EdwardsBasepointTable::create(&EdwardsPoint),curve25519_dalek::edwards,BasepointTable for EdwardsBasepointTable
+EdwardsBasepointTable::basepoint(&self),curve25519_dalek::edwards,BasepointTable for EdwardsBasepointTable
+"EdwardsBasepointTable::mul_base(&self, &Scalar)",curve25519_dalek::edwards,BasepointTable for EdwardsBasepointTable
+Scalar::sum(I),curve25519_dalek::scalar,Sum<T> for Scalar
+EdwardsPoint::sum(I),curve25519_dalek::edwards,Sum<T> for EdwardsPoint
+RistrettoPoint::sum(I),curve25519_dalek::ristretto,Sum<T> for RistrettoPoint

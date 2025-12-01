@@ -159,15 +159,35 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('outputs/curve25519_functions.csv');
             const csvText = await response.text();
             
-            // Parse CSV
+            // Parse CSV (handles quoted fields with commas)
+            function parseCSVLine(line) {
+                const result = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        result.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                result.push(current.trim());
+                return result;
+            }
+            
             const lines = csvText.trim().split('\n');
-            const headers = lines[0].split(',');
+            const headers = parseCSVLine(lines[0]);
             
             csvFunctionsData = lines.slice(1).map(line => {
-                const values = line.split(',');
+                const values = parseCSVLine(line);
                 const func = {};
                 headers.forEach((header, i) => {
-                    func[header.trim()] = values[i] ? values[i].trim() : '';
+                    func[header] = values[i] || '';
                 });
                 return func;
             });
@@ -220,6 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (currentCsvFilter === 'all') return true;
             if (currentCsvFilter === 'verified') return func.has_proof === 'yes';
             if (currentCsvFilter === 'spec') return func.has_spec === 'yes' || func.has_spec === 'ext';
+            if (currentCsvFilter === 'external') return func.has_spec === 'ext';
             if (currentCsvFilter === 'none') return !func.has_spec && !func.has_proof;
             
             return true;

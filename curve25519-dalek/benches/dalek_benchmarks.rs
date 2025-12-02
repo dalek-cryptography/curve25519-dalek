@@ -1,10 +1,6 @@
 #![allow(non_snake_case)]
 
-<<<<<<< HEAD
-use rand::{rngs::OsRng, thread_rng, Rng};
-=======
 use rand::{RngCore, TryRngCore, rng, rngs::OsRng};
->>>>>>> origin/main
 
 use criterion::{
     BatchSize, BenchmarkGroup, BenchmarkId, Criterion, criterion_main, measurement::Measurement,
@@ -78,7 +74,6 @@ mod edwards_benches {
         });
     }
 
-<<<<<<< HEAD
     fn vartime_triple_base_scalar_mul_128<M: Measurement>(c: &mut BenchmarkGroup<M>) {
         c.bench_function("Variable-time a1*A1+a2*A2+b*B (128-bit a1,a2)", |bench| {
             let mut rng = thread_rng();
@@ -109,7 +104,6 @@ mod edwards_benches {
                 BatchSize::SmallInput,
             );
         });
-=======
     #[cfg(feature = "digest")]
     fn encode_to_curve<M: Measurement>(c: &mut BenchmarkGroup<M>) {
         let mut rng = rng();
@@ -138,7 +132,6 @@ mod edwards_benches {
             "Elligator2 hash to curve (SHA-512, input size 32 bytes)",
             |b| b.iter(|| EdwardsPoint::hash_to_curve::<Sha512>(&[&msg], &[&domain_sep])),
         );
->>>>>>> origin/main
     }
 
     pub(crate) fn edwards_benches() {
@@ -152,12 +145,9 @@ mod edwards_benches {
         consttime_fixed_base_scalar_mul(&mut g);
         consttime_variable_base_scalar_mul(&mut g);
         vartime_double_base_scalar_mul(&mut g);
-<<<<<<< HEAD
         vartime_triple_base_scalar_mul_128(&mut g);
-=======
         encode_to_curve(&mut g);
         hash_to_curve(&mut g);
->>>>>>> origin/main
     }
 }
 

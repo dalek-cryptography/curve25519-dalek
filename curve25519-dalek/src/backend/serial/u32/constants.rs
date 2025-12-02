@@ -19,9 +19,9 @@ use crate::edwards::EdwardsPoint;
 
 #[cfg(feature = "precomputed-tables")]
 use crate::{
-    backend::serial::curve_models::AffineNielsPoint,
+    backend::serial::curve_models::{AffineNielsPoint, ProjectiveNielsPoint},
     edwards::EdwardsBasepointTable,
-    window::{LookupTable, NafLookupTable8},
+    window::{LookupTable, NafLookupTable5, NafLookupTable8},
 };
 
 /// The value of minus one, equal to `-&FieldElement::ONE`

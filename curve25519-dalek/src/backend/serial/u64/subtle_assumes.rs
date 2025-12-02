@@ -1,5 +1,9 @@
 //! Tell Verus what Choice and CtOption do
-use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
+use subtle::{Choice, ConditionallyNegatable, ConditionallySelectable, ConstantTimeEq, CtOption};
+
+use crate::backend::serial::u64::field::FieldElement51;
+#[cfg(verus_keep_ghost)]
+use crate::specs::field_specs::{fe51_limbs_bounded, math_field_neg, spec_field_element};
 
 use vstd::prelude::*;
 
@@ -9,6 +13,17 @@ verus! {
 #[verifier::external_body]
 #[allow(dead_code)]
 pub struct ExChoice(Choice);
+
+/*** External trait specification for subtle::ConstantTimeEq ***/
+
+#[verifier::external_trait_specification]
+pub trait ExConstantTimeEq {
+    type ExternalTraitSpecificationFor: ConstantTimeEq;
+
+    // Note: Implementations should define their own preconditions via a companion spec trait
+    // For EdwardsPoint, see ConstantTimeEqSpecImpl in edwards.rs
+    fn ct_eq(&self, other: &Self) -> Choice;
+}
 
 /*** External type specification for subtle::CtOption ***/
 
@@ -228,11 +243,30 @@ pub fn conditional_assign_u64(a: &mut u64, b: &u64, choice: Choice)
     a.conditional_assign(b, choice)
 }
 
-/// Wrapper for conditional_negate on FieldElement
+/// Generic wrapper for conditional_negate on types implementing ConditionallyNegatable
+/// Used for: ProjectiveNielsPoint, AffineNielsPoint in window.rs
+/// For FieldElement51 with proper specs, we use conditional_negate_field_element instead.
 #[verifier::external_body]
-pub fn conditional_negate_field<T>(a: &mut T, choice: Choice) where
+pub fn conditional_negate_generic<T>(a: &mut T, choice: Choice) where
     T: subtle::ConditionallyNegatable,
  {
+    a.conditional_negate(choice);
+}
+
+/// Specialized wrapper for conditional_negate on FieldElement51 with proper specs.
+/// Use this when you need verified limb bounds and functional correctness guarantees.
+#[verifier::external_body]
+pub fn conditional_negate_field_element(a: &mut FieldElement51, choice: Choice)
+    requires
+        fe51_limbs_bounded(old(a), 51),
+    ensures
+        fe51_limbs_bounded(a, 52),
+        spec_field_element(a) == if choice_is_true(choice) {
+            math_field_neg(spec_field_element(old(a)))
+        } else {
+            spec_field_element(old(a))
+        },
+{
     a.conditional_negate(choice);
 }
 

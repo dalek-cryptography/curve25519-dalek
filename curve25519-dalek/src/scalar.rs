@@ -265,7 +265,7 @@ impl Scalar {
 
     /// Construct a `Scalar` by reducing a 512-bit little-endian integer
     /// modulo the group order \\( \ell \\).
-    // VERIFICATION NOTE: VERIFIED
+    // VERIFICATION NOTE: PROOF BYPASS
     pub fn from_bytes_mod_order_wide(input: &[u8; 64]) -> (result: Scalar)
         ensures
             bytes_to_nat(&result.bytes) % group_order() == bytes_wide_to_nat(input) % group_order(),

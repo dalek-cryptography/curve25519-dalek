@@ -25,7 +25,7 @@ use crate::traits::Identity;
 use crate::backend::serial::curve_models::AffineNielsPoint;
 use crate::backend::serial::curve_models::ProjectiveNielsPoint;
 use crate::backend::serial::u64::subtle_assumes::{
-    conditional_assign_generic, conditional_negate_field, ct_eq_u16,
+    conditional_assign_generic, conditional_negate_generic, ct_eq_u16,
 };
 use crate::edwards::EdwardsPoint;
 
@@ -160,7 +160,7 @@ impl LookupTable<AffineNielsPoint> {
 
         let neg_mask = Choice::from((xmask & 1) as u8);
         /* ORIGINAL CODE: t.conditional_negate(neg_mask); */
-        conditional_negate_field(&mut t, neg_mask);
+        conditional_negate_generic(&mut t, neg_mask);
         // Now t == x * P.
 
         t
@@ -234,7 +234,7 @@ impl LookupTable<ProjectiveNielsPoint> {
 
         let neg_mask = Choice::from((xmask & 1) as u8);
         /* ORIGINAL CODE: t.conditional_negate(neg_mask); */
-        conditional_negate_field(&mut t, neg_mask);
+        conditional_negate_generic(&mut t, neg_mask);
         // Now t == x * P.
 
         t
@@ -301,11 +301,19 @@ impl<T: Debug> Debug for LookupTable<T> {
 impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a EdwardsPoint> for LookupTable<
     ProjectiveNielsPoint,
 > {
+    //impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
     open spec fn obeys_from_spec() -> bool {
-        false  // We use ensures clause instead of concrete spec
-
+        false
     }
 
+    /* VERIFICTATION NOTE: this not supported in Verus
+
+    open spec fn from_req(P: &'a EdwardsPoint) -> bool {
+        // Preconditions needed for table construction
+        fe51_limbs_bounded(&P.X, 54) && fe51_limbs_bounded(&P.Y, 54) && fe51_limbs_bounded(&P.Z, 54)
+            && fe51_limbs_bounded(&P.T, 54)
+    }
+*/
     open spec fn from_spec(P: &'a EdwardsPoint) -> Self {
         arbitrary()  // conditions specified in the ensures clause of the from function
 
@@ -315,7 +323,12 @@ impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a EdwardsPoint> for LookupTabl
 impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
     /// Create a lookup table from an EdwardsPoint
     /// Constructs [P, 2P, 3P, ..., Size*P]
-    fn from(P: &'a EdwardsPoint) -> (result: Self)
+    fn from(P: &'a EdwardsPoint) -> (result:
+        Self)/*
+    VERIFICATION NOTE: similar to Add and Mul traits,
+    we want from_req from above to apply here, but Verus does not yet support this
+    */
+
         ensures
             is_valid_lookup_table_projective(result.0, *P, 8 as nat),
     {
@@ -329,12 +342,10 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
 
         In our instantiation we have $name = LookupTable, $size = 8, and conv_range = 0..7.
         */
-        // Assume preconditions from vstd FromSpecImpl::from_req
+        // Assume preconditions from FromSpecImpl::from_spec_req
         proof {
-            assume(limbs_bounded(&P.X, 54));
-            assume(limbs_bounded(&P.Y, 54));
-            assume(limbs_bounded(&P.Z, 54));
-            assume(limbs_bounded(&P.T, 54));
+            assume(edwards_point_limbs_bounded(*P));
+            assume(edwards_point_sum_bounded(*P));
         }
 
         let mut points = [P.as_projective_niels();8];
@@ -345,31 +356,25 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
             // We cannot directly put them in proof blocks because they are exec variables.
             proof {
                 // Preconditions for P + &points[j]
-                assume(sum_of_limbs_bounded(&P.Y, &P.X, u64::MAX));
-                assume(limbs_bounded(&P.X, 54));
-                assume(limbs_bounded(&P.Y, 54));
-                assume(limbs_bounded(&P.Z, 54));
-                assume(limbs_bounded(&P.T, 54));
-                assume(limbs_bounded(&&points[j as int].Y_plus_X, 54));
-                assume(limbs_bounded(&&points[j as int].Y_minus_X, 54));
-                assume(limbs_bounded(&&points[j as int].Z, 54));
-                assume(limbs_bounded(&&points[j as int].T2d, 54));
+                assume(is_well_formed_edwards_point(*P));
+                assume(fe51_limbs_bounded(&&points[j as int].Y_plus_X, 54));
+                assume(fe51_limbs_bounded(&&points[j as int].Y_minus_X, 54));
+                assume(fe51_limbs_bounded(&&points[j as int].Z, 54));
+                assume(fe51_limbs_bounded(&&points[j as int].T2d, 54));
             }
             let sum = P + &points[j];
             proof {
                 // Preconditions for sum.as_extended()
-                assume(limbs_bounded(&sum.X, 54));
-                assume(limbs_bounded(&sum.Y, 54));
-                assume(limbs_bounded(&sum.Z, 54));
-                assume(limbs_bounded(&sum.T, 54));
+                assume(fe51_limbs_bounded(&sum.X, 54));
+                assume(fe51_limbs_bounded(&sum.Y, 54));
+                assume(fe51_limbs_bounded(&sum.Z, 54));
+                assume(fe51_limbs_bounded(&sum.T, 54));
             }
             let extended = sum.as_extended();
             proof {
                 // Preconditions for extended.as_projective_niels()
-                assume(limbs_bounded(&extended.X, 54));
-                assume(limbs_bounded(&extended.Y, 54));
-                assume(limbs_bounded(&extended.Z, 54));
-                assume(limbs_bounded(&extended.T, 54));
+                assume(edwards_point_limbs_bounded(extended));
+                assume(edwards_point_sum_bounded(extended));
             }
             points[j + 1] = extended.as_projective_niels();
         }
@@ -387,10 +392,16 @@ impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a EdwardsPoint> for LookupTabl
     AffineNielsPoint,
 > {
     open spec fn obeys_from_spec() -> bool {
-        false  // We use ensures clause instead of concrete spec
-
+        false
     }
 
+    /* VERIFICTATION NOTE: this not supported in Verus
+    open spec fn from_req(P: &'a EdwardsPoint) -> bool {
+        // Preconditions needed for table construction
+        fe51_limbs_bounded(&P.X, 54) && fe51_limbs_bounded(&P.Y, 54) && fe51_limbs_bounded(&P.Z, 54)
+            && fe51_limbs_bounded(&P.T, 54)
+    }
+*/
     open spec fn from_spec(P: &'a EdwardsPoint) -> Self {
         arbitrary()  // conditions specified in the ensures clause of the from function
 
@@ -400,7 +411,12 @@ impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a EdwardsPoint> for LookupTabl
 impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
     /// Create a lookup table from an EdwardsPoint (affine version)
     /// Constructs [P, 2P, 3P, ..., Size*P]
-    fn from(P: &'a EdwardsPoint) -> (result: Self)
+    fn from(P: &'a EdwardsPoint) -> (result:
+        Self)/*
+    VERIFICATION NOTE: similar to Add and Mul traits,
+    we want from_req from above to apply here, but Verus does not yet support this
+    */
+
         ensures
             is_valid_lookup_table_affine(result.0, *P, 8 as nat),
     {
@@ -415,12 +431,9 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
 
         In our instantiation we have $name = LookupTable, $size = 8, and conv_range = 0..7.
         */
-        // Assume preconditions from vstd FromSpecImpl::from_req
+        // Assume preconditions from FromSpecImpl::from_spec_req
         proof {
-            assume(limbs_bounded(&P.X, 54));
-            assume(limbs_bounded(&P.Y, 54));
-            assume(limbs_bounded(&P.Z, 54));
-            assume(limbs_bounded(&P.T, 54));
+            assume(edwards_point_limbs_bounded(*P));
         }
 
         let mut points = [P.as_affine_niels();8];
@@ -431,32 +444,25 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
             // For Verus: unroll to assume preconditions for intermediate operations
             proof {
                 // Preconditions for P (left-hand side of addition)
-                assume(sum_of_limbs_bounded(&P.Y, &P.X, u64::MAX));
+                assume(is_well_formed_edwards_point(*P));
                 assume(sum_of_limbs_bounded(&P.Z, &P.Z, u64::MAX));  // for Z2 = &P.Z + &P.Z in add
-                assume(limbs_bounded(&P.X, 54));
-                assume(limbs_bounded(&P.Y, 54));
-                assume(limbs_bounded(&P.Z, 54));
-                assume(limbs_bounded(&P.T, 54));
                 // Preconditions for &points[j] (right-hand side - AffineNielsPoint)
-                assume(limbs_bounded(&&points[j as int].y_plus_x, 54));
-                assume(limbs_bounded(&&points[j as int].y_minus_x, 54));
-                assume(limbs_bounded(&&points[j as int].xy2d, 54));
+                assume(fe51_limbs_bounded(&&points[j as int].y_plus_x, 54));
+                assume(fe51_limbs_bounded(&&points[j as int].y_minus_x, 54));
+                assume(fe51_limbs_bounded(&&points[j as int].xy2d, 54));
             }
             let sum = P + &points[j];
             proof {
                 // Preconditions for sum.as_extended()
-                assume(limbs_bounded(&sum.X, 54));
-                assume(limbs_bounded(&sum.Y, 54));
-                assume(limbs_bounded(&sum.Z, 54));
-                assume(limbs_bounded(&sum.T, 54));
+                assume(fe51_limbs_bounded(&sum.X, 54));
+                assume(fe51_limbs_bounded(&sum.Y, 54));
+                assume(fe51_limbs_bounded(&sum.Z, 54));
+                assume(fe51_limbs_bounded(&sum.T, 54));
             }
             let extended = sum.as_extended();
             proof {
                 // Preconditions for extended.as_affine_niels()
-                assume(limbs_bounded(&extended.X, 54));
-                assume(limbs_bounded(&extended.Y, 54));
-                assume(limbs_bounded(&extended.Z, 54));
-                assume(limbs_bounded(&extended.T, 54));
+                assume(edwards_point_limbs_bounded(extended));
             }
             points[j + 1] = extended.as_affine_niels()
         }

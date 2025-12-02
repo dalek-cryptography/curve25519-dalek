@@ -46,8 +46,8 @@ pub proof fn lemma_field51_add(lhs: &FieldElement51, rhs: &FieldElement51)
 
 pub proof fn lemma_field_add_16p_no_overflow(lhs: &FieldElement51, rhs: &FieldElement51)
     requires
-        limbs_bounded(lhs, 54),
-        limbs_bounded(rhs, 54),
+        fe51_limbs_bounded(lhs, 54),
+        fe51_limbs_bounded(rhs, 54),
     ensures
 // Adding 16p constants won't overflow
 

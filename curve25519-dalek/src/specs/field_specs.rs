@@ -24,7 +24,7 @@ use vstd::prelude::*;
 verus! {
 
 /// Spec predicate: all limbs are bounded by a given bit limit
-pub open spec fn limbs_bounded(fe: &FieldElement51, bit_limit: u64) -> bool {
+pub open spec fn fe51_limbs_bounded(fe: &FieldElement51, bit_limit: u64) -> bool {
     forall|i: int| 0 <= i < 5 ==> fe.limbs[i] < (1u64 << bit_limit)
 }
 

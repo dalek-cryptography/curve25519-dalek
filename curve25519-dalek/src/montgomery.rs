@@ -239,7 +239,16 @@ impl Zeroize for MontgomeryPoint {
 impl MontgomeryPoint {
     /// Fixed-base scalar multiplication (i.e. multiplication by the base point).
     pub fn mul_base(scalar: &Scalar) -> Self {
-        EdwardsPoint::mul_base(scalar).to_montgomery()
+        // ORIGINAL CODE: EdwardsPoint::mul_base(scalar).to_montgomery(temp)
+        // REFACTORED: to assume postconditions for EdwardsPoint::mul_base
+        let temp = EdwardsPoint::mul_base(scalar);
+        proof {
+            assume(fe51_limbs_bounded(&temp.X, 54));
+            // to_montgomery requires 51-bit bounds for Y, Z so U = Z + Y fits in 52 bits
+            assume(fe51_limbs_bounded(&temp.Y, 51) && fe51_limbs_bounded(&temp.Z, 51));
+            assume(sum_of_limbs_bounded(&temp.Z, &temp.Y, u64::MAX));
+        }
+        temp.to_montgomery()
     }
 
     /// Multiply this point by `clamp_integer(bytes)`. For a description of clamping, see
@@ -384,8 +393,8 @@ impl MontgomeryPoint {
 
         proof {
             // preconditions for as_affine
-            assume(crate::specs::field_specs::limbs_bounded(&x0.U, 54));
-            assume(crate::specs::field_specs::limbs_bounded(&x0.W, 54));
+            assume(crate::specs::field_specs::fe51_limbs_bounded(&x0.U, 54));
+            assume(crate::specs::field_specs::fe51_limbs_bounded(&x0.W, 54));
         }
         let result = x0.as_affine();
         proof {
@@ -613,8 +622,8 @@ impl ProjectivePoint {
     /// The resulting MontgomeryPoint has u-coordinate equal to U/W (or 0 if W=0)
     pub fn as_affine(&self) -> (result: MontgomeryPoint)
         requires
-            crate::specs::field_specs::limbs_bounded(&self.U, 54),
-            crate::specs::field_specs::limbs_bounded(&self.W, 54),
+            crate::specs::field_specs::fe51_limbs_bounded(&self.U, 54),
+            crate::specs::field_specs::fe51_limbs_bounded(&self.W, 54),
         ensures
     // For projective point (U:W), the affine u-coordinate is u = U/W (or 0 if W=0)
 

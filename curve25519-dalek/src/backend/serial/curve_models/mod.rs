@@ -297,9 +297,9 @@ verus! {
 impl ValidityCheck for ProjectivePoint {
     fn is_valid(&self) -> (result: bool)
         requires
-            limbs_bounded(&self.X, 54),
-            limbs_bounded(&self.Y, 54),
-            limbs_bounded(&self.Z, 54),
+            fe51_limbs_bounded(&self.X, 54),
+            fe51_limbs_bounded(&self.Y, 54),
+            fe51_limbs_bounded(&self.Z, 54),
         ensures
             result == math_on_edwards_curve_projective(
                 spec_field_element(&self.X),
@@ -313,8 +313,8 @@ impl ValidityCheck for ProjectivePoint {
         let YY = self.Y.square();
         let ZZ = self.Z.square();
         proof {
-            assume(limbs_bounded(&ZZ, 54));  // for ZZZZ = ZZ.square()
-            assume(limbs_bounded(&YY, 54) && limbs_bounded(&XX, 54));  // for yy_minus_xx = &YY - &XX and
+            assume(fe51_limbs_bounded(&ZZ, 54));  // for ZZZZ = ZZ.square()
+            assume(fe51_limbs_bounded(&YY, 54) && fe51_limbs_bounded(&XX, 54));  // for yy_minus_xx = &YY - &XX and
         }
         let ZZZZ = ZZ.square();
 
@@ -326,13 +326,16 @@ impl ValidityCheck for ProjectivePoint {
 
         let yy_minus_xx = &YY - &XX;
         proof {
-            assume(limbs_bounded(&yy_minus_xx, 54) && limbs_bounded(&ZZ, 54));  // for lhs = &yy_minus_xx * &ZZ
+            assume(fe51_limbs_bounded(&yy_minus_xx, 54) && fe51_limbs_bounded(&ZZ, 54));  // for lhs = &yy_minus_xx * &ZZ
         }
         let lhs = &yy_minus_xx * &ZZ;
 
         let xx_times_yy = &XX * &YY;
         proof {
-            assume(limbs_bounded(&constants::EDWARDS_D, 54) && limbs_bounded(&xx_times_yy, 54));  // for d_times_xxyy = &constants::EDWARDS_D * &xx_times_yy
+            assume(fe51_limbs_bounded(&constants::EDWARDS_D, 54) && fe51_limbs_bounded(
+                &xx_times_yy,
+                54,
+            ));  // for d_times_xxyy = &constants::EDWARDS_D * &xx_times_yy
         }
         let d_times_xxyy = &constants::EDWARDS_D * &xx_times_yy;
         proof {
@@ -406,9 +409,9 @@ impl ProjectivePoint {
         requires
             is_valid_projective_point(*self),
             // preconditions for arithmetic traits
-            limbs_bounded(&self.X, 54),
-            limbs_bounded(&self.Y, 54),
-            limbs_bounded(&self.Z, 54),
+            fe51_limbs_bounded(&self.X, 54),
+            fe51_limbs_bounded(&self.Y, 54),
+            fe51_limbs_bounded(&self.Z, 54),
         ensures
             is_valid_edwards_point(result),
             spec_edwards_point(result) == spec_projective_to_extended(*self),
@@ -439,10 +442,10 @@ impl CompletedPoint {
         requires
             is_valid_completed_point(*self),
             // preconditions for arithmetic traits
-            limbs_bounded(&self.X, 54),
-            limbs_bounded(&self.Y, 54),
-            limbs_bounded(&self.Z, 54),
-            limbs_bounded(&self.T, 54),
+            fe51_limbs_bounded(&self.X, 54),
+            fe51_limbs_bounded(&self.Y, 54),
+            fe51_limbs_bounded(&self.Z, 54),
+            fe51_limbs_bounded(&self.T, 54),
         ensures
             is_valid_projective_point(result),
             spec_projective_point_edwards(result) == spec_completed_to_projective(*self),
@@ -472,10 +475,10 @@ impl CompletedPoint {
         requires
             is_valid_completed_point(*self),
             // preconditions for arithmetic traits
-            limbs_bounded(&self.X, 54),
-            limbs_bounded(&self.Y, 54),
-            limbs_bounded(&self.Z, 54),
-            limbs_bounded(&self.T, 54),
+            fe51_limbs_bounded(&self.X, 54),
+            fe51_limbs_bounded(&self.Y, 54),
+            fe51_limbs_bounded(&self.Z, 54),
+            fe51_limbs_bounded(&self.T, 54),
         ensures
             is_valid_edwards_point(result),
             spec_edwards_point(result) == spec_completed_to_extended(*self),
@@ -506,9 +509,9 @@ impl ProjectivePoint {
         requires
             is_valid_projective_point(*self),
             // preconditions for arithmetic traits
-            limbs_bounded(&self.X, 54),
-            limbs_bounded(&self.Y, 54),
-            limbs_bounded(&self.Z, 54),
+            fe51_limbs_bounded(&self.X, 54),
+            fe51_limbs_bounded(&self.Y, 54),
+            fe51_limbs_bounded(&self.Z, 54),
             sum_of_limbs_bounded(&self.X, &self.Y, u64::MAX),
         ensures
             is_valid_completed_point(result),
@@ -517,10 +520,10 @@ impl ProjectivePoint {
                 let (x, y) = projective_point_as_affine_edwards(*self);
                 edwards_double(x, y)
             }),
-            limbs_bounded(&result.X, 54),
-            limbs_bounded(&result.Y, 54),
-            limbs_bounded(&result.Z, 54),
-            limbs_bounded(&result.T, 54),
+            fe51_limbs_bounded(&result.X, 54),
+            fe51_limbs_bounded(&result.Y, 54),
+            fe51_limbs_bounded(&result.Z, 54),
+            fe51_limbs_bounded(&result.T, 54),
     {
         // Double()
         let XX = self.X.square();
@@ -530,9 +533,9 @@ impl ProjectivePoint {
         let X_plus_Y = &self.X + &self.Y;
         proof {
             // preconditions for arithmetic traits
-            assume(limbs_bounded(&X_plus_Y, 54));  // for X_plus_Y_sq = X_plus_Y.square()
+            assume(fe51_limbs_bounded(&X_plus_Y, 54));  // for X_plus_Y_sq = X_plus_Y.square()
             assume(sum_of_limbs_bounded(&YY, &XX, u64::MAX));  // for YY_plus_XX = &YY + &XX and YY_minus_XX = &YY - &XX
-            assume(limbs_bounded(&YY, 54) && limbs_bounded(&XX, 54));  // for YY_plus_XX = &YY + &XX and YY_minus_XX = &YY - &XX
+            assume(fe51_limbs_bounded(&YY, 54) && fe51_limbs_bounded(&XX, 54));  // for YY_plus_XX = &YY + &XX and YY_minus_XX = &YY - &XX
         }
         let X_plus_Y_sq = X_plus_Y.square();
         let YY_plus_XX = &YY + &XX;
@@ -540,10 +543,10 @@ impl ProjectivePoint {
 
         proof {
             // preconditions for arithmetic traits
-            assume(limbs_bounded(&X_plus_Y_sq, 54));  // for &X_plus_Y_sq - &YY_plus_XX
-            assume(limbs_bounded(&YY_plus_XX, 54));  // for &X_plus_Y_sq - &YY_plus_XX
-            assume(limbs_bounded(&YY_minus_XX, 54));  // for &ZZ2 - &YY_minus_XX
-            assume(limbs_bounded(&ZZ2, 54));  // for &ZZ2 - &YY_minus_XX
+            assume(fe51_limbs_bounded(&X_plus_Y_sq, 54));  // for &X_plus_Y_sq - &YY_plus_XX
+            assume(fe51_limbs_bounded(&YY_plus_XX, 54));  // for &X_plus_Y_sq - &YY_plus_XX
+            assume(fe51_limbs_bounded(&YY_minus_XX, 54));  // for &ZZ2 - &YY_minus_XX
+            assume(fe51_limbs_bounded(&ZZ2, 54));  // for &ZZ2 - &YY_minus_XX
         }
         let result = CompletedPoint {
             X: &X_plus_Y_sq - &YY_plus_XX,
@@ -580,14 +583,9 @@ impl vstd::std_specs::ops::AddSpecImpl<&ProjectiveNielsPoint> for &EdwardsPoint 
 
     open spec fn add_req(self, rhs: &ProjectiveNielsPoint) -> bool {
         // Preconditions needed for field operations
-        sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX) && limbs_bounded(&self.X, 54)
-            && limbs_bounded(&self.Y, 54) && limbs_bounded(&self.Z, 54) && limbs_bounded(
-            &self.T,
-            54,
-        ) && limbs_bounded(&rhs.Y_plus_X, 54) && limbs_bounded(&rhs.Y_minus_X, 54) && limbs_bounded(
-            &rhs.Z,
-            54,
-        ) && limbs_bounded(&rhs.T2d, 54)
+        is_well_formed_edwards_point(*self) && fe51_limbs_bounded(&rhs.Y_plus_X, 54)
+            && fe51_limbs_bounded(&rhs.Y_minus_X, 54) && fe51_limbs_bounded(&rhs.Z, 54)
+            && fe51_limbs_bounded(&rhs.T2d, 54)
     }
 
     open spec fn add_spec(self, rhs: &ProjectiveNielsPoint) -> CompletedPoint {
@@ -616,7 +614,7 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
         let Y_minus_X = &self.Y - &self.X;
         proof {
             assume(sum_of_limbs_bounded(&Y_plus_X, &Y_minus_X, u64::MAX));  // for PP = &Y_plus_X * &other.Y_plus_X and MM = &Y_minus_X * &other.Y_minus_X
-            assume(limbs_bounded(&Y_plus_X, 54) && limbs_bounded(&Y_minus_X, 54));  // for PP = &Y_plus_X * &other.Y_plus_X and MM = &Y_minus_X * &other.Y_minus_X
+            assume(fe51_limbs_bounded(&Y_plus_X, 54) && fe51_limbs_bounded(&Y_minus_X, 54));  // for PP = &Y_plus_X * &other.Y_plus_X and MM = &Y_minus_X * &other.Y_minus_X
         }
         let PP = &Y_plus_X * &other.Y_plus_X;
         let MM = &Y_minus_X * &other.Y_minus_X;
@@ -627,12 +625,12 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
         }
         let ZZ2 = &ZZ + &ZZ;
         proof {
-            assume(limbs_bounded(&ZZ2, 54));  // for ZZ2 = &ZZ + &ZZ
+            assume(fe51_limbs_bounded(&ZZ2, 54));  // for ZZ2 = &ZZ + &ZZ
             assume(sum_of_limbs_bounded(&ZZ2, &TT2d, u64::MAX));  // for Z and T operations
             assume(sum_of_limbs_bounded(&PP, &MM, u64::MAX));  // for Y = &PP + &MM
             // Preconditions for subtractions
-            assume(limbs_bounded(&PP, 54) && limbs_bounded(&MM, 54));  // for X = &PP - &MM
-            assume(limbs_bounded(&TT2d, 54));  // for T = &ZZ2 - &TT2d (ZZ2 already bounded above)
+            assume(fe51_limbs_bounded(&PP, 54) && fe51_limbs_bounded(&MM, 54));  // for X = &PP - &MM
+            assume(fe51_limbs_bounded(&TT2d, 54));  // for T = &ZZ2 - &TT2d (ZZ2 already bounded above)
         }
         let result = CompletedPoint {
             X: &PP - &MM,
@@ -661,14 +659,9 @@ impl vstd::std_specs::ops::SubSpecImpl<&ProjectiveNielsPoint> for &EdwardsPoint 
 
     open spec fn sub_req(self, rhs: &ProjectiveNielsPoint) -> bool {
         // Preconditions needed for field operations
-        sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX) && limbs_bounded(&self.X, 54)
-            && limbs_bounded(&self.Y, 54) && limbs_bounded(&self.Z, 54) && limbs_bounded(
-            &self.T,
-            54,
-        ) && limbs_bounded(&rhs.Y_plus_X, 54) && limbs_bounded(&rhs.Y_minus_X, 54) && limbs_bounded(
-            &rhs.Z,
-            54,
-        ) && limbs_bounded(&rhs.T2d, 54)
+        is_well_formed_edwards_point(*self) && fe51_limbs_bounded(&rhs.Y_plus_X, 54)
+            && fe51_limbs_bounded(&rhs.Y_minus_X, 54) && fe51_limbs_bounded(&rhs.Z, 54)
+            && fe51_limbs_bounded(&rhs.T2d, 54)
     }
 
     open spec fn sub_spec(self, rhs: &ProjectiveNielsPoint) -> CompletedPoint {
@@ -684,7 +677,7 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         proof {
-            assume(limbs_bounded(&Y_plus_X, 54) && limbs_bounded(&Y_minus_X, 54));  // for PM = &Y_plus_X * &other.Y_minus_X and MP = &Y_minus_X * &other.Y_plus_X
+            assume(fe51_limbs_bounded(&Y_plus_X, 54) && fe51_limbs_bounded(&Y_minus_X, 54));  // for PM = &Y_plus_X * &other.Y_minus_X and MP = &Y_minus_X * &other.Y_plus_X
         }
         let PM = &Y_plus_X * &other.Y_minus_X;
         let MP = &Y_minus_X * &other.Y_plus_X;
@@ -698,8 +691,8 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
             assume(sum_of_limbs_bounded(&PM, &MP, u64::MAX));  // for Y = &PM + &MP
             assume(sum_of_limbs_bounded(&ZZ2, &TT2d, u64::MAX));  // for Z and T operations
             // Preconditions for subtractions
-            assume(limbs_bounded(&PM, 54) && limbs_bounded(&MP, 54));  // for X = &PM - &MP
-            assume(limbs_bounded(&ZZ2, 54) && limbs_bounded(&TT2d, 54));  // for Z = &ZZ2 - &TT2d
+            assume(fe51_limbs_bounded(&PM, 54) && fe51_limbs_bounded(&MP, 54));  // for X = &PM - &MP
+            assume(fe51_limbs_bounded(&ZZ2, 54) && fe51_limbs_bounded(&TT2d, 54));  // for Z = &ZZ2 - &TT2d
         }
 
         let result = CompletedPoint {
@@ -724,16 +717,13 @@ impl vstd::std_specs::ops::AddSpecImpl<&AffineNielsPoint> for &EdwardsPoint {
 
     open spec fn add_req(self, rhs: &AffineNielsPoint) -> bool {
         // Preconditions needed for field operations
-        sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX) && sum_of_limbs_bounded(
+        is_well_formed_edwards_point(*self) && sum_of_limbs_bounded(
             &self.Z,
             &self.Z,
             u64::MAX,
         )  // for Z2 = &self.Z + &self.Z
-         && limbs_bounded(&self.X, 54) && limbs_bounded(&self.Y, 54) && limbs_bounded(&self.Z, 54)
-            && limbs_bounded(&self.T, 54) && limbs_bounded(&rhs.y_plus_x, 54) && limbs_bounded(
-            &rhs.y_minus_x,
-            54,
-        ) && limbs_bounded(&rhs.xy2d, 54)
+         && fe51_limbs_bounded(&rhs.y_plus_x, 54) && fe51_limbs_bounded(&rhs.y_minus_x, 54)
+            && fe51_limbs_bounded(&rhs.xy2d, 54)
     }
 
     open spec fn add_spec(self, rhs: &AffineNielsPoint) -> CompletedPoint {
@@ -760,7 +750,7 @@ impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
         let Y_minus_X = &self.Y - &self.X;
         proof {
             assume(sum_of_limbs_bounded(&Y_plus_X, &Y_minus_X, u64::MAX));
-            assume(limbs_bounded(&Y_plus_X, 54) && limbs_bounded(&Y_minus_X, 54));
+            assume(fe51_limbs_bounded(&Y_plus_X, 54) && fe51_limbs_bounded(&Y_minus_X, 54));
         }
         let PP = &Y_plus_X * &other.y_plus_x;
         let MM = &Y_minus_X * &other.y_minus_x;
@@ -769,8 +759,8 @@ impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
         proof {
             assume(sum_of_limbs_bounded(&Z2, &Txy2d, u64::MAX));
             assume(sum_of_limbs_bounded(&PP, &MM, u64::MAX));
-            assume(limbs_bounded(&PP, 54) && limbs_bounded(&MM, 54));
-            assume(limbs_bounded(&Z2, 54) && limbs_bounded(&Txy2d, 54));
+            assume(fe51_limbs_bounded(&PP, 54) && fe51_limbs_bounded(&MM, 54));
+            assume(fe51_limbs_bounded(&Z2, 54) && fe51_limbs_bounded(&Txy2d, 54));
         }
         let result = CompletedPoint {
             X: &PP - &MM,

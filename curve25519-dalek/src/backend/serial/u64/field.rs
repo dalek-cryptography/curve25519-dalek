@@ -231,6 +231,11 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
                 spec_field_element(self),
                 spec_field_element(_rhs),
             ),
+            // Bound propagation: tighter inputs give tighter output
+            fe51_limbs_bounded(self, 51) && fe51_limbs_bounded(_rhs, 51) ==> fe51_limbs_bounded(
+                &output,
+                52,
+            ),
     {
         let mut output = *self;
         /* ORIGINAL CODE
@@ -262,6 +267,10 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
             ]);
 
             lemma_field51_add(self, _rhs);
+
+            // Prove bound propagation: 51-bit inputs → 52-bit output
+            // If a < 2^51 and b < 2^51, then a + b < 2^52
+            assert((1u64 << 51) + (1u64 << 51) == (1u64 << 52)) by (bit_vector);
         }
 
         output
@@ -276,7 +285,7 @@ impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
     // VERIFICATION NOTE: PROOF BYPASS
 
         requires
-            limbs_bounded(old(self), 54) && limbs_bounded(_rhs, 54),
+            fe51_limbs_bounded(old(self), 54) && fe51_limbs_bounded(_rhs, 54),
         ensures
             forall|i: int| 0 <= i < 5 ==> #[trigger] self.limbs[i] < (1u64 << 52),
             *self == spec_sub_limbs(old(self), _rhs),
@@ -315,7 +324,7 @@ impl vstd::std_specs::ops::SubSpecImpl<&FieldElement51> for &FieldElement51 {
 
     // Pre-condition of sub - delegates to spec_sub_limbs_bounded for consistency
     open spec fn sub_req(self, rhs: &FieldElement51) -> bool {
-        limbs_bounded(self, 54) && limbs_bounded(rhs, 54)
+        fe51_limbs_bounded(self, 54) && fe51_limbs_bounded(rhs, 54)
     }
 
     // Postcondition of sub - delegates to spec_sub_limbs for consistency
@@ -337,9 +346,9 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
                 spec_field_element(self),
                 spec_field_element(_rhs),
             ),
-            limbs_bounded(&output, 54),
+            fe51_limbs_bounded(&output, 54),
     {
-        assert(limbs_bounded(self, 54) && limbs_bounded(_rhs, 54));
+        assert(fe51_limbs_bounded(self, 54) && fe51_limbs_bounded(_rhs, 54));
         // To avoid underflow, first add a multiple of p.
         // Choose 16*p = p << 4 to be larger than 54-bit _rhs.
         //
@@ -383,7 +392,7 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
 
         proof {
             assert(1u64 << 52 < 1u64 << 54) by (compute);
-            assert(limbs_bounded(&output, 54));
+            assert(fe51_limbs_bounded(&output, 54));
 
             // Glue the raw subtraction back to the spec subtraction using reduction lemmas.
             lemma_u64_5_as_nat_add(self.limbs, const_vec);
@@ -452,7 +461,7 @@ impl vstd::std_specs::ops::MulSpecImpl<&FieldElement51> for &FieldElement51 {
 
     // Pre-condition of mul
     open spec fn mul_req(self, rhs: &FieldElement51) -> bool {
-        limbs_bounded(self, 54) && limbs_bounded(rhs, 54)
+        fe51_limbs_bounded(self, 54) && fe51_limbs_bounded(rhs, 54)
     }
 
     // Postcondition of mul
@@ -477,7 +486,7 @@ impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
                 spec_field_element(self),
                 spec_field_element(_rhs),
             ),
-            limbs_bounded(&output, 54),
+            fe51_limbs_bounded(&output, 54),
     {
         /// Helper function to multiply two 64-bit integers with 128
         /// bits of output.
@@ -614,7 +623,7 @@ impl vstd::std_specs::ops::NegSpecImpl for &FieldElement51 {
 
     // Pre-condition of neg
     open spec fn neg_req(self) -> bool {
-        forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 51)
+        fe51_limbs_bounded(self, 51)
     }
 
     // Postcondition of neg
@@ -895,6 +904,8 @@ impl FieldElement51 {
     // last bit is ignored
 
             u64_5_as_nat(r.limbs) == u8_32_as_nat(bytes) % pow2(255),
+            // each limb is masked with (2^51 - 1), so bounded by 51 bits
+            fe51_limbs_bounded(&r, 51),
     {
         /* MANUALLY moved outside */
         /*
@@ -939,6 +950,9 @@ impl FieldElement51 {
                 lemma_from_bytes_as_nat(bytes);
                 lemma_as_nat_32_mod_255(bytes);
             }
+
+            // Prove limbs are bounded: x & mask51 < 2^51
+            assert(forall|x: u64| #[trigger] (x & mask51) < (1u64 << 51)) by (bit_vector);
         }
         let low_51_bit_mask = (1u64 << 51) - 1;
         // ADAPTED CODE LINE: limbs is now a named field

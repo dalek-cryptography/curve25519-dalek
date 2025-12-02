@@ -160,6 +160,28 @@ pub open spec fn is_valid_edwards_point(point: crate::edwards::EdwardsPoint) -> 
     t == math_field_mul(math_field_mul(x, y), math_field_inv(z))
 }
 
+/// Limb bounds for safe field arithmetic on an EdwardsPoint.
+/// All coordinate limbs must fit in 54 bits for safe arithmetic operations.
+pub open spec fn edwards_point_limbs_bounded(point: crate::edwards::EdwardsPoint) -> bool {
+    fe51_limbs_bounded(&point.X, 54) && fe51_limbs_bounded(&point.Y, 54) && fe51_limbs_bounded(
+        &point.Z,
+        54,
+    ) && fe51_limbs_bounded(&point.T, 54)
+}
+
+/// Sum bound needed for operations like as_projective_niels that compute Y+X.
+/// The sum of Y and X limbs must not overflow.
+pub open spec fn edwards_point_sum_bounded(point: crate::edwards::EdwardsPoint) -> bool {
+    sum_of_limbs_bounded(&point.Y, &point.X, u64::MAX)
+}
+
+/// A "well-formed" EdwardsPoint: mathematically valid and properly bounded.
+/// This is the standard predicate for points ready to use in arithmetic operations.
+pub open spec fn is_well_formed_edwards_point(point: crate::edwards::EdwardsPoint) -> bool {
+    is_valid_edwards_point(point) && edwards_point_limbs_bounded(point)
+        && edwards_point_sum_bounded(point)
+}
+
 /// Returns the field element values (X, Y, Z, T) from an EdwardsPoint.
 /// An EdwardsPoint (X:Y:Z:T) is in extended projective coordinates.
 pub open spec fn spec_edwards_point(point: crate::edwards::EdwardsPoint) -> (nat, nat, nat, nat) {
@@ -254,17 +276,6 @@ pub open spec fn spec_affine_niels_point(niels: AffineNielsPoint) -> (nat, nat, 
     let y_minus_x = spec_field_element(&niels.y_minus_x);
     let xy2d = spec_field_element(&niels.xy2d);
     (y_plus_x, y_minus_x, xy2d)
-}
-
-/// Check if a CompressedEdwardsY represents the identity point
-/// The identity point is (0, 1) in affine coordinates
-/// When compressed, this is represented as y=1 with sign bit 0
-pub open spec fn spec_is_compressed_identity(compressed: CompressedEdwardsY) -> bool {
-    // Extract the y-coordinate (identity has y = 1)
-    spec_field_element_from_bytes(&compressed.0) == 1
-        &&
-    // Sign bit should be 0 (since x = 0)
-    (compressed.0[31] >> 7) == 0
 }
 
 /// Spec function: check if a CompressedEdwardsY corresponds to an EdwardsPoint

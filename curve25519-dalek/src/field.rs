@@ -288,12 +288,12 @@ impl FieldElement {
     #[rustfmt::skip]  // keep alignment of explanatory comments
     fn pow22501(&self) -> (result: (FieldElement, FieldElement))
         requires
-            limbs_bounded(self, 54),
+            fe51_limbs_bounded(self, 54),
         ensures
     // Bounded limbs (maintained by all field operations)
 
-            limbs_bounded(&result.0, 54),
-            limbs_bounded(&result.1, 54),
+            fe51_limbs_bounded(&result.0, 54),
+            fe51_limbs_bounded(&result.1, 54),
             // Mathematical values
             spec_field_element(&result.0) == (pow(
                 spec_field_element(self) as int,
@@ -508,8 +508,8 @@ impl FieldElement {
             // Bounded limbs: all field operations (mul, square, pow2k) maintain the bound < 2^54
             // t19 is the result of mul (&t18 * &t13), so it inherits the bound from mul's postcondition
             // t3 is the result of mul (&t0 * &t2), so it inherits the bound from mul's postcondition
-            assert(limbs_bounded(&t19, 54));
-            assert(limbs_bounded(&t3, 54));
+            assert(fe51_limbs_bounded(&t19, 54));
+            assert(fe51_limbs_bounded(&t3, 54));
         }
 
         (t19, t3)
@@ -600,7 +600,7 @@ impl FieldElement {
         proof {
             // PROOF BYPASS: assume acc limbs are bounded
             // (This would follow from the loop invariant, but we haven't proven that yet)
-            assume(limbs_bounded(&acc, 54));
+            assume(fe51_limbs_bounded(&acc, 54));
         }
         acc = acc.invert();
 
@@ -676,7 +676,7 @@ impl FieldElement {
     */
 
         requires
-            limbs_bounded(self, 54),
+            fe51_limbs_bounded(self, 54),
         ensures
     // If self is non-zero, result is the multiplicative inverse: result * self ≡ 1 (mod p)
 
@@ -686,7 +686,7 @@ impl FieldElement {
             // If self is zero, result is zero
             spec_field_element(self) == 0 ==> spec_field_element(&result) == 0,
             spec_field_element(&result) == math_field_inv(spec_field_element(self)),
-            limbs_bounded(&result, 54),
+            fe51_limbs_bounded(&result, 54),
     {
         // The bits of p-2 = 2^255 -19 -2 are 11010111111...11.
         //
@@ -707,11 +707,11 @@ impl FieldElement {
     #[allow(clippy::let_and_return)]
     fn pow_p58(&self) -> (result: FieldElement)
         requires
-            limbs_bounded(self, 54),
+            fe51_limbs_bounded(self, 54),
         ensures
     // Bounded limbs (maintained by all field operations)
 
-            limbs_bounded(&result, 54),
+            fe51_limbs_bounded(&result, 54),
             // Mathematical value
             spec_field_element(&result) == (pow(
                 spec_field_element(self) as int,
@@ -770,7 +770,7 @@ impl FieldElement {
             lemma_bridge_pow_as_nat_to_spec(&t21, self, (pow2(252) - 3) as nat);
 
             // Bounded limbs: t21 is the result of mul (self * &t20), which maintains the bound
-            assert(limbs_bounded(&t21, 54));
+            assert(fe51_limbs_bounded(&t21, 54));
         }
 
         t21
@@ -871,8 +871,13 @@ impl FieldElement {
         let r_is_negative = r.is_negative();
         // ORIGINAL CODE:
         // r.conditional_negate(r_is_negative);
-        // REFACTORED: Use wrapper for conditional_negate
-        conditional_negate_field(&mut r, r_is_negative);
+        // REFACTORED: Use specialized wrapper with specs
+        proof {
+            // r is bounded after conditional_assign (result of multiplications and pow_p58)
+            // This will need to be proven when we remove the assume(false) bypass
+            assume(fe51_limbs_bounded(&r, 51));
+        }
+        conditional_negate_field_element(&mut r, r_is_negative);
 
         // ORIGINAL CODE:
         // let was_nonzero_square = correct_sign_sqrt | flipped_sign_sqrt;

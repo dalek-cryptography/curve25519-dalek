@@ -75,6 +75,9 @@ pub mod constants;
 // External (and internal) traits.
 pub mod traits;
 
+// hEEA scalar reduction algorithm
+pub mod heea;
+
 //------------------------------------------------------------------------
 // curve25519-dalek internal modules
 //------------------------------------------------------------------------

@@ -168,8 +168,7 @@ pub mod spec {
                 let points = &points[0..n].to_vec();
                 let control: EdwardsPoint = premultiplied[0..n].iter().sum();
 
-                let subject =
-                    Pippenger::vartime_multiscalar_mul(scalars.clone(), points.clone());
+                let subject = Pippenger::vartime_multiscalar_mul(scalars.clone(), points.clone());
 
                 assert_eq!(subject.compress(), control.compress());
 

@@ -148,7 +148,8 @@ pub fn mul_128_128_256(
 
 #[cfg(test)]
 mod test {
-    use rand::thread_rng;
+
+    use rand::rng;
 
     use super::*;
     use crate::scalar::Scalar;
@@ -158,7 +159,7 @@ mod test {
         // Test vectors with random scalars
         let a1 = Scalar::from(12345u64);
         let a2 = Scalar::from(67890u64);
-        let b = Scalar::random(&mut thread_rng());
+        let b = Scalar::random(&mut rng());
 
         // Random points (using scalar multiplication of basepoint)
         let A1 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(2u64);
@@ -192,7 +193,7 @@ mod test {
         let a2 = Scalar::from_bytes_mod_order(a2_bytes);
 
         // Full 256-bit scalar for b
-        let b = Scalar::random(&mut thread_rng());
+        let b = Scalar::random(&mut rng());
 
         // Test points
         let A1 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(5u64);
@@ -211,7 +212,7 @@ mod test {
     fn test_triple_base_with_zero_scalars() {
         let a1 = Scalar::ZERO;
         let a2 = Scalar::from(123u64);
-        let b = Scalar::random(&mut thread_rng());
+        let b = Scalar::random(&mut rng());
 
         let A1 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(2u64);
         let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(3u64);
@@ -226,7 +227,7 @@ mod test {
     fn test_triple_base_with_identity_points() {
         let a1 = Scalar::from(111u64);
         let a2 = Scalar::from(222u64);
-        let b = Scalar::random(&mut thread_rng());
+        let b = Scalar::random(&mut rng());
 
         let A1 = EdwardsPoint::identity();
         let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(3u64);
@@ -242,7 +243,7 @@ mod test {
         // Test that both functions give the same result for 128-bit inputs
         let a1 = Scalar::from(0x123456789ABCDEFu64);
         let a2 = Scalar::from(0xFEDCBA987654321u64);
-        let b = Scalar::random(&mut thread_rng());
+        let b = Scalar::random(&mut rng());
 
         let A1 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(11u64);
         let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(13u64);
@@ -269,7 +270,7 @@ mod test {
         }
         let a2 = Scalar::from_bytes_mod_order(a2_bytes);
 
-        let b = Scalar::random(&mut thread_rng());
+        let b = Scalar::random(&mut rng());
 
         let A1 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(17u64);
         let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(19u64);

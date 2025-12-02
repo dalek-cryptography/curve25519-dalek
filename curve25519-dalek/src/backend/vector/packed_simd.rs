@@ -3,6 +3,11 @@
 // This file is part of curve25519-dalek.
 // See LICENSE for licensing information.
 
+// Nightly and stable currently disagree on the requirement of unsafe blocks when `unsafe_target_feature`
+// gets used.
+// See: https://github.com/rust-lang/rust/issues/132856
+#![allow(unused_unsafe)]
+
 //! This module defines wrappers over platform-specific SIMD types to make them
 //! more convenient to use.
 //!
@@ -240,7 +245,9 @@ impl u64x4 {
     pub const fn new_const(x0: u64, x1: u64, x2: u64, x3: u64) -> Self {
         // SAFETY: Transmuting between an array and a SIMD type is safe
         // https://rust-lang.github.io/unsafe-code-guidelines/layout/packed-simd-vectors.html
-        unsafe { Self(core::mem::transmute([x0, x1, x2, x3])) }
+        unsafe {
+            Self(core::mem::transmute::<[u64; 4], core::arch::x86_64::__m256i>([x0, x1, x2, x3]))
+        }
     }
 
     /// A constified variant of `splat`.
@@ -290,7 +297,13 @@ impl u32x8 {
     ) -> Self {
         // SAFETY: Transmuting between an array and a SIMD type is safe
         // https://rust-lang.github.io/unsafe-code-guidelines/layout/packed-simd-vectors.html
-        unsafe { Self(core::mem::transmute([x0, x1, x2, x3, x4, x5, x6, x7])) }
+        unsafe {
+            Self(
+                core::mem::transmute::<[u32; 8], core::arch::x86_64::__m256i>([
+                    x0, x1, x2, x3, x4, x5, x6, x7,
+                ]),
+            )
+        }
     }
 
     /// A constified variant of `splat`.

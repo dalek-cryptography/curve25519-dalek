@@ -55,33 +55,33 @@ impl Zeroize for FieldElement51 {
     }
 }
 
-impl<'b> AddAssign<&'b FieldElement51> for FieldElement51 {
-    fn add_assign(&mut self, _rhs: &'b FieldElement51) {
+impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
+    fn add_assign(&mut self, _rhs: &'a FieldElement51) {
         for i in 0..5 {
             self.0[i] += _rhs.0[i];
         }
     }
 }
 
-impl<'a, 'b> Add<&'b FieldElement51> for &'a FieldElement51 {
+impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
-    fn add(self, _rhs: &'b FieldElement51) -> FieldElement51 {
+    fn add(self, _rhs: &'a FieldElement51) -> FieldElement51 {
         let mut output = *self;
         output += _rhs;
         output
     }
 }
 
-impl<'b> SubAssign<&'b FieldElement51> for FieldElement51 {
-    fn sub_assign(&mut self, _rhs: &'b FieldElement51) {
+impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
+    fn sub_assign(&mut self, _rhs: &'a FieldElement51) {
         let result = (self as &FieldElement51) - _rhs;
         self.0 = result.0;
     }
 }
 
-impl<'a, 'b> Sub<&'b FieldElement51> for &'a FieldElement51 {
+impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
-    fn sub(self, _rhs: &'b FieldElement51) -> FieldElement51 {
+    fn sub(self, _rhs: &'a FieldElement51) -> FieldElement51 {
         // To avoid underflow, first add a multiple of p.
         // Choose 16*p = p << 4 to be larger than 54-bit _rhs.
         //
@@ -101,18 +101,18 @@ impl<'a, 'b> Sub<&'b FieldElement51> for &'a FieldElement51 {
     }
 }
 
-impl<'b> MulAssign<&'b FieldElement51> for FieldElement51 {
-    fn mul_assign(&mut self, _rhs: &'b FieldElement51) {
+impl<'a> MulAssign<&'a FieldElement51> for FieldElement51 {
+    fn mul_assign(&mut self, _rhs: &'a FieldElement51) {
         let result = (self as &FieldElement51) * _rhs;
         self.0 = result.0;
     }
 }
 
-impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
+impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
     #[rustfmt::skip] // keep alignment of c* calculations
-    fn mul(self, _rhs: &'b FieldElement51) -> FieldElement51 {
+    fn mul(self, _rhs: &'a FieldElement51) -> FieldElement51 {
         /// Helper function to multiply two 64-bit integers with 128
         /// bits of output.
         #[inline(always)]
@@ -213,7 +213,7 @@ impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
     }
 }
 
-impl<'a> Neg for &'a FieldElement51 {
+impl Neg for &FieldElement51 {
     type Output = FieldElement51;
     fn neg(self) -> FieldElement51 {
         let mut output = *self;
@@ -335,37 +335,37 @@ impl FieldElement51 {
     /// canonical.
     ///
     #[rustfmt::skip] // keep alignment of bit shifts
-    pub fn from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
-        let load8 = |input: &[u8]| -> u64 {
-               (input[0] as u64)
-            | ((input[1] as u64) << 8)
-            | ((input[2] as u64) << 16)
-            | ((input[3] as u64) << 24)
-            | ((input[4] as u64) << 32)
-            | ((input[5] as u64) << 40)
-            | ((input[6] as u64) << 48)
-            | ((input[7] as u64) << 56)
-        };
+    pub const fn from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
+        const fn load8_at(input: &[u8], i: usize) -> u64 {
+               (input[i] as u64)
+            | ((input[i + 1] as u64) << 8)
+            | ((input[i + 2] as u64) << 16)
+            | ((input[i + 3] as u64) << 24)
+            | ((input[i + 4] as u64) << 32)
+            | ((input[i + 5] as u64) << 40)
+            | ((input[i + 6] as u64) << 48)
+            | ((input[i + 7] as u64) << 56)
+        }
 
         let low_51_bit_mask = (1u64 << 51) - 1;
         FieldElement51(
         // load bits [  0, 64), no shift
-        [  load8(&bytes[ 0..])        & low_51_bit_mask
+        [  load8_at(bytes,  0)        & low_51_bit_mask
         // load bits [ 48,112), shift to [ 51,112)
-        , (load8(&bytes[ 6..]) >>  3) & low_51_bit_mask
+        , (load8_at(bytes,  6) >>  3) & low_51_bit_mask
         // load bits [ 96,160), shift to [102,160)
-        , (load8(&bytes[12..]) >>  6) & low_51_bit_mask
+        , (load8_at(bytes, 12) >>  6) & low_51_bit_mask
         // load bits [152,216), shift to [153,216)
-        , (load8(&bytes[19..]) >>  1) & low_51_bit_mask
+        , (load8_at(bytes, 19) >>  1) & low_51_bit_mask
         // load bits [192,256), shift to [204,112)
-        , (load8(&bytes[24..]) >> 12) & low_51_bit_mask
+        , (load8_at(bytes, 24) >> 12) & low_51_bit_mask
         ])
     }
 
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     #[rustfmt::skip] // keep alignment of s[*] calculations
-    pub fn as_bytes(&self) -> [u8; 32] {
+    pub fn to_bytes(self) -> [u8; 32] {
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
         //
         // Write h = pq + r with 0 <= r < p.

@@ -9,14 +9,14 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-#![doc = include_str!("../../../docs/parallel-formulas.md")]
+#![doc = include_str!("../../docs/parallel-formulas.md")]
 
 #[allow(missing_docs)]
 pub mod packed_simd;
 
 pub mod avx2;
 
-#[cfg(nightly)]
+#[cfg(all(curve25519_dalek_backend = "unstable_avx512", nightly))]
 pub mod ifma;
 
 pub mod scalar_mul;

@@ -24,22 +24,29 @@ use crate::{InternalError, SignatureError};
 /// use ed25519_dalek::{Signature, SigningKey, VerifyingKey, Sha512};
 /// # use curve25519_dalek::digest::Digest;
 /// # use rand::rngs::OsRng;
+/// # use rand_core::TryRngCore;
 /// use ed25519_dalek::{DigestSigner, DigestVerifier};
 ///
-/// # let mut csprng = OsRng;
+/// # let mut csprng = OsRng.unwrap_err();
 /// # let signing_key = SigningKey::generate(&mut csprng);
 /// # let verifying_key = signing_key.verifying_key();
 /// let context_str = b"Local Channel 3";
-/// let prehashed_message = Sha512::default().chain_update(b"Stay tuned for more news at 7");
+/// let message = b"Stay tuned for more news at 7";
 ///
 /// // Signer
 /// let signing_context = signing_key.with_context(context_str).unwrap();
-/// let signature = signing_context.sign_digest(prehashed_message.clone());
+/// let signature = signing_context.sign_digest(|digest: &mut Sha512| digest.update(message));
 ///
 /// // Verifier
 /// let verifying_context = verifying_key.with_context(context_str).unwrap();
 /// let verified: bool = verifying_context
-///     .verify_digest(prehashed_message, &signature)
+///     .verify_digest(
+///         |digest: &mut Sha512| {
+///             digest.update(message);
+///             Ok(())
+///         },
+///         &signature
+///     )
 ///     .is_ok();
 ///
 /// # assert!(verified);
@@ -84,27 +91,34 @@ mod test {
 
     use crate::{Signature, SigningKey, VerifyingKey};
     use curve25519_dalek::digest::Digest;
-    use ed25519::signature::{DigestSigner, DigestVerifier};
-    use rand::rngs::OsRng;
+    use rand::{TryRngCore, rngs::OsRng};
     use sha2::Sha512;
+    use signature::{DigestSigner, DigestVerifier};
 
     #[test]
     fn context_correctness() {
-        let mut csprng = OsRng;
+        let mut csprng = OsRng.unwrap_err();
         let signing_key: SigningKey = SigningKey::generate(&mut csprng);
         let verifying_key: VerifyingKey = signing_key.verifying_key();
 
         let context_str = b"Local Channel 3";
-        let prehashed_message = Sha512::default().chain_update(b"Stay tuned for more news at 7");
+        let message = b"Stay tuned for more news at 7";
 
         // Signer
         let signing_context = signing_key.with_context(context_str).unwrap();
-        let signature: Signature = signing_context.sign_digest(prehashed_message.clone());
+        let signature: Signature =
+            signing_context.sign_digest(|digest: &mut Sha512| digest.update(message));
 
         // Verifier
         let verifying_context = verifying_key.with_context(context_str).unwrap();
         let verified: bool = verifying_context
-            .verify_digest(prehashed_message, &signature)
+            .verify_digest(
+                |digest: &mut Sha512| {
+                    digest.update(message);
+                    Ok(())
+                },
+                &signature,
+            )
             .is_ok();
 
         assert!(verified);

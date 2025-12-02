@@ -136,7 +136,7 @@ i3-8121U) executes 512-bit IFMA instructions at half rate compared to
 using 512-bit IFMA instructions, and this implementation uses 256-bit
 vectors.
 
-To extend this to 512-bit vectors, it's only only necessary to achieve
+To extend this to 512-bit vectors, it's only necessary to achieve
 2-way parallelism, and it's possible (with a small amount of overhead)
 to create a hybrid strategy that operates entirely within 128-bit
 lanes.  This means that cross-lane operations can use the faster

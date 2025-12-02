@@ -30,6 +30,13 @@ pub(crate) const MINUS_ONE: FieldElement2625 = FieldElement2625::from_limbs([
     33554431,
 ]);
 
+/// sqrt(-486664)
+#[cfg(feature = "digest")]
+pub(crate) const ED25519_SQRTAM2: FieldElement2625 = FieldElement2625::from_limbs([
+    54885894, 25242303, 55597453, 9067496, 51808079, 33312638, 25456129, 14121551, 54921728,
+    3972023,
+]);
+
 /// Edwards `d` value, equal to `-121665/121666 mod p`.
 pub(crate) const EDWARDS_D: FieldElement2625 = FieldElement2625::from_limbs([
     56195235, 13857412, 51736253, 6949390, 114729, 24766616, 60832955, 30306712, 48412415, 21499315,
@@ -71,12 +78,14 @@ pub(crate) const SQRT_M1: FieldElement2625 = FieldElement2625::from_limbs([
 pub(crate) const APLUS2_OVER_FOUR: FieldElement2625 =
     FieldElement2625::from_limbs([121666, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
+#[cfg(feature = "digest")]
 /// `MONTGOMERY_A` is equal to 486662, which is a constant of the curve equation
 /// for Curve25519 in its Montgomery form. (This is used internally within the
 /// Elligator map.)
 pub(crate) const MONTGOMERY_A: FieldElement2625 =
     FieldElement2625::from_limbs([486662, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
+#[cfg(feature = "digest")]
 /// `MONTGOMERY_A_NEG` is equal to -486662. (This is used internally within the
 /// Elligator map.)
 pub(crate) const MONTGOMERY_A_NEG: FieldElement2625 = FieldElement2625::from_limbs([

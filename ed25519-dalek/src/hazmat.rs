@@ -13,16 +13,19 @@
 // defined.
 #![allow(dead_code)]
 
+use core::fmt::Debug;
+
 use crate::{InternalError, SignatureError};
 
-use curve25519_dalek::scalar::{clamp_integer, Scalar};
+use curve25519_dalek::scalar::{Scalar, clamp_integer};
 
+use subtle::{Choice, ConstantTimeEq};
 #[cfg(feature = "zeroize")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 // These are used in the functions that are made public when the hazmat feature is set
 use crate::{Signature, VerifyingKey};
-use curve25519_dalek::digest::{generic_array::typenum::U64, Digest};
+use curve25519_dalek::digest::{Digest, array::typenum::U64};
 
 /// Contains the secret scalar and domain separator used for generating signatures.
 ///
@@ -40,6 +43,26 @@ pub struct ExpandedSecretKey {
     /// The domain separator used when hashing the message to generate the pseudorandom `r` value
     pub hash_prefix: [u8; 32],
 }
+
+impl Debug for ExpandedSecretKey {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("ExpandedSecretKey").finish_non_exhaustive() // avoids printing secrets
+    }
+}
+
+impl ConstantTimeEq for ExpandedSecretKey {
+    fn ct_eq(&self, other: &Self) -> Choice {
+        self.scalar.ct_eq(&other.scalar) & self.hash_prefix.ct_eq(&other.hash_prefix)
+    }
+}
+
+impl PartialEq for ExpandedSecretKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.ct_eq(other).into()
+    }
+}
+
+impl Eq for ExpandedSecretKey {}
 
 #[cfg(feature = "zeroize")]
 impl Drop for ExpandedSecretKey {
@@ -106,7 +129,7 @@ impl TryFrom<&[u8]> for ExpandedSecretKey {
 /// calculate the pseudorandomness needed for signing. According to the Ed25519 spec, `CtxDigest =
 /// Sha512`.
 ///
-/// # ⚠️  Unsafe
+/// # ⚠️  Cryptographically Unsafe
 ///
 /// Do NOT use this function unless you absolutely must. Using the wrong values in
 /// `ExpandedSecretKey` can leak your signing key. See
@@ -119,7 +142,7 @@ pub fn raw_sign<CtxDigest>(
 where
     CtxDigest: Digest<OutputSize = U64>,
 {
-    esk.raw_sign::<CtxDigest>(message, verifying_key)
+    esk.raw_sign::<CtxDigest>(&[message], verifying_key)
 }
 
 /// Compute a signature over the given prehashed message, the Ed25519ph algorithm defined in
@@ -127,7 +150,7 @@ where
 /// `CtxDigest` is the digest function used to calculate the pseudorandomness needed for signing.
 /// According to the Ed25519 spec, `MsgDigest = CtxDigest = Sha512`.
 ///
-/// # ⚠️  Unsafe
+/// # ⚠️  Cryptographically Unsafe
 //
 /// Do NOT use this function unless you absolutely must. Using the wrong values in
 /// `ExpandedSecretKey` can leak your signing key. See
@@ -169,6 +192,33 @@ where
     esk.raw_sign_prehashed::<CtxDigest, MsgDigest>(prehashed_message, verifying_key, context)
 }
 
+/// Compute an ordinary Ed25519 signature, with the message contents provided incrementally by
+/// updating a digest instance.
+///
+/// The `msg_update` closure provides the message content, updating a hasher argument. It will be
+/// called twice. This closure MUST leave its hasher in the same state (i.e., must hash the same
+/// values) after both calls. Otherwise it will produce an invalid signature.
+///
+/// `CtxDigest` is the digest used to calculate the pseudorandomness needed for signing. According
+/// to the Ed25519 spec, `CtxDigest = Sha512`.
+///
+/// # ⚠️  Cryptographically Unsafe
+///
+/// Do NOT use this function unless you absolutely must. Using the wrong values in
+/// `ExpandedSecretKey` can leak your signing key. See
+/// [here](https://github.com/MystenLabs/ed25519-unsafe-libs) for more details on this attack.
+pub fn raw_sign_byupdate<CtxDigest, F>(
+    esk: &ExpandedSecretKey,
+    msg_update: F,
+    verifying_key: &VerifyingKey,
+) -> Result<Signature, SignatureError>
+where
+    CtxDigest: Digest<OutputSize = U64>,
+    F: Fn(&mut CtxDigest) -> Result<(), SignatureError>,
+{
+    esk.raw_sign_byupdate::<CtxDigest, F>(msg_update, verifying_key)
+}
+
 /// The ordinary non-batched Ed25519 verification check, rejecting non-canonical R
 /// values.`CtxDigest` is the digest used to calculate the pseudorandomness needed for signing.
 /// According to the Ed25519 spec, `CtxDigest = Sha512`.
@@ -180,7 +230,7 @@ pub fn raw_verify<CtxDigest>(
 where
     CtxDigest: Digest<OutputSize = U64>,
 {
-    vk.raw_verify::<CtxDigest>(message, signature)
+    vk.raw_verify::<CtxDigest>(&[message], signature)
 }
 
 /// The batched Ed25519 verification check, rejecting non-canonical R values. `MsgDigest` is the
@@ -208,7 +258,7 @@ mod test {
 
     use super::*;
 
-    use rand::{rngs::OsRng, CryptoRng, RngCore};
+    use rand::{CryptoRng, TryRngCore, rngs::OsRng};
 
     // Pick distinct, non-spec 512-bit hash functions for message and sig-context hashing
     type CtxDigest = blake2::Blake2b512;
@@ -217,7 +267,7 @@ mod test {
     impl ExpandedSecretKey {
         // Make a random expanded secret key for testing purposes. This is NOT how you generate
         // expanded secret keys IRL. They're the hash of a seed.
-        fn random<R: RngCore + CryptoRng>(mut rng: R) -> Self {
+        fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
             let mut bytes = [0u8; 64];
             rng.fill_bytes(&mut bytes);
             ExpandedSecretKey::from_bytes(&bytes)
@@ -228,8 +278,8 @@ mod test {
     #[test]
     fn sign_verify_nonspec() {
         // Generate the keypair
-        let rng = OsRng;
-        let esk = ExpandedSecretKey::random(rng);
+        let mut rng = OsRng.unwrap_err();
+        let esk = ExpandedSecretKey::random(&mut rng);
         let vk = VerifyingKey::from(&esk);
 
         let msg = b"Then one day, a piano fell on my head";
@@ -247,8 +297,8 @@ mod test {
         use curve25519_dalek::digest::Digest;
 
         // Generate the keypair
-        let rng = OsRng;
-        let esk = ExpandedSecretKey::random(rng);
+        let mut rng = OsRng.unwrap_err();
+        let esk = ExpandedSecretKey::random(&mut rng);
         let vk = VerifyingKey::from(&esk);
 
         // Hash the message
@@ -262,5 +312,48 @@ mod test {
         let sig = raw_sign_prehashed::<CtxDigest, MsgDigest>(&esk, h.clone(), &vk, Some(ctx_str))
             .unwrap();
         raw_verify_prehashed::<CtxDigest, MsgDigest>(&vk, h, Some(ctx_str), &sig).unwrap();
+    }
+
+    #[test]
+    fn sign_byupdate() {
+        // Generate the keypair
+        let mut rng = OsRng.unwrap_err();
+        let esk = ExpandedSecretKey::random(&mut rng);
+        let vk = VerifyingKey::from(&esk);
+
+        let msg = b"realistic";
+        // signatures are deterministic so we can compare with a good one
+        let good_sig = raw_sign::<CtxDigest>(&esk, msg, &vk);
+
+        let sig = raw_sign_byupdate::<CtxDigest, _>(
+            &esk,
+            |h| {
+                h.update(msg);
+                Ok(())
+            },
+            &vk,
+        );
+        assert!(sig.unwrap() == good_sig, "sign byupdate matches");
+
+        let sig = raw_sign_byupdate::<CtxDigest, _>(
+            &esk,
+            |h| {
+                h.update(msg);
+                Err(SignatureError::new())
+            },
+            &vk,
+        );
+        assert!(sig.is_err(), "sign byupdate failure propagates");
+
+        let sig = raw_sign_byupdate::<CtxDigest, _>(
+            &esk,
+            |h| {
+                h.update(&msg[..1]);
+                h.update(&msg[1..]);
+                Ok(())
+            },
+            &vk,
+        );
+        assert!(sig.unwrap() == good_sig, "sign byupdate two part");
     }
 }

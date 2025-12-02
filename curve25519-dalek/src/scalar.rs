@@ -127,16 +127,16 @@ use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]
 use group::ff::{FieldBits, PrimeFieldBits};
 
-#[cfg(any(test, feature = "group"))]
-use rand_core::RngCore;
+#[cfg(feature = "group")]
+use rand_core::TryRngCore;
 
-#[cfg(any(test, feature = "rand_core"))]
-use rand_core::CryptoRngCore;
+#[cfg(feature = "rand_core")]
+use rand_core::CryptoRng;
 
-#[cfg(feature = "digest")]
-use digest::generic_array::typenum::U64;
 #[cfg(feature = "digest")]
 use digest::Digest;
+#[cfg(feature = "digest")]
+use digest::array::typenum::U64;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
@@ -271,10 +271,6 @@ impl Scalar {
     /// `EdwardsPoint::vartime_double_scalar_mul_basepoint`. **Do not use this function** unless
     /// you absolutely have to.
     #[cfg(feature = "legacy_compatibility")]
-    #[deprecated(
-        since = "4.0.0",
-        note = "This constructor outputs scalars with undefined scalar-scalar arithmetic. See docs."
-    )]
     pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
         let mut s = Scalar { bytes };
         // Ensure invariant #1 holds. That is, make s < 2^255 by masking the high bit.
@@ -312,35 +308,35 @@ impl Index<usize> for Scalar {
     }
 }
 
-impl<'b> MulAssign<&'b Scalar> for Scalar {
-    fn mul_assign(&mut self, _rhs: &'b Scalar) {
+impl<'a> MulAssign<&'a Scalar> for Scalar {
+    fn mul_assign(&mut self, _rhs: &'a Scalar) {
         *self = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
     }
 }
 
 define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
+impl<'a> Mul<&'a Scalar> for &Scalar {
     type Output = Scalar;
-    fn mul(self, _rhs: &'b Scalar) -> Scalar {
+    fn mul(self, _rhs: &'a Scalar) -> Scalar {
         UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack()
     }
 }
 
 define_mul_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
-impl<'b> AddAssign<&'b Scalar> for Scalar {
-    fn add_assign(&mut self, _rhs: &'b Scalar) {
+impl<'a> AddAssign<&'a Scalar> for Scalar {
+    fn add_assign(&mut self, _rhs: &'a Scalar) {
         *self = *self + _rhs;
     }
 }
 
 define_add_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
+impl<'a> Add<&'a Scalar> for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
-    fn add(self, _rhs: &'b Scalar) -> Scalar {
+    fn add(self, _rhs: &'a Scalar) -> Scalar {
         // The UnpackedScalar::add function produces reduced outputs if the inputs are reduced. By
         // Scalar invariant #1, this is always the case.
         UnpackedScalar::add(&self.unpack(), &_rhs.unpack()).pack()
@@ -349,18 +345,18 @@ impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
 
 define_add_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
-impl<'b> SubAssign<&'b Scalar> for Scalar {
-    fn sub_assign(&mut self, _rhs: &'b Scalar) {
+impl<'a> SubAssign<&'a Scalar> for Scalar {
+    fn sub_assign(&mut self, _rhs: &'a Scalar) {
         *self = *self - _rhs;
     }
 }
 
 define_sub_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
+impl<'a> Sub<&'a Scalar> for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
-    fn sub(self, rhs: &'b Scalar) -> Scalar {
+    fn sub(self, rhs: &'a Scalar) -> Scalar {
         // The UnpackedScalar::sub function produces reduced outputs if the inputs are reduced. By
         // Scalar invariant #1, this is always the case.
         UnpackedScalar::sub(&self.unpack(), &rhs.unpack()).pack()
@@ -369,7 +365,7 @@ impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
 
 define_sub_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
-impl<'a> Neg for &'a Scalar {
+impl Neg for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
     fn neg(self) -> Scalar {
@@ -571,13 +567,11 @@ impl Scalar {
         ],
     };
 
-    #[cfg(any(test, feature = "rand_core"))]
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements `CryptoRngCore`
-    ///   (i.e. `CryptoRng` + `RngCore`) interface.
+    /// * `rng`: any RNG which implements `CryptoRng` interface.
     ///
     /// # Returns
     ///
@@ -589,12 +583,13 @@ impl Scalar {
     /// # fn main() {
     /// use curve25519_dalek::scalar::Scalar;
     ///
-    /// use rand_core::OsRng;
+    /// use rand::{rngs::OsRng, TryRngCore};
     ///
-    /// let mut csprng = OsRng;
+    /// let mut csprng = OsRng.unwrap_err();
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
-    pub fn random<R: CryptoRngCore + ?Sized>(rng: &mut R) -> Self {
+    #[cfg(feature = "rand_core")]
+    pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)
@@ -775,7 +770,7 @@ impl Scalar {
     ///     Scalar::from(11u64),
     /// ];
     ///
-    /// let allinv = Scalar::batch_invert(&mut scalars);
+    /// let allinv = Scalar::invert_batch(&mut scalars);
     ///
     /// assert_eq!(allinv, Scalar::from(3*5*7*11u64).invert());
     /// assert_eq!(scalars[0], Scalar::from(3u64).invert());
@@ -784,19 +779,45 @@ impl Scalar {
     /// assert_eq!(scalars[3], Scalar::from(11u64).invert());
     /// # }
     /// ```
+    pub fn invert_batch<const N: usize>(inputs: &mut [Scalar; N]) -> Scalar {
+        let one: UnpackedScalar = Scalar::ONE.unpack().as_montgomery();
+
+        let mut scratch = [one; N];
+
+        Self::invert_batch_internal(inputs, &mut scratch)
+    }
+
+    /// Given a slice of nonzero (possibly secret) `Scalar`s, compute their inverses in a batch.
+    /// This the allocating form of [`Self::invert_batch`]. See those docs for examples.
+    ///
+    /// # Return
+    ///
+    /// Each element of `inputs` is replaced by its inverse.
+    ///
+    /// The product of all inverses is returned.
+    ///
+    /// # Warning
+    ///
+    /// All input `Scalars` **MUST** be nonzero.  If you cannot
+    /// *prove* that this is the case, you **SHOULD NOT USE THIS
+    /// FUNCTION**.
     #[cfg(feature = "alloc")]
-    pub fn batch_invert(inputs: &mut [Scalar]) -> Scalar {
+    pub fn invert_batch_alloc(inputs: &mut [Scalar]) -> Scalar {
+        let n = inputs.len();
+        let one: UnpackedScalar = Scalar::ONE.unpack().as_montgomery();
+
+        let mut scratch = vec![one; n];
+
+        Self::invert_batch_internal(inputs, &mut scratch)
+    }
+
+    fn invert_batch_internal(inputs: &mut [Scalar], scratch: &mut [UnpackedScalar]) -> Scalar {
         // This code is essentially identical to the FieldElement
         // implementation, and is documented there.  Unfortunately,
         // it's not easy to write it generically, since here we want
         // to use `UnpackedScalar`s internally, and `Scalar`s
         // externally, but there's no corresponding distinction for
         // field elements.
-
-        let n = inputs.len();
-        let one: UnpackedScalar = Scalar::ONE.unpack().as_montgomery();
-
-        let mut scratch = vec![one; n];
 
         // Keep an accumulator of all of the previous products
         let mut acc = Scalar::ONE.unpack().as_montgomery();
@@ -831,9 +852,25 @@ impl Scalar {
         }
 
         #[cfg(feature = "zeroize")]
-        Zeroize::zeroize(&mut scratch);
+        Zeroize::zeroize(&mut scratch.iter_mut());
 
         ret
+    }
+
+    /// Compute `b` such that `b + b = a mod modulus`.
+    pub fn div_by_2(&self) -> Self {
+        // We are looking for such `b` that `b + b = a mod modulus`.
+        // Two possibilities:
+        // - if `a` is even, we can just divide by 2;
+        // - if `a` is odd, we divide `(a + modulus)` by 2.
+        let is_odd = Choice::from(self.as_bytes()[0] & 1);
+        let mut scalar = self.unpack();
+        scalar.conditional_add_l(is_odd);
+
+        let carry = scalar.shr1_assign();
+        debug_assert_eq!(carry, 0);
+
+        scalar.pack()
     }
 
     /// Get the bits of the scalar, in little-endian order
@@ -1024,9 +1061,9 @@ impl Scalar {
         debug_assert!(w <= 8);
 
         let digits_count = match w {
-            4..=7 => (256 + w - 1) / w,
+            4..=7 => 256_usize.div_ceil(w),
             // See comment in to_radix_2w on handling the terminal carry.
-            8 => (256 + w - 1) / w + 1_usize,
+            8 => 256_usize.div_ceil(w) + 1_usize,
             _ => panic!("invalid radix parameter"),
         };
 
@@ -1073,7 +1110,7 @@ impl Scalar {
 
         let mut carry = 0u64;
         let mut digits = [0i8; 64];
-        let digits_count = (256 + w - 1) / w;
+        let digits_count = 256_usize.div_ceil(w);
         #[allow(clippy::needless_range_loop)]
         for i in 0..digits_count {
             // Construct a buffer of bits of the scalar, starting at `bit_offset`.
@@ -1140,7 +1177,7 @@ impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> Scalar {
         Scalar {
-            bytes: self.as_bytes(),
+            bytes: self.to_bytes(),
         }
     }
 
@@ -1213,11 +1250,11 @@ impl Field for Scalar {
     const ZERO: Self = Self::ZERO;
     const ONE: Self = Self::ONE;
 
-    fn random(mut rng: impl RngCore) -> Self {
+    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         // NOTE: this is duplicated due to different `rng` bounds
         let mut scalar_bytes = [0u8; 64];
-        rng.fill_bytes(&mut scalar_bytes);
-        Self::from_bytes_mod_order_wide(&scalar_bytes)
+        rng.try_fill_bytes(&mut scalar_bytes)?;
+        Ok(Self::from_bytes_mod_order_wide(&scalar_bytes))
     }
 
     fn square(&self) -> Self {
@@ -1332,7 +1369,7 @@ impl PrimeFieldBits for Scalar {
     }
 
     fn char_le_bits() -> FieldBits<Self::ReprBits> {
-        constants::BASEPOINT_ORDER_PRIVATE.to_bytes().into()
+        constants::BASEPOINT_ORDER.to_bytes().into()
     }
 }
 
@@ -1393,6 +1430,7 @@ pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
 #[cfg(test)]
 pub(crate) mod test {
     use super::*;
+    use rand::RngCore;
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
@@ -1532,6 +1570,7 @@ pub(crate) mod test {
         }
     }
 
+    #[cfg(feature = "rand_core")]
     fn non_adjacent_form_iter(w: usize, x: &Scalar) {
         let naf = x.non_adjacent_form(w);
 
@@ -1550,9 +1589,10 @@ pub(crate) mod test {
         assert_eq!(*x, y);
     }
 
+    #[cfg(feature = "rand_core")]
     #[test]
     fn non_adjacent_form_random() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..1_000 {
             let x = Scalar::random(&mut rng);
             for w in &[5, 6, 7, 8] {
@@ -1682,6 +1722,23 @@ pub(crate) mod test {
     }
 
     #[test]
+    fn div_by_2() {
+        // test a range of small scalars
+        for i in 0u64..32 {
+            let scalar = Scalar::from(i);
+            let dividend = scalar.div_by_2();
+            assert_eq!(scalar, dividend + dividend);
+        }
+
+        // test a range of scalars near the modulus
+        for i in 0u64..32 {
+            let scalar = Scalar::ZERO - Scalar::from(i);
+            let dividend = scalar.div_by_2();
+            assert_eq!(scalar, dividend + dividend);
+        }
+    }
+
+    #[test]
     fn reduce() {
         let biggest = Scalar::from_bytes_mod_order([0xff; 32]);
         assert_eq!(biggest, CANONICAL_2_256_MINUS_1);
@@ -1731,7 +1788,7 @@ pub(crate) mod test {
     #[test]
     fn to_bytes_from_bytes_roundtrips() {
         let unpacked = X.unpack();
-        let bytes = unpacked.as_bytes();
+        let bytes = unpacked.to_bytes();
         let should_be_unpacked = UnpackedScalar::from_bytes(&bytes);
 
         assert_eq!(should_be_unpacked.0, unpacked.0);
@@ -1816,25 +1873,44 @@ pub(crate) mod test {
         assert_eq!(X, bincode::deserialize(X.as_bytes()).unwrap(),);
     }
 
-    #[cfg(all(debug_assertions, feature = "alloc"))]
+    #[cfg(debug_assertions)]
     #[test]
     #[should_panic]
-    fn batch_invert_with_a_zero_input_panics() {
-        let mut xs = vec![Scalar::ONE; 16];
+    fn invert_batch_with_a_zero_input_panics() {
+        let mut xs = [Scalar::ONE; 16];
         xs[3] = Scalar::ZERO;
         // This should panic in debug mode.
-        Scalar::batch_invert(&mut xs);
+        Scalar::invert_batch(&mut xs);
+    }
+
+    #[test]
+    fn invert_batch_empty() {
+        assert_eq!(Scalar::ONE, Scalar::invert_batch(&mut []));
+    }
+
+    #[test]
+    fn invert_batch_consistency() {
+        let mut x = Scalar::from(1u64);
+        let mut v1: [Scalar; 16] = core::array::from_fn(|_| {
+            let tmp = x;
+            x = x + x;
+            tmp
+        });
+        let v2 = v1;
+
+        let expected: Scalar = v1.iter().product();
+        let expected = expected.invert();
+        let ret = Scalar::invert_batch(&mut v1);
+        assert_eq!(ret, expected);
+
+        for (a, b) in v1.iter().zip(v2.iter()) {
+            assert_eq!(a * b, Scalar::ONE);
+        }
     }
 
     #[test]
     #[cfg(feature = "alloc")]
-    fn batch_invert_empty() {
-        assert_eq!(Scalar::ONE, Scalar::batch_invert(&mut []));
-    }
-
-    #[test]
-    #[cfg(feature = "alloc")]
-    fn batch_invert_consistency() {
+    fn batch_vec_invert_consistency() {
         let mut x = Scalar::from(1u64);
         let mut v1: Vec<_> = (0..16)
             .map(|_| {
@@ -1847,7 +1923,7 @@ pub(crate) mod test {
 
         let expected: Scalar = v1.iter().product();
         let expected = expected.invert();
-        let ret = Scalar::batch_invert(&mut v1);
+        let ret = Scalar::invert_batch_alloc(&mut v1);
         assert_eq!(ret, expected);
 
         for (a, b) in v1.iter().zip(v2.iter()) {
@@ -2043,10 +2119,10 @@ pub(crate) mod test {
 
     // Check that a * b == a.reduce() * a.reduce() for ANY scalars a,b, even ones that violate
     // invariant #1, i.e., a,b > 2^255. Old versions of ed25519-dalek did multiplication where a
-    // was reduced and b was clamped and unreduced. This checks that that was always well-defined.
+    // was reduced and b was clamped and unreduced. This checks that was always well-defined.
     #[test]
     fn test_mul_reduction_invariance() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..10 {
             // Also define c that's clamped. We'll make sure that clamping doesn't affect

@@ -230,7 +230,7 @@ impl FieldElement2625 {
     /// encoding of every field element should decode, re-encode to
     /// the canonical encoding, and check that the input was
     /// canonical.
-    pub fn from_bytes(data: &[u8; 32]) -> FieldElement2625 {
+    pub const fn from_bytes(data: &[u8; 32]) -> FieldElement2625 {
         let mut temp = [0u8; 32];
         temp.copy_from_slice(data);
         temp[31] &= 127u8;
@@ -241,7 +241,7 @@ impl FieldElement2625 {
 
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
-    pub fn as_bytes(&self) -> [u8; 32] {
+    pub fn to_bytes(self) -> [u8; 32] {
         let mut bytes = [0u8; 32];
         fiat_25519_to_bytes(&mut bytes, &self.0);
         bytes

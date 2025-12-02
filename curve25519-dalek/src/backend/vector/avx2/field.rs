@@ -9,6 +9,11 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
+// Nightly and stable currently disagree on the requirement of unsafe blocks when `unsafe_target_feature`
+// gets used.
+// See: https://github.com/rust-lang/rust/issues/132856
+#![allow(unused_unsafe)]
+
 //! An implementation of 4-way vectorized 32bit field arithmetic using
 //! AVX2.
 //!
@@ -45,7 +50,7 @@ use core::ops::{Add, Mul, Neg};
 
 use crate::backend::serial::u64::field::FieldElement51;
 use crate::backend::vector::avx2::constants::{
-    P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO,
+    P_TIMES_2_HI, P_TIMES_2_LO, P_TIMES_16_HI, P_TIMES_16_LO,
 };
 
 use curve25519_dalek_derive::unsafe_target_feature;

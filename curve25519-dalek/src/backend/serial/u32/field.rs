@@ -333,14 +333,14 @@ impl FieldElement2625 {
     /// In other words, each coefficient of the result is bounded by
     /// either `2^(25 + 0.007)` or `2^(26 + 0.007)`, as appropriate.
     #[rustfmt::skip] // keep alignment of carry chain
-    fn reduce(mut z: [u64; 10]) -> FieldElement2625 {
+    const fn reduce(mut z: [u64; 10]) -> FieldElement2625 {
 
         const LOW_25_BITS: u64 = (1 << 25) - 1;
         const LOW_26_BITS: u64 = (1 << 26) - 1;
 
         /// Carry the value from limb i = 0..8 to limb i+1
         #[inline(always)]
-        fn carry(z: &mut [u64; 10], i: usize) {
+        const fn carry(z: &mut [u64; 10], i: usize) {
             debug_assert!(i < 9);
             if i % 2 == 0 {
                 // Even limbs have 26 bits
@@ -401,29 +401,32 @@ impl FieldElement2625 {
     /// the canonical encoding, and check that the input was
     /// canonical.
     #[rustfmt::skip] // keep alignment of h[*] values
-    pub fn from_bytes(data: &[u8; 32]) -> FieldElement2625 {
+    pub const fn from_bytes(data: &[u8; 32]) -> FieldElement2625 {
         #[inline]
-        fn load3(b: &[u8]) -> u64 {
-           (b[0] as u64) | ((b[1] as u64) << 8) | ((b[2] as u64) << 16)
+        const fn load3_at(b: &[u8], i: usize) -> u64 {
+           (b[i] as u64) | ((b[i + 1] as u64) << 8) | ((b[i + 2] as u64) << 16)
         }
 
         #[inline]
-        fn load4(b: &[u8]) -> u64 {
-           (b[0] as u64) | ((b[1] as u64) << 8) | ((b[2] as u64) << 16) | ((b[3] as u64) << 24)
+        const fn load4_at(b: &[u8], i: usize) -> u64 {
+           (b[i] as u64)
+           | ((b[i + 1] as u64) << 8)
+           | ((b[i + 2] as u64) << 16)
+           | ((b[i + 3] as u64) << 24)
         }
 
         let mut h = [0u64;10];
         const LOW_23_BITS: u64 = (1 << 23) - 1;
-        h[0] =  load4(&data[ 0..]);
-        h[1] =  load3(&data[ 4..]) << 6;
-        h[2] =  load3(&data[ 7..]) << 5;
-        h[3] =  load3(&data[10..]) << 3;
-        h[4] =  load3(&data[13..]) << 2;
-        h[5] =  load4(&data[16..]);
-        h[6] =  load3(&data[20..]) << 7;
-        h[7] =  load3(&data[23..]) << 5;
-        h[8] =  load3(&data[26..]) << 4;
-        h[9] = (load3(&data[29..]) & LOW_23_BITS) << 2;
+        h[0] =  load4_at(data,  0);
+        h[1] =  load3_at(data,  4) << 6;
+        h[2] =  load3_at(data,  7) << 5;
+        h[3] =  load3_at(data, 10) << 3;
+        h[4] =  load3_at(data, 13) << 2;
+        h[5] =  load4_at(data, 16);
+        h[6] =  load3_at(data, 20) << 7;
+        h[7] =  load3_at(data, 23) << 5;
+        h[8] =  load3_at(data, 26) << 4;
+        h[9] = (load3_at(data, 29) & LOW_23_BITS) << 2;
 
         FieldElement2625::reduce(h)
     }
@@ -431,7 +434,7 @@ impl FieldElement2625 {
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     #[allow(clippy::identity_op)]
-    pub fn as_bytes(&self) -> [u8; 32] {
+    pub fn to_bytes(self) -> [u8; 32] {
         let inp = &self.0;
         // Reduce the value represented by `in` to the range [0,2*p)
         let mut h: [u32; 10] = FieldElement2625::reduce([

@@ -47,6 +47,17 @@ mod ed25519_benches {
         });
     }
 
+    fn verify_heea(c: &mut Criterion) {
+        let mut csprng: ThreadRng = rng();
+        let keypair: SigningKey = SigningKey::generate(&mut csprng);
+        let msg: &[u8] = b"";
+        let sig: Signature = keypair.sign(msg);
+
+        c.bench_function("Ed25519 HEEA signature verification", move |b| {
+            b.iter(|| keypair.verifying_key().verify_heea(msg, &sig))
+        });
+    }
+
     #[cfg(feature = "batch")]
     fn verify_batch_signatures(c: &mut Criterion) {
         use ed25519_dalek::verify_batch;
@@ -92,6 +103,7 @@ mod ed25519_benches {
             sign,
             verify,
             verify_strict,
+            verify_heea,
             verify_batch_signatures,
             key_generation,
     }

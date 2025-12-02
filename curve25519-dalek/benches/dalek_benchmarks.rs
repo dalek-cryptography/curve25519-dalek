@@ -443,8 +443,9 @@ mod scalar_benches {
 }
 
 mod heea_benches {
+    use curve25519_dalek::traits::HEEADecomposition;
+
     use super::*;
-    use curve25519_dalek::heea::generate_half_size_scalars;
 
     fn heea_generate_half_size_scalars<M: Measurement>(c: &mut BenchmarkGroup<M>) {
         let mut rng = rng();
@@ -461,7 +462,7 @@ mod heea_benches {
             bench.iter(|| {
                 let h = &random_scalars[i % random_scalars.len()];
                 i += 1;
-                generate_half_size_scalars(h)
+                h.heea_decompose()
             })
         });
     }

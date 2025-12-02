@@ -122,6 +122,7 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
+use ethnum::{I256, U256};
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]
@@ -148,6 +149,10 @@ use zeroize::Zeroize;
 
 use crate::backend;
 use crate::constants;
+use crate::scalar::heea::curve25519_heea_vartime;
+use crate::traits::HEEADecomposition;
+
+mod heea;
 
 cfg_if! {
     if #[cfg(curve25519_dalek_backend = "fiat")] {
@@ -548,10 +553,86 @@ impl From<u128> for Scalar {
     }
 }
 
+impl From<i128> for Scalar {
+    fn from(val: i128) -> Scalar {
+        if val < 0 {
+            // For negative, we want: Scalar representing (ell + val) = ell - |val|
+            // Since val is negative, -val = |val|
+            let abs_val = (-val) as u128;
+            let mut bytes = [0u8; 32];
+            bytes[..16].copy_from_slice(&abs_val.to_le_bytes());
+            let positive_scalar = Scalar::from_canonical_bytes(bytes).unwrap();
+            // Return -|val| mod ell, which is ell - |val|
+            -positive_scalar
+        } else {
+            // For positive, just convert directly
+            let mut bytes = [0u8; 32];
+            bytes[..16].copy_from_slice(&(val as u128).to_le_bytes());
+            Scalar::from_canonical_bytes(bytes).unwrap()
+        }
+    }
+}
+
+impl From<&Scalar> for I256 {
+    fn from(s: &Scalar) -> I256 {
+        // Scalar is always positive and less than L, so treat as unsigned
+        let u256 = U256::from_le_bytes(*s.as_bytes());
+        // Convert to I256 - this is safe since Scalar < L < 2^253 < 2^255
+        u256.as_i256()
+    }
+}
+
+impl From<&I256> for Scalar {
+    fn from(val: &I256) -> Scalar {
+        if *val < I256::ZERO {
+            // For negative numbers, compute absolute value and negate
+            let abs_val = val.wrapping_neg();
+            let bytes = abs_val.to_le_bytes();
+            let positive = Scalar::from_canonical_bytes(bytes).unwrap();
+            -positive
+        } else {
+            let bytes = val.to_le_bytes();
+            Scalar::from_canonical_bytes(bytes).unwrap()
+        }
+    }
+}
+
 #[cfg(feature = "zeroize")]
 impl Zeroize for Scalar {
     fn zeroize(&mut self) {
         self.bytes.zeroize();
+    }
+}
+
+impl HEEADecomposition for Scalar {
+    /// Generate half-size scalars (rho, tau) for a given hash value h
+    ///
+    /// This function takes the hash value h from the signature verification equation
+    /// and produces two half-size scalars rho and tau such that rho = tau*h (mod ell).
+    ///
+    /// And a flag indicating if rho is negative in its signed representation.
+    fn heea_decompose(&self) -> (Scalar, Scalar, bool) {
+        // Convert h to I256
+        let v = self.into();
+
+        // Run the algorithm
+        let (rho_i256, tau_i128) = curve25519_heea_vartime(v);
+
+        // Convert back to Scalars
+        let rho: Scalar = (&rho_i256).into();
+        let tau: Scalar = tau_i128.into();
+        // Check if rho is negative
+        let rho_is_negative = rho_i256 < I256::ZERO;
+        let tau_is_negative = tau_i128 < 0;
+
+        let (rho, tau, flip_h) = match (rho_is_negative, tau_is_negative) {
+            (true, true) => (-rho, -tau, false),
+            (true, false) => (-rho, tau, true),
+            (false, true) => (rho, -tau, true),
+            (false, false) => (rho, tau, false),
+        };
+
+        (rho, tau, flip_h)
     }
 }
 

@@ -1,11 +1,11 @@
-//! Implementation of the TCHES 2025 paper
+//! Implementation of the paper "Accelerating EdDSA Signature Verification
+//! with Faster Scalar Size Halving" (TCHES 2025).
 //!
 //! This module implements Algorithm 4 (hEEA_approx_q) from the paper, which generates
 //! half-size scalars for faster EdDSA verification.
 //!
 //! For verification sB = R + hA, we find rho, tau such that rho = tau*h (mod ell)
-use crate::scalar::Scalar;
-use ethnum::{I256, U256};
+use ethnum::I256;
 
 /// Ed25519 group order L = 2^252 + 27742317777372353535851937790883648493
 /// = 0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed
@@ -96,85 +96,10 @@ fn bit_length_i256(val: I256) -> u32 {
     }
 }
 
-/// Convert I256 to Scalar
-#[inline]
-fn i256_to_scalar(val: I256) -> Scalar {
-    if val < I256::ZERO {
-        // For negative numbers, compute absolute value and negate
-        let abs_val = val.wrapping_neg();
-        let bytes = abs_val.to_le_bytes();
-        let positive = Scalar::from_canonical_bytes(bytes).unwrap();
-        -positive
-    } else {
-        let bytes = val.to_le_bytes();
-        Scalar::from_canonical_bytes(bytes).unwrap()
-    }
-}
-
-/// Convert i128 to Scalar (for tau)
-#[inline]
-fn i128_to_scalar(val: i128) -> Scalar {
-    if val < 0 {
-        // For negative, we want: Scalar representing (ell + val) = ell - |val|
-        // Since val is negative, -val = |val|
-        let abs_val = (-val) as u128;
-        let mut bytes = [0u8; 32];
-        bytes[..16].copy_from_slice(&abs_val.to_le_bytes());
-        let positive_scalar = Scalar::from_canonical_bytes(bytes).unwrap();
-        // Return -|val| mod ell, which is ell - |val|
-        -positive_scalar
-    } else {
-        // For positive, just convert directly
-        let mut bytes = [0u8; 32];
-        bytes[..16].copy_from_slice(&(val as u128).to_le_bytes());
-        Scalar::from_canonical_bytes(bytes).unwrap()
-    }
-}
-
-/// Convert Scalar to I256
-#[inline]
-fn scalar_to_i256(s: &Scalar) -> I256 {
-    // Scalar is always positive and less than L, so treat as unsigned
-    let u256 = U256::from_le_bytes(*s.as_bytes());
-    // Convert to I256 - this is safe since Scalar < L < 2^253 < 2^255
-    u256.as_i256()
-}
-
-/// Generate half-size scalars (rho, tau) for a given hash value h
-///
-/// This function takes the hash value h from the signature verification equation
-/// and produces two half-size scalars rho and tau such that rho = tau*h (mod ell).
-///
-/// And a flag indicating if rho is negative in its signed representation.
-pub fn generate_half_size_scalars(h: &Scalar) -> (Scalar, Scalar, bool) {
-    // Convert h to I256
-    let v = scalar_to_i256(h);
-
-    // Run the algorithm
-    let (rho_i256, tau_i128) = curve25519_heea_vartime(v);
-
-    // Convert back to Scalars
-    let rho = i256_to_scalar(rho_i256);
-    let tau = i128_to_scalar(tau_i128);
-
-    // Check if rho is negative
-    let rho_is_negative = rho_i256 < I256::ZERO;
-    let tau_is_negative = tau_i128 < 0;
-
-    let (rho, tau, flip_h) = match (rho_is_negative, tau_is_negative) {
-        (true, true) => (-rho, -tau, false),
-        (true, false) => (-rho, tau, true),
-        (false, true) => (rho, -tau, true),
-        (false, false) => (rho, tau, false),
-    };
-
-    (rho, tau, flip_h)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::digest::Update;
+    use crate::{Scalar, digest::Update, traits::HEEADecomposition};
     use rand::RngCore;
 
     #[test]
@@ -194,7 +119,7 @@ mod tests {
             let h = Scalar::from_hash(Sha512::new().chain(random_bytes));
 
             // Convert h to I256 to see the actual output
-            let h_i256 = scalar_to_i256(&h);
+            let h_i256 = (&h).into();
             let (rho_i256, tau_i128) = curve25519_heea_vartime(h_i256);
 
             // Check the magnitude of rho and tau in their signed representation
@@ -209,7 +134,7 @@ mod tests {
             };
 
             // Now convert to Scalars and verify the equation
-            let (rho, tau, flip) = generate_half_size_scalars(&h);
+            let (rho, tau, flip) = h.heea_decompose();
 
             // Verify that rho = tau * h (mod ell)
             let computed_rho = tau * h;

@@ -442,10 +442,43 @@ mod scalar_benches {
     }
 }
 
+mod heea_benches {
+    use super::*;
+    use curve25519_dalek::heea::generate_half_size_scalars;
+
+    fn heea_generate_half_size_scalars<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        let mut rng = rng();
+        let random_scalars: Vec<Scalar> = (0..100)
+            .map(|_| {
+                let mut random_bytes = [0u8; 32];
+                rng.fill_bytes(&mut random_bytes);
+                Scalar::from_bytes_mod_order(random_bytes)
+            })
+            .collect();
+
+        c.bench_function("Generate half-size scalars (hEEA)", |bench| {
+            let mut i = 0;
+            bench.iter(|| {
+                let h = &random_scalars[i % random_scalars.len()];
+                i += 1;
+                generate_half_size_scalars(h)
+            })
+        });
+    }
+
+    pub(crate) fn heea_benches() {
+        let mut c = Criterion::default();
+        let mut g = c.benchmark_group("heea benches");
+
+        heea_generate_half_size_scalars(&mut g);
+    }
+}
+
 criterion_main!(
     scalar_benches::scalar_benches,
     montgomery_benches::montgomery_benches,
     ristretto_benches::ristretto_benches,
     edwards_benches::edwards_benches,
     multiscalar_benches::multiscalar_benches,
+    heea_benches::heea_benches,
 );

@@ -99,7 +99,7 @@ mod vectors {
                 expected_verifying_key
                     .verify_heea(&msg_bytes, &sig2)
                     .is_ok(),
-                "Signature strict verification failed on line {}",
+                "Signature heea verification failed on line {}",
                 lineno
             );
         }

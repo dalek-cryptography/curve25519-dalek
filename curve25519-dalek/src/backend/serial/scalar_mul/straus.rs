@@ -227,7 +227,7 @@ impl VartimeMultiscalarMul for Straus {
     {
         Self::optional_multiscalar_mul_with_scalar_bits(
             scalars,
-            points.into_iter().map(|P| Some(P.borrow().clone())),
+            points.into_iter().map(|P| Some(*P.borrow())),
             scalar_bits,
         )
         .expect("should return some point")

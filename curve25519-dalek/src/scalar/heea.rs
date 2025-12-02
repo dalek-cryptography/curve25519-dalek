@@ -7,19 +7,14 @@
 //! For verification sB = R + hA, we find rho, tau such that rho = tau*h (mod ell)
 use ethnum::I256;
 
-/// Ed25519 group order L = 2^252 + 27742317777372353535851937790883648493
-/// = 0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed
-/// High 128 bits: 0x10000000000000000000000000000000
-/// Low 128 bits:  0x14def9dea2f79cd65812631a5cf5d3ed
-const L: I256 = I256::from_words(
-    0x10000000000000000000000000000000,
-    0x14def9dea2f79cd65812631a5cf5d3ed,
-);
+use crate::constants;
 
 /// Implement curve25519_hEEA_vartime algorithm
 /// Returns (rho, tau) such that rho ≡ tau * v (mod L)
+/// where L is the Ed25519 group order (2^252 + 27742317777372353535851937790883648493)
 pub(crate) fn curve25519_heea_vartime(v: I256) -> (I256, i128) {
-    let mut r0 = L;
+    // Get L from the existing BASEPOINT_ORDER constant
+    let mut r0: I256 = (&constants::BASEPOINT_ORDER).into();
     let mut r1 = v;
     let mut t0: i128 = 0;
     let mut t1: i128 = 1;
@@ -100,9 +95,12 @@ fn bit_length_i256(val: I256) -> u32 {
 mod tests {
     use super::*;
     use crate::{Scalar, digest::Update, traits::HEEADecomposition};
+
+    #[cfg(feature = "rand_core")]
     use rand::RngCore;
 
     #[test]
+    #[cfg(feature = "rand_core")]
     fn test_generate_half_size_scalars() {
         use rand::rng;
         use sha2::{Digest, Sha512};

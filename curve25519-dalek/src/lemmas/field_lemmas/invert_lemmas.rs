@@ -446,7 +446,7 @@ pub proof fn lemma_invert_equals_math_field_inv(self_fe: &FieldElement51, t21: &
         // 2. ((x % p()) * w) % p() == 1
         // By uniqueness, they must be equal
         assert(t21_val == math_field_inv(x)) by {
-            field_inv_axiom(x);
+            field_inv_property(x);
             field_inv_unique(x, t21_val);
         }
     } else {

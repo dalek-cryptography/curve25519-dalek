@@ -55,6 +55,18 @@ pub open spec fn is_valid_lookup_table_projective<const N: usize>(
             == edwards_scalar_mul(edwards_point_as_affine(P), (j + 1) as nat)
 }
 
+/// Spec: All entries in a ProjectiveNiels lookup table have bounded limbs
+pub open spec fn lookup_table_projective_limbs_bounded<const N: usize>(
+    table: [ProjectiveNielsPoint; N],
+) -> bool {
+    forall|j: int|
+        0 <= j < table.len() ==> {
+            let entry = #[trigger] table[j];
+            fe51_limbs_bounded(&entry.Y_plus_X, 54) && fe51_limbs_bounded(&entry.Y_minus_X, 54)
+                && fe51_limbs_bounded(&entry.Z, 54) && fe51_limbs_bounded(&entry.T2d, 54)
+        }
+}
+
 /// Spec: Check if a lookup table contains [P, 2P, 3P, ..., size*P] in AffineNiels form
 pub open spec fn is_valid_lookup_table_affine<const N: usize>(
     table: [AffineNielsPoint; N],
@@ -177,12 +189,19 @@ impl LookupTable<ProjectiveNielsPoint> {
         requires
             -8 <= x,
             x <= 8,
+            // Table entries must have bounded limbs
+            lookup_table_projective_limbs_bounded(self.0),
         ensures
     // Formal specification for all cases:
 
             (x > 0 ==> result == self.0[(x - 1) as int]),
             (x == 0 ==> result == identity_projective_niels()),
             (x < 0 ==> result == negate_projective_niels(self.0[((-x) - 1) as int])),
+            // Limb bounds for the result (derived from table bounds)
+            fe51_limbs_bounded(&result.Y_plus_X, 54),
+            fe51_limbs_bounded(&result.Y_minus_X, 54),
+            fe51_limbs_bounded(&result.Z, 54),
+            fe51_limbs_bounded(&result.T2d, 54),
     {
         /* ORIGINAL CODE: for generic type T, $name, $size, $neg, $range, and $conv_range.
 
@@ -331,6 +350,8 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
 
         ensures
             is_valid_lookup_table_projective(result.0, *P, 8 as nat),
+            // All table entries have bounded limbs for subsequent arithmetic
+            lookup_table_projective_limbs_bounded(result.0),
     {
         /* ORIGINAL CODE: for generic $name, $size, and conv_range.
 
@@ -381,6 +402,7 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
         let result = LookupTable(points);
         proof {
             assume(is_valid_lookup_table_projective(result.0, *P, 8 as nat));
+            assume(lookup_table_projective_limbs_bounded(result.0));
         }
         result
     }

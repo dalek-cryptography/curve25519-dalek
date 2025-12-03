@@ -460,6 +460,8 @@ impl vstd::std_specs::ops::MulSpecImpl<&FieldElement51> for &FieldElement51 {
     }
 
     // Pre-condition of mul
+    // Note: mul can handle up to ~59-bit inputs (51 + b where b < 8.75)
+    // We use 54-bit as the standard requirement
     open spec fn mul_req(self, rhs: &FieldElement51) -> bool {
         fe51_limbs_bounded(self, 54) && fe51_limbs_bounded(rhs, 54)
     }
@@ -486,6 +488,9 @@ impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
                 spec_field_element(self),
                 spec_field_element(_rhs),
             ),
+            // Actual bound: 2^51 + 2^13 < 2^52 (from carry propagation)
+            fe51_limbs_bounded(&output, 52),
+            // 52-bit implies 54-bit (for compatibility with callers)
             fe51_limbs_bounded(&output, 54),
     {
         /// Helper function to multiply two 64-bit integers with 128
@@ -1113,7 +1118,13 @@ impl FieldElement51 {
             forall|i: int|
                 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54  // 51 + b for b = 3
             ,
-        ensures
+        ensures/*  VERIFICATION NOTE: spec updated
+         - spec needs cleanup
+         - proof needs completed: one assume left */
+    // Actual bound: 2^51 + 2^13 < 2^52 (from carry propagation in reduction)
+
+            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 52,
+            // 52-bit implies 54-bit (for compatibility with callers)
             forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 54,
             u64_5_as_nat(r.limbs) % p() == pow(
                 u64_5_as_nat(self.limbs) as int,
@@ -1142,6 +1153,8 @@ impl FieldElement51 {
         }
         loop
             invariant_except_break
+        // Conservative: input could be 54-bit, but after first iteration it's 52-bit
+
                 forall|j: int| 0 <= j < 5 ==> a[j] < 1u64 << 54,
                 u64_5_as_nat(a) % p() == pow(
                     u64_5_as_nat(self.limbs) as int,
@@ -1150,6 +1163,8 @@ impl FieldElement51 {
                 0 < k <= k0,
             ensures
                 k == 0,
+                forall|j: int| 0 <= j < 5 ==> a[j] < 1u64 << 52,
+                // 52-bit implies 54-bit (for compatibility)
                 forall|j: int| 0 <= j < 5 ==> a[j] < 1u64 << 54,
                 u64_5_as_nat(a) % p() == pow(
                     u64_5_as_nat(self.limbs) as int,
@@ -1249,7 +1264,16 @@ impl FieldElement51 {
             a[1] += a[0] >> 51;
             a[0] &= LOW_51_BIT_MASK;
 
-            // Now all a[i] < 2^(51 + epsilon) and a = self^(2^k).
+            // Now all a[i] < 2^(51 + epsilon) < 2^52 and a = self^(2^k).
+            proof {
+                // After masking and carry propagation:
+                // a[0] is masked to 51 bits: a[0] < 2^51 < 2^52
+                // a[2], a[3], a[4] were masked earlier, so < 2^51 < 2^52
+                // a[1] < 2^51 + 2^13 < 2^52 (from old masked value + carry)
+                // GAP: proving these bounds requires tracking mask effects through the loop
+                // TODO:
+                assume(forall|j: int| 0 <= j < 5 ==> a[j] < (1u64 << 52));
+            }
 
             k -= 1;
             if k == 0 {
@@ -1267,8 +1291,10 @@ impl FieldElement51 {
 
             forall|i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54,
         ensures
-    //needed for pow22501
+    // Actual bound: 2^51 + 2^13 < 2^52 (from carry propagation)
 
+            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 52,
+            // 52-bit implies 54-bit (for compatibility with callers)
             forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 54,
             u64_5_as_nat(r.limbs) % p() == pow(u64_5_as_nat(self.limbs) as int, 2) as nat % p(),
     {
@@ -1296,10 +1322,11 @@ impl FieldElement51 {
 
         proof {
             // forall |i: int| 0 <= i < 5 ==> 2 * old_limbs[i] <= u64::MAX
+            // pow2k now ensures 52-bit output
             assert forall|i: int| 0 <= i < 5 implies 2 * square.limbs[i] <= u64::MAX by {
                 // if LHS < RHS, then 2 * LHS < 2 * RHS
-                lemma_mul_left_inequality(2, square.limbs[i] as int, (1u64 << 54) as int);
-                assert(2 * (1u64 << 54) <= u64::MAX) by (compute);
+                lemma_mul_left_inequality(2, square.limbs[i] as int, (1u64 << 52) as int);
+                assert(2 * (1u64 << 52) <= u64::MAX) by (compute);
             }
 
             let ka = [
@@ -1345,13 +1372,15 @@ impl FieldElement51 {
 
         for i in 0..5
             invariant
-                forall|j: int| 0 <= j < 5 ==> old_limbs[j] < (1u64 << 54),
+        // pow2k now ensures 52-bit output
+
+                forall|j: int| 0 <= j < 5 ==> old_limbs[j] < (1u64 << 52),
                 forall|j: int| 0 <= j < i ==> #[trigger] square.limbs[j] == 2 * old_limbs[j],
                 forall|j: int| i <= j < 5 ==> #[trigger] square.limbs[j] == old_limbs[j],
         {
             proof {
-                assert(2 * (1u64 << 54) <= u64::MAX) by (compute);
-                lemma_mul_strict_inequality(square.limbs[i as int] as int, (1u64 << 54) as int, 2);
+                assert(2 * (1u64 << 52) <= u64::MAX) by (compute);
+                lemma_mul_strict_inequality(square.limbs[i as int] as int, (1u64 << 52) as int, 2);
             }
             square.limbs[i] *= 2;
         }

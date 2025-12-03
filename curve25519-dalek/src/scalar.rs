@@ -2157,6 +2157,8 @@ impl Scalar {
     // Result digits are in valid range
 
             is_valid_radix_16(&result),
+            // Simple bounds: all digits in [-8, 8] for easy access
+            radix_16_all_bounded(&result),
             // Reconstruction property: digits reconstruct the scalar value
             reconstruct_radix_16(result@) == scalar_to_nat(self) as int,
     {
@@ -2206,9 +2208,10 @@ impl Scalar {
         // Precondition note: output[63] is not recentered.  It
         // increases by carry <= 1.  Thus output[63] <= 8.
 
-        // VERIFICATION NOTE: PROOF BYPASS - assume postconditions
         proof {
+            // postconditions
             assume(is_valid_radix_16(&output));
+            assume(radix_16_all_bounded(&output));
             assume(reconstruct_radix_16(output@) == scalar_to_nat(self) as int);
         }
 

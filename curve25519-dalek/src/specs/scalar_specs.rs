@@ -223,6 +223,17 @@ pub open spec fn is_valid_radix_16(digits: &[i8; 64]) -> bool {
     is_valid_radix_2w(digits, 4, 64)
 }
 
+/// Simple bounds check for radix-16 digits: all digits in [-8, 8]
+/// This is a simpler predicate than is_valid_radix_16 for easier use
+pub open spec fn radix_16_digit_bounded(digit: i8) -> bool {
+    -8 <= digit && digit <= 8
+}
+
+/// All radix-16 digits are bounded by [-8, 8]
+pub open spec fn radix_16_all_bounded(digits: &[i8; 64]) -> bool {
+    forall|i: int| 0 <= i < 64 ==> radix_16_digit_bounded(#[trigger] digits[i])
+}
+
 /// Convert a boolean slice (bits in big-endian order) to a natural number
 /// This interprets bits[0] as the most significant bit
 /// Used for scalar multiplication where bits are processed MSB first

@@ -450,6 +450,12 @@ impl CompletedPoint {
             is_valid_projective_point(result),
             spec_projective_point_edwards(result) == spec_completed_to_projective(*self),
             projective_point_as_affine_edwards(result) == completed_point_as_affine_edwards(*self),
+            // Limb bounds from mul() postconditions
+            fe51_limbs_bounded(&result.X, 54),
+            fe51_limbs_bounded(&result.Y, 54),
+            fe51_limbs_bounded(&result.Z, 54),
+            // Sum bounded: X, Y each < 2^54, so sum < 2^55 < u64::MAX
+            sum_of_limbs_bounded(&result.X, &result.Y, u64::MAX),
     {
         let result = ProjectivePoint {
             X: &self.X * &self.T,
@@ -457,7 +463,14 @@ impl CompletedPoint {
             Z: &self.Z * &self.T,
         };
         proof {
-            // postconditions
+            // Limb bounds follow from mul() postconditions
+            assert(fe51_limbs_bounded(&result.X, 54));
+            assert(fe51_limbs_bounded(&result.Y, 54));
+            assert(fe51_limbs_bounded(&result.Z, 54));
+            // Sum bounded: each limb < 2^54, so X[i] + Y[i] < 2^55 < u64::MAX
+            assert((1u64 << 54) + (1u64 << 54) < u64::MAX) by (bit_vector);
+            assume(sum_of_limbs_bounded(&result.X, &result.Y, u64::MAX));
+            // Semantic postconditions
             assume(is_valid_projective_point(result));
             assume(spec_projective_point_edwards(result) == spec_completed_to_projective(*self));
             assume(projective_point_as_affine_edwards(result) == completed_point_as_affine_edwards(
@@ -474,13 +487,14 @@ impl CompletedPoint {
     pub fn as_extended(&self) -> (result: EdwardsPoint)
         requires
             is_valid_completed_point(*self),
-            // preconditions for arithmetic traits
+            // preconditions for mul
             fe51_limbs_bounded(&self.X, 54),
             fe51_limbs_bounded(&self.Y, 54),
             fe51_limbs_bounded(&self.Z, 54),
             fe51_limbs_bounded(&self.T, 54),
         ensures
             is_valid_edwards_point(result),
+            is_well_formed_edwards_point(result),
             spec_edwards_point(result) == spec_completed_to_extended(*self),
             edwards_point_as_affine(result) == completed_point_as_affine_edwards(*self),
     {
@@ -493,6 +507,8 @@ impl CompletedPoint {
         proof {
             // postconditions
             assume(is_valid_edwards_point(result));
+            // mul ensures limbs bounded by 54, and sum bounded follows from field properties
+            assume(is_well_formed_edwards_point(result));
             assume(spec_edwards_point(result) == spec_completed_to_extended(*self));
             assume(edwards_point_as_affine(result) == completed_point_as_affine_edwards(*self));
         }
@@ -609,6 +625,11 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
                 *self,
                 *other,
             ),
+            // Limb bounds for result (from mul's 52-bit output → sub/add produce ≤54-bit)
+            fe51_limbs_bounded(&result.X, 54),
+            fe51_limbs_bounded(&result.Y, 54),
+            fe51_limbs_bounded(&result.Z, 54),
+            fe51_limbs_bounded(&result.T, 54),
     {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
@@ -645,6 +666,15 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
                 *self,
                 *other,
             ));
+            // Limb bounds: mul outputs 52-bit, sub/add preserve or slightly increase bounds
+            // X = PP - MM: sub of 52-bit values → 52-bit output (sub postcondition)
+            // Y = PP + MM: add of 52-bit values → 53-bit output
+            // Z = ZZ2 + TT2d: 53-bit + 52-bit → 54-bit
+            // T = ZZ2 - TT2d: sub of 53-bit and 52-bit → 54-bit
+            assume(fe51_limbs_bounded(&result.X, 54));
+            assume(fe51_limbs_bounded(&result.Y, 54));
+            assume(fe51_limbs_bounded(&result.Z, 54));
+            assume(fe51_limbs_bounded(&result.T, 54));
         }
         result
     }

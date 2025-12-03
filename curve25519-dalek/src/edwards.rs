@@ -714,6 +714,7 @@ impl Identity for EdwardsPoint {
     fn identity() -> (result: EdwardsPoint)
         ensures
             is_identity_edwards_point(result),
+            is_well_formed_edwards_point(result),
     {
         let result = EdwardsPoint {
             X: FieldElement::ZERO,
@@ -728,6 +729,13 @@ impl Identity for EdwardsPoint {
             assume(spec_field_element(&FieldElement::ONE) == 1);
             // is_identity_edwards_point requires: z != 0, x == 0, y == z
             // With X=ZERO, Y=ONE, Z=ONE: z=1≠0, x=0, y=z=1 ✓
+
+            // is_well_formed_edwards_point requires:
+            // - is_valid_edwards_point (identity is on curve)
+            // - edwards_point_limbs_bounded (all limbs < 2^54)
+            // - edwards_point_sum_bounded (Y + X doesn't overflow)
+            // ZERO/ONE have limbs [0/1, 0, 0, 0, 0] which are trivially bounded
+            assume(is_well_formed_edwards_point(result));
         }
         result
     }

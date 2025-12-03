@@ -156,73 +156,25 @@ pub proof fn lemma_as_bytes_equals_spec_fe51_to_bytes(fe: &FieldElement51, bytes
     ensures
         seq_from32(bytes) == spec_fe51_to_bytes(fe),
 {
-    // Step 1: spec_fe51_to_bytes produces 32 bytes (by construction - the seq! macro)
-    assert(spec_fe51_to_bytes(fe).len() == 32);
-
-    // Step 2: Show that both byte representations have the same nat value
-    // From requires: u8_32_as_nat(bytes) == u64_5_as_nat(fe.limbs) % p()
-    // We need to show spec_fe51_to_bytes also represents u64_5_as_nat(fe.limbs) % p()
-
-    // Step 3: Show that bytes is canonical (< p())
-    // Since bytes == as_bytes(fe), and as_bytes produces canonical form,
-    // we have u8_32_as_nat(bytes) < p()
-    // This follows from: u8_32_as_nat(bytes) == u64_5_as_nat(fe.limbs) % p(), and x % p() < p()
+    // Step 1: Derive that bytes is canonical (< p)
+    // This follows from x % p < p for any x
     assert(u8_32_as_nat(bytes) < p()) by {
-        // u8_32_as_nat(bytes) == u64_5_as_nat(fe.limbs) % p()
-        // For any x, x % p() < p() (when p() > 0)
-        pow255_gt_19();  // Proves p() > 0
+        pow255_gt_19();
         lemma_mod_is_mod_recursive(u64_5_as_nat(fe.limbs) as int, p() as int);
     }
 
-    // Step 4: Both are canonical (< p), so by injectivity they must be equal
-    lemma_seq_from32_equals_spec_bytes(fe, bytes);
-}
-
-/// Helper lemma: Converting bytes to seq equals spec when both represent same value
-///
-/// Key insight: as_bytes() and spec_fe51_to_bytes() follow the EXACT same algorithm:
-/// 1. Both call spec_reduce on the limbs
-/// 2. Both compute q using identical formulas
-/// 3. Both pack bytes identically (matching bytes_match_limbs_packing)
-/// Therefore, they produce identical bytes!
-proof fn lemma_seq_from32_equals_spec_bytes(fe: &FieldElement51, bytes: &[u8; 32])
-    requires
-        u8_32_as_nat(bytes) == u64_5_as_nat(fe.limbs) % p(),
-        u8_32_as_nat(bytes) < p(),  // bytes is canonical
-
-    ensures
-        seq_from32(bytes) == spec_fe51_to_bytes(fe),
-{
-    // Both as_bytes() and spec_fe51_to_bytes() use the exact same byte packing formulas.
-    // We'll prove that spec_fe51_to_bytes produces a sequence that, when converted
-    // to an array, equals bytes element-by-element.
-    // Key observation: spec_fe51_to_bytes uses seq![...] with the EXACT same formulas
-    // as bytes_match_limbs_packing. Lines 180-211 in field_specs.rs are identical to
-    // the byte packing in the executable as_bytes implementation.
-    // Since both functions:
-    // 1. Start with the same limbs (fe.limbs)
-    // 2. Apply the same reduction (spec_reduce)
-    // 3. Compute the same q value
-    // 4. Apply the same canonical reduction formulas
-    // 5. Pack bytes with identical bit manipulation formulas
-    //
-    // They must produce the same bytes element-by-element.
-    // To prove this formally, we show that each byte of spec_fe51_to_bytes
-    // equals the corresponding byte in the array.
+    // Step 2: Prove element-wise equality between spec and bytes
     lemma_spec_fe51_to_bytes_matches_array(fe, bytes);
 
-    // Now use element-wise equality to prove sequence equality
+    // Step 3: Conclude sequence equality
     assert(spec_fe51_to_bytes(fe).len() == 32);
     assert(seq_from32(bytes).len() == 32);
 
     assert forall|i: int| 0 <= i < 32 implies seq_from32(bytes)[i] == spec_fe51_to_bytes(fe)[i] by {
-        // seq_from32(bytes)[i] == bytes[i] by definition
         assert(seq_from32(bytes)[i] == bytes[i]);
-        // spec_fe51_to_bytes(fe)[i] == bytes[i] from the lemma
         assert(spec_fe51_to_bytes(fe)[i] == bytes[i]);
     }
 
-    // Two sequences with the same length and same elements are equal
     assert(seq_from32(bytes) =~= spec_fe51_to_bytes(fe));
 }
 

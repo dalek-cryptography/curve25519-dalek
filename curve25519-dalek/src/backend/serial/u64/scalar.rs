@@ -815,9 +815,40 @@ impl Scalar52 {
             // VER NOTE: Result is canonical from montgomery_reduce
             to_nat(&result.limbs) < group_order(),
     {
-        assume(false);  // TODO: Add proofs
+        proof {
+            lemma_rr_limbs_bounded();
+        }
+
+        // First montgomery_reduce: ab*R ≡ a*b (mod L)
         let ab = Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b));
-        Scalar52::montgomery_reduce(&Scalar52::mul_internal(&ab, &constants::RR))
+
+        assert((to_nat(&ab.limbs) * montgomery_radix()) % group_order() == (to_nat(&a.limbs)
+            * to_nat(&b.limbs)) % group_order());
+
+        // Second montgomery_reduce: result*R ≡ ab*RR (mod L)
+        // Since RR < group_order, this triggers the stronger postcondition
+        let result = Scalar52::montgomery_reduce(&Scalar52::mul_internal(&ab, &constants::RR));
+
+        assert((to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(&ab.limbs)
+            * to_nat(&constants::RR.limbs)) % group_order());
+
+        proof {
+            // 1. Prove RR ≡ R² (mod L)
+            lemma_rr_equals_spec(constants::RR);
+
+            // 2. Apply cancellation lemma to get: result ≡ ab*R (mod L)
+            //    Combined with ab*R ≡ a*b (mod L), we get result ≡ a*b (mod L)
+            lemma_cancel_mul_montgomery_mod(
+                to_nat(&result.limbs),
+                to_nat(&ab.limbs),
+                to_nat(&constants::RR.limbs),
+            );
+
+            // 3. Since result < group_order (from montgomery_reduce), result % L == result
+            lemma_small_mod(to_nat(&result.limbs), group_order());
+        }
+
+        result
     }
 
     /// Compute `a^2` (mod l)

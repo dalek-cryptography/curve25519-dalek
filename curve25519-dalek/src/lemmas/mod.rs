@@ -10,4 +10,6 @@ pub mod scalar_montgomery_lemmas;
 
 pub mod montgomery_lemmas;
 
+pub mod scalar_lemmas_extra;
+
 pub mod scalar_byte_lemmas;

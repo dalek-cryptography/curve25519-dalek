@@ -133,7 +133,7 @@ impl Zeroize for FieldElement51 {
 
 /* MANUALLY moved outside, named return value */
 
-const fn load8_at(input: &[u8], i: usize) -> (r: u64)
+pub(super) const fn load8_at(input: &[u8], i: usize) -> (r: u64)
     requires
         i + 7 < input.len(),
     ensures

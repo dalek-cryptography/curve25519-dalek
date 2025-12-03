@@ -24,6 +24,8 @@ use vstd::calc;
 use vstd::prelude::*;
 
 #[allow(unused_imports)]
+use super::common_lemmas::bit_lemmas::*;
+#[allow(unused_imports)]
 use super::common_lemmas::pow_lemmas::*;
 #[allow(unused_imports)]
 use super::common_lemmas::shift_lemmas::*;
@@ -364,6 +366,21 @@ pub proof fn lemma_from_montgomery_limbs_conversion(limbs: &[u128; 9], self_limb
     ));
 }
 
+pub proof fn lemma_r_limbs_bounded()
+    ensures
+        0x000f48bd6721e6edu64 < (1u64 << 52),
+        0x0003bab5ac67e45au64 < (1u64 << 52),
+        0x000fffffeb35e51bu64 < (1u64 << 52),
+        0x000fffffffffffffu64 < (1u64 << 52),
+        0x00000fffffffffff_u64 < (1u64 << 52),
+{
+    assert(0x000f48bd6721e6edu64 < (1u64 << 52)) by (bit_vector);
+    assert(0x0003bab5ac67e45au64 < (1u64 << 52)) by (bit_vector);
+    assert(0x000fffffeb35e51bu64 < (1u64 << 52)) by (bit_vector);
+    assert(0x000fffffffffffffu64 < (1u64 << 52)) by (bit_vector);
+    assert(0x00000fffffffffff_u64 < (1u64 << 52)) by (bit_vector);
+}
+
 pub proof fn lemma_rr_limbs_bounded()
     ensures
         0x000d63c715bea69fu64 < (1u64 << 52),
@@ -470,7 +487,7 @@ pub proof fn lemma_montgomery_inverse()
 
 }
 
-pub(crate) proof fn lemma_r_le_l(r: Scalar52)
+pub(crate) proof fn lemma_r_equals_spec(r: Scalar52)
     requires
         r == (Scalar52 {
             limbs: [
@@ -482,19 +499,30 @@ pub(crate) proof fn lemma_r_le_l(r: Scalar52)
             ],
         }),
     ensures
+        to_nat(&r.limbs) % group_order() == montgomery_radix() % group_order(),
         to_nat(&r.limbs) < group_order(),
 {
     lemma_five_limbs_equals_to_nat(&r.limbs);
 
+    lemma2_to64();
     lemma2_to64_rest();
-    lemma_pow2_adds(52, 52);  // prove pow2(104)
-    lemma_pow2_adds(104, 52);  // prove pow2(156)
-    lemma_pow2_adds(156, 52);  // prove pow2(208)
-    lemma_pow2_adds(208, 44);  // prove pow2(252)
-    lemma_pow2_adds(208, 52);  // prove pow2(260)
+    lemma_pow2_adds(52, 52);
+    lemma_pow2_adds(104, 52);
+    lemma_pow2_adds(156, 52);
+    lemma_pow2_adds(208, 44);
+    lemma_pow2_adds(208, 52);
 
     let r_calc: nat = five_limbs_to_nat_aux(r.limbs);
+    lemma_small_mod(r_calc, group_order());
 
+    calc! {
+        (==)
+        montgomery_radix() % group_order(); {}
+        pow2(260) % group_order(); {}
+        1852673427797059126777135760139006525652319754650249024631321344126610074238976_nat
+            % 7237005577332262213973186563042994240857116359379907606001950938285454250989_nat; {}
+        r_calc;
+    }
 }
 
 pub(crate) proof fn lemma_rr_equals_spec(rr: Scalar52)

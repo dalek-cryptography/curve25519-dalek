@@ -2510,7 +2510,7 @@ impl Scalar {
         }
 
         assert(to_nat(&constants::R.limbs) < group_order()) by {
-            lemma_r_le_l(constants::R);
+            lemma_r_equals_spec(constants::R);
         };
 
         let xR = UnpackedScalar::mul_internal(&x, &constants::R);
@@ -2529,30 +2529,7 @@ impl Scalar {
                 &x.limbs,
             ) * to_nat(&constants::R.limbs)) % group_order());
 
-            assert(to_nat(&constants::R.limbs) % group_order() == montgomery_radix()
-                % group_order()) by {
-                lemma_five_limbs_equals_to_nat(&constants::R.limbs);
-
-                lemma2_to64();
-                lemma2_to64_rest();
-                lemma_pow2_adds(52, 52);  // prove pow2(104)
-                lemma_pow2_adds(104, 52);  // prove pow2(156)
-                lemma_pow2_adds(156, 52);  // prove pow2(208)
-                lemma_pow2_adds(208, 44);  // prove pow2(252)
-                lemma_pow2_adds(208, 52);  // prove pow2(260)
-
-                let r_calc: nat = five_limbs_to_nat_aux(constants::R.limbs);
-                lemma_small_mod(r_calc, group_order());  // necessary for to_nat(&constants::R.limbs) == to_nat(&constants::R.limbs) % group_order()
-
-                calc! {
-                    (==)
-                    montgomery_radix() % group_order(); {}
-                    pow2(260) % group_order(); {}
-                    1852673427797059126777135760139006525652319754650249024631321344126610074238976_nat
-                        % 7237005577332262213973186563042994240857116359379907606001950938285454250989_nat; {}
-                    r_calc;
-                }
-            };
+            lemma_r_equals_spec(constants::R);
 
             lemma_mul_factors_congruent_implies_products_congruent(
                 to_nat(&x.limbs) as int,

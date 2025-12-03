@@ -265,17 +265,50 @@ impl Scalar {
 
     /// Construct a `Scalar` by reducing a 512-bit little-endian integer
     /// modulo the group order \\( \ell \\).
-    // VERIFICATION NOTE: PROOF BYPASS
+    /*
+    <VERIFICATION NOTE>
+      VERIFIED
+      - Split single expression into two statements to allow proof block
+      - Added proof block to connect postconditions from from_bytes_wide and pack()
+    </VERIFICATION NOTE>
+    */
     pub fn from_bytes_mod_order_wide(input: &[u8; 64]) -> (result: Scalar)
         ensures
             bytes_to_nat(&result.bytes) % group_order() == bytes_wide_to_nat(input) % group_order(),
             // Result satisfies Scalar invariants #1 and #2
             is_canonical_scalar(&result),
     {
-        proof {
-            assume(false);
-        }
+        /* <ORIGINAL CODE>
         UnpackedScalar::from_bytes_wide(input).pack()
+        </ORIGINAL CODE> */
+        /* <MODIFIED CODE> */
+        // The proof chain:
+        // 1. from_bytes_wide ensures: to_nat(&s.limbs) < group_order() AND limbs_bounded(&s)
+        // 2. pack() requires limbs_bounded, ensures: to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result)
+        // 3. is_canonical_scalar includes bytes[31] <= 127
+        let unpacked = UnpackedScalar::from_bytes_wide(input);
+        let result = unpacked.pack();
+
+        proof {
+            // from_bytes_wide postconditions:
+            // - limbs_bounded(&unpacked)
+            // - to_nat(&unpacked.limbs) % group_order() == bytes_wide_to_nat(input) % group_order()
+            // - to_nat(&unpacked.limbs) < group_order()
+            // pack() postconditions:
+            // - bytes_to_nat(&result.bytes) == to_nat(&unpacked.limbs) % pow2(256)
+            // - to_nat(&unpacked.limbs) < group_order() ==> is_canonical_scalar(&result)
+            // Since to_nat(&unpacked.limbs) < group_order() < pow2(256),
+            // we have to_nat(&unpacked.limbs) % pow2(256) == to_nat(&unpacked.limbs)
+            lemma_group_order_smaller_than_pow256();
+            lemma_small_mod(to_nat(&unpacked.limbs), pow2(256));
+
+            // Therefore bytes_to_nat(&result.bytes) == to_nat(&unpacked.limbs)
+            // And bytes_to_nat(&result.bytes) % group_order() == to_nat(&unpacked.limbs) % group_order()
+            //                                                 == bytes_wide_to_nat(input) % group_order()
+        }
+
+        result  /* </MODIFIED CODE> */
+
     }
 
     /// Attempt to construct a `Scalar` from a canonical byte representation.

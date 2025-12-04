@@ -4,7 +4,7 @@ name = "curve25519-dalek"
 # - update CHANGELOG
 # - update README if required by semver
 # - if README was updated, also update module documentation in src/lib.rs
-version = "5.0.0-pre.2"
+version = "5.0.0-pre.3"
 edition = "2024"
 rust-version = "1.85.0"
 authors = [
@@ -28,13 +28,7 @@ rustdoc-args = [
     "--cfg",
     "docsrs",
 ]
-features = [
-    "serde",
-    "rand_core",
-    "digest",
-    "legacy_compatibility",
-    "group-bits",
-]
+all-features = true
 
 [dev-dependencies]
 sha2 = { version = "0.11.0-rc.3", default-features = false }

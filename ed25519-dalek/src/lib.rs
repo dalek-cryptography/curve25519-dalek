@@ -251,8 +251,7 @@
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 #![deny(clippy::unwrap_used)] // don't allow unwrap
 #![cfg_attr(not(any(test, feature = "batch")), forbid(unsafe_code))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
-#![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[cfg(feature = "batch")]
 extern crate alloc;

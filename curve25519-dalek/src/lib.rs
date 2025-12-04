@@ -10,8 +10,8 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
-#![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, doc(auto_cfg(hide(docsrs))))]
 //------------------------------------------------------------------------
 // Documentation:
 //------------------------------------------------------------------------
@@ -92,7 +92,7 @@ pub(crate) mod backend;
 pub(crate) mod window;
 
 #[cfg(feature = "lizard")]
-pub mod lizard;
+mod lizard;
 
 pub use crate::{
     edwards::EdwardsPoint, montgomery::MontgomeryPoint, ristretto::RistrettoPoint, scalar::Scalar,

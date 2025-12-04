@@ -4,7 +4,7 @@ Entries are listed in reverse chronological order.
 
 # 3.x Series
 
-## 3.0.0-pre.2
+## 3.0.0-pre.3
 
 * Upgrade `rand_core` to v0.10.0-rc-2
 

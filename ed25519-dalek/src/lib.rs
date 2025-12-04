@@ -252,7 +252,6 @@
 #![deny(clippy::unwrap_used)] // don't allow unwrap
 #![cfg_attr(not(any(test, feature = "batch")), forbid(unsafe_code))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, doc(auto_cfg(hide(docsrs))))]
 
 #[cfg(feature = "batch")]
 extern crate alloc;

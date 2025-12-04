@@ -40,6 +40,8 @@ use crate::lemmas::montgomery_lemmas::*;
 use crate::lemmas::scalar_byte_lemmas::scalar_to_bytes_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::scalar_lemmas::*;
+#[allow(unused_imports)]
+use crate::lemmas::scalar_lemmas_::montgomery_reduce_lemmas::*; // TODO: see https://github.com/Beneficial-AI-Foundation/dalek-lite/issues/386
 #[cfg(verus_keep_ghost)]
 use crate::lemmas::scalar_montgomery_lemmas::lemma_from_montgomery_is_product_with_one;
 #[allow(unused_imports)]
@@ -1007,7 +1009,7 @@ impl Scalar52 {
                 &&& sum == (w as u128) + (carry << 52)
             }),
     {
-        assume(false);  // TODO: Add proofs
+        proof { lemma_part2_bounds(sum) }
         let w = (sum as u64) & ((1u64 << 52) - 1);
         let carry = sum >> 52;
         (carry, w)

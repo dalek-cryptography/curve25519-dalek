@@ -110,6 +110,16 @@ jobs:
           toolchain: stable
       - run: cargo doc --all-features
 
+  docsrs:
+    name: Check docs-rs build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: cargo doc --all-features --no-deps
+        env:
+          RUSTDOCFLAGS: '--cfg docsrs'
+
   typos:
     name: Check for typos
     runs-on: ubuntu-latest

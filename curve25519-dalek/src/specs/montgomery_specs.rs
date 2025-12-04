@@ -4,6 +4,8 @@ use super::field_specs::*;
 #[allow(unused_imports)]
 use crate::backend::serial::u64::constants::MONTGOMERY_A;
 #[allow(unused_imports)]
+use crate::constants::X25519_BASEPOINT;
+#[allow(unused_imports)]
 use crate::montgomery::ProjectivePoint;
 #[allow(unused_imports)]
 use crate::specs::field_specs_u64::*;
@@ -310,6 +312,45 @@ pub open spec fn montgomery_scalar_mul(P: MontgomeryAffine, n: nat) -> Montgomer
     } else {
         montgomery_add(P, montgomery_scalar_mul(P, (n - 1) as nat))
     }
+}
+
+// =============================================================================
+// X25519 / Montgomery Basepoint
+// =============================================================================
+/// The X25519/Montgomery basepoint u-coordinate.
+///
+/// References the actual constant `X25519_BASEPOINT` from `constants.rs`.
+/// The u-coordinate is 9, as specified in:
+/// - [RFC 7748] Section 4.1: "The u-coordinate of the base point is u = 9"
+/// - https://www.rfc-editor.org/rfc/rfc7748#section-4.1
+///
+/// The Montgomery basepoint corresponds to the Ed25519 basepoint under
+/// the birational map between twisted Edwards and Montgomery forms.
+///
+/// Note: X25519 uses X-only (u-coordinate only) arithmetic, so the full
+/// affine point (u, v) is not needed - we only work with u-coordinates.
+pub open spec fn spec_x25519_basepoint_u() -> nat {
+    spec_field_element_from_bytes(&X25519_BASEPOINT.0)
+}
+
+/// Extract u-coordinate from a MontgomeryAffine point
+pub open spec fn montgomery_affine_u(P: MontgomeryAffine) -> nat {
+    match P {
+        MontgomeryAffine::Infinity => 0,  // Convention: infinity maps to 0
+        MontgomeryAffine::Finite { u, v: _ } => u,
+    }
+}
+
+/// Scalar multiplication on Montgomery curve, returning only u-coordinate
+/// This is what X25519 computes: [n]P returning just the u-coordinate
+pub open spec fn montgomery_scalar_mul_u(u: nat, n: nat) -> nat {
+    // Compute full scalar mul and extract u-coordinate
+    montgomery_affine_u(
+        montgomery_scalar_mul(
+            MontgomeryAffine::Finite { u, v: canonical_sqrt(montgomery_rhs(u)) },
+            n,
+        ),
+    )
 }
 
 } // verus!

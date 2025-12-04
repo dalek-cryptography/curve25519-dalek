@@ -35,10 +35,21 @@
 use crate::EdwardsPoint;
 use crate::Scalar;
 
+#[cfg(verus_keep_ghost)]
+use crate::specs::edwards_specs::{
+    edwards_point_as_affine, edwards_scalar_mul, is_well_formed_edwards_point,
+};
+#[cfg(verus_keep_ghost)]
+use crate::specs::scalar_specs::spec_scalar;
+
 pub mod serial;
+
+use vstd::prelude::*;
 
 // #[cfg(curve25519_dalek_backend = "simd")]
 // pub mod vector;
+
+verus! {
 
 #[derive(Copy, Clone)]
 enum BackendKind {
@@ -50,7 +61,10 @@ enum BackendKind {
 }
 
 #[inline]
-fn get_selected_backend() -> BackendKind {
+fn get_selected_backend() -> (result: BackendKind)
+    ensures
+        matches!(result, BackendKind::Serial),
+{
     // #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
     // {
     //     cpufeatures::new!(cpuid_avx512, "avx512ifma", "avx512vl");
@@ -59,7 +73,6 @@ fn get_selected_backend() -> BackendKind {
     //         return BackendKind::Avx512;
     //     }
     // }
-
     // #[cfg(curve25519_dalek_backend = "simd")]
     // {
     //     cpufeatures::new!(cpuid_avx2, "avx2");
@@ -68,10 +81,10 @@ fn get_selected_backend() -> BackendKind {
     //         return BackendKind::Avx2;
     //     }
     // }
-
     BackendKind::Serial
 }
 
+} // verus!
 #[allow(missing_docs)]
 #[cfg(feature = "alloc")]
 pub fn pippenger_optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
@@ -227,8 +240,27 @@ where
     }
 }
 
+verus! {
+
 /// Perform constant-time, variable-base scalar multiplication.
-pub fn variable_base_mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
+/// Computes scalar * point on the Ed25519 curve.
+pub fn variable_base_mul(point: &EdwardsPoint, scalar: &Scalar) -> (result: EdwardsPoint)
+    requires
+// as_radix_16 requires scalar.bytes[31] <= 127 (MSB clear, i.e. scalar < 2^255)
+
+        scalar.bytes[31] <= 127,
+        // Input point must be well-formed (valid coordinates with proper limb bounds)
+        is_well_formed_edwards_point(*point),
+    ensures
+// Result is a well-formed Edwards point
+
+        is_well_formed_edwards_point(result),
+        // Functional correctness: result represents scalar * point
+        edwards_point_as_affine(result) == edwards_scalar_mul(
+            edwards_point_as_affine(*point),
+            spec_scalar(scalar),
+        ),
+{
     match get_selected_backend() {
         // #[cfg(curve25519_dalek_backend = "simd")]
         // BackendKind::Avx2 => vector::scalar_mul::variable_base::spec_avx2::mul(point, scalar),
@@ -240,6 +272,7 @@ pub fn variable_base_mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint 
     }
 }
 
+} // verus!
 /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
 #[allow(non_snake_case)]
 pub fn vartime_double_base_mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {

@@ -3173,6 +3173,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 
     proof {
         // The bitwise operations above produce a clamped integer
+        // (includes result[31] <= 127 since MSB is cleared)
         assume(is_clamped_integer(&result));
         // The result matches the spec function
         assume(result == spec_clamp_integer(bytes));

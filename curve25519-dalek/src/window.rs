@@ -68,15 +68,29 @@ pub open spec fn lookup_table_projective_limbs_bounded<const N: usize>(
 }
 
 /// Spec: Check if a lookup table contains [P, 2P, 3P, ..., size*P] in AffineNiels form
+/// where P is given as affine coordinates (nat, nat).
+pub open spec fn is_valid_lookup_table_affine_coords<const N: usize>(
+    table: [AffineNielsPoint; N],
+    basepoint: (nat, nat),
+    size: nat,
+) -> bool {
+    &&& table.len() == size
+    &&& forall|j: int|
+        #![trigger table[j]]
+        0 <= j < size ==> affine_niels_point_as_affine_edwards(table[j]) == edwards_scalar_mul(
+            basepoint,
+            (j + 1) as nat,
+        )
+}
+
+/// Spec: Check if a lookup table contains [P, 2P, 3P, ..., size*P] in AffineNiels form
+/// Wrapper that takes an EdwardsPoint and extracts affine coords.
 pub open spec fn is_valid_lookup_table_affine<const N: usize>(
     table: [AffineNielsPoint; N],
     P: EdwardsPoint,
     size: nat,
 ) -> bool {
-    &&& table.len() == size
-    &&& forall|j: int|
-        0 <= j < size ==> affine_niels_point_as_affine_edwards(#[trigger] table[j])
-            == edwards_scalar_mul(edwards_point_as_affine(P), (j + 1) as nat)
+    is_valid_lookup_table_affine_coords(table, edwards_point_as_affine(P), size)
 }
 
 /* VERIFICATION NOTE: Manually expanded impl_lookup_table! macro for radix-16 (LookupTable).

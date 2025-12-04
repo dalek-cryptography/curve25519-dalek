@@ -153,6 +153,7 @@ use crate::scalar::heea::curve25519_heea_vartime;
 use crate::traits::HEEADecomposition;
 
 mod heea;
+pub(crate) use heea::HEEA_MAX_INDEX;
 
 cfg_if! {
     if #[cfg(curve25519_dalek_backend = "fiat")] {

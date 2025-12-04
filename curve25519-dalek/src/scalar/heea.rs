@@ -9,6 +9,8 @@ use ethnum::I256;
 
 use crate::constants;
 
+pub(crate) const HEEA_MAX_INDEX: usize = 129;
+
 /// Implement curve25519_hEEA_vartime algorithm
 /// Returns (rho, tau) such that rho ≡ tau * v (mod L)
 /// where L is the Ed25519 group order (2^252 + 27742317777372353535851937790883648493)
@@ -16,6 +18,9 @@ pub(crate) fn curve25519_heea_vartime(v: I256) -> (I256, i128) {
     // Get L from the existing BASEPOINT_ORDER constant
     let mut r0: I256 = (&constants::BASEPOINT_ORDER).into();
     let mut r1 = v;
+
+    debug_assert!(r1 < r0, "Input v must be less than the group order L");
+
     let mut t0: i128 = 0;
     let mut t1: i128 = 1;
 
@@ -25,35 +30,23 @@ pub(crate) fn curve25519_heea_vartime(v: I256) -> (I256, i128) {
     // Main loop - continue until r1 is approximately half-size (~127 bits)
     while bl_r1 > 127 {
         // Compute shift amount
-        // the initial s is less than 253 - 127 = 126
+        // the initial s is less than 253 - 128 = 125
         // for consecutive iterations we are decreasing the gap between bl_r0 and bl_r1
-        // so s will be in the range [0, 126]
+        // so s will be in the range [0, 125]
         let s = bl_r0 - bl_r1;
-        debug_assert!(s < 128, "s should be less than 128, got {}", s);
 
-        // Perform the shift-and-add/sub operation
-        let mut r = r0;
-        let mut t = t0;
+        // Handle shift carefully - if s >= 128, result would overflow
+        debug_assert!(s < 128, "s should be less than 128, got {}", s);
 
         // Check if signs are the same
         let sign_r0 = r0 < I256::ZERO;
         let sign_r1 = r1 < I256::ZERO;
 
-        if sign_r0 == sign_r1 {
-            // Same sign: subtract
-            r = r.wrapping_sub(r1 << s);
-            // For t, handle shift carefully - if s >= 128, result would overflow
-            if s < 128 {
-                t = t.wrapping_sub(t1.wrapping_shl(s));
-            }
+        let (r, t) = if sign_r0 == sign_r1 {
+            (r0.wrapping_sub(r1 << s), t0.wrapping_sub(t1 << s))
         } else {
-            // Different sign: add
-            r = r.wrapping_add(r1 << s);
-            // For t, handle shift carefully - if s >= 128, result would overflow
-            if s < 128 {
-                t = t.wrapping_add(t1.wrapping_shl(s));
-            }
-        }
+            (r0.wrapping_add(r1 << s), t0.wrapping_add(t1 << s))
+        };
 
         let bl_r = bit_length_i256(r);
 
@@ -79,7 +72,7 @@ pub(crate) fn curve25519_heea_vartime(v: I256) -> (I256, i128) {
 /// Compute bit length of I256 (magnitude, not including sign)
 #[inline]
 fn bit_length_i256(val: I256) -> u32 {
-    let abs = val.abs();
+    let abs = val.unsigned_abs();
     256 - abs.leading_zeros()
 }
 
@@ -137,7 +130,7 @@ mod tests {
 
             // Both magnitudes should be approximately half-size (~127 bits)
             assert!(
-                rho_magnitude_bits <= 128,
+                rho_magnitude_bits <= 127,
                 "rho magnitude should be approximately half-size, got {} bits",
                 rho_magnitude_bits
             );
@@ -170,17 +163,6 @@ mod tests {
         let (rho, tau) = curve25519_heea_vartime(v_minus_one);
         assert_eq!(rho, -I256::ONE, "rho should be -1 when v is -1");
         assert_eq!(tau, 1, "tau should be 1 when v is -1");
-
-        // Test Group Order: v = L
-        let l: I256 = (&constants::BASEPOINT_ORDER).into();
-        let (rho, _tau) = curve25519_heea_vartime(l);
-        // The algorithm should reduce L properly
-        let rho_bits = bit_length_i256(rho);
-        assert!(
-            rho_bits <= 128,
-            "rho should be half-size for L, got {} bits",
-            rho_bits
-        );
 
         // Test Max i128 Boundary: v = 2^127 - 1
         // This tests whether we handle values near the i128 boundary correctly

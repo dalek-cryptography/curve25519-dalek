@@ -14,7 +14,7 @@ use core::cmp::Ordering;
 use crate::backend::serial::curve_models::{ProjectiveNielsPoint, ProjectivePoint};
 use crate::constants;
 use crate::edwards::EdwardsPoint;
-use crate::scalar::Scalar;
+use crate::scalar::{HEEA_MAX_INDEX, Scalar};
 use crate::traits::Identity;
 use crate::window::NafLookupTable5;
 
@@ -77,8 +77,8 @@ pub fn mul_128_128_256(
 
     // Find starting index - check all NAFs up to bit 127
     // (with potential carry to bit 128 or 129)
-    let mut i: usize = 130;
-    for j in (0..131).rev() {
+    let mut i = HEEA_MAX_INDEX;
+    for j in (0..HEEA_MAX_INDEX).rev() {
         i = j;
         if a1_naf[i] != 0 || a2_naf[i] != 0 || b_lo_naf[i] != 0 || b_hi_naf[i] != 0 {
             break;

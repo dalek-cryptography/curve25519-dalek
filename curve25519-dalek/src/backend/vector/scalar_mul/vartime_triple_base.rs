@@ -34,6 +34,7 @@ pub mod spec {
 
     use crate::constants;
     use crate::edwards::EdwardsPoint;
+    use crate::scalar::HEEA_MAX_INDEX;
     use crate::scalar::Scalar;
     use crate::traits::Identity;
     use crate::window::NafLookupTable5;
@@ -105,13 +106,8 @@ pub mod spec {
 
         // Find starting index - check all NAFs up to bit 127
         // (with potential carry to bit 128 or 129)
-        #[cfg(feature = "precomputed-tables")]
-        let max_index = 131;
-        #[cfg(not(feature = "precomputed-tables"))]
-        let max_index = 131;
-
-        let mut i: usize = max_index;
-        for j in (0..=max_index).rev() {
+        let mut i: usize = HEEA_MAX_INDEX;
+        for j in (0..=HEEA_MAX_INDEX).rev() {
             i = j;
             if a1_naf[i] != 0 || a2_naf[i] != 0 || b_lo_naf[i] != 0 || b_hi_naf[i] != 0 {
                 break;

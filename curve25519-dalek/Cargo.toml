@@ -28,13 +28,7 @@ rustdoc-args = [
     "--cfg",
     "docsrs",
 ]
-features = [
-    "serde",
-    "rand_core",
-    "digest",
-    "legacy_compatibility",
-    "group-bits",
-]
+all-features = true
 
 [dev-dependencies]
 sha2 = { version = "0.11.0-rc.3", default-features = false }

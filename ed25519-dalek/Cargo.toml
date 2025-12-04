@@ -25,7 +25,7 @@ rustdoc-args = [
     "--cfg",
     "docsrs",
 ]
-features = ["batch", "digest", "hazmat", "pem", "serde"]
+all-features = true
 
 [dependencies]
 curve25519-dalek = { version = "=5.0.0-pre.3", default-features = false, features = [

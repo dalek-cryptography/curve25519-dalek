@@ -11,7 +11,7 @@
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
+#![cfg_attr(docsrs, doc(auto_cfg(hide(docsrs))))]
 //------------------------------------------------------------------------
 // Documentation:
 //------------------------------------------------------------------------

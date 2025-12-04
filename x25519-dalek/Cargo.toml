@@ -39,7 +39,7 @@ rustdoc-args = [
     "--cfg",
     "docsrs",
 ]
-features = ["reusable_secrets", "serde", "static_secrets"]
+all-features = true
 
 [dependencies]
 curve25519-dalek = { version = "=5.0.0-pre.3", default-features = false }

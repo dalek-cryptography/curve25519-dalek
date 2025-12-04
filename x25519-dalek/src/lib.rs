@@ -16,7 +16,7 @@
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
+#![cfg_attr(docsrs, doc(auto_cfg(hide(docsrs))))]
 #![deny(missing_docs)]
 #![doc(
     html_logo_url = "https://cdn.jsdelivr.net/gh/dalek-cryptography/curve25519-dalek/docs/assets/dalek-logo-clear.png"

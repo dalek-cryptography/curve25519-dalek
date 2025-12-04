@@ -1,7 +1,5 @@
 //! The Lizard method for encoding/decoding 16 bytes into Ristretto points.
 
-#![allow(non_snake_case)]
-
 #[cfg(curve25519_dalek_bits = "32")]
 mod u32_constants;
 
@@ -10,4 +8,4 @@ mod u64_constants;
 
 mod jacobi_quartic;
 mod lizard_constants;
-pub mod lizard_ristretto;
+mod lizard_ristretto;

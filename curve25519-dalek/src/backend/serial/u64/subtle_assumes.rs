@@ -156,7 +156,11 @@ pub uninterp spec fn ct_option_value<T>(opt: CtOption<T>) -> T;
 
 /// Wrapper function for CtOption::new
 #[verifier::external_body]
-pub fn ct_option_new<T>(value: T, choice: Choice) -> CtOption<T> {
+pub fn ct_option_new<T>(value: T, choice: Choice) -> (result: CtOption<T>)
+    ensures
+        ct_option_has_value(result) == choice_is_true(choice),
+        ct_option_value(result) == value,
+{
     CtOption::new(value, choice)
 }
 

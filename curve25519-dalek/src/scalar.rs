@@ -349,11 +349,22 @@ impl Scalar {
         let result = ct_option_new(candidate, condition);
         /* </MODIFIED CODE> */
 
-        // VERIFICATION NOTE: PROOF BYPASS
-        assume(bytes_to_nat(&bytes) < group_order() ==> ct_option_has_value(result));
-        assume(bytes_to_nat(&bytes) >= group_order() ==> !ct_option_has_value(result));
-        assume(ct_option_has_value(result) ==> bytes_to_nat(&ct_option_value(result).bytes)
-            % group_order() == bytes_to_nat(&bytes) % group_order());
+        // Capture the high byte value for proof (avoids Verus interpreter issues)
+        let ghost high_byte: u8 = bytes[31];
+
+        proof {
+            if bytes_to_nat(&bytes) < group_order() {
+                use crate::lemmas::scalar_lemmas::lemma_canonical_bytes_high_bit_clear;
+                lemma_canonical_bytes_high_bit_clear(&candidate.bytes);
+                assert(high_byte >> 7 == 0) by (bit_vector)
+                    requires
+                        high_byte <= 127,
+                ;
+            }
+            // ct_option_value(result) == candidate and candidate.bytes == bytes
+
+            assert(ct_option_value(result).bytes == bytes);
+        }
 
         result
     }

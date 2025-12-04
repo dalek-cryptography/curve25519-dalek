@@ -2012,4 +2012,23 @@ pub proof fn lemma_square_multiply_step(new_y: nat, y_before: nat, y0: nat, R: n
     }
 }
 
+/// If bytes_to_nat(bytes) < group_order(), then bytes[31] <= 127 (high bit is clear)
+pub proof fn lemma_canonical_bytes_high_bit_clear(bytes: &[u8; 32])
+    requires
+        bytes_to_nat(bytes) < group_order(),
+    ensures
+        bytes[31] <= 127,
+{
+    lemma_group_order_bound();
+    // bytes_to_nat < group_order < 2^255
+    if bytes[31] >= 128 {
+        // bytes_to_nat >= bytes[31] * 2^248 >= 128 * 2^248 = 2^255
+        lemma_bytes_to_nat_lower_bound(bytes, 31);
+        lemma_pow2_adds(7, 248);
+        lemma2_to64();
+        lemma_mul_inequality(128, bytes[31] as int, pow2(248) as int);
+        // contradiction: bytes_to_nat >= 2^255 > group_order
+    }
+}
+
 } // verus!

@@ -68,7 +68,7 @@ serde = { version = "1.0", default-features = false, optional = true, features =
 ] }
 zeroize = { version = "1", default-features = false, optional = true }
 # temp use ethnum for u256/i256
-# a native u256/i256 implementation (zz/impl_ches25_without_ethnum) is twice slower for heaa computation
+# a native u256/i256 implementation (zz/impl_ches25_without_ethnum) is twice slower for heea computation
 # will optimize later and remove ethnum dependency
 ethnum = "1.5"
 

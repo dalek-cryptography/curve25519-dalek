@@ -563,21 +563,6 @@ impl From<&Scalar> for I256 {
     }
 }
 
-impl From<&I256> for Scalar {
-    fn from(val: &I256) -> Scalar {
-        if *val < I256::ZERO {
-            // For negative numbers, compute absolute value and negate
-            let abs_val = val.wrapping_neg();
-            let bytes = abs_val.to_le_bytes();
-            let positive = Scalar::from_canonical_bytes(bytes).unwrap();
-            -positive
-        } else {
-            let bytes = val.to_le_bytes();
-            Scalar::from_canonical_bytes(bytes).unwrap()
-        }
-    }
-}
-
 #[cfg(feature = "zeroize")]
 impl Zeroize for Scalar {
     fn zeroize(&mut self) {
@@ -597,21 +582,21 @@ impl HEEADecomposition for Scalar {
         let v = self.into();
 
         // Run the algorithm
-        let (rho_i256, tau_i256) = curve25519_heea_vartime(v);
+        let (mut rho_i, mut tau_i) = curve25519_heea_vartime(v);
 
-        // Convert back to Scalars
-        let rho: Scalar = (&rho_i256).into();
-        let tau: Scalar = (&tau_i256).into();
-        // Check if rho is negative
-        let rho_is_negative = rho_i256 < I256::ZERO;
-        let tau_is_negative = tau_i256 < I256::ZERO;
+        // Convert back to Scalars and ensure shortness
+        let mut flip_h = false;
+        if rho_i < 0 {
+            rho_i = -rho_i;
+            flip_h = !flip_h;
+        }
+        if tau_i < 0 {
+            tau_i = -tau_i;
+            flip_h = !flip_h;
+        }
 
-        let (rho, tau, flip_h) = match (rho_is_negative, tau_is_negative) {
-            (true, true) => (-rho, -tau, false),
-            (true, false) => (-rho, tau, true),
-            (false, true) => (rho, -tau, true),
-            (false, false) => (rho, tau, false),
-        };
+        let rho = Scalar::from_positive_i256(&rho_i);
+        let tau = Scalar::from_positive_i256(&tau_i);
 
         (rho, tau, flip_h)
     }
@@ -1217,6 +1202,15 @@ impl Scalar {
     /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
     pub(crate) fn unpack(&self) -> UnpackedScalar {
         UnpackedScalar::from_bytes(&self.bytes)
+    }
+
+    /// Create a `Scalar` from a positive `I256`.
+    /// The caller must ensure val > 0.
+    pub(crate) fn from_positive_i256(val: &I256) -> Self {
+        debug_assert!(val >= &I256::ZERO);
+        Scalar {
+            bytes: val.to_le_bytes(),
+        }
     }
 
     /// Reduce this `Scalar` modulo \\(\ell\\).

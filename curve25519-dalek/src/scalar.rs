@@ -554,26 +554,6 @@ impl From<u128> for Scalar {
     }
 }
 
-impl From<i128> for Scalar {
-    fn from(val: i128) -> Scalar {
-        if val < 0 {
-            // For negative, we want: Scalar representing (ell + val) = ell - |val|
-            // Since val is negative, -val = |val|
-            let abs_val = (-val) as u128;
-            let mut bytes = [0u8; 32];
-            bytes[..16].copy_from_slice(&abs_val.to_le_bytes());
-            let positive_scalar = Scalar::from_canonical_bytes(bytes).unwrap();
-            // Return -|val| mod ell, which is ell - |val|
-            -positive_scalar
-        } else {
-            // For positive, just convert directly
-            let mut bytes = [0u8; 32];
-            bytes[..16].copy_from_slice(&(val as u128).to_le_bytes());
-            Scalar::from_canonical_bytes(bytes).unwrap()
-        }
-    }
-}
-
 impl From<&Scalar> for I256 {
     fn from(s: &Scalar) -> I256 {
         // Scalar is always positive and less than L, so treat as unsigned
@@ -617,14 +597,14 @@ impl HEEADecomposition for Scalar {
         let v = self.into();
 
         // Run the algorithm
-        let (rho_i256, tau_i128) = curve25519_heea_vartime(v);
+        let (rho_i256, tau_i256) = curve25519_heea_vartime(v);
 
         // Convert back to Scalars
         let rho: Scalar = (&rho_i256).into();
-        let tau: Scalar = tau_i128.into();
+        let tau: Scalar = (&tau_i256).into();
         // Check if rho is negative
         let rho_is_negative = rho_i256 < I256::ZERO;
-        let tau_is_negative = tau_i128 < 0;
+        let tau_is_negative = tau_i256 < I256::ZERO;
 
         let (rho, tau, flip_h) = match (rho_is_negative, tau_is_negative) {
             (true, true) => (-rho, -tau, false),

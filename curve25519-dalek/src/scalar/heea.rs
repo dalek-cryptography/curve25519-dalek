@@ -14,15 +14,15 @@ pub(crate) const HEEA_MAX_INDEX: usize = 129;
 /// Implement curve25519_hEEA_vartime algorithm
 /// Returns (rho, tau) such that rho ≡ tau * v (mod L)
 /// where L is the Ed25519 group order (2^252 + 27742317777372353535851937790883648493)
-pub(crate) fn curve25519_heea_vartime(v: I256) -> (I256, i128) {
+pub(crate) fn curve25519_heea_vartime(v: I256) -> (I256, I256) {
     // Get L from the existing BASEPOINT_ORDER constant
     let mut r0: I256 = (&constants::BASEPOINT_ORDER).into();
     let mut r1 = v;
 
     debug_assert!(r1 < r0, "Input v must be less than the group order L");
 
-    let mut t0: i128 = 0;
-    let mut t1: i128 = 1;
+    let mut t0: I256 = I256::ZERO;
+    let mut t1: I256 = I256::ONE;
 
     let mut bl_r0 = 253u32; // bit_length(L) = 253
     let mut bl_r1 = bit_length_i256(r1);
@@ -30,13 +30,7 @@ pub(crate) fn curve25519_heea_vartime(v: I256) -> (I256, i128) {
     // Main loop - continue until r1 is approximately half-size (~127 bits)
     while bl_r1 > 127 {
         // Compute shift amount
-        // the initial s is less than 253 - 128 = 125
-        // for consecutive iterations we are decreasing the gap between bl_r0 and bl_r1
-        // so s will be in the range [0, 125]
         let s = bl_r0 - bl_r1;
-
-        // Handle shift carefully - if s >= 128, result would overflow
-        debug_assert!(s < 128, "s should be less than 128, got {}", s);
 
         // Check if signs are the same
         let sign_r0 = r0 < I256::ZERO;
@@ -103,18 +97,11 @@ mod tests {
 
             // Convert h to I256 to see the actual output
             let h_i256 = (&h).into();
-            let (rho_i256, tau_i128) = curve25519_heea_vartime(h_i256);
+            let (rho_i256, tau_i256) = curve25519_heea_vartime(h_i256);
 
             // Check the magnitude of rho and tau in their signed representation
             let rho_magnitude_bits = bit_length_i256(rho_i256);
-
-            // For tau (i128), compute bit length
-            let tau_magnitude_bits = if tau_i128 < 0 {
-                let abs_val = tau_i128.wrapping_neg();
-                128 - abs_val.leading_zeros()
-            } else {
-                128 - tau_i128.leading_zeros()
-            };
+            let tau_magnitude_bits = bit_length_i256(tau_i256);
 
             // Now convert to Scalars and verify the equation
             let (rho, tau, flip) = h.heea_decompose();
@@ -150,19 +137,19 @@ mod tests {
         // When v = 0, the algorithm should return (0, 1) since we start with r1=0, t1=1
         // and the loop never executes (bl_r1 would be small)
         assert_eq!(rho, I256::ZERO, "rho should be zero when v is zero");
-        assert_eq!(tau, 1, "tau should be 1 when v is zero");
+        assert_eq!(tau, I256::ONE, "tau should be 1 when v is zero");
 
         // Test One: v = 1
         let v_one = I256::ONE;
         let (rho, tau) = curve25519_heea_vartime(v_one);
         assert_eq!(rho, I256::ONE, "rho should be 1 when v is 1");
-        assert_eq!(tau, 1, "tau should be 1 when v is 1");
+        assert_eq!(tau, I256::ONE, "tau should be 1 when v is 1");
 
         // Test Minus One: v = -1
         let v_minus_one = -I256::ONE;
         let (rho, tau) = curve25519_heea_vartime(v_minus_one);
         assert_eq!(rho, -I256::ONE, "rho should be -1 when v is -1");
-        assert_eq!(tau, 1, "tau should be 1 when v is -1");
+        assert_eq!(tau, I256::ONE, "tau should be 1 when v is -1");
 
         // Test Max i128 Boundary: v = 2^127 - 1
         // This tests whether we handle values near the i128 boundary correctly
@@ -176,16 +163,12 @@ mod tests {
             rho_bits
         );
 
-        // Verify tau doesn't overflow i128
-        let tau_magnitude = if tau < 0 {
-            tau.wrapping_neg() as u128
-        } else {
-            tau as u128
-        };
+        // Verify tau magnitude
+        let tau_bits = bit_length_i256(tau);
         assert!(
-            tau_magnitude <= (1u128 << 127),
-            "tau should fit in i128, got magnitude {}",
-            tau_magnitude
+            tau_bits <= 128,
+            "tau should be approximately half-size, got {} bits",
+            tau_bits
         );
 
         // test v = 2^252
@@ -197,7 +180,7 @@ mod tests {
             "rho should be half-size for 2^252, got {} bits",
             rho_bits
         );
-        assert_eq!(tau, -1, "tau should be 1 for 2^252");
+        assert_eq!(tau, -I256::ONE, "tau should be -1 for 2^252");
     }
 
     #[test]
@@ -230,12 +213,12 @@ mod tests {
 
     #[test]
     fn test_heea_instrumented_shift_check() {
-        // Instrumented version to check if s >= 128 ever occurs
-        fn curve25519_heea_instrumented(v: I256) -> (I256, i128, u32) {
+        // Instrumented version to track max shift value
+        fn curve25519_heea_instrumented(v: I256) -> (I256, I256, u32) {
             let mut r0: I256 = (&constants::BASEPOINT_ORDER).into();
             let mut r1 = v;
-            let mut t0: i128 = 0;
-            let mut t1: i128 = 1;
+            let mut t0: I256 = I256::ZERO;
+            let mut t1: I256 = I256::ONE;
 
             let mut bl_r0 = 253u32;
             let mut bl_r1 = bit_length_i256(r1);
@@ -245,23 +228,14 @@ mod tests {
                 let s = bl_r0 - bl_r1;
                 max_s = max_s.max(s);
 
-                let mut r = r0;
-                let mut t = t0;
-
                 let sign_r0 = r0 < I256::ZERO;
                 let sign_r1 = r1 < I256::ZERO;
 
-                if sign_r0 == sign_r1 {
-                    r = r.wrapping_sub(r1 << s);
-                    if s < 128 {
-                        t = t.wrapping_sub(t1.wrapping_shl(s));
-                    }
+                let (r, t) = if sign_r0 == sign_r1 {
+                    (r0.wrapping_sub(r1 << s), t0.wrapping_sub(t1 << s))
                 } else {
-                    r = r.wrapping_add(r1 << s);
-                    if s < 128 {
-                        t = t.wrapping_add(t1.wrapping_shl(s));
-                    }
-                }
+                    (r0.wrapping_add(r1 << s), t0.wrapping_add(t1 << s))
+                };
 
                 let bl_r = bit_length_i256(r);
 
@@ -295,13 +269,9 @@ mod tests {
 
         for v in test_values {
             let (_rho, _tau, max_s) = curve25519_heea_instrumented(v);
-            // Print or verify max_s is always < 128
-            assert!(
-                max_s < 128,
-                "Found s >= 128! max_s = {} for input bit_length = {}",
-                max_s,
-                bit_length_i256(v)
-            );
+            // Verify we can handle any shift value now with I256
+            // (previously would panic if max_s >= 128)
+            println!("Input bit_length: {}, max_s: {}", bit_length_i256(v), max_s);
         }
     }
 }

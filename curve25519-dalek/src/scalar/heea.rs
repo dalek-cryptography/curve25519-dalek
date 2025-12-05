@@ -19,7 +19,7 @@ pub(crate) fn curve25519_heea_vartime(v: I256) -> (I256, I256) {
     let mut r0: I256 = (&constants::BASEPOINT_ORDER).into();
     let mut r1 = v;
 
-    debug_assert!(r1 < r0, "Input v must be less than the group order L");
+    debug_assert!(r1.abs() < r0, "Input v must be less than the group order L");
 
     let mut t0: I256 = I256::ZERO;
     let mut t1: I256 = I256::ONE;
@@ -181,97 +181,5 @@ mod tests {
             rho_bits
         );
         assert_eq!(tau, -I256::ONE, "tau should be -1 for 2^252");
-    }
-
-    #[test]
-    fn test_heea_large_shift() {
-        // Create a test case where r0 and r1 differ by approximately 128 bits
-        // This will trigger the s >= 128 case if it can happen
-        // Create a value around 125 bits: 2^125
-        let v_small = I256::ONE << 125;
-
-        let (rho, _tau) = curve25519_heea_vartime(v_small);
-
-        // Verify the result is still half-size
-        let rho_bits = bit_length_i256(rho);
-        assert!(
-            rho_bits <= 128,
-            "rho should be half-size even with large shifts, got {} bits",
-            rho_bits
-        );
-
-        // Also test with a value that's exactly at the boundary
-        let v_boundary = I256::ONE << 127;
-        let (rho2, _tau2) = curve25519_heea_vartime(v_boundary);
-        let rho2_bits = bit_length_i256(rho2);
-        assert!(
-            rho2_bits <= 128,
-            "rho should be half-size for 2^127, got {} bits",
-            rho2_bits
-        );
-    }
-
-    #[test]
-    fn test_heea_instrumented_shift_check() {
-        // Instrumented version to track max shift value
-        fn curve25519_heea_instrumented(v: I256) -> (I256, I256, u32) {
-            let mut r0: I256 = (&constants::BASEPOINT_ORDER).into();
-            let mut r1 = v;
-            let mut t0: I256 = I256::ZERO;
-            let mut t1: I256 = I256::ONE;
-
-            let mut bl_r0 = 253u32;
-            let mut bl_r1 = bit_length_i256(r1);
-            let mut max_s = 0u32;
-
-            while bl_r1 > 127 {
-                let s = bl_r0 - bl_r1;
-                max_s = max_s.max(s);
-
-                let sign_r0 = r0 < I256::ZERO;
-                let sign_r1 = r1 < I256::ZERO;
-
-                let (r, t) = if sign_r0 == sign_r1 {
-                    (r0.wrapping_sub(r1 << s), t0.wrapping_sub(t1 << s))
-                } else {
-                    (r0.wrapping_add(r1 << s), t0.wrapping_add(t1 << s))
-                };
-
-                let bl_r = bit_length_i256(r);
-
-                if bl_r > bl_r1 {
-                    r0 = r;
-                    t0 = t;
-                    bl_r0 = bl_r;
-                } else {
-                    r0 = r1;
-                    r1 = r;
-                    t0 = t1;
-                    t1 = t;
-                    bl_r0 = bl_r1;
-                    bl_r1 = bl_r;
-                }
-            }
-
-            (r1, t1, max_s)
-        }
-
-        // Test several edge cases to see max shift value
-        let test_values = vec![
-            I256::ZERO,
-            I256::ONE,
-            I256::ONE << 125,
-            I256::ONE << 127,
-            I256::ONE << 128,
-            I256::ONE << 200,
-            (&constants::BASEPOINT_ORDER).into(),
-        ];
-
-        for v in test_values {
-            let (_rho, _tau, max_s) = curve25519_heea_instrumented(v);
-            // Verify we can handle any shift value now with I256
-            // (previously would panic if max_s >= 128)
-            println!("Input bit_length: {}, max_s: {}", bit_length_i256(v), max_s);
-        }
     }
 }

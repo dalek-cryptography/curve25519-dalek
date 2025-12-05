@@ -177,7 +177,9 @@ use digest::generic_array::typenum::U64;
 use digest::Digest;
 
 use crate::constants;
+
 use crate::field::FieldElement;
+use vstd::prelude::*;
 
 #[cfg(feature = "group")]
 use {
@@ -338,6 +340,16 @@ impl Identity for CompressedRistretto {
     }
 }
 
+verus! {
+
+#[verifier::external]
+impl crate::traits::IsIdentitySpecImpl for CompressedRistretto {
+    open spec fn is_identity_spec(&self) -> bool {
+        arbitrary()
+    }
+}
+
+} // verus!
 impl Default for CompressedRistretto {
     fn default() -> CompressedRistretto {
         CompressedRistretto::identity()
@@ -808,6 +820,16 @@ impl Identity for RistrettoPoint {
     }
 }
 
+verus! {
+
+#[verifier::external]
+impl crate::traits::IsIdentitySpecImpl for RistrettoPoint {
+    open spec fn is_identity_spec(&self) -> bool {
+        arbitrary()
+    }
+}
+
+} // verus!
 impl Default for RistrettoPoint {
     fn default() -> RistrettoPoint {
         RistrettoPoint::identity()

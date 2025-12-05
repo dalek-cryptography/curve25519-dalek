@@ -38,12 +38,27 @@ pub trait IsIdentity {
     fn is_identity(&self) -> bool;
 }
 
+/// Spec trait for IsIdentity - provides the specification for is_identity
+pub trait IsIdentitySpecImpl {
+    /// Specification for is_identity result
+    spec fn is_identity_spec(&self) -> bool;
+}
+
 /// Implement generic identity equality testing for a point representations
 /// which have constant-time equality testing and a defined identity
 /// constructor.
-impl<T> IsIdentity for T where T: ConstantTimeEq + Identity {
-    fn is_identity(&self) -> bool {
-        self.ct_eq(&T::identity()).into()
+impl<T> IsIdentity for T where T: ConstantTimeEq + Identity + IsIdentitySpecImpl {
+    fn is_identity(&self) -> (result: bool)
+        ensures
+            result == self.is_identity_spec(),
+    {
+        /* ORIGINAL CODE: self.ct_eq(&T::identity()).into() */
+        let choice = self.ct_eq(&T::identity());
+        let result: bool = choice.into();
+        proof {
+            assume(result == self.is_identity_spec());
+        }
+        result
     }
 }
 

@@ -20,7 +20,6 @@ Scalar::mul(&MontgomeryPoint),curve25519_dalek::montgomery,Mul<&MontgomeryPoint>
 Scalar::from_bytes_mod_order([u8; 32]),curve25519_dalek::scalar,Scalar
 Scalar::from_bytes_mod_order_wide(&[u8; 64]),curve25519_dalek::scalar,Scalar
 Scalar::from_canonical_bytes([u8; 32]),curve25519_dalek::scalar,Scalar
-Scalar::from_bits([u8; 32]),curve25519_dalek::scalar,Scalar
 Scalar::fmt(&core),curve25519_dalek::scalar,Debug for Scalar
 Scalar::ct_eq(&Self),curve25519_dalek::scalar,ConstantTimeEq for Scalar
 Scalar::index(usize),curve25519_dalek::scalar,Index<usize> for Scalar
@@ -41,7 +40,6 @@ Scalar::from(u32),curve25519_dalek::scalar,From<u32> for Scalar
 Scalar::from(u64),curve25519_dalek::scalar,From<u64> for Scalar
 Scalar::from(u128),curve25519_dalek::scalar,From<u128> for Scalar
 Scalar::zeroize(&self),curve25519_dalek::scalar,Zeroize for Scalar
-Scalar::random(&R),curve25519_dalek::scalar,Scalar
 Scalar::hash_from_bytes(&[u8]),curve25519_dalek::scalar,Scalar
 Scalar::from_hash(D),curve25519_dalek::scalar,Scalar
 Scalar::to_bytes(&self),curve25519_dalek::scalar,Scalar
@@ -65,6 +63,14 @@ NafLookupTable5::select(usize),curve25519_dalek::window,NafLookupTable5<T>
 NafLookupTable5::fmt(&core),curve25519_dalek::window,Debug for NafLookupTable5<T>
 NafLookupTable8::select(usize),curve25519_dalek::window,NafLookupTable8<T>
 NafLookupTable8::fmt(&core),curve25519_dalek::window,Debug for NafLookupTable8<T>
+NafLookupTable5::from(&EdwardsPoint),curve25519_dalek::window,From<&'a EdwardsPoint> for NafLookupTable5<ProjectiveNielsPoint>
+NafLookupTable5::from(&EdwardsPoint),curve25519_dalek::window,From<&'a EdwardsPoint> for NafLookupTable5<AffineNielsPoint>
+NafLookupTable8::from(&EdwardsPoint),curve25519_dalek::window,From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint>
+NafLookupTable8::from(&EdwardsPoint),curve25519_dalek::window,From<&'a EdwardsPoint> for NafLookupTable8<AffineNielsPoint>
+LookupTable<AffineNielsPoint>::select(i8),curve25519_dalek::window,LookupTable<AffineNielsPoint>
+LookupTable<ProjectiveNielsPoint>::select(i8),curve25519_dalek::window,LookupTable<ProjectiveNielsPoint>
+LookupTable<ProjectiveNielsPoint>::from(&EdwardsPoint),curve25519_dalek::window,From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint>
+LookupTable<AffineNielsPoint>::from(&EdwardsPoint),curve25519_dalek::window,From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint>
 FieldElement::ct_eq(&FieldElement),curve25519_dalek::field,ConstantTimeEq for FieldElement
 FieldElement::is_negative(&self),curve25519_dalek::field,FieldElement
 FieldElement::is_zero(&self),curve25519_dalek::field,FieldElement
@@ -82,7 +88,9 @@ CompressedEdwardsY::decompress(&self),curve25519_dalek::edwards,CompressedEdward
 step_1(&CompressedEdwardsY),curve25519_dalek::edwards,
 "step_2(&CompressedEdwardsY, FieldElement, FieldElement, FieldElement)",curve25519_dalek::edwards,
 EdwardsPoint::serialize(S),curve25519_dalek::edwards,Serialize for EdwardsPoint
+EdwardsPoint::deserialize(D),curve25519_dalek::edwards,Deserialize<'de> for EdwardsPoint
 CompressedEdwardsY::serialize(S),curve25519_dalek::edwards,Serialize for CompressedEdwardsY
+CompressedEdwardsY::deserialize(D),curve25519_dalek::edwards,Deserialize<'de> for CompressedEdwardsY
 CompressedEdwardsY::identity(),curve25519_dalek::edwards,Identity for CompressedEdwardsY
 EdwardsPoint::identity(),curve25519_dalek::edwards,Identity for EdwardsPoint
 CompressedEdwardsY::zeroize(&self),curve25519_dalek::edwards,Zeroize for CompressedEdwardsY
@@ -126,14 +134,15 @@ step_1(&CompressedRistretto),curve25519_dalek::ristretto,
 step_2(FieldElement),curve25519_dalek::ristretto,
 CompressedRistretto::identity(),curve25519_dalek::ristretto,Identity for CompressedRistretto
 RistrettoPoint::serialize(S),curve25519_dalek::ristretto,Serialize for RistrettoPoint
+RistrettoPoint::deserialize(D),curve25519_dalek::ristretto,Deserialize<'de> for RistrettoPoint
 CompressedRistretto::serialize(S),curve25519_dalek::ristretto,Serialize for CompressedRistretto
+CompressedRistretto::deserialize(D),curve25519_dalek::ristretto,Deserialize<'de> for CompressedRistretto
 RistrettoPoint::compress(&self),curve25519_dalek::ristretto,RistrettoPoint
 RistrettoPoint::double_and_compress_batch(I),curve25519_dalek::ristretto,RistrettoPoint
 BatchCompressState::efgh(&self),curve25519_dalek::ristretto,BatchCompressState
 BatchCompressState::from(&RistrettoPoint),curve25519_dalek::ristretto,From<&'a RistrettoPoint> for BatchCompressState
 coset4(&self),curve25519_dalek::ristretto,
 elligator_ristretto_flavor(&FieldElement),curve25519_dalek::ristretto,
-RistrettoPoint::random(&R),curve25519_dalek::ristretto,RistrettoPoint
 hash_from_bytes(&[u8]),curve25519_dalek::ristretto,
 from_hash(D),curve25519_dalek::ristretto,
 from_uniform_bytes(&[u8; 64]),curve25519_dalek::ristretto,

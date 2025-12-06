@@ -215,10 +215,12 @@ def parse_function_in_file(
                 def normalize_impl(s):
                     # Remove lifetime annotations while preserving & references
                     # Pattern 1: <'a> → "" (standalone lifetime generics like Deserialize<'de>)
-                    # Pattern 2: 'a → "" (lifetimes in mixed contexts like &'b Scalar → & Scalar)
+                    # Pattern 2: 'a → "" (lifetimes in mixed contexts like &'b Scalar → &Scalar)
                     # Both patterns together ensure consistent normalization for matching
                     s = re.sub(r"<'\w+>", "", s)
                     s = re.sub(r"'\w+\b", "", s)
+                    # Remove space after & to normalize "&'a Scalar" → "&Scalar" and "&Scalar" → "&Scalar"
+                    s = re.sub(r"&\s+", "&", s)
                     return " ".join(s.split())
 
                 norm_found = normalize_impl(found_impl_sig)

@@ -14,9 +14,9 @@ elligator_encode(&FieldElement),curve25519_dalek::montgomery,
 ProjectivePoint::identity(),curve25519_dalek::montgomery,Identity for ProjectivePoint
 ProjectivePoint::as_affine(&self),curve25519_dalek::montgomery,ProjectivePoint
 "differential_add_and_double(&ProjectivePoint, &ProjectivePoint, &FieldElement)",curve25519_dalek::montgomery,
-MontgomeryPoint::mul(&Scalar),curve25519_dalek::montgomery,Mul<&Scalar> for MontgomeryPoint
+MontgomeryPoint::mul(&Scalar),curve25519_dalek::montgomery,Mul<&Scalar> for &MontgomeryPoint
 MontgomeryPoint::mul_assign(&Scalar),curve25519_dalek::montgomery,MulAssign<&Scalar> for MontgomeryPoint
-Scalar::mul(&MontgomeryPoint),curve25519_dalek::montgomery,Mul<&MontgomeryPoint> for Scalar
+Scalar::mul(&MontgomeryPoint),curve25519_dalek::montgomery,Mul<&MontgomeryPoint> for &Scalar
 Scalar::from_bytes_mod_order([u8; 32]),curve25519_dalek::scalar,Scalar
 Scalar::from_bytes_mod_order_wide(&[u8; 64]),curve25519_dalek::scalar,Scalar
 Scalar::from_canonical_bytes([u8; 32]),curve25519_dalek::scalar,Scalar
@@ -112,8 +112,8 @@ EdwardsPoint::sub_assign(&EdwardsPoint),curve25519_dalek::edwards,SubAssign<&'b 
 EdwardsPoint::neg(self),curve25519_dalek::edwards,Neg for &EdwardsPoint
 EdwardsPoint::neg(self),curve25519_dalek::edwards,Neg for EdwardsPoint
 EdwardsPoint::mul_assign(&Scalar),curve25519_dalek::edwards,MulAssign<&'b Scalar> for EdwardsPoint
-EdwardsPoint::mul(&Scalar),curve25519_dalek::edwards,Mul<&'b Scalar> for EdwardsPoint
-Scalar::mul(&EdwardsPoint),curve25519_dalek::edwards,Mul<&'b EdwardsPoint> for Scalar
+EdwardsPoint::mul(&Scalar),curve25519_dalek::edwards,Mul<&'b Scalar> for &EdwardsPoint
+Scalar::mul(&EdwardsPoint),curve25519_dalek::edwards,Mul<&'b EdwardsPoint> for &Scalar
 EdwardsPoint::mul_base(&Scalar),curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::mul_clamped([u8; 32]),curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::mul_base_clamped([u8; 32]),curve25519_dalek::edwards,EdwardsPoint
@@ -156,13 +156,13 @@ RistrettoPoint::sub_assign(&RistrettoPoint),curve25519_dalek::ristretto,SubAssig
 RistrettoPoint::neg(self),curve25519_dalek::ristretto,Neg for &RistrettoPoint
 RistrettoPoint::neg(self),curve25519_dalek::ristretto,Neg for RistrettoPoint
 RistrettoPoint::mul_assign(&Scalar),curve25519_dalek::ristretto,MulAssign<&'b Scalar> for RistrettoPoint
-RistrettoPoint::mul(&Scalar),curve25519_dalek::ristretto,Mul<&'b Scalar> for RistrettoPoint
-Scalar::mul(&RistrettoPoint),curve25519_dalek::ristretto,Mul<&'b RistrettoPoint> for Scalar
+RistrettoPoint::mul(&Scalar),curve25519_dalek::ristretto,Mul<&'b Scalar> for &RistrettoPoint
+Scalar::mul(&RistrettoPoint),curve25519_dalek::ristretto,Mul<&'b RistrettoPoint> for &Scalar
 RistrettoPoint::mul_base(&Scalar),curve25519_dalek::ristretto,RistrettoPoint
 VartimeRistrettoPrecomputation::new(I),curve25519_dalek::ristretto,VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation
 "VartimeRistrettoPrecomputation::optional_mixed_multiscalar_mul(I, J, K)",curve25519_dalek::ristretto,VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation
-RistrettoBasepointTable::mul(&Scalar),curve25519_dalek::ristretto,Mul<&'b Scalar> for RistrettoBasepointTable
-Scalar::mul(&RistrettoBasepointTable),curve25519_dalek::ristretto,Mul<&'a RistrettoBasepointTable> for Scalar
+RistrettoBasepointTable::mul(&Scalar),curve25519_dalek::ristretto,Mul<&'b Scalar> for &RistrettoBasepointTable
+Scalar::mul(&RistrettoBasepointTable),curve25519_dalek::ristretto,Mul<&'a RistrettoBasepointTable> for &Scalar
 RistrettoBasepointTable::create(&RistrettoPoint),curve25519_dalek::ristretto,RistrettoBasepointTable
 RistrettoBasepointTable::basepoint(&self),curve25519_dalek::ristretto,RistrettoBasepointTable
 "RistrettoPoint::conditional_select(&RistrettoPoint, &RistrettoPoint, Choice)",curve25519_dalek::ristretto,ConditionallySelectable for RistrettoPoint
@@ -224,12 +224,12 @@ ProjectivePoint::as_extended(&self),curve25519_dalek::backend::serial::curve_mod
 CompletedPoint::as_projective(&self),curve25519_dalek::backend::serial::curve_models,CompletedPoint
 CompletedPoint::as_extended(&self),curve25519_dalek::backend::serial::curve_models,CompletedPoint
 ProjectivePoint::double(&self),curve25519_dalek::backend::serial::curve_models,ProjectivePoint
-EdwardsPoint::add(&ProjectiveNielsPoint),curve25519_dalek::backend::serial::curve_models,Add<&'b ProjectiveNielsPoint> for EdwardsPoint
-EdwardsPoint::sub(&ProjectiveNielsPoint),curve25519_dalek::backend::serial::curve_models,Sub<&'b ProjectiveNielsPoint> for EdwardsPoint
-EdwardsPoint::add(&AffineNielsPoint),curve25519_dalek::backend::serial::curve_models,Add<&'b AffineNielsPoint> for EdwardsPoint
-EdwardsPoint::sub(&AffineNielsPoint),curve25519_dalek::backend::serial::curve_models,Sub<&'b AffineNielsPoint> for EdwardsPoint
-ProjectiveNielsPoint::neg(self),curve25519_dalek::backend::serial::curve_models,Neg for ProjectiveNielsPoint
-AffineNielsPoint::neg(self),curve25519_dalek::backend::serial::curve_models,Neg for AffineNielsPoint
+EdwardsPoint::add(&ProjectiveNielsPoint),curve25519_dalek::backend::serial::curve_models,Add<&'b ProjectiveNielsPoint> for &EdwardsPoint
+EdwardsPoint::sub(&ProjectiveNielsPoint),curve25519_dalek::backend::serial::curve_models,Sub<&'b ProjectiveNielsPoint> for &EdwardsPoint
+EdwardsPoint::add(&AffineNielsPoint),curve25519_dalek::backend::serial::curve_models,Add<&'b AffineNielsPoint> for &EdwardsPoint
+EdwardsPoint::sub(&AffineNielsPoint),curve25519_dalek::backend::serial::curve_models,Sub<&'b AffineNielsPoint> for &EdwardsPoint
+ProjectiveNielsPoint::neg(self),curve25519_dalek::backend::serial::curve_models,Neg for &ProjectiveNielsPoint
+AffineNielsPoint::neg(self),curve25519_dalek::backend::serial::curve_models,Neg for &AffineNielsPoint
 ProjectivePoint::fmt(&core),curve25519_dalek::backend::serial::curve_models,Debug for ProjectivePoint
 CompletedPoint::fmt(&core),curve25519_dalek::backend::serial::curve_models,Debug for CompletedPoint
 AffineNielsPoint::fmt(&core),curve25519_dalek::backend::serial::curve_models,Debug for AffineNielsPoint

@@ -162,19 +162,6 @@ impl VartimeMultiscalarMul for Straus {
         I::Item: Borrow<Scalar>,
         J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
-        Self::optional_multiscalar_mul_with_scalar_bits(scalars, points, None)
-    }
-
-    fn optional_multiscalar_mul_with_scalar_bits<I, J>(
-        scalars: I,
-        points: J,
-        scalar_bits: Option<usize>,
-    ) -> Option<Self::Point>
-    where
-        I: IntoIterator,
-        I::Item: Borrow<Scalar>,
-        J: IntoIterator<Item = Option<Self::Point>>,
-    {
         use crate::backend::serial::curve_models::{
             CompletedPoint, ProjectiveNielsPoint, ProjectivePoint,
         };
@@ -193,8 +180,7 @@ impl VartimeMultiscalarMul for Straus {
 
         let mut r = ProjectivePoint::identity();
 
-        let scalar_bits = scalar_bits.unwrap_or(255);
-        for i in (0..=scalar_bits).rev() {
+        for i in (0..256).rev() {
             let mut t: CompletedPoint = r.double();
 
             for (naf, lookup_table) in nafs.iter().zip(lookup_tables.iter()) {
@@ -211,25 +197,5 @@ impl VartimeMultiscalarMul for Straus {
         }
 
         Some(r.as_extended())
-    }
-
-    fn vartime_multiscalar_mul_with_scalar_bits<I, J>(
-        scalars: I,
-        points: J,
-        scalar_bits: Option<usize>,
-    ) -> Self::Point
-    where
-        I: IntoIterator,
-        I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<Self::Point>,
-        Self::Point: Clone,
-    {
-        Self::optional_multiscalar_mul_with_scalar_bits(
-            scalars,
-            points.into_iter().map(|P| Some(*P.borrow())),
-            scalar_bits,
-        )
-        .expect("should return some point")
     }
 }

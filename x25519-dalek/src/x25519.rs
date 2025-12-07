@@ -16,6 +16,10 @@
 
 use curve25519_dalek::{edwards::EdwardsPoint, montgomery::MontgomeryPoint, traits::IsIdentity};
 
+#[cfg(all(feature = "alloc", feature = "pkcs8"))]
+use pkcs8::{EncodePrivateKey, SecretDocument, der::asn1::OctetStringRef};
+#[cfg(feature = "pkcs8")]
+use pkcs8::{ObjectIdentifier, PrivateKeyInfoRef};
 use rand_core::CryptoRng;
 
 #[cfg(feature = "zeroize")]
@@ -397,3 +401,98 @@ pub fn x25519(k: [u8; 32], u: [u8; 32]) -> [u8; 32] {
 pub const X25519_BASEPOINT_BYTES: [u8; 32] = [
     9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ];
+
+/// Algorithm [`ObjectIdentifier`] for the X25519 digital signature algorithm
+/// (`id-X25519`).
+///
+/// <http://oid-info.com/get/1.3.101.110>
+#[cfg(feature = "pkcs8")]
+pub const ALGORITHM_OID: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.3.101.110");
+
+/// X25519 Algorithm Identifier.
+#[cfg(feature = "pkcs8")]
+pub const ALGORITHM_ID: pkcs8::AlgorithmIdentifierRef<'static> = pkcs8::AlgorithmIdentifierRef {
+    oid: ALGORITHM_OID,
+    parameters: None,
+};
+
+#[cfg(all(feature = "alloc", feature = "pkcs8"))]
+impl EncodePrivateKey for EphemeralSecret {
+    fn to_pkcs8_der(&self) -> Result<SecretDocument, pkcs8::Error> {
+        to_pkcs8_der(&self.0, &PublicKey::from(self).0.0)
+    }
+}
+
+#[cfg(all(feature = "alloc", feature = "pkcs8", feature = "static_secrets"))]
+impl EncodePrivateKey for StaticSecret {
+    fn to_pkcs8_der(&self) -> Result<SecretDocument, pkcs8::Error> {
+        to_pkcs8_der(&self.0, &PublicKey::from(self).0.0)
+    }
+}
+
+#[cfg(all(feature = "alloc", feature = "pkcs8"))]
+fn to_pkcs8_der(
+    private_key_bytes: &[u8; 32],
+    public_key_bytes: &[u8; 32],
+) -> Result<SecretDocument, pkcs8::Error> {
+    // Serialize private key as nested OCTET STRING
+    let mut private_key = [0u8; 2 + 32];
+    private_key[0] = 0x04;
+    private_key[1] = 0x20;
+    private_key[2..].copy_from_slice(private_key_bytes);
+
+    let private_key_info = PrivateKeyInfoRef {
+        algorithm: ALGORITHM_ID,
+        private_key: OctetStringRef::new(&private_key)?,
+        public_key: Some(pkcs8::der::asn1::BitStringRef::new(0, public_key_bytes)?),
+    };
+
+    let result = SecretDocument::encode_msg(&private_key_info)?;
+
+    #[cfg(feature = "zeroize")]
+    private_key.zeroize();
+
+    Ok(result)
+}
+
+#[cfg(feature = "pkcs8")]
+impl TryFrom<PrivateKeyInfoRef<'_>> for EphemeralSecret {
+    type Error = pkcs8::Error;
+
+    fn try_from(private_key: PrivateKeyInfoRef<'_>) -> Result<Self, pkcs8::Error> {
+        Ok(Self(to_private_key_bytes(private_key)?))
+    }
+}
+
+#[cfg(all(feature = "pkcs8", feature = "static_secrets"))]
+impl TryFrom<PrivateKeyInfoRef<'_>> for StaticSecret {
+    type Error = pkcs8::Error;
+
+    fn try_from(private_key: PrivateKeyInfoRef<'_>) -> Result<Self, pkcs8::Error> {
+        Ok(Self(to_private_key_bytes(private_key)?))
+    }
+}
+
+#[cfg(feature = "pkcs8")]
+fn to_private_key_bytes(private_key: PrivateKeyInfoRef<'_>) -> Result<[u8; 32], pkcs8::Error> {
+    private_key.algorithm.assert_algorithm_oid(ALGORITHM_OID)?;
+
+    if private_key.algorithm.parameters.is_some() {
+        return Err(pkcs8::Error::ParametersMalformed);
+    }
+
+    // X25519 PKCS#8 keys are represented as a nested OCTET STRING
+    // (i.e. an OCTET STRING within an OCTET STRING).
+    //
+    // This match statement checks and removes the inner OCTET STRING
+    // header value:
+    //
+    // - 0x04: OCTET STRING tag
+    // - 0x20: 32-byte length
+    let private_key_bytes = match private_key.private_key.as_bytes() {
+        [0x04, 0x20, rest @ ..] => rest.try_into().map_err(|_| pkcs8::Error::KeyMalformed),
+        _ => Err(pkcs8::Error::KeyMalformed),
+    }?;
+
+    Ok(private_key_bytes)
+}

@@ -282,6 +282,22 @@ pub fn conditional_assign_generic<T>(a: &mut T, b: &T, choice: Choice) where
     a.conditional_assign(b, choice)
 }
 
+/*** ConditionallySelectable specification for FieldElement51 ***/
+
+/// Wrapper for conditional_select on FieldElement51
+#[verifier::external_body]
+pub fn conditional_select_field_element(
+    a: &FieldElement51,
+    b: &FieldElement51,
+    choice: Choice,
+) -> (result: FieldElement51)
+    ensures
+        !choice_is_true(choice) ==> result == *a,
+        choice_is_true(choice) ==> result == *b,
+{
+    FieldElement51::conditional_select(a, b, choice)
+}
+
 /*** ConditionallySelectable specification for ProjectivePoint ***/
 
 /// Wrapper for conditional_swap on Montgomery ProjectivePoint

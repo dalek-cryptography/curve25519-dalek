@@ -353,4 +353,67 @@ pub open spec fn montgomery_scalar_mul_u(u: nat, n: nat) -> nat {
     )
 }
 
+// =============================================================================
+// Elligator2 Mapping (hash-to-curve)
+// =============================================================================
+// Reference: https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1
+// Also: RFC 9380 Section 6.7.1
+/// Elligator2 mapping from a field element to a Montgomery u-coordinate.
+///
+/// Given input r, computes:
+///   d = -A / (1 + 2*r²)
+///   eps = d³ + A*d² + d = d * (d² + A*d + 1)
+///   if eps is square: u = d       (point lands on the curve)
+///   if eps is not square: u = -d - A  (point lands on the quadratic twist)
+///
+/// ## Quadratic Twist
+///
+/// For a Montgomery curve v² = u³ + Au² + u, not every u-coordinate has a
+/// corresponding v (i.e., u³ + Au² + u may not be a square). The "quadratic
+/// twist" is a related curve containing exactly those points whose u-coordinates
+/// are invalid on the original curve.
+///
+/// - If eps = u³ + Au² + u is a **quadratic residue** (square) → u is on the **curve**
+/// - If eps is a **non-residue** (not a square) → u is on the **twist**
+///
+/// ## Twist Security
+///
+/// Curve25519 is specifically designed to be "twist-secure". The twist has group
+/// order 4 * p' where p' is a large prime, similar to the main curve's order 8 * q.
+/// This means:
+/// - The Montgomery ladder (used in X25519) produces correct results regardless
+///   of whether the input u-coordinate is on the curve or the twist
+/// - An attacker cannot learn secret key bits by sending a malicious u-coordinate
+///   that corresponds to a point on the twist (a "small subgroup attack")
+///
+/// The output u is always a valid u-coordinate on either the Montgomery curve
+/// or its quadratic twist. This provides a deterministic mapping from field
+/// elements to curve points.
+pub open spec fn spec_elligator_encode(r: nat) -> nat {
+    let A = spec_field_element(&MONTGOMERY_A);
+    let r_sq = math_field_square(r);
+    let two_r_sq = math_field_mul(2, r_sq);
+    let d_denom = math_field_add(1, two_r_sq);  // 1 + 2r²
+
+    // d = -A / (1 + 2r²)
+    let d = math_field_mul(math_field_neg(A), math_field_inv(d_denom));
+
+    // eps = d³ + A*d² + d = d * (d² + A*d + 1)
+    let d_sq = math_field_square(d);
+    let A_d = math_field_mul(A, d);
+    let inner = math_field_add(math_field_add(d_sq, A_d), 1);
+    let eps = math_field_mul(d, inner);
+
+    // Choose u based on whether eps is a quadratic residue
+    let eps_is_square = math_is_square(eps);
+
+    if eps_is_square {
+        // eps is square → point is on curve → result u = d
+        d
+    } else {
+        // eps is not square → point is on twist → result u = -d - A
+        math_field_neg(math_field_add(d, A))
+    }
+}
+
 } // verus!

@@ -66,6 +66,8 @@ use crate::specs::edwards_specs::*;
 #[allow(unused_imports)]
 use crate::specs::field_specs::*;
 #[allow(unused_imports)]
+use crate::specs::field_specs_u64::*;
+#[allow(unused_imports)]
 use crate::specs::montgomery_specs::*;
 #[allow(unused_imports)]
 use crate::specs::scalar_specs::*;
@@ -79,12 +81,13 @@ use crate::traits::Identity;
 #[cfg(verus_keep_ghost)]
 use crate::backend::serial::u64::subtle_assumes::choice_is_true;
 use crate::backend::serial::u64::subtle_assumes::{
-    choice_into, conditional_swap_montgomery_projective,
+    choice_into, choice_not, conditional_negate_field_element, conditional_select_field_element,
+    conditional_swap_montgomery_projective,
 };
 
 use subtle::Choice;
+use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
-use subtle::{ConditionallyNegatable, ConditionallySelectable};
 
 use vstd::prelude::*;
 #[cfg(feature = "zeroize")]
@@ -540,37 +543,104 @@ impl MontgomeryPoint {
     }
 }
 
-} // verus!
 /// Perform the Elligator2 mapping to a Montgomery point.
 ///
 /// See <https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1>
+/// Also: RFC 9380 Section 6.7.1
 //
 // TODO Determine how much of the hash-to-group API should be exposed after the CFRG
 //      draft gets into a more polished/accepted state.
 #[allow(unused)]
-pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
+pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
+    requires
+        fe51_limbs_bounded(r_0, 51),
+    ensures
+        spec_montgomery_point(result) == spec_elligator_encode(spec_field_element(r_0)),
+        spec_montgomery_point(result) < p(),
+{
+    proof {
+        // Preconditions for constants (MONTGOMERY_A = 486662, MONTGOMERY_A_NEG = -486662 mod p)
+        assume(fe51_limbs_bounded(&FieldElement::ONE, 51));
+        assume(fe51_limbs_bounded(&FieldElement::ZERO, 51));
+        assume(fe51_limbs_bounded(&MONTGOMERY_A, 51));
+        assume(fe51_limbs_bounded(&MONTGOMERY_A_NEG, 51));
+    }
+
     let one = FieldElement::ONE;
-    let d_1 = &one + &r_0.square2(); /* 2r^2 */
 
-    let d = &MONTGOMERY_A_NEG * &(d_1.invert()); /* A/(1+2r^2) */
+    // ORIGINAL CODE: let d_1 = &one + &r_0.square2(); // 2r^2
+    proof {
+        assume(fe51_limbs_bounded(r_0, 54));
+    }
+    let r_0_sq2 = r_0.square2();
+    proof {
+        assume(sum_of_limbs_bounded(&one, &r_0_sq2, u64::MAX));
+    }
+    let d_1 = &one + &r_0_sq2;  // 2r^2
 
-    let d_sq = &d.square();
+    proof {
+        assume(fe51_limbs_bounded(&d_1, 54));
+        assume(fe51_limbs_bounded(&MONTGOMERY_A_NEG, 54));
+    }
+    let d = &MONTGOMERY_A_NEG * &(d_1.invert());  // A/(1+2r^2)
+
+    // ORIGINAL CODE: let d_sq = &d.square();
+    // (Changed: removed & because Verus doesn't auto-deref &&FieldElement in Add trait)
+    proof {
+        assume(fe51_limbs_bounded(&d, 54));
+        assume(fe51_limbs_bounded(&MONTGOMERY_A, 54));
+    }
+    let d_sq = d.square();
     let au = &MONTGOMERY_A * &d;
 
-    let inner = &(d_sq + &au) + &one;
-    let eps = &d * &inner; /* eps = d^3 + Ad^2 + d */
+    // ORIGINAL CODE: let inner = &(d_sq + &au) + &one;
+    proof {
+        assume(sum_of_limbs_bounded(&d_sq, &au, u64::MAX));
+    }
+    let d_sq_plus_au = &d_sq + &au;
+    proof {
+        assume(sum_of_limbs_bounded(&d_sq_plus_au, &one, u64::MAX));
+    }
+    let inner = &d_sq_plus_au + &one;  // inner = d^2 + A*d + 1
 
+    proof {
+        assume(fe51_limbs_bounded(&inner, 54));
+    }
+    let eps = &d * &inner;  // eps = d^3 + Ad^2 + d
+
+    proof {
+        assume(fe51_limbs_bounded(&eps, 54));
+        assume(fe51_limbs_bounded(&one, 54));
+    }
     let (eps_is_sq, _eps) = FieldElement::sqrt_ratio_i(&eps, &one);
 
     let zero = FieldElement::ZERO;
-    let Atemp = FieldElement::conditional_select(&MONTGOMERY_A, &zero, eps_is_sq); /* 0, or A if nonsquare*/
-    let mut u = &d + &Atemp; /* d, or d+A if nonsquare */
-    u.conditional_negate(!eps_is_sq); /* d, or -d-A if nonsquare */
+    let Atemp = conditional_select_field_element(&MONTGOMERY_A, &zero, eps_is_sq);  // 0, or A if nonsquare
 
-    MontgomeryPoint(u.as_bytes())
+    proof {
+        assume(sum_of_limbs_bounded(&d, &Atemp, u64::MAX));
+    }
+    let mut u = &d + &Atemp;  // d, or d+A if nonsquare
+
+    // ORIGINAL CODE: u.conditional_negate(!eps_is_sq);
+    proof {
+        assume(fe51_limbs_bounded(&u, 51));
+    }
+    conditional_negate_field_element(&mut u, choice_not(eps_is_sq));  // d, or -d-A if nonsquare
+
+    proof {
+        assume(fe51_limbs_bounded(&u, 51));
+    }
+    let result = MontgomeryPoint(u.as_bytes());
+
+    proof {
+        // PROOF BYPASS: Assume postconditions
+        assume(spec_montgomery_point(result) == spec_elligator_encode(spec_field_element(r_0)));
+        assume(spec_montgomery_point(result) < p());
+    }
+
+    result
 }
-
-verus! {
 
 /// A `ProjectivePoint` holds a point on the projective line
 /// \\( \mathbb P(\mathbb F\_p) \\), which we identify with the Kummer

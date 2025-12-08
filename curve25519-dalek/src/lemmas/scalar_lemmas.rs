@@ -2031,4 +2031,73 @@ pub proof fn lemma_canonical_bytes_high_bit_clear(bytes: &[u8; 32])
     }
 }
 
+/// Proves that Scalar52::ZERO has bounded limbs (all limbs are 0 < 2^52)
+/// and that its natural number value is 0
+pub proof fn lemma_zero_bounded(z: Scalar52)
+    requires
+        z == (Scalar52 { limbs: [0, 0, 0, 0, 0] }),
+    ensures
+        limbs_bounded(&z),
+        to_nat(&z.limbs) == 0,
+{
+    assert(0u64 < (1u64 << 52)) by (bit_vector);
+
+    // Prove to_nat is 0 for all-zero limbs
+    let seq = z.limbs@.map(|i, x| x as nat);
+    assert(seq =~= seq![0nat, 0nat, 0nat, 0nat, 0nat]);
+
+    reveal_with_fuel(seq_to_nat, 6);
+    assert(seq_to_nat(seq) == 0);
+    assert(to_nat(&z.limbs) == 0);
+}
+
+/// Helper lemma: -(L*q + r) % L == (-r) % L
+proof fn lemma_neg_sum_mod(q: int, r: int, L: int)
+    requires
+        L > 0,
+        0 <= r < L,
+    ensures
+        (-(L * q + r)) % L == (-r) % L,
+{
+    lemma_mod_multiples_vanish(-q, -r, L);
+    vstd::arithmetic::mul::lemma_mul_unary_negation(L, q);
+}
+
+/// Proves that for self_nat and its negation result_nat:
+/// (self_nat + result_nat) % L == 0
+/// where result_nat == (-congruent_to_self) % L and congruent_to_self % L == self_nat % L
+pub proof fn lemma_negation_sums_to_zero(
+    self_nat: nat,
+    congruent_to_self: nat,
+    result_nat: nat,
+    L: nat,
+)
+    requires
+        L > 0,
+        congruent_to_self % L == self_nat % L,
+        result_nat == (-(congruent_to_self as int)) % (L as int),
+        result_nat < L,
+    ensures
+        (self_nat + result_nat) % L == 0,
+{
+    let L_int: int = L as int;
+    let self_mod_L: int = (self_nat % L) as int;
+
+    // (-congruent_to_self) % L == (-self_mod_L) % L
+    let q: int = (congruent_to_self as int) / L_int;
+    lemma_fundamental_div_mod(congruent_to_self as int, L_int);
+    lemma_neg_sum_mod(q, self_mod_L, L_int);
+
+    if self_mod_L == 0 {
+        lemma_small_mod(0nat, L);
+        lemma_mod_multiples_vanish((self_nat as int) / L_int, 0, L_int);
+    } else {
+        lemma_mod_add_multiples_vanish(-self_mod_L, L_int);
+        lemma_small_mod((L_int - self_mod_L) as nat, L);
+        lemma_add_mod_noop(self_nat as int, result_nat as int, L_int);
+        lemma_small_mod(result_nat, L);
+        lemma_mod_self_0(L_int);
+    }
+}
+
 } // verus!

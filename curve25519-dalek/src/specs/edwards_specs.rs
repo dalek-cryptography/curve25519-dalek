@@ -81,7 +81,6 @@ pub open spec fn pow256(n: nat) -> nat {
 /// - table.0[i] contains [1·(16²)^i·B, 2·(16²)^i·B, ..., 8·(16²)^i·B]
 ///
 /// This enables computing [scalar] * B via radix-16 representation of scalar.
-/// Uses is_valid_lookup_table_affine_coords from window.rs
 #[cfg(feature = "precomputed-tables")]
 pub open spec fn is_valid_edwards_basepoint_table(
     table: EdwardsBasepointTable,
@@ -90,7 +89,7 @@ pub open spec fn is_valid_edwards_basepoint_table(
     // Each of the 32 LookupTables contains correct multiples of (16²)^i * B
     forall|i: int|
         #![trigger table.0[i]]
-        0 <= i < 32 ==> crate::window::is_valid_lookup_table_affine_coords(
+        0 <= i < 32 ==> crate::specs::window_specs::is_valid_lookup_table_affine_coords(
             table.0[i].0,
             edwards_scalar_mul(basepoint, pow256(i as nat)),
             8,

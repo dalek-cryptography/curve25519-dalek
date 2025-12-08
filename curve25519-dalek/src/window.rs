@@ -36,62 +36,14 @@ use zeroize::Zeroize;
 use crate::specs::edwards_specs::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::specs::field_specs::*;
+#[allow(unused_imports)] // Used in verus! blocks
+use crate::specs::window_specs::*;
 use vstd::prelude::*;
 
 /* VERIFICATION NOTE: Removed unused impl_lookup_table! macro since LookupTable
 (radix-16) was manually expanded. */
 
 verus! {
-
-/// Spec: Check if a lookup table contains [P, 2P, 3P, ..., size*P] in ProjectiveNiels form
-pub open spec fn is_valid_lookup_table_projective<const N: usize>(
-    table: [ProjectiveNielsPoint; N],
-    P: EdwardsPoint,
-    size: nat,
-) -> bool {
-    &&& table.len() == size
-    &&& forall|j: int|
-        0 <= j < size ==> projective_niels_point_as_affine_edwards(#[trigger] table[j])
-            == edwards_scalar_mul(edwards_point_as_affine(P), (j + 1) as nat)
-}
-
-/// Spec: All entries in a ProjectiveNiels lookup table have bounded limbs
-pub open spec fn lookup_table_projective_limbs_bounded<const N: usize>(
-    table: [ProjectiveNielsPoint; N],
-) -> bool {
-    forall|j: int|
-        0 <= j < table.len() ==> {
-            let entry = #[trigger] table[j];
-            fe51_limbs_bounded(&entry.Y_plus_X, 54) && fe51_limbs_bounded(&entry.Y_minus_X, 54)
-                && fe51_limbs_bounded(&entry.Z, 54) && fe51_limbs_bounded(&entry.T2d, 54)
-        }
-}
-
-/// Spec: Check if a lookup table contains [P, 2P, 3P, ..., size*P] in AffineNiels form
-/// where P is given as affine coordinates (nat, nat).
-pub open spec fn is_valid_lookup_table_affine_coords<const N: usize>(
-    table: [AffineNielsPoint; N],
-    basepoint: (nat, nat),
-    size: nat,
-) -> bool {
-    &&& table.len() == size
-    &&& forall|j: int|
-        #![trigger table[j]]
-        0 <= j < size ==> affine_niels_point_as_affine_edwards(table[j]) == edwards_scalar_mul(
-            basepoint,
-            (j + 1) as nat,
-        )
-}
-
-/// Spec: Check if a lookup table contains [P, 2P, 3P, ..., size*P] in AffineNiels form
-/// Wrapper that takes an EdwardsPoint and extracts affine coords.
-pub open spec fn is_valid_lookup_table_affine<const N: usize>(
-    table: [AffineNielsPoint; N],
-    P: EdwardsPoint,
-    size: nat,
-) -> bool {
-    is_valid_lookup_table_affine_coords(table, edwards_point_as_affine(P), size)
-}
 
 /* VERIFICATION NOTE: Manually expanded impl_lookup_table! macro for radix-16 (LookupTable).
    Removed macro invocations for radix-32, 64, 128, 256 variants to focus verification
@@ -106,7 +58,6 @@ impl_lookup_table! {
     ConversionRange = 0..7
    }
 */
-
 /// A lookup table of precomputed multiples of a point \\(P\\), used to
 /// compute \\( xP \\) for \\( -8 \leq x \leq 8 \\).
 ///
@@ -329,38 +280,14 @@ impl<T: Debug> Debug for LookupTable<T> {
     }
 }
 
-/// Spec for From<&EdwardsPoint> conversion for ProjectiveNiels lookup table
-#[cfg(verus_keep_ghost)]
-impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a EdwardsPoint> for LookupTable<
-    ProjectiveNielsPoint,
-> {
-    //impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
-    open spec fn obeys_from_spec() -> bool {
-        false
-    }
-
-    /* VERIFICTATION NOTE: this not supported in Verus
-
-    open spec fn from_req(P: &'a EdwardsPoint) -> bool {
-        // Preconditions needed for table construction
-        fe51_limbs_bounded(&P.X, 54) && fe51_limbs_bounded(&P.Y, 54) && fe51_limbs_bounded(&P.Z, 54)
-            && fe51_limbs_bounded(&P.T, 54)
-    }
-*/
-    open spec fn from_spec(P: &'a EdwardsPoint) -> Self {
-        arbitrary()  // conditions specified in the ensures clause of the from function
-
-    }
-}
-
 impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
     /// Create a lookup table from an EdwardsPoint
     /// Constructs [P, 2P, 3P, ..., Size*P]
     fn from(P: &'a EdwardsPoint) -> (result:
-        Self)/*
-    VERIFICATION NOTE: similar to Add and Mul traits,
-    we want from_req from above to apply here, but Verus does not yet support this
-    */
+        Self)/* Expected requires (if Verus supported from_req):
+            edwards_point_limbs_bounded(*P),
+            edwards_point_sum_bounded(*P),
+        */
 
         ensures
             is_valid_lookup_table_projective(result.0, *P, 8 as nat),
@@ -377,7 +304,7 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
 
         In our instantiation we have $name = LookupTable, $size = 8, and conv_range = 0..7.
         */
-        // Assume preconditions from FromSpecImpl::from_spec_req
+        // Preconditions assumed here since Verus does not support from_req
         proof {
             assume(edwards_point_limbs_bounded(*P));
             assume(edwards_point_sum_bounded(*P));
@@ -422,36 +349,13 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
     }
 }
 
-/// Spec for From<&EdwardsPoint> conversion for AffineNiels lookup table
-#[cfg(verus_keep_ghost)]
-impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a EdwardsPoint> for LookupTable<
-    AffineNielsPoint,
-> {
-    open spec fn obeys_from_spec() -> bool {
-        false
-    }
-
-    /* VERIFICTATION NOTE: this not supported in Verus
-    open spec fn from_req(P: &'a EdwardsPoint) -> bool {
-        // Preconditions needed for table construction
-        fe51_limbs_bounded(&P.X, 54) && fe51_limbs_bounded(&P.Y, 54) && fe51_limbs_bounded(&P.Z, 54)
-            && fe51_limbs_bounded(&P.T, 54)
-    }
-*/
-    open spec fn from_spec(P: &'a EdwardsPoint) -> Self {
-        arbitrary()  // conditions specified in the ensures clause of the from function
-
-    }
-}
-
 impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
     /// Create a lookup table from an EdwardsPoint (affine version)
     /// Constructs [P, 2P, 3P, ..., Size*P]
     fn from(P: &'a EdwardsPoint) -> (result:
-        Self)/*
-    VERIFICATION NOTE: similar to Add and Mul traits,
-    we want from_req from above to apply here, but Verus does not yet support this
-    */
+        Self)/* Expected requires (if Verus supported from_req):
+            edwards_point_limbs_bounded(*P),
+        */
 
         ensures
             is_valid_lookup_table_affine(result.0, *P, 8 as nat),
@@ -467,7 +371,7 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
 
         In our instantiation we have $name = LookupTable, $size = 8, and conv_range = 0..7.
         */
-        // Assume preconditions from FromSpecImpl::from_spec_req
+        // Preconditions assumed here since Verus does not support from_req
         proof {
             assume(edwards_point_limbs_bounded(*P));
         }
@@ -528,17 +432,89 @@ cfg_if! {
     }
 }
 
+verus! {
+
 /// Holds odd multiples 1A, 3A, ..., 15A of a point A.
-#[derive(Copy, Clone)]
-pub(crate) struct NafLookupTable5<T>(pub(crate) [T; 8]);
+/* VERIFICATION NOTE:
+   - Changed from pub(crate) to pub to allow Verus verification
+     of requires/ensures clauses that reference self.0.
+   - Removed Clone from #[derive(Copy, Clone)] because Verus does not support
+     autoderive Clone for arrays. Manual Clone impl provided outside verus! macro.
 
-impl<T: Copy> NafLookupTable5<T> {
+   ORIGINAL CODE:
+   #[derive(Copy, Clone)]
+   pub(crate) struct NafLookupTable5<T>(pub(crate) [T; 8]);
+*/
+#[derive(Copy)]
+pub struct NafLookupTable5<T>(pub [T; 8]);
+
+/* VERIFICATION NOTE: Replaced generic NafLookupTable5<T>::select with concrete implementations
+   to allow type-specific specs.
+
+   ORIGINAL CODE:
+   impl<T: Copy> NafLookupTable5<T> {
+       pub fn select(&self, x: usize) -> T {
+           debug_assert_eq!(x & 1, 1);
+           debug_assert!(x < 16);
+           self.0[x / 2]
+       }
+   }
+*/
+
+/// Concrete select implementation for NafLookupTable5<ProjectiveNielsPoint>
+impl NafLookupTable5<ProjectiveNielsPoint> {
     /// Given public, odd \\( x \\) with \\( 0 < x < 2^4 \\), return \\(xA\\).
-    pub fn select(&self, x: usize) -> T {
-        debug_assert_eq!(x & 1, 1);
-        debug_assert!(x < 16);
-
+    /// Table stores [1A, 3A, 5A, 7A, 9A, 11A, 13A, 15A], so table[x/2] = x*A.
+    pub fn select(&self, x: usize) -> (result: ProjectiveNielsPoint)
+        requires
+            x & 1 == 1,  // x is odd
+            x < 16,  // x in {1, 3, 5, 7, 9, 11, 13, 15}
+            naf_lookup_table5_projective_limbs_bounded(self.0),
+        ensures
+            result == self.0[(x / 2) as int],
+            fe51_limbs_bounded(&result.Y_plus_X, 54),
+            fe51_limbs_bounded(&result.Y_minus_X, 54),
+            fe51_limbs_bounded(&result.Z, 54),
+            fe51_limbs_bounded(&result.T2d, 54),
+    {
+        #[cfg(not(verus_keep_ghost))]
+        {
+            debug_assert_eq!(x & 1, 1);
+            debug_assert!(x < 16);
+        }
         self.0[x / 2]
+    }
+}
+
+/// Concrete select implementation for NafLookupTable5<AffineNielsPoint>
+impl NafLookupTable5<AffineNielsPoint> {
+    /// Given public, odd \\( x \\) with \\( 0 < x < 2^4 \\), return \\(xA\\).
+    /// Table stores [1A, 3A, 5A, 7A, 9A, 11A, 13A, 15A], so table[x/2] = x*A.
+    pub fn select(&self, x: usize) -> (result: AffineNielsPoint)
+        requires
+            x & 1 == 1,  // x is odd
+            x < 16,  // x in {1, 3, 5, 7, 9, 11, 13, 15}
+            naf_lookup_table5_affine_limbs_bounded(self.0),
+        ensures
+            result == self.0[(x / 2) as int],
+            fe51_limbs_bounded(&result.y_plus_x, 54),
+            fe51_limbs_bounded(&result.y_minus_x, 54),
+            fe51_limbs_bounded(&result.xy2d, 54),
+    {
+        #[cfg(not(verus_keep_ghost))]
+        {
+            debug_assert_eq!(x & 1, 1);
+            debug_assert!(x < 16);
+        }
+        self.0[x / 2]
+    }
+}
+
+} // verus!
+// Manual Clone impl since derive(Clone) is not supported inside verus macro for arrays
+impl<T: Copy> Clone for NafLookupTable5<T> {
+    fn clone(&self) -> Self {
+        *self
     }
 }
 
@@ -548,43 +524,215 @@ impl<T: Debug> Debug for NafLookupTable5<T> {
     }
 }
 
+verus! {
+
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<ProjectiveNielsPoint> {
-    fn from(A: &'a EdwardsPoint) -> Self {
-        let mut Ai = [A.as_projective_niels(); 8];
+    /// Create a NAF lookup table from an EdwardsPoint
+    /// Constructs [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A] (odd multiples)
+    fn from(A: &'a EdwardsPoint) -> (result:
+        Self)/* Expected requires (if Verus supported from_req):
+            edwards_point_limbs_bounded(*A),
+            edwards_point_sum_bounded(*A),
+            is_valid_edwards_point(*A),
+        */
+
+        ensures
+            is_valid_naf_lookup_table5_projective(result.0, *A),
+            naf_lookup_table5_projective_limbs_bounded(result.0),
+    {
+        // Preconditions assumed here since Verus does not support from_req
+        proof {
+            assume(edwards_point_limbs_bounded(*A));
+            assume(edwards_point_sum_bounded(*A));
+            assume(is_valid_edwards_point(*A));
+        }
+
+        let mut Ai = [A.as_projective_niels();8];
         let A2 = A.double();
+
         for i in 0..7 {
-            Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_projective_niels();
+            proof {
+                // A2 is 2*A, need to be well-formed for addition
+                assume(is_well_formed_edwards_point(A2));
+                assume(fe51_limbs_bounded(&&Ai[i as int].Y_plus_X, 54));
+                assume(fe51_limbs_bounded(&&Ai[i as int].Y_minus_X, 54));
+                assume(fe51_limbs_bounded(&&Ai[i as int].Z, 54));
+                assume(fe51_limbs_bounded(&&Ai[i as int].T2d, 54));
+            }
+            // ORIGINAL CODE: Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_projective_niels();
+            let sum = &A2 + &Ai[i];
+            proof {
+                assume(fe51_limbs_bounded(&sum.X, 54));
+                assume(fe51_limbs_bounded(&sum.Y, 54));
+                assume(fe51_limbs_bounded(&sum.Z, 54));
+                assume(fe51_limbs_bounded(&sum.T, 54));
+            }
+            let extended = sum.as_extended();
+            proof {
+                assume(edwards_point_limbs_bounded(extended));
+                assume(edwards_point_sum_bounded(extended));
+            }
+            Ai[i + 1] = extended.as_projective_niels();
         }
         // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
-        NafLookupTable5(Ai)
+        let result = NafLookupTable5(Ai);
+        proof {
+            assume(is_valid_naf_lookup_table5_projective(result.0, *A));
+            assume(naf_lookup_table5_projective_limbs_bounded(result.0));
+        }
+        result
     }
 }
 
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<AffineNielsPoint> {
-    fn from(A: &'a EdwardsPoint) -> Self {
-        let mut Ai = [A.as_affine_niels(); 8];
+    /// Create a NAF lookup table from an EdwardsPoint
+    /// Constructs [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A] (odd multiples)
+    fn from(A: &'a EdwardsPoint) -> (result:
+        Self)/* Expected requires (if Verus supported from_req):
+            edwards_point_limbs_bounded(*A),
+            edwards_point_sum_bounded(*A),
+            is_valid_edwards_point(*A),
+        */
+
+        ensures
+            is_valid_naf_lookup_table5_affine(result.0, *A),
+            naf_lookup_table5_affine_limbs_bounded(result.0),
+    {
+        // Preconditions assumed here since Verus does not support from_req
+        proof {
+            assume(edwards_point_limbs_bounded(*A));
+            assume(edwards_point_sum_bounded(*A));
+            assume(is_valid_edwards_point(*A));
+        }
+
+        let mut Ai = [A.as_affine_niels();8];
         let A2 = A.double();
+
         for i in 0..7 {
-            Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_affine_niels();
+            proof {
+                // A2 is 2*A, need to be well-formed for addition
+                assume(is_well_formed_edwards_point(A2));
+                // Additional requirement for EdwardsPoint + AffineNielsPoint
+                assume(sum_of_limbs_bounded(&A2.Z, &A2.Z, u64::MAX));
+                assume(fe51_limbs_bounded(&&Ai[i as int].y_plus_x, 54));
+                assume(fe51_limbs_bounded(&&Ai[i as int].y_minus_x, 54));
+                assume(fe51_limbs_bounded(&&Ai[i as int].xy2d, 54));
+            }
+            // ORIGINAL CODE: Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_affine_niels();
+            let sum = &A2 + &Ai[i];
+            proof {
+                assume(fe51_limbs_bounded(&sum.X, 54));
+                assume(fe51_limbs_bounded(&sum.Y, 54));
+                assume(fe51_limbs_bounded(&sum.Z, 54));
+                assume(fe51_limbs_bounded(&sum.T, 54));
+            }
+            let extended = sum.as_extended();
+            proof {
+                assume(edwards_point_limbs_bounded(extended));
+                assume(edwards_point_sum_bounded(extended));
+            }
+            Ai[i + 1] = extended.as_affine_niels();
         }
         // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
-        NafLookupTable5(Ai)
+        let result = NafLookupTable5(Ai);
+        proof {
+            assume(is_valid_naf_lookup_table5_affine(result.0, *A));
+            assume(naf_lookup_table5_affine_limbs_bounded(result.0));
+        }
+        result
     }
 }
 
+} // verus!
+verus! {
+
 /// Holds stuff up to 8. The only time we use tables this big is for precomputed basepoint tables
 /// and multiscalar multiplication (which requires alloc).
-#[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
-#[derive(Copy, Clone)]
-pub(crate) struct NafLookupTable8<T>(pub(crate) [T; 64]);
+/* VERIFICATION NOTE:
+   - Changed from pub(crate) to pub to allow Verus verification
+     of requires/ensures clauses that reference self.0.
+   - Removed Clone from #[derive(Copy, Clone)] because Verus does not support
+     autoderive Clone for arrays. Manual Clone impl provided outside verus! macro.
 
+   ORIGINAL CODE:
+   #[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
+   #[derive(Copy, Clone)]
+   pub(crate) struct NafLookupTable8<T>(pub(crate) [T; 64]);
+*/
 #[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
-impl<T: Copy> NafLookupTable8<T> {
-    pub fn select(&self, x: usize) -> T {
-        debug_assert_eq!(x & 1, 1);
-        debug_assert!(x < 128);
+#[derive(Copy)]
+pub struct NafLookupTable8<T>(pub [T; 64]);
 
+/* VERIFICATION NOTE: Replaced generic NafLookupTable8<T>::select with concrete implementations
+   to allow type-specific specs.
+
+   ORIGINAL CODE:
+   impl<T: Copy> NafLookupTable8<T> {
+       pub fn select(&self, x: usize) -> T {
+           debug_assert_eq!(x & 1, 1);
+           debug_assert!(x < 128);
+           self.0[x / 2]
+       }
+   }
+*/
+
+/// Concrete select implementation for NafLookupTable8<ProjectiveNielsPoint>
+#[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
+impl NafLookupTable8<ProjectiveNielsPoint> {
+    /// Given public, odd \\( x \\) with \\( 0 < x < 2^7 \\), return \\(xA\\).
+    /// Table stores [1A, 3A, 5A, ..., 127A], so table[x/2] = x*A.
+    pub fn select(&self, x: usize) -> (result: ProjectiveNielsPoint)
+        requires
+            x & 1 == 1,  // x is odd
+            x < 128,  // x in {1, 3, 5, ..., 127}
+            naf_lookup_table8_projective_limbs_bounded(self.0),
+        ensures
+            result == self.0[(x / 2) as int],
+            fe51_limbs_bounded(&result.Y_plus_X, 54),
+            fe51_limbs_bounded(&result.Y_minus_X, 54),
+            fe51_limbs_bounded(&result.Z, 54),
+            fe51_limbs_bounded(&result.T2d, 54),
+    {
+        #[cfg(not(verus_keep_ghost))]
+        {
+            debug_assert_eq!(x & 1, 1);
+            debug_assert!(x < 128);
+        }
         self.0[x / 2]
+    }
+}
+
+/// Concrete select implementation for NafLookupTable8<AffineNielsPoint>
+#[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
+impl NafLookupTable8<AffineNielsPoint> {
+    /// Given public, odd \\( x \\) with \\( 0 < x < 2^7 \\), return \\(xA\\).
+    /// Table stores [1A, 3A, 5A, ..., 127A], so table[x/2] = x*A.
+    pub fn select(&self, x: usize) -> (result: AffineNielsPoint)
+        requires
+            x & 1 == 1,  // x is odd
+            x < 128,  // x in {1, 3, 5, ..., 127}
+            naf_lookup_table8_affine_limbs_bounded(self.0),
+        ensures
+            result == self.0[(x / 2) as int],
+            fe51_limbs_bounded(&result.y_plus_x, 54),
+            fe51_limbs_bounded(&result.y_minus_x, 54),
+            fe51_limbs_bounded(&result.xy2d, 54),
+    {
+        #[cfg(not(verus_keep_ghost))]
+        {
+            debug_assert_eq!(x & 1, 1);
+            debug_assert!(x < 128);
+        }
+        self.0[x / 2]
+    }
+}
+
+} // verus!
+// Manual Clone impl since derive(Clone) is not supported inside verus macro for arrays
+#[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
+impl<T: Copy> Clone for NafLookupTable8<T> {
+    fn clone(&self) -> Self {
+        *self
     }
 }
 
@@ -599,28 +747,125 @@ impl<T: Debug> Debug for NafLookupTable8<T> {
     }
 }
 
+verus! {
+
 #[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint> {
-    fn from(A: &'a EdwardsPoint) -> Self {
-        let mut Ai = [A.as_projective_niels(); 64];
+    /// Create a NAF lookup table from an EdwardsPoint
+    /// Constructs [A, 3A, 5A, 7A, ..., 127A] (odd multiples)
+    fn from(A: &'a EdwardsPoint) -> (result:
+        Self)/* Expected requires (if Verus supported from_req):
+            edwards_point_limbs_bounded(*A),
+            edwards_point_sum_bounded(*A),
+            is_valid_edwards_point(*A),
+        */
+
+        ensures
+            is_valid_naf_lookup_table8_projective(result.0, *A),
+            naf_lookup_table8_projective_limbs_bounded(result.0),
+    {
+        // Preconditions assumed here since Verus does not support from_req
+        proof {
+            assume(edwards_point_limbs_bounded(*A));
+            assume(edwards_point_sum_bounded(*A));
+            assume(is_valid_edwards_point(*A));
+        }
+
+        let mut Ai = [A.as_projective_niels();64];
         let A2 = A.double();
+
         for i in 0..63 {
-            Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_projective_niels();
+            proof {
+                // A2 is 2*A, need to be well-formed for addition
+                assume(is_well_formed_edwards_point(A2));
+                assume(fe51_limbs_bounded(&&Ai[i as int].Y_plus_X, 54));
+                assume(fe51_limbs_bounded(&&Ai[i as int].Y_minus_X, 54));
+                assume(fe51_limbs_bounded(&&Ai[i as int].Z, 54));
+                assume(fe51_limbs_bounded(&&Ai[i as int].T2d, 54));
+            }
+            // ORIGINAL CODE: Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_projective_niels();
+            let sum = &A2 + &Ai[i];
+            proof {
+                assume(fe51_limbs_bounded(&sum.X, 54));
+                assume(fe51_limbs_bounded(&sum.Y, 54));
+                assume(fe51_limbs_bounded(&sum.Z, 54));
+                assume(fe51_limbs_bounded(&sum.T, 54));
+            }
+            let extended = sum.as_extended();
+            proof {
+                assume(edwards_point_limbs_bounded(extended));
+                assume(edwards_point_sum_bounded(extended));
+            }
+            Ai[i + 1] = extended.as_projective_niels();
         }
         // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A, ..., 127A]
-        NafLookupTable8(Ai)
+        let result = NafLookupTable8(Ai);
+        proof {
+            assume(is_valid_naf_lookup_table8_projective(result.0, *A));
+            assume(naf_lookup_table8_projective_limbs_bounded(result.0));
+        }
+        result
     }
 }
 
 #[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<AffineNielsPoint> {
-    fn from(A: &'a EdwardsPoint) -> Self {
-        let mut Ai = [A.as_affine_niels(); 64];
+    /// Create a NAF lookup table from an EdwardsPoint
+    /// Constructs [A, 3A, 5A, 7A, ..., 127A] (odd multiples)
+    fn from(A: &'a EdwardsPoint) -> (result:
+        Self)/* Expected requires (if Verus supported from_req):
+            edwards_point_limbs_bounded(*A),
+            edwards_point_sum_bounded(*A),
+            is_valid_edwards_point(*A),
+        */
+
+        ensures
+            is_valid_naf_lookup_table8_affine(result.0, *A),
+            naf_lookup_table8_affine_limbs_bounded(result.0),
+    {
+        // Preconditions assumed here since Verus does not support from_req
+        proof {
+            assume(edwards_point_limbs_bounded(*A));
+            assume(edwards_point_sum_bounded(*A));
+            assume(is_valid_edwards_point(*A));
+        }
+
+        let mut Ai = [A.as_affine_niels();64];
         let A2 = A.double();
+
         for i in 0..63 {
-            Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_affine_niels();
+            proof {
+                // A2 is 2*A, need to be well-formed for addition
+                assume(is_well_formed_edwards_point(A2));
+                // Additional requirement for EdwardsPoint + AffineNielsPoint
+                assume(sum_of_limbs_bounded(&A2.Z, &A2.Z, u64::MAX));
+                assume(fe51_limbs_bounded(&&Ai[i as int].y_plus_x, 54));
+                assume(fe51_limbs_bounded(&&Ai[i as int].y_minus_x, 54));
+                assume(fe51_limbs_bounded(&&Ai[i as int].xy2d, 54));
+            }
+            // ORIGINAL CODE: Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_affine_niels();
+            let sum = &A2 + &Ai[i];
+            proof {
+                assume(fe51_limbs_bounded(&sum.X, 54));
+                assume(fe51_limbs_bounded(&sum.Y, 54));
+                assume(fe51_limbs_bounded(&sum.Z, 54));
+                assume(fe51_limbs_bounded(&sum.T, 54));
+            }
+            let extended = sum.as_extended();
+            proof {
+                assume(edwards_point_limbs_bounded(extended));
+                assume(edwards_point_sum_bounded(extended));
+            }
+            Ai[i + 1] = extended.as_affine_niels();
         }
         // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A, ..., 127A]
-        NafLookupTable8(Ai)
+        let result = NafLookupTable8(Ai);
+        proof {
+            assume(is_valid_naf_lookup_table8_affine(result.0, *A));
+            assume(naf_lookup_table8_affine_limbs_bounded(result.0));
+        }
+        result
     }
 }
+
+} // verus!

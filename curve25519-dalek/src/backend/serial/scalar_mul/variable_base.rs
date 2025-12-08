@@ -16,7 +16,7 @@ use crate::specs::field_specs::{fe51_limbs_bounded, sum_of_limbs_bounded};
 #[cfg(verus_keep_ghost)]
 use crate::specs::scalar_specs::{radix_16_all_bounded, radix_16_digit_bounded, spec_scalar};
 #[cfg(verus_keep_ghost)]
-use crate::window::lookup_table_projective_limbs_bounded;
+use crate::specs::window_specs::lookup_table_projective_limbs_bounded;
 
 use vstd::prelude::*;
 

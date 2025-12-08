@@ -58,10 +58,8 @@ UnpackedScalar::invert(&self),curve25519_dalek::scalar,UnpackedScalar
 clamp_integer([u8; 32]),curve25519_dalek::scalar,
 NafLookupTable5<ProjectiveNielsPoint>::select(usize),curve25519_dalek::window,NafLookupTable5<ProjectiveNielsPoint>
 NafLookupTable5<AffineNielsPoint>::select(usize),curve25519_dalek::window,NafLookupTable5<AffineNielsPoint>
-NafLookupTable5::fmt(&core),curve25519_dalek::window,Debug for NafLookupTable5<T>
 NafLookupTable8<ProjectiveNielsPoint>::select(usize),curve25519_dalek::window,NafLookupTable8<ProjectiveNielsPoint>
 NafLookupTable8<AffineNielsPoint>::select(usize),curve25519_dalek::window,NafLookupTable8<AffineNielsPoint>
-NafLookupTable8::fmt(&core),curve25519_dalek::window,Debug for NafLookupTable8<T>
 NafLookupTable5::from(&EdwardsPoint),curve25519_dalek::window,From<&'a EdwardsPoint> for NafLookupTable5<ProjectiveNielsPoint>
 NafLookupTable5::from(&EdwardsPoint),curve25519_dalek::window,From<&'a EdwardsPoint> for NafLookupTable5<AffineNielsPoint>
 NafLookupTable8::from(&EdwardsPoint),curve25519_dalek::window,From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint>

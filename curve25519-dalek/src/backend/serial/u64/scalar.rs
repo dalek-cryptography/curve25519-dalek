@@ -1187,6 +1187,8 @@ impl Scalar52 {
             limbs_bounded(&result),
             (to_nat(&result.limbs) * montgomery_radix()) % group_order() == to_nat(&self.limbs)
                 % group_order(),
+            // Result is canonical (< group_order). This follows from montgomery_reduce's postcondition
+            to_nat(&result.limbs) < group_order(),
     {
         let mut limbs = [0u128;9];
         #[allow(clippy::needless_range_loop)]

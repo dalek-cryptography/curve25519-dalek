@@ -1126,4 +1126,74 @@ pub proof fn lemma_modular_power_addition(x: nat, a: nat, b: nat, m: nat)
     // The int-level equality now carries over to the nat-level postcondition ✓
 }
 
+pub proof fn lemma_pow2_distributivity_over_word(
+    word: nat,
+    byte0: nat,
+    byte1: nat,
+    byte2: nat,
+    byte3: nat,
+    byte4: nat,
+    byte5: nat,
+    byte6: nat,
+    byte7: nat,
+    exp: nat,
+)
+    requires
+        word == byte0 * pow2(0) + byte1 * pow2(8) + byte2 * pow2(16) + byte3 * pow2(24) + byte4
+            * pow2(32) + byte5 * pow2(40) + byte6 * pow2(48) + byte7 * pow2(56),
+    ensures
+        word * pow2(exp) == byte0 * pow2(exp) + byte1 * pow2(exp + 8) + byte2 * pow2(exp + 16)
+            + byte3 * pow2(exp + 24) + byte4 * pow2(exp + 32) + byte5 * pow2(exp + 40) + byte6
+            * pow2(exp + 48) + byte7 * pow2(exp + 56),
+{
+    // Step 1: Apply distributivity over the sum
+    let x1 = (byte0 * pow2(0)) as int;
+    let x2 = (byte1 * pow2(8)) as int;
+    let x3 = (byte2 * pow2(16)) as int;
+    let x4 = (byte3 * pow2(24)) as int;
+    let x5 = (byte4 * pow2(32)) as int;
+    let x6 = (byte5 * pow2(40)) as int;
+    let x7 = (byte6 * pow2(48)) as int;
+    let x8 = (byte7 * pow2(56)) as int;
+
+    lemma_mul_distributive_8_terms(pow2(exp) as int, x1, x2, x3, x4, x5, x6, x7, x8);
+
+    assert(word * pow2(exp) == byte0 * pow2(0) * pow2(exp) + byte1 * pow2(8) * pow2(exp) + byte2
+        * pow2(16) * pow2(exp) + byte3 * pow2(24) * pow2(exp) + byte4 * pow2(32) * pow2(exp) + byte5
+        * pow2(40) * pow2(exp) + byte6 * pow2(48) * pow2(exp) + byte7 * pow2(56) * pow2(exp));
+
+    // Step 2: Simplify each term using pow2(a) * pow2(b) == pow2(a+b)
+    lemma_pow2_adds(0, exp);
+    lemma_mul_is_associative(byte0 as int, pow2(0) as int, pow2(exp) as int);
+    assert(byte0 * pow2(0) * pow2(exp) == byte0 * pow2(exp));
+
+    lemma_pow2_adds(8, exp);
+    lemma_mul_is_associative(byte1 as int, pow2(8) as int, pow2(exp) as int);
+    assert(byte1 * pow2(8) * pow2(exp) == byte1 * pow2(exp + 8));
+
+    lemma_pow2_adds(16, exp);
+    lemma_mul_is_associative(byte2 as int, pow2(16) as int, pow2(exp) as int);
+    assert(byte2 * pow2(16) * pow2(exp) == byte2 * pow2(exp + 16));
+
+    lemma_pow2_adds(24, exp);
+    lemma_mul_is_associative(byte3 as int, pow2(24) as int, pow2(exp) as int);
+    assert(byte3 * pow2(24) * pow2(exp) == byte3 * pow2(exp + 24));
+
+    lemma_pow2_adds(32, exp);
+    lemma_mul_is_associative(byte4 as int, pow2(32) as int, pow2(exp) as int);
+    assert(byte4 * pow2(32) * pow2(exp) == byte4 * pow2(exp + 32));
+
+    lemma_pow2_adds(40, exp);
+    lemma_mul_is_associative(byte5 as int, pow2(40) as int, pow2(exp) as int);
+    assert(byte5 * pow2(40) * pow2(exp) == byte5 * pow2(exp + 40));
+
+    lemma_pow2_adds(48, exp);
+    lemma_mul_is_associative(byte6 as int, pow2(48) as int, pow2(exp) as int);
+    assert(byte6 * pow2(48) * pow2(exp) == byte6 * pow2(exp + 48));
+
+    lemma_pow2_adds(56, exp);
+    lemma_mul_is_associative(byte7 as int, pow2(56) as int, pow2(exp) as int);
+    assert(byte7 * pow2(56) * pow2(exp) == byte7 * pow2(exp + 56));
+}
+
 } // verus!

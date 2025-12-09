@@ -37,6 +37,8 @@ use crate::lemmas::field_lemmas::load8_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::montgomery_lemmas::*;
 #[allow(unused_imports)]
+use crate::lemmas::scalar_byte_lemmas::bytes_to_scalar_lemmas::*;
+#[allow(unused_imports)]
 use crate::lemmas::scalar_byte_lemmas::scalar_to_bytes_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::scalar_lemmas::*;
@@ -139,28 +141,45 @@ impl Scalar52 {
         let mut words = [0u64;4];
         for i in 0..4
             invariant
-                0 <= i <= 4  // proof
-                ,
+                0 <= i <= 4,
+                forall|i2: int| i <= i2 < 4 ==> words[i2] == 0,
+                forall|i2: int|
+                    0 <= i2 < i ==> (words[i2] == bytes_seq_to_nat_clear_aux(
+                        Seq::new(8, |j: int| bytes[i2 * 8 + j]),
+                        8,
+                    )),
         {
+            proof {
+                assert(words[i as int] == 0);
+                lemma_pow2_pos(0)
+            }
+
             for j in 0..8
                 invariant
-                    0 <= j <= 8 && i < 4,
+                    0 <= j <= 8 && 0 <= i < 4,
+                    words[i as int] < pow2(j as nat * 8),
+                    forall|i2: int| i + 1 <= i2 < 4 ==> words[i2] == 0,
+                    words[i as int] == bytes_seq_to_nat_clear_aux(
+                        Seq::new(8, |j2: int| bytes[i as int * 8 + j2]),
+                        j as nat,
+                    ),
+                    forall|i2: int|
+                        0 <= i2 < i ==> ((words[i2] as nat) == bytes_seq_to_nat_clear_aux(
+                            Seq::new(8, |j: int| bytes[i2 * 8 + j]),
+                            8,
+                        )),
             {
                 proof {
-                    assert(i < 4 && j < 8);
-                    assert((i as u64) * 8u64 < 32u64);
-                    let idx = (i as u64) * 8 + (j as u64);
-                    assert(idx < 32);
+                    lemma_byte_to_word_step(*bytes, words, i, j);
                 }
                 words[i] |= (bytes[(i * 8) + j] as u64) << (j * 8);
             }
         }
-        //TODO: prove that bytes_to_nat(bytes) == words_to_nat(&words)
-        assume(bytes_to_nat(bytes) == words_to_nat(&words));
+
         proof {
+            lemma_bytes_to_word_equivalence(bytes, words);
             assert(1u64 << 52 > 0) by (bit_vector);
             assert(1u64 << 48 > 0) by (bit_vector);
-            // TODO: prove property about words array
         }
 
         let mask = (1u64 << 52) - 1;
@@ -173,7 +192,10 @@ impl Scalar52 {
         s.limbs[3] = ((words[2] >> 28) | (words[3] << 36)) & mask;
         s.limbs[4] = (words[3] >> 16) & top_mask;
 
-        assume(false);  // TODO: complete the proof
+        proof {
+            lemma_words_to_scalar(words, s, mask, top_mask);
+            assert(bytes_to_nat(bytes) == to_nat(&s.limbs));
+        }
 
         s
     }

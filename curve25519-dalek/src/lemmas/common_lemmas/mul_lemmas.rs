@@ -200,4 +200,36 @@ pub proof fn lemma_mul_quad_prod(a1: int, b1: int, a2: int, b2: int)
     lemma_mul_is_associative(a2 * a1, b1, b2);
 }
 
+pub proof fn lemma_mul_commutative_8_terms(
+    a0: int,
+    b0: int,
+    a1: int,
+    b1: int,
+    a2: int,
+    b2: int,
+    a3: int,
+    b3: int,
+    a4: int,
+    b4: int,
+    a5: int,
+    b5: int,
+    a6: int,
+    b6: int,
+    a7: int,
+    b7: int,
+)
+    ensures
+        a0 * b0 + a1 * b1 + a2 * b2 + a3 * b3 + a4 * b4 + a5 * b5 + a6 * b6 + a7 * b7 == b0 * a0
+            + b1 * a1 + b2 * a2 + b3 * a3 + b4 * a4 + b5 * a5 + b6 * a6 + b7 * a7,
+{
+    lemma_mul_is_commutative(a0, b0);
+    lemma_mul_is_commutative(a1, b1);
+    lemma_mul_is_commutative(a2, b2);
+    lemma_mul_is_commutative(a3, b3);
+    lemma_mul_is_commutative(a4, b4);
+    lemma_mul_is_commutative(a5, b5);
+    lemma_mul_is_commutative(a6, b6);
+    lemma_mul_is_commutative(a7, b7);
+}
+
 } // verus!

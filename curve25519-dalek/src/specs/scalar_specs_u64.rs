@@ -99,6 +99,21 @@ pub open spec fn bytes_seq_to_nat(bytes: Seq<u8>) -> nat
     }
 }
 
+/// Little-endian natural value of first j bytes of a sequence
+/// Used for incremental byte-to-word conversion proofs
+pub open spec fn bytes_seq_to_nat_clear_aux(bytes: Seq<u8>, j: nat) -> nat
+    recommends
+        j <= bytes.len(),
+    decreases j,
+{
+    if j == 0 {
+        0
+    } else {
+        let j1: nat = (j - 1) as nat;
+        bytes_seq_to_nat_clear_aux(bytes, j1) + pow2(((j1) * 8) as nat) * bytes[j1 as int] as nat
+    }
+}
+
 // Generic function to convert array of words to natural number
 // Takes: array of words, number of words, bits per word
 // Note: This is a specification function that works with concrete types

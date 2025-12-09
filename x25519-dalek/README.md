@@ -110,13 +110,14 @@ x25519-dalek = "3.0.0-pre.3"
 
 This crate is `#[no_std]` compatible with `default-features = false`.
 
-| Feature            | Default? | Description |
-| :---               | :---     | :---        |
-| `zeroize`          | ✓        | Implements `Zeroize` and `ZeroizeOnDrop` for `EphemeralSecret`, `ReusableSecret`, and `StaticSecret` |
-| `getrandom`        |          | Exposes the `random()` constructor for `EphemeralSecret`, `ReusableSecret`, and `StaticSecret` |
-| `reusable_secrets` |          | Exposes the `ReusableSecret` struct |
-| `static_secrets`   |          | Exposes the `StaticSecret` struct |
-| `serde`            |          | Enables `serde` serialization/deserialization for `PublicKey` and `StaticSecret` |
+| Feature              | Default? | Description |
+| :---                 | :---     | :---        |
+| `zeroize`            | ✓        | Implements `Zeroize` and `ZeroizeOnDrop` for `EphemeralSecret`, `ReusableSecret`, and `StaticSecret` |
+| `precomputed-tables` | ✓        | Includes precomputed basepoint multiplication tables. This speeds up `diffie_hellman()` by ~4x, at the cost of ~30KB added to the code size. |
+| `getrandom`          |          | Exposes the `random()` constructor for `EphemeralSecret`, `ReusableSecret`, and `StaticSecret` |
+| `reusable_secrets`   |          | Exposes the `ReusableSecret` struct |
+| `static_secrets`     |          | Exposes the `StaticSecret` struct |
+| `serde`              |          | Enables `serde` serialization/deserialization for `PublicKey` and `StaticSecret` |
 
 # MSRV
 

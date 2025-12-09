@@ -60,10 +60,9 @@ name = "x25519"
 harness = false
 
 [features]
-default = ["precomputed-tables", "zeroize"]
+default = ["zeroize"]
 getrandom = ["dep:getrandom"]
 zeroize = ["dep:zeroize", "curve25519-dalek/zeroize"]
 serde = ["dep:serde", "curve25519-dalek/serde"]
-precomputed-tables = ["curve25519-dalek/precomputed-tables"]
 reusable_secrets = []
 static_secrets = []

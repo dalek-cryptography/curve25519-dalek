@@ -113,7 +113,6 @@ This crate is `#[no_std]` compatible with `default-features = false`.
 | Feature            | Default? | Description |
 | :---               | :---     | :---        |
 | `zeroize`          | ✓        | Implements `Zeroize` and `ZeroizeOnDrop` for `EphemeralSecret`, `ReusableSecret`, and `StaticSecret` |
-| `precompted-table s| ✓        | Includes precomputed basepoint multiplication tables. This speeds up `diffie_hellman()` by ~4x, at the cost of ~30KB added to the code size. |
 | `getrandom`        |          | Exposes the `random()` constructor for `EphemeralSecret`, `ReusableSecret`, and `StaticSecret` |
 | `reusable_secrets` |          | Exposes the `ReusableSecret` struct |
 | `static_secrets`   |          | Exposes the `StaticSecret` struct |

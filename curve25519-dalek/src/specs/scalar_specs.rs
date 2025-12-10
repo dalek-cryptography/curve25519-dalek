@@ -59,25 +59,31 @@ pub open spec fn is_inverse(a: &Scalar, b: &Scalar) -> bool {
 
 /// Spec function to compute product of all scalars in a sequence (mod group_order)
 /// Returns the natural number representation
+/// Note: Processes from back to front to match iterative loop order
 pub open spec fn product_of_scalars(scalars: Seq<Scalar>) -> nat
     decreases scalars.len(),
 {
     if scalars.len() == 0 {
         1
     } else {
-        (product_of_scalars(scalars.skip(1)) * bytes_to_nat(&scalars[0].bytes)) % group_order()
+        let last = (scalars.len() - 1) as int;
+        (product_of_scalars(scalars.subrange(0, last)) * bytes_to_nat(&scalars[last].bytes))
+            % group_order()
     }
 }
 
 /// Spec function to compute sum of all scalars in a sequence (mod group_order)
 /// Returns the natural number representation
+/// Note: Processes from back to front to match iterative loop order
 pub open spec fn sum_of_scalars(scalars: Seq<Scalar>) -> nat
     decreases scalars.len(),
 {
     if scalars.len() == 0 {
         0
     } else {
-        (sum_of_scalars(scalars.skip(1)) + bytes_to_nat(&scalars[0].bytes)) % group_order()
+        let last = (scalars.len() - 1) as int;
+        (sum_of_scalars(scalars.subrange(0, last)) + bytes_to_nat(&scalars[last].bytes))
+            % group_order()
     }
 }
 

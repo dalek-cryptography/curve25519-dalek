@@ -1,5 +1,11 @@
 //! Helper functions for scalar operations in MODIFIED CODE
 use crate::scalar::Scalar;
+#[allow(unused_imports)]
+use vstd::arithmetic::div_mod::*;
+#[allow(unused_imports)]
+use vstd::arithmetic::mul::*;
+#[allow(unused_imports)]
+use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
 #[allow(unused_imports)]
@@ -10,6 +16,60 @@ use crate::specs::scalar_specs::*;
 
 verus! {
 
+// ============================================================================
+// Core lemmas for Scalar::ZERO and Scalar::ONE
+// ============================================================================
+/// Lemma: bytes_to_nat of all-zero bytes equals 0
+pub proof fn lemma_bytes_to_nat_zero()
+    ensures
+        bytes_to_nat(&Scalar::ZERO.bytes) == 0,
+{
+    // 0 * x == 0 for all terms
+    assert forall|i: nat| i < 32 implies (0nat) * #[trigger] pow2(i * 8) == 0 by {
+        lemma_mul_basics(pow2(i * 8) as int);
+    }
+}
+
+/// Lemma: bytes_to_nat of ONE's bytes equals 1
+pub proof fn lemma_bytes_to_nat_one()
+    ensures
+        bytes_to_nat(&Scalar::ONE.bytes) == 1,
+{
+    let bytes = Scalar::ONE.bytes;
+    assert(bytes[0] == 1);
+    // pow2(0) == 1
+    lemma2_to64();
+    // 0 * x == 0 for remaining terms
+    assert forall|i: nat| 1 <= i < 32 implies (0nat) * #[trigger] pow2(i * 8) == 0 by {
+        lemma_mul_basics(pow2(i * 8) as int);
+    }
+}
+
+/// Combined lemma for ZERO: value is 0, less than L, and congruent to 0
+pub proof fn lemma_scalar_zero_properties()
+    ensures
+        scalar_to_nat(&Scalar::ZERO) == 0,
+        scalar_to_nat(&Scalar::ZERO) < group_order(),
+        scalar_congruent_nat(&Scalar::ZERO, 0),
+{
+    lemma_bytes_to_nat_zero();
+    lemma_small_mod(0nat, group_order());
+}
+
+/// Combined lemma for ONE: value is 1, less than L, and congruent to 1
+pub proof fn lemma_scalar_one_properties()
+    ensures
+        scalar_to_nat(&Scalar::ONE) == 1,
+        scalar_to_nat(&Scalar::ONE) < group_order(),
+        scalar_congruent_nat(&Scalar::ONE, 1),
+{
+    lemma_bytes_to_nat_one();
+    lemma_small_mod(1nat, group_order());
+}
+
+// ============================================================================
+// Main helper functions
+// ============================================================================
 impl Scalar {
     /// Compute the product of all scalars in a slice.
     ///
@@ -33,47 +93,47 @@ impl Scalar {
     #[allow(clippy::needless_range_loop, clippy::op_ref)]
     pub fn product_of_slice(scalars: &[Scalar]) -> (result: Scalar)
         ensures
-    // Result is a valid scalar (bytes represent a value < group_order)
-
             scalar_to_nat(&result) < group_order(),
-            // Result represents the product of all scalars in the slice (mod group_order)
             scalar_congruent_nat(&result, product_of_scalars(scalars@)),
     {
         let n = scalars.len();
         let mut acc = Scalar::ONE;
 
         proof {
-            // Assume properties of Scalar::ONE
-            assume(scalar_to_nat(&acc) < group_order());
-            assume(scalar_to_nat(&acc) == 1);
-            assume(scalar_congruent_nat(&acc, product_of_scalars(scalars@.subrange(0, 0))));
+            lemma_scalar_one_properties();
+            assert(scalars@.subrange(0, 0) =~= Seq::<Scalar>::empty());
         }
 
         for i in 0..n
             invariant
                 n == scalars.len(),
                 scalar_to_nat(&acc) < group_order(),
-                // acc represents the product of scalars[0..i]
                 scalar_congruent_nat(&acc, product_of_scalars(scalars@.subrange(0, i as int))),
         {
+            let _old_acc = acc;
+
             proof {
-                // Assume preconditions for multiplication are satisfied
-                assume(false);
+                // Inline: product extends by one element
+                let sub = scalars@.subrange(0, (i + 1) as int);
+                assert(sub.subrange(0, i as int) =~= scalars@.subrange(0, i as int));
             }
+
             acc = &acc * &scalars[i];
 
             proof {
-                // Assume the result maintains the invariant
-                assume(scalar_to_nat(&acc) < group_order());
-                assume(scalar_congruent_nat(
-                    &acc,
-                    product_of_scalars(scalars@.subrange(0, (i + 1) as int)),
-                ));
+                let L = group_order();
+                let acc_val = bytes_to_nat(&acc.bytes);
+                let old_acc_val = bytes_to_nat(&_old_acc.bytes);
+                let scalar_val = bytes_to_nat(&scalars[i as int].bytes);
+                let prod_prev = product_of_scalars(scalars@.subrange(0, i as int));
+
+                lemma_mul_mod_noop_general(old_acc_val as int, scalar_val as int, L as int);
+                lemma_mul_mod_noop_general(prod_prev as int, scalar_val as int, L as int);
+                lemma_mod_twice(prod_prev as int * scalar_val as int, L as int);
             }
         }
 
         proof {
-            // At this point, acc is the product of all scalars
             assert(scalars@.subrange(0, n as int) =~= scalars@);
         }
 
@@ -99,53 +159,51 @@ impl Scalar {
     /// let sum = Scalar::sum_of_slice(&scalars);
     /// assert_eq!(sum, Scalar::from(10u64));
     /// ```
-    /* <VERIFICATION NOTE>
-     Refactored for Verus: Use index-based loop over slice
-    </VERIFICATION NOTE> */
     #[allow(clippy::needless_range_loop, clippy::op_ref)]
     pub fn sum_of_slice(scalars: &[Scalar]) -> (result: Scalar)
         ensures
-    // Result is a valid scalar (bytes represent a value < group_order)
-
             scalar_to_nat(&result) < group_order(),
-            // Result represents the sum of all scalars in the slice (mod group_order)
             scalar_congruent_nat(&result, sum_of_scalars(scalars@)),
     {
         let n = scalars.len();
         let mut acc = Scalar::ZERO;
 
         proof {
-            // Assume properties of Scalar::ZERO
-            assume(scalar_to_nat(&acc) < group_order());
-            assume(scalar_to_nat(&acc) == 0);
-            assume(scalar_congruent_nat(&acc, sum_of_scalars(scalars@.subrange(0, 0))));
+            lemma_scalar_zero_properties();
+            assert(scalars@.subrange(0, 0) =~= Seq::<Scalar>::empty());
         }
 
         for i in 0..n
             invariant
                 n == scalars.len(),
                 scalar_to_nat(&acc) < group_order(),
-                // acc represents the sum of scalars[0..i]
                 scalar_congruent_nat(&acc, sum_of_scalars(scalars@.subrange(0, i as int))),
         {
+            let _old_acc = acc;
+
             proof {
-                // Assume preconditions for addition are satisfied
-                assume(false);
+                // Inline: sum extends by one element
+                let sub = scalars@.subrange(0, (i + 1) as int);
+                assert(sub.subrange(0, i as int) =~= scalars@.subrange(0, i as int));
             }
+
             acc = &acc + &scalars[i];
 
             proof {
-                // Assume the result maintains the invariant
-                assume(scalar_to_nat(&acc) < group_order());
-                assume(scalar_congruent_nat(
-                    &acc,
-                    sum_of_scalars(scalars@.subrange(0, (i + 1) as int)),
-                ));
+                let L = group_order();
+                let acc_val = bytes_to_nat(&acc.bytes);
+                let old_acc_val = bytes_to_nat(&_old_acc.bytes);
+                let scalar_val = bytes_to_nat(&scalars[i as int].bytes);
+                let sum_prev = sum_of_scalars(scalars@.subrange(0, i as int));
+
+                lemma_mod_bound(old_acc_val as int + scalar_val as int, L as int);
+                lemma_add_mod_noop(old_acc_val as int, scalar_val as int, L as int);
+                lemma_add_mod_noop(sum_prev as int, scalar_val as int, L as int);
+                lemma_mod_twice(sum_prev as int + scalar_val as int, L as int);
             }
         }
 
         proof {
-            // At this point, acc is the sum of all scalars
             assert(scalars@.subrange(0, n as int) =~= scalars@);
         }
 

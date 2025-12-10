@@ -79,14 +79,21 @@ impl Debug for Scalar52 {
     }
 }
 
+verus! {
+
 #[cfg(feature = "zeroize")]
 impl Zeroize for Scalar52 {
-    fn zeroize(&mut self) {
-        self.limbs.zeroize();
+    /* <VERIFICATION NOTE>
+    Using wrapper function for Verus compatibility instead of direct call to zeroize
+    </VERIFICATION NOTE> */
+    fn zeroize(&mut self)
+        ensures
+            forall|i: int| 0 <= i < 5 ==> self.limbs[i] == 0,
+    {
+        /* ORIGINAL CODE: self.limbs.zeroize(); */
+        crate::core_assumes::zeroize_limbs5(&mut self.limbs);
     }
 }
-
-verus! {
 
 impl Index<usize> for Scalar52 {
     type Output = u64;

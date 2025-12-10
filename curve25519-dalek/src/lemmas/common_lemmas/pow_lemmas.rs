@@ -10,27 +10,82 @@ use super::div_mod_lemmas::*;
 use super::mul_lemmas::*;
 use super::sum_lemmas::*;
 
-verus! {
-
-pub proof fn lemma_u8_lt_pow2_8(a: u8)
-    ensures
-        a < pow2(8),
-{
-    assert(u8::MAX < pow2(8)) by {
-        lemma2_to64();
+// Proofs that unsigned integers are bounded by a power of 2
+macro_rules! lemma_uN_lt_pow2 {
+    ($name:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "Proof that for any `x` of type "]
+        #[doc = stringify!($uN)]
+        #[doc = ", `x < 2^("]
+        #[doc = stringify!($uN)]
+        #[doc = "::BITS)"]
+        pub proof fn $name(x: $uN)
+            ensures
+                x < pow2(<$uN>::BITS as nat),
+        {
+            let N = <$uN>::BITS;
+            lemma2_to64();
+            lemma2_to64_rest();
+            if (N == 128) {
+                assert(pow2(128) == pow2(64) * pow2(64)) by {
+                    lemma_pow2_adds(64,64);
+                }
+                assert( x < 0x10000000000000000 * 0x10000000000000000) by (compute);
+            }
+        }
     }
+    };
 }
 
-// Auxiliary lemma for exponentiation
-pub proof fn lemma_pow2_le_max64(k: nat)
-    requires
-        k < 64,
-    ensures
-        pow2(k) <= u64::MAX,
-{
-    lemma2_to64();
-    lemma2_to64_rest();
+lemma_uN_lt_pow2!(lemma_u8_lt_pow2_8, u8);
+lemma_uN_lt_pow2!(lemma_u16_lt_pow2_16, u16);
+lemma_uN_lt_pow2!(lemma_u32_lt_pow2_32, u32);
+lemma_uN_lt_pow2!(lemma_u64_lt_pow2_64, u64);
+lemma_uN_lt_pow2!(lemma_u128_lt_pow2_128, u128);
+
+// Converse of above, any 2^k fits into uN for k < N.
+macro_rules! lemma_pow2_le_maxN {
+    ($name:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "Proof that for any `k` smaller than `"]
+        #[doc = stringify!($uN)]
+        #[doc = "::BITS`, `pow2(k) <= "]
+        #[doc = stringify!($uN)]
+        #[doc = "::MAX`"]
+        pub proof fn $name(k: nat)
+            requires
+                k < <$uN>::BITS
+            ensures
+                pow2(k) <= <$uN>::MAX,
+        {
+            let N = <$uN>::BITS;
+            lemma2_to64();
+            lemma2_to64_rest();
+            if(N == 128 && k > 64) {
+                let d = (k - 64) as nat;
+                assert(pow2(k) == pow2(d) * pow2(64)) by {
+                    lemma_pow2_adds(d, 64);
+                }
+                assert(pow2(k) <= pow2(63) * pow2(64)) by {
+                    lemma_pow2_pos(64);
+                    lemma_mul_inequality(d as int, 63, pow2(64) as int);
+                }
+                assert(0x8000000000000000 * 0x10000000000000000 <= u128::MAX) by (compute);
+            }
+        }
+    }
+    };
 }
+
+lemma_pow2_le_maxN!(lemma_u8_pow2_le_max, u8);
+lemma_pow2_le_maxN!(lemma_u16_pow2_le_max, u16);
+lemma_pow2_le_maxN!(lemma_u32_pow2_le_max, u32);
+lemma_pow2_le_maxN!(lemma_u64_pow2_le_max, u64);
+lemma_pow2_le_maxN!(lemma_u128_pow2_le_max, u128);
+
+verus! {
 
 pub proof fn lemma_pow2_plus_one(n: nat)
     ensures
@@ -121,20 +176,39 @@ pub proof fn lemma_pow2_mul_bound_general(a: nat, s: nat, k: nat)
     }
 }
 
-pub proof fn lemma_pow2_mul_bound_u8(a: u8, k: nat)
-    ensures
-        pow2(k) * a <= pow2(k + 8) - pow2(k),
-        a * pow2(k) <= pow2(k + 8) - pow2(k),
-        pow2(k + 8) - pow2(k) < pow2(k + 8),
-{
-    assert(a < pow2(8)) by {
-        lemma2_to64();
-    }
+macro_rules! lemma_pow2_mul_bound_uN {
+    ($name:ident, $pow_bound:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub proof fn $name(a: $uN, k: nat)
+            ensures
+                pow2(k) * a <= pow2(k + <$uN>::BITS as nat) - pow2(k),
+                a * pow2(k) <= pow2(k + <$uN>::BITS as nat) - pow2(k),
+                pow2(k + <$uN>::BITS as nat) - pow2(k) < pow2(k + <$uN>::BITS as nat),
+        {
+            let N = <$uN>::BITS as nat;
+            assert(a < pow2(N)) by {
+                $pow_bound(a);
+            }
 
-    lemma_pow2_mul_bound_general(a as nat, 8, k);
+            lemma_pow2_mul_bound_general(a as nat, N, k);
+        }
+    }
+    };
 }
 
-pub proof fn lemma_bindary_sum_div_decomposition(a: nat, b: nat, s: nat, k: nat)
+lemma_pow2_mul_bound_uN!(lemma_u8_pow2_mul_bound, lemma_u8_lt_pow2_8, u8);
+
+lemma_pow2_mul_bound_uN!(lemma_u16_pow2_mul_bound, lemma_u16_lt_pow2_16, u16);
+
+lemma_pow2_mul_bound_uN!(lemma_u32_pow2_mul_bound, lemma_u32_lt_pow2_32, u32);
+
+lemma_pow2_mul_bound_uN!(lemma_u64_pow2_mul_bound, lemma_u64_lt_pow2_64, u64);
+
+lemma_pow2_mul_bound_uN!(lemma_u128_pow2_mul_bound, lemma_u128_lt_pow2_128, u128);
+
+pub proof fn lemma_binary_sum_div_decomposition(a: nat, b: nat, s: nat, k: nat)
     requires
         a < pow2(s),
     ensures
@@ -253,7 +327,7 @@ pub proof fn lemma_u8_times_pow2_mod_is_id(a: u8, k: nat, s: nat)
         (pow2(k) * a) as nat % pow2(s) == pow2(k) * a,
 {
     assert(pow2(k) * a < pow2(k + 8)) by {
-        lemma_pow2_mul_bound_u8(a, k);
+        lemma_u8_pow2_mul_bound(a, k);
     }
     if (k + 8 < s) {
         assert(pow2(k + 8) < pow2(s)) by {
@@ -284,7 +358,7 @@ pub proof fn lemma_u8_times_pow2_fits_u64(a: u8, k: nat)
         lemma_mul_le(a as nat, a as nat, pow2(k), pow2(56));
     }
 
-    lemma_pow2_mul_bound_u8(a, 56);
+    lemma_u8_pow2_mul_bound(a, 56);
     assert(pow2(64) - pow2(56) <= u64::MAX) by {
         lemma2_to64_rest();
     }
@@ -349,7 +423,7 @@ pub proof fn lemma_pow2_div_mod(x: nat, k: nat, s: nat)
     assert(x / pk == ps * x_div_pd + x_mod_pd / pk) by {
         assert((pd * x_div_pd + x_mod_pd) / pk == (pd * x_div_pd) / pk + x_mod_pd / pk) by {
             lemma_mul_is_commutative(pd as int, x_div_pd as int);
-            lemma_bindary_sum_div_decomposition(x_mod_pd, x_div_pd, d, k);
+            lemma_binary_sum_div_decomposition(x_mod_pd, x_div_pd, d, k);
         }
         assert((pd * x_div_pd) / pk == ps * x_div_pd) by {
             assert(pd * x_div_pd == pk * (ps * x_div_pd)) by {
@@ -740,6 +814,8 @@ pub proof fn lemma_pow2_sum_bounds(coefs: &[u8], offset: nat, step: nat, k: nat)
         assert(coefs[offset as int] * pow2(0) == coefs[offset as int]) by {
             lemma_mul_basics_3(coefs[offset as int] as int);
         }
+        // trigger forall
+        assert(coefs[(offset + 0) as int] < pow2(step));
     } else {
         assert(pow2_sum(coefs, offset, step, k) == pow2_sum(coefs, offset, step, (k - 1) as nat)
             + coefs[(offset + k) as int] * pow2(k * step)) by {

@@ -253,7 +253,7 @@ pub proof fn lemma_load8_at_versions_equivalent(input: &[u8], i: usize, k: nat)
             }
             assert(u8::MAX <= u64::MAX >> 56) by (compute);
         }
-        lemma_bit_or_is_plus(prev, input[i + k] as u64, (8 * k) as u64);
+        lemma_u64_bit_or_is_plus(prev, input[i + k] as u64, (8 * k) as u64);
     }
 }
 
@@ -315,7 +315,7 @@ pub proof fn lemma_load8_plus_ver_div_mod(input: &[u8], i: usize, k: nat, s: nat
         ) % (pow2(s) as u64) + (pow2(k * 8) * input[i + k]) as u64 % (pow2(s) as u64),
 {
     assert(pow2(s) <= u64::MAX) by {
-        lemma_pow2_le_max64(s);
+        lemma_u64_pow2_le_max(s);
     }
 
     assert(pow2(s) > 0) by {
@@ -323,7 +323,7 @@ pub proof fn lemma_load8_plus_ver_div_mod(input: &[u8], i: usize, k: nat, s: nat
     }
 
     assert(pow2(k * 8) <= u64::MAX) by {
-        lemma_pow2_le_max64(k * 8);
+        lemma_u64_pow2_le_max(k * 8);
     }
 
     let p64 = pow2(s) as u64;
@@ -355,7 +355,8 @@ pub proof fn lemma_load8_plus_ver_div_mod(input: &[u8], i: usize, k: nat, s: nat
         assert((xk_1 + pow2(k * 8) * v) <= u64::MAX) by {
             lemma_load8_at_plus_fits_u64(input, i, k);
         }
-        lemma_bitops_lifted(xk_1, v as u64, (k * 8) as nat, s);
+        lemma_binary_sum_div_decomposition(xk_1 as nat, v_n, (k * 8) as nat, s);
+        lemma_binary_sum_mod_decomposition(xk_1 as nat, v_n, (k * 8) as nat, s);
     }
 }
 
@@ -415,7 +416,7 @@ proof fn lemma_load8_shift_mod_aux(
             assert((s_j / ps64 + x * pow2(d)) as u64 % pt64 == (s_j / ps64) % pt64 + (x * pow2(
                 d,
             )) as u64 % pt64 == (s_j / ps64) % pt64 + (a_jplus1 / ps64) % pt64) by {
-                lemma_bitops_lifted(s_j / ps64, x as u64, d, t);
+                lemma_binary_sum_mod_decomposition((s_j / ps64) as nat, x as nat, d, t);
             }
         } else {
             // s > j * 8
@@ -456,7 +457,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
 
     assert(0 < pow2(s) <= u64::MAX) by {
         lemma_pow2_pos(s);
-        lemma_pow2_le_max64(s);
+        lemma_u64_pow2_le_max(s);
     }
 
     assert(x >> s64 == x / ps64) by {
@@ -500,7 +501,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
     let z = y / ps64;
 
     assert(low_bits_mask(t) <= u64::MAX) by {
-        lemma_low_bits_masks_fit_u64(t);
+        lemma_u64_low_bits_masks_fit(t);
     }
 
     assert(z & (low_bits_mask(t) as u64) == z % pt64) by {
@@ -517,7 +518,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
         assert(j * 8 + 8 == (j + 1) * 8) by {
             lemma_mul_is_distributive_add_other_way(8, j as int, 1);
         }
-        lemma_pow2_mul_bound_u8(input[i + j], j * 8);
+        lemma_u8_pow2_mul_bound(input[i + j], j * 8);
     }
 
     // pow2(_) values;
@@ -525,7 +526,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
     lemma2_to64_rest();
     assert(0 < pow2(t) <= u64::MAX) by {
         lemma_pow2_pos(t);
-        lemma_pow2_le_max64(t);
+        lemma_u64_pow2_le_max(t);
     }
 
     // ---- lemmas about X * pow2
@@ -540,7 +541,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
         assert(j * 8 + 8 == (j + 1) * 8) by {
             lemma_mul_is_distributive_add_other_way(8, j as int, 1);
         }
-        lemma_pow2_mul_bound_u8(input[i + j], j * 8);
+        lemma_u8_pow2_mul_bound(input[i + j], j * 8);
         assert(pow2((j + 1) * 8) > pow2(j * 8)) by {
             lemma_pow2_strictly_increases(j * 8, j * 8 + 8);
         }
@@ -577,7 +578,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
 
     assert(s1_0 < pow2(2 * 8));
     assert(s1 == s0_0 / ps64 + a1 / ps64) by {
-        lemma_bitops_lifted(s0_0, input[i + 1] as u64, 1 * 8, s);
+        lemma_binary_sum_div_decomposition(s0_0 as nat, input[i + 1] as nat, 1 * 8, s);
     }
     assert(s1_0 + a2 <= u64::MAX);
 
@@ -586,7 +587,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
 
     assert(s2_0 < pow2(3 * 8));
     assert(s2 == s1_0 / ps64 + a2 / ps64) by {
-        lemma_bitops_lifted(s1_0, input[i + 2] as u64, 2 * 8, s);
+        lemma_binary_sum_div_decomposition(s1_0 as nat, input[i + 2] as nat, 2 * 8, s);
     }
     assert(s2_0 + a3 <= u64::MAX);
 
@@ -595,7 +596,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
 
     assert(s3_0 < pow2(4 * 8));
     assert(s3 == s2_0 / ps64 + a3 / ps64) by {
-        lemma_bitops_lifted(s2_0, input[i + 3] as u64, 3 * 8, s);
+        lemma_binary_sum_div_decomposition(s2_0 as nat, input[i + 3] as nat, 3 * 8, s);
     }
     assert(s3_0 + a4 <= u64::MAX);
 
@@ -604,7 +605,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
 
     assert(s4_0 < pow2(5 * 8));
     assert(s4 == s3_0 / ps64 + a4 / ps64) by {
-        lemma_bitops_lifted(s3_0, input[i + 4] as u64, 4 * 8, s);
+        lemma_binary_sum_div_decomposition(s3_0 as nat, input[i + 4] as nat, 4 * 8, s);
     }
     assert(s4_0 + a5 <= u64::MAX);
 
@@ -613,7 +614,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
 
     assert(s5_0 < pow2(6 * 8));
     assert(s5 == s4_0 / ps64 + a5 / ps64) by {
-        lemma_bitops_lifted(s4_0, input[i + 5] as u64, 5 * 8, s);
+        lemma_binary_sum_div_decomposition(s4_0 as nat, input[i + 5] as nat, 5 * 8, s);
     }
     assert(s5_0 + a6 <= u64::MAX);
 
@@ -622,7 +623,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
 
     assert(s6_0 < pow2(7 * 8));
     assert(s6 == s5_0 / ps64 + a6 / ps64) by {
-        lemma_bitops_lifted(s5_0, input[i + 6] as u64, 6 * 8, s);
+        lemma_binary_sum_div_decomposition(s5_0 as nat, input[i + 6] as nat, 6 * 8, s);
     }
     assert(s6_0 + a7 <= u64::MAX);
 
@@ -630,7 +631,7 @@ pub proof fn lemma_load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
     let s7 = s7_0 / ps64;
 
     assert(s7 == s6_0 / ps64 + a7 / ps64) by {
-        lemma_bitops_lifted(s6_0, input[i + 7] as u64, 7 * 8, s);
+        lemma_binary_sum_div_decomposition(s6_0 as nat, input[i + 7] as nat, 7 * 8, s);
     }
 
     assert(s7 == z);
@@ -678,12 +679,12 @@ pub proof fn lemma_load8_at_limb_base(input: &[u8], i: usize, k: u64)
 {
     assert(0 < pow2(51) <= u64::MAX) by {
         lemma_pow2_pos(51);
-        lemma_pow2_le_max64(51);
+        lemma_u64_pow2_le_max(51);
     }
 
     assert(0 < pow2(k as nat) <= u64::MAX) by {
         lemma_pow2_pos(k as nat);
-        lemma_pow2_le_max64(k as nat);
+        lemma_u64_pow2_le_max(k as nat);
     }
 
     let p51 = pow2(51) as u64;
@@ -781,7 +782,7 @@ pub proof fn lemma_load8_at_limb_X(
 
     assert(0 < pow2(k) <= u64::MAX) by {
         lemma_pow2_pos(k);
-        lemma_pow2_le_max64(k);
+        lemma_u64_pow2_le_max(k);
     }
 
     let pk = pow2(k) as u64;

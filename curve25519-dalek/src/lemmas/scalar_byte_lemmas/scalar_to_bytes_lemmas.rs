@@ -436,7 +436,7 @@ proof fn lemma_boundary_byte_combines_52(
     }
 
     // === STEP 2: Prove OR equals addition ===
-    // Need preconditions for lemma_bit_or_is_plus:
+    // Need preconditions for lemma_u64_bit_or_is_plus:
     // 1) low_part < 1u64 << low_bits
     // 2) high_limb <= u64::MAX >> low_bits
 
@@ -476,9 +476,9 @@ proof fn lemma_boundary_byte_combines_52(
         lemma_u64_shr_is_div(u64::MAX, low_bits as u64);
     }
 
-    // Apply lemma_bit_or_is_plus
+    // Apply lemma_u64_bit_or_is_plus
     assert(low_part | high_part == low_part + high_part) by {
-        lemma_bit_or_is_plus(low_part, high_limb, low_bits as u64);
+        lemma_u64_bit_or_is_plus(low_part, high_limb, low_bits as u64);
     }
 
     // === STEP 3: Express combined value ===

@@ -17,7 +17,7 @@ pub proof fn lemma_shift_is_pow2(k: nat)
     ensures
         (1u64 << k) == pow2(k),
 {
-    lemma_pow2_le_max64(k);
+    lemma_u64_pow2_le_max(k);
     lemma_u64_shl_is_mul(1u64, k as u64);
 }
 

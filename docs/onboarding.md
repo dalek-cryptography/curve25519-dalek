@@ -54,7 +54,7 @@ pub proof fn lemma_pow2_mul_bound_general(a: nat, s: nat, k: nat)
 ```
 3. Bit masking bound
 ```rust
-pub proof fn lemma_masked_lt(v: u64, k: nat)
+pub proof fn lemma_u64_masked_lt(v: u64, k: nat)
     requires
         0 <= k < 64,
     ensures

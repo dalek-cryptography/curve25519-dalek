@@ -84,7 +84,7 @@ pub proof fn lemma_word_contribution_decomposition(
                 >> mask_shift,
     ;
 
-    lemma_bit_or_is_plus(low, high, split_pos);
+    lemma_u64_bit_or_is_plus(low, high, split_pos);
     vstd::bits::lemma_u64_mul_pow2_le_max_iff_max_shr(high, split_pos, u64::MAX);
     vstd::bits::lemma_u64_shl_is_mul(high, split_pos);
 
@@ -173,7 +173,7 @@ pub proof fn lemma_limb_from_adjacent_words(
                 - high_bits) == 64 && low_mask == u64::MAX >> low_mask_shift,
     ;
 
-    lemma_bit_or_is_plus(high_val, low_val, high_bits);
+    lemma_u64_bit_or_is_plus(high_val, low_val, high_bits);
     vstd::bits::lemma_u64_mul_pow2_le_max_iff_max_shr(low_val, high_bits, u64::MAX);
     vstd::bits::lemma_u64_shl_is_mul(low_val, high_bits);
 }
@@ -358,7 +358,7 @@ pub proof fn lemma_low_limbs_encode_low_expr(lo: &[u64; 5], words: &[u64; 8], ma
         assert((w3 >> 16) < (1u64 << 48)) by (bit_vector);
         assert((w4 & 0xf) <= u64::MAX >> 48) by (bit_vector);
         assert(((w3 >> 16) | ((w4 & 0xf) << 48)) < (1u64 << 52)) by (bit_vector);
-        lemma_bit_or_is_plus(high48, low4, 48);
+        lemma_u64_bit_or_is_plus(high48, low4, 48);
         vstd::bits::lemma_u64_mul_pow2_le_max_iff_max_shr(low4, 48, u64::MAX);
         vstd::bits::lemma_u64_shl_is_mul(low4, 48);
     };
@@ -371,7 +371,7 @@ pub proof fn lemma_low_limbs_encode_low_expr(lo: &[u64; 5], words: &[u64; 8], ma
         assert((w0 & (u64::MAX >> 12)) < (1u64 << 52)) by (bit_vector);
         assert((w0 >> 52) <= u64::MAX >> 52) by (bit_vector);
         lemma_decompose(w0, mask);
-        lemma_bit_or_is_plus(low, high, 52);
+        lemma_u64_bit_or_is_plus(low, high, 52);
     };
     // Word 1's contribution at scale 2^64 equals its low 40 bits plus its high 24 bits.
     assert(pow2(64) * (words[1] as nat) == pow2(64) * w1_low + pow2(104) * w1_high) by {
@@ -462,7 +462,7 @@ pub proof fn lemma_high_limbs_encode_high_expr(hi: &[u64; 5], words: &[u64; 8], 
             assert(u64::MAX >> 56 <= u64::MAX >> 52) by (bit_vector);
         }
         assert((w4 >> 4) == ((w4 >> 4) & (u64::MAX >> 12)) | ((w4 >> 56) << 52)) by (bit_vector);
-        lemma_bit_or_is_plus(low52, high8, 52);
+        lemma_u64_bit_or_is_plus(low52, high8, 52);
         vstd::bits::lemma_u64_mul_pow2_le_max_iff_max_shr(high8, 52, u64::MAX);
         vstd::bits::lemma_u64_shl_is_mul(high8, 52);
     };

@@ -1980,7 +1980,7 @@ proof fn lemma_boundary_byte_combines(
                 lemma_pow2_adds(51, 8);
             }
             assert(pow2(59) <= u64::MAX) by {
-                lemma_pow2_le_max64(59);
+                lemma_u64_pow2_le_max(59);
             }
         }
         lemma_u64_shl_is_mul(high_limb, low_bits as u64);
@@ -2010,7 +2010,7 @@ proof fn lemma_boundary_byte_combines(
         }
 
         assert((a | b << low_bits) == a + (b << low_bits)) by {
-            lemma_bit_or_is_plus(a, b, low_bits as u64);
+            lemma_u64_bit_or_is_plus(a, b, low_bits as u64);
         }
     }
 

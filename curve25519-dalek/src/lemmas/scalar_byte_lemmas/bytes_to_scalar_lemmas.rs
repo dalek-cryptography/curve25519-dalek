@@ -129,7 +129,7 @@ pub proof fn lemma_byte_to_word_step(bytes: [u8; 32], words: [u64; 4], i: usize,
     }
 
     assert((old_word | (new_byte << (j8))) == (old_word + (new_byte << (j8)))) by {
-        lemma_bit_or_is_plus(old_word, new_byte, j8 as u64);
+        lemma_u64_bit_or_is_plus(old_word, new_byte, j8 as u64);
     }
 
     let j8next = (j as u64 + 1) * 8 as u64;

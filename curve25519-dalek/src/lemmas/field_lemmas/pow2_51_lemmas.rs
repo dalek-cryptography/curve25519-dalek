@@ -106,7 +106,7 @@ pub proof fn lemma_masked_lt_51(v: u64)
         v & mask51 < (1u64 << 51),
 {
     l51_bit_mask_lt();  // mask51 == low_bits_mask(51)
-    lemma_masked_lt(v, 51);
+    lemma_u64_masked_lt(v, 51);
 }
 
 // lemma_div_and_mod specialization for k = 51, using mask51 == low_bits_mask(51)

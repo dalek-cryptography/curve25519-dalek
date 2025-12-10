@@ -61,6 +61,10 @@ serde = { version = "1.0", default-features = false, optional = true, features =
     "derive",
 ] }
 zeroize = { version = "1", default-features = false, optional = true }
+# temp use ethnum for u256/i256 which is more stable
+# a hand optimized i256 implementation (zz/impl_ches25_without_ethnum) is a little faster for heea computation
+# happy to merge those code if desired
+ethnum = "1.5"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 cpufeatures = "0.2.17"

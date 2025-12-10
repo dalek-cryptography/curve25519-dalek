@@ -1072,6 +1072,38 @@ impl EdwardsPoint {
     ) -> EdwardsPoint {
         crate::backend::vartime_double_base_mul(a, A, b)
     }
+
+    /// Compute \\(a_1 A_1 + a_2 A_2 + b B\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
+    ///
+    /// This function is optimized for the case where \\(a_1\\) and \\(a_2\\) are less than \\(2^{128}\\).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek::constants::ED25519_BASEPOINT_POINT;
+    /// use curve25519_dalek::edwards::EdwardsPoint;
+    ///
+    /// let a1 = Scalar::from(123u64);
+    /// let a2 = Scalar::from(456u64);
+    /// let b = Scalar::from(789u64);
+    ///
+    /// let A1 = &ED25519_BASEPOINT_POINT * &Scalar::from(2u64);
+    /// let A2 = &ED25519_BASEPOINT_POINT * &Scalar::from(3u64);
+    ///
+    /// // Compute a1*A1 + a2*A2 + b*B efficiently
+    /// let result = EdwardsPoint::vartime_triple_scalar_mul_basepoint(&a1, &A1, &a2, &A2, &b);
+    /// ```
+    #[allow(non_snake_case)]
+    pub fn vartime_triple_scalar_mul_basepoint(
+        a1: &Scalar,
+        A1: &EdwardsPoint,
+        a2: &Scalar,
+        A2: &EdwardsPoint,
+        b: &Scalar,
+    ) -> EdwardsPoint {
+        crate::backend::vartime_triple_base_mul_128_128_256(a1, A1, a2, A2, b)
+    }
 }
 
 #[cfg(feature = "precomputed-tables")]

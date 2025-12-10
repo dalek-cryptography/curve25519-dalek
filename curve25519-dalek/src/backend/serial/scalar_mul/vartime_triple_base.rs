@@ -278,4 +278,42 @@ mod test {
 
         assert_eq!(result, expected);
     }
+
+    // Proptest for vartime_triple_scalar_mul_basepoint equivalence
+    proptest::proptest! {
+        #[test]
+        fn proptest_triple_scalar_mul_equivalence(
+            a1_bytes_16 in proptest::array::uniform16(proptest::num::u8::ANY),
+            a2_bytes_16 in proptest::array::uniform16(proptest::num::u8::ANY),
+            b_bytes in proptest::array::uniform32(proptest::num::u8::ANY),
+            A1_scalar_bytes in proptest::array::uniform32(proptest::num::u8::ANY),
+            A2_scalar_bytes in proptest::array::uniform32(proptest::num::u8::ANY),
+        ) {
+            // Construct 128-bit scalars a1 and a2 (upper 16 bytes are zero)
+            let mut a1_bytes = [0u8; 32];
+            let mut a2_bytes = [0u8; 32];
+            a1_bytes[..16].copy_from_slice(&a1_bytes_16);
+            a2_bytes[..16].copy_from_slice(&a2_bytes_16);
+
+            let a1 = Scalar::from_bytes_mod_order(a1_bytes);
+            let a2 = Scalar::from_bytes_mod_order(a2_bytes);
+
+            // Construct full 256-bit scalar b
+            let b = Scalar::from_bytes_mod_order(b_bytes);
+
+            // Generate random points A1 and A2 using scalar multiplication of basepoint
+            let A1_scalar = Scalar::from_bytes_mod_order(A1_scalar_bytes);
+            let A2_scalar = Scalar::from_bytes_mod_order(A2_scalar_bytes);
+            let A1 = &constants::ED25519_BASEPOINT_POINT * &A1_scalar;
+            let A2 = &constants::ED25519_BASEPOINT_POINT * &A2_scalar;
+
+            // Compute using the optimized triple-base function
+            let result_optimized = mul_128_128_256(&a1, &A1, &a2, &A2, &b);
+
+            // Compute using raw operations: a1*A1 + a2*A2 + b*B
+            let expected = &(&(&a1 * &A1) + &(&a2 * &A2)) + &(&b * &constants::ED25519_BASEPOINT_POINT);
+
+            proptest::prop_assert_eq!(result_optimized, expected, "Optimized triple scalar mul should equal raw operations");
+        }
+    }
 }

@@ -91,6 +91,7 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
+use alloc::vec::Vec;
 use core::array::TryFromSliceError;
 use core::borrow::Borrow;
 use core::fmt::Debug;
@@ -1264,6 +1265,7 @@ impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
 
         ensures
             is_valid_edwards_point(result),
+            is_well_formed_edwards_point(result),
             // Semantic correctness: affine addition law
             ({
                 let (x1, y1) = edwards_point_as_affine(*self);
@@ -1303,14 +1305,15 @@ impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
         let result = sum.as_extended();
 
         proof {
-            // Assume postconditions
-            assume(is_valid_edwards_point(result));
+            // CompletedPoint::as_extended ensures is_well_formed_edwards_point(result)
+            // Assume affine semantics postcondition
             assume({
                 let (x1, y1) = edwards_point_as_affine(*self);
                 let (x2, y2) = edwards_point_as_affine(*other);
                 edwards_point_as_affine(result) == edwards_add(x1, y1, x2, y2)
             });
         }
+
         result
     }
 }
@@ -1328,6 +1331,7 @@ impl<'b> AddAssign<&'b EdwardsPoint> for EdwardsPoint {
             is_well_formed_edwards_point(*_rhs),
         ensures
             is_valid_edwards_point(*self),
+            is_well_formed_edwards_point(*self),
             // Semantic correctness: result is the addition of old(self) + rhs
             ({
                 let (x1, y1) = edwards_point_as_affine(*old(self));
@@ -1448,6 +1452,76 @@ impl<'b> SubAssign<&'b EdwardsPoint> for EdwardsPoint {
 } // verus!
 define_sub_assign_variants!(LHS = EdwardsPoint, RHS = EdwardsPoint);
 
+verus! {
+
+impl EdwardsPoint {
+    /// Compute the sum of all EdwardsPoints in a slice.
+    ///
+    /// # Returns
+    ///
+    /// The sum of all points using elliptic curve addition.
+    #[allow(clippy::needless_range_loop, clippy::op_ref)]
+    pub fn sum_of_slice(points: &[EdwardsPoint]) -> (result: EdwardsPoint)
+        requires
+            forall|i: int|
+                0 <= i < points@.len() ==> is_well_formed_edwards_point(#[trigger] points@[i]),
+        ensures
+            is_well_formed_edwards_point(result),
+            edwards_point_as_affine(result) == sum_of_points(points@),
+    {
+        let n = points.len();
+        let mut acc = EdwardsPoint::identity();
+
+        proof {
+            assert(points@.subrange(0, 0) =~= Seq::<EdwardsPoint>::empty());
+            // identity() has affine coords (0, 1) which equals sum_of_points(empty)
+            lemma_identity_affine_coords(acc);
+        }
+
+        for i in 0..n
+            invariant
+                n == points.len(),
+                is_well_formed_edwards_point(acc),
+                edwards_point_as_affine(acc) == sum_of_points(points@.subrange(0, i as int)),
+                forall|j: int|
+                    0 <= j < points@.len() ==> is_well_formed_edwards_point(#[trigger] points@[j]),
+        {
+            proof {
+                let sub = points@.subrange(0, (i + 1) as int);
+                assert(sub.subrange(0, i as int) =~= points@.subrange(0, i as int));
+            }
+
+            acc = &acc + &points[i];
+
+        }
+
+        proof {
+            assert(points@.subrange(0, n as int) =~= points@);
+        }
+
+        acc
+    }
+}
+
+// Spec function: extracts the points collected from an iterator
+pub uninterp spec fn spec_points_from_iter<T, I>(iter: I) -> Seq<EdwardsPoint>;
+
+// Helper to collect iterator into Vec<EdwardsPoint>
+#[verifier::external_body]
+fn collect_points_from_iter<T, I>(iter: I) -> (result: Vec<EdwardsPoint>) where
+    T: Borrow<EdwardsPoint>,
+    I: Iterator<Item = T>,
+
+    ensures
+        result@ == spec_points_from_iter::<T, I>(iter),
+        // Assume all collected points are well-formed (trusted boundary)
+        forall|i: int|
+            0 <= i < result@.len() ==> is_well_formed_edwards_point(#[trigger] result@[i]),
+{
+    iter.map(|item| *item.borrow()).collect()
+}
+
+/* <ORIGINAL CODE>
 impl<T> Sum<T> for EdwardsPoint
 where
     T: Borrow<EdwardsPoint>,
@@ -1459,13 +1533,28 @@ where
         iter.fold(EdwardsPoint::identity(), |acc, item| acc + item.borrow())
     }
 }
+</ORIGINAL CODE> */
+
+/* <VERIFICATION NOTE>
+Iterator operations and Borrow trait are not directly supported by Verus.
+We use an external_body helper to collect the iterator into Vec<EdwardsPoint>,
+then call the verified sum_of_slice function for the actual computation.
+</VERIFICATION NOTE> */
+
+impl<T> Sum<T> for EdwardsPoint where T: Borrow<EdwardsPoint> {
+    fn sum<I>(iter: I) -> (result: Self) where I: Iterator<Item = T>
+        ensures
+            is_well_formed_edwards_point(result),
+            edwards_point_as_affine(result) == sum_of_points(spec_points_from_iter::<T, I>(iter)),
+    {
+        let points = collect_points_from_iter(iter);
+        EdwardsPoint::sum_of_slice(&points)
+    }
+}
 
 // ------------------------------------------------------------------------
 // Negation
 // ------------------------------------------------------------------------
-
-verus! {
-
 /// Spec for &EdwardsPoint negation
 #[cfg(verus_keep_ghost)]
 impl vstd::std_specs::ops::NegSpecImpl for &EdwardsPoint {

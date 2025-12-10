@@ -39,6 +39,9 @@ use crate::specs::field_specs_u64::*;
 use crate::specs::montgomery_specs::*;
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)]
+use vstd::arithmetic::div_mod::{lemma_mod_bound, lemma_small_mod};
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
 use vstd::arithmetic::power2::pow2;
 use vstd::prelude::*;
 
@@ -707,6 +710,78 @@ pub open spec fn edwards_scalar_mul_signed(point_affine: (nat, nat), n: int) -> 
         let (x, y) = edwards_scalar_mul(point_affine, (-n) as nat);
         (math_field_neg(x), y)
     }
+}
+
+/// Spec function to compute sum of all EdwardsPoints in a sequence.
+/// Returns the affine coordinates of the result.
+/// Note: Processes from back to front to match iterative loop order.
+pub open spec fn sum_of_points(points: Seq<EdwardsPoint>) -> (nat, nat)
+    decreases points.len(),
+{
+    if points.len() == 0 {
+        // Identity point in affine coordinates: (0, 1)
+        (0, 1)
+    } else {
+        let last = (points.len() - 1) as int;
+        let prev = sum_of_points(points.subrange(0, last));
+        let point_affine = edwards_point_as_affine(points[last]);
+        edwards_add(prev.0, prev.1, point_affine.0, point_affine.1)
+    }
+}
+
+/// Lemma: The identity point has affine coordinates (0, 1).
+///
+/// For an identity point where x == 0 and y == z (with z != 0):
+/// - x * z^{-1} = 0 * z^{-1} = 0
+/// - y * z^{-1} = z * z^{-1} = 1
+pub proof fn lemma_identity_affine_coords(point: EdwardsPoint)
+    requires
+        is_identity_edwards_point(point),
+    ensures
+        edwards_point_as_affine(point) == (0nat, 1nat),
+{
+    let x = spec_field_element(&point.X);
+    let y = spec_field_element(&point.Y);
+    let z = spec_field_element(&point.Z);
+    let z_inv = math_field_inv(z);
+
+    // From is_identity_edwards_point: z != 0, x == 0, y == z
+    assert(z != 0);
+    assert(x == 0);
+    assert(y == z);
+
+    // Establish p() > 0
+    assert(p() > 0) by {
+        pow255_gt_19();
+    }
+
+    // x * z_inv = 0 * z_inv = 0
+    // math_field_mul(0, z_inv) = (0 * z_inv) % p() = 0 % p() = 0
+    assert(math_field_mul(0nat, z_inv) == 0nat) by {
+        assert(0nat * z_inv == 0nat);
+        // 0 % p == 0 when p > 0
+        lemma_small_mod(0nat, p());
+    }
+    assert(math_field_mul(x, z_inv) == 0nat);
+
+    // z = spec_field_element(&point.Z) = spec_field_element_as_nat(&point.Z) % p()
+    // So z < p() by property of modulo
+    assert(z < p()) by {
+        lemma_mod_bound(spec_field_element_as_nat(&point.Z) as int, p() as int);
+    }
+
+    // Since z < p() and z != 0, we have z % p() == z and z % p() != 0
+    assert(z % p() == z) by {
+        lemma_small_mod(z, p());
+    }
+    assert(z % p() != 0);
+
+    // y * z_inv = z * z_inv = 1 (by field inverse property)
+    field_inv_property(z);
+    // field_inv_property ensures (z % p()) * math_field_inv(z) % p() == 1
+    // Since z % p() == z, we have z * z_inv % p() == 1
+    assert(math_field_mul(z, z_inv) == 1nat);
+    assert(math_field_mul(y, z_inv) == 1nat);
 }
 
 } // verus!

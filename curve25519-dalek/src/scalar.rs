@@ -113,6 +113,7 @@
 use crate::lemmas::common_lemmas::mask_lemmas::*;
 use crate::lemmas::common_lemmas::pow_lemmas::*;
 use crate::lemmas::common_lemmas::shift_lemmas::*;
+use crate::lemmas::common_lemmas::sum_lemmas::*;
 use core::borrow::Borrow;
 use core::fmt::Debug;
 use core::iter::{Product, Sum};
@@ -725,15 +726,15 @@ impl vstd::std_specs::ops::SubSpecImpl<&Scalar> for &Scalar {
 impl<'b> Sub<&'b Scalar> for &Scalar {
     type Output = Scalar;
 
-    // VERIFICATION NOTE: PROOF BYPASS (problems with traits and preconditions)
+    // VERIFICATION NOTE: VERIFIED
     // PRECONDITION is_canonical_scalar(self) && is_canonical_scalar(_rhs)
     #[allow(non_snake_case)]
     fn sub(self, _rhs: &'b Scalar) -> (result:
         Scalar)/* VERIFICATION NOTE: preconditions are added to the SpecImpl above
-    requires
-      is_canonical_scalar(self),
-      is_canonical_scalar(_rhs),
-    */
+        requires
+            is_canonical_scalar(self),
+            is_canonical_scalar(rhs)
+        */
 
         ensures
             bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes)
@@ -745,7 +746,9 @@ impl<'b> Sub<&'b Scalar> for &Scalar {
         /* <MODIFIED CODE> */
         let self_unpacked = self.unpack();
         let rhs_unpacked = _rhs.unpack();
+
         proof {
+            // unpack() ensures these properties:
             assert(to_nat(&self_unpacked.limbs) == bytes_to_nat(&self.bytes));
             assert(to_nat(&rhs_unpacked.limbs) == bytes_to_nat(&_rhs.bytes));
             assert(limbs_bounded(&self_unpacked));
@@ -754,29 +757,49 @@ impl<'b> Sub<&'b Scalar> for &Scalar {
 
         // UnpackedScalar::sub requires: -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order()
         proof {
-            assume(-group_order() <= to_nat(&self_unpacked.limbs) - to_nat(&rhs_unpacked.limbs));
-            assume(to_nat(&self_unpacked.limbs) - to_nat(&rhs_unpacked.limbs) < group_order());
+            // -group_order() < to_nat(&self_unpacked.limbs) - to_nat(&rhs_unpacked.limbs) < grour_order()
+            lemma_sub_symmetric_bound(
+                to_nat(&self_unpacked.limbs),
+                to_nat(&rhs_unpacked.limbs),
+                group_order(),
+            );
         }
 
         let result_unpacked = UnpackedScalar::sub(&self_unpacked, &rhs_unpacked);
+
         proof {
             // Postconditions from sub - need to strengthen, review connections
-            assume(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs)
-                - to_nat(&rhs_unpacked.limbs)) % (group_order() as int));
-            assume(limbs_bounded(&result_unpacked));
+            assert(to_nat(&result_unpacked.limbs) == (to_nat(&self_unpacked.limbs) - to_nat(
+                &rhs_unpacked.limbs,
+            )) % (group_order() as int));
+            assert(limbs_bounded(&result_unpacked));
+            assert(to_nat(&result_unpacked.limbs) < group_order());
+
+            // Since result < group_order(), taking mod again gives the same value
+            lemma_small_mod(to_nat(&result_unpacked.limbs), group_order());
+            assert(to_nat(&result_unpacked.limbs) % group_order() == to_nat(
+                &result_unpacked.limbs,
+            ));
         }
 
         let result = result_unpacked.pack();
+
         proof {
-            assert(to_nat(&result_unpacked.limbs) == to_nat(&result_unpacked.limbs) % pow2(256))
-                by {
-                assert(group_order() < pow2(256)) by {
-                    assume(false);
+            // Goal: bytes_to_nat(&result.bytes) == to_nat(&result_unpacked.limbs)
+            // pack postcondition gives: bytes_to_nat(...) == to_nat(...) % pow2(256)
+            assert(bytes_to_nat(&result.bytes) == to_nat(&result_unpacked.limbs)) by {
+                assert(to_nat(&result_unpacked.limbs) % pow2(256) == to_nat(&result_unpacked.limbs))
+                    by {
+                    assert(to_nat(&result_unpacked.limbs) < pow2(256)) by {
+                        // sub postcondition: to_nat(...) < group_order()
+                        // and group_order() < pow2(256)
+                        lemma_group_order_smaller_than_pow256();
+                        lemma_scalar52_lt_pow2_256_if_canonical(&result_unpacked);
+                    }
+                    lemma_small_mod(to_nat(&result_unpacked.limbs), pow2(256));
                 }
-                lemma_small_mod(to_nat(&result_unpacked.limbs), pow2(256));
             }
-            assert(bytes_to_nat(&result.bytes) % group_order() == to_nat(&result_unpacked.limbs)
-                % group_order());
+
             assert(bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes)
                 - bytes_to_nat(&_rhs.bytes)) % (group_order() as int));
         }

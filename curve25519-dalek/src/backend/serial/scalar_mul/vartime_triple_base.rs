@@ -143,3 +143,139 @@ pub fn mul_128_128_256(
 
     r.as_extended()
 }
+
+#[cfg(test)]
+mod test {
+
+    use rand::rng;
+
+    use super::*;
+    use crate::scalar::Scalar;
+
+    #[test]
+    fn test_triple_base_multiplication() {
+        // Test vectors with random scalars
+        let a1 = Scalar::from(12345u64);
+        let a2 = Scalar::from(67890u64);
+        let b = Scalar::random(&mut rng());
+
+        // Random points (using scalar multiplication of basepoint)
+        let A1 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(2u64);
+        let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(3u64);
+
+        // Compute using the optimized triple-base function
+        let result = mul_128_128_256(&a1, &A1, &a2, &A2, &b);
+
+        // Compute using naive addition
+        let expected = &(&(&a1 * &A1) + &(&a2 * &A2)) + &(&b * &constants::ED25519_BASEPOINT_POINT);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_triple_base_multiplication_128() {
+        // Test with 128-bit scalars for a1 and a2
+        // Create a 128-bit scalar (use lower half)
+        let a1_bytes = [
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+        ];
+        let a1 = Scalar::from_bytes_mod_order(a1_bytes);
+
+        let a2_bytes = [
+            0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
+            0x77, 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+        ];
+        let a2 = Scalar::from_bytes_mod_order(a2_bytes);
+
+        // Full 256-bit scalar for b
+        let b = Scalar::random(&mut rng());
+
+        // Test points
+        let A1 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(5u64);
+        let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(7u64);
+
+        // Test the optimized 128-bit version
+        let result_128 = mul_128_128_256(&a1, &A1, &a2, &A2, &b);
+
+        // Compute expected result
+        let expected = &(&(&a1 * &A1) + &(&a2 * &A2)) + &(&b * &constants::ED25519_BASEPOINT_POINT);
+
+        assert_eq!(result_128, expected, "Optimized 128-bit version failed");
+    }
+
+    #[test]
+    fn test_triple_base_with_zero_scalars() {
+        let a1 = Scalar::ZERO;
+        let a2 = Scalar::from(123u64);
+        let b = Scalar::random(&mut rng());
+
+        let A1 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(2u64);
+        let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(3u64);
+
+        let result = mul_128_128_256(&a1, &A1, &a2, &A2, &b);
+        let expected = &(&a2 * &A2) + &(&b * &constants::ED25519_BASEPOINT_POINT);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_triple_base_with_identity_points() {
+        let a1 = Scalar::from(111u64);
+        let a2 = Scalar::from(222u64);
+        let b = Scalar::random(&mut rng());
+
+        let A1 = EdwardsPoint::identity();
+        let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(3u64);
+
+        let result = mul_128_128_256(&a1, &A1, &a2, &A2, &b);
+        let expected = &(&a2 * &A2) + &(&b * &constants::ED25519_BASEPOINT_POINT);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_triple_base_consistency() {
+        // Test that both functions give the same result for 128-bit inputs
+        let a1 = Scalar::from(0x123456789ABCDEFu64);
+        let a2 = Scalar::from(0xFEDCBA987654321u64);
+        let b = Scalar::random(&mut rng());
+
+        let A1 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(11u64);
+        let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(13u64);
+
+        let result_optimized = mul_128_128_256(&a1, &A1, &a2, &A2, &b);
+        let result_general =
+            &(&(&a1 * &A1) + &(&a2 * &A2)) + &(&b * &constants::ED25519_BASEPOINT_POINT);
+
+        assert_eq!(result_optimized, result_general);
+    }
+
+    #[test]
+    fn test_triple_base_large_scalars() {
+        // Test with large scalars
+        let mut a1_bytes = [0xFFu8; 32];
+        for i in 16..32 {
+            a1_bytes[i] = 0x00;
+        }
+        let a1 = Scalar::from_bytes_mod_order(a1_bytes);
+
+        let mut a2_bytes = [0xAAu8; 32];
+        for i in 16..32 {
+            a2_bytes[i] = 0x00;
+        }
+        let a2 = Scalar::from_bytes_mod_order(a2_bytes);
+
+        let b = Scalar::random(&mut rng());
+
+        let A1 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(17u64);
+        let A2 = &constants::ED25519_BASEPOINT_POINT * &Scalar::from(19u64);
+
+        let result = mul_128_128_256(&a1, &A1, &a2, &A2, &b);
+        let expected = &(&(&a1 * &A1) + &(&a2 * &A2)) + &(&b * &constants::ED25519_BASEPOINT_POINT);
+
+        assert_eq!(result, expected);
+    }
+}

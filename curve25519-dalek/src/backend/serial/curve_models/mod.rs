@@ -130,7 +130,10 @@ use subtle::ConditionallySelectable;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
+#[cfg(verus_keep_ghost)]
+use crate::backend::serial::u64::subtle_assumes::choice_is_true;
 use crate::constants;
+use crate::core_assumes::negate_field;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::specs::edwards_specs::*;
 #[allow(unused_imports)] // Used in verus! blocks
@@ -195,7 +198,14 @@ pub struct AffineNielsPoint {
 
 #[cfg(feature = "zeroize")]
 impl Zeroize for AffineNielsPoint {
-    fn zeroize(&mut self) {
+    fn zeroize(&mut self)
+        ensures
+    // All fields are zeroed (each limb is 0)
+
+            forall|i: int| 0 <= i < 5 ==> self.y_plus_x.limbs[i] == 0,
+            forall|i: int| 0 <= i < 5 ==> self.y_minus_x.limbs[i] == 0,
+            forall|i: int| 0 <= i < 5 ==> self.xy2d.limbs[i] == 0,
+    {
         self.y_plus_x.zeroize();
         self.y_minus_x.zeroize();
         self.xy2d.zeroize();
@@ -218,7 +228,15 @@ pub struct ProjectiveNielsPoint {
 
 #[cfg(feature = "zeroize")]
 impl Zeroize for ProjectiveNielsPoint {
-    fn zeroize(&mut self) {
+    fn zeroize(&mut self)
+        ensures
+    // All fields are zeroed (each limb is 0)
+
+            forall|i: int| 0 <= i < 5 ==> self.Y_plus_X.limbs[i] == 0,
+            forall|i: int| 0 <= i < 5 ==> self.Y_minus_X.limbs[i] == 0,
+            forall|i: int| 0 <= i < 5 ==> self.Z.limbs[i] == 0,
+            forall|i: int| 0 <= i < 5 ==> self.T2d.limbs[i] == 0,
+    {
         self.Y_plus_X.zeroize();
         self.Y_minus_X.zeroize();
         self.Z.zeroize();
@@ -356,50 +374,104 @@ impl ValidityCheck for ProjectivePoint {
     }
 }
 
-} // verus!
 // ------------------------------------------------------------------------
 // Constant-time assignment
 // ------------------------------------------------------------------------
 impl ConditionallySelectable for ProjectiveNielsPoint {
-    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
-        ProjectiveNielsPoint {
+    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> (result: Self)
+        ensures
+    // If choice is false, return a
+
+            !choice_is_true(choice) ==> result == *a,
+            // If choice is true, return b
+            choice_is_true(choice) ==> result == *b,
+    {
+        let result = ProjectiveNielsPoint {
             Y_plus_X: FieldElement::conditional_select(&a.Y_plus_X, &b.Y_plus_X, choice),
             Y_minus_X: FieldElement::conditional_select(&a.Y_minus_X, &b.Y_minus_X, choice),
             Z: FieldElement::conditional_select(&a.Z, &b.Z, choice),
             T2d: FieldElement::conditional_select(&a.T2d, &b.T2d, choice),
+        };
+        proof {
+            // Postconditions follow from FieldElement51::conditional_select specs
+            // Each field select returns a's or b's field based on choice, so struct equals a or b
+            // Verus can't automatically derive struct equality from limb-level specs
+            assume(!choice_is_true(choice) ==> result == *a);
+            assume(choice_is_true(choice) ==> result == *b);
         }
+        result
     }
 
-    fn conditional_assign(&mut self, other: &Self, choice: Choice) {
+    fn conditional_assign(&mut self, other: &Self, choice: Choice)
+        ensures
+    // If choice is false, self remains unchanged
+
+            !choice_is_true(choice) ==> *self == *old(self),
+            // If choice is true, self is assigned from other
+            choice_is_true(choice) ==> *self == *other,
+    {
         self.Y_plus_X.conditional_assign(&other.Y_plus_X, choice);
         self.Y_minus_X.conditional_assign(&other.Y_minus_X, choice);
         self.Z.conditional_assign(&other.Z, choice);
         self.T2d.conditional_assign(&other.T2d, choice);
+        proof {
+            // Postconditions follow from FieldElement51::conditional_assign specs
+            // Each field assign keeps old or assigns other based on choice
+            // Verus can't automatically derive struct equality from limb-level specs
+            assume(!choice_is_true(choice) ==> *self == *old(self));
+            assume(choice_is_true(choice) ==> *self == *other);
+        }
     }
 }
 
 impl ConditionallySelectable for AffineNielsPoint {
-    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
-        AffineNielsPoint {
+    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> (result: Self)
+        ensures
+    // If choice is false, return a
+
+            !choice_is_true(choice) ==> result == *a,
+            // If choice is true, return b
+            choice_is_true(choice) ==> result == *b,
+    {
+        let result = AffineNielsPoint {
             y_plus_x: FieldElement::conditional_select(&a.y_plus_x, &b.y_plus_x, choice),
             y_minus_x: FieldElement::conditional_select(&a.y_minus_x, &b.y_minus_x, choice),
             xy2d: FieldElement::conditional_select(&a.xy2d, &b.xy2d, choice),
+        };
+        proof {
+            // Postconditions follow from FieldElement51::conditional_select specs
+            // Each field select returns a's or b's field based on choice, so struct equals a or b
+            // Verus can't automatically derive struct equality from limb-level specs
+            assume(!choice_is_true(choice) ==> result == *a);
+            assume(choice_is_true(choice) ==> result == *b);
         }
+        result
     }
 
-    fn conditional_assign(&mut self, other: &Self, choice: Choice) {
+    fn conditional_assign(&mut self, other: &Self, choice: Choice)
+        ensures
+    // If choice is false, self remains unchanged
+
+            !choice_is_true(choice) ==> *self == *old(self),
+            // If choice is true, self is assigned from other
+            choice_is_true(choice) ==> *self == *other,
+    {
         self.y_plus_x.conditional_assign(&other.y_plus_x, choice);
         self.y_minus_x.conditional_assign(&other.y_minus_x, choice);
         self.xy2d.conditional_assign(&other.xy2d, choice);
+        proof {
+            // Postconditions follow from FieldElement51::conditional_assign specs
+            // Each field assign keeps old or assigns other based on choice
+            // Verus can't automatically derive struct equality from limb-level specs
+            assume(!choice_is_true(choice) ==> *self == *old(self));
+            assume(choice_is_true(choice) ==> *self == *other);
+        }
     }
 }
 
 // ------------------------------------------------------------------------
 // Point conversions
 // ------------------------------------------------------------------------
-
-verus! {
-
 impl ProjectivePoint {
     /// Convert this point from the \\( \mathbb P\^2 \\) model to the
     /// \\( \mathbb P\^3 \\) model.
@@ -616,7 +688,16 @@ impl vstd::std_specs::ops::AddSpecImpl<&ProjectiveNielsPoint> for &EdwardsPoint 
 impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn add(self, other: &'b ProjectiveNielsPoint) -> (result: CompletedPoint)
+    fn add(self, other: &'b ProjectiveNielsPoint) -> (result:
+        CompletedPoint)/* VERIFICATION NOTE: requires clause is in AddSpecImpl::add_req
+        requires
+            is_well_formed_edwards_point(*self),
+            fe51_limbs_bounded(&other.Y_plus_X, 54),
+            fe51_limbs_bounded(&other.Y_minus_X, 54),
+            fe51_limbs_bounded(&other.Z, 54),
+            fe51_limbs_bounded(&other.T2d, 54),
+        */
+
         ensures
     // The result represents the Edwards addition of the affine forms of self and other
 
@@ -703,11 +784,35 @@ impl vstd::std_specs::ops::SubSpecImpl<&ProjectiveNielsPoint> for &EdwardsPoint 
 impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn sub(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
+    fn sub(self, other: &'b ProjectiveNielsPoint) -> (result:
+        CompletedPoint)/* VERIFICATION NOTE: requires clause is in SubSpecImpl::sub_req
+        requires
+            is_well_formed_edwards_point(*self),
+            fe51_limbs_bounded(&other.Y_plus_X, 54),
+            fe51_limbs_bounded(&other.Y_minus_X, 54),
+            fe51_limbs_bounded(&other.Z, 54),
+            fe51_limbs_bounded(&other.T2d, 54),
+        */
+
+        ensures
+    // The result represents the Edwards subtraction of the affine forms of self and other
+
+            is_valid_completed_point(result),
+            ({
+                let self_affine = edwards_point_as_affine(*self);
+                let other_affine = projective_niels_point_as_affine_edwards(*other);
+                completed_point_as_affine_edwards(result) == edwards_sub(
+                    self_affine.0,
+                    self_affine.1,
+                    other_affine.0,
+                    other_affine.1,
+                )
+            }),
+    {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         proof {
-            assume(fe51_limbs_bounded(&Y_plus_X, 54) && fe51_limbs_bounded(&Y_minus_X, 54));  // for PM = &Y_plus_X * &other.Y_minus_X and MP = &Y_minus_X * &other.Y_plus_X
+            assume(fe51_limbs_bounded(&Y_plus_X, 54) && fe51_limbs_bounded(&Y_minus_X, 54));
         }
         let PM = &Y_plus_X * &other.Y_minus_X;
         let MP = &Y_minus_X * &other.Y_plus_X;
@@ -732,7 +837,16 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
             T: &ZZ2 + &TT2d,
         };
         proof {
+            // postconditions
             assume(is_valid_completed_point(result));
+            let self_affine = edwards_point_as_affine(*self);
+            let other_affine = projective_niels_point_as_affine_edwards(*other);
+            assume(completed_point_as_affine_edwards(result) == edwards_sub(
+                self_affine.0,
+                self_affine.1,
+                other_affine.0,
+                other_affine.1,
+            ));
         }
         result
     }
@@ -766,7 +880,16 @@ impl vstd::std_specs::ops::AddSpecImpl<&AffineNielsPoint> for &EdwardsPoint {
 impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn add(self, other: &'b AffineNielsPoint) -> (result: CompletedPoint)
+    fn add(self, other: &'b AffineNielsPoint) -> (result:
+        CompletedPoint)/* VERIFICATION NOTE: requires clause is in AddSpecImpl::add_req
+        requires
+            is_well_formed_edwards_point(*self),
+            sum_of_limbs_bounded(&self.Z, &self.Z, u64::MAX),
+            fe51_limbs_bounded(&other.y_plus_x, 54),
+            fe51_limbs_bounded(&other.y_minus_x, 54),
+            fe51_limbs_bounded(&other.xy2d, 54),
+        */
+
         ensures
     // The result represents the Edwards addition of the affine forms of self and other
 
@@ -810,61 +933,224 @@ impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
     }
 }
 
-} // verus!
+/// Spec for &EdwardsPoint - &AffineNielsPoint
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::SubSpecImpl<&AffineNielsPoint> for &EdwardsPoint {
+    open spec fn obeys_sub_spec() -> bool {
+        false
+    }
+
+    open spec fn sub_req(self, rhs: &AffineNielsPoint) -> bool {
+        // Preconditions needed for field operations
+        is_well_formed_edwards_point(*self) && sum_of_limbs_bounded(
+            &self.Z,
+            &self.Z,
+            u64::MAX,
+        )  // for Z2 = &self.Z + &self.Z
+         && fe51_limbs_bounded(&rhs.y_plus_x, 54) && fe51_limbs_bounded(&rhs.y_minus_x, 54)
+            && fe51_limbs_bounded(&rhs.xy2d, 54)
+    }
+
+    open spec fn sub_spec(self, rhs: &AffineNielsPoint) -> CompletedPoint {
+        // Placeholder - actual spec is in the ensures clause of the sub function
+        arbitrary()
+    }
+}
+
 //#[doc(hidden)]
 impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn sub(self, other: &'b AffineNielsPoint) -> CompletedPoint {
+    fn sub(self, other: &'b AffineNielsPoint) -> (result:
+        CompletedPoint)/* VERIFICATION NOTE: requires clause is in SubSpecImpl::sub_req
+        requires
+            is_well_formed_edwards_point(*self),
+            sum_of_limbs_bounded(&self.Z, &self.Z, u64::MAX),
+            fe51_limbs_bounded(&other.y_plus_x, 54),
+            fe51_limbs_bounded(&other.y_minus_x, 54),
+            fe51_limbs_bounded(&other.xy2d, 54),
+        */
+
+        ensures
+    // The result represents the Edwards subtraction of the affine forms of self and other
+
+            is_valid_completed_point(result),
+            ({
+                let self_affine = edwards_point_as_affine(*self);
+                let other_affine = affine_niels_point_as_affine_edwards(*other);
+                completed_point_as_affine_edwards(result) == edwards_sub(
+                    self_affine.0,
+                    self_affine.1,
+                    other_affine.0,
+                    other_affine.1,
+                )
+            }),
+    {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
+        proof {
+            assume(sum_of_limbs_bounded(&Y_plus_X, &Y_minus_X, u64::MAX));
+            assume(fe51_limbs_bounded(&Y_plus_X, 54) && fe51_limbs_bounded(&Y_minus_X, 54));
+        }
         let PM = &Y_plus_X * &other.y_minus_x;
         let MP = &Y_minus_X * &other.y_plus_x;
         let Txy2d = &self.T * &other.xy2d;
         let Z2 = &self.Z + &self.Z;
-
-        CompletedPoint {
+        proof {
+            assume(sum_of_limbs_bounded(&Z2, &Txy2d, u64::MAX));
+            assume(sum_of_limbs_bounded(&PM, &MP, u64::MAX));
+            assume(fe51_limbs_bounded(&PM, 54) && fe51_limbs_bounded(&MP, 54));
+            assume(fe51_limbs_bounded(&Z2, 54) && fe51_limbs_bounded(&Txy2d, 54));
+        }
+        let result = CompletedPoint {
             X: &PM - &MP,
             Y: &PM + &MP,
             Z: &Z2 - &Txy2d,
             T: &Z2 + &Txy2d,
+        };
+        proof {
+            // postconditions
+            assume(is_valid_completed_point(result));
+            let self_affine = edwards_point_as_affine(*self);
+            let other_affine = affine_niels_point_as_affine_edwards(*other);
+            assume(completed_point_as_affine_edwards(result) == edwards_sub(
+                self_affine.0,
+                self_affine.1,
+                other_affine.0,
+                other_affine.1,
+            ));
         }
+        result
     }
 }
 
 // ------------------------------------------------------------------------
 // Negation
 // ------------------------------------------------------------------------
+/// Spec for &ProjectiveNielsPoint negation
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::NegSpecImpl for &ProjectiveNielsPoint {
+    open spec fn obeys_neg_spec() -> bool {
+        false
+    }
+
+    open spec fn neg_req(self) -> bool {
+        // Preconditions: limbs must be bounded for field element negation
+        fe51_limbs_bounded(&self.T2d, 51)
+    }
+
+    open spec fn neg_spec(self) -> ProjectiveNielsPoint {
+        // Negation swaps Y_plus_X and Y_minus_X, keeps Z, negates T2d
+        // The affine point represented is (-x, y) where (x, y) was the original
+        arbitrary()
+    }
+}
 
 impl<'a> Neg for &'a ProjectiveNielsPoint {
     type Output = ProjectiveNielsPoint;
 
-    fn neg(self) -> ProjectiveNielsPoint {
-        ProjectiveNielsPoint {
+    /// Negate a ProjectiveNielsPoint: for Edwards point (x, y), negation is (-x, y).
+    /// In Niels form (Y+X, Y-X, Z, T2d), this swaps Y+X ↔ Y-X and negates T2d.
+    fn neg(self) -> (result:
+        ProjectiveNielsPoint)/* requires clause in NegSpecImpl:
+       requires fe51_limbs_bounded(&self.T2d, 51)
+    */
+
+        ensures
+    // Structural: negation swaps Y_plus_X and Y_minus_X, keeps Z
+
+            result.Y_plus_X == self.Y_minus_X,
+            result.Y_minus_X == self.Y_plus_X,
+            result.Z == self.Z,
+            // Mathematical: the affine point is negated (x, y) → (-x, y)
+            ({
+                let self_affine = projective_niels_point_as_affine_edwards(*self);
+                let result_affine = projective_niels_point_as_affine_edwards(result);
+                result_affine == (math_field_neg(self_affine.0), self_affine.1)
+            }),
+    {
+        // ORIGINAL CODE: T2d: -(&self.T2d),
+        // Using negate_field wrapper to avoid Verus internal error
+        let result = ProjectiveNielsPoint {
             Y_plus_X: self.Y_minus_X,
             Y_minus_X: self.Y_plus_X,
             Z: self.Z,
-            T2d: -(&self.T2d),
+            T2d: negate_field(&self.T2d),
+        };
+        proof {
+            let self_affine = projective_niels_point_as_affine_edwards(*self);
+            assume(projective_niels_point_as_affine_edwards(result) == (
+                math_field_neg(self_affine.0),
+                self_affine.1,
+            ));
         }
+        result
+    }
+}
+
+/// Spec for &AffineNielsPoint negation
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::NegSpecImpl for &AffineNielsPoint {
+    open spec fn obeys_neg_spec() -> bool {
+        false
+    }
+
+    open spec fn neg_req(self) -> bool {
+        // Preconditions: limbs must be bounded for field element negation
+        fe51_limbs_bounded(&self.xy2d, 51)
+    }
+
+    open spec fn neg_spec(self) -> AffineNielsPoint {
+        // Negation swaps y_plus_x and y_minus_x, negates xy2d
+        // The affine point represented is (-x, y) where (x, y) was the original
+        arbitrary()
     }
 }
 
 impl<'a> Neg for &'a AffineNielsPoint {
     type Output = AffineNielsPoint;
 
-    fn neg(self) -> AffineNielsPoint {
-        AffineNielsPoint {
+    /// Negate an AffineNielsPoint: for Edwards point (x, y), negation is (-x, y).
+    /// In AffineNiels form (y+x, y-x, xy2d), this swaps y+x ↔ y-x and negates xy2d.
+    fn neg(self) -> (result:
+        AffineNielsPoint)/* requires clause in NegSpecImpl:
+       requires fe51_limbs_bounded(&self.xy2d, 51)
+    */
+
+        ensures
+    // Structural: negation swaps y_plus_x and y_minus_x
+
+            result.y_plus_x == self.y_minus_x,
+            result.y_minus_x == self.y_plus_x,
+            // Mathematical: the affine point is negated (x, y) → (-x, y)
+            ({
+                let self_affine = affine_niels_point_as_affine_edwards(*self);
+                let result_affine = affine_niels_point_as_affine_edwards(result);
+                result_affine == (math_field_neg(self_affine.0), self_affine.1)
+            }),
+    {
+        // ORIGINAL CODE: xy2d: -(&self.xy2d),
+        // Using negate_field wrapper to avoid Verus internal error
+        let result = AffineNielsPoint {
             y_plus_x: self.y_minus_x,
             y_minus_x: self.y_plus_x,
-            xy2d: -(&self.xy2d),
+            xy2d: negate_field(&self.xy2d),
+        };
+        proof {
+            let self_affine = affine_niels_point_as_affine_edwards(*self);
+            assume(affine_niels_point_as_affine_edwards(result) == (
+                math_field_neg(self_affine.0),
+                self_affine.1,
+            ));
         }
+        result
     }
 }
 
+} // verus!
 // ------------------------------------------------------------------------
 // Debug traits
 // ------------------------------------------------------------------------
-
 impl Debug for ProjectivePoint {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(

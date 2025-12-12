@@ -73,13 +73,15 @@ fn bit_length_i256(val: I256) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(all(feature = "rand_core", feature = "digest"))]
     use crate::{Scalar, digest::Update, traits::HEEADecomposition};
 
     #[cfg(feature = "rand_core")]
     use rand::RngCore;
 
     #[test]
-    #[cfg(feature = "rand_core")]
+    #[cfg(all(feature = "rand_core", feature = "digest"))]
     fn test_generate_half_size_scalars() {
         use rand::rng;
         use sha2::{Digest, Sha512};

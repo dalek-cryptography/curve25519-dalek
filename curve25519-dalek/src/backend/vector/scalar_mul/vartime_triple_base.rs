@@ -9,7 +9,10 @@
 
 #[curve25519_dalek_derive::unsafe_target_feature_specialize(
     "avx2",
-    conditional("avx512ifma,avx512vl", nightly)
+    conditional(
+        "avx512ifma,avx512vl",
+        all(curve25519_dalek_backend = "unstable_avx512", nightly)
+    )
 )]
 pub mod spec {
 
@@ -25,7 +28,6 @@ pub mod spec {
     #[for_target_feature("avx2")]
     use crate::backend::vector::avx2::constants::BASEPOINT_ODD_LOOKUP_TABLE;
 
-    #[cfg(feature = "precomputed-tables")]
     #[for_target_feature("avx512ifma")]
     use crate::backend::vector::ifma::constants::BASEPOINT_ODD_LOOKUP_TABLE;
 
@@ -33,6 +35,7 @@ pub mod spec {
     use crate::edwards::EdwardsPoint;
     use crate::scalar::HEEA_MAX_INDEX;
     use crate::scalar::Scalar;
+    #[allow(unused_imports)]
     use crate::traits::Identity;
     use crate::window::NafLookupTable5;
 

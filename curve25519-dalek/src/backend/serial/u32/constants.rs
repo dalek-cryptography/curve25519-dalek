@@ -136,6 +136,48 @@ pub const ED25519_BASEPOINT_POINT: EdwardsPoint = EdwardsPoint {
     ]),
 };
 
+/// The Ed25519 basepoint, mul by 2^128, as an `EdwardsPoint`.
+pub const ED25519_BASEPOINT_128_POINT: EdwardsPoint = EdwardsPoint {
+    X: FieldElement2625::from_limbs([
+        2664042, 23449881, 8588504, 31570262, 52025907, 14016958, 17934911, 10536770, 36081707,
+        18715816,
+    ]),
+    Y: FieldElement2625::from_limbs([
+        53612635, 17322216, 64979144, 12220533, 27384794, 7796776, 63981171, 31808137, 3318544,
+        10876052,
+    ]),
+    Z: FieldElement2625::from_limbs([
+        38318927, 6633020, 30360108, 27133620, 43190211, 599215, 50990868, 21586734, 34463843,
+        14390137,
+    ]),
+    T: FieldElement2625::from_limbs([
+        46012201, 27645749, 48994527, 27092089, 44549182, 4023192, 8388284, 20428666, 53367776,
+        2097936,
+    ]),
+};
+
+#[cfg(all(test, feature = "precomputed-tables"))]
+mod tests {
+    use super::*;
+    use crate::window::NafLookupTable5;
+
+    #[test]
+    fn basepoint_128_table_matches_generated() {
+        let generated = NafLookupTable5::<ProjectiveNielsPoint>::from(&ED25519_BASEPOINT_128_POINT);
+
+        for (expected, actual) in AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128
+            .0
+            .iter()
+            .zip(generated.0.iter())
+        {
+            assert_eq!(expected.Y_plus_X, actual.Y_plus_X);
+            assert_eq!(expected.Y_minus_X, actual.Y_minus_X);
+            assert_eq!(expected.Z, actual.Z);
+            assert_eq!(expected.T2d, actual.T2d);
+        }
+    }
+}
+
 /// The 8-torsion subgroup \\(\mathcal E \[8\]\\).
 ///
 /// In the case of Curve25519, it is cyclic; the \\(i\\)-th element of
@@ -4817,8 +4859,8 @@ pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128: NafLookupTable5<Projecti
     NafLookupTable5([
         ProjectiveNielsPoint {
             Y_plus_X: FieldElement2625::from_limbs([
-                56276677, 7217665, 6458785, 10236364, 12301838, 21813735, 14807218, 8790476,
-                39400252, 29591868,
+                56276677, 40772097, 73567648, 43790795, 79410701, 21813734, 81916082, 42344907,
+                39400251, 29591868,
             ]),
             Y_minus_X: FieldElement2625::from_limbs([
                 50948574, 27426767, 56390639, 14204703, 42467750, 27334249, 46046259, 21271367,
@@ -4835,8 +4877,8 @@ pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128: NafLookupTable5<Projecti
         },
         ProjectiveNielsPoint {
             Y_plus_X: FieldElement2625::from_limbs([
-                61573526, 26839672, 66658950, 7860582, 5467228, 30187735, 9483513, 29613442,
-                34510433, 30513335,
+                61573526, 60394104, 66658949, 41415014, 72576091, 30187734, 76592377, 63167873,
+                101619296, 30513334,
             ]),
             Y_minus_X: FieldElement2625::from_limbs([
                 51181788, 696007, 24915963, 12735707, 2911894, 7060820, 64624395, 1392014, 2117242,
@@ -4853,8 +4895,8 @@ pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128: NafLookupTable5<Projecti
         },
         ProjectiveNielsPoint {
             Y_plus_X: FieldElement2625::from_limbs([
-                63997925, 22141397, 16344335, 19270123, 11338216, 16163263, 54904184, 24982069,
-                56606655, 24922282,
+                63997925, 22141397, 83453199, 52824554, 78447079, 49717694, 122013047, 24982068,
+                56606655, 58476714,
             ]),
             Y_minus_X: FieldElement2625::from_limbs([
                 25892846, 11528509, 46114731, 26269695, 31949658, 18508240, 8742696, 14557236,
@@ -4871,8 +4913,8 @@ pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128: NafLookupTable5<Projecti
         },
         ProjectiveNielsPoint {
             Y_plus_X: FieldElement2625::from_limbs([
-                18135939, 20390706, 771316, 3834009, 62046955, 32059486, 53528634, 28397810,
-                53903558, 2683232,
+                85244803, 20390705, 67880180, 3834008, 62046955, 32059486, 53528634, 61952242,
+                53903557, 36237664,
             ]),
             Y_minus_X: FieldElement2625::from_limbs([
                 51282070, 16196724, 13662050, 32134248, 30369654, 19444710, 35256476, 33331300,
@@ -4889,8 +4931,8 @@ pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128: NafLookupTable5<Projecti
         },
         ProjectiveNielsPoint {
             Y_plus_X: FieldElement2625::from_limbs([
-                43828549, 14757490, 56664015, 24665671, 50233976, 14590870, 65779056, 33374083,
-                47093275, 4915216,
+                110937413, 48311921, 56664014, 24665671, 117342840, 14590869, 65779056, 33374083,
+                47093275, 38469648,
             ]),
             Y_minus_X: FieldElement2625::from_limbs([
                 11795097, 23045357, 37986619, 25517870, 61752555, 20274894, 5272019, 20059223,
@@ -4907,8 +4949,8 @@ pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128: NafLookupTable5<Projecti
         },
         ProjectiveNielsPoint {
             Y_plus_X: FieldElement2625::from_limbs([
-                22997800, 33050677, 60441767, 7973230, 30621382, 4134210, 41797844, 1978192,
-                58504534, 317870,
+                22997800, 33050677, 60441767, 41527662, 30621381, 4134210, 108906708, 35532623,
+                58504533, 33872302,
             ]),
             Y_minus_X: FieldElement2625::from_limbs([
                 6811554, 1638711, 35767789, 14166397, 19866339, 260838, 19580826, 7806685,
@@ -4925,8 +4967,8 @@ pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128: NafLookupTable5<Projecti
         },
         ProjectiveNielsPoint {
             Y_plus_X: FieldElement2625::from_limbs([
-                21843428, 19355043, 6522572, 1255394, 64421578, 23324883, 31082733, 13182074,
-                56269698, 27274610,
+                88952292, 52909474, 73631435, 34809825, 64421577, 23324883, 98191597, 46736505,
+                56269697, 27274610,
             ]),
             Y_minus_X: FieldElement2625::from_limbs([
                 36626131, 26445435, 43443322, 31269185, 4788786, 21966751, 10657839, 11622879,
@@ -4943,8 +4985,8 @@ pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128: NafLookupTable5<Projecti
         },
         ProjectiveNielsPoint {
             Y_plus_X: FieldElement2625::from_limbs([
-                47704924, 31694873, 47305006, 31556775, 44753887, 19755612, 25884799, 6259103,
-                377598, 26990890,
+                47704924, 31694873, 47305006, 31556775, 111862751, 53310043, 92993662, 39813534,
+                67486461, 60545321,
             ]),
             Y_minus_X: FieldElement2625::from_limbs([
                 4781635, 20898487, 30324746, 31566849, 66314586, 2020338, 46386772, 13303771,

@@ -292,7 +292,7 @@ pub fn vartime_triple_base_mul_128_128_256(
         BackendKind::Avx2 => {
             vector::scalar_mul::vartime_triple_base::spec_avx2::mul_128_128_256(a1, A1, a2, A2, b)
         }
-        #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+        #[cfg(all(curve25519_dalek_backend = "unstable_avx512", nightly))]
         BackendKind::Avx512 => {
             vector::scalar_mul::vartime_triple_base::spec_avx512ifma_avx512vl::mul_128_128_256(
                 a1, A1, a2, A2, b,

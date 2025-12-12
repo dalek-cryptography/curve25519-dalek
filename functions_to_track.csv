@@ -109,8 +109,6 @@ Scalar::mul(&EdwardsPoint),curve25519_dalek::edwards,Mul<&'b EdwardsPoint> for &
 EdwardsPoint::mul_base(&Scalar),curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::mul_clamped([u8; 32]),curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::mul_base_clamped([u8; 32]),curve25519_dalek::edwards,EdwardsPoint
-VartimeEdwardsPrecomputation::new(I),curve25519_dalek::edwards,VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation
-"VartimeEdwardsPrecomputation::optional_mixed_multiscalar_mul(I, J, K)",curve25519_dalek::edwards,VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation
 "EdwardsPoint::vartime_double_scalar_mul_basepoint(&Scalar, &EdwardsPoint, &Scalar)",curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::mul_by_cofactor(&self),curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::mul_by_pow_2(u32),curve25519_dalek::edwards,EdwardsPoint
@@ -146,8 +144,6 @@ RistrettoPoint::mul_assign(&Scalar),curve25519_dalek::ristretto,MulAssign<&'b Sc
 RistrettoPoint::mul(&Scalar),curve25519_dalek::ristretto,Mul<&'b Scalar> for &RistrettoPoint
 Scalar::mul(&RistrettoPoint),curve25519_dalek::ristretto,Mul<&'b RistrettoPoint> for &Scalar
 RistrettoPoint::mul_base(&Scalar),curve25519_dalek::ristretto,RistrettoPoint
-VartimeRistrettoPrecomputation::new(I),curve25519_dalek::ristretto,VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation
-"VartimeRistrettoPrecomputation::optional_mixed_multiscalar_mul(I, J, K)",curve25519_dalek::ristretto,VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation
 RistrettoBasepointTable::mul(&Scalar),curve25519_dalek::ristretto,Mul<&'b Scalar> for &RistrettoBasepointTable
 Scalar::mul(&RistrettoBasepointTable),curve25519_dalek::ristretto,Mul<&'a RistrettoBasepointTable> for &Scalar
 RistrettoBasepointTable::create(&RistrettoPoint),curve25519_dalek::ristretto,RistrettoBasepointTable
@@ -193,8 +189,6 @@ FieldElement51::pow2k(u32),curve25519_dalek::backend::serial::u64::field,FieldEl
 FieldElement51::square(&self),curve25519_dalek::backend::serial::u64::field,FieldElement51
 FieldElement51::square2(&self),curve25519_dalek::backend::serial::u64::field,FieldElement51
 "mul(&EdwardsPoint, &Scalar)",curve25519_dalek::backend::serial::scalar_mul::variable_base,
-VartimePrecomputedStraus::new(I),curve25519_dalek::backend::serial::scalar_mul::precomputed_straus,VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus
-"VartimePrecomputedStraus::optional_mixed_multiscalar_mul(I, J, K)",curve25519_dalek::backend::serial::scalar_mul::precomputed_straus,VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus
 "mul(&Scalar, &EdwardsPoint, &Scalar)",curve25519_dalek::backend::serial::scalar_mul::vartime_double_base,
 AffineNielsPoint::zeroize(&self),curve25519_dalek::backend::serial::curve_models,Zeroize for AffineNielsPoint
 ProjectiveNielsPoint::zeroize(&self),curve25519_dalek::backend::serial::curve_models,Zeroize for ProjectiveNielsPoint

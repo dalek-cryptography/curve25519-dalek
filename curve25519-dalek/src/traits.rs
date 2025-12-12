@@ -149,6 +149,7 @@ pub trait VartimeMultiscalarMul {
     /// involving compressed points.  Accepting `Option<Point>` allows
     /// inlining point decompression into the multiscalar call,
     /// avoiding the need for temporary buffers.
+    ///
     /// ```
     /// #[cfg(feature = "alloc")]
     /// # {

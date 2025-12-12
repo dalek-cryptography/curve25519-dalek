@@ -122,7 +122,6 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
-use ethnum::{I256, U256};
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]
@@ -149,7 +148,7 @@ use zeroize::Zeroize;
 
 use crate::backend;
 use crate::constants;
-use crate::scalar::heea::curve25519_heea_vartime;
+use crate::scalar::heea::{I256, curve25519_heea_vartime};
 use crate::traits::HEEADecomposition;
 
 mod heea;
@@ -556,10 +555,7 @@ impl From<u128> for Scalar {
 
 impl From<&Scalar> for I256 {
     fn from(s: &Scalar) -> I256 {
-        // Scalar is always positive and less than L, so treat as unsigned
-        let u256 = U256::from_le_bytes(*s.as_bytes());
-        // Convert to I256 - this is safe since Scalar < L < 2^253 < 2^255
-        u256.as_i256()
+        I256::from_le_bytes(s.to_bytes())
     }
 }
 
@@ -586,11 +582,11 @@ impl HEEADecomposition for Scalar {
 
         // Convert back to Scalars and ensure shortness
         let mut flip_h = false;
-        if rho_i < 0 {
+        if rho_i < I256::ZERO {
             rho_i = -rho_i;
             flip_h = !flip_h;
         }
-        if tau_i < 0 {
+        if tau_i < I256::ZERO {
             tau_i = -tau_i;
             flip_h = !flip_h;
         }

@@ -37,8 +37,8 @@ pub proof fn lemma_add_then_shift(a: u64, b: u64)
     assert(1u64 << 53 == (1u64 << 51) * 4) by (bit_vector);
     // 0 < b  /\ a < b * c => a/b < c
     lemma_multiply_divide_lt((a + b) as int, (1u64 << 51) as int, 4int);
-    lemma_shift_is_pow2(51);
-    lemma_shift_is_pow2(53);
+    lemma_u64_shift_is_pow2(51);
+    lemma_u64_shift_is_pow2(53);
     assert((a + b) as u64 >> 51 == (a + b) as u64 / (pow2(51) as u64)) by {
         lemma_u64_shr_is_div((a + b) as u64, 51);
     }

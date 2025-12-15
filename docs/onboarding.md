@@ -30,7 +30,7 @@ All of these lemmas are already proven and require only `vstd` lemmas. The solut
 1. Right-shift decomposition
 ```rust
 // v >> (a + b) == (v >> a) >> b
-pub proof fn lemma_shr_by_sum(v: u64, a: nat, b: nat)
+pub proof fn lemma_u64_shr_by_sum(v: u64, a: nat, b: nat)
     requires
         (a + b) < 64,
     ensures

@@ -199,7 +199,7 @@ We use Rust's preferred snake-case style throughout.
 - The `spec` version of an executable function `[fn]` should be named `spec_[fn]` using the `spec_` prefix, e.g. `spec_reduce`
 - Boolean properties  may be named with no prefix if generic or math-based, e.g. `is_positive`, but should prefix the name of the class/trait they describe otherwise (shorthands permitted), e.g. `fe51_is_canonical`
 - Conversions should adopt the convention `[a]_as_[b]`, e.g. `u8_32_as_nat`
-- Lemmas should use the `lemma_` prefix (exceptions below), followed by the name of the function/category they describe, e.g. `lemma_load8_plus_fits_u64` or `lemma_pow2_sum_div_decomposition`
+- Lemmas should use the `lemma_` prefix (exceptions below), followed by the name of the function/category they describe, e.g. `lemma_load8_plus_fits_u64` or `lemma_pow2_sum_u8_div_decomposition`
 - Proofs about top-level executable functions should use `proof_[fn]` and `no_overflow_[fn]` as their prefix instead, for functional correctness and overflow freedom respectively
 - If a spec function is used only as a helper in proofs but not in the specifications of any executable function, add the suffix `_aux`
 

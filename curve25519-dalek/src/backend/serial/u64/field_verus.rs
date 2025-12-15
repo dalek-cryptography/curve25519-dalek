@@ -334,7 +334,7 @@ impl FieldElement51 {
         proof {
             // Prove q <= 2 after first iteration
             //lemma_add_preserves_bound(limbs[0], 1u64 << 52, 19);
-            lemma_shr_le_u64((limbs[0] + 19) as u64, ((1u64 << 52) + 19) as u64, 51);
+            lemma_u64_shr_le((limbs[0] + 19) as u64, ((1u64 << 52) + 19) as u64, 51);
             assert((((1u64 << 52) + 19) as u64) >> 51 == 2) by (compute);
         }
 
@@ -342,7 +342,7 @@ impl FieldElement51 {
         q = (limbs[1] + q) >> 51;
 
         proof {
-            lemma_shr_le_u64((limbs[1] + old_q) as u64, ((1u64 << 52) + 2) as u64, 51);
+            lemma_u64_shr_le((limbs[1] + old_q) as u64, ((1u64 << 52) + 2) as u64, 51);
             assert((((1u64 << 52) + 2) as u64) >> 51 == 2) by (compute);
         }
 
@@ -350,14 +350,14 @@ impl FieldElement51 {
         q = (limbs[2] + q) >> 51;
 
         proof {
-            lemma_shr_le_u64((limbs[2] + old_q2) as u64, ((1u64 << 52) + 2) as u64, 51);
+            lemma_u64_shr_le((limbs[2] + old_q2) as u64, ((1u64 << 52) + 2) as u64, 51);
         }
 
         let ghost old_q3 = q;
         q = (limbs[3] + q) >> 51;
 
         proof {
-            lemma_shr_le_u64((limbs[3] + old_q3) as u64, ((1u64 << 52) + 2) as u64, 51);
+            lemma_u64_shr_le((limbs[3] + old_q3) as u64, ((1u64 << 52) + 2) as u64, 51);
         }
 
         q = (limbs[4] + q) >> 51;
@@ -377,25 +377,25 @@ impl FieldElement51 {
 
         proof {
             // limbs[0] < 2^52 + 19, so limbs[0] >> 51 <= 2
-            lemma_shr_le_u64(limbs[0], ((1u64 << 52) + 19) as u64, 51);
+            lemma_u64_shr_le(limbs[0], ((1u64 << 52) + 19) as u64, 51);
         }
         limbs[1] += limbs[0] >> 51;
         limbs[0] &= LOW_51_BIT_MASK;
 
         proof {
-            lemma_shr_le_u64(limbs[1], ((1u64 << 52) + 2) as u64, 51);
+            lemma_u64_shr_le(limbs[1], ((1u64 << 52) + 2) as u64, 51);
         }
         limbs[2] += limbs[1] >> 51;
         limbs[1] &= LOW_51_BIT_MASK;
 
         proof {
-            lemma_shr_le_u64(limbs[2], ((1u64 << 52) + 2) as u64, 51);
+            lemma_u64_shr_le(limbs[2], ((1u64 << 52) + 2) as u64, 51);
         }
         limbs[3] += limbs[2] >> 51;
         limbs[2] &= LOW_51_BIT_MASK;
 
         proof {
-            lemma_shr_le_u64(limbs[3], ((1u64 << 52) + 2) as u64, 51);
+            lemma_u64_shr_le(limbs[3], ((1u64 << 52) + 2) as u64, 51);
         }
         limbs[4] += limbs[3] >> 51;
         limbs[3] &= LOW_51_BIT_MASK;
@@ -497,7 +497,7 @@ impl FieldElement51 {
             proof {
                 pow255_gt_19();  // p > 0
                 lemma2_to64_rest();  // pow2(51 | 54)
-                lemma_shift_is_pow2(54);
+                lemma_u64_shift_is_pow2(54);
 
                 let bound = 1u64 << 54;
                 let bound19 = (19 * bound) as u64;

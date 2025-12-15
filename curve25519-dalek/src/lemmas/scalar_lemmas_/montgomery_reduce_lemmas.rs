@@ -77,7 +77,7 @@ pub proof fn lemma_part2_bounds(sum: u128)
         assert(w == sum as nat % p52) by {
             assert(((1u64 << 52) - 1) as u64 == low_bits_mask(52)) by {
                 assert(1u64 << 52 == p52) by {
-                    lemma_shift_is_pow2(52);
+                    lemma_u64_shift_is_pow2(52);
                 }
             }
             assert((sum as u64) & (low_bits_mask(52) as u64) == sum as u64 % (p52 as u64)) by {

@@ -54,7 +54,7 @@ pub proof fn lemma_limbs_to_bytes(limbs: [u64; 5], bytes: [u8; 32])
         u8_32_as_nat(&bytes) == u64_5_as_nat(limbs),
 {
     // Connect the bit shift in the requires clause to pow2
-    lemma_shift_is_pow2(51);
+    lemma_u64_shift_is_pow2(51);
     lemma_byte_sum_equals_limb_sum(limbs, bytes);
 }
 
@@ -280,7 +280,7 @@ proof fn lemma_limb0_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // From bytes_match_limbs_packing, we know each byte is exactly (limbs[0] >> (i*8)) as u8
 
     // Use lemma_byte_from_limb_shift to establish arithmetic value of each byte
-    lemma_shr_zero_is_id(limbs[0]);  // Explicit call instead of broadcast for better Z3 performance
+    lemma_u64_shr_zero_is_id(limbs[0]);  // Explicit call instead of broadcast for better Z3 performance
     assert(bytes[0] == (limbs[0] >> 0) as u8);
     lemma_byte_from_limb_shift(limbs[0], 0, bytes[0]);
     assert(bytes[0] as nat == (limbs[0] as nat / pow2(0)) % 256);
@@ -2006,7 +2006,7 @@ proof fn lemma_boundary_byte_combines(
         }
 
         assert(pow2(low_bits) == 1u64 << low_bits) by {
-            lemma_shift_is_pow2(low_bits);
+            lemma_u64_shift_is_pow2(low_bits);
         }
 
         assert((a | b << low_bits) == a + (b << low_bits)) by {

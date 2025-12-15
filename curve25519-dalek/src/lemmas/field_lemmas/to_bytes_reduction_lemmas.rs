@@ -619,15 +619,15 @@ pub proof fn lemma_to_bytes_reduction(input_limbs: [u64; 5], final_limbs: [u64; 
     // Similar reasoning for other limbs - the carries are small enough
     // l0 < 2^52 + 20, so l0 >> 51 <= 2
     // l1 = input_limbs[1] + (l0 >> 51) < 2^52 + 2 < u64::MAX
-    lemma_shr_le_u64(l0, ((1u64 << 52) + 20) as u64, 51);
+    lemma_u64_shr_le(l0, ((1u64 << 52) + 20) as u64, 51);
     assert((((1u64 << 52) + 20) as u64) >> 51 == 2) by (compute);
 
-    lemma_shr_le_u64(l1, ((1u64 << 52) + 2) as u64, 51);
+    lemma_u64_shr_le(l1, ((1u64 << 52) + 2) as u64, 51);
     assert((((1u64 << 52) + 2) as u64) >> 51 == 2) by (compute);
 
-    lemma_shr_le_u64(l2, ((1u64 << 52) + 2) as u64, 51);
+    lemma_u64_shr_le(l2, ((1u64 << 52) + 2) as u64, 51);
 
-    lemma_shr_le_u64(l3, ((1u64 << 52) + 2) as u64, 51);
+    lemma_u64_shr_le(l3, ((1u64 << 52) + 2) as u64, 51);
 
     // Now use the telescoping lemma to relate u64_5_as_nat(input_limbs) + 19*q to u64_5_as_nat(final_limbs) + c4*2^255
     // The division-mod relationships give us the preconditions needed:

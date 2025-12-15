@@ -56,23 +56,23 @@ pub proof fn lemma_as_bytes_boundaries1(raw_limbs: [u64; 5])
     let q4 = q_arr[4];
 
     assert(q0 <= 2) by {
-        lemma_shr_le_u64((limbs[0] + 19) as u64, ((1u64 << 52) + 19) as u64, 51);
+        lemma_u64_shr_le((limbs[0] + 19) as u64, ((1u64 << 52) + 19) as u64, 51);
     }
 
     assert(q1 <= 2) by {
-        lemma_shr_le_u64((limbs[1] + q0) as u64, ((1u64 << 52) + 2) as u64, 51);
+        lemma_u64_shr_le((limbs[1] + q0) as u64, ((1u64 << 52) + 2) as u64, 51);
     }
 
     assert(q2 <= 2) by {
-        lemma_shr_le_u64((limbs[2] + q1) as u64, ((1u64 << 52) + 2) as u64, 51);
+        lemma_u64_shr_le((limbs[2] + q1) as u64, ((1u64 << 52) + 2) as u64, 51);
     }
 
     assert(q3 <= 2) by {
-        lemma_shr_le_u64((limbs[3] + q2) as u64, ((1u64 << 52) + 2) as u64, 51);
+        lemma_u64_shr_le((limbs[3] + q2) as u64, ((1u64 << 52) + 2) as u64, 51);
     }
 
     assert(q4 <= 2) by {
-        lemma_shr_le_u64((limbs[4] + q3) as u64, ((1u64 << 52) + 2) as u64, 51);
+        lemma_u64_shr_le((limbs[4] + q3) as u64, ((1u64 << 52) + 2) as u64, 51);
     }
 }
 
@@ -114,23 +114,23 @@ pub proof fn lemma_as_bytes_boundaries2(raw_limbs: [u64; 5])
     let l4 = l[4];
 
     assert(l0 >> 51 <= 2) by {
-        lemma_shr_le_u64(l0, ((1u64 << 52) + 19) as u64, 51);
+        lemma_u64_shr_le(l0, ((1u64 << 52) + 19) as u64, 51);
     }
 
     assert(l1 >> 51 <= 2) by {
-        lemma_shr_le_u64(l1, ((1u64 << 52) + 2) as u64, 51);
+        lemma_u64_shr_le(l1, ((1u64 << 52) + 2) as u64, 51);
     }
 
     assert(l2 >> 51 <= 2) by {
-        lemma_shr_le_u64(l2, ((1u64 << 52) + 2) as u64, 51);
+        lemma_u64_shr_le(l2, ((1u64 << 52) + 2) as u64, 51);
     }
 
     assert(l3 >> 51 <= 2) by {
-        lemma_shr_le_u64(l3, ((1u64 << 52) + 2) as u64, 51);
+        lemma_u64_shr_le(l3, ((1u64 << 52) + 2) as u64, 51);
     }
 
     assert(l4 >> 51 <= 2) by {
-        lemma_shr_le_u64(l4, ((1u64 << 52) + 2) as u64, 51);
+        lemma_u64_shr_le(l4, ((1u64 << 52) + 2) as u64, 51);
     }
 }
 

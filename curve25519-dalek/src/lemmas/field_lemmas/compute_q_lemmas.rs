@@ -296,8 +296,8 @@ pub proof fn lemma_carry_propagation_setup()
         3 * pow2(51) <= u64::MAX,
 {
     lemma2_to64();
-    lemma_shift_is_pow2(51);
-    lemma_shift_is_pow2(52);
+    lemma_u64_shift_is_pow2(51);
+    lemma_u64_shift_is_pow2(52);
     lemma_pow2_pos(51);
 
     assert(pow2(52) == 2 * pow2(51)) by {

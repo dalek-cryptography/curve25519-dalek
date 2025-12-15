@@ -10,313 +10,630 @@ use super::pow_lemmas::*;
 
 verus! {
 
-// Specialization of lemma_u64_shl_is_mul for x = 1
-pub proof fn lemma_shift_is_pow2(k: nat)
-    requires
-        k < 64,
-    ensures
-        (1u64 << k) == pow2(k),
-{
-    lemma_u64_pow2_le_max(k);
-    lemma_u64_shl_is_mul(1u64, k as u64);
-}
-
-// v << 0 == v for all v
-pub broadcast proof fn lemma_shl_zero_is_id(v: u64)
-    ensures
-        #![trigger v << 0]
-        v << 0 == v,
-{
-    assert(v << 0 == v) by (bit_vector);
-}
-
-// v << (a + b) == (v << a) << b
-pub proof fn lemma_shl_by_sum(v: u64, a: nat, b: nat)
-    requires
-        (a + b) < 64,
-        v * pow2(a + b) <= u64::MAX,
-    ensures
-        (v << (a + b)) == ((v << a) << b),
-{
-    if (a == 0 || b == 0) {
-        broadcast use lemma_shl_zero_is_id;
-
-    } else {
-        // 2^(a + b) == 2^a * 2^b
-        lemma_pow2_adds(a, b);
-        // 2^a < 2^(a + b) ...
-        lemma_pow2_strictly_increases(a, a + b);
-        // ..., which implies v * 2^a < v * 2^(a + b) <= u64::MAX
-        lemma_mul_le(v as nat, v as nat, pow2(a), pow2(a + b));
-        // v << a + b = v * 2^(a+b)
-        lemma_u64_shl_is_mul(v, (a + b) as u64);
-        // v << a = v * 2^a
-        lemma_u64_shl_is_mul(v, a as u64);
-        // (v * 2^a) * 2^b = v * (2^a * 2^b)
-        lemma_mul_is_associative(v as int, pow2(a) as int, pow2(b) as int);
-        // (v * 2^a) << b = (v * 2^a) * 2^b
-        lemma_u64_shl_is_mul((v * pow2(a)) as u64, b as u64);
-    }
-}
-
-// [<<] preserves [<=] (u64 version)
-pub proof fn lemma_shl_le_u64(a: u64, b: u64, k: nat)
-    requires
-        a <= b,
-        k < 64,
-        (b * pow2(k)) <= u64::MAX,
-    ensures
-        (a << k) <= (b << k),
-{
-    lemma_mul_le(a as nat, b as nat, pow2(k), pow2(k));
-    lemma_u64_shl_is_mul(a, k as u64);
-    lemma_u64_shl_is_mul(b, k as u64);
-}
-
-// // If a <= b then v << a <= v << b (up to overflow)
-pub proof fn lemma_shl_nondecreasing(v: u64, a: nat, b: nat)
-    requires
-        a <= b < 64,
-        v * pow2(b) <= u64::MAX,
-    ensures
-        (v << a) <= (v << b),
-{
-    lemma2_to64();  // pow2(0)
-
-    if (a == b) {
-        // trivial
-    } else if (a == 0) {
-        // a != b <=> b > 0
-        lemma_pow2_strictly_increases(0, b);
-        lemma_u64_shl_is_mul(v, 0);
-        lemma_u64_shl_is_mul(v, b as u64);
-        lemma_mul_le(v as nat, v as nat, pow2(0), pow2(b));
-    } else {
-        // if a != 0 and a != b then 0 < d < b
-        let d = b - a;
-
-        // v << b = (v << (b - a)) << a
-        lemma_shl_by_sum(v, d as nat, a);
-
-        assert(v << d == v * pow2(d as nat)) by {
-            // we need the precond v * pow2(d) < M
-            lemma_pow2_strictly_increases(d as nat, b);
-            lemma_mul_le(v as nat, v as nat, pow2(d as nat), pow2(b));
-            lemma_u64_shl_is_mul(v, d as u64);
-        }
-
-        assert(v <= v << d) by {
-            lemma_shl_zero_is_id(v);
-            lemma_u64_shl_is_mul(v, 0);
-            lemma_pow2_strictly_increases(0, d as nat);
-            lemma_mul_le(v as nat, v as nat, pow2(0), pow2(d as nat));
-        }
-
-        lemma_pow2_adds(a, d as nat);
-
-        assert((v << (d as u64)) * pow2(a) <= u64::MAX) by {
-            lemma_mul_is_associative(v as int, pow2(d as nat) as int, pow2(a) as int);
-        }
-
-        // [v <= v << d] => [(v << a) <= (v << d) << a]
-        lemma_shl_le_u64(v, v << (d as u64), a);
-    }
-}
-
-// v >> 0 == v for all v
-pub broadcast proof fn lemma_shr_zero_is_id(v: u64)
-    ensures
-        #![trigger v >> 0]
-        v >> 0 == v,
-{
-    assert(v >> 0 == v) by (bit_vector);
-}
-
-// v >> (a + b) == (v >> a) >> b
-pub proof fn lemma_shr_by_sum(v: u64, a: nat, b: nat)
-    requires
-        (a + b) < 64,
-    ensures
-        (v >> (a + b)) == ((v >> a) >> b),
-{
-    if (a == 0 || b == 0) {
-        broadcast use lemma_shr_zero_is_id;
-
-    } else {
-        lemma2_to64_rest();  // pow2(64)
-        lemma_pow2_strictly_increases(a, a + b);
-        lemma_pow2_strictly_increases(b, a + b);
-        lemma_pow2_strictly_increases(a + b, 64);  // pow2(a + b) fits in u64
-
-        // 2^(a + b) == 2^a * 2^b
-        lemma_pow2_adds(a, b);
-        // v >> a + b = v / 2^(a+b)
-        lemma_u64_shr_is_div(v, (a + b) as u64);
-        // v >> a = v / 2^a
-        lemma_u64_shr_is_div(v, a as u64);
-        // (v / 2^a) << b = (v / 2^a) / 2^b
-        lemma_u64_shr_is_div((v / (pow2(a) as u64)) as u64, b as u64);
-
-        // 2^k > 0
-        lemma_pow2_pos(a);
-        lemma_pow2_pos(b);
-
-        // v / 2^a / 2^b = v / 2^(a + b)
-        lemma_div_denominator(v as int, pow2(a) as int, pow2(b) as int);
-    }
-}
-
-// [>>] preserves [<=] (u64 version)
-pub proof fn lemma_shr_le_u64(a: u64, b: u64, k: nat)
-    requires
-        a <= b,
-        k < 64,
-    ensures
-        (a >> k) <= (b >> k),
-{
-    lemma_pow2_pos(k);
-    lemma_u64_shr_is_div(a, k as u64);
-    lemma_u64_shr_is_div(b, k as u64);
-    lemma_div_is_ordered(a as int, b as int, pow2(k) as int);
-}
-
-// If a <= b then v >> a >= v >> b
-pub proof fn lemma_shr_nonincreasing(v: u64, a: nat, b: nat)
-    requires
-        a <= b <= 64,
-    ensures
-        v >> b <= v >> a,
-{
-    if (b == 64) {
-        assert(v >> 64 == 0) by (bit_vector);
-    } else {
-        let d = (b - a) as u64;
-        // v >> b = (v >> (b - a)) >> a
-        lemma_shr_by_sum(v, d as nat, a);
-        assert(v >> d <= v) by (bit_vector);
-        // a <= b => a >> x <= b >> x
-        lemma_shr_le_u64(v >> d, v, a);
-    }
-}
-
-// u64::MAX = 2^64 - 1
-// u64::MAX >> k = 2^(64 - k) - 1
-// 1u64 << (64 - k) = 2^(64 - k)
-pub proof fn lemma_u64_max_shifting(k: nat)
-    requires
-        1 <= k < 64,
-    ensures
-        u64::MAX >> k < 1u64 << (64 - k),
-    decreases 64 - k,
-{
-    let M = u64::MAX;
-
-    // recursion base case
-    if (k == 63) {
-        assert(u64::MAX >> 63 < 1u64 << 1) by (compute);
-    } else {
-        // M >> (k + 1) < 1 << (63 - k)
-        lemma_u64_max_shifting(k + 1);
-
-        // M >> (k + 1) = (M >> k) >> 1
-        lemma_shr_by_sum(M, k, 1);
-
-        // precondition
-        lemma2_to64_rest();  // pow2(63)
-        lemma_pow2_strictly_increases((63 - k) as nat, (64 - k) as nat);
-
-        assert(1u64 * pow2((64 - k) as nat) <= 1u64 * pow2(63)) by {
-            if (k == 1) {
-                // 64 - k = 63
-                // tautology
-            } else {
-                // 64 - k < 63
-                lemma_pow2_strictly_increases((64 - k) as nat, 63);
+// Specialization of lemma_uN_shl_is_mul for x = 1
+macro_rules! lemma_shift_is_pow2 {
+    ($name:ident, $le_max:ident, $shl_is_mul:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub proof fn $name(k: nat)
+            requires
+                k < <$uN>::BITS,
+            ensures
+                (1 as $uN << k) == pow2(k),
+        {
+            assert(1 as $uN * pow2(k) == pow2(k)) by {
+                lemma_mul_basics_4(pow2(k) as int);
             }
-            lemma_mul_le(1u64 as nat, 1u64 as nat, pow2((64 - k) as nat), pow2(63));
-        }
-        assert(1u64 * pow2(63) <= u64::MAX) by (compute);
-
-        // 1 << 64 - k = (1 << 63 - k) << 1
-        lemma_shl_by_sum(1u64, (63 - k) as nat, 1);
-
-        // (M >> k) >> 1 = (M >> k) / pow2(1);
-        lemma_u64_shr_is_div(M >> k, 1);
-
-        // lemma_u64_shl_is_mul(x, n) precondition: x * pow2(n) <= u64::MAX
-        assert((1u64 << ((63 - k))) * pow2(1) <= u64::MAX) by {
-            lemma_shift_is_pow2((63 - k) as nat);
-            lemma_pow2_adds((63 - k) as nat, 1);
-        }
-
-        // (1 << 63 - k) << 1 = (1 << 63 - k) * pow2(1);
-        lemma_u64_shl_is_mul(1u64 << ((63 - k)), 1);
-
-        lemma2_to64();  // pow2(1) = 2
-
-        assert((1u64 << ((64 - k) as u64)) / 2 == (1u64 << ((63 - k) as u64))) by {
-            lemma_div_multiples_vanish((1u64 << (63 - k) as u64) as int, 2);
+            assert(pow2(k) <= <$uN>::MAX) by {
+                $le_max(k);
+            }
+            $shl_is_mul(1 as $uN, k as $uN);
         }
     }
+    };
 }
 
-pub proof fn lemma_left_right_shift(v: u64, sl: u64, sr: u64)
-    requires
-        sr <= sl < 64,
-        v * pow2(sl as nat) <= u64::MAX,
-    ensures
-        (v << sl) >> sr == v << (sl - sr),
-{
-    let d = (sl - sr) as nat;
+lemma_shift_is_pow2!(lemma_u8_shift_is_pow2, lemma_u8_pow2_le_max, lemma_u8_shl_is_mul, u8);
 
-    assert(v << sl == v * pow2(sl as nat)) by {
-        lemma_u64_shl_is_mul(v, sl);
+lemma_shift_is_pow2!(lemma_u16_shift_is_pow2, lemma_u16_pow2_le_max, lemma_u16_shl_is_mul, u16);
+
+lemma_shift_is_pow2!(lemma_u32_shift_is_pow2, lemma_u32_pow2_le_max, lemma_u32_shl_is_mul, u32);
+
+lemma_shift_is_pow2!(lemma_u64_shift_is_pow2, lemma_u64_pow2_le_max, lemma_u64_shl_is_mul, u64);
+
+// TODO: missing lemma_u128_shl_is_mul from vstd
+// lemma_shift_is_pow2!(lemma_u128_shift_is_pow2, lemma_u128_pow2_le_max, lemma_u128_shl_is_mul, u128);
+// Proofs that left-shift by 0 is a no-op
+macro_rules! lemma_shl_zero_is_id {
+    ($name:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub broadcast proof fn $name(v: $uN)
+            by (bit_vector)
+            ensures
+                #![trigger v << 0]
+                v << 0 == v,
+        {}
     }
-
-    assert(pow2(sl as nat) == pow2(d) * pow2(sr as nat)) by {
-        lemma_pow2_adds(d, sr as nat);
-    }
-
-    let w = (v * pow2(sl as nat)) as nat;
-
-    assert(w as u64 >> sr == w / pow2(sr as nat)) by {
-        lemma_u64_shr_is_div(w as u64, sr);
-    }
-
-    assert(w == pow2(sr as nat) * (v * pow2(d))) by {
-        lemma_mul_is_associative(v as int, pow2(d) as int, pow2(sr as nat) as int);
-    }
-
-    assert(pow2(sr as nat) > 0) by {
-        lemma_pow2_pos(sr as nat);
-    }
-
-    assert(w / pow2(sr as nat) == v * pow2(d)) by {
-        lemma_div_multiples_vanish((v * pow2(d)) as int, pow2(sr as nat) as int);
-    }
-
-    assert(v * pow2(d) == v << (d as u64)) by {
-        lemma_u64_shl_is_mul(v, d as u64);
-    }
+    };
 }
 
-// Corollary of lemma_u64_max_shifting, since for any
-// v: u64 it holds that v <= u64::MAX and >> preserves [<=]
-pub proof fn lemma_shifted_lt(v: u64, k: nat)
-    requires
-        1 <= k <= 64,
-    ensures
-        v >> k < 1u64 << (64 - k),
-{
-    if (k == 64) {
-        assert(v >> 64 == 0) by (bit_vector);
-        lemma_shl_zero_is_id(1u64);
-    } else {
-        // (v >> k) <= (u64::MAX >> k)
-        lemma_shr_le_u64(v, u64::MAX, k);
-        // u64::MAX >> k < 1u64 << (64 - k)
-        lemma_u64_max_shifting(k);
+lemma_shl_zero_is_id!(lemma_u8_shl_zero_is_id, u8);
+
+lemma_shl_zero_is_id!(lemma_u16_shl_zero_is_id, u16);
+
+lemma_shl_zero_is_id!(lemma_u32_shl_zero_is_id, u32);
+
+lemma_shl_zero_is_id!(lemma_u64_shl_zero_is_id, u64);
+
+lemma_shl_zero_is_id!(lemma_u128_shl_zero_is_id, u128);
+
+// Proofs that v << (a + b) == (v << a) << b
+macro_rules! lemma_shl_by_sum {
+    ($name:ident, $shl_is_mul:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub broadcast proof fn $name(v: $uN, a: nat, b: nat)
+            requires
+                (a + b) < <$uN>::BITS,
+                v * pow2(a + b) <= <$uN>::MAX,
+            ensures
+                #[trigger] (v << (a + b)) == ((v << a) << b),
+        {
+            assert(pow2(a + b) == pow2(a) * pow2(b)) by {
+                lemma_pow2_adds(a, b);
+            }
+            assert(pow2(a) <= pow2(a + b)) by {
+                if (b > 0) {
+                    lemma_pow2_strictly_increases(a, a + b);
+                }
+            }
+            assert(v * pow2(a) <= v * pow2(a + b) <= <$uN>::MAX) by {
+                assert(pow2(a) * v <= pow2(a + b) * v) by {
+                    lemma_mul_inequality(pow2(a) as int, pow2(a + b) as int, v as int);
+                }
+                lemma_mul_is_commutative(v as int, pow2(a) as int);
+                lemma_mul_is_commutative(v as int, pow2(a + b) as int);
+            }
+            assert( v << (a + b) == v * pow2(a + b)) by {
+                $shl_is_mul(v, (a + b) as $uN);
+            }
+            assert( v << a == v * pow2(a)) by {
+                $shl_is_mul(v, a as $uN);
+            }
+            assert((v * pow2(a)) * pow2(b) == v * (pow2(a) * pow2(b))) by {
+                lemma_mul_is_associative(v as int, pow2(a) as int, pow2(b) as int);
+            }
+            assert( (v * pow2(a)) as $uN << b == (v * pow2(a)) * pow2(b)) by {
+                $shl_is_mul((v * pow2(a)) as $uN, b as $uN);
+            }
+        }
     }
+    };
 }
 
+lemma_shl_by_sum!(lemma_u8_shl_by_sum, lemma_u8_shl_is_mul, u8);
+
+lemma_shl_by_sum!(lemma_u16_shl_by_sum, lemma_u16_shl_is_mul, u16);
+
+lemma_shl_by_sum!(lemma_u32_shl_by_sum, lemma_u32_shl_is_mul, u32);
+
+lemma_shl_by_sum!(lemma_u64_shl_by_sum, lemma_u64_shl_is_mul, u64);
+
+// TODO: missing lemma_u128_shl_is_mul from vstd
+// lemma_shl_by_sum!(lemma_u128_shl_by_sum, lemma_u128_shl_is_mul, u128);
+// Proofs that [<<] preserves [<=]
+macro_rules! lemma_shl_le {
+    ($name:ident, $shl_is_mul:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub proof fn $name(a: $uN, b: $uN, k: nat)
+            requires
+                a <= b,
+                k < <$uN>::BITS,
+                (b * pow2(k)) <= <$uN>::MAX,
+            ensures
+                (a << k) <= (b << k),
+        {
+            assert(a * pow2(k) <= b * pow2(k)) by {
+                lemma_mul_inequality(a as int, b as int, pow2(k) as int);
+            }
+            $shl_is_mul(a, k as $uN);
+            $shl_is_mul(b, k as $uN);
+        }
+    }
+    };
+}
+
+lemma_shl_le!(lemma_u8_shl_le, lemma_u8_shl_is_mul, u8);
+
+lemma_shl_le!(lemma_u16_shl_le, lemma_u16_shl_is_mul, u16);
+
+lemma_shl_le!(lemma_u32_shl_le, lemma_u32_shl_is_mul, u32);
+
+lemma_shl_le!(lemma_u64_shl_le, lemma_u64_shl_is_mul, u64);
+
+// TODO: missing lemma_u128_shl_is_mul from vstd
+// lemma_shl_le!(lemma_u128_shl_le, lemma_u128_shl_is_mul, u128);
+// Proofs that if a <= b then v << a <= v << b (up to overflow)
+macro_rules! lemma_shl_nondecreasing {
+    ($name:ident, $shl_by_sum:ident, $shl_is_mul:ident, $shl_le:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub proof fn $name(v: $uN, a: nat, b: nat)
+            requires
+                a <= b < <$uN>::BITS,
+                v * pow2(b) <=<$uN>::MAX,
+            ensures
+                (v << a) <= (v << b),
+        {
+            let d = (b - a) as nat;
+
+            assert(v << b == (v << d) << a) by {
+                $shl_by_sum(v, d, a);
+            }
+
+            assert(v << d == v * pow2(d)) by {
+                assert(pow2(d) <= pow2(b)) by {
+                    if (d < b){
+                        lemma_pow2_strictly_increases(d, b);
+                    }
+                }
+                assert(v * pow2(d) <= v * pow2(b) <= <$uN>::MAX) by {
+                    assert(pow2(d) * v <= pow2(b) * v) by {
+                        lemma_mul_inequality(pow2(d) as int, pow2(b) as int, v as int);
+                    }
+                    lemma_mul_is_commutative(v as int, pow2(d) as int);
+                    lemma_mul_is_commutative(v as int, pow2(b) as int);
+                }
+
+                $shl_is_mul(v, d as $uN);
+            }
+
+            assert(v <= v * pow2(d)) by {
+                assert(v == 1 * v) by {
+                    lemma_mul_basics_4(v as int);
+                }
+                assert(pow2(d) >= 1) by {
+                    lemma_pow2_pos(d);
+                }
+                assert(v * pow2(d) == pow2(d) * v) by {
+                    lemma_mul_is_commutative(v as int, pow2(d) as int);
+                }
+                lemma_mul_inequality(1, pow2(d) as int, v as int);
+            }
+
+            assert(pow2(b) == pow2(d) * pow2(a)) by {
+                lemma_pow2_adds(d, a);
+            }
+
+            assert((v << (d as $uN)) * pow2(a) <= <$uN>::MAX) by {
+                lemma_mul_is_associative(v as int, pow2(d) as int, pow2(a) as int);
+            }
+
+            // [v <= v << d] => [(v << a) <= (v << d) << a]
+            $shl_le(v, v << (d as $uN), a);
+        }
+    }
+    };
+}
+
+lemma_shl_nondecreasing!(lemma_u8_shl_nondecreasing, lemma_u8_shl_by_sum, lemma_u8_shl_is_mul, lemma_u8_shl_le, u8);
+
+lemma_shl_nondecreasing!(lemma_u16_shl_nondecreasing, lemma_u16_shl_by_sum, lemma_u16_shl_is_mul, lemma_u16_shl_le, u16);
+
+lemma_shl_nondecreasing!(lemma_u32_shl_nondecreasing, lemma_u32_shl_by_sum, lemma_u32_shl_is_mul, lemma_u32_shl_le, u32);
+
+lemma_shl_nondecreasing!(lemma_u64_shl_nondecreasing, lemma_u64_shl_by_sum, lemma_u64_shl_is_mul, lemma_u64_shl_le, u64);
+
+// TODO: missing lemma_u128_shl_is_mul from vstd
+// lemma_shl_nondecreasing!(lemma_u128_shl_nondecreasing, lemma_u128_shl_by_sum, lemma_u128_shl_is_mul, lemma_u128_shl_le, u128);
+// Proofs that right-shift by 0 is a no-op
+macro_rules! lemma_shr_zero_is_id {
+    ($name:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub broadcast proof fn $name(v: $uN)
+            by (bit_vector)
+            ensures
+                #![trigger v >> 0]
+                v >> 0 == v,
+        {}
+    }
+    };
+}
+
+lemma_shr_zero_is_id!(lemma_u8_shr_zero_is_id, u8);
+
+lemma_shr_zero_is_id!(lemma_u16_shr_zero_is_id, u16);
+
+lemma_shr_zero_is_id!(lemma_u32_shr_zero_is_id, u32);
+
+lemma_shr_zero_is_id!(lemma_u64_shr_zero_is_id, u64);
+
+lemma_shr_zero_is_id!(lemma_u128_shr_zero_is_id, u128);
+
+// Proofs that v >> (a + b) == (v >> a) >> b
+macro_rules! lemma_shr_by_sum {
+    ($name:ident, $pow2_le_max:ident, $shr_is_div:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub broadcast proof fn $name(v: $uN, a: nat, b: nat)
+            requires
+                (a + b) < <$uN>::BITS, // todo: generalize to a + b <= MAX
+            ensures
+                #[trigger] (v >> (a + b)) == ((v >> a) >> b),
+        {
+            assert(pow2(a) == pow2(a) as $uN) by {
+                $pow2_le_max(a);
+            }
+            assert(pow2(b) == pow2(b) as $uN) by {
+                $pow2_le_max(b);
+            }
+
+            // 2^k > 0
+            lemma_pow2_pos(a);
+            lemma_pow2_pos(b);
+
+            assert(pow2(a + b) == pow2(a) * pow2(b)) by {
+                lemma_pow2_adds(a, b);
+            }
+            assert(v >> (a + b) == v as nat/ pow2(a + b)) by {
+                $shr_is_div(v, (a + b) as $uN);
+            }
+            assert(v >> a == v as nat/ pow2(a)) by {
+                $shr_is_div(v, a as $uN);
+            }
+
+            assert((v as nat/ pow2(a)) as $uN >> b == (v as nat/ pow2(a)) / pow2(b)) by {
+                $shr_is_div(v / (pow2(a) as $uN), b as $uN);
+            }
+
+            assert( (v as nat/ pow2(a)) / pow2(b) == v as nat / pow2(a + b)) by {
+                lemma_div_denominator(v as int, pow2(a) as int, pow2(b) as int);
+            }
+        }
+    }
+    };
+}
+
+lemma_shr_by_sum!(lemma_u8_shr_by_sum, lemma_u8_pow2_le_max, lemma_u8_shr_is_div, u8);
+
+lemma_shr_by_sum!(lemma_u16_shr_by_sum, lemma_u16_pow2_le_max, lemma_u16_shr_is_div, u16);
+
+lemma_shr_by_sum!(lemma_u32_shr_by_sum, lemma_u32_pow2_le_max, lemma_u32_shr_is_div, u32);
+
+lemma_shr_by_sum!(lemma_u64_shr_by_sum, lemma_u64_pow2_le_max, lemma_u64_shr_is_div, u64);
+
+lemma_shr_by_sum!(lemma_u128_shr_by_sum, lemma_u128_pow2_le_max, lemma_u128_shr_is_div, u128);
+
+// Proofs that [>>] preserves [<=]
+macro_rules! lemma_shr_le {
+    ($name:ident, $shr_is_div:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub proof fn $name(a: $uN, b: $uN, k: nat)
+            requires
+                a <= b,
+                k <= <$uN>::MAX,
+            ensures
+                (a >> k) <= (b >> k),
+        {
+            if (k >= <$uN>::BITS) {
+                let k_uN = k as $uN;
+                assert(a >> k_uN == 0) by (bit_vector) requires k_uN >= <$uN>::BITS;
+                assert(b >> k_uN == 0) by (bit_vector) requires k_uN >= <$uN>::BITS;
+            }
+            else {
+                assert(pow2(k) > 0) by {
+                    lemma_pow2_pos(k);
+                }
+                assert(a >> k == a as nat / pow2(k)) by {
+                    $shr_is_div(a, k as $uN);
+                }
+                assert(b >> k == b as nat / pow2(k)) by {
+                    $shr_is_div(b, k as $uN);
+                }
+                lemma_div_is_ordered(a as int, b as int, pow2(k) as int);
+            }
+        }
+    }
+    };
+}
+
+lemma_shr_le!(lemma_u8_shr_le, lemma_u8_shr_is_div, u8);
+
+lemma_shr_le!(lemma_u16_shr_le, lemma_u16_shr_is_div, u16);
+
+lemma_shr_le!(lemma_u32_shr_le, lemma_u32_shr_is_div, u32);
+
+lemma_shr_le!(lemma_u64_shr_le, lemma_u64_shr_is_div, u64);
+
+lemma_shr_le!(lemma_u128_shr_le, lemma_u128_shr_is_div, u128);
+
+// Proofs that if a <= b then v >> a >= v >> b
+macro_rules! lemma_shr_nonincreasing {
+    ($name:ident, $shr_by_sum:ident, $shr_le:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub proof fn $name(v: $uN, a: nat, b: nat)
+            requires
+                a <= b <= <$uN>::MAX,
+            ensures
+                v >> b <= v >> a,
+        {
+            if (b >= <$uN>::BITS) {
+                let b_uN = b as $uN;
+                assert(v >> b_uN == 0) by (bit_vector) requires b_uN >= <$uN>::BITS;
+            } else {
+                let d = (b - a) as $uN;
+                assert(v >> b == (v >> d) >> a) by {
+                    $shr_by_sum(v, d as nat, a);
+                }
+                assert(v >> d <= v) by (bit_vector);
+                assert( (v >> d) >> a <= v >> a) by {
+                    $shr_le(v >> d, v, a);
+                }
+            }
+        }
+    }
+    };
+}
+
+lemma_shr_nonincreasing!(lemma_u8_shr_nonincreasing, lemma_u8_shr_by_sum, lemma_u8_shr_le, u8);
+
+lemma_shr_nonincreasing!(lemma_u16_shr_nonincreasing, lemma_u16_shr_by_sum, lemma_u16_shr_le, u16);
+
+lemma_shr_nonincreasing!(lemma_u32_shr_nonincreasing, lemma_u32_shr_by_sum, lemma_u32_shr_le, u32);
+
+lemma_shr_nonincreasing!(lemma_u64_shr_nonincreasing, lemma_u64_shr_by_sum, lemma_u64_shr_le, u64);
+
+lemma_shr_nonincreasing!(lemma_u128_shr_nonincreasing, lemma_u128_shr_by_sum, lemma_u128_shr_le, u128);
+
+// uN::MAX = 2^N - 1
+// uN::MAX >> k = 2^(N - k) - 1
+// 1 << (N - k) = 2^(N - k)
+macro_rules! lemma_max_shifting {
+    ($name:ident,
+        $shr_by_sum:ident,
+        $pow2_le_max:ident,
+        $shl_by_sum:ident,
+        $shr_is_div:ident,
+        $shift_is_pow2:ident,
+        $shl_is_mul:ident,
+        $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub proof fn $name(k: nat)
+            requires
+                1 <= k < <$uN>::BITS,
+            ensures
+                <$uN>::MAX >> k < (1 as $uN) << (<$uN>::BITS - k) as $uN,
+            decreases <$uN>::BITS - k
+        {
+            let M = <$uN>::MAX;
+            let N = <$uN>::BITS;
+            let N_min1 = (N - 1) as nat;
+            let one = 1 as $uN;
+
+            // recursion base case
+            if (k == N_min1) {
+                assert(<$uN>::MAX >> (<$uN>::BITS - 1) < (1 as $uN) << 1) by (compute);
+            } else {
+                // recursion case
+                assert(M >> (k + 1) < one << (N_min1 - k) as $uN) by {
+                    $name(k + 1);
+                }
+
+                assert(M >> (k + 1) == (M >> k) >> 1) by {
+                    $shr_by_sum(M, k, 1);
+                }
+
+                lemma_pow2_strictly_increases((N_min1 - k) as nat, (N - k) as nat);
+
+                assert(one * pow2((N - k) as nat) <= one * pow2(N_min1)) by {
+                    if (k == 1) {
+                        // N - k = N - 1
+                        // tautology
+                    } else {
+                        // N - k < N - 1
+                        lemma_pow2_strictly_increases((N - k) as nat, N_min1);
+                    }
+                    lemma_mul_le(1, 1, pow2((N - k) as nat), pow2(N_min1));
+                }
+
+                assert(one * pow2(N_min1) <= M) by {
+                    assert(one * pow2(N_min1) == pow2(N_min1)) by {
+                        lemma_mul_basics_4(pow2(N_min1) as int);
+                    }
+                    assert(pow2(N_min1) <= M) by {
+                        $pow2_le_max(N_min1);
+                    }
+                }
+
+                assert( one << (N - k) as nat == (one << (N_min1 - k) as nat) << 1) by {
+                    $shl_by_sum(1, (N_min1 - k) as nat, 1);
+                }
+
+                assert((M >> k) >> 1 == (M >> k) as nat / pow2(1)) by {
+                    $shr_is_div(M >> k, 1);
+                }
+
+                // shl_is_mul(x, n) precondition: x * pow2(n) <= M
+                assert((one << ((N_min1 - k) as nat)) * pow2(1) <= M) by {
+                    $shift_is_pow2((N_min1 - k) as nat);
+                    lemma_pow2_adds((N_min1 - k) as nat, 1);
+                }
+
+                assert((one << (N_min1 - k) as nat) << 1 == (one << (N_min1 - k) as nat) * pow2(1)) by {
+                    $shl_is_mul(one << ((N_min1 - k) as nat), 1);
+                }
+
+                lemma2_to64();  // pow2(1) = 2
+
+                assert((one << ((N - k) as $uN)) / 2 == (one << ((N_min1 - k) as $uN))) by {
+                    lemma_div_multiples_vanish((one << (N_min1 - k) as $uN) as int, 2);
+                }
+            }
+        }
+    }
+    };
+}
+
+lemma_max_shifting!(lemma_u8_max_shifting,
+    lemma_u8_shr_by_sum,
+    lemma_u8_pow2_le_max,
+    lemma_u8_shl_by_sum,
+    lemma_u8_shr_is_div,
+    lemma_u8_shift_is_pow2,
+    lemma_u8_shl_is_mul,
+    u8
+);
+
+lemma_max_shifting!(lemma_u16_max_shifting,
+    lemma_u16_shr_by_sum,
+    lemma_u16_pow2_le_max,
+    lemma_u16_shl_by_sum,
+    lemma_u16_shr_is_div,
+    lemma_u16_shift_is_pow2,
+    lemma_u16_shl_is_mul,
+    u16
+);
+
+lemma_max_shifting!(lemma_u32_max_shifting,
+    lemma_u32_shr_by_sum,
+    lemma_u32_pow2_le_max,
+    lemma_u32_shl_by_sum,
+    lemma_u32_shr_is_div,
+    lemma_u32_shift_is_pow2,
+    lemma_u32_shl_is_mul,
+    u32
+);
+
+lemma_max_shifting!(lemma_u64_max_shifting,
+    lemma_u64_shr_by_sum,
+    lemma_u64_pow2_le_max,
+    lemma_u64_shl_by_sum,
+    lemma_u64_shr_is_div,
+    lemma_u64_shift_is_pow2,
+    lemma_u64_shl_is_mul,
+    u64
+);
+
+// TODO: missing lemma_u128_shl_is_mul from vstd
+// lemma_max_shifting!(lemma_u128_max_shifting,
+//     lemma_u128_shr_by_sum,
+//     lemma_u128_pow2_le_max, // MISSING
+//     lemma_u128_shl_by_sum, // MISSING
+//     lemma_u128_shr_is_div,
+//     lemma_u128_shift_is_pow2, // MISSING
+//     lemma_u128_shl_is_mul, // MISSING
+//     u128
+// );
+// Corollary of lemma_max_shifting, since for any
+// v: uN it holds that v <= uN::MAX and >> preserves [<=]
+macro_rules! lemma_shifted_lt {
+    ($name:ident, $shl_zero:ident, $shr_le:ident, $max_shifting:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub proof fn $name(v: $uN, k: nat)
+            requires
+                1 <= k <= <$uN>::BITS,
+            ensures
+                v >> k < (1 as $uN) << (<$uN>::BITS - k),
+        {
+            if (k == <$uN>::BITS) {
+                assert(v >> <$uN>::BITS == 0) by (bit_vector);
+                $shl_zero(1 as $uN);
+            } else {
+                assert(v >> k <= (<$uN>::MAX) >> k) by {
+                    $shr_le(v, <$uN>::MAX, k);
+                }
+                $max_shifting(k);
+            }
+        }
+    }
+    };
+}
+
+lemma_shifted_lt!(lemma_u8_shifted_lt, lemma_u8_shl_zero_is_id, lemma_u8_shr_le, lemma_u8_max_shifting, u8);
+
+lemma_shifted_lt!(lemma_u16_shifted_lt, lemma_u16_shl_zero_is_id, lemma_u16_shr_le, lemma_u16_max_shifting, u16);
+
+lemma_shifted_lt!(lemma_u32_shifted_lt, lemma_u32_shl_zero_is_id, lemma_u32_shr_le, lemma_u32_max_shifting, u32);
+
+lemma_shifted_lt!(lemma_u64_shifted_lt, lemma_u64_shl_zero_is_id, lemma_u64_shr_le, lemma_u64_max_shifting, u64);
+
+// TODO: missing lemma_u128_shl_is_mul from vstd
+// lemma_shifted_lt!(lemma_u128_shifted_lt, lemma_u128_shl_zero_is_id, lemma_u128_shr_le, lemma_u128_max_shifting, u128);
+// Proofs that shifting left then right is the same as shifting left once by the difference.
+macro_rules! lemma_left_right_shift {
+    ($name:ident, $shl_is_mul:ident, $shr_is_div:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub proof fn $name(v: $uN, sl: $uN, sr: $uN)
+            requires
+                sr <= sl < <$uN>::BITS,
+                v * pow2(sl as nat) <= <$uN>::MAX,
+            ensures
+                (v << sl) >> sr == v << (sl - sr),
+        {
+            let d = (sl - sr) as nat;
+
+            assert(v << sl == v * pow2(sl as nat)) by {
+                $shl_is_mul(v, sl);
+            }
+
+            assert(pow2(sl as nat) == pow2(d) * pow2(sr as nat)) by {
+                lemma_pow2_adds(d, sr as nat);
+            }
+
+            let w = (v * pow2(sl as nat)) as nat;
+
+            assert(w as $uN >> sr == w / pow2(sr as nat)) by {
+                $shr_is_div(w as $uN, sr);
+            }
+
+            assert(w == pow2(sr as nat) * (v * pow2(d))) by {
+                lemma_mul_is_associative(v as int, pow2(d) as int, pow2(sr as nat) as int);
+            }
+
+            assert(pow2(sr as nat) > 0) by {
+                lemma_pow2_pos(sr as nat);
+            }
+
+            assert(w / pow2(sr as nat) == v * pow2(d)) by {
+                lemma_div_multiples_vanish((v * pow2(d)) as int, pow2(sr as nat) as int);
+            }
+
+            assert(v * pow2(d) == v << (d as $uN)) by {
+                $shl_is_mul(v, d as $uN);
+            }
+        }
+    }
+    };
+}
+
+lemma_left_right_shift!(lemma_u8_left_right_shift, lemma_u8_shl_is_mul, lemma_u8_shr_is_div, u8);
+
+lemma_left_right_shift!(lemma_u16_left_right_shift, lemma_u16_shl_is_mul, lemma_u16_shr_is_div, u16);
+
+lemma_left_right_shift!(lemma_u32_left_right_shift, lemma_u32_shl_is_mul, lemma_u32_shr_is_div, u32);
+
+lemma_left_right_shift!(lemma_u64_left_right_shift, lemma_u64_shl_is_mul, lemma_u64_shr_is_div, u64);
+
+// TODO: missing lemma_u128_shl_is_mul from vstd
+// lemma_left_right_shift!(lemma_u128_left_right_shift, lemma_u128_shl_is_mul, lemma_u128_shr_is_div, u128);
 } // verus!

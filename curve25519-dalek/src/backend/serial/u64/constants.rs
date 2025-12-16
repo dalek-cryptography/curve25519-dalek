@@ -6340,9 +6340,17 @@ static ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN: EdwardsBasepointTable = Edwards
 ]);
 
 /// Odd multiples of the basepoint `[B, 3B, 5B, 7B, 9B, 11B, 13B, 15B, ..., 127B]`.
+///
+/// VERIFICATION NOTE: Renamed to `_INNER` to support Verus `external_body` wrapper pattern.
+/// The public constant `AFFINE_ODD_MULTIPLES_OF_BASEPOINT` is defined in a verus! block
+/// below with `#[verifier::external_body]` to avoid verification overhead on the 1475-line
+/// table data. Its correctness is specified via `axiom_affine_odd_multiples_of_basepoint_valid()`
+/// in `specs/window_specs.rs`, which asserts:
+/// - `naf_lookup_table8_affine_limbs_bounded`: all limbs are within 54-bit bounds
+/// - `is_valid_naf_lookup_table8_affine`: table[i] == (2i+1)·B for i in 0..64
 #[cfg(feature = "precomputed-tables")]
 #[allow(dead_code)]
-pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT: NafLookupTable8<AffineNielsPoint> =
+const AFFINE_ODD_MULTIPLES_OF_BASEPOINT_INNER: NafLookupTable8<AffineNielsPoint> =
     NafLookupTable8([
         AffineNielsPoint {
             y_plus_x: FieldElement51::from_limbs([
@@ -7817,3 +7825,18 @@ pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT: NafLookupTable8<AffineNielsP
             ]),
         },
     ]);
+
+verus! {
+
+/// Odd multiples of the basepoint `[B, 3B, 5B, 7B, 9B, 11B, 13B, 15B, ..., 127B]`.
+///
+/// VERIFICATION NOTE: This is the Verus-accessible wrapper for `AFFINE_ODD_MULTIPLES_OF_BASEPOINT_INNER`.
+/// The table data is marked `external_body` to avoid bloating verification.
+/// Its correctness is specified via `axiom_affine_odd_multiples_of_basepoint_valid()` in
+/// `specs/window_specs.rs`.
+#[cfg(feature = "precomputed-tables")]
+#[verifier::external_body]
+pub const AFFINE_ODD_MULTIPLES_OF_BASEPOINT: NafLookupTable8<AffineNielsPoint> =
+    AFFINE_ODD_MULTIPLES_OF_BASEPOINT_INNER;
+
+} // verus!

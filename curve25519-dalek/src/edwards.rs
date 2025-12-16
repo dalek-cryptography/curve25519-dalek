@@ -165,9 +165,11 @@ use crate::specs::field_specs::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::specs::montgomery_specs::*;
 #[cfg(verus_keep_ghost)]
-use crate::specs::scalar_specs::{spec_clamp_integer, spec_scalar};
+#[allow(unused_imports)]
+use crate::specs::scalar_specs::*;
 #[cfg(verus_keep_ghost)]
-use crate::specs::scalar_specs_u64::group_order;
+#[allow(unused_imports)]
+use crate::specs::scalar_specs_u64::*;
 use vstd::prelude::*;
 
 // ------------------------------------------------------------------------
@@ -1896,22 +1898,31 @@ impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
     }
 }
 
+verus! {
+
 impl EdwardsPoint {
     /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
-    pub fn vartime_double_scalar_mul_basepoint(
-        a: &Scalar,
-        A: &EdwardsPoint,
-        b: &Scalar,
-    ) -> EdwardsPoint {
+    pub fn vartime_double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> (result:
+        EdwardsPoint)
+        requires
+            is_well_formed_edwards_point(*A),
+        ensures
+            is_well_formed_edwards_point(result),
+            // Functional correctness: result = a*A + b*B where B is the Ed25519 basepoint
+            edwards_point_as_affine(result) == {
+                let aA = edwards_scalar_mul(edwards_point_as_affine(*A), spec_scalar(a));
+                let bB = edwards_scalar_mul(spec_ed25519_basepoint(), spec_scalar(b));
+                edwards_add(aA.0, aA.1, bB.0, bB.1)
+            },
+    {
         crate::backend::vartime_double_base_mul(a, A, b)
     }
 }
 
+} // verus!
 /* VERIFICATION NOTE: Removed unused impl_basepoint_table! macro since EdwardsBasepointTable
 (radix-16) was manually expanded. */
-
 // The number of additions required is ceil(256/w) where w is the radix representation.
-
 /* VERIFICATION NOTE: Manually expanded impl_basepoint_table! macro for radix-16 (EdwardsBasepointTable).
    Removed macro invocations for radix-32, 64, 128, 256 variants to focus verification
    on the primary radix-16 implementation used as a constructor for consts.
@@ -1925,7 +1936,6 @@ impl EdwardsPoint {
        Additions = 64
    }
 */
-
 cfg_if! {
     if #[cfg(feature = "precomputed-tables")] {
 

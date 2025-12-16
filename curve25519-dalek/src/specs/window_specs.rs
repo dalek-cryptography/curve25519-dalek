@@ -4,6 +4,8 @@
 //! and selection operations used in scalar multiplication.
 use crate::backend::serial::curve_models::AffineNielsPoint;
 use crate::backend::serial::curve_models::ProjectiveNielsPoint;
+#[cfg(feature = "precomputed-tables")]
+use crate::backend::serial::u64::constants::AFFINE_ODD_MULTIPLES_OF_BASEPOINT;
 use crate::edwards::EdwardsPoint;
 use crate::specs::edwards_specs::*;
 use crate::specs::field_specs::*;
@@ -163,6 +165,40 @@ pub open spec fn is_valid_naf_lookup_table8_affine(
     forall|j: int|
         0 <= j < 64 ==> affine_niels_point_as_affine_edwards(#[trigger] table[j])
             == edwards_scalar_mul(edwards_point_as_affine(A), (2 * j + 1) as nat)
+}
+
+/// Spec: Check if a NafLookupTable8 contains odd multiples [1A, 3A, 5A, ..., 127A]
+/// in AffineNiels form, where A is given as affine coordinates (nat, nat).
+#[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
+pub open spec fn is_valid_naf_lookup_table8_affine_coords(
+    table: [AffineNielsPoint; 64],
+    basepoint: (nat, nat),
+) -> bool {
+    forall|j: int|
+        #![trigger table[j]]
+        0 <= j < 64 ==> affine_niels_point_as_affine_edwards(table[j]) == edwards_scalar_mul(
+            basepoint,
+            (2 * j + 1) as nat,
+        )
+}
+
+// ============================================================================
+// Axioms for precomputed constant tables
+// ============================================================================
+/// Axiom: AFFINE_ODD_MULTIPLES_OF_BASEPOINT is a valid NAF lookup table for the Ed25519 basepoint.
+/// This connects the hardcoded constant to our specification.
+///
+/// The table contains odd multiples [1·B, 3·B, 5·B, ..., 127·B] where B is the Ed25519 basepoint.
+#[cfg(feature = "precomputed-tables")]
+pub proof fn axiom_affine_odd_multiples_of_basepoint_valid()
+    ensures
+        naf_lookup_table8_affine_limbs_bounded(AFFINE_ODD_MULTIPLES_OF_BASEPOINT.0),
+        is_valid_naf_lookup_table8_affine_coords(
+            AFFINE_ODD_MULTIPLES_OF_BASEPOINT.0,
+            spec_ed25519_basepoint(),
+        ),
+{
+    admit();  // Hardcoded table data verified by construction
 }
 
 // ============================================================================

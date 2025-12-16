@@ -440,13 +440,17 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
 }
 
 impl<'a> MulAssign<&'a FieldElement51> for FieldElement51 {
-    fn mul_assign(&mut self, _rhs: &'a FieldElement51) {
-        proof {
-            // PROOF BYPASS: Assume preconditions for Mul
-            // For Mul (self * rhs): requires limbs < 2^54
-            assume(forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 54));
-            assume(forall|i: int| 0 <= i < 5 ==> _rhs.limbs[i] < (1u64 << 54));
-        }
+    fn mul_assign(&mut self, _rhs: &'a FieldElement51)
+        requires
+            fe51_limbs_bounded(old(self), 54),
+            fe51_limbs_bounded(_rhs, 54),
+        ensures
+            spec_field_element(self) == math_field_mul(
+                spec_field_element(old(self)),
+                spec_field_element(_rhs),
+            ),
+            fe51_limbs_bounded(self, 54),
+    {
         let result = &*self * _rhs;
         self.limbs = result.limbs;
     }

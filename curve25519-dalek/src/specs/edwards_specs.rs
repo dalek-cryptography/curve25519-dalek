@@ -26,6 +26,9 @@ use super::field_specs::*;
 use crate::backend::serial::curve_models::{
     AffineNielsPoint, CompletedPoint, ProjectiveNielsPoint, ProjectivePoint,
 };
+#[cfg(feature = "precomputed-tables")]
+#[allow(unused_imports)]
+use crate::backend::serial::u64::constants::ED25519_BASEPOINT_TABLE;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::backend::serial::u64::constants::{ED25519_BASEPOINT_POINT, EDWARDS_D};
 #[cfg(feature = "precomputed-tables")]
@@ -105,10 +108,7 @@ pub open spec fn is_valid_edwards_basepoint_table(
 #[verifier::external_body]
 pub proof fn axiom_ed25519_basepoint_table_valid()
     ensures
-        is_valid_edwards_basepoint_table(
-            *crate::backend::serial::u64::constants::ED25519_BASEPOINT_TABLE,
-            spec_ed25519_basepoint(),
-        ),
+        is_valid_edwards_basepoint_table(*ED25519_BASEPOINT_TABLE, spec_ed25519_basepoint()),
 {
 }
 

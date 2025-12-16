@@ -114,6 +114,8 @@ EdwardsPoint::mul_by_cofactor(&self),curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::mul_by_pow_2(u32),curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::is_small_order(&self),curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::is_torsion_free(&self),curve25519_dalek::edwards,EdwardsPoint
+"EdwardsPoint::multiscalar_mul(I, J)",curve25519_dalek::edwards,MultiscalarMul for EdwardsPoint
+"EdwardsPoint::optional_multiscalar_mul(I, J)",curve25519_dalek::edwards,VartimeMultiscalarMul for EdwardsPoint
 CompressedRistretto::ct_eq(&CompressedRistretto),curve25519_dalek::ristretto,ConstantTimeEq for CompressedRistretto
 CompressedRistretto::to_bytes(&self),curve25519_dalek::ristretto,CompressedRistretto
 CompressedRistretto::as_bytes(&self),curve25519_dalek::ristretto,CompressedRistretto
@@ -151,10 +153,8 @@ RistrettoBasepointTable::basepoint(&self),curve25519_dalek::ristretto,RistrettoB
 "RistrettoPoint::conditional_select(&RistrettoPoint, &RistrettoPoint, Choice)",curve25519_dalek::ristretto,ConditionallySelectable for RistrettoPoint
 CompressedRistretto::zeroize(&self),curve25519_dalek::ristretto,Zeroize for CompressedRistretto
 RistrettoPoint::zeroize(&self),curve25519_dalek::ristretto,Zeroize for RistrettoPoint
-is_identity(&self),curve25519_dalek::traits,
-mul_base_clamped([u8; 32]),curve25519_dalek::traits,
-vartime_multiscalar_mul(I),curve25519_dalek::traits,
-"vartime_mixed_multiscalar_mul(I, J, K)",curve25519_dalek::traits,
+"RistrettoPoint::multiscalar_mul(I, J)",curve25519_dalek::ristretto,MultiscalarMul for RistrettoPoint
+"RistrettoPoint::optional_multiscalar_mul(I, J)",curve25519_dalek::ristretto,VartimeMultiscalarMul for RistrettoPoint
 Scalar52::zeroize(&self),curve25519_dalek::backend::serial::u64::scalar,Zeroize for Scalar52
 Scalar52::index(usize),curve25519_dalek::backend::serial::u64::scalar,Index<usize> for Scalar52
 "m(u64, u64)",curve25519_dalek::backend::serial::u64::scalar,
@@ -190,6 +190,9 @@ FieldElement51::square(&self),curve25519_dalek::backend::serial::u64::field,Fiel
 FieldElement51::square2(&self),curve25519_dalek::backend::serial::u64::field,FieldElement51
 "mul(&EdwardsPoint, &Scalar)",curve25519_dalek::backend::serial::scalar_mul::variable_base,
 "mul(&Scalar, &EdwardsPoint, &Scalar)",curve25519_dalek::backend::serial::scalar_mul::vartime_double_base,
+"Straus::multiscalar_mul(I, J)",curve25519_dalek::backend::serial::scalar_mul::straus,MultiscalarMul for Straus
+"Straus::optional_multiscalar_mul(I, J)",curve25519_dalek::backend::serial::scalar_mul::straus,VartimeMultiscalarMul for Straus
+"Pippenger::optional_multiscalar_mul(I, J)",curve25519_dalek::backend::serial::scalar_mul::pippenger,VartimeMultiscalarMul for Pippenger
 AffineNielsPoint::zeroize(&self),curve25519_dalek::backend::serial::curve_models,Zeroize for AffineNielsPoint
 ProjectiveNielsPoint::zeroize(&self),curve25519_dalek::backend::serial::curve_models,Zeroize for ProjectiveNielsPoint
 ProjectiveNielsPoint::identity(),curve25519_dalek::backend::serial::curve_models,Identity for ProjectiveNielsPoint

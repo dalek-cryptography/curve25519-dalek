@@ -450,6 +450,58 @@ pub open spec fn is_sqrt_ratio_times_i(
     spec_field_element(&constants::SQRT_M1) * spec_field_element(u)) % p()
 }
 
+/// Spec function: r² * v = u (mod p) — math version operating on nat values
+/// This is the mathematical equivalent of is_sqrt_ratio but without FieldElement wrappers.
+/// Use this when working with mathematical values directly in lemmas.
+pub open spec fn math_is_sqrt_ratio(u: nat, v: nat, r: nat) -> bool {
+    (r * r * v) % p() == u
+}
+
+/// Spec function: r² * v = i*u (mod p) — math version operating on nat values
+/// Used for the nonsquare case in sqrt_ratio_i.
+/// This is the mathematical equivalent of is_sqrt_ratio_times_i.
+pub open spec fn math_is_sqrt_ratio_times_i(u: nat, v: nat, r: nat) -> bool {
+    (r * r * v) % p() == (spec_sqrt_m1() * u) % p()
+}
+
+/// Spec function capturing sqrt_ratio_i math correctness postconditions.
+///
+/// This encapsulates the four mathematical postconditions of sqrt_ratio_i:
+/// 1. When u = 0: returns (true, 0)
+/// 2. When v = 0 and u ≠ 0: returns (false, 0)
+/// 3. When success and v ≠ 0: r² · v ≡ u (mod p)
+/// 4. When failure and v ≠ 0 and u ≠ 0: r² · v ≡ i·u (mod p)
+pub open spec fn spec_sqrt_ratio_i_math_post(u: nat, v: nat, success: bool, r: nat) -> bool {
+    // When u = 0: always return (true, 0)
+    ((u == 0) ==> (success && r == 0))
+        &&
+    // When v = 0 but u ≠ 0: return (false, 0) [division by zero case]
+    ((v == 0 && u != 0) ==> (!success && r == 0))
+        &&
+    // When successful and v ≠ 0: r² * v ≡ u (mod p)
+    ((success && v != 0) ==> math_is_sqrt_ratio(u, v, r))
+        &&
+    // When unsuccessful and v ≠ 0 and u ≠ 0: r² * v ≡ i*u (mod p)
+    ((!success && v != 0 && u != 0) ==> math_is_sqrt_ratio_times_i(u, v, r))
+}
+
+/// Spec function capturing sqrt_ratio_i boundedness postconditions.
+///
+/// The result r is:
+/// - Reduced modulo p (r < p)
+/// - The "non-negative" square root (even, i.e., LSB = 0)
+pub open spec fn spec_sqrt_ratio_i_bounded_post(r: nat) -> bool {
+    r < p() && r % 2 == 0
+}
+
+/// Complete spec function for sqrt_ratio_i postconditions.
+///
+/// Combines math correctness and boundedness postconditions.
+/// Use this in lemmas instead of listing all postconditions separately.
+pub open spec fn spec_sqrt_ratio_i_post(u: nat, v: nat, success: bool, r: nat) -> bool {
+    spec_sqrt_ratio_i_math_post(u, v, success, r) && spec_sqrt_ratio_i_bounded_post(r)
+}
+
 // Square-ness mod p (spec-only).
 pub open spec fn is_square_mod_p(a: nat) -> bool {
     exists|y: nat| (#[trigger] (y * y) % p()) == (a % p())
@@ -463,6 +515,12 @@ pub open spec fn has_inv_mod_p(v: nat) -> bool {
 // Spec: witness-based inverse predicate (lets callers quantify the inverse).
 pub open spec fn is_inv_witness(v: nat, w: nat) -> bool {
     ((v % p()) * (w % p())) % p() == 1
+}
+
+/// The mathematical value of SQRT_M1 (sqrt(-1) mod p)
+/// This is the 4th root of unity i such that i² = -1 (mod p)
+pub open spec fn spec_sqrt_m1() -> nat {
+    spec_field_element(&constants::SQRT_M1)
 }
 
 } // verus!

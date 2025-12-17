@@ -15,4 +15,5 @@ pub mod scalar_lemmas_extra;
 pub mod scalar_byte_lemmas;
 
 // See: https://github.com/Beneficial-AI-Foundation/dalek-lite/issues/386
+pub mod edwards_lemmas;
 pub mod scalar_lemmas_;

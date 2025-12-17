@@ -17,3 +17,4 @@ extend-ignore-re = [
 "Ono" = "Ono" # Surname
 "Tung" = "Tung" # Name
 "Monts" = "Monts" # Abbreviation for Montgomery
+"pn" = "pn" # Variable name for prime number

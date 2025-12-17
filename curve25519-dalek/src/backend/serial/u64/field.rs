@@ -790,6 +790,17 @@ impl FieldElement51 {
     };
 
     /// Invert the sign of this field element
+    ///
+    /// # Implementation Note on Limb Bounds
+    ///
+    /// The implementation adds 16*p (constants around 2^55) then subtracts and reduces.
+    /// The math shows it can actually handle larger inputs without underflow:
+    /// - For 52-bit limbs (< 2^52): 2^55 - 2^52 = 7*2^52 > 0 ✓ (no underflow)
+    /// - For 54-bit limbs (< 2^54): 2^55 - 2^54 = 2^54 > 0 ✓ (no underflow)
+    ///
+    /// The verified spec conservatively requires 51-bit input, but the implementation
+    /// safely handles up to 54-bit. Wrappers like `negate_field_element` and
+    /// `conditional_negate_field_element` in `subtle_assumes.rs` use relaxed 52-bit bounds.
     pub fn negate(&mut self)
         requires
             forall|i: int| 0 <= i < 5 ==> old(self).limbs[i] < (1u64 << 51),

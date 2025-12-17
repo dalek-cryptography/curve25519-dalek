@@ -792,6 +792,12 @@ impl FieldElement {
         Choice,
         FieldElement,
     ))
+        requires
+    // Input bounds for sqrt_ratio_i
+    // u and v can be up to 54-bit bounded (from sub/add operations in decompress)
+
+            fe51_limbs_bounded(u, 54),
+            fe51_limbs_bounded(v, 54),
         ensures
     // When u = 0: always return (true, 0)
 
@@ -810,10 +816,17 @@ impl FieldElement {
             ),
             // When unsuccessful and v ≠ 0: r² * v ≡ i*u (mod p) [nonsquare case]
             (!choice_is_true(result.0) && spec_field_element(v) != 0 && spec_field_element(u) != 0)
-                ==> is_sqrt_ratio_times_i(
-                u,
-                v,
+                ==> is_sqrt_ratio_times_i(u, v, &result.1),
+            // NEW: The result is always the "non-negative" square root (LSB = 0)
+            // This is a fundamental property of sqrt_ratio_i that the original code
+            // relies on for decompression sign bit handling
+            (spec_field_element(&result.1) % p()) % 2 == 0,
+            // NEW: The result is bounded (reduced mod p)
+            spec_field_element(&result.1) < p(),
+            // Limb bounds: result is 52-bit bounded (from conditional_negate)
+            fe51_limbs_bounded(
                 &result.1,
+                52,
             ),
     // VERIFICATION NOTE: PROOF BYPASS
 

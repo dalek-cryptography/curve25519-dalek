@@ -1,6 +1,8 @@
 #[allow(unused_imports)]
 use crate::lemmas::common_lemmas::pow_lemmas::*;
 #[allow(unused_imports)]
+use crate::specs::field_specs_u64::*; // for p(), pow255_gt_19()
+#[allow(unused_imports)]
 use crate::specs::primality_specs::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::div_mod::*;
@@ -8,6 +10,8 @@ use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::power::*;
+#[allow(unused_imports)]
+use vstd::arithmetic::power2::*; // for pow2(), lemma_pow2_adds()
 
 use vstd::prelude::*;
 
@@ -1677,6 +1681,82 @@ proof fn lemma_cancellation_mod_prime(a: nat, b: nat, prime: nat)
             lemma_mod_adds((a - 1) as int, 1, prime as int);
             lemma_small_mod(1nat, prime);
         };
+    }
+}
+
+// ============================================================================
+// Modular Arithmetic - Product of Complements
+// ============================================================================
+/// Lemma: (p - a)(p - b) % p = (a * b) % p for 0 < a, b < p
+///
+/// This is a fundamental modular arithmetic property:
+///   (p - a)(p - b) = p² - pb - pa + ab = p(p - a - b) + ab
+///   p(p - a - b) % p = 0 (p divides p(p - a - b))
+///   So (p - a)(p - b) % p = ab % p
+///
+/// This lemma generalizes the property that negation preserves products in finite fields.
+pub proof fn lemma_product_of_complements(a: nat, b: nat, p: nat)
+    requires
+        p > 0,
+        0 < a && a < p,
+        0 < b && b < p,
+    ensures
+        (((p - a) * (p - b)) as nat) % p == ((a * b) as nat) % p,
+{
+    let p_int = p as int;
+    let a_int = a as int;
+    let b_int = b as int;
+    let p_minus_a = (p - a) as int;
+    let p_minus_b = (p - b) as int;
+
+    // Step 1: (p - a)(p - b) = p² - pb - pa + ab = p(p - a - b) + ab
+    assert(p_minus_a * p_minus_b == p_int * (p_int - a_int - b_int) + a_int * b_int) by {
+        // (p - a)(p - b) = p(p - b) - a(p - b)
+        lemma_mul_is_distributive_sub(p_minus_b, p_int, a_int);
+        // p(p - b) = p² - pb
+        lemma_mul_is_distributive_sub(p_int, p_int, b_int);
+        // a(p - b) = ap - ab
+        lemma_mul_is_distributive_sub(a_int, p_int, b_int);
+        // So: (p - a)(p - b) = p² - pb - ap + ab
+        //                    = p² - pb - pa + ab  (commutativity)
+        lemma_mul_is_commutative(a_int, p_int);
+        // p² - pb - pa + ab = p(p - b - a) + ab
+        lemma_mul_is_distributive_sub(p_int, p_int, b_int);
+        lemma_mul_is_distributive_sub(p_int, (p_int - b_int), a_int);
+    }
+
+    // Step 2: (p(p - a - b) + ab) % p = ab % p
+    let k = p_int - a_int - b_int;
+    assert((p_int * k + a_int * b_int) % p_int == (a_int * b_int) % p_int) by {
+        // p * k % p = 0 for any k
+        lemma_mod_multiples_vanish(k, a_int * b_int, p_int);
+    }
+}
+
+/// Proof that p() is odd (p() % 2 == 1)
+///
+/// Since p() = 2^255 - 19:
+/// - 2^255 is even (by lemma_pow2_even)
+/// - 19 is odd (19 % 2 == 1)
+/// - even - odd = odd
+pub proof fn lemma_p_is_odd()
+    ensures
+        p() % 2 == 1,
+{
+    // 2^255 is even
+    assert(pow2(255) % 2 == 0) by {
+        lemma_pow2_even(255);
+    }
+
+    // p = 2^255 - 19 ≡ 0 - 1 ≡ -1 ≡ 1 (mod 2)
+    assert((pow2(255) as int - 19) % 2 == 1) by {
+        assert(19int % 2 == 1) by (compute);
+        lemma_sub_mod_noop(pow2(255) as int, 19int, 2int);
+        assert((-1int) % 2 == 1) by (compute);
+    }
+
+    assert(pow2(255) > 19) by {
+        pow255_gt_19();
     }
 }
 

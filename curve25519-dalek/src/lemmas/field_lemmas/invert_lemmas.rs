@@ -5,6 +5,7 @@
 //!
 //! The exponent p-2 = 2^255 - 21 is computed as:
 //!   (2^250 - 1) * 2^5 + 11 = 2^255 - 32 + 11 = 2^255 - 21
+#![allow(unused_imports)]
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::power::*;
 use vstd::arithmetic::power2::*;
@@ -72,7 +73,7 @@ pub proof fn lemma_pow2k_to_field_element(fe: &FieldElement51, result: &FieldEle
     // spec_field_element(result) == (pow(u64_5_as_nat(fe.limbs), k) as nat) % p()  (proven above)
     // pow(spec_field_element(fe), k) % p() == pow(u64_5_as_nat(fe.limbs), k) % p()  (proven above)
     // Both powers are non-negative, so int % and nat % give the same result
-    // Therefore: spec_field_element(result) == (pow(spec_field_element(fe), k) as nat) % p() ✅
+    // Therefore: spec_field_element(result) == (pow(spec_field_element(fe), k) as nat) % p()
 }
 
 /// Lemma: When the input is zero, the invert result is zero

@@ -202,4 +202,137 @@ pub proof fn lemma_int_nat_mod_equiv(v: int, m: nat)
     lemma_fundamental_div_mod_converse_mod(v, m as int, q_nat as int, r_nat as int);
 }
 
+/// Multiplication distributes with modular negation: a * (-b mod m) ≡ -(a*b) (mod m)
+///
+/// This is the unsigned representation version, where -x is encoded as (m - x % m).
+/// Key insight: a * (-b) = -(a*b) in integer arithmetic.
+pub proof fn lemma_mul_distributes_over_neg_mod(a: nat, b: nat, m: nat)
+    requires
+        m > 1,
+    ensures
+        (a * ((m - b % m) as nat)) % m == ((m - (a * b) % m) as nat) % m,
+{
+    let b_mod = b % m;
+    let neg_b: nat = (m - b_mod) as nat;
+    let ab_mod = (a * b) % m;
+    let neg_ab: nat = (m - ab_mod) as nat;
+
+    // Step 1: (m - b_mod) ≡ -b_mod (mod m)
+    assert((neg_b as int) % (m as int) == (-(b_mod as int)) % (m as int)) by {
+        lemma_mod_add_multiples_vanish(-(b_mod as int), m as int);
+    };
+
+    // Step 2: a * (m - b_mod) ≡ a * (-b_mod) (mod m)
+    assert(((a as int) * (neg_b as int)) % (m as int) == ((a as int) * (-(b_mod as int))) % (
+    m as int)) by {
+        lemma_mul_mod_noop_right(a as int, neg_b as int, m as int);
+        lemma_mul_mod_noop_right(a as int, -(b_mod as int), m as int);
+    };
+
+    // Step 3: a * (-b_mod) = -(a * b_mod) in integer arithmetic
+    assert((a as int) * (-(b_mod as int)) == -((a as int) * (b_mod as int))) by (nonlinear_arith);
+
+    // Step 4: (a * b_mod) % m == (a * b) % m [mod absorption]
+    assert((a * b_mod) % m == ab_mod) by {
+        lemma_mul_mod_noop_right(a as int, b as int, m as int);
+    };
+
+    // Step 5: -(a*b_mod) ≡ -(ab_mod) (mod m)
+    assert((-(a as int * b_mod as int)) % (m as int) == (-(ab_mod as int)) % (m as int)) by {
+        lemma_sub_mod_noop(0int, (a * b_mod) as int, m as int);
+    };
+
+    // Step 6: -(ab_mod) ≡ (m - ab_mod) (mod m)
+    assert((-(ab_mod as int)) % (m as int) == (neg_ab as int) % (m as int)) by {
+        lemma_mod_add_multiples_vanish(-(ab_mod as int), m as int);
+    };
+}
+
+/// Double negation in modular arithmetic: -(-x) ≡ x (mod m)
+///
+/// For x with 0 ≤ x < m: (m - (m - x)) % m = x
+pub proof fn lemma_double_neg_mod(x: nat, m: nat)
+    requires
+        m > 1,
+        x < m,
+    ensures
+        ((m - ((m - x) as nat) % m) as nat) % m == x,
+{
+    // (m - x) < m since 0 ≤ x < m implies 0 < m - x ≤ m
+    // Actually m - x could be m when x = 0, so (m - x) % m handles that
+    let neg_x = (m - x) as nat;
+
+    if x == 0 {
+        // neg_x = m, so neg_x % m = 0
+        assert(neg_x % m == 0) by {
+            lemma_mod_self_0(m as int);
+        };
+        // (m - 0) % m = m % m = 0 = x
+        assert(((m - 0nat) as nat) % m == 0);
+    } else {
+        // 0 < x < m, so 0 < m - x < m, so (m - x) % m = m - x
+        assert(neg_x < m);
+        assert(neg_x % m == neg_x) by {
+            lemma_small_mod(neg_x, m);
+        };
+        // (m - neg_x) = (m - (m - x)) = x
+        assert((m - neg_x) as nat == x);
+        assert(((m - neg_x) as nat) % m == x) by {
+            lemma_small_mod(x, m);
+        };
+    }
+}
+
+/// Multiplication by (m-1) is negation modulo m: a*(m-1) % m = (m - a%m) % m
+///
+/// Proof: a*(m-1) = a*m - a ≡ 0 - a ≡ m - a%m (mod m)
+///
+/// This is useful for proving that multiplying by -1 (represented as m-1 in
+/// unsigned arithmetic) produces the additive inverse modulo m.
+pub proof fn lemma_mul_by_minus_one_is_negation(a: nat, m: nat)
+    requires
+        m > 0,
+    ensures
+        (a * ((m - 1) as nat)) % m == ((m - a % m) as nat) % m,
+{
+    let a_mod = a % m;
+    let m_minus_1: nat = (m - 1) as nat;
+    let neg_a: nat = (m - a_mod) as nat;
+
+    // Step 1: a * (m-1) = a*m - a [distributive]
+    assert(a * m_minus_1 == a * m - a) by {
+        lemma_mul_is_distributive_sub(a as int, m as int, 1int);
+    };
+
+    // Step 2: (a*m) % m = 0
+    assert((a * m) % m == 0) by {
+        lemma_mod_multiples_basic(a as int, m as int);
+    };
+
+    // Step 3: (a*m - a) % m = (0 - a_mod) % m [by sub_mod_noop]
+    assert(((a * m) as int - a as int) % (m as int) == (0int - a_mod as int) % (m as int)) by {
+        lemma_sub_mod_noop((a * m) as int, a as int, m as int);
+    };
+
+    // Step 4: (0 - a_mod) % m = (m - a_mod) % m [add m to get positive representative]
+    assert((0int - a_mod as int) % (m as int) == (m as int - a_mod as int) % (m as int)) by {
+        lemma_mod_add_multiples_vanish(-(a_mod as int), m as int);
+    };
+
+    // Step 5: Connect int form to nat form
+    assert((m as int - a_mod as int) % (m as int) == (neg_a as int) % (m as int));
+
+    // Step 6: Show a*m >= a (so subtraction is non-negative)
+    assert((a as int) * (m as int) >= a as int) by {
+        lemma_mul_inequality(1int, m as int, a as int);
+        lemma_mul_is_commutative(1int, a as int);
+        lemma_mul_is_commutative(m as int, a as int);
+    };
+
+    // Step 7: Connect nat % nat form
+    assert((a * m_minus_1) as int == (a as int) * (m as int) - (a as int));
+    assert((a * m_minus_1) as int >= 0);
+    assert((a * m_minus_1) % m == neg_a % m);
+}
+
 } // verus!

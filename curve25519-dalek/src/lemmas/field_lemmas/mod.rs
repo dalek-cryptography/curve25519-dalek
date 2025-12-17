@@ -31,3 +31,11 @@ pub mod pow22501_t19_lemma;
 pub mod pow22501_t3_lemma;
 pub mod pow_chain_lemmas;
 pub mod pow_p58_lemma;
+
+pub mod constants_lemmas;
+
+pub mod field_algebra_lemmas;
+
+pub mod sqrt_m1_lemmas;
+
+pub mod sqrt_ratio_lemmas;

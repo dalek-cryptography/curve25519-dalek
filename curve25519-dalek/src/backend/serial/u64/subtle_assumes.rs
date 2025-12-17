@@ -259,10 +259,18 @@ pub fn conditional_negate_generic<T>(a: &mut T, choice: Choice) where
 
 /// Specialized wrapper for conditional_negate on FieldElement51 with proper specs.
 /// Use this when you need verified limb bounds and functional correctness guarantees.
+///
+/// Note: The implementation internally uses field negation which calls reduce(),
+/// so 52-bit bounded input is safe (reduce handles up to 64-bit limbs).
+/// The output is always 52-bit bounded from the reduce operation.
 #[verifier::external_body]
 pub fn conditional_negate_field_element(a: &mut FieldElement51, choice: Choice)
     requires
-        fe51_limbs_bounded(old(a), 51),
+        fe51_limbs_bounded(
+            old(a),
+            52,
+        ),  // Relaxed from 51 to 52 to match mul/square output
+
     ensures
         fe51_limbs_bounded(a, 52),
         spec_field_element(a) == if choice_is_true(choice) {

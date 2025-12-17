@@ -2976,6 +2976,8 @@ impl UnpackedScalar {
 
     /// Inverts an UnpackedScalar not in Montgomery form.
     pub fn invert(&self) -> (result: UnpackedScalar)
+        requires
+            limbs_bounded(self),
         ensures
             limbs_bounded(&result),
             // Postcondition: result * self ≡ 1 (mod group_order)
@@ -2986,16 +2988,21 @@ impl UnpackedScalar {
         /* <ORIGINAL CODE>
                 self.as_montgomery().montgomery_invert().from_montgomery()
         </ORIGINAL CODE> */
-        assume(limbs_bounded(self));
         let mont = self.as_montgomery();
-        assume(limbs_bounded(&mont));
+        // as_montgomery ensures limbs_bounded(&mont)
         let inv = mont.montgomery_invert();
-        assume(limbs_bounded(&inv));
+        // montgomery_invert ensures limbs_bounded(&inv)
         let result = inv.from_montgomery();
+        // from_montgomery ensures limbs_bounded(&result) and to_nat(&result.limbs) < group_order()
 
         proof {
-            assume(limbs_bounded(&result));
-            assume(to_nat(&result.limbs) * to_nat(&self.limbs) % group_order() == 1);
+            // Apply the invert correctness lemma
+            lemma_invert_correctness(
+                to_nat(&self.limbs),
+                to_nat(&mont.limbs),
+                to_nat(&inv.limbs),
+                to_nat(&result.limbs),
+            );
         }
 
         result

@@ -2112,4 +2112,92 @@ pub proof fn lemma_one_bounded(one: Scalar52)
     assert(0x10000000000000 == 1u64 << 52) by (bit_vector);
 }
 
+/// Proves that the composition of as_montgomery, montgomery_invert, and from_montgomery
+/// correctly computes the modular inverse.
+///
+/// Given:
+/// 1. mont ≡ self * R (mod L)         [from as_montgomery]
+/// 2. inv * mont ≡ R² (mod L)         [from montgomery_invert]
+/// 3. result * R ≡ inv (mod L)        [from from_montgomery]
+///
+/// Proves: result * self ≡ 1 (mod L)
+///
+/// Proof strategy:
+/// - Substitute (3) into (2): (result * R) * mont ≡ R² (mod L)
+/// - Substitute (1): result * R * (self * R) ≡ R² (mod L)
+/// - Regroup: (result * self) * R² ≡ R² (mod L)
+/// - Cancel R² by multiplying by (R⁻¹)²: result * self ≡ 1 (mod L)
+pub proof fn lemma_invert_correctness(self_val: nat, mont_val: nat, inv_val: nat, result_val: nat)
+    requires
+        group_order() > 0,
+        (mont_val % group_order()) == ((self_val * montgomery_radix()) % group_order()),
+        ((inv_val * mont_val) % group_order()) == ((montgomery_radix() * montgomery_radix())
+            % group_order()),
+        ((result_val * montgomery_radix()) % group_order()) == (inv_val % group_order()),
+    ensures
+        ((result_val * self_val) % group_order()) == 1,
+{
+    let R = montgomery_radix();
+    let L = group_order();
+    let R_inv = inv_montgomery_radix();
+
+    // Final goal: (result_val * self_val) % L == 1
+    assert((result_val * self_val) % L == 1nat) by {
+        lemma_montgomery_inverse();
+
+        // Step 1: Show (result * R) * mont ≡ R² (mod L)
+        assert(((result_val * R) * mont_val) % L == (R * R) % L) by {
+            lemma_mul_mod_noop_left((result_val * R) as int, mont_val as int, L as int);
+            lemma_mul_mod_noop_left(inv_val as int, mont_val as int, L as int);
+        }
+
+        // Step 2: Substitute mont ≡ self * R
+        assert((result_val * ((R * self_val) * R)) % L == (R * R) % L) by {
+            lemma_mul_is_associative(result_val as int, R as int, mont_val as int);
+            lemma_mul_mod_noop_right(R as int, mont_val as int, L as int);
+            lemma_mul_mod_noop_right(R as int, (self_val * R) as int, L as int);
+            lemma_mul_is_associative(R as int, self_val as int, R as int);
+            lemma_mul_mod_noop_right(result_val as int, (R * mont_val) as int, L as int);
+            lemma_mul_mod_noop_right(result_val as int, (R * (self_val * R)) as int, L as int);
+        }
+
+        // Step 3: Regroup to (result * self) * R²
+        assert(((result_val * self_val) * (R * R)) % L == (R * R) % L) by {
+            lemma_mul_is_associative(result_val as int, (R * self_val) as int, R as int);
+            lemma_mul_is_associative(result_val as int, R as int, self_val as int);
+            lemma_mul_is_associative((result_val * R) as int, self_val as int, R as int);
+            lemma_mul_is_commutative(R as int, self_val as int);
+            lemma_mul_is_associative(result_val as int, self_val as int, R as int);
+            lemma_mul_is_associative((result_val * self_val) as int, R as int, R as int);
+        }
+
+        // Step 4: First application of R_inv to cancel one R
+        assert(((result_val * self_val) * R) % L == R % L) by {
+            lemma_montgomery_inverse();
+            lemma_mul_mod_noop_right(
+                R_inv as int,
+                ((result_val * self_val) * (R * R)) as int,
+                L as int,
+            );
+            lemma_mul_mod_noop_right(R_inv as int, (R * R) as int, L as int);
+            lemma_mul_is_associative((result_val * self_val) as int, (R * R) as int, R_inv as int);
+            lemma_mul_is_associative(R as int, R as int, R_inv as int);
+            lemma_mul_mod_noop_right(R as int, (R * R_inv) as int, L as int);
+            lemma_mul_mod_noop_right(
+                (result_val * self_val) as int,
+                ((R * R) * R_inv) as int,
+                L as int,
+            );
+            lemma_mul_mod_noop_right((result_val * self_val) as int, R as int, L as int);
+        }
+
+        // Step 5: Second application of R_inv to cancel the remaining R
+        lemma_mul_mod_noop_right(R_inv as int, ((result_val * self_val) * R) as int, L as int);
+        lemma_mul_mod_noop_right(R_inv as int, R as int, L as int);
+        lemma_mul_is_associative((result_val * self_val) as int, R as int, R_inv as int);
+        lemma_mul_mod_noop_right((result_val * self_val) as int, (R * R_inv) as int, L as int);
+        lemma_mul_mod_noop_right((result_val * self_val) as int, 1nat as int, L as int);
+    }
+}
+
 } // verus!

@@ -114,6 +114,7 @@ use crate::lemmas::common_lemmas::mask_lemmas::*;
 use crate::lemmas::common_lemmas::pow_lemmas::*;
 use crate::lemmas::common_lemmas::shift_lemmas::*;
 use crate::lemmas::common_lemmas::sum_lemmas::*;
+use crate::scalar_helpers::*;
 use core::borrow::Borrow;
 use core::fmt::Debug;
 use core::iter::{Product, Sum};
@@ -1115,7 +1116,6 @@ impl vstd::std_specs::convert::FromSpecImpl<u128> for Scalar {
 }
 
 impl From<u8> for Scalar {
-    // VERIFICATION NOTE: PROOF BYPASS
     fn from(x: u8) -> (result: Scalar)
         ensures
             scalar_to_nat(&result) == x as nat,
@@ -1125,14 +1125,16 @@ impl From<u8> for Scalar {
 
         let result = Scalar { bytes: s_bytes };
         proof {
-            assume(scalar_to_nat(&result) == x as nat);
+            assert(scalar_to_nat(&result) == x as nat) by {
+                assert forall|i: int| 1 <= i < 32 implies result.bytes[i] == 0 by {}
+                lemma_bytes_to_nat_first_byte_only(&result.bytes);
+            }
         }
         result
     }
 }
 
 impl From<u16> for Scalar {
-    // VERIFICATION NOTE: PROOF BYPASS
     #[allow(clippy::manual_memcpy)]
     fn from(x: u16) -> (result: Scalar)
         ensures
@@ -1144,21 +1146,32 @@ impl From<u16> for Scalar {
         </ORIGINAL CODE> */
         /* <MODIFIED CODE> Verus doesn't support copy_from_slice and to_le_bytes */
         let mut s_bytes = [0u8;32];
-        let x_bytes = crate::core_assumes::u16_to_le_bytes(x);
-        for i in 0..x_bytes.len() {
+        let x_bytes = u16_to_le_bytes(x);
+
+        // Copy the 2 bytes from x_bytes to s_bytes
+        // (x_bytes.len() is always 2 because u16_to_le_bytes returns [u8; 2])
+        for i in 0..2
+            invariant
+        // Copied bytes match
+
+                forall|j: int| 0 <= j < i ==> s_bytes[j] == x_bytes[j],
+                // Remaining bytes are still zero
+                forall|j: int| i <= j < 32 ==> s_bytes[j] == 0,
+        {
             s_bytes[i] = x_bytes[i];
         }
         /* </MODIFIED CODE> */
+
         let result = Scalar { bytes: s_bytes };
         proof {
-            assume(scalar_to_nat(&result) == x as nat);
+            let le_seq = seq_from2(&x_bytes);
+            lemma_from_le_bytes(le_seq, &result.bytes, 2);
         }
         result
     }
 }
 
 impl From<u32> for Scalar {
-    // VERIFICATION NOTE: PROOF BYPASS
     #[allow(clippy::manual_memcpy)]
     fn from(x: u32) -> (result: Scalar)
         ensures
@@ -1170,14 +1183,23 @@ impl From<u32> for Scalar {
         </ORIGINAL CODE> */
         /* <MODIFIED CODE> Verus doesn't support copy_from_slice and to_le_bytes */
         let mut s_bytes = [0u8;32];
-        let x_bytes = crate::core_assumes::u32_to_le_bytes(x);
-        for i in 0..x_bytes.len() {
+        let x_bytes = u32_to_le_bytes(x);
+
+        // Copy the 4 bytes from x_bytes to s_bytes
+        // (x_bytes.len() is always 4 because u32_to_le_bytes returns [u8; 4])
+        for i in 0..4
+            invariant
+                forall|j: int| 0 <= j < i ==> s_bytes[j] == x_bytes[j],
+                forall|j: int| i <= j < 32 ==> s_bytes[j] == 0,
+        {
             s_bytes[i] = x_bytes[i];
         }
-        let result = Scalar { bytes: s_bytes };
         /* </MODIFIED CODE> */
+
+        let result = Scalar { bytes: s_bytes };
         proof {
-            assume(scalar_to_nat(&result) == x as nat);
+            let le_seq = seq_from4(&x_bytes);
+            lemma_from_le_bytes(le_seq, &result.bytes, 4);
         }
         result
     }
@@ -1205,7 +1227,6 @@ impl From<u64> for Scalar {
     ///
     /// assert!(fourtytwo == six * seven);
     /// ```
-    // VERIFICATION NOTE: PROOF BYPASS
     #[allow(clippy::manual_memcpy)]
     fn from(x: u64) -> (result: Scalar)
         ensures
@@ -1217,21 +1238,28 @@ impl From<u64> for Scalar {
         </ORIGINAL CODE> */
         /* <MODIFIED CODE> Verus doesn't support copy_from_slice and to_le_bytes */
         let mut s_bytes = [0u8;32];
-        let x_bytes = crate::core_assumes::u64_to_le_bytes(x);
-        for i in 0..x_bytes.len() {
+        let x_bytes = u64_to_le_bytes(x);
+
+        // Copy the 8 bytes from x_bytes to s_bytes
+        // (x_bytes.len() is always 8 because u64_to_le_bytes returns [u8; 8])
+        for i in 0..8
+            invariant
+                forall|j: int| 0 <= j < i ==> s_bytes[j] == x_bytes[j],
+                forall|j: int| i <= j < 32 ==> s_bytes[j] == 0,
+        {
             s_bytes[i] = x_bytes[i];
         }
         /* </MODIFIED CODE> */
         let result = Scalar { bytes: s_bytes };
         proof {
-            assume(scalar_to_nat(&result) == x as nat);
+            let le_seq = seq_from8(&x_bytes);
+            lemma_from_le_bytes(le_seq, &result.bytes, 8);
         }
         result
     }
 }
 
 impl From<u128> for Scalar {
-    // VERIFICATION NOTE: PROOF BYPASS
     #[allow(clippy::manual_memcpy)]
     fn from(x: u128) -> (result: Scalar)
         ensures
@@ -1243,14 +1271,23 @@ impl From<u128> for Scalar {
         </ORIGINAL CODE> */
         /* <MODIFIED CODE> Verus doesn't support copy_from_slice and to_le_bytes */
         let mut s_bytes = [0u8;32];
-        let x_bytes = crate::core_assumes::u128_to_le_bytes(x);
-        for i in 0..x_bytes.len() {
+        let x_bytes = u128_to_le_bytes(x);
+
+        // Copy the 16 bytes from x_bytes to s_bytes
+        // (x_bytes.len() is always 16 because u128_to_le_bytes returns [u8; 16])
+        for i in 0..16
+            invariant
+                forall|j: int| 0 <= j < i ==> s_bytes[j] == x_bytes[j],
+                forall|j: int| i <= j < 32 ==> s_bytes[j] == 0,
+        {
             s_bytes[i] = x_bytes[i];
         }
         /* </MODIFIED CODE> */
+
         let result = Scalar { bytes: s_bytes };
         proof {
-            assume(scalar_to_nat(&result) == x as nat);
+            let le_seq = seq_from16(&x_bytes);
+            lemma_from_le_bytes(le_seq, &result.bytes, 16);
         }
         result
     }

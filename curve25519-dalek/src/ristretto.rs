@@ -161,7 +161,7 @@ mod elligator;
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 
-use core::array::TryFromSliceError;
+use core::array::{self, TryFromSliceError};
 use core::borrow::Borrow;
 use core::fmt::Debug;
 use core::iter::Sum;
@@ -550,8 +550,8 @@ impl RistrettoPoint {
     /// # fn main() {
     /// let mut rng = OsRng.unwrap_err();
     ///
-    /// let points: Vec<RistrettoPoint> =
-    ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
+    /// let points: [RistrettoPoint; 32] =
+    ///     core::array::from_fn(|_| RistrettoPoint::random(&mut rng));
     ///
     /// let compressed = RistrettoPoint::double_and_compress_batch(&points);
     ///
@@ -560,90 +560,102 @@ impl RistrettoPoint {
     /// }
     /// # }
     /// ```
+    pub fn double_and_compress_batch<const N: usize>(
+        points: &[RistrettoPoint; N],
+    ) -> [CompressedRistretto; N] {
+        let states: [BatchCompressState; N] =
+            array::from_fn(|i| BatchCompressState::from(&points[i]));
+
+        let mut invs: [FieldElement; N] = array::from_fn(|i| states[i].efgh());
+
+        FieldElement::invert_batch(&mut invs);
+
+        array::from_fn(|i| Self::internal_double_and_compress_batch(&states[i], &invs[i]))
+    }
+
+    /// Double-and-compress a batch of points.  The Ristretto encoding
+    /// is not batchable, since it requires an inverse square root.
+    ///
+    /// However, given input points \\( P\_1, \ldots, P\_n, \\)
+    /// it is possible to compute the encodings of their doubles \\(
+    /// \mathrm{enc}( \[2\]P\_1), \ldots, \mathrm{enc}( \[2\]P\_n ) \\)
+    /// in a batch.
+    ///
+    #[cfg_attr(feature = "rand_core", doc = "```")]
+    #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
+    /// # use curve25519_dalek::ristretto::RistrettoPoint;
+    /// use rand_core::{OsRng, TryRngCore};
+    ///
+    /// # // Need fn main() here in comment so the doctest compiles
+    /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
+    /// # fn main() {
+    /// let mut rng = OsRng.unwrap_err();
+    ///
+    /// let points: Vec<RistrettoPoint> =
+    ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
+    ///
+    /// let compressed = RistrettoPoint::double_and_compress_batch_alloc(&points);
+    ///
+    /// for (P, P2_compressed) in points.iter().zip(compressed.iter()) {
+    ///     assert_eq!(*P2_compressed, (P + P).compress());
+    /// }
+    /// # }
+    /// ```
     #[cfg(feature = "alloc")]
-    pub fn double_and_compress_batch<'a, I>(points: I) -> Vec<CompressedRistretto>
+    pub fn double_and_compress_batch_alloc<'a, I>(points: I) -> Vec<CompressedRistretto>
     where
         I: IntoIterator<Item = &'a RistrettoPoint>,
     {
-        #[derive(Copy, Clone, Debug)]
-        struct BatchCompressState {
-            e: FieldElement,
-            f: FieldElement,
-            g: FieldElement,
-            h: FieldElement,
-            eg: FieldElement,
-            fh: FieldElement,
-        }
-
-        impl BatchCompressState {
-            fn efgh(&self) -> FieldElement {
-                &self.eg * &self.fh
-            }
-        }
-
-        impl<'a> From<&'a RistrettoPoint> for BatchCompressState {
-            #[rustfmt::skip] // keep alignment of explanatory comments
-            fn from(P: &'a RistrettoPoint) -> BatchCompressState {
-                let XX = P.0.X.square();
-                let YY = P.0.Y.square();
-                let ZZ = P.0.Z.square();
-                let dTT = &P.0.T.square() * &constants::EDWARDS_D;
-
-                let e = &P.0.X * &(&P.0.Y + &P.0.Y); // = 2*X*Y
-                let f = &ZZ + &dTT;                  // = Z^2 + d*T^2
-                let g = &YY + &XX;                   // = Y^2 - a*X^2
-                let h = &ZZ - &dTT;                  // = Z^2 - d*T^2
-
-                let eg = &e * &g;
-                let fh = &f * &h;
-
-                BatchCompressState{ e, f, g, h, eg, fh }
-            }
-        }
-
         let states: Vec<BatchCompressState> =
             points.into_iter().map(BatchCompressState::from).collect();
 
         let mut invs: Vec<FieldElement> = states.iter().map(|state| state.efgh()).collect();
 
-        FieldElement::batch_invert(&mut invs[..]);
+        FieldElement::invert_batch_alloc(&mut invs[..]);
 
         states
             .iter()
             .zip(invs.iter())
             .map(|(state, inv): (&BatchCompressState, &FieldElement)| {
-                let Zinv = &state.eg * inv;
-                let Tinv = &state.fh * inv;
-
-                let mut magic = constants::INVSQRT_A_MINUS_D;
-
-                let negcheck1 = (&state.eg * &Zinv).is_negative();
-
-                let mut e = state.e;
-                let mut g = state.g;
-                let mut h = state.h;
-
-                let minus_e = -&e;
-                let f_times_sqrta = &state.f * &constants::SQRT_M1;
-
-                e.conditional_assign(&state.g, negcheck1);
-                g.conditional_assign(&minus_e, negcheck1);
-                h.conditional_assign(&f_times_sqrta, negcheck1);
-
-                magic.conditional_assign(&constants::SQRT_M1, negcheck1);
-
-                let negcheck2 = (&(&h * &e) * &Zinv).is_negative();
-
-                g.conditional_negate(negcheck2);
-
-                let mut s = &(&h - &g) * &(&magic * &(&g * &Tinv));
-
-                let s_is_negative = s.is_negative();
-                s.conditional_negate(s_is_negative);
-
-                CompressedRistretto(s.to_bytes())
+                Self::internal_double_and_compress_batch(state, inv)
             })
             .collect()
+    }
+
+    fn internal_double_and_compress_batch(
+        state: &BatchCompressState,
+        inv: &FieldElement,
+    ) -> CompressedRistretto {
+        let Zinv = &state.eg * inv;
+        let Tinv = &state.fh * inv;
+
+        let mut magic = constants::INVSQRT_A_MINUS_D;
+
+        let negcheck1 = (&state.eg * &Zinv).is_negative();
+
+        let mut e = state.e;
+        let mut g = state.g;
+        let mut h = state.h;
+
+        let minus_e = -&e;
+        let f_times_sqrta = &state.f * &constants::SQRT_M1;
+
+        e.conditional_assign(&state.g, negcheck1);
+        g.conditional_assign(&minus_e, negcheck1);
+        h.conditional_assign(&f_times_sqrta, negcheck1);
+
+        magic.conditional_assign(&constants::SQRT_M1, negcheck1);
+
+        let negcheck2 = (&(&h * &e) * &Zinv).is_negative();
+
+        g.conditional_negate(negcheck2);
+
+        let mut s = &(&h - &g) * &(&magic * &(&g * &Tinv));
+
+        let s_is_negative = s.is_negative();
+        s.conditional_negate(s_is_negative);
+
+        CompressedRistretto(s.to_bytes())
     }
 
     /// Return the coset self + E\[4\], for debugging.
@@ -1110,6 +1122,42 @@ impl RistrettoBasepointTable {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
+struct BatchCompressState {
+    e: FieldElement,
+    f: FieldElement,
+    g: FieldElement,
+    h: FieldElement,
+    eg: FieldElement,
+    fh: FieldElement,
+}
+
+impl BatchCompressState {
+    fn efgh(&self) -> FieldElement {
+        &self.eg * &self.fh
+    }
+}
+
+impl<'a> From<&'a RistrettoPoint> for BatchCompressState {
+    #[rustfmt::skip] // keep alignment of explanatory comments
+    fn from(P: &'a RistrettoPoint) -> BatchCompressState {
+        let XX = P.0.X.square();
+        let YY = P.0.Y.square();
+        let ZZ = P.0.Z.square();
+        let dTT = &P.0.T.square() * &constants::EDWARDS_D;
+
+        let e = &P.0.X * &(&P.0.Y + &P.0.Y); // = 2*X*Y
+        let f = &ZZ + &dTT;                  // = Z^2 + d*T^2
+        let g = &YY + &XX;                   // = Y^2 - a*X^2
+        let h = &ZZ - &dTT;                  // = Z^2 - d*T^2
+
+        let eg = &e * &g;
+        let fh = &f * &h;
+
+        BatchCompressState{ e, f, g, h, eg, fh }
+    }
+}
+
 // ------------------------------------------------------------------------
 // Constant-time conditional selection
 // ------------------------------------------------------------------------
@@ -1503,7 +1551,7 @@ mod test {
             .collect();
         points[500] = <RistrettoPoint as Group>::identity();
 
-        let compressed = RistrettoPoint::double_and_compress_batch(&points);
+        let compressed = RistrettoPoint::double_and_compress_batch_alloc(&points);
 
         for (P, P2_compressed) in points.iter().zip(compressed.iter()) {
             assert_eq!(*P2_compressed, (P + P).compress());
@@ -1534,7 +1582,7 @@ mod test {
             ];
 
             let multiplied_points: [_; 3] =
-                core::array::from_fn(|i| scalars[i].div_by_2() * points[i]);
+                array::from_fn(|i| scalars[i].div_by_2() * points[i]);
             let compressed = RistrettoPoint::double_and_compress_batch(&multiplied_points);
 
             for ((s, P), P2_compressed) in scalars.iter().zip(points).zip(compressed) {

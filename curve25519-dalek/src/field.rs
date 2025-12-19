@@ -212,14 +212,29 @@ impl FieldElement {
     /// Given a slice of pub(crate)lic `FieldElements`, replace each with its inverse.
     ///
     /// When an input `FieldElement` is zero, its value is unchanged.
+    pub(crate) fn invert_batch<const N: usize>(inputs: &mut [FieldElement; N]) {
+        let mut scratch = [FieldElement::ONE; N];
+
+        Self::internal_invert_batch(inputs, &mut scratch);
+    }
+
+    /// Given a slice of pub(crate)lic `FieldElements`, replace each with its inverse.
+    ///
+    /// When an input `FieldElement` is zero, its value is unchanged.
     #[cfg(feature = "alloc")]
-    pub(crate) fn batch_invert(inputs: &mut [FieldElement]) {
+    pub(crate) fn invert_batch_alloc(inputs: &mut [FieldElement]) {
+        let n = inputs.len();
+        let mut scratch = vec![FieldElement::ONE; n];
+
+        Self::internal_invert_batch(inputs, &mut scratch);
+    }
+
+    fn internal_invert_batch(inputs: &mut [FieldElement], scratch: &mut [FieldElement]) {
         // Montgomery’s Trick and Fast Implementation of Masked AES
         // Genelle, Prouff and Quisquater
         // Section 3.2
 
-        let n = inputs.len();
-        let mut scratch = vec![FieldElement::ONE; n];
+        debug_assert_eq!(inputs.len(), scratch.len());
 
         // Keep an accumulator of all of the previous products
         let mut acc = FieldElement::ONE;
@@ -240,12 +255,12 @@ impl FieldElement {
 
         // Pass through the vector backwards to compute the inverses
         // in place
-        for (input, scratch) in inputs.iter_mut().rev().zip(scratch.into_iter().rev()) {
+        for (input, scratch) in inputs.iter_mut().rev().zip(scratch.iter_mut().rev()) {
             let tmp = &acc * input;
             // input <- acc * scratch, then acc <- tmp
             // Again, we skip zeros in a constant-time way
             let nz = !input.is_zero();
-            input.conditional_assign(&(&acc * &scratch), nz);
+            input.conditional_assign(&(&acc * scratch), nz);
             acc.conditional_assign(&tmp, nz);
         }
     }
@@ -559,7 +574,7 @@ mod test {
 
     #[test]
     #[cfg(feature = "alloc")]
-    fn batch_invert_a_matches_nonbatched() {
+    fn invert_batch_a_matches_nonbatched() {
         let a = FieldElement::from_bytes(&A_BYTES);
         let ap58 = FieldElement::from_bytes(&AP58_BYTES);
         let asq = FieldElement::from_bytes(&ASQ_BYTES);
@@ -568,7 +583,7 @@ mod test {
         let a2 = &a + &a;
         let a_list = vec![a, ap58, asq, ainv, a0, a2];
         let mut ainv_list = a_list.clone();
-        FieldElement::batch_invert(&mut ainv_list[..]);
+        FieldElement::invert_batch_alloc(&mut ainv_list[..]);
         for i in 0..6 {
             assert_eq!(a_list[i].invert(), ainv_list[i]);
         }
@@ -677,8 +692,8 @@ mod test {
 
     #[test]
     #[cfg(feature = "alloc")]
-    fn batch_invert_empty() {
-        FieldElement::batch_invert(&mut []);
+    fn invert_batch_empty() {
+        FieldElement::invert_batch_alloc(&mut []);
     }
 
     // The following two consts were generated with the following sage script:

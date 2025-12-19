@@ -1,6 +1,6 @@
 [package]
 name = "ed25519-dalek"
-version = "3.0.0-pre.1"
+version = "3.0.0-pre.3"
 edition = "2024"
 authors = [
     "isis lovecruft <isis@patternsinthevoid.net>",
@@ -25,41 +25,39 @@ rustdoc-args = [
     "--cfg",
     "docsrs",
 ]
-features = ["batch", "digest", "hazmat", "pem", "serde"]
+all-features = true
 
 [dependencies]
-curve25519-dalek = { version = "=5.0.0-pre.1", default-features = false, features = [
+curve25519-dalek = { version = "=5.0.0-pre.3", default-features = false, features = [
     "digest",
 ] }
-ed25519 = { version = "3.0.0-rc.0", default-features = false }
-signature = { version = "3.0.0-rc.4", optional = true, default-features = false }
-sha2 = { version = "0.11.0-rc.2", default-features = false }
+ed25519 = { version = "3.0.0-rc.2", default-features = false }
+signature = { version = "3.0.0-rc.5", optional = true, default-features = false }
+sha2 = { version = "0.11.0-rc.3", default-features = false }
 subtle = { version = "2.3.0", default-features = false }
 
 # optional features
 keccak = { version = "0.2.0-rc.0", default-features = false, optional = true }
-rand_core = { version = "0.9", default-features = false, optional = true }
+rand_core = { version = "0.10.0-rc-2", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 zeroize = { version = "1.5", default-features = false, optional = true }
 
 [dev-dependencies]
-curve25519-dalek = { version = "=5.0.0-pre.1", default-features = false, features = [
+curve25519-dalek = { version = "=5.0.0-pre.3", default-features = false, features = [
     "digest",
     "rand_core",
 ] }
-x25519-dalek = { version = "=3.0.0-pre.1", default-features = false, features = [
+x25519-dalek = { version = "=3.0.0-pre.3", default-features = false, features = [
     "static_secrets",
 ] }
-blake2 = "0.11.0-rc.2"
+blake2 = "0.11.0-rc.3"
 sha3 = "0.11.0-rc.3"
 hex = "0.4"
 bincode = "1.0"
 serde_json = "1.0"
 criterion = { version = "0.5", features = ["html_reports"] }
-hex-literal = "0.4"
-rand = "0.9"
-rand_core = { version = "0.9", default-features = false }
-rand_chacha = "0.9"
+hex-literal = "1"
+rand = { version = "0.10.0-rc.5", features = ["chacha"] }
 serde = { version = "1.0", features = ["derive"] }
 strobe-rs = "0.5"
 toml = { version = "0.9" }

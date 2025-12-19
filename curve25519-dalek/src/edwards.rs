@@ -117,7 +117,7 @@ use {
     subtle::CtOption,
 };
 
-#[cfg(any(test, feature = "rand_core"))]
+#[cfg(feature = "rand_core")]
 use rand_core::RngCore;
 
 use subtle::Choice;
@@ -763,7 +763,7 @@ impl EdwardsPoint {
     ///
     /// Uses rejection sampling, generating a random `CompressedEdwardsY` and then attempting point
     /// decompression, rejecting invalid points.
-    #[cfg(any(test, feature = "rand_core"))]
+    #[cfg(feature = "rand_core")]
     pub fn random<R: RngCore + ?Sized>(rng: &mut R) -> Self {
         let mut repr = CompressedEdwardsY([0u8; 32]);
         loop {
@@ -1791,7 +1791,7 @@ impl CofactorGroup for EdwardsPoint {
 mod test {
     use super::*;
 
-    use rand_core::TryRngCore;
+    use rand::TryRngCore;
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
@@ -2080,7 +2080,7 @@ mod test {
     /// Check that mul_base_clamped and mul_clamped agree
     #[test]
     fn mul_base_clamped() {
-        let mut csprng = rand_core::OsRng;
+        let mut csprng = rand::rngs::OsRng;
 
         // Make a random curve point in the curve. Give it torsion to make things interesting.
         #[cfg(feature = "precomputed-tables")]
@@ -2198,6 +2198,7 @@ mod test {
         );
     }
 
+    #[cfg(feature = "rand_core")]
     #[test]
     fn compress_batch() {
         let mut rng = rand::rng();
@@ -2269,7 +2270,7 @@ mod test {
     }
 
     // A single iteration of a consistency check for MSM.
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn multiscalar_consistency_iter(n: usize) {
         let mut rng = rand::rng();
 
@@ -2296,7 +2297,7 @@ mod test {
     // parameters.
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn multiscalar_consistency_n_100() {
         let iters = 50;
         for _ in 0..iters {
@@ -2305,7 +2306,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn multiscalar_consistency_n_250() {
         let iters = 50;
         for _ in 0..iters {
@@ -2314,7 +2315,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn multiscalar_consistency_n_500() {
         let iters = 50;
         for _ in 0..iters {
@@ -2323,7 +2324,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn multiscalar_consistency_n_1000() {
         let iters = 50;
         for _ in 0..iters {
@@ -2332,7 +2333,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn batch_to_montgomery() {
         let mut rng = rand::rng();
 
@@ -2357,7 +2358,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::rng();
 

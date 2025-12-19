@@ -13,7 +13,7 @@
 
 use criterion::{Criterion, criterion_group, criterion_main};
 
-use rand_core::{OsRng, TryRngCore};
+use rand::{TryRngCore, rngs::OsRng};
 
 use x25519_dalek::EphemeralSecret;
 use x25519_dalek::PublicKey;
@@ -30,11 +30,20 @@ fn bench_diffie_hellman(c: &mut Criterion) {
     });
 }
 
+fn bench_pubkey_constructor(c: &mut Criterion) {
+    let bob_secret = EphemeralSecret::random_from_rng(&mut OsRng.unwrap_err());
+
+    c.bench_function("PublicKey::from", move |b| {
+        b.iter(|| PublicKey::from(&bob_secret))
+    });
+}
+
 criterion_group! {
     name = x25519_benches;
     config = Criterion::default();
     targets =
         bench_diffie_hellman,
+        bench_pubkey_constructor,
 }
 criterion_main! {
     x25519_benches,

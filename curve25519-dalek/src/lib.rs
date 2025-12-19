@@ -10,8 +10,8 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
-#![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, doc(auto_cfg(hide(docsrs))))]
 //------------------------------------------------------------------------
 // Documentation:
 //------------------------------------------------------------------------
@@ -24,6 +24,7 @@
 //------------------------------------------------------------------------
 #![cfg_attr(allow_unused_unsafe, allow(unused_unsafe))]
 #![warn(
+    clippy::mod_module_files,
     clippy::unwrap_used,
     missing_docs,
     rust_2018_idioms,
@@ -89,6 +90,9 @@ pub(crate) mod backend;
 
 // Generic code for window lookups
 pub(crate) mod window;
+
+#[cfg(feature = "lizard")]
+mod lizard;
 
 pub use crate::{
     edwards::EdwardsPoint, montgomery::MontgomeryPoint, ristretto::RistrettoPoint, scalar::Scalar,

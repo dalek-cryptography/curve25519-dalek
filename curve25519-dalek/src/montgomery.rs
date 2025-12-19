@@ -515,7 +515,9 @@ mod test {
     use super::*;
     use crate::constants;
 
-    use rand_core::{CryptoRng, RngCore, TryRngCore};
+    #[cfg(feature = "rand_core")]
+    use rand::CryptoRng;
+    use rand::{RngCore, TryRngCore};
 
     #[test]
     fn identity_in_different_coordinates() {
@@ -599,6 +601,7 @@ mod test {
     }
 
     /// Returns a random point on the prime-order subgroup
+    #[cfg(feature = "rand_core")]
     fn rand_prime_order_point<R: CryptoRng + ?Sized>(rng: &mut R) -> EdwardsPoint {
         let s: Scalar = Scalar::random(rng);
         EdwardsPoint::mul_base(&s)
@@ -616,9 +619,10 @@ mod test {
         })
     }
 
+    #[cfg(feature = "rand_core")]
     #[test]
     fn montgomery_ladder_matches_edwards_scalarmult() {
-        let mut csprng = rand_core::OsRng.unwrap_err();
+        let mut csprng = rand::rngs::OsRng.unwrap_err();
 
         for _ in 0..100 {
             let p_edwards = rand_prime_order_point(&mut csprng);
@@ -634,9 +638,10 @@ mod test {
 
     // Tests that, on the prime-order subgroup, MontgomeryPoint::mul_bits_be is the same as
     // multiplying by the Scalar representation of the same bits
+    #[cfg(feature = "rand_core")]
     #[test]
     fn montgomery_mul_bits_be() {
-        let mut csprng = rand_core::OsRng.unwrap_err();
+        let mut csprng = rand::rngs::OsRng.unwrap_err();
 
         for _ in 0..100 {
             // Make a random prime-order point P
@@ -661,7 +666,7 @@ mod test {
     // integers b₁, b₂ and random (curve or twist) point P.
     #[test]
     fn montgomery_mul_bits_be_twist() {
-        let mut csprng = rand_core::OsRng.unwrap_err();
+        let mut csprng = rand::rngs::OsRng.unwrap_err();
 
         for _ in 0..100 {
             // Make a random point P on the curve or its twist
@@ -694,7 +699,7 @@ mod test {
     /// Check that mul_base_clamped and mul_clamped agree
     #[test]
     fn mul_base_clamped() {
-        let mut csprng = rand_core::OsRng;
+        let mut csprng = rand::rngs::OsRng;
 
         // Test agreement on a large integer. Even after clamping, this is not reduced mod l.
         let a_bytes = [0xff; 32];

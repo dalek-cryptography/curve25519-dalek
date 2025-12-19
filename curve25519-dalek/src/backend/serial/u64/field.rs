@@ -921,10 +921,10 @@ impl FieldElement51 {
     #[rustfmt::skip]  // keep alignment of bit shifts
     pub const fn from_bytes(bytes: &[u8; 32]) -> (r: FieldElement51)
         ensures
-    // last bit is ignored
+    // Decode bytes to limbs (bit 255 is cleared)
 
-            u64_5_as_nat(r.limbs) == u8_32_as_nat(bytes) % pow2(255),
-            // each limb is masked with (2^51 - 1), so bounded by 51 bits
+            fe_as_nat(&r) == bytes_as_nat(bytes) % pow2(255),
+            // Each limb is masked with (2^51 - 1), so bounded by 51 bits
             fe51_limbs_bounded(&r, 51),
     {
         /* MANUALLY moved outside */
@@ -1006,9 +1006,9 @@ impl FieldElement51 {
     #[rustfmt::skip]  // keep alignment of s[*] calculations
     pub fn as_bytes(self) -> (r: [u8; 32])
         ensures
-    // canonical encoding, i.e. mod p value
+    // Canonical encoding: bytes represent the field element value
 
-            u8_32_as_nat(&r) == u64_5_as_nat(self.limbs) % p(),
+            bytes_as_nat(&r) == spec_field_element(&self),
     {
         proof {
             // No overflows

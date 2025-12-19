@@ -599,7 +599,7 @@ impl EdwardsPoint {
 
         // Compute the denominators in a batch
         let mut denominators = eds.iter().map(|p| &p.Z - &p.Y).collect::<Vec<_>>();
-        FieldElement::batch_invert(&mut denominators);
+        FieldElement::invert_batch_alloc(&mut denominators);
 
         // Now compute the Montgomery u coordinate for every point
         let mut ret = Vec::with_capacity(eds.len());
@@ -618,10 +618,22 @@ impl EdwardsPoint {
 
     /// Compress several `EdwardsPoint`s into `CompressedEdwardsY` format, using a batch inversion
     /// for a significant speedup.
+    pub fn compress_batch<const N: usize>(inputs: &[EdwardsPoint; N]) -> [CompressedEdwardsY; N] {
+        let mut zs: [_; N] = core::array::from_fn(|i| inputs[i].Z);
+        FieldElement::invert_batch(&mut zs);
+
+        core::array::from_fn(|i| {
+            let x = &inputs[i].X * &zs[i];
+            let y = &inputs[i].Y * &zs[i];
+            AffinePoint { x, y }.compress()
+        })
+    }
+    /// Compress several `EdwardsPoint`s into `CompressedEdwardsY` format, using a batch inversion
+    /// for a significant speedup.
     #[cfg(feature = "alloc")]
-    pub fn compress_batch(inputs: &[EdwardsPoint]) -> Vec<CompressedEdwardsY> {
+    pub fn compress_batch_alloc(inputs: &[EdwardsPoint]) -> Vec<CompressedEdwardsY> {
         let mut zs = inputs.iter().map(|input| input.Z).collect::<Vec<_>>();
-        FieldElement::batch_invert(&mut zs);
+        FieldElement::invert_batch_alloc(&mut zs);
 
         inputs
             .iter()
@@ -2175,30 +2187,49 @@ mod test {
             CompressedEdwardsY::identity()
         );
 
+        assert_eq!(
+            EdwardsPoint::compress_batch(&[EdwardsPoint::identity()]),
+            [CompressedEdwardsY::identity()]
+        );
         #[cfg(feature = "alloc")]
-        {
-            let compressed = EdwardsPoint::compress_batch(&[EdwardsPoint::identity()]);
-            assert_eq!(&compressed, &[CompressedEdwardsY::identity()]);
-        }
+        assert_eq!(
+            &EdwardsPoint::compress_batch_alloc(&[EdwardsPoint::identity()]),
+            &[CompressedEdwardsY::identity()]
+        );
     }
 
-    #[cfg(all(feature = "alloc", feature = "rand_core"))]
+    #[cfg(feature = "rand_core")]
     #[test]
     fn compress_batch() {
         let mut rng = rand::rng();
 
         // TODO(tarcieri): proptests?
-        // Make some points deterministically then randomly
-        let mut points = (1u64..16)
-            .map(|n| constants::ED25519_BASEPOINT_POINT * Scalar::from(n))
-            .collect::<Vec<_>>();
-        points.extend(core::iter::repeat_with(|| EdwardsPoint::random(&mut rng)).take(100));
-        let compressed = EdwardsPoint::compress_batch(&points);
+
+        // Make some test points deterministically then randomly
+        const TEST_VEC_LEN: usize = 117;
+        let points: [EdwardsPoint; TEST_VEC_LEN] = core::array::from_fn(|i| {
+            if i < 17 {
+                // The first 17 are multiple of the basepoint
+                constants::ED25519_BASEPOINT_POINT * Scalar::from(i as u64)
+            } else {
+                // The rest are random
+                EdwardsPoint::random(&mut rng)
+            }
+        });
+
+        // Compress the points individually. This is our reference result
+        let expected_compressed = core::array::from_fn(|i| points[i].compress());
 
         // Check that the batch-compressed points match the individually compressed ones
-        for (point, compressed) in points.iter().zip(&compressed) {
-            assert_eq!(&point.compress(), compressed);
-        }
+        assert_eq!(EdwardsPoint::compress_batch(&points), expected_compressed);
+
+        // Check that the batch-compressed (with alloc) points match the individually compressed
+        // ones
+        #[cfg(feature = "alloc")]
+        assert_eq!(
+            EdwardsPoint::compress_batch_alloc(&points),
+            expected_compressed
+        );
     }
 
     #[test]

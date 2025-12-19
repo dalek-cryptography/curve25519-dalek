@@ -606,7 +606,7 @@ impl RistrettoPoint {
 
         let mut invs: Vec<FieldElement> = states.iter().map(|state| state.efgh()).collect();
 
-        FieldElement::batch_invert(&mut invs[..]);
+        FieldElement::invert_batch_alloc(&mut invs[..]);
 
         states
             .iter()

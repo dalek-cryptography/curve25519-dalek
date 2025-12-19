@@ -34,7 +34,7 @@ mod edwards_benches {
                     let mut rng = OsRng.unwrap_err();
                     let points: Vec<EdwardsPoint> =
                         (0..size).map(|_| EdwardsPoint::random(&mut rng)).collect();
-                    b.iter(|| EdwardsPoint::compress_batch(&points));
+                    b.iter(|| EdwardsPoint::compress_batch_alloc(&points));
                 },
             );
         }

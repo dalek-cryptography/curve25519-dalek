@@ -223,6 +223,13 @@ impl FieldElement {
         Self::internal_invert_batch(inputs, &mut scratch);
     }
 
+    /// Given a slice of pub(crate)lic `FieldElements`, replace each with its inverse. `scratch` can
+    /// contain anything, so long as its length is the same as `inputs`.
+    ///
+    /// When an input `FieldElement` is zero, its value is unchanged.
+    ///
+    /// # Panics
+    /// Panics when `scratch.len() != inputs.len()`
     fn internal_invert_batch(inputs: &mut [FieldElement], scratch: &mut [FieldElement]) {
         // Montgomery’s Trick and Fast Implementation of Masked AES
         // Genelle, Prouff and Quisquater

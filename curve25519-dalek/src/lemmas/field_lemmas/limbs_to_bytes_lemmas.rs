@@ -147,7 +147,7 @@ proof fn lemma_byte_from_limb_shift(limb: u64, shift: u64, byte: u8)
 
     // The u8 cast takes the low 8 bits, which is % 256
     assert((limb >> shift) as u8 == (limb >> shift) as nat % 256) by {
-        lemma_u8_cast_is_mod_256(limb >> shift);
+        lemma_u64_cast_u8_is_mod(limb >> shift);
     }
 }
 
@@ -2015,7 +2015,7 @@ proof fn lemma_boundary_byte_combines(
     }
 
     assert((a | (b << low_bits)) as u8 == (a + (b * pow2(low_bits))) as nat % pow2(8)) by {
-        lemma_u8_cast_is_mod_256(a | (b << low_bits));
+        lemma_u64_cast_u8_is_mod(a | (b << low_bits));
     }
 
     assert((a + (b * pow2(low_bits))) as nat % pow2(8) == a as nat % pow2(8) + (b as nat * pow2(

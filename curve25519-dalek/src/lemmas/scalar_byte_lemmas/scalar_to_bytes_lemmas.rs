@@ -536,7 +536,7 @@ proof fn lemma_boundary_byte_combines_52(
     // === STEP 5: Connect to byte value ===
     // byte = combined as u8 means byte as nat = combined % 256
     assert((combined as nat) % pow2(8) == (combined as u8)) by {
-        lemma_u8_cast_is_mod_256(combined as u64);
+        lemma_u64_cast_u8_is_mod(combined as u64);
     }
 
     // We know: combined as nat = a + b * pow2(k)

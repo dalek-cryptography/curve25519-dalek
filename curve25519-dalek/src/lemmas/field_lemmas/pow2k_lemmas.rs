@@ -373,7 +373,7 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
                     lemma_u64_shr_is_div(a0_1, 51);
                 }
 
-                lemma_div_and_mod_51((a0_1 >> 51), a0_2, a0_1);
+                lemma_u64_div_and_mod_51((a0_1 >> 51), a0_2, a0_1);
             }
         }
 

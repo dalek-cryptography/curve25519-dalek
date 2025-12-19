@@ -5,39 +5,60 @@ use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
 
+use super::pow_lemmas::*;
+
 verus! {
 
-pub proof fn lemma_div_and_mod(ai: u64, bi: u64, v: u64, k: nat)
-    requires
-        k < 64,
-        ai == v >> k,
-        bi == v & (low_bits_mask(k) as u64),
-    ensures
-        ai == v / (pow2(k) as u64),
-        bi == v % (pow2(k) as u64),
-        v == ai * pow2(k) + bi,
-{
-    lemma2_to64();
-    lemma2_to64_rest();  // pow2(63) = 0x8000000000000000
+// Proofs express the fundamental div/mod theorem with >> and &
+macro_rules! lemma_div_and_mod {
+    ($name:ident, $pow_le_max:ident, $shr_is_div:ident, $mask_is_mod:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub proof fn $name(ai: $uN, bi: $uN, v: $uN, k: nat)
+            requires
+                k < <$uN>::BITS,
+                ai == v >> k,
+                bi == v & (low_bits_mask(k) as $uN),
+            ensures
+                ai == v / (pow2(k) as $uN),
+                bi == v % (pow2(k) as $uN),
+                v == ai * pow2(k) + bi,
+        {
+            assert(0 < pow2(k) <= <$uN>::MAX) by {
+                lemma_pow2_pos(k);
+                $pow_le_max(k)
+            }
 
-    // v >> k = v / pow2(k);
-    lemma_u64_shr_is_div(v, k as u64);
+            assert(ai == v / (pow2(k) as $uN)) by {
+                $shr_is_div(v, k as $uN);
+            }
 
-    // v & low_bits_mask(k) = v % pow2(k);
-    lemma_u64_low_bits_mask_is_mod(v, k);
+            // v & low_bits_mask(k) = v % pow2(k);
+            assert(bi == v % (pow2(k) as $uN)) by {
+                $mask_is_mod(v, k);
+            }
 
-    // 0 < pow2(k) <= u64::MAX
-    lemma_pow2_pos(k);
-    assert(pow2(k) <= u64::MAX) by {
-        if (k < 63) {
-            lemma_pow2_strictly_increases(k, 63);
+            assert(v == pow2(k) * (v as nat / pow2(k)) + v as nat % pow2(k)) by {
+                lemma_fundamental_div_mod(v as int, pow2(k) as int);
+            }
+
+            lemma_mul_is_commutative(ai as int, pow2(k) as int);
         }
     }
-
-    // v = (pow2(k) * (v / pow2(k)) + (v % pow2(k)))
-    lemma_fundamental_div_mod(v as int, pow2(k) as int);
+    };
 }
 
+lemma_div_and_mod!(lemma_u8_div_and_mod, lemma_u8_pow2_le_max, lemma_u8_shr_is_div, lemma_u8_low_bits_mask_is_mod, u8);
+
+lemma_div_and_mod!(lemma_u16_div_and_mod, lemma_u16_pow2_le_max, lemma_u16_shr_is_div, lemma_u16_low_bits_mask_is_mod, u16);
+
+lemma_div_and_mod!(lemma_u32_div_and_mod, lemma_u32_pow2_le_max, lemma_u32_shr_is_div, lemma_u32_low_bits_mask_is_mod, u32);
+
+lemma_div_and_mod!(lemma_u64_div_and_mod, lemma_u64_pow2_le_max, lemma_u64_shr_is_div, lemma_u64_low_bits_mask_is_mod, u64);
+
+// TODO: missing VSTD lemmas for u128
+// lemma_div_and_mod!(lemma_u128_div_and_mod, lemma_u128_pow2_le_max, lemma_u128_shr_is_div, lemma_u128_low_bits_mask_is_mod, u128);
 // Combination of mod lemmas, (b +- a * m) % m = b % m
 pub proof fn lemma_mod_sum_factor(a: int, b: int, m: int)
     requires
@@ -120,13 +141,44 @@ pub proof fn lemma_mul_le_implies_div_le(a: nat, b: nat, c: nat)
     lemma_div_by_multiple(a as int, b as int);
 }
 
-pub proof fn lemma_u8_cast_is_mod_256(x: u64)
-    ensures
-        (x as u8) == (x as nat) % 256,
-{
-    assert(x as nat % 256 == x % 256);
-    assert((x as u8) == x % 256) by (bit_vector);
+// Proofs that downcasting is the same as taking a mod
+macro_rules! lemma_cast_is_mod {
+    ($name:ident, $uM:ty, $uN:ty, $maxPlusOne:expr) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "TODO"]
+        pub proof fn $name(x: $uM)
+            requires
+                <$uM>::BITS > <$uN>::BITS
+            ensures
+                (x as $uN) == (x as nat) % $maxPlusOne,
+        {
+            assert(x as nat % $maxPlusOne == x % $maxPlusOne);
+            assert((x as $uN) == x % $maxPlusOne) by (bit_vector);
+        }
+    }
+    };
 }
+
+lemma_cast_is_mod!(lemma_u128_cast_u8_is_mod, u128, u8, 0x100);
+
+lemma_cast_is_mod!(lemma_u64_cast_u8_is_mod, u64, u8, 0x100);
+
+lemma_cast_is_mod!(lemma_u32_cast_u8_is_mod, u32, u8, 0x100);
+
+lemma_cast_is_mod!(lemma_u16_cast_u8_is_mod, u16, u8, 0x100);
+
+lemma_cast_is_mod!(lemma_u128_cast_u16_is_mod, u128, u16, 0x10000);
+
+lemma_cast_is_mod!(lemma_u64_cast_u16_is_mod, u64, u16, 0x10000);
+
+lemma_cast_is_mod!(lemma_u32_cast_u16_is_mod, u32, u16, 0x10000);
+
+lemma_cast_is_mod!(lemma_u128_cast_u32_is_mod, u128, u32, 0x100000000);
+
+lemma_cast_is_mod!(lemma_u64_cast_u32_is_mod, u64, u32, 0x100000000);
+
+lemma_cast_is_mod!(lemma_u128_cast_64_is_mod, u128, u64, 0x10000000000000000);
 
 /// Helper: Sum of two numbers both divisible by d is divisible by d
 ///

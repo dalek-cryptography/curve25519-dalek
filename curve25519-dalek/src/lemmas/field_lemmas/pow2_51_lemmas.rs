@@ -109,8 +109,8 @@ pub proof fn lemma_masked_lt_51(v: u64)
     lemma_u64_masked_lt(v, 51);
 }
 
-// lemma_div_and_mod specialization for k = 51, using mask51 == low_bits_mask(51)
-pub proof fn lemma_div_and_mod_51(ai: u64, bi: u64, v: u64)
+// lemma_u64_div_and_mod specialization for k = 51, using mask51 == low_bits_mask(51)
+pub proof fn lemma_u64_div_and_mod_51(ai: u64, bi: u64, v: u64)
     requires
         ai == v >> 51,
         bi == v & mask51,
@@ -120,7 +120,7 @@ pub proof fn lemma_div_and_mod_51(ai: u64, bi: u64, v: u64)
         v == ai * pow2(51) + bi,
 {
     l51_bit_mask_lt();  // mask51 == low_bits_mask(51)
-    lemma_div_and_mod(ai, bi, v, 51);
+    lemma_u64_div_and_mod(ai, bi, v, 51);
 }
 
 pub broadcast proof fn lemma_cast_then_mask_51(x: u128)

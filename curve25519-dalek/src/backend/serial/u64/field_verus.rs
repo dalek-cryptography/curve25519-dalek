@@ -647,7 +647,7 @@ impl FieldElement51 {
                         // s * a1_0 + [s * (a0_1 / s) + a0_1 % s] = (by the div-mod identity)
                         // s * a1_0 + a0_1
                         assert(a0_2 + pow2(51) * a1_1 == a0_1 + pow2(51) * a1_0) by {
-                            lemma_div_and_mod_51((a0_1 >> 51), a0_2, a0_1);
+                            lemma_u64_div_and_mod_51((a0_1 >> 51), a0_2, a0_1);
                         }
                     }
 

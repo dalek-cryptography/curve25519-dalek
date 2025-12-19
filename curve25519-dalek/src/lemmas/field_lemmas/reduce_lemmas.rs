@@ -161,16 +161,16 @@ pub proof fn proof_reduce(limbs: [u64; 5])
     // invoke div/mod identity
     assert(u64_5_as_nat(rr) == limbs[0] + pow2(51) * limbs[1] + pow2(102) * limbs[2] + pow2(153)
         * limbs[3] + pow2(204) * b4 + 19 * a4) by {
-        lemma_div_and_mod_51(a0, b0, limbs[0]);
-        lemma_div_and_mod_51(a1, b1, limbs[1]);
-        lemma_div_and_mod_51(a2, b2, limbs[2]);
-        lemma_div_and_mod_51(a3, b3, limbs[3]);
+        lemma_u64_div_and_mod_51(a0, b0, limbs[0]);
+        lemma_u64_div_and_mod_51(a1, b1, limbs[1]);
+        lemma_u64_div_and_mod_51(a2, b2, limbs[2]);
+        lemma_u64_div_and_mod_51(a3, b3, limbs[3]);
     }
 
     // Add missing limbs[4] parts
     assert(u64_5_as_nat(rr) == limbs[0] + pow2(51) * limbs[1] + pow2(102) * limbs[2] + pow2(153)
         * limbs[3] + pow2(204) * limbs[4] - pow2(204) * (pow2(51) * a4) + 19 * a4) by {
-        lemma_div_and_mod_51(a4, b4, limbs[4]);
+        lemma_u64_div_and_mod_51(a4, b4, limbs[4]);
         assert(pow2(204) * limbs[4] == pow2(204) * b4 + pow2(204) * (pow2(51) * a4)) by {
             lemma_mul_is_distributive_add(pow2(204) as int, pow2(51) * a4 as int, b4 as int);
         }

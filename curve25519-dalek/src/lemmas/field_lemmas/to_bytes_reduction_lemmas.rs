@@ -387,11 +387,11 @@ pub proof fn lemma_reduction_carry_propagation_is_division(input_limbs: [u64; 5]
 
     // Apply div-mod relationships
     l51_bit_mask_lt();
-    lemma_div_and_mod_51(c0, l0_masked, l0);
-    lemma_div_and_mod_51(c1, l1_masked, l1);
-    lemma_div_and_mod_51(c2, l2_masked, l2);
-    lemma_div_and_mod_51(c3, l3_masked, l3);
-    lemma_div_and_mod_51(c4, l4_masked, l4);
+    lemma_u64_div_and_mod_51(c0, l0_masked, l0);
+    lemma_u64_div_and_mod_51(c1, l1_masked, l1);
+    lemma_u64_div_and_mod_51(c2, l2_masked, l2);
+    lemma_u64_div_and_mod_51(c3, l3_masked, l3);
+    lemma_u64_div_and_mod_51(c4, l4_masked, l4);
 
     // Now use the telescoping lemma
     let final_limbs = [l0_masked, l1_masked, l2_masked, l3_masked, l4_masked];
@@ -593,16 +593,16 @@ pub proof fn lemma_to_bytes_reduction(input_limbs: [u64; 5], final_limbs: [u64; 
     // Strategy: Show that the carry propagation computes u64_5_as_nat(input_limbs) + 19*q - 2^255*q
     //           which equals u64_5_as_nat(input_limbs) - q*(2^255 - 19) = u64_5_as_nat(input_limbs) - q*p()
 
-    // Use lemma_div_and_mod_51 to relate the shift and mask operations to division and modulo
-    lemma_div_and_mod_51(l0 >> 51, l0 & mask51, l0);
+    // Use lemma_u64_div_and_mod_51 to relate the shift and mask operations to division and modulo
+    lemma_u64_div_and_mod_51(l0 >> 51, l0 & mask51, l0);
 
-    lemma_div_and_mod_51(l1 >> 51, l1 & mask51, l1);
+    lemma_u64_div_and_mod_51(l1 >> 51, l1 & mask51, l1);
 
-    lemma_div_and_mod_51(l2 >> 51, l2 & mask51, l2);
+    lemma_u64_div_and_mod_51(l2 >> 51, l2 & mask51, l2);
 
-    lemma_div_and_mod_51(l3 >> 51, l3 & mask51, l3);
+    lemma_u64_div_and_mod_51(l3 >> 51, l3 & mask51, l3);
 
-    lemma_div_and_mod_51(l4 >> 51, l4 & mask51, l4);
+    lemma_u64_div_and_mod_51(l4 >> 51, l4 & mask51, l4);
 
     // Define the carries for readability
     let c0 = l0 >> 51;

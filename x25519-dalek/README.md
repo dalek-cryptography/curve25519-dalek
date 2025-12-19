@@ -97,14 +97,27 @@ This example used the ephemeral DH API, which ensures that secret keys
 cannot be reused; Alice and Bob could instead use the static DH API
 and load a long-term secret key.
 
-# Installation
+# Use
 
-To install, add the following to your project's `Cargo.toml`:
+To import `x25519-dalek`, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies]
 x25519-dalek = "3.0.0-pre.3"
 ```
+
+# Feature Flags
+
+This crate is `#[no_std]` compatible with `default-features = false`.
+
+| Feature              | Default? | Description |
+| :---                 | :---     | :---        |
+| `zeroize`            | ✓        | Implements `Zeroize` and `ZeroizeOnDrop` for `EphemeralSecret`, `ReusableSecret`, and `StaticSecret` |
+| `precomputed-tables` | ✓        | Includes precomputed basepoint multiplication tables. This speeds up `PublicKey::from` by ~3x, at the cost of ~400KB added to the code size. |
+| `getrandom`          |          | Exposes the `random()` constructor for `EphemeralSecret`, `ReusableSecret`, and `StaticSecret` |
+| `reusable_secrets`   |          | Exposes the `ReusableSecret` struct |
+| `static_secrets`     |          | Exposes the `StaticSecret` struct |
+| `serde`              |          | Enables `serde` serialization/deserialization for `PublicKey` and `StaticSecret` |
 
 # MSRV
 

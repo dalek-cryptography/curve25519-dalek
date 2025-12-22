@@ -19,9 +19,9 @@ use crate::edwards::EdwardsPoint;
 
 #[cfg(feature = "precomputed-tables")]
 use crate::{
-    backend::serial::curve_models::AffineNielsPoint,
+    backend::serial::curve_models::{AffineNielsPoint, ProjectiveNielsPoint},
     edwards::EdwardsBasepointTable,
-    window::{LookupTable, NafLookupTable8},
+    window::{LookupTable, NafLookupTable5, NafLookupTable8},
 };
 
 /// The value of minus one, equal to `-&FieldElement::ONE`
@@ -135,6 +135,48 @@ pub const ED25519_BASEPOINT_POINT: EdwardsPoint = EdwardsPoint {
         27139452,
     ]),
 };
+
+/// The Ed25519 basepoint, mul by 2^128, as an `EdwardsPoint`.
+pub const ED25519_BASEPOINT_128_POINT: EdwardsPoint = EdwardsPoint {
+    X: FieldElement2625::from_limbs([
+        2664042, 23449881, 8588504, 31570262, 52025907, 14016958, 17934911, 10536770, 36081707,
+        18715816,
+    ]),
+    Y: FieldElement2625::from_limbs([
+        53612635, 17322216, 64979144, 12220533, 27384794, 7796776, 63981171, 31808137, 3318544,
+        10876052,
+    ]),
+    Z: FieldElement2625::from_limbs([
+        38318927, 6633020, 30360108, 27133620, 43190211, 599215, 50990868, 21586734, 34463843,
+        14390137,
+    ]),
+    T: FieldElement2625::from_limbs([
+        46012201, 27645749, 48994527, 27092089, 44549182, 4023192, 8388284, 20428666, 53367776,
+        2097936,
+    ]),
+};
+
+#[cfg(all(test, feature = "precomputed-tables"))]
+mod tests {
+    use super::*;
+    use crate::window::NafLookupTable5;
+
+    #[test]
+    fn basepoint_128_table_matches_generated() {
+        let generated = NafLookupTable5::<ProjectiveNielsPoint>::from(&ED25519_BASEPOINT_128_POINT);
+
+        for (expected, actual) in AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128
+            .0
+            .iter()
+            .zip(generated.0.iter())
+        {
+            assert_eq!(expected.Y_plus_X, actual.Y_plus_X);
+            assert_eq!(expected.Y_minus_X, actual.Y_minus_X);
+            assert_eq!(expected.Z, actual.Z);
+            assert_eq!(expected.T2d, actual.T2d);
+        }
+    }
+}
 
 /// The 8-torsion subgroup \\(\mathcal E \[8\]\\).
 ///
@@ -4805,6 +4847,158 @@ pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT: NafLookupTable8<AffineNielsP
             xy2d: FieldElement2625::from_limbs([
                 30631113, 26363656, 21279866, 23275794, 18311406, 466071, 42527968, 7989982,
                 29641567, 29446694,
+            ]),
+        },
+    ]);
+
+/// Precomputed NafLookupTable5 for ED25519_BASEPOINT_128_POINT
+/// Contains odd multiples [1B', 3B', 5B', 7B', 9B', 11B', 13B', 15B']
+/// where B' = B * 2^128
+#[cfg(feature = "precomputed-tables")]
+pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128: NafLookupTable5<ProjectiveNielsPoint> =
+    NafLookupTable5([
+        ProjectiveNielsPoint {
+            Y_plus_X: FieldElement2625::from_limbs([
+                56276677, 40772097, 73567648, 43790795, 79410701, 21813734, 81916082, 42344907,
+                39400251, 29591868,
+            ]),
+            Y_minus_X: FieldElement2625::from_limbs([
+                50948574, 27426767, 56390639, 14204703, 42467750, 27334249, 46046259, 21271367,
+                34345701, 25714667,
+            ]),
+            Z: FieldElement2625::from_limbs([
+                38318927, 6633020, 30360108, 27133620, 43190211, 599215, 50990868, 21586734,
+                34463843, 14390137,
+            ]),
+            T2d: FieldElement2625::from_limbs([
+                55001814, 11526031, 29172528, 19702978, 57194240, 33496133, 28505201, 6534991,
+                35091584, 29849501,
+            ]),
+        },
+        ProjectiveNielsPoint {
+            Y_plus_X: FieldElement2625::from_limbs([
+                61573526, 60394104, 66658949, 41415014, 72576091, 30187734, 76592377, 63167873,
+                101619296, 30513334,
+            ]),
+            Y_minus_X: FieldElement2625::from_limbs([
+                51181788, 696007, 24915963, 12735707, 2911894, 7060820, 64624395, 1392014, 2117242,
+                549672,
+            ]),
+            Z: FieldElement2625::from_limbs([
+                1375370, 21089372, 48301986, 8317127, 40530149, 15040395, 40784256, 3020215,
+                2680506, 21416503,
+            ]),
+            T2d: FieldElement2625::from_limbs([
+                20572821, 11904555, 50242953, 31126781, 63713506, 29202792, 58335501, 11712060,
+                32040945, 28287357,
+            ]),
+        },
+        ProjectiveNielsPoint {
+            Y_plus_X: FieldElement2625::from_limbs([
+                63997925, 22141397, 83453199, 52824554, 78447079, 49717694, 122013047, 24982068,
+                56606655, 58476714,
+            ]),
+            Y_minus_X: FieldElement2625::from_limbs([
+                25892846, 11528509, 46114731, 26269695, 31949658, 18508240, 8742696, 14557236,
+                16402355, 26155200,
+            ]),
+            Z: FieldElement2625::from_limbs([
+                38457063, 5424669, 61803693, 25961913, 42758992, 27223402, 64723485, 24042834,
+                60529696, 25431727,
+            ]),
+            T2d: FieldElement2625::from_limbs([
+                16905521, 9132640, 31799824, 27591686, 39867108, 6595207, 56652308, 20125311,
+                25159658, 2078150,
+            ]),
+        },
+        ProjectiveNielsPoint {
+            Y_plus_X: FieldElement2625::from_limbs([
+                85244803, 20390705, 67880180, 3834008, 62046955, 32059486, 53528634, 61952242,
+                53903557, 36237664,
+            ]),
+            Y_minus_X: FieldElement2625::from_limbs([
+                51282070, 16196724, 13662050, 32134248, 30369654, 19444710, 35256476, 33331300,
+                59297746, 14250525,
+            ]),
+            Z: FieldElement2625::from_limbs([
+                3445791, 21391121, 34232242, 31943518, 6858093, 4243898, 19125331, 22740977,
+                66125843, 17090801,
+            ]),
+            T2d: FieldElement2625::from_limbs([
+                33365109, 11130954, 12461906, 19758375, 47688325, 30792256, 40299724, 5246188,
+                44473969, 15349344,
+            ]),
+        },
+        ProjectiveNielsPoint {
+            Y_plus_X: FieldElement2625::from_limbs([
+                110937413, 48311921, 56664014, 24665671, 117342840, 14590869, 65779056, 33374083,
+                47093275, 38469648,
+            ]),
+            Y_minus_X: FieldElement2625::from_limbs([
+                11795097, 23045357, 37986619, 25517870, 61752555, 20274894, 5272019, 20059223,
+                35147576, 20606386,
+            ]),
+            Z: FieldElement2625::from_limbs([
+                57507727, 19391019, 38433125, 11242927, 27002606, 28894320, 56608229, 12332442,
+                8089695, 13073249,
+            ]),
+            T2d: FieldElement2625::from_limbs([
+                37741271, 17839496, 20586535, 9831905, 18983461, 25508586, 63411317, 8323540,
+                38457441, 1489950,
+            ]),
+        },
+        ProjectiveNielsPoint {
+            Y_plus_X: FieldElement2625::from_limbs([
+                22997800, 33050677, 60441767, 41527662, 30621381, 4134210, 108906708, 35532623,
+                58504533, 33872302,
+            ]),
+            Y_minus_X: FieldElement2625::from_limbs([
+                6811554, 1638711, 35767789, 14166397, 19866339, 260838, 19580826, 7806685,
+                21147024, 11184764,
+            ]),
+            Z: FieldElement2625::from_limbs([
+                56686189, 817943, 57332738, 26228354, 5008852, 4939604, 43684796, 24536787,
+                9480743, 15490942,
+            ]),
+            T2d: FieldElement2625::from_limbs([
+                64866667, 25959608, 1287178, 28622686, 28996196, 27179453, 29156417, 122723,
+                319481, 12947309,
+            ]),
+        },
+        ProjectiveNielsPoint {
+            Y_plus_X: FieldElement2625::from_limbs([
+                88952292, 52909474, 73631435, 34809825, 64421577, 23324883, 98191597, 46736505,
+                56269697, 27274610,
+            ]),
+            Y_minus_X: FieldElement2625::from_limbs([
+                36626131, 26445435, 43443322, 31269185, 4788786, 21966751, 10657839, 11622879,
+                5076135, 12024398,
+            ]),
+            Z: FieldElement2625::from_limbs([
+                27574083, 30265038, 50965871, 383090, 29024858, 20875059, 21323131, 11150207,
+                30687572, 18127668,
+            ]),
+            T2d: FieldElement2625::from_limbs([
+                11705253, 28151182, 52953365, 25485653, 22768936, 30893323, 62228850, 15557152,
+                13370370, 11519727,
+            ]),
+        },
+        ProjectiveNielsPoint {
+            Y_plus_X: FieldElement2625::from_limbs([
+                47704924, 31694873, 47305006, 31556775, 111862751, 53310043, 92993662, 39813534,
+                67486461, 60545321,
+            ]),
+            Y_minus_X: FieldElement2625::from_limbs([
+                4781635, 20898487, 30324746, 31566849, 66314586, 2020338, 46386772, 13303771,
+                3604654, 31609762,
+            ]),
+            Z: FieldElement2625::from_limbs([
+                62029700, 23518227, 27988369, 32135885, 45236203, 32920151, 9386636, 4293881,
+                41034217, 10875575,
+            ]),
+            T2d: FieldElement2625::from_limbs([
+                55189462, 23119455, 46083877, 20752941, 52953876, 30458463, 26312358, 17747216,
+                58369047, 6595265,
             ]),
         },
     ]);

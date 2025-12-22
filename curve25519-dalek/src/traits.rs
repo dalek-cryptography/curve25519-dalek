@@ -149,6 +149,7 @@ pub trait VartimeMultiscalarMul {
     /// involving compressed points.  Accepting `Option<Point>` allows
     /// inlining point decompression into the multiscalar call,
     /// avoiding the need for temporary buffers.
+    ///
     /// ```
     /// #[cfg(feature = "alloc")]
     /// # {
@@ -411,6 +412,23 @@ pub trait VartimePrecomputedMultiscalarMul: Sized {
         J: IntoIterator,
         J::Item: Borrow<Scalar>,
         K: IntoIterator<Item = Option<Self::Point>>;
+}
+
+/// A trait for decomposing scalars for the HEEA method.
+///
+/// The HEEA method is a technique for accelerating scalar multiplication
+/// on elliptic curves by decomposing a scalar into two smaller scalars.
+/// The smaller scalars then can be multiplied with multi-scalar multiplication
+/// which is in general faster than single point full multiplication.
+///
+/// This trait provides a method for performing this decomposition.
+pub trait HEEADecomposition {
+    /// Decomposes a scalar `k` into two half-size scalars `k1` and `k2`
+    /// such that `k = k1 + k2 * h (mod ell)`, where `h` is a fixed constant.
+    ///
+    /// Returns the tuple `(k1, k2, flip_h)`, where `flip_h` is a boolean
+    /// indicating whether the sign of `h` was flipped during the decomposition.
+    fn heea_decompose(&self) -> (Scalar, Scalar, bool);
 }
 
 // ------------------------------------------------------------------------

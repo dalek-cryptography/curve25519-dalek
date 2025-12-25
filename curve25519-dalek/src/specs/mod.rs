@@ -14,6 +14,6 @@ pub mod primality_specs;
 
 pub mod scalar_specs;
 
-pub mod scalar_specs_u64;
+pub mod scalar52_specs;
 
 pub mod window_specs;

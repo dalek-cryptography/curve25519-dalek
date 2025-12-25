@@ -62,6 +62,8 @@ use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
 use crate::scalar::{clamp_integer, Scalar};
 #[allow(unused_imports)]
+use crate::specs::core_specs::*;
+#[allow(unused_imports)]
 use crate::specs::edwards_specs::*;
 #[allow(unused_imports)]
 use crate::specs::field_specs::*;
@@ -70,11 +72,11 @@ use crate::specs::field_specs_u64::*;
 #[allow(unused_imports)]
 use crate::specs::montgomery_specs::*;
 #[allow(unused_imports)]
+use crate::specs::scalar52_specs::*;
+#[allow(unused_imports)]
 use crate::specs::scalar_specs::*;
 #[cfg(verus_keep_ghost)]
 use crate::specs::scalar_specs::{spec_clamp_integer, spec_scalar};
-#[allow(unused_imports)]
-use crate::specs::scalar_specs_u64::*;
 
 use crate::traits::Identity;
 
@@ -292,7 +294,7 @@ impl MontgomeryPoint {
             ({
                 let P = canonical_montgomery_lift(spec_montgomery_point(self));
                 let clamped_bytes = spec_clamp_integer(bytes);
-                let n = bytes_to_nat(&clamped_bytes);
+                let n = bytes32_to_nat(&clamped_bytes);
                 let R = montgomery_scalar_mul(P, n);
                 spec_montgomery_point(result) == spec_u_coordinate(R)
             }),
@@ -311,7 +313,7 @@ impl MontgomeryPoint {
             assume({
                 let P = canonical_montgomery_lift(spec_montgomery_point(self));
                 let clamped_bytes = spec_clamp_integer(bytes);
-                let n = bytes_to_nat(&clamped_bytes);
+                let n = bytes32_to_nat(&clamped_bytes);
                 let R = montgomery_scalar_mul(P, n);
                 spec_montgomery_point(result) == spec_u_coordinate(R)
             });

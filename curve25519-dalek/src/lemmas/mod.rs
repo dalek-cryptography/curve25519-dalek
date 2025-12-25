@@ -1,5 +1,3 @@
-pub mod core_lemmas;
-
 pub mod field_lemmas;
 
 pub mod common_lemmas;

@@ -2,8 +2,8 @@
 use super::common_lemmas::pow_lemmas::*;
 use super::scalar_lemmas::*;
 use crate::backend::serial::u64::constants;
+use crate::specs::scalar52_specs::*;
 use crate::specs::scalar_specs::*;
-use crate::specs::scalar_specs_u64::*;
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
@@ -17,13 +17,13 @@ verus! {
 /// - L = group_order() (the curve order)
 ///
 /// This lemma verifies the precomputed constant is correct by showing:
-///   to_nat(RR.limbs) % L == (R * R) % L
+///   scalar52_to_nat(RR.limbs) % L == (R * R) % L
 pub(crate) proof fn lemma_rr_equals_radix_squared()
     ensures
-        to_nat(&constants::RR.limbs) % group_order() == (montgomery_radix() * montgomery_radix())
+        scalar52_to_nat(&constants::RR) % group_order() == (montgomery_radix() * montgomery_radix())
             % group_order(),
 {
-    // Enable conversion between to_nat and five_limbs_to_nat_aux representations
+    // Enable conversion between scalar52_to_nat and five_limbs_to_nat_aux representations
     lemma_five_limbs_equals_to_nat(&constants::RR.limbs);
 
     // Establish pow2 facts needed for montgomery_radix() == pow2(260)
@@ -45,12 +45,12 @@ pub(crate) proof fn lemma_rr_equals_radix_squared()
     lemma_small_mod(rr_stored, group_order());
 
     // The proof establishes this chain of equalities:
-    //   to_nat(RR.limbs) % L
+    //   scalar52_to_nat(RR.limbs) % L
     //   == rr_stored % L        (by lemma_five_limbs_equals_to_nat)
     //   == rr_stored            (by lemma_small_mod, since rr_stored < L)
     //   == (R * R) % L          (by direct computation below)
     //
-    // Therefore: to_nat(RR.limbs) % L == (R * R) % L  ✓
+    // Therefore: scalar52_to_nat(RR.limbs) % L == (R * R) % L  ✓
 
     // Verify by direct computation that (R * R) % L equals the stored value
     // R = 2^260 = 1852673427797059126777135760139006525652319754650249024631321344126610074238976

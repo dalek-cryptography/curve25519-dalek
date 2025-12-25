@@ -2,42 +2,24 @@
 #[allow(unused_imports)]
 use crate::scalar::Scalar;
 #[allow(unused_imports)]
-use vstd::arithmetic::power2::*; // Import all power2 functions including pow2
+use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
 #[allow(unused_imports)]
-use super::scalar_specs_u64::*;
+use super::core_specs::*;
+#[allow(unused_imports)]
+use super::scalar52_specs::*;
 
 verus! {
 
-/// Convert a boolean array (bits in little-endian order) to a natural number
-pub open spec fn bits_to_nat(bits: &[bool; 256]) -> nat {
-    bits_to_nat_rec(bits, 0)
-}
-
-pub open spec fn bits_to_nat_rec(bits: &[bool; 256], index: int) -> nat
-    decreases 256 - index,
-{
-    if index >= 256 {
-        0
-    } else {
-        let bit_value = if bits[index] {
-            1nat
-        } else {
-            0nat
-        };
-        bit_value * pow2(index as nat) + bits_to_nat_rec(bits, index + 1)
-    }
-}
-
 pub open spec fn scalar_to_nat(s: &Scalar) -> nat {
-    bytes_to_nat(&s.bytes)
+    bytes32_to_nat(&s.bytes)
 }
 
 /// Returns the mathematical value of a Scalar modulo the group order.
 /// This is the value used in scalar multiplication: [n]P where n = spec_scalar(s).
 pub open spec fn spec_scalar(s: &Scalar) -> nat {
-    bytes_to_nat(&s.bytes) % group_order()
+    bytes32_to_nat(&s.bytes) % group_order()
 }
 
 /// Checks if a Scalar satisfies the canonical representation invariants:
@@ -45,7 +27,7 @@ pub open spec fn spec_scalar(s: &Scalar) -> nat {
 /// - Invariant #2: Scalar is reduced modulo group order, i.e., s < ℓ
 pub open spec fn is_canonical_scalar(s: &Scalar) -> bool {
     // Invariant #2: Scalar is reduced (< group order)
-    bytes_to_nat(&s.bytes)
+    bytes32_to_nat(&s.bytes)
         < group_order()
     // Invariant #1: High bit is clear (< 2^255)
      && s.bytes[31] <= 127
@@ -54,7 +36,7 @@ pub open spec fn is_canonical_scalar(s: &Scalar) -> bool {
 /// Returns true iff a and b are multiplicative inverses modulo group_order
 /// i.e., a * b ≡ 1 (mod group_order)
 pub open spec fn is_inverse(a: &Scalar, b: &Scalar) -> bool {
-    (bytes_to_nat(&a.bytes) * bytes_to_nat(&b.bytes)) % group_order() == 1
+    (bytes32_to_nat(&a.bytes) * bytes32_to_nat(&b.bytes)) % group_order() == 1
 }
 
 /// Spec function to compute product of all scalars in a sequence (mod group_order)
@@ -67,7 +49,7 @@ pub open spec fn product_of_scalars(scalars: Seq<Scalar>) -> nat
         1
     } else {
         let last = (scalars.len() - 1) as int;
-        (product_of_scalars(scalars.subrange(0, last)) * bytes_to_nat(&scalars[last].bytes))
+        (product_of_scalars(scalars.subrange(0, last)) * bytes32_to_nat(&scalars[last].bytes))
             % group_order()
     }
 }
@@ -82,19 +64,19 @@ pub open spec fn sum_of_scalars(scalars: Seq<Scalar>) -> nat
         0
     } else {
         let last = (scalars.len() - 1) as int;
-        (sum_of_scalars(scalars.subrange(0, last)) + bytes_to_nat(&scalars[last].bytes))
+        (sum_of_scalars(scalars.subrange(0, last)) + bytes32_to_nat(&scalars[last].bytes))
             % group_order()
     }
 }
 
 /// Returns true iff a scalar's byte representation equals the given natural number (mod group_order)
 pub open spec fn scalar_congruent_nat(s: &Scalar, n: nat) -> bool {
-    bytes_to_nat(&s.bytes) % group_order() == n % group_order()
+    bytes32_to_nat(&s.bytes) % group_order() == n % group_order()
 }
 
 /// Returns true iff a scalar is the inverse of a natural number (mod group_order)
 pub open spec fn is_inverse_of_nat(s: &Scalar, n: nat) -> bool {
-    (bytes_to_nat(&s.bytes) * n) % group_order() == 1
+    (bytes32_to_nat(&s.bytes) * n) % group_order() == 1
 }
 
 /// Returns true iff a byte array represents a clamped integer for X25519.
@@ -241,26 +223,6 @@ pub open spec fn radix_16_digit_bounded(digit: i8) -> bool {
 /// All radix-16 digits are bounded by [-8, 8]
 pub open spec fn radix_16_all_bounded(digits: &[i8; 64]) -> bool {
     forall|i: int| 0 <= i < 64 ==> radix_16_digit_bounded(#[trigger] digits[i])
-}
-
-/// Convert a boolean slice (bits in big-endian order) to a natural number
-/// This interprets bits[0] as the most significant bit
-/// Used for scalar multiplication where bits are processed MSB first
-pub open spec fn bits_be_to_nat(bits: &[bool], len: int) -> nat
-    recommends
-        0 <= len <= bits.len(),
-    decreases len,
-{
-    if len <= 0 {
-        0
-    } else {
-        let bit_value = if bits[len - 1] {
-            1nat
-        } else {
-            0nat
-        };
-        bit_value + 2 * bits_be_to_nat(bits, len - 1)
-    }
 }
 
 } // verus!

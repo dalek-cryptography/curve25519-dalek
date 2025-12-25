@@ -1,12 +1,12 @@
 use crate::backend::serial::u64::scalar::Scalar52;
 #[cfg(verus_keep_ghost)]
-use crate::specs::scalar_specs_u64::group_order;
+use crate::specs::scalar52_specs::group_order;
 #[cfg(verus_keep_ghost)]
-use crate::specs::scalar_specs_u64::limbs_bounded;
+use crate::specs::scalar52_specs::limbs_bounded;
 #[cfg(verus_keep_ghost)]
-use crate::specs::scalar_specs_u64::spec_mul_internal;
+use crate::specs::scalar52_specs::scalar52_to_nat;
 #[cfg(verus_keep_ghost)]
-use crate::specs::scalar_specs_u64::to_nat;
+use crate::specs::scalar52_specs::spec_mul_internal;
 use vstd::prelude::*;
 
 verus! {
@@ -26,7 +26,7 @@ pub proof fn lemma_from_montgomery_is_product_with_one(self_scalar: &Scalar52, l
             ) == limbs),
         // Stronger postcondition: one of them is canonical (< group_order)
         (exists|bounded: &Scalar52, canonical: &Scalar52|
-            limbs_bounded(bounded) && limbs_bounded(canonical) && to_nat(&canonical.limbs)
+            limbs_bounded(bounded) && limbs_bounded(canonical) && scalar52_to_nat(&canonical)
                 < group_order() && spec_mul_internal(bounded, canonical) == limbs),
 {
     let one = Scalar52 { limbs: [1, 0, 0, 0, 0] };
@@ -43,7 +43,7 @@ pub proof fn lemma_from_montgomery_is_product_with_one(self_scalar: &Scalar52, l
     self_scalar.limbs[4] as u128) * (1)) as u128);
     assert(product[8] == ((self_scalar.limbs[4] as u128) * (0)) as u128);
     assert(&product =~= limbs);
-    // Establish that one is canonical: to_nat([1,0,0,0,0]) = 1 < group_order()
+    // Establish that one is canonical: scalar52_to_nat([1,0,0,0,0]) = 1 < group_order()
     crate::lemmas::scalar_lemmas::lemma_one_bounded(one);
     crate::lemmas::scalar_lemmas::lemma_five_limbs_equals_to_nat(&one.limbs);
     assert(1 < group_order());

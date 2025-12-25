@@ -923,7 +923,7 @@ impl FieldElement51 {
         ensures
     // Decode bytes to limbs (bit 255 is cleared)
 
-            fe_as_nat(&r) == bytes_as_nat(bytes) % pow2(255),
+            spec_field_element_as_nat(&r) == bytes32_to_nat(bytes) % pow2(255),
             // Each limb is masked with (2^51 - 1), so bounded by 51 bits
             fe51_limbs_bounded(&r, 51),
     {
@@ -966,8 +966,8 @@ impl FieldElement51 {
                 (l4 as u64 >> 12) & mask51,
             ];
 
-            assert(u64_5_as_nat(rr) == u8_32_as_nat(bytes) % pow2(255)) by {
-                lemma_from_bytes_as_nat(bytes);
+            assert(u64_5_as_nat(rr) == bytes32_to_nat(bytes) % pow2(255)) by {
+                lemma_from_bytes32_to_nat(bytes);
                 lemma_as_nat_32_mod_255(bytes);
             }
 
@@ -1008,7 +1008,7 @@ impl FieldElement51 {
         ensures
     // Canonical encoding: bytes represent the field element value
 
-            bytes_as_nat(&r) == spec_field_element(&self),
+            bytes32_to_nat(&r) == spec_field_element(&self),
     {
         proof {
             // No overflows

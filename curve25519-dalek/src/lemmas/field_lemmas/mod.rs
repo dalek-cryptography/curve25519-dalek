@@ -8,8 +8,6 @@ pub mod as_bytes_lemmas;
 
 pub mod u64_5_as_nat_lemmas;
 
-pub mod u8_32_as_nat_injectivity_lemmas;
-
 pub mod from_bytes_lemmas;
 
 pub mod negate_lemmas;

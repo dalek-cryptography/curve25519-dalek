@@ -543,12 +543,12 @@ impl RistrettoPoint {
     #[cfg_attr(feature = "rand_core", doc = "```")]
     #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// use rand::{rngs::OsRng, TryRngCore};
+    /// use rand::{rngs::SysRng, TryRngCore};
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
-    /// let mut rng = OsRng.unwrap_err();
+    /// let mut rng = SysRng.unwrap_err();
     ///
     /// let points: Vec<RistrettoPoint> =
     ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
@@ -1278,7 +1278,7 @@ mod test {
     #[cfg(feature = "group")]
     use proptest::prelude::*;
     #[cfg(feature = "rand_core")]
-    use rand::{TryRngCore, rngs::OsRng};
+    use rand::{TryRngCore, rngs::SysRng};
 
     #[test]
     #[cfg(feature = "serde")]
@@ -1472,7 +1472,7 @@ mod test {
     #[cfg(feature = "rand_core")]
     #[test]
     fn four_torsion_random() {
-        let mut rng = OsRng.unwrap_err();
+        let mut rng = SysRng.unwrap_err();
         let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
         let P_coset = P.coset4();
         for point in P_coset {
@@ -1483,7 +1483,7 @@ mod test {
     #[cfg(feature = "rand_core")]
     #[test]
     fn random_roundtrip() {
-        let mut rng = OsRng.unwrap_err();
+        let mut rng = SysRng.unwrap_err();
         for _ in 0..100 {
             let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
             let compressed_P = P.compress();
@@ -1496,7 +1496,7 @@ mod test {
     #[cfg(all(feature = "alloc", feature = "rand_core", feature = "group"))]
     fn double_and_compress_1024_random_points() {
         use group::Group;
-        let mut rng = OsRng;
+        let mut rng = SysRng;
 
         let mut points: Vec<RistrettoPoint> = (0..1024)
             .map(|_| RistrettoPoint::try_from_rng(&mut rng).unwrap())

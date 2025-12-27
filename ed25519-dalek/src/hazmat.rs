@@ -258,7 +258,7 @@ mod test {
 
     use super::*;
 
-    use rand::{CryptoRng, TryRngCore, rngs::OsRng};
+    use rand::{CryptoRng, TryRngCore, rngs::SysRng};
 
     // Pick distinct, non-spec 512-bit hash functions for message and sig-context hashing
     type CtxDigest = blake2::Blake2b512;
@@ -278,7 +278,7 @@ mod test {
     #[test]
     fn sign_verify_nonspec() {
         // Generate the keypair
-        let mut rng = OsRng.unwrap_err();
+        let mut rng = SysRng.unwrap_err();
         let esk = ExpandedSecretKey::random(&mut rng);
         let vk = VerifyingKey::from(&esk);
 
@@ -297,7 +297,7 @@ mod test {
         use curve25519_dalek::digest::Digest;
 
         // Generate the keypair
-        let mut rng = OsRng.unwrap_err();
+        let mut rng = SysRng.unwrap_err();
         let esk = ExpandedSecretKey::random(&mut rng);
         let vk = VerifyingKey::from(&esk);
 
@@ -317,7 +317,7 @@ mod test {
     #[test]
     fn sign_byupdate() {
         // Generate the keypair
-        let mut rng = OsRng.unwrap_err();
+        let mut rng = SysRng.unwrap_err();
         let esk = ExpandedSecretKey::random(&mut rng);
         let vk = VerifyingKey::from(&esk);
 

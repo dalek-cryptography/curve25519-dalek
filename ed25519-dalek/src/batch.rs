@@ -50,11 +50,11 @@ struct ZeroRng;
 
 impl rand_core::RngCore for ZeroRng {
     fn next_u32(&mut self) -> u32 {
-        rand_core::le::next_u32_via_fill(self)
+        rand_core::utils::next_word_via_fill(self)
     }
 
     fn next_u64(&mut self) -> u64 {
-        rand_core::le::next_u64_via_fill(self)
+        rand_core::utils::next_word_via_fill(self)
     }
 
     /// A no-op function which leaves the destination bytes for randomness unchanged.
@@ -124,11 +124,11 @@ fn gen_u128<R: RngCore>(rng: &mut R) -> u128 {
 /// use ed25519_dalek::{
 ///     verify_batch, SigningKey, VerifyingKey, Signer, Signature,
 /// };
-/// use rand::rngs::OsRng;
+/// use rand::rngs::SysRng;
 /// use rand_core::TryRngCore;
 ///
 /// # fn main() {
-/// let mut csprng = OsRng.unwrap_err();
+/// let mut csprng = SysRng.unwrap_err();
 /// let signing_keys: Vec<_> = (0..64).map(|_| SigningKey::generate(&mut csprng)).collect();
 /// let msg: &[u8] = b"They're good dogs Brant";
 /// let messages: Vec<_> = (0..64).map(|_| msg).collect();

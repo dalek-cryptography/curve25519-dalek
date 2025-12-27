@@ -187,11 +187,11 @@ pub struct TranscriptRng {
 
 impl rand_core::RngCore for TranscriptRng {
     fn next_u32(&mut self) -> u32 {
-        rand_core::le::next_u32_via_fill(self)
+        rand_core::utils::next_word_via_fill(self)
     }
 
     fn next_u64(&mut self) -> u64 {
-        rand_core::le::next_u64_via_fill(self)
+        rand_core::utils::next_word_via_fill(self)
     }
 
     fn fill_bytes(&mut self, dest: &mut [u8]) {

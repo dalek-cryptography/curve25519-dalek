@@ -363,13 +363,13 @@ impl ZeroizeOnDrop for SharedSecret {}
 /// # Example
 #[cfg_attr(feature = "static_secrets", doc = "```")]
 #[cfg_attr(not(feature = "static_secrets"), doc = "```ignore")]
-/// use rand::{rngs::OsRng, RngCore, TryRngCore};
+/// use rand::{rngs::SysRng, RngCore, TryRngCore};
 ///
 /// use x25519_dalek::x25519;
 /// use x25519_dalek::StaticSecret;
 /// use x25519_dalek::PublicKey;
 ///
-/// let mut rng = OsRng.unwrap_err();
+/// let mut rng = SysRng.unwrap_err();
 ///
 /// // Generate Alice's key pair.
 /// let alice_secret = StaticSecret::random_from_rng(&mut rng);

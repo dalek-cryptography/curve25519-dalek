@@ -43,7 +43,7 @@ all-features = true
 
 [dependencies]
 curve25519-dalek = { version = "=5.0.0-pre.3", default-features = false }
-rand_core = { version = "0.10.0-rc-2", default-features = false }
+rand_core = { version = "0.10.0-rc-3", default-features = false }
 
 # optional dependencies
 getrandom = { version = "0.3", optional = true }

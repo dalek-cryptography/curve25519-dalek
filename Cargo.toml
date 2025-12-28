@@ -15,6 +15,4 @@ curve25519-dalek-derive = { path = "./curve25519-dalek-derive" }
 curve25519-dalek = { path = "./curve25519-dalek" }
 x25519-dalek = { path = "./x25519-dalek" }
 
-# https://github.com/rust-random/rand/pull/1697
-rand = { git = "https://github.com/rust-random/rand", rev = "99ae06fb348e5c5fee0fe41d2201bd4cbb107635" }
-getrandom = { git = "https://github.com/rust-random/getrandom.git", rev = "f67c70110f706f80d7dd6fa52e38d0920754fe2c" }
+rand = { git = "https://github.com/rust-random/rand", rev = "ff07ec205347dd749a586aaee7218cb21590ea4c" }

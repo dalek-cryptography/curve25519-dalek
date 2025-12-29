@@ -299,6 +299,12 @@ impl CompressedEdwardsY {
                 assert(spec_field_element(&point.Y) == spec_field_element_from_bytes(&self.0));
                 assert(spec_field_element(&point.Z) == 1);
 
+                // x_orig < p() is trivially true since x_orig = spec_field_element(&X) = ...%p()
+                pow255_gt_19();
+                assert(x_orig < p()) by {
+                    lemma_mod_bound(spec_field_element_as_nat(&X) as int, p() as int);
+                };
+
                 // Use the unified lemma to prove all postconditions
                 lemma_decompress_valid_branch(&self.0, x_orig, &point);
             }
@@ -343,12 +349,9 @@ mod decompress {
                     51,
                 )
                     &&
-                // the next 2 postconditions are needed in the proof of decompress
                 // X is the non-negative root (LSB = 0) - from sqrt_ratio_i
-                (spec_field_element(&X) % p()) % 2 == 0
-                    &&
-                // X is bounded (< p) - from sqrt_ratio_i
-                spec_field_element(&X) < p()
+                // This is needed in the proof of decompress
+                spec_field_element(&X) % 2 == 0
             }),
     {
         // =================================================================
@@ -413,13 +416,15 @@ mod decompress {
             // sqrt_ratio_i postconditions encapsulated in spec_sqrt_ratio_i_post
             assert(spec_sqrt_ratio_i_post(u_math, v_math, choice_is_true(is_valid_y_coord), x)) by {
                 // Boundedness (spec_sqrt_ratio_i_bounded_post):
-                // From sqrt_ratio_i ensures: x < p() and (x % p()) % 2 == 0
-                assert(x < p());
-                assert((x % p()) % 2 == 0);
-                assert(x % p() == x) by {
-                    lemma_small_mod(x, p());
+                // x = spec_field_element(&X) is always < p() by definition (it's mod p)
+                // From step_1 postcondition: x % 2 == 0 (non-negative square root)
+                pow255_gt_19();  // proves p() > 0
+                assert(x < p()) by {
+                    // spec_field_element is defined as spec_field_element_as_nat % p()
+                    // so it's always < p()
+                    lemma_mod_bound(spec_field_element_as_nat(&X) as int, p() as int);
                 };
-                assert(x % 2 == 0);
+                assert(x % 2 == 0);  // From step_1 postcondition
                 assert(spec_sqrt_ratio_i_bounded_post(x));
 
                 // Connect field elements to math versions (needed for spec_sqrt_ratio_i_math_post)

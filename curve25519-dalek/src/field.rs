@@ -820,9 +820,7 @@ impl FieldElement {
             // NEW: The result is always the "non-negative" square root (LSB = 0)
             // This is a fundamental property of sqrt_ratio_i that the original code
             // relies on for decompression sign bit handling
-            (spec_field_element(&result.1) % p()) % 2 == 0,
-            // NEW: The result is bounded (reduced mod p)
-            spec_field_element(&result.1) < p(),
+            spec_field_element(&result.1) % 2 == 0,
             // Limb bounds: result is 52-bit bounded (from conditional_negate)
             fe51_limbs_bounded(
                 &result.1,

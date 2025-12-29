@@ -218,8 +218,10 @@ pub proof fn lemma_decompress_valid_branch(repr_bytes: &[u8; 32], x_orig: nat, p
         // step_1 postconditions
         spec_field_element(&point.Y) == spec_field_element_from_bytes(repr_bytes),
         math_on_edwards_curve(x_orig, spec_field_element(&point.Y)),
-        // X is non-negative root (LSB = 0) and bounded
-        (x_orig % p()) % 2 == 0,
+        // X is non-negative root (LSB = 0)
+        x_orig % 2 == 0,
+        // x_orig < p() is trivially true since x_orig = spec_field_element(&X)
+        // which is defined as spec_field_element_as_nat % p(). Required by internal lemma calls.
         x_orig < p(),
         // step_2 postconditions
         spec_field_element(&point.X) == (if (repr_bytes[31] >> 7) == 1 {
@@ -289,7 +291,10 @@ pub proof fn lemma_decompress_valid_branch(repr_bytes: &[u8; 32], x_orig: nat, p
             ;
 
             // Precondition 1: sqrt_ratio_i returns non-negative root (LSB = 0)
-            assert((x_before % p()) % 2 == 0);
+            // x_before % 2 == 0 from precondition, and x_before < p() so x_before % p() == x_before
+            assert((x_before % p()) % 2 == 0) by {
+                lemma_small_mod(x_before, p());
+            };
 
             // Precondition 2: sign_bit == 1 ==> x != 0
             assert(sign_bit == 1 ==> x_before % p() != 0) by {

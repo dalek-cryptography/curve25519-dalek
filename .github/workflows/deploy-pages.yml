@@ -62,7 +62,9 @@ jobs:
             --fetch-url https://beneficial-ai-foundation.github.io/dalek-lite/outputs/stats_history.jsonl \
             --fill-missing \
             --since 2025-10-09 \
-            --max-commits 10000 || \
+            --max-commits 10000 \
+            --min-entries 100 \
+            --max-gap-days 14 || \
           (echo "Warning: Stats history fetch failed, regenerating from git..." && \
            if [ -f outputs/curve25519_functions.csv ]; then \
              scripts/update_stats_history.py --since 2025-10-09 --max-commits 10000 --fill-missing; \

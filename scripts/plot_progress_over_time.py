@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
+from matplotlib.dates import DateFormatter, WeekdayLocator, MO
 import pandas as pd
 from beartype import beartype
 from git import Repo
@@ -470,9 +471,8 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
     # Set x-axis limits to actual data range
     ax.set_xlim(df["date"].min(), df["date"].max())
 
-    # Format x-axis dates
-    from matplotlib.dates import DateFormatter
-
+    # Format x-axis dates with weekly ticks (every Monday)
+    ax.xaxis.set_major_locator(WeekdayLocator(byweekday=MO))
     ax.xaxis.set_major_formatter(DateFormatter("%b %d"))
     plt.xticks(rotation=45, ha="right")
     plt.tight_layout()

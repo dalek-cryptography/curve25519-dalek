@@ -21,7 +21,7 @@ outputs/curve25519_functions.csv
 outputs/curve25519_functions.md
 outputs/stats.json
 outputs/metadata.json
-outputs/stats_history.jsonl
+# outputs/stats_history.jsonl is tracked to preserve historical data
 docs/outputs/*.png
 docs/outputs/*.csv
 docs/outputs/stats.json

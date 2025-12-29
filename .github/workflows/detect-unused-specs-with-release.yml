@@ -1,9 +1,6 @@
 name: Detect Unused Specs (Using Release Binary)
 
 on:
-  pull_request:
-    branches:
-      - main
   workflow_call:
     inputs:
       project_path:
@@ -39,6 +36,9 @@ jobs:
 
       - name: Download scip-callgraph release
         run: |
+          # Install jq for JSON parsing
+          sudo apt-get update && sudo apt-get install -y jq
+          
           VERSION="${{ inputs.scip_callgraph_version || 'latest' }}"
           if [ "$VERSION" = "latest" ]; then
             # Get latest release
@@ -46,6 +46,12 @@ jobs:
           else
             # Get specific version
             DOWNLOAD_URL=$(curl -s https://api.github.com/repos/Beneficial-AI-Foundation/scip-callgraph/releases/tags/$VERSION | jq -r '.assets[] | select(.name | contains("linux")) | .browser_download_url')
+          fi
+          
+          # Validate URL was retrieved
+          if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
+            echo "Error: Could not find download URL for scip-callgraph"
+            exit 1
           fi
           
           wget "$DOWNLOAD_URL" -O scip-callgraph.tar.gz
@@ -56,9 +62,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Install jq for JSON parsing
-          sudo apt-get update && sudo apt-get install -y jq
-          
           # Install Rust and Cargo (required by verus-analyzer)
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           source "$HOME/.cargo/env"

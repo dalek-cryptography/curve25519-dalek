@@ -1,11 +1,6 @@
 name: Generate Verus Function Graphs
 
 on:
-  pull_request:
-    branches: [ main, master ]
-    types: [opened, synchronize, reopened]
-  
-  # Manual trigger for testing
   workflow_dispatch:
     inputs:
       base_ref:
@@ -38,38 +33,23 @@ jobs:
       - name: Determine execution context
         id: context
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "mode=pr" >> $GITHUB_OUTPUT
-            echo "base_ref=origin/${{ github.base_ref }}" >> $GITHUB_OUTPUT
-            echo "depth=5" >> $GITHUB_OUTPUT
-            echo "filter_sources=none" >> $GITHUB_OUTPUT
-            echo "include_callers=false" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "mode=manual" >> $GITHUB_OUTPUT
-            echo "base_ref=origin/${{ github.event.inputs.base_ref || 'main' }}" >> $GITHUB_OUTPUT
-            echo "depth=${{ github.event.inputs.depth || '5' }}" >> $GITHUB_OUTPUT
-            echo "filter_sources=${{ github.event.inputs.filter_sources || 'none' }}" >> $GITHUB_OUTPUT
-            echo "include_callers=${{ github.event.inputs.include_callers || 'false' }}" >> $GITHUB_OUTPUT
-          fi
+          echo "mode=manual" >> $GITHUB_OUTPUT
+          echo "base_ref=origin/${{ github.event.inputs.base_ref || 'main' }}" >> $GITHUB_OUTPUT
+          echo "depth=${{ github.event.inputs.depth || '5' }}" >> $GITHUB_OUTPUT
+          echo "filter_sources=${{ github.event.inputs.filter_sources || 'none' }}" >> $GITHUB_OUTPUT
+          echo "include_callers=${{ github.event.inputs.include_callers || 'false' }}" >> $GITHUB_OUTPUT
           
-          echo "Event: ${{ github.event_name }}"
           echo "Branch: ${{ github.ref_name }}"
-          echo "Mode: $(cat $GITHUB_OUTPUT | grep mode= | cut -d= -f2)"
 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       
       - name: Fetch base branch
         run: |
           echo "Fetching base branch for comparison..."
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
-          else
-            git fetch origin ${{ steps.context.outputs.base_ref || 'main' }}:refs/remotes/origin/${{ steps.context.outputs.base_ref || 'main' }} || true
-          fi
+          git fetch origin ${{ steps.context.outputs.base_ref || 'main' }}:refs/remotes/origin/${{ steps.context.outputs.base_ref || 'main' }} || true
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -571,17 +551,10 @@ jobs:
         if: hashFiles('function_graphs/*.svg') != ''
         run: |
           echo "Creating graph gallery..."
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            python3 scripts/create_graph_gallery.py \
-              function_graphs \
-              GRAPHS.md \
-              --title "Verus Function call graphs - PR #${{ github.event.number }}"
-          else
-            python3 scripts/create_graph_gallery.py \
-              function_graphs \
-              GRAPHS.md \
-              --title "Verus Function call graphs - Manual run"
-          fi
+          python3 scripts/create_graph_gallery.py \
+            function_graphs \
+            GRAPHS.md \
+            --title "Verus Function call graphs - Manual run"
 
       - name: Upload graph gallery
         uses: actions/upload-artifact@v4

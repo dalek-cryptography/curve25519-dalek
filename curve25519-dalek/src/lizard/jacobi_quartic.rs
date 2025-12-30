@@ -13,7 +13,7 @@ use crate::field::FieldElement;
 /// to the Edwards curve.
 #[derive(Copy, Clone)]
 #[allow(missing_docs)]
-pub struct JacobiPoint {
+pub(crate) struct JacobiPoint {
     pub S: FieldElement,
     pub T: FieldElement,
 }

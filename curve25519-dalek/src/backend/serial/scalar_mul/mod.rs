@@ -29,3 +29,6 @@ pub mod precomputed_straus;
 
 #[cfg(feature = "alloc")]
 pub mod pippenger;
+
+#[cfg(feature = "alloc")]
+mod scalar_mul_tests;

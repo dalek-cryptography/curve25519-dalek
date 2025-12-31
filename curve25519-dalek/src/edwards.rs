@@ -1601,24 +1601,6 @@ impl EdwardsPoint {
     }
 }
 
-// Spec function: extracts the points collected from an iterator
-pub uninterp spec fn spec_points_from_iter<T, I>(iter: I) -> Seq<EdwardsPoint>;
-
-// Helper to collect iterator into Vec<EdwardsPoint>
-#[verifier::external_body]
-fn collect_points_from_iter<T, I>(iter: I) -> (result: Vec<EdwardsPoint>) where
-    T: Borrow<EdwardsPoint>,
-    I: Iterator<Item = T>,
-
-    ensures
-        result@ == spec_points_from_iter::<T, I>(iter),
-        // Assume all collected points are well-formed (trusted boundary)
-        forall|i: int|
-            0 <= i < result@.len() ==> is_well_formed_edwards_point(#[trigger] result@[i]),
-{
-    iter.map(|item| *item.borrow()).collect()
-}
-
 /* <ORIGINAL CODE>
 impl<T> Sum<T> for EdwardsPoint
 where
@@ -1900,6 +1882,16 @@ impl MultiscalarMul for EdwardsPoint {
         I::Item: Borrow<Scalar>,
         J: IntoIterator,
         J::Item: Borrow<EdwardsPoint>,
+        /* VERIFICATION NOTE: VERUS SPEC (when IntoIterator with I::Item projections is supported):
+        requires
+            scalars.len() == points.len(),
+            forall|i| is_well_formed_edwards_point(points[i]),
+        ensures
+            is_well_formed_edwards_point(result),
+            edwards_point_as_affine(result) == sum_of_scalar_muls(scalars, points),
+
+        VERIFICATION NOTE: see `EdwardsPoint::multiscalar_mul_verus` below for the verified version using Iterator (not IntoIterator).
+        */
     {
         // Sanity-check lengths of input iterators
         let mut scalars = scalars.into_iter();
@@ -1931,6 +1923,17 @@ impl VartimeMultiscalarMul for EdwardsPoint {
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
         J: IntoIterator<Item = Option<EdwardsPoint>>,
+        /* VERIFICATION NOTE: VERUS SPEC (when IntoIterator with I::Item projections is supported):
+        requires
+            scalars.len() == points.len(),
+            forall|i| points[i].is_some() ==> is_well_formed_edwards_point(points[i].unwrap()),
+        ensures
+            result.is_some() <==> all_points_some(points),
+            result.is_some() ==> is_well_formed_edwards_point(result.unwrap()),
+            result.is_some() ==> edwards_point_as_affine(result.unwrap()) == sum_of_scalar_muls(scalars, unwrap_points(points)),
+
+        VERIFICATION NOTE: see `EdwardsPoint::optional_multiscalar_mul_verus` below for the verified version using Iterator (not IntoIterator).
+        */
     {
         // Sanity-check lengths of input iterators
         let mut scalars = scalars.into_iter();
@@ -1994,6 +1997,16 @@ impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
     }
 }
 
+// Import spec functions from scalar_mul_specs for multiscalar verification
+#[cfg(verus_keep_ghost)]
+use crate::specs::scalar_mul_specs::{
+    all_points_some, spec_optional_points_from_iter, spec_points_from_iter, spec_scalars_from_iter,
+    sum_of_scalar_muls, unwrap_points,
+};
+// Import runtime helper for Sum<T> trait
+#[cfg(feature = "alloc")]
+use crate::specs::scalar_mul_specs::collect_points_from_iter;
+
 verus! {
 
 impl EdwardsPoint {
@@ -2012,6 +2025,180 @@ impl EdwardsPoint {
             },
     {
         crate::backend::vartime_double_base_mul(a, A, b)
+    }
+
+    // Helper to count iterator elements without consuming (clones internally).
+    // Verus doesn't support Iterator::clone() or Iterator::count().
+    #[verifier::external_body]
+    #[cfg(feature = "alloc")]
+    fn iter_count<T, I: Iterator<Item = T> + Clone>(iter: &I) -> (size: usize)
+        ensures
+            size == spec_scalars_from_iter::<T, I>(*iter).len(),
+    {
+        iter.clone().count()
+    }
+
+    /*
+     * VERIFICATION NOTE
+     * =================
+     * Verus limitations addressed in these _verus versions:
+     * - IntoIterator with I::Item projections → use Iterator bounds instead
+     * - size_hint() on &mut iterator → use Clone + iter_count helper
+     *
+     * TESTING: `scalar_mul_tests.rs` contains tests that generate random scalars and points,
+     * run both original and _verus implementations, and assert equality of results.
+     * This is evidence of functional equivalence between the original and refactored versions:
+     *     forall scalars s, points p:
+     *         optional_multiscalar_mul(s, p) == optional_multiscalar_mul_verus(s, p)
+     *         multiscalar_mul(s, p) == multiscalar_mul_verus(s, p)
+     */
+    /// Verus-compatible version of optional_multiscalar_mul.
+    /// Uses Iterator + Clone instead of IntoIterator (Verus doesn't support I::Item projections).
+    /// Clone allows peeking at size without consuming the iterator (similar to original's size_hint).
+    /// Dispatches to Straus (size < 190) or Pippenger (size >= 190) algorithm.
+    #[cfg(feature = "alloc")]
+    pub fn optional_multiscalar_mul_verus<S, I, J>(scalars: I, points: J) -> (result: Option<
+        EdwardsPoint,
+    >) where
+        S: Borrow<Scalar>,
+        I: Iterator<Item = S> + Clone,
+        J: Iterator<Item = Option<EdwardsPoint>> + Clone,
+
+        requires
+    // Same number of scalars and points
+
+            spec_scalars_from_iter::<S, I>(scalars).len() == spec_optional_points_from_iter::<J>(
+                points,
+            ).len(),
+            // All input points (when Some) must be well-formed
+            forall|i: int|
+                0 <= i < spec_optional_points_from_iter::<J>(points).len() && (
+                #[trigger] spec_optional_points_from_iter::<J>(points)[i]).is_some()
+                    ==> is_well_formed_edwards_point(
+                    spec_optional_points_from_iter::<J>(points)[i].unwrap(),
+                ),
+        ensures
+    // Result is Some if and only if all input points are Some
+
+            result.is_some() <==> all_points_some(spec_optional_points_from_iter::<J>(points)),
+            // If result is Some, it is a well-formed Edwards point
+            result.is_some() ==> is_well_formed_edwards_point(result.unwrap()),
+            // Semantic correctness: result = sum(scalars[i] * points[i])
+            result.is_some() ==> edwards_point_as_affine(result.unwrap()) == sum_of_scalar_muls(
+                spec_scalars_from_iter::<S, I>(scalars),
+                unwrap_points(spec_optional_points_from_iter::<J>(points)),
+            ),
+    {
+        /* <ORIGINAL CODE>
+        // Sanity-check lengths of input iterators
+        let mut scalars = scalars.into_iter();
+        let mut points = points.into_iter();
+
+        // Lower and upper bounds on iterators
+        let (s_lo, s_hi) = scalars.by_ref().size_hint();
+        let (p_lo, p_hi) = points.by_ref().size_hint();
+
+        // They should all be equal
+        assert_eq!(s_lo, p_lo);
+        assert_eq!(s_hi, Some(s_lo));
+        assert_eq!(p_hi, Some(p_lo));
+
+        // Now we know there's a single size.
+        // Use this as the hint to decide which algorithm to use.
+        let size = s_lo;
+
+        if size < 190 {
+            crate::backend::straus_optional_multiscalar_mul(scalars, points)
+        } else {
+            crate::backend::pippenger_optional_multiscalar_mul(scalars, points)
+        }
+        </ORIGINAL CODE> */
+        /* Uses Clone instead of by_ref() since Verus doesn't support &mut on iterators. */
+        // Sanity-check lengths of input iterators (skipped by Verus, checked via requires clause)
+        #[cfg(not(verus_keep_ghost))]
+        {
+            let (s_lo, s_hi) = scalars.clone().size_hint();
+            let (p_lo, p_hi) = points.clone().size_hint();
+            assert_eq!(s_lo, p_lo);
+            assert_eq!(s_hi, Some(s_lo));
+            assert_eq!(p_hi, Some(p_lo));
+        }
+
+        // Get size for algorithm dispatch
+        let size = Self::iter_count(&scalars);
+
+        if size < 190 {
+            crate::backend::straus_optional_multiscalar_mul_verus(scalars, points)
+        } else {
+            crate::backend::pippenger_optional_multiscalar_mul_verus(scalars, points)
+        }
+    }
+
+    /// Verus-compatible version of multiscalar_mul (constant-time).
+    /// Uses Iterator instead of IntoIterator (Verus doesn't support I::Item projections).
+    /// Dispatches to Straus algorithm (constant-time).
+    #[cfg(feature = "alloc")]
+    pub fn multiscalar_mul_verus<S, P, I, J>(scalars: I, points: J) -> (result: EdwardsPoint) where
+        S: Borrow<Scalar>,
+        P: Borrow<EdwardsPoint>,
+        I: Iterator<Item = S> + Clone,
+        J: Iterator<Item = P> + Clone,
+
+        requires
+    // Same number of scalars and points
+
+            spec_scalars_from_iter::<S, I>(scalars).len() == spec_points_from_iter::<P, J>(
+                points,
+            ).len(),
+            // All input points must be well-formed
+            forall|i: int|
+                0 <= i < spec_points_from_iter::<P, J>(points).len()
+                    ==> is_well_formed_edwards_point(
+                    #[trigger] spec_points_from_iter::<P, J>(points)[i],
+                ),
+        ensures
+    // Result is a well-formed Edwards point
+
+            is_well_formed_edwards_point(result),
+            // Semantic correctness: result = sum(scalars[i] * points[i])
+            edwards_point_as_affine(result) == sum_of_scalar_muls(
+                spec_scalars_from_iter::<S, I>(scalars),
+                spec_points_from_iter::<P, J>(points),
+            ),
+    {
+        /* <ORIGINAL CODE>
+        // Sanity-check lengths of input iterators
+        let mut scalars = scalars.into_iter();
+        let mut points = points.into_iter();
+
+        // Lower and upper bounds on iterators
+        let (s_lo, s_hi) = scalars.by_ref().size_hint();
+        let (p_lo, p_hi) = points.by_ref().size_hint();
+
+        // They should all be equal
+        assert_eq!(s_lo, p_lo);
+        assert_eq!(s_hi, Some(s_lo));
+        assert_eq!(p_hi, Some(p_lo));
+
+        // Now we know there's a single size.  When we do
+        // size-dependent algorithm dispatch, use this as the hint.
+        let _size = s_lo;
+
+        crate::backend::straus_multiscalar_mul(scalars, points)
+        </ORIGINAL CODE> */
+        /* Uses Clone instead of by_ref() since Verus doesn't support &mut on iterators. */
+        // Sanity-check lengths of input iterators (skipped by Verus, checked via requires clause)
+        #[cfg(not(verus_keep_ghost))]
+        {
+            let (s_lo, s_hi) = scalars.clone().size_hint();
+            let (p_lo, p_hi) = points.clone().size_hint();
+            assert_eq!(s_lo, p_lo);
+            assert_eq!(s_hi, Some(s_lo));
+            assert_eq!(p_hi, Some(p_lo));
+        }
+
+        // Dispatch to Straus (constant-time)
+        crate::backend::straus_multiscalar_mul_verus(scalars, points)
     }
 }
 

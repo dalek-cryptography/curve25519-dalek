@@ -12,6 +12,8 @@ pub mod mul_specs;
 
 pub mod primality_specs;
 
+pub mod scalar_mul_specs;
+
 pub mod scalar_specs;
 
 pub mod scalar52_specs;

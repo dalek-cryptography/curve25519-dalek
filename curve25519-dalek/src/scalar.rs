@@ -116,6 +116,10 @@ use crate::lemmas::common_lemmas::shift_lemmas::*;
 use crate::lemmas::common_lemmas::sum_lemmas::*;
 use crate::lemmas::common_lemmas::to_nat_lemmas::*;
 use crate::scalar_helpers::*;
+#[cfg(feature = "alloc")]
+use crate::specs::scalar_mul_specs::collect_scalars_from_iter;
+#[cfg(all(feature = "alloc", verus_keep_ghost))]
+use crate::specs::scalar_mul_specs::spec_scalars_from_iter;
 use core::borrow::Borrow;
 use core::fmt::Debug;
 use core::iter::{Product, Sum};
@@ -984,24 +988,9 @@ impl ConditionallySelectable for Scalar {
 
 /* <VERIFICATION NOTE>
  Trait implementations for Product and Sum use iterators which are not directly supported by Verus.
- Both use an external_body helper to collect the iterator into Vec<Scalar>,
- then call verified product_of_slice/sum_of_slice functions for the actual computation.
+ Both use external_body helpers (collect_scalars_from_iter from scalar_mul_specs) to collect
+ the iterator into Vec<Scalar>, then call verified product_of_slice/sum_of_slice functions.
 </VERIFICATION NOTE> */
-
-// Spec function: extracts the scalars collected from an iterator
-pub uninterp spec fn spec_scalars_from_iter<T, I>(iter: I) -> Seq<Scalar>;
-
-// Helper to collect iterator into Vec<Scalar>
-#[verifier::external_body]
-fn collect_scalars_from_iter<T, I>(iter: I) -> (result: Vec<Scalar>) where
-    T: Borrow<Scalar>,
-    I: Iterator<Item = T>,
-
-    ensures
-        result@ == spec_scalars_from_iter::<T, I>(iter),
-{
-    iter.map(|item| *item.borrow()).collect()
-}
 
 impl<T> Product<T> for Scalar where T: Borrow<Scalar> {
     /* <ORIGINAL CODE>

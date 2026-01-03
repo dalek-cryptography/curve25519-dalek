@@ -85,7 +85,7 @@
 //! successful decompression of a compressed point, or else by
 //! operations on other (valid) `EdwardsPoint`s.
 //!
-//! [curve_models]: https://docs.rs/curve25519-dalek/latest/curve25519-dalek/backend/serial/curve_models/index.html
+//! [curve_models]: https://docs.rs/curve25519-dalek/latest/curve25519_dalek/backend/serial/curve_models/index.html
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective

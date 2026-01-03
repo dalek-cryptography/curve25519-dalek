@@ -76,6 +76,7 @@ group = ["dep:group", "rand_core"]
 group-bits = ["group", "ff/bits"]
 digest = ["dep:digest"]
 lizard = ["digest"]
+rand_core = ["dep:rand_core", "digest/rand_core"]
 
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
 curve25519-dalek-derive = "0.1"

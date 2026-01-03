@@ -4,13 +4,14 @@ Entries are listed in reverse chronological order.
 
 # 3.x Series
 
-## Unreleased
+## 3.0.0-pre.4
 
 * Removed `alloc` feature flag, which was doing nothing
+* Upgrade `rand_core` dependency to v0.10.0-rc-3
 
 ## 3.0.0-pre.3
 
-* Upgrade `rand_core` to v0.10.0-rc-2
+* Upgrade `rand_core` dependency to v0.10.0-rc-2
 
 ## 3.0.0-pre.0
 

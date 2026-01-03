@@ -21,7 +21,14 @@ use rand_core::CryptoRng;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "digest")]
-use curve25519_dalek::digest::{crypto_common::KeySizeUser, typenum::U32};
+use curve25519_dalek::digest::{
+    Key,
+    crypto_common::{InvalidKey, KeySizeUser, TryKeyInit},
+    typenum::U32,
+};
+
+#[cfg(all(feature = "digest", feature = "rand_core"))]
+use curve25519_dalek::digest::crypto_common::Generate;
 
 use sha2::Sha512;
 use subtle::{Choice, ConstantTimeEq};
@@ -551,6 +558,22 @@ impl SigningKey {
 #[cfg(feature = "digest")]
 impl KeySizeUser for SigningKey {
     type KeySize = U32;
+}
+
+#[cfg(feature = "digest")]
+impl TryKeyInit for SigningKey {
+    fn new(key: &Key<Self>) -> Result<Self, InvalidKey> {
+        Ok(Self::from_bytes(key.as_ref()))
+    }
+}
+
+#[cfg(all(feature = "digest", feature = "rand_core"))]
+impl Generate for SigningKey {
+    fn try_generate_from_rng<R: rand_core::TryCryptoRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+        let mut secret = SecretKey::default();
+        rng.try_fill_bytes(&mut secret)?;
+        Ok(Self::from_bytes(&secret))
+    }
 }
 
 impl AsRef<VerifyingKey> for SigningKey {

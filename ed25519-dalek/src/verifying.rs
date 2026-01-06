@@ -17,6 +17,7 @@ use curve25519_dalek::{
     edwards::{CompressedEdwardsY, EdwardsPoint},
     montgomery::MontgomeryPoint,
     scalar::Scalar,
+    traits::IsIdentity,
 };
 
 use ed25519::signature::{MultipartVerifier, Verifier};
@@ -375,6 +376,82 @@ impl VerifyingKey {
 
         let expected_R = RCompute::<Sha512>::compute(self, signature, None, &[message]);
         if expected_R == signature.R {
+            Ok(())
+        } else {
+            Err(InternalError::Verify.into())
+        }
+    }
+
+    /// Verify a signature using the heea half-size scalar optimization.
+    ///
+    /// This implements the algorithm from "Accelerating EdDSA Signature Verification
+    /// with Faster Scalar Size Halving" (TCHES 2025).
+    ///
+    /// The standard verification equation sB = R + hA is transformed to:
+    /// τsB = τR + ρA where ρ ≡ τh (mod ℓ)
+    ///
+    /// Both ρ and τ are approximately half the size of h.
+    ///
+    /// We then decompose τs into two 128-bit scalars:
+    /// τs = τs_hi * 2^128 + τs_lo
+    ///
+    /// The verification equation becomes:
+    /// τs_lo B + τs_hi (2^128 B) = τR + ρA
+    /// which can be done via 4-variable MSM with half-size scalars.
+    #[allow(non_snake_case)]
+    pub fn verify_heea(
+        &self,
+        message: &[u8],
+        signature: &ed25519::Signature,
+    ) -> Result<(), SignatureError> {
+        use curve25519_dalek::traits::HEEADecomposition;
+
+        let signature = InternalSignature::try_from(signature)?;
+
+        let signature_R = signature
+            .R
+            .decompress()
+            .ok_or_else(|| SignatureError::from(InternalError::Verify))?;
+
+        // Logical OR is fine here as we're not trying to be constant time.
+        if signature_R.is_small_order() || self.point.is_small_order() {
+            return Err(InternalError::Verify.into());
+        }
+
+        // Compute h = H(R || A || M)
+        let mut h = Sha512::new();
+        Digest::update(&mut h, signature.R.as_bytes());
+        Digest::update(&mut h, self.compressed.as_bytes());
+        Digest::update(&mut h, message);
+        let h = Scalar::from_hash(h);
+
+        // Generate half-size scalars ρ and τ such that ρ ≡ τh (mod ℓ)
+        // in order to have rho and tau approximately half the size of h
+        // it is possible that we compute ρ ≡ -τh (mod ℓ)
+        // this is indicated by `flip_h` flag being true,
+        // in which case we will need to negate A later
+        let (rho, tau, flip_h) = h.heea_decompose();
+
+        // Standard verification checks: sB = R + hA
+        // Transformed verification: -τsB + τR + ρA == 0
+        let s = signature.s;
+
+        // Compute τs
+        let ts = tau * s;
+        let A = if flip_h { -self.point } else { self.point };
+        let neg_ts = -ts;
+
+        // Compute the multi-scalar multiplication: -τs·B + τ·R + ρ·A
+        let result = EdwardsPoint::vartime_triple_scalar_mul_basepoint(
+            &tau,
+            &signature_R,
+            &rho,
+            &A,
+            &neg_ts,
+        );
+
+        // Check if result is identity (zero point)
+        if result.is_identity() {
             Ok(())
         } else {
             Err(InternalError::Verify.into())

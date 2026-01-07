@@ -48,30 +48,28 @@ macro_rules! impl_shared {
         impl PartialEq for $ty {
             #[inline]
             fn eq(&self, rhs: &$ty) -> bool {
-                unsafe {
-                    // This compares each pair of 8-bit packed integers and returns either 0xFF or
-                    // 0x00 depending on whether they're equal.
-                    //
-                    // So the values are equal if (and only if) this returns a value that's filled
-                    // with only 0xFF.
-                    //
-                    // Pseudocode of what this does:
-                    //     self.0
-                    //         .bytes()
-                    //         .zip(rhs.0.bytes())
-                    //         .map(|a, b| if a == b { 0xFF } else { 0x00 })
-                    //         .join();
-                    let m = core::arch::x86_64::_mm256_cmpeq_epi8(self.0, rhs.0);
+                // This compares each pair of 8-bit packed integers and returns either 0xFF or
+                // 0x00 depending on whether they're equal.
+                //
+                // So the values are equal if (and only if) this returns a value that's filled
+                // with only 0xFF.
+                //
+                // Pseudocode of what this does:
+                //     self.0
+                //         .bytes()
+                //         .zip(rhs.0.bytes())
+                //         .map(|a, b| if a == b { 0xFF } else { 0x00 })
+                //         .join();
+                let m = core::arch::x86_64::_mm256_cmpeq_epi8(self.0, rhs.0);
 
-                    // Now we need to reduce the 256-bit value to something on which we can branch.
-                    //
-                    // This will just take the most significant bit of every 8-bit packed integer
-                    // and build an `i32` out of it. If the values we previously compared were
-                    // equal then all off the most significant bits will be equal to 1, which means
-                    // that this will return 0xFFFFFFFF, which is equal to -1 when represented as
-                    // an `i32`.
-                    core::arch::x86_64::_mm256_movemask_epi8(m) == -1
-                }
+                // Now we need to reduce the 256-bit value to something on which we can branch.
+                //
+                // This will just take the most significant bit of every 8-bit packed integer
+                // and build an `i32` out of it. If the values we previously compared were
+                // equal then all off the most significant bits will be equal to 1, which means
+                // that this will return 0xFFFFFFFF, which is equal to -1 when represented as
+                // an `i32`.
+                core::arch::x86_64::_mm256_movemask_epi8(m) == -1
             }
         }
 
@@ -83,7 +81,7 @@ macro_rules! impl_shared {
 
             #[inline]
             fn add(self, rhs: $ty) -> Self {
-                unsafe { core::arch::x86_64::$add_intrinsic(self.0, rhs.0).into() }
+                core::arch::x86_64::$add_intrinsic(self.0, rhs.0).into()
             }
         }
 
@@ -102,7 +100,7 @@ macro_rules! impl_shared {
 
             #[inline]
             fn sub(self, rhs: $ty) -> Self {
-                unsafe { core::arch::x86_64::$sub_intrinsic(self.0, rhs.0).into() }
+                core::arch::x86_64::$sub_intrinsic(self.0, rhs.0).into()
             }
         }
 
@@ -112,7 +110,7 @@ macro_rules! impl_shared {
 
             #[inline]
             fn bitand(self, rhs: $ty) -> Self {
-                unsafe { core::arch::x86_64::_mm256_and_si256(self.0, rhs.0).into() }
+                core::arch::x86_64::_mm256_and_si256(self.0, rhs.0).into()
             }
         }
 
@@ -122,7 +120,7 @@ macro_rules! impl_shared {
 
             #[inline]
             fn bitxor(self, rhs: $ty) -> Self {
-                unsafe { core::arch::x86_64::_mm256_xor_si256(self.0, rhs.0).into() }
+                core::arch::x86_64::_mm256_xor_si256(self.0, rhs.0).into()
             }
         }
 
@@ -149,17 +147,17 @@ macro_rules! impl_shared {
         impl $ty {
             #[inline]
             pub fn shl<const N: i32>(self) -> Self {
-                unsafe { core::arch::x86_64::$shl_intrinsic(self.0, N).into() }
+                core::arch::x86_64::$shl_intrinsic(self.0, N).into()
             }
 
             #[inline]
             pub fn shr<const N: i32>(self) -> Self {
-                unsafe { core::arch::x86_64::$shr_intrinsic(self.0, N).into() }
+                core::arch::x86_64::$shr_intrinsic(self.0, N).into()
             }
 
             #[inline]
             pub fn extract<const N: i32>(self) -> $lane_ty {
-                unsafe { core::arch::x86_64::$extract_intrinsic(self.0, N) as $lane_ty }
+                core::arch::x86_64::$extract_intrinsic(self.0, N) as $lane_ty
             }
         }
     };
@@ -257,19 +255,17 @@ impl u64x4 {
     #[unsafe_target_feature("avx2")]
     #[inline]
     pub fn new(x0: u64, x1: u64, x2: u64, x3: u64) -> u64x4 {
-        unsafe {
-            // _mm256_set_epi64 sets the underlying vector in reverse order of the args
-            u64x4(core::arch::x86_64::_mm256_set_epi64x(
-                x3 as i64, x2 as i64, x1 as i64, x0 as i64,
-            ))
-        }
+        // _mm256_set_epi64 sets the underlying vector in reverse order of the args
+        u64x4(core::arch::x86_64::_mm256_set_epi64x(
+            x3 as i64, x2 as i64, x1 as i64, x0 as i64,
+        ))
     }
 
     /// Constructs a new instance with all of the elements initialized to the given value.
     #[unsafe_target_feature("avx2")]
     #[inline]
     pub fn splat(x: u64) -> u64x4 {
-        unsafe { u64x4(core::arch::x86_64::_mm256_set1_epi64x(x as i64)) }
+        u64x4(core::arch::x86_64::_mm256_set1_epi64x(x as i64))
     }
 }
 
@@ -314,20 +310,17 @@ impl u32x8 {
     #[unsafe_target_feature("avx2")]
     #[inline]
     pub fn new(x0: u32, x1: u32, x2: u32, x3: u32, x4: u32, x5: u32, x6: u32, x7: u32) -> u32x8 {
-        unsafe {
-            // _mm256_set_epi32 sets the underlying vector in reverse order of the args
-            u32x8(core::arch::x86_64::_mm256_set_epi32(
-                x7 as i32, x6 as i32, x5 as i32, x4 as i32, x3 as i32, x2 as i32, x1 as i32,
-                x0 as i32,
-            ))
-        }
+        // _mm256_set_epi32 sets the underlying vector in reverse order of the args
+        u32x8(core::arch::x86_64::_mm256_set_epi32(
+            x7 as i32, x6 as i32, x5 as i32, x4 as i32, x3 as i32, x2 as i32, x1 as i32, x0 as i32,
+        ))
     }
 
     /// Constructs a new instance with all of the elements initialized to the given value.
     #[unsafe_target_feature("avx2")]
     #[inline]
     pub fn splat(x: u32) -> u32x8 {
-        unsafe { u32x8(core::arch::x86_64::_mm256_set1_epi32(x as i32)) }
+        u32x8(core::arch::x86_64::_mm256_set1_epi32(x as i32))
     }
 }
 
@@ -340,6 +333,6 @@ impl u32x8 {
     #[inline]
     pub fn mul32(self, rhs: u32x8) -> u64x4 {
         // NOTE: This ignores the upper 32-bits from each packed 64-bits.
-        unsafe { core::arch::x86_64::_mm256_mul_epu32(self.0, rhs.0).into() }
+        core::arch::x86_64::_mm256_mul_epu32(self.0, rhs.0).into()
     }
 }

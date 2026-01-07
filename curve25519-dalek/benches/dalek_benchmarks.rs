@@ -6,8 +6,8 @@ use criterion::{
     criterion_main, measurement::Measurement, BatchSize, BenchmarkGroup, BenchmarkId, Criterion,
 };
 
-use curve25519_dalek::constants;
-use curve25519_dalek::scalar::Scalar;
+use curve25519_dalek_arcium_fork::constants;
+use curve25519_dalek_arcium_fork::scalar::Scalar;
 
 static BATCH_SIZES: [usize; 5] = [1, 2, 4, 8, 16];
 static MULTISCALAR_SIZES: [usize; 13] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 384, 512, 768, 1024];
@@ -15,7 +15,7 @@ static MULTISCALAR_SIZES: [usize; 13] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 384, 
 mod edwards_benches {
     use super::*;
 
-    use curve25519_dalek::edwards::EdwardsPoint;
+    use curve25519_dalek_arcium_fork::edwards::EdwardsPoint;
 
     fn compress<M: Measurement>(c: &mut BenchmarkGroup<M>) {
         let B = &constants::ED25519_BASEPOINT_POINT;
@@ -71,11 +71,11 @@ mod edwards_benches {
 mod multiscalar_benches {
     use super::*;
 
-    use curve25519_dalek::edwards::EdwardsPoint;
-    use curve25519_dalek::edwards::VartimeEdwardsPrecomputation;
-    use curve25519_dalek::traits::MultiscalarMul;
-    use curve25519_dalek::traits::VartimeMultiscalarMul;
-    use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;
+    use curve25519_dalek_arcium_fork::edwards::EdwardsPoint;
+    use curve25519_dalek_arcium_fork::edwards::VartimeEdwardsPrecomputation;
+    use curve25519_dalek_arcium_fork::traits::MultiscalarMul;
+    use curve25519_dalek_arcium_fork::traits::VartimeMultiscalarMul;
+    use curve25519_dalek_arcium_fork::traits::VartimePrecomputedMultiscalarMul;
 
     fn construct_scalars(n: usize) -> Vec<Scalar> {
         let mut rng = thread_rng();
@@ -227,7 +227,7 @@ mod multiscalar_benches {
 
 mod ristretto_benches {
     use super::*;
-    use curve25519_dalek::ristretto::RistrettoPoint;
+    use curve25519_dalek_arcium_fork::ristretto::RistrettoPoint;
 
     fn compress<M: Measurement>(c: &mut BenchmarkGroup<M>) {
         c.bench_function("RistrettoPoint compression", |b| {
@@ -271,7 +271,7 @@ mod ristretto_benches {
 
 mod montgomery_benches {
     use super::*;
-    use curve25519_dalek::montgomery::MontgomeryPoint;
+    use curve25519_dalek_arcium_fork::montgomery::MontgomeryPoint;
 
     fn montgomery_ladder<M: Measurement>(c: &mut BenchmarkGroup<M>) {
         c.bench_function("Montgomery pseudomultiplication", |b| {

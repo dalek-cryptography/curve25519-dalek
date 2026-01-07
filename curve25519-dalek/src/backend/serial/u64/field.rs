@@ -63,7 +63,7 @@ impl<'b> AddAssign<&'b FieldElement51> for FieldElement51 {
     }
 }
 
-impl<'a, 'b> Add<&'b FieldElement51> for &'a FieldElement51 {
+impl<'b> Add<&'b FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
     fn add(self, _rhs: &'b FieldElement51) -> FieldElement51 {
         let mut output = *self;
@@ -79,7 +79,7 @@ impl<'b> SubAssign<&'b FieldElement51> for FieldElement51 {
     }
 }
 
-impl<'a, 'b> Sub<&'b FieldElement51> for &'a FieldElement51 {
+impl<'b> Sub<&'b FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
     fn sub(self, _rhs: &'b FieldElement51) -> FieldElement51 {
         // To avoid underflow, first add a multiple of p.
@@ -108,7 +108,7 @@ impl<'b> MulAssign<&'b FieldElement51> for FieldElement51 {
     }
 }
 
-impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
+impl<'b> Mul<&'b FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
     #[rustfmt::skip] // keep alignment of c* calculations
@@ -213,7 +213,7 @@ impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
     }
 }
 
-impl<'a> Neg for &'a FieldElement51 {
+impl Neg for &FieldElement51 {
     type Output = FieldElement51;
     fn neg(self) -> FieldElement51 {
         let mut output = *self;

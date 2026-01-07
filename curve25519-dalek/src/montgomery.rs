@@ -457,14 +457,14 @@ mod test {
     fn serde_bincode_basepoint_roundtrip() {
         use bincode;
 
-        let encoded = bincode::serialize(&constants::X25519_BASEPOINT).unwrap();
-        let decoded: MontgomeryPoint = bincode::deserialize(&encoded).unwrap();
+        let encoded = bincode::serialize(&constants::X25519_BASEPOINT).expect("serialization should succeed");
+        let decoded: MontgomeryPoint = bincode::deserialize(&encoded).expect("deserialization should succeed");
 
         assert_eq!(encoded.len(), 32);
         assert_eq!(decoded, constants::X25519_BASEPOINT);
 
         let raw_bytes = constants::X25519_BASEPOINT.as_bytes();
-        let bp: MontgomeryPoint = bincode::deserialize(raw_bytes).unwrap();
+        let bp: MontgomeryPoint = bincode::deserialize(raw_bytes).expect("deserialization from bytes should succeed");
         assert_eq!(bp, constants::X25519_BASEPOINT);
     }
 
@@ -474,12 +474,12 @@ mod test {
         // sign bit = 0 => basepoint
         assert_eq!(
             constants::ED25519_BASEPOINT_POINT,
-            constants::X25519_BASEPOINT.to_edwards(0).unwrap()
+            constants::X25519_BASEPOINT.to_edwards(0).expect("X25519 basepoint should convert to Edwards with sign=0")
         );
         // sign bit = 1 => minus basepoint
         assert_eq!(
             -constants::ED25519_BASEPOINT_POINT,
-            constants::X25519_BASEPOINT.to_edwards(1).unwrap()
+            constants::X25519_BASEPOINT.to_edwards(1).expect("X25519 basepoint should convert to Edwards with sign=1")
         );
     }
 
@@ -543,7 +543,7 @@ mod test {
         let mut csprng = rand_core::OsRng;
 
         for _ in 0..100 {
-            let p_edwards = rand_prime_order_point(&mut csprng);
+            let p_edwards = rand_prime_order_point(csprng);
             let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
             let s: Scalar = Scalar::random(&mut csprng);
@@ -562,7 +562,7 @@ mod test {
 
         for _ in 0..100 {
             // Make a random prime-order point P
-            let p_edwards = rand_prime_order_point(&mut csprng);
+            let p_edwards = rand_prime_order_point(csprng);
             let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
             // Make a random integer b

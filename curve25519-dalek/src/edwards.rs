@@ -649,7 +649,7 @@ impl EdwardsPoint {
 // Addition and Subtraction
 // ------------------------------------------------------------------------
 
-impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
+impl<'b> Add<&'b EdwardsPoint> for &EdwardsPoint {
     type Output = EdwardsPoint;
     fn add(self, other: &'b EdwardsPoint) -> EdwardsPoint {
         (self + &other.as_projective_niels()).as_extended()
@@ -670,7 +670,7 @@ impl<'b> AddAssign<&'b EdwardsPoint> for EdwardsPoint {
 
 define_add_assign_variants!(LHS = EdwardsPoint, RHS = EdwardsPoint);
 
-impl<'a, 'b> Sub<&'b EdwardsPoint> for &'a EdwardsPoint {
+impl<'b> Sub<&'b EdwardsPoint> for &EdwardsPoint {
     type Output = EdwardsPoint;
     fn sub(self, other: &'b EdwardsPoint) -> EdwardsPoint {
         (self - &other.as_projective_niels()).as_extended()
@@ -707,7 +707,7 @@ where
 // Negation
 // ------------------------------------------------------------------------
 
-impl<'a> Neg for &'a EdwardsPoint {
+impl Neg for &EdwardsPoint {
     type Output = EdwardsPoint;
 
     fn neg(self) -> EdwardsPoint {
@@ -744,7 +744,7 @@ define_mul_assign_variants!(LHS = EdwardsPoint, RHS = Scalar);
 define_mul_variants!(LHS = EdwardsPoint, RHS = Scalar, Output = EdwardsPoint);
 define_mul_variants!(LHS = Scalar, RHS = EdwardsPoint, Output = EdwardsPoint);
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
+impl<'b> Mul<&'b Scalar> for &EdwardsPoint {
     type Output = EdwardsPoint;
     /// Scalar multiplication: compute `scalar * self`.
     ///
@@ -755,7 +755,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
     }
 }
 
-impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
+impl<'b> Mul<&'b EdwardsPoint> for &Scalar {
     type Output = EdwardsPoint;
 
     /// Scalar multiplication: compute `scalar * self`.
@@ -1705,7 +1705,7 @@ mod test {
         let base_X = FieldElement::from_bytes(&BASE_X_COORD_BYTES);
         let bp = constants::ED25519_BASEPOINT_COMPRESSED
             .decompress()
-            .unwrap();
+            .expect("basepoint should decompress successfully");
         assert!(bp.is_valid());
         // Check that decompression actually gives the correct X coordinate
         assert_eq!(base_X, bp.X);
@@ -1720,7 +1720,7 @@ mod test {
         minus_basepoint_bytes[31] |= 1 << 7;
         let minus_basepoint = CompressedEdwardsY(minus_basepoint_bytes)
             .decompress()
-            .unwrap();
+            .expect("negated basepoint should decompress successfully");
         // Test projective coordinates exactly since we know they should
         // only differ by a flipped sign.
         assert_eq!(minus_basepoint.X, -(&constants::ED25519_BASEPOINT_POINT.X));
@@ -2188,7 +2188,7 @@ mod test {
         /// Test double_scalar_mul_vartime vs ed25519.py
         #[test]
         fn double_scalar_mul_basepoint_vs_ed25519py() {
-            let A = A_TIMES_BASEPOINT.decompress().unwrap();
+            let A = A_TIMES_BASEPOINT.decompress().expect("test vector should decompress");
             let result =
                 EdwardsPoint::vartime_double_scalar_mul_basepoint(&A_SCALAR, &A, &B_SCALAR);
             assert_eq!(result.compress(), DOUBLE_SCALAR_MULT_RESULT);
@@ -2197,7 +2197,7 @@ mod test {
         #[test]
         #[cfg(feature = "alloc")]
         fn multiscalar_mul_vs_ed25519py() {
-            let A = A_TIMES_BASEPOINT.decompress().unwrap();
+            let A = A_TIMES_BASEPOINT.decompress().expect("test vector should decompress");
             let result = EdwardsPoint::vartime_multiscalar_mul(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT],
@@ -2208,7 +2208,7 @@ mod test {
         #[test]
         #[cfg(feature = "alloc")]
         fn multiscalar_mul_vartime_vs_consttime() {
-            let A = A_TIMES_BASEPOINT.decompress().unwrap();
+            let A = A_TIMES_BASEPOINT.decompress().expect("test vector should decompress");
             let result_vartime = EdwardsPoint::vartime_multiscalar_mul(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT],
@@ -2227,22 +2227,22 @@ mod test {
     fn serde_bincode_basepoint_roundtrip() {
         use bincode;
 
-        let encoded = bincode::serialize(&constants::ED25519_BASEPOINT_POINT).unwrap();
-        let enc_compressed = bincode::serialize(&constants::ED25519_BASEPOINT_COMPRESSED).unwrap();
+        let encoded = bincode::serialize(&constants::ED25519_BASEPOINT_POINT).expect("serialization should succeed");
+        let enc_compressed = bincode::serialize(&constants::ED25519_BASEPOINT_COMPRESSED).expect("serialization should succeed");
         assert_eq!(encoded, enc_compressed);
 
         // Check that the encoding is 32 bytes exactly
         assert_eq!(encoded.len(), 32);
 
-        let dec_uncompressed: EdwardsPoint = bincode::deserialize(&encoded).unwrap();
-        let dec_compressed: CompressedEdwardsY = bincode::deserialize(&encoded).unwrap();
+        let dec_uncompressed: EdwardsPoint = bincode::deserialize(&encoded).expect("deserialization should succeed");
+        let dec_compressed: CompressedEdwardsY = bincode::deserialize(&encoded).expect("deserialization should succeed");
 
         assert_eq!(dec_uncompressed, constants::ED25519_BASEPOINT_POINT);
         assert_eq!(dec_compressed, constants::ED25519_BASEPOINT_COMPRESSED);
 
         // Check that the encoding itself matches the usual one
         let raw_bytes = constants::ED25519_BASEPOINT_COMPRESSED.as_bytes();
-        let bp: EdwardsPoint = bincode::deserialize(raw_bytes).unwrap();
+        let bp: EdwardsPoint = bincode::deserialize(raw_bytes).expect("deserialization from bytes should succeed");
         assert_eq!(bp, constants::ED25519_BASEPOINT_POINT);
     }
 
@@ -2302,8 +2302,8 @@ mod test {
     #[cfg(all(feature = "alloc", feature = "digest"))]
     fn elligator_signal_test_vectors() {
         for vector in test_vectors().iter() {
-            let input = hex::decode(vector[0]).unwrap();
-            let output = hex::decode(vector[1]).unwrap();
+            let input = hex::decode(vector[0]).expect("test vector input should be valid hex");
+            let output = hex::decode(vector[1]).expect("test vector output should be valid hex");
 
             let point = EdwardsPoint::nonspec_map_to_curve::<sha2::Sha512>(&input);
             assert_eq!(point.compress().to_bytes(), output[..]);

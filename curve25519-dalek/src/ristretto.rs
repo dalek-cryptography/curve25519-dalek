@@ -868,7 +868,7 @@ impl Hash for RistrettoPoint {
 // Arithmetic
 // ------------------------------------------------------------------------
 
-impl<'a, 'b> Add<&'b RistrettoPoint> for &'a RistrettoPoint {
+impl<'b> Add<&'b RistrettoPoint> for &RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn add(self, other: &'b RistrettoPoint) -> RistrettoPoint {
@@ -882,7 +882,7 @@ define_add_variants!(
     Output = RistrettoPoint
 );
 
-impl<'b> AddAssign<&'b RistrettoPoint> for RistrettoPoint {
+impl AddAssign<&RistrettoPoint> for RistrettoPoint {
     fn add_assign(&mut self, _rhs: &RistrettoPoint) {
         *self = (self as &RistrettoPoint) + _rhs;
     }
@@ -890,7 +890,7 @@ impl<'b> AddAssign<&'b RistrettoPoint> for RistrettoPoint {
 
 define_add_assign_variants!(LHS = RistrettoPoint, RHS = RistrettoPoint);
 
-impl<'a, 'b> Sub<&'b RistrettoPoint> for &'a RistrettoPoint {
+impl<'b> Sub<&'b RistrettoPoint> for &RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn sub(self, other: &'b RistrettoPoint) -> RistrettoPoint {
@@ -904,7 +904,7 @@ define_sub_variants!(
     Output = RistrettoPoint
 );
 
-impl<'b> SubAssign<&'b RistrettoPoint> for RistrettoPoint {
+impl SubAssign<&RistrettoPoint> for RistrettoPoint {
     fn sub_assign(&mut self, _rhs: &RistrettoPoint) {
         *self = (self as &RistrettoPoint) - _rhs;
     }
@@ -924,7 +924,7 @@ where
     }
 }
 
-impl<'a> Neg for &'a RistrettoPoint {
+impl Neg for &RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn neg(self) -> RistrettoPoint {
@@ -947,7 +947,7 @@ impl<'b> MulAssign<&'b Scalar> for RistrettoPoint {
     }
 }
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoPoint {
+impl<'b> Mul<&'b Scalar> for &RistrettoPoint {
     type Output = RistrettoPoint;
     /// Scalar multiplication: compute `scalar * self`.
     fn mul(self, scalar: &'b Scalar) -> RistrettoPoint {
@@ -955,7 +955,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoPoint {
     }
 }
 
-impl<'a, 'b> Mul<&'b RistrettoPoint> for &'a Scalar {
+impl<'b> Mul<&'b RistrettoPoint> for &Scalar {
     type Output = RistrettoPoint;
 
     /// Scalar multiplication: compute `self * scalar`.
@@ -1102,7 +1102,7 @@ impl RistrettoPoint {
 pub struct RistrettoBasepointTable(pub(crate) EdwardsBasepointTable);
 
 #[cfg(feature = "precomputed-tables")]
-impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
+impl<'b> Mul<&'b Scalar> for &RistrettoBasepointTable {
     type Output = RistrettoPoint;
 
     fn mul(self, scalar: &'b Scalar) -> RistrettoPoint {
@@ -1111,7 +1111,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
 }
 
 #[cfg(feature = "precomputed-tables")]
-impl<'a, 'b> Mul<&'a RistrettoBasepointTable> for &'b Scalar {
+impl<'a> Mul<&'a RistrettoBasepointTable> for &Scalar {
     type Output = RistrettoPoint;
 
     fn mul(self, basepoint_table: &'a RistrettoBasepointTable) -> RistrettoPoint {
@@ -1305,23 +1305,23 @@ mod test {
     fn serde_bincode_basepoint_roundtrip() {
         use bincode;
 
-        let encoded = bincode::serialize(&constants::RISTRETTO_BASEPOINT_POINT).unwrap();
+        let encoded = bincode::serialize(&constants::RISTRETTO_BASEPOINT_POINT).expect("serialization should succeed");
         let enc_compressed =
-            bincode::serialize(&constants::RISTRETTO_BASEPOINT_COMPRESSED).unwrap();
+            bincode::serialize(&constants::RISTRETTO_BASEPOINT_COMPRESSED).expect("serialization should succeed");
         assert_eq!(encoded, enc_compressed);
 
         // Check that the encoding is 32 bytes exactly
         assert_eq!(encoded.len(), 32);
 
-        let dec_uncompressed: RistrettoPoint = bincode::deserialize(&encoded).unwrap();
-        let dec_compressed: CompressedRistretto = bincode::deserialize(&encoded).unwrap();
+        let dec_uncompressed: RistrettoPoint = bincode::deserialize(&encoded).expect("deserialization should succeed");
+        let dec_compressed: CompressedRistretto = bincode::deserialize(&encoded).expect("deserialization should succeed");
 
         assert_eq!(dec_uncompressed, constants::RISTRETTO_BASEPOINT_POINT);
         assert_eq!(dec_compressed, constants::RISTRETTO_BASEPOINT_COMPRESSED);
 
         // Check that the encoding itself matches the usual one
         let raw_bytes = constants::RISTRETTO_BASEPOINT_COMPRESSED.as_bytes();
-        let bp: RistrettoPoint = bincode::deserialize(raw_bytes).unwrap();
+        let bp: RistrettoPoint = bincode::deserialize(raw_bytes).expect("deserialization from bytes should succeed");
         assert_eq!(bp, constants::RISTRETTO_BASEPOINT_POINT);
     }
 
@@ -1377,7 +1377,7 @@ mod test {
     #[test]
     fn decompress_id() {
         let compressed_id = CompressedRistretto::identity();
-        let id = compressed_id.decompress().unwrap();
+        let id = compressed_id.decompress().expect("identity should decompress successfully");
         let mut identity_in_coset = false;
         for P in &id.coset4() {
             if P.compress() == CompressedEdwardsY::identity() {
@@ -1396,7 +1396,7 @@ mod test {
     #[test]
     fn basepoint_roundtrip() {
         let bp_compressed_ristretto = constants::RISTRETTO_BASEPOINT_POINT.compress();
-        let bp_recaf = bp_compressed_ristretto.decompress().unwrap().0;
+        let bp_recaf = bp_compressed_ristretto.decompress().expect("basepoint should decompress successfully").0;
         // Check that bp_recaf differs from bp by a point of order 4
         let diff = constants::RISTRETTO_BASEPOINT_POINT.0 - bp_recaf;
         let diff4 = diff.mul_by_pow_2(2);
@@ -1820,7 +1820,7 @@ mod test {
         for _ in 0..100 {
             let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
             let compressed_P = P.compress();
-            let Q = compressed_P.decompress().unwrap();
+            let Q = compressed_P.decompress().expect("random point should decompress successfully");
             assert_eq!(P, Q);
         }
     }

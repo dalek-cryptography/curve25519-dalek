@@ -373,7 +373,7 @@ impl<'b> MulAssign<&'b Scalar> for Scalar {
 
 define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
+impl<'b> Mul<&'b Scalar> for &Scalar {
     type Output = Scalar;
     fn mul(self, _rhs: &'b Scalar) -> Scalar {
         UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack()
@@ -390,7 +390,7 @@ impl<'b> AddAssign<&'b Scalar> for Scalar {
 
 define_add_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
+impl<'b> Add<&'b Scalar> for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
     fn add(self, _rhs: &'b Scalar) -> Scalar {
@@ -410,7 +410,7 @@ impl<'b> SubAssign<&'b Scalar> for Scalar {
 
 define_sub_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
+impl<'b> Sub<&'b Scalar> for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
     fn sub(self, rhs: &'b Scalar) -> Scalar {
@@ -422,7 +422,7 @@ impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
 
 define_sub_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
-impl<'a> Neg for &'a Scalar {
+impl Neg for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
     fn neg(self) -> Scalar {
@@ -1880,15 +1880,15 @@ pub(crate) mod test {
     #[cfg(feature = "serde")]
     fn serde_bincode_scalar_roundtrip() {
         use bincode;
-        let encoded = bincode::serialize(&X).unwrap();
-        let parsed: Scalar = bincode::deserialize(&encoded).unwrap();
+        let encoded = bincode::serialize(&X).expect("serialization should succeed");
+        let parsed: Scalar = bincode::deserialize(&encoded).expect("deserialization should succeed");
         assert_eq!(parsed, X);
 
         // Check that the encoding is 32 bytes exactly
         assert_eq!(encoded.len(), 32);
 
         // Check that the encoding itself matches the usual one
-        assert_eq!(X, bincode::deserialize(X.as_bytes()).unwrap(),);
+        assert_eq!(X, bincode::deserialize(X.as_bytes()).expect("deserialization from bytes should succeed"),);
     }
 
     #[cfg(all(debug_assertions, feature = "alloc"))]
@@ -2039,13 +2039,13 @@ pub(crate) mod test {
 
         // ROOT_OF_UNITY^{2^s} mod m == 1
         assert_eq!(
-            Scalar::ROOT_OF_UNITY.pow(&[1u64 << Scalar::S, 0, 0, 0]),
+            Scalar::ROOT_OF_UNITY.pow([1u64 << Scalar::S, 0, 0, 0]),
             Scalar::ONE,
         );
 
         // DELTA^{t} mod m == 1
         assert_eq!(
-            Scalar::DELTA.pow(&[
+            Scalar::DELTA.pow([
                 0x9604_98c6_973d_74fb,
                 0x0537_be77_a8bd_e735,
                 0x0000_0000_0000_0000,
@@ -2070,7 +2070,7 @@ pub(crate) mod test {
         // We should get back either the positive or negative root.
         assert!([X, -X].contains(&x_sq.sqrt().unwrap()));
 
-        let res = Array::try_from([0xff; 32]).unwrap();
+        let res = Array::from([0xff; 32]);
 
         assert_eq!(Scalar::from_repr_vartime(X.to_repr()), Some(X));
         assert_eq!(Scalar::from_repr_vartime(res), None);

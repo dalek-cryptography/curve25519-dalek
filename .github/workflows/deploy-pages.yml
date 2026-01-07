@@ -31,8 +31,6 @@ jobs:
   # Job 1: Generate the call graph (runs in parallel with dashboard build)
   callgraph:
     name: Generate Call Graph
-    continue-on-error: true  # Don't block deployment if callgraph generation fails
-    permissions: inherit  # Pass workflow permissions to the reusable workflow
     uses: Beneficial-AI-Foundation/scip-callgraph/.github/workflows/generate-callgraph.yml@main
     with:
       github_url: https://github.com/Beneficial-AI-Foundation/dalek-lite
@@ -119,6 +117,8 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: [callgraph, build-dashboard]
+    # Run even if callgraph fails, but not if build-dashboard fails
+    if: ${{ always() && needs.build-dashboard.result == 'success' }}
     runs-on: ubuntu-latest
     
     environment:
@@ -137,22 +137,21 @@ jobs:
       # changes, update both the "name" below and the verification step that
       # checks for the presence of site/callgraph/index.html.
       - name: Download callgraph viewer
-        if: always()  # Try to download even if callgraph job failed
         continue-on-error: true  # Don't fail deployment if artifact is missing
         uses: actions/download-artifact@v4
         with:
           name: callgraph-viewer
           path: site/callgraph
 
-      - name: Verify callgraph viewer artifact was downloaded
+      - name: Check callgraph viewer artifact status
         run: |
-          if [ ! -f site/callgraph/index.html ]; then
-            echo "Error: Expected callgraph viewer artifact (site/callgraph/index.html) not found."
-            echo "Ensure the upstream workflow produces an artifact named 'callgraph-viewer'."
-            exit 1
+          if [ -f site/callgraph/index.html ]; then
+            echo "✓ Callgraph viewer artifact found"
+          else
+            echo "⚠ Callgraph viewer artifact not found (callgraph job may have failed)"
+            echo "Deployment will continue without callgraph"
           fi
       - name: Fix callgraph asset paths for subpath deployment
-        if: always()  # Always run to handle callgraph path fixes when available
         run: |
           # The callgraph viewer references /callgraph/assets/... but we're at /dalek-lite/callgraph/
           # Fix the paths in the HTML file and verify that the replacements succeeded

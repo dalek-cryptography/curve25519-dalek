@@ -171,6 +171,7 @@ use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 use subtle::CtOption;
 
+use wincode::{SchemaRead, SchemaWrite};
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
@@ -243,7 +244,7 @@ cfg_if! {
 
 /// The `Scalar` struct holds an element of \\(\mathbb Z / \ell\mathbb Z \\).
 #[allow(clippy::derived_hash_with_manual_eq)]
-#[derive(Copy, Clone, Hash)]
+#[derive(Copy, Clone, Hash, SchemaRead, SchemaWrite)]
 pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the
     /// group order.

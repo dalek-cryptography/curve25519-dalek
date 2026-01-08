@@ -286,7 +286,7 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
     fn from(P: &'a EdwardsPoint) -> (result:
         Self)/* Expected requires (if Verus supported from_req):
             edwards_point_limbs_bounded(*P),
-            edwards_point_sum_bounded(*P),
+            sum_of_limbs_bounded(&P.Y, &P.X, u64::MAX),
         */
 
         ensures
@@ -307,7 +307,7 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
         // Preconditions assumed here since Verus does not support from_req
         proof {
             assume(edwards_point_limbs_bounded(*P));
-            assume(edwards_point_sum_bounded(*P));
+            assume(sum_of_limbs_bounded(&P.Y, &P.X, u64::MAX));
         }
 
         let mut points = [P.as_projective_niels();8];
@@ -336,7 +336,7 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
             proof {
                 // Preconditions for extended.as_projective_niels()
                 assume(edwards_point_limbs_bounded(extended));
-                assume(edwards_point_sum_bounded(extended));
+                assume(sum_of_limbs_bounded(&extended.Y, &extended.X, u64::MAX));
             }
             points[j + 1] = extended.as_projective_niels();
         }
@@ -532,7 +532,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<ProjectiveNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> (result:
         Self)/* Expected requires (if Verus supported from_req):
             edwards_point_limbs_bounded(*A),
-            edwards_point_sum_bounded(*A),
+            sum_of_limbs_bounded(&A.Y, &A.X, u64::MAX),
             is_valid_edwards_point(*A),
         */
 
@@ -543,7 +543,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<ProjectiveNielsPoint> {
         // Preconditions assumed here since Verus does not support from_req
         proof {
             assume(edwards_point_limbs_bounded(*A));
-            assume(edwards_point_sum_bounded(*A));
+            assume(sum_of_limbs_bounded(&A.Y, &A.X, u64::MAX));
             assume(is_valid_edwards_point(*A));
         }
 
@@ -570,7 +570,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<ProjectiveNielsPoint> {
             let extended = sum.as_extended();
             proof {
                 assume(edwards_point_limbs_bounded(extended));
-                assume(edwards_point_sum_bounded(extended));
+                assume(sum_of_limbs_bounded(&extended.Y, &extended.X, u64::MAX));
             }
             Ai[i + 1] = extended.as_projective_niels();
         }
@@ -590,7 +590,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<AffineNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> (result:
         Self)/* Expected requires (if Verus supported from_req):
             edwards_point_limbs_bounded(*A),
-            edwards_point_sum_bounded(*A),
+            sum_of_limbs_bounded(&A.Y, &A.X, u64::MAX),
             is_valid_edwards_point(*A),
         */
 
@@ -601,7 +601,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<AffineNielsPoint> {
         // Preconditions assumed here since Verus does not support from_req
         proof {
             assume(edwards_point_limbs_bounded(*A));
-            assume(edwards_point_sum_bounded(*A));
+            assume(sum_of_limbs_bounded(&A.Y, &A.X, u64::MAX));
             assume(is_valid_edwards_point(*A));
         }
 
@@ -629,7 +629,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<AffineNielsPoint> {
             let extended = sum.as_extended();
             proof {
                 assume(edwards_point_limbs_bounded(extended));
-                assume(edwards_point_sum_bounded(extended));
+                assume(sum_of_limbs_bounded(&extended.Y, &extended.X, u64::MAX));
             }
             Ai[i + 1] = extended.as_affine_niels();
         }
@@ -756,7 +756,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> (result:
         Self)/* Expected requires (if Verus supported from_req):
             edwards_point_limbs_bounded(*A),
-            edwards_point_sum_bounded(*A),
+            sum_of_limbs_bounded(&A.Y, &A.X, u64::MAX),
             is_valid_edwards_point(*A),
         */
 
@@ -767,7 +767,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint> {
         // Preconditions assumed here since Verus does not support from_req
         proof {
             assume(edwards_point_limbs_bounded(*A));
-            assume(edwards_point_sum_bounded(*A));
+            assume(sum_of_limbs_bounded(&A.Y, &A.X, u64::MAX));
             assume(is_valid_edwards_point(*A));
         }
 
@@ -794,7 +794,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint> {
             let extended = sum.as_extended();
             proof {
                 assume(edwards_point_limbs_bounded(extended));
-                assume(edwards_point_sum_bounded(extended));
+                assume(sum_of_limbs_bounded(&extended.Y, &extended.X, u64::MAX));
             }
             Ai[i + 1] = extended.as_projective_niels();
         }
@@ -815,7 +815,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<AffineNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> (result:
         Self)/* Expected requires (if Verus supported from_req):
             edwards_point_limbs_bounded(*A),
-            edwards_point_sum_bounded(*A),
+            sum_of_limbs_bounded(&A.Y, &A.X, u64::MAX),
             is_valid_edwards_point(*A),
         */
 
@@ -826,7 +826,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<AffineNielsPoint> {
         // Preconditions assumed here since Verus does not support from_req
         proof {
             assume(edwards_point_limbs_bounded(*A));
-            assume(edwards_point_sum_bounded(*A));
+            assume(sum_of_limbs_bounded(&A.Y, &A.X, u64::MAX));
             assume(is_valid_edwards_point(*A));
         }
 
@@ -854,7 +854,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<AffineNielsPoint> {
             let extended = sum.as_extended();
             proof {
                 assume(edwards_point_limbs_bounded(extended));
-                assume(edwards_point_sum_bounded(extended));
+                assume(sum_of_limbs_bounded(&extended.Y, &extended.X, u64::MAX));
             }
             Ai[i + 1] = extended.as_affine_niels();
         }

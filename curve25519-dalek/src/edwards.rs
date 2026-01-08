@@ -164,6 +164,8 @@ use crate::lemmas::edwards_lemmas::constants_lemmas::*;
 use crate::lemmas::edwards_lemmas::decompress_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for decompress proofs
 use crate::lemmas::edwards_lemmas::step1_lemmas::*;
+#[allow(unused_imports)] // Used in verus! blocks for bound weakening
+use crate::lemmas::field_lemmas::add_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for general field constants (ONE, ZERO)
 use crate::lemmas::field_lemmas::constants_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for field algebra lemmas
@@ -845,7 +847,7 @@ impl Identity for EdwardsPoint {
             // is_well_formed_edwards_point requires:
             // - is_valid_edwards_point (identity is on curve)
             // - edwards_point_limbs_bounded (all limbs < 2^54)
-            // - edwards_point_sum_bounded (Y + X doesn't overflow)
+            // - sum_of_limbs_bounded (Y + X doesn't overflow)
             // ZERO/ONE have limbs [0/1, 0, 0, 0, 0] which are trivially bounded
             assume(is_well_formed_edwards_point(result));
         }
@@ -922,13 +924,21 @@ impl ValidityCheck for EdwardsPoint {
         let proj = self.as_projective();
         proof {
             // The limb bounds are preserved by as_projective() (proj.X == self.X, etc.)
-            // and self has limbs_bounded from the preconditions
-            assert(fe51_limbs_bounded(&proj.X, 54));
-            assert(fe51_limbs_bounded(&proj.Y, 54));
-            assert(fe51_limbs_bounded(&proj.Z, 54));
+            // EdwardsPoint invariant is 52-bounded
+            assert(fe51_limbs_bounded(&proj.X, 52));
+            assert(fe51_limbs_bounded(&proj.Y, 52));
+            assert(fe51_limbs_bounded(&proj.Z, 52));
+            // Weaken to 54-bounded for mul preconditions
+            lemma_fe51_limbs_bounded_weaken(&proj.X, 52, 54);
+            lemma_fe51_limbs_bounded_weaken(&proj.Y, 52, 54);
+            lemma_fe51_limbs_bounded_weaken(&proj.Z, 52, 54);
         }
         let point_on_curve = proj.is_valid();
 
+        proof {
+            // Weaken self's coordinates for mul preconditions
+            lemma_edwards_point_weaken_to_54(self);
+        }
         let on_segre_image = (&self.X * &self.Y) == (&self.Z * &self.T);
 
         let result = point_on_curve && on_segre_image;
@@ -1014,6 +1024,11 @@ impl ConstantTimeEq for EdwardsPoint {
             - For standard types like Add, a "requires" clause for "add" was supported through the AddSpecImpl
             */
             assume(self.ct_eq_req(other));
+            // Weaken from 52-bounded (EdwardsPoint invariant) to 54-bounded (mul precondition)
+            lemma_edwards_point_weaken_to_54(self);
+            lemma_fe51_limbs_bounded_weaken(&other.X, 52, 54);
+            lemma_fe51_limbs_bounded_weaken(&other.Y, 52, 54);
+            lemma_fe51_limbs_bounded_weaken(&other.Z, 52, 54);
         }
 
         // We would like to check that the point (X/Z, Y/Z) is equal to
@@ -1094,7 +1109,7 @@ impl EdwardsPoint {
     pub(crate) fn as_projective_niels(&self) -> (result: ProjectiveNielsPoint)
         requires
             edwards_point_limbs_bounded(*self),
-            edwards_point_sum_bounded(*self),
+            sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX),
         ensures
             projective_niels_corresponds_to_edwards(result, *self),
             fe51_limbs_bounded(&result.Y_plus_X, 54),
@@ -1103,6 +1118,8 @@ impl EdwardsPoint {
             fe51_limbs_bounded(&result.T2d, 54),
     {
         proof {
+            // Weaken from 52-bounded (EdwardsPoint invariant) to 54-bounded (sub/mul precondition)
+            lemma_edwards_point_weaken_to_54(self);
             assume(fe51_limbs_bounded(&constants::EDWARDS_D2, 54));  // for T2d
         }
 
@@ -1136,8 +1153,9 @@ impl EdwardsPoint {
             result.X == self.X,
             result.Y == self.Y,
             result.Z == self.Z,
-            fe51_limbs_bounded(&result.X, 54) && fe51_limbs_bounded(&result.Y, 54)
-                && fe51_limbs_bounded(&result.Z, 54),
+            // ProjectivePoint invariant: 52-bounded (from EdwardsPoint invariant)
+            fe51_limbs_bounded(&result.X, 52) && fe51_limbs_bounded(&result.Y, 52)
+                && fe51_limbs_bounded(&result.Z, 52),
     {
         let result = ProjectivePoint { X: self.X, Y: self.Y, Z: self.Z };
         result
@@ -1151,6 +1169,10 @@ impl EdwardsPoint {
         ensures
             affine_niels_corresponds_to_edwards(result, *self),
     {
+        proof {
+            // Weaken from 52-bounded (EdwardsPoint invariant) to 54-bounded (invert/mul precondition)
+            lemma_edwards_point_weaken_to_54(self);
+        }
         let recip = self.Z.invert();
         // recip bounded by 54 from invert() postcondition
 
@@ -1234,6 +1256,10 @@ impl EdwardsPoint {
         ensures
             compressed_edwards_y_corresponds_to_edwards(result, *self),
     {
+        proof {
+            // Weaken from 52-bounded (EdwardsPoint invariant) to 54-bounded (invert/mul precondition)
+            lemma_edwards_point_weaken_to_54(self);
+        }
         let recip = self.Z.invert();
         let ghost z_abs = spec_field_element(&self.Z);
         assert(spec_field_element(&recip) == math_field_inv(z_abs));
@@ -1303,10 +1329,12 @@ impl EdwardsPoint {
         let proj = self.as_projective();
         proof {
             assert(is_valid_projective_point(proj));
-            // preconditions for projective double()
-            assert(fe51_limbs_bounded(&proj.X, 54) && fe51_limbs_bounded(&proj.Y, 54)
-                && fe51_limbs_bounded(&proj.Z, 54));
-            assume(sum_of_limbs_bounded(&proj.X, &proj.Y, u64::MAX));
+            // ProjectivePoint invariant: 52-bounded (from as_projective postcondition)
+            assert(fe51_limbs_bounded(&proj.X, 52) && fe51_limbs_bounded(&proj.Y, 52)
+                && fe51_limbs_bounded(&proj.Z, 52));
+            // sum_of_limbs_bounded follows from 52-bounded: 2^52 + 2^52 = 2^53 < u64::MAX
+            assert((1u64 << 52) + (1u64 << 52) < u64::MAX) by (bit_vector);
+            assume(sum_of_limbs_bounded(&proj.X, &proj.Y, u64::MAX));  // TODO: prove from 52-bounded
         }
 
         let doubled = proj.double();
@@ -2285,10 +2313,13 @@ impl BasepointTable for EdwardsBasepointTable {
             // P = (16²)^i * basepoint
             table.0[i] = LookupTableRadix16::from(&P);
             proof {
-                assume(fe51_limbs_bounded(&P.X, 54));
-                assume(fe51_limbs_bounded(&P.Y, 54));
-                assume(fe51_limbs_bounded(&P.Z, 54));
-                assume(fe51_limbs_bounded(&P.T, 54));
+                // P is 52-bounded via loop invariant:
+                // - Initial: is_well_formed_edwards_point(*basepoint) includes edwards_point_limbs_bounded (52)
+                // - Maintained: mul_by_pow_2 ensures is_well_formed_edwards_point(result)
+                assume(fe51_limbs_bounded(&P.X, 52));
+                assume(fe51_limbs_bounded(&P.Y, 52));
+                assume(fe51_limbs_bounded(&P.Z, 52));
+                assume(fe51_limbs_bounded(&P.T, 52));
             }
             P = P.mul_by_pow_2(4 + 4);  // P = P * 2^8 = P * 256 = P * 16²
         }
@@ -2594,12 +2625,14 @@ impl EdwardsPoint {
             proof {
                 assume(is_valid_projective_point(s));
                 assume(sum_of_limbs_bounded(&s.X, &s.Y, u64::MAX));
-                assume(fe51_limbs_bounded(&s.X, 54));
-                assume(fe51_limbs_bounded(&s.Y, 54));
-                assume(fe51_limbs_bounded(&s.Z, 54));
+                // ProjectivePoint invariant: 52-bounded (from as_projective postcondition)
+                assume(fe51_limbs_bounded(&s.X, 52));
+                assume(fe51_limbs_bounded(&s.Y, 52));
+                assume(fe51_limbs_bounded(&s.Z, 52));
             }
             r = s.double();
             proof {
+                // CompletedPoint invariant: 54-bounded
                 assume(fe51_limbs_bounded(&r.X, 54));
                 assume(fe51_limbs_bounded(&r.Y, 54));
                 assume(fe51_limbs_bounded(&r.Z, 54));
@@ -2610,9 +2643,10 @@ impl EdwardsPoint {
         proof {
             assume(is_valid_projective_point(s));
             assume(sum_of_limbs_bounded(&s.X, &s.Y, u64::MAX));
-            assume(fe51_limbs_bounded(&s.X, 54));
-            assume(fe51_limbs_bounded(&s.Y, 54));
-            assume(fe51_limbs_bounded(&s.Z, 54));
+            // ProjectivePoint invariant: 52-bounded
+            assume(fe51_limbs_bounded(&s.X, 52));
+            assume(fe51_limbs_bounded(&s.Y, 52));
+            assume(fe51_limbs_bounded(&s.Z, 52));
         }
         let result = s.double().as_extended();
         proof {

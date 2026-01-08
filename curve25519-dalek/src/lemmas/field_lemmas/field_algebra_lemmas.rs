@@ -1096,4 +1096,150 @@ pub proof fn lemma_double_negation(a: nat)
     assert((neg_one * neg_a) % p == a);
 }
 
+/// Lemma: (a·c) / (b·c) = a / b  (common factor cancellation)
+///
+/// ## Mathematical Proof
+/// ```text
+/// (a·c) · inv(b·c)
+/// = (a·c) · (inv(b) · inv(c))     [by lemma_inv_of_product]
+/// = a · (c · inv(c)) · inv(b)     [by assoc/comm]
+/// = a · 1 · inv(b)                [by field_inv_property: c · inv(c) = 1]
+/// = a · inv(b)
+/// ```
+pub proof fn lemma_cancel_common_factor(a: nat, b: nat, c: nat)
+    requires
+        b % p() != 0,
+        c % p() != 0,
+    ensures
+        math_field_mul(math_field_mul(a, c), math_field_inv(math_field_mul(b, c)))
+            == math_field_mul(a, math_field_inv(b)),
+{
+    let p = p();
+    p_gt_2();
+
+    let ac = math_field_mul(a, c);
+    let bc = math_field_mul(b, c);
+    let inv_b = math_field_inv(b);
+    let inv_c = math_field_inv(c);
+    let inv_bc = math_field_inv(bc);
+
+    // bc % p != 0 (product of non-zero elements in prime field)
+    assert(bc % p != 0) by {
+        lemma_mod_bound((b * c) as int, p as int);
+        lemma_mod_twice((b * c) as int, p as int);
+        if (b * c) % p == 0 {
+            axiom_p_is_prime();
+            lemma_euclid_prime(b, c, p);
+            assert(false);
+        }
+    };
+
+    // Step 1: inv(b·c) = inv(b) · inv(c)
+    assert(inv_bc == math_field_mul(inv_b, inv_c)) by {
+        lemma_inv_of_product(b, c);
+    };
+
+    // Step 2: c · inv(c) = 1
+    assert(math_field_mul(c, inv_c) == 1) by {
+        field_inv_property(c);
+        lemma_mul_mod_noop_left(c as int, inv_c as int, p as int);
+        lemma_small_mod(1, p);
+    };
+
+    // Step 3: (a·c) · (inv(b) · inv(c)) = a · inv(b)
+    // Rearrange using associativity and commutativity:
+    // (a·c) · (inv(b) · inv(c))
+    // = a · (c · (inv(b) · inv(c)))        [assoc]
+    // = a · (c · (inv(c) · inv(b)))        [comm on inv(b), inv(c)]
+    // = a · ((c · inv(c)) · inv(b))        [assoc]
+    // = a · (1 · inv(b))                   [c · inv(c) = 1]
+    // = a · inv(b)
+
+    let inv_b_inv_c = math_field_mul(inv_b, inv_c);
+
+    // (a·c) · inv(b·c) = (a·c) · (inv(b) · inv(c))
+    assert(math_field_mul(ac, inv_bc) == math_field_mul(ac, inv_b_inv_c));
+
+    // Now show (a·c) · (inv(b) · inv(c)) = a · inv(b)
+    assert(math_field_mul(ac, inv_b_inv_c) == math_field_mul(a, inv_b)) by {
+        // Work at the integer level modulo p
+        // LHS = ((a*c) % p * ((inv_b * inv_c) % p)) % p
+        //     = ((a*c) * (inv_b * inv_c)) % p
+        lemma_mul_mod_noop((a * c) as int, (inv_b * inv_c) as int, p as int);
+
+        // RHS = (a * inv_b) % p
+
+        // Show (a*c) * (inv_b * inv_c) ≡ a * inv_b (mod p)
+
+        // (a*c) * (inv_b * inv_c) = a * (c * inv_b * inv_c) [assoc]
+        assert((a * c) * (inv_b * inv_c) == a * (c * (inv_b * inv_c))) by {
+            lemma_mul_is_associative(a as int, c as int, (inv_b * inv_c) as int);
+        };
+
+        // c * (inv_b * inv_c) = c * (inv_c * inv_b) [comm]
+        assert(c * (inv_b * inv_c) == c * (inv_c * inv_b)) by {
+            lemma_mul_is_commutative(inv_b as int, inv_c as int);
+        };
+
+        // c * (inv_c * inv_b) = (c * inv_c) * inv_b [assoc]
+        assert(c * (inv_c * inv_b) == (c * inv_c) * inv_b) by {
+            lemma_mul_is_associative(c as int, inv_c as int, inv_b as int);
+        };
+
+        // (c * inv_c) % p = 1
+        assert((c * inv_c) % p == 1) by {
+            field_inv_property(c);
+            lemma_mul_mod_noop_left(c as int, inv_c as int, p as int);
+        };
+
+        // ((c * inv_c) * inv_b) % p = (1 * inv_b) % p = inv_b % p = inv_b
+        assert(((c * inv_c) * inv_b) % p == inv_b) by {
+            lemma_mul_mod_noop_left((c * inv_c) as int, inv_b as int, p as int);
+            lemma_mul_basics(inv_b as int);
+            field_inv_property(b);
+            lemma_small_mod(inv_b, p);
+        };
+
+        // Chain: (a * (c * (inv_b * inv_c))) % p = (a * ((c * inv_c) * inv_b)) % p
+        assert((a * (c * (inv_b * inv_c))) % p == (a * ((c * inv_c) * inv_b)) % p) by {
+            assert(c * (inv_b * inv_c) == (c * inv_c) * inv_b);
+        };
+
+        // (a * ((c * inv_c) * inv_b)) % p = (a * inv_b) % p
+        assert((a * ((c * inv_c) * inv_b)) % p == (a * inv_b) % p) by {
+            lemma_mul_mod_noop_right(a as int, ((c * inv_c) * inv_b) as int, p as int);
+            // (a * (((c * inv_c) * inv_b) % p)) % p
+            // = (a * inv_b) % p  [since ((c * inv_c) * inv_b) % p = inv_b]
+        };
+    };
+}
+
+/// Lemma: Product of non-zero field elements is non-zero
+///
+/// In a prime field, if a ≢ 0 and b ≢ 0, then a·b ≢ 0
+pub proof fn lemma_nonzero_product(a: nat, b: nat)
+    requires
+        a % p() != 0,
+        b % p() != 0,
+    ensures
+        math_field_mul(a, b) != 0,
+{
+    let p = p();
+    p_gt_2();
+
+    let ab = math_field_mul(a, b);
+
+    assert(ab != 0) by {
+        if ab == 0 {
+            // ab = (a * b) % p = 0 means p | (a * b)
+            // By Euclid's lemma for primes: p | a or p | b
+            // But a % p != 0 and b % p != 0, contradiction
+            lemma_mod_twice((a * b) as int, p as int);
+            axiom_p_is_prime();
+            lemma_euclid_prime(a, b, p);
+            assert(false);
+        }
+    };
+}
+
 } // verus!

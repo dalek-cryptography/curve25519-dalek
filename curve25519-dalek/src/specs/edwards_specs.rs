@@ -245,26 +245,21 @@ pub open spec fn is_valid_edwards_point(point: crate::edwards::EdwardsPoint) -> 
     math_is_valid_extended_edwards_point(x, y, z, t)
 }
 
-/// Limb bounds for safe field arithmetic on an EdwardsPoint.
-/// All coordinate limbs must fit in 54 bits for safe arithmetic operations.
+/// EdwardsPoint invariant: all coordinate limbs must be 52-bounded.
 pub open spec fn edwards_point_limbs_bounded(point: crate::edwards::EdwardsPoint) -> bool {
-    fe51_limbs_bounded(&point.X, 54) && fe51_limbs_bounded(&point.Y, 54) && fe51_limbs_bounded(
+    fe51_limbs_bounded(&point.X, 52) && fe51_limbs_bounded(&point.Y, 52) && fe51_limbs_bounded(
         &point.Z,
-        54,
-    ) && fe51_limbs_bounded(&point.T, 54)
+        52,
+    ) && fe51_limbs_bounded(&point.T, 52)
 }
 
-/// Sum bound needed for operations like as_projective_niels that compute Y+X.
-/// The sum of Y and X limbs must not overflow.
-pub open spec fn edwards_point_sum_bounded(point: crate::edwards::EdwardsPoint) -> bool {
-    sum_of_limbs_bounded(&point.Y, &point.X, u64::MAX)
-}
-
-/// A "well-formed" EdwardsPoint: mathematically valid and properly bounded.
-/// This is the standard predicate for points ready to use in arithmetic operations.
+/// A well-formed EdwardsPoint: mathematically valid and properly bounded.
 pub open spec fn is_well_formed_edwards_point(point: crate::edwards::EdwardsPoint) -> bool {
-    is_valid_edwards_point(point) && edwards_point_limbs_bounded(point)
-        && edwards_point_sum_bounded(point)
+    is_valid_edwards_point(point) && edwards_point_limbs_bounded(point) && sum_of_limbs_bounded(
+        &point.Y,
+        &point.X,
+        u64::MAX,
+    )
 }
 
 /// Returns the field element values (X, Y, Z, T) from an EdwardsPoint.

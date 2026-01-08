@@ -322,7 +322,7 @@ impl vstd::std_specs::ops::SubSpecImpl<&FieldElement51> for &FieldElement51 {
         true
     }
 
-    // Pre-condition of sub - delegates to spec_sub_limbs_bounded for consistency
+    // Pre-condition: both operands must be 54-bounded for subtraction
     open spec fn sub_req(self, rhs: &FieldElement51) -> bool {
         fe51_limbs_bounded(self, 54) && fe51_limbs_bounded(rhs, 54)
     }
@@ -1329,6 +1329,10 @@ impl FieldElement51 {
         ensures
             u64_5_as_nat(r.limbs) % p() == (2 * pow(u64_5_as_nat(self.limbs) as int, 2)) as nat
                 % p(),
+            // Bounds: pow2k gives 52-bounded, doubling gives 53-bounded
+            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 53,
+            // 53-bounded implies 54-bounded (for compatibility)
+            fe51_limbs_bounded(&r, 54),
     {
         let mut square = self.pow2k(1);
 
@@ -1392,12 +1396,30 @@ impl FieldElement51 {
                 forall|j: int| 0 <= j < 5 ==> old_limbs[j] < (1u64 << 52),
                 forall|j: int| 0 <= j < i ==> #[trigger] square.limbs[j] == 2 * old_limbs[j],
                 forall|j: int| i <= j < 5 ==> #[trigger] square.limbs[j] == old_limbs[j],
+                // Bounds invariant: processed limbs are 53-bounded (2 * 52-bit < 2^53)
+                forall|j: int| 0 <= j < i ==> square.limbs[j] < (1u64 << 53),
         {
             proof {
                 assert(2 * (1u64 << 52) <= u64::MAX) by (compute);
                 lemma_mul_strict_inequality(square.limbs[i as int] as int, (1u64 << 52) as int, 2);
+                // After doubling: 2 * old_limbs[i] < 2 * 2^52 = 2^53
+                assert(2 * (1u64 << 52) == (1u64 << 53)) by (bit_vector);
             }
             square.limbs[i] *= 2;
+        }
+
+        proof {
+            // After loop: all limbs are 53-bounded
+            assert forall|j: int| 0 <= j < 5 implies square.limbs[j] < (1u64 << 53) by {
+                assert(square.limbs[j] == 2 * old_limbs[j]);
+                assert(old_limbs[j] < (1u64 << 52));
+                assert(2 * (1u64 << 52) == (1u64 << 53)) by (bit_vector);
+            }
+            // 53-bounded implies 54-bounded
+            assert forall|j: int| 0 <= j < 5 implies square.limbs[j] < (1u64 << 54) by {
+                assert(square.limbs[j] < (1u64 << 53));
+                assert((1u64 << 53) < (1u64 << 54)) by (bit_vector);
+            }
         }
 
         square

@@ -229,7 +229,7 @@ impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a EdwardsPoint> for LookupTabl
     /* Expected from_req (if Verus supported it):
     open spec fn from_req(P: &'a EdwardsPoint) -> bool {
         edwards_point_limbs_bounded(*P)
-        && edwards_point_sum_bounded(*P)
+        && sum_of_limbs_bounded(&P.Y, &P.X, u64::MAX)
     }
     */
     open spec fn from_spec(P: &'a EdwardsPoint) -> Self {
@@ -273,7 +273,7 @@ impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a EdwardsPoint> for NafLookupT
     /* Expected from_req (if Verus supported it):
     open spec fn from_req(A: &'a EdwardsPoint) -> bool {
         edwards_point_limbs_bounded(*A)
-        && edwards_point_sum_bounded(*A)
+        && sum_of_limbs_bounded(&A.Y, &A.X, u64::MAX)
         && is_valid_edwards_point(*A)
     }
     */
@@ -296,7 +296,7 @@ impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a EdwardsPoint> for NafLookupT
     /* Expected from_req (if Verus supported it):
     open spec fn from_req(A: &'a EdwardsPoint) -> bool {
         edwards_point_limbs_bounded(*A)
-        && edwards_point_sum_bounded(*A)
+        && sum_of_limbs_bounded(&A.Y, &A.X, u64::MAX)
         && is_valid_edwards_point(*A)
     }
     */
@@ -320,7 +320,7 @@ impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a EdwardsPoint> for NafLookupT
     /* Expected from_req (if Verus supported it):
     open spec fn from_req(A: &'a EdwardsPoint) -> bool {
         edwards_point_limbs_bounded(*A)
-        && edwards_point_sum_bounded(*A)
+        && sum_of_limbs_bounded(&A.Y, &A.X, u64::MAX)
         && is_valid_edwards_point(*A)
     }
     */
@@ -343,7 +343,7 @@ impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a EdwardsPoint> for NafLookupT
     /* Expected from_req (if Verus supported it):
     open spec fn from_req(A: &'a EdwardsPoint) -> bool {
         edwards_point_limbs_bounded(*A)
-        && edwards_point_sum_bounded(*A)
+        && sum_of_limbs_bounded(&A.Y, &A.X, u64::MAX)
         && is_valid_edwards_point(*A)
     }
     */

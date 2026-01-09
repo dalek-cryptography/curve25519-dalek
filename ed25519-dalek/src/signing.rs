@@ -790,7 +790,7 @@ impl<'d> Deserialize<'d> for SigningKey {
             type Value = SigningKey;
 
             fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                write!(formatter, concat!("An ed25519 signing (private) key"))
+                write!(formatter, "An ed25519 signing (private) key")
             }
 
             fn visit_bytes<E: serde::de::Error>(self, bytes: &[u8]) -> Result<Self::Value, E> {

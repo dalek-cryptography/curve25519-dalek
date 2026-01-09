@@ -11,10 +11,7 @@
 
 #[curve25519_dalek_derive::unsafe_target_feature_specialize(
     "avx2",
-    conditional(
-        "avx512ifma,avx512vl",
-        curve25519_dalek_backend = "avx512"
-    )
+    conditional("avx512ifma,avx512vl", curve25519_dalek_backend = "avx512")
 )]
 pub mod spec {
 

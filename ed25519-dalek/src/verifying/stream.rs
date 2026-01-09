@@ -34,7 +34,7 @@ impl StreamVerifier {
     /// Finalize verifier and check against candidate signature.
     #[allow(non_snake_case)]
     pub fn finalize_and_verify(self) -> Result<(), SignatureError> {
-        let expected_R = self.cr.finish();
+        let expected_R = self.cr.finish().compress();
 
         if expected_R == self.sig_R {
             Ok(())

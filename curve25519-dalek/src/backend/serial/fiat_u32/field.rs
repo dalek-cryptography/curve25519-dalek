@@ -54,7 +54,8 @@ use fiat_crypto::curve25519_32::*;
 ///
 /// The backend-specific type `FieldElement2625` should not be used
 /// outside of the `curve25519_dalek::field` module.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, SchemaRead, SchemaWrite)]
+#[repr(transparent)]
 pub struct FieldElement2625(pub(crate) fiat_25519_tight_field_element);
 
 impl Debug for FieldElement2625 {

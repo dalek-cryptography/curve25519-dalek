@@ -245,6 +245,7 @@ cfg_if! {
 /// The `Scalar` struct holds an element of \\(\mathbb Z / \ell\mathbb Z \\).
 #[allow(clippy::derived_hash_with_manual_eq)]
 #[derive(Copy, Clone, Hash, SchemaRead, SchemaWrite)]
+#[repr(transparent)]
 pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the
     /// group order.
@@ -1881,14 +1882,18 @@ pub(crate) mod test {
     fn serde_bincode_scalar_roundtrip() {
         use bincode;
         let encoded = bincode::serialize(&X).expect("serialization should succeed");
-        let parsed: Scalar = bincode::deserialize(&encoded).expect("deserialization should succeed");
+        let parsed: Scalar =
+            bincode::deserialize(&encoded).expect("deserialization should succeed");
         assert_eq!(parsed, X);
 
         // Check that the encoding is 32 bytes exactly
         assert_eq!(encoded.len(), 32);
 
         // Check that the encoding itself matches the usual one
-        assert_eq!(X, bincode::deserialize(X.as_bytes()).expect("deserialization from bytes should succeed"),);
+        assert_eq!(
+            X,
+            bincode::deserialize(X.as_bytes()).expect("deserialization from bytes should succeed"),
+        );
     }
 
     #[cfg(all(debug_assertions, feature = "alloc"))]

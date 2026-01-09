@@ -21,6 +21,8 @@ use core::ops::{Sub, SubAssign};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
+use wincode::{SchemaRead, SchemaWrite};
+
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
@@ -39,7 +41,8 @@ use zeroize::Zeroize;
 ///
 /// The backend-specific type `FieldElement51` should not be used
 /// outside of the `curve25519_dalek::field` module.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, SchemaRead, SchemaWrite)]
+#[repr(transparent)]
 pub struct FieldElement51(pub(crate) [u64; 5]);
 
 impl Debug for FieldElement51 {

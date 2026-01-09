@@ -105,6 +105,7 @@ use cfg_if::cfg_if;
 
 #[cfg(feature = "digest")]
 use digest::{generic_array::typenum::U64, Digest};
+use wincode::{SchemaRead, SchemaWrite};
 
 #[cfg(feature = "group")]
 use {
@@ -366,8 +367,9 @@ impl<'de> Deserialize<'de> for CompressedEdwardsY {
 // ------------------------------------------------------------------------
 
 /// An `EdwardsPoint` represents a point on the Edwards form of Curve25519.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, SchemaRead, SchemaWrite)]
 #[allow(missing_docs)]
+#[repr(C)]
 pub struct EdwardsPoint {
     pub(crate) X: FieldElement,
     pub(crate) Y: FieldElement,
@@ -377,8 +379,13 @@ pub struct EdwardsPoint {
 
 impl EdwardsPoint {
     /// Create a new EdwardsPoint. We don't verify that the coordinates represent a valid point on the curve.
-    pub fn new_unchecked(X: FieldElement, Y: FieldElement, Z: FieldElement, T: FieldElement) -> EdwardsPoint {
-        EdwardsPoint {X, Y, Z, T}
+    pub fn new_unchecked(
+        X: FieldElement,
+        Y: FieldElement,
+        Z: FieldElement,
+        T: FieldElement,
+    ) -> EdwardsPoint {
+        EdwardsPoint { X, Y, Z, T }
     }
 
     /// Return the X-coordinate.
@@ -2188,7 +2195,9 @@ mod test {
         /// Test double_scalar_mul_vartime vs ed25519.py
         #[test]
         fn double_scalar_mul_basepoint_vs_ed25519py() {
-            let A = A_TIMES_BASEPOINT.decompress().expect("test vector should decompress");
+            let A = A_TIMES_BASEPOINT
+                .decompress()
+                .expect("test vector should decompress");
             let result =
                 EdwardsPoint::vartime_double_scalar_mul_basepoint(&A_SCALAR, &A, &B_SCALAR);
             assert_eq!(result.compress(), DOUBLE_SCALAR_MULT_RESULT);
@@ -2197,7 +2206,9 @@ mod test {
         #[test]
         #[cfg(feature = "alloc")]
         fn multiscalar_mul_vs_ed25519py() {
-            let A = A_TIMES_BASEPOINT.decompress().expect("test vector should decompress");
+            let A = A_TIMES_BASEPOINT
+                .decompress()
+                .expect("test vector should decompress");
             let result = EdwardsPoint::vartime_multiscalar_mul(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT],
@@ -2208,7 +2219,9 @@ mod test {
         #[test]
         #[cfg(feature = "alloc")]
         fn multiscalar_mul_vartime_vs_consttime() {
-            let A = A_TIMES_BASEPOINT.decompress().expect("test vector should decompress");
+            let A = A_TIMES_BASEPOINT
+                .decompress()
+                .expect("test vector should decompress");
             let result_vartime = EdwardsPoint::vartime_multiscalar_mul(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT],
@@ -2227,22 +2240,27 @@ mod test {
     fn serde_bincode_basepoint_roundtrip() {
         use bincode;
 
-        let encoded = bincode::serialize(&constants::ED25519_BASEPOINT_POINT).expect("serialization should succeed");
-        let enc_compressed = bincode::serialize(&constants::ED25519_BASEPOINT_COMPRESSED).expect("serialization should succeed");
+        let encoded = bincode::serialize(&constants::ED25519_BASEPOINT_POINT)
+            .expect("serialization should succeed");
+        let enc_compressed = bincode::serialize(&constants::ED25519_BASEPOINT_COMPRESSED)
+            .expect("serialization should succeed");
         assert_eq!(encoded, enc_compressed);
 
         // Check that the encoding is 32 bytes exactly
         assert_eq!(encoded.len(), 32);
 
-        let dec_uncompressed: EdwardsPoint = bincode::deserialize(&encoded).expect("deserialization should succeed");
-        let dec_compressed: CompressedEdwardsY = bincode::deserialize(&encoded).expect("deserialization should succeed");
+        let dec_uncompressed: EdwardsPoint =
+            bincode::deserialize(&encoded).expect("deserialization should succeed");
+        let dec_compressed: CompressedEdwardsY =
+            bincode::deserialize(&encoded).expect("deserialization should succeed");
 
         assert_eq!(dec_uncompressed, constants::ED25519_BASEPOINT_POINT);
         assert_eq!(dec_compressed, constants::ED25519_BASEPOINT_COMPRESSED);
 
         // Check that the encoding itself matches the usual one
         let raw_bytes = constants::ED25519_BASEPOINT_COMPRESSED.as_bytes();
-        let bp: EdwardsPoint = bincode::deserialize(raw_bytes).expect("deserialization from bytes should succeed");
+        let bp: EdwardsPoint =
+            bincode::deserialize(raw_bytes).expect("deserialization from bytes should succeed");
         assert_eq!(bp, constants::ED25519_BASEPOINT_POINT);
     }
 

@@ -65,12 +65,12 @@ fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
     let a: u32x8;
     let b: u32x8;
     let zero = u32x8::splat(0);
-    
-        use core::arch::x86_64::_mm256_unpackhi_epi32;
-        use core::arch::x86_64::_mm256_unpacklo_epi32;
-        a = _mm256_unpacklo_epi32(src.into(), zero.into()).into();
-        b = _mm256_unpackhi_epi32(src.into(), zero.into()).into();
-    
+
+    use core::arch::x86_64::_mm256_unpackhi_epi32;
+    use core::arch::x86_64::_mm256_unpacklo_epi32;
+    a = _mm256_unpacklo_epi32(src.into(), zero.into()).into();
+    b = _mm256_unpackhi_epi32(src.into(), zero.into()).into();
+
     (a, b)
 }
 
@@ -86,21 +86,19 @@ fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
 #[unsafe_target_feature("avx2")]
 #[inline(always)]
 fn repack_pair(x: u32x8, y: u32x8) -> u32x8 {
-    
-        use core::arch::x86_64::_mm256_blend_epi32;
-        use core::arch::x86_64::_mm256_shuffle_epi32;
+    use core::arch::x86_64::_mm256_blend_epi32;
+    use core::arch::x86_64::_mm256_shuffle_epi32;
 
-        // Input: x = (a0, 0, b0, 0, c0, 0, d0, 0)
-        // Input: y = (a1, 0, b1, 0, c1, 0, d1, 0)
+    // Input: x = (a0, 0, b0, 0, c0, 0, d0, 0)
+    // Input: y = (a1, 0, b1, 0, c1, 0, d1, 0)
 
-        let x_shuffled = _mm256_shuffle_epi32(x.into(), 0b11_01_10_00);
-        let y_shuffled = _mm256_shuffle_epi32(y.into(), 0b10_00_11_01);
+    let x_shuffled = _mm256_shuffle_epi32(x.into(), 0b11_01_10_00);
+    let y_shuffled = _mm256_shuffle_epi32(y.into(), 0b10_00_11_01);
 
-        // x' = (a0, b0,  0,  0, c0, d0,  0,  0)
-        // y' = ( 0,  0, a1, b1,  0,  0, c1, d1)
+    // x' = (a0, b0,  0,  0, c0, d0,  0,  0)
+    // y' = ( 0,  0, a1, b1,  0,  0, c1, d1)
 
-        _mm256_blend_epi32(x_shuffled, y_shuffled, 0b11001100).into()
-    
+    _mm256_blend_epi32(x_shuffled, y_shuffled, 0b11001100).into()
 }
 
 /// The `Lanes` enum represents a subset of the lanes `A,B,C,D` of a
@@ -429,13 +427,11 @@ impl FieldElement2625x4 {
         //
         // The carryouts are bounded by 2^(32 - 25) = 2^7.
         let rotated_carryout = |v: u32x8| -> u32x8 {
-            
-                use core::arch::x86_64::_mm256_shuffle_epi32;
-                use core::arch::x86_64::_mm256_srlv_epi32;
+            use core::arch::x86_64::_mm256_shuffle_epi32;
+            use core::arch::x86_64::_mm256_srlv_epi32;
 
-                let c = _mm256_srlv_epi32(v.into(), shifts.into());
-                _mm256_shuffle_epi32(c, 0b01_00_11_10).into()
-            
+            let c = _mm256_srlv_epi32(v.into(), shifts.into());
+            _mm256_shuffle_epi32(c, 0b01_00_11_10).into()
         };
 
         // Combine (lo, lo, lo, lo, lo, lo, lo, lo)
@@ -453,10 +449,8 @@ impl FieldElement2625x4 {
         //     (   x2,    y2,    x3,    y3,    z2,    w2,    z3,    w3).
         //
         let combine = |v_lo: u32x8, v_hi: u32x8| -> u32x8 {
-           
-                use core::arch::x86_64::_mm256_blend_epi32;
-                _mm256_blend_epi32(v_lo.into(), v_hi.into(), 0b11_00_11_00).into()
-            
+            use core::arch::x86_64::_mm256_blend_epi32;
+            _mm256_blend_epi32(v_lo.into(), v_hi.into(), 0b11_00_11_00).into()
         };
 
         let mut v = self.0;
@@ -476,7 +470,7 @@ impl FieldElement2625x4 {
         let c98 = rotated_carryout(v[4]);
         v[4] = (v[4] & masks) + combine(c76, c98);
 
-        let c9_19: u32x8 = { 
+        let c9_19: u32x8 = {
             use core::arch::x86_64::_mm256_mul_epu32;
             use core::arch::x86_64::_mm256_shuffle_epi32;
 
@@ -660,10 +654,8 @@ impl FieldElement2625x4 {
         let odd__p37 = u64x4::splat(0x1ffffff << 37);
 
         let negate_D = |x: u64x4, p: u64x4| -> u64x4 {
-            
                 use core::arch::x86_64::_mm256_blend_epi32;
                 _mm256_blend_epi32(x.into(), (p - x).into(), D_LANES64 as i32).into()
-            
         };
 
         z0 = negate_D(z0, low__p37);

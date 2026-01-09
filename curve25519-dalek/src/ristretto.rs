@@ -164,11 +164,11 @@ use alloc::vec::Vec;
 use core::array::TryFromSliceError;
 use core::borrow::Borrow;
 use core::fmt::Debug;
+use core::hash::{Hash, Hasher};
 use core::iter::Sum;
 use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
-use core::hash::{Hash, Hasher};
 
 #[cfg(any(test, feature = "rand_core"))]
 use rand_core::CryptoRngCore;
@@ -192,6 +192,8 @@ use subtle::Choice;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
+
+use wincode::{SchemaRead, SchemaWrite};
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -482,7 +484,8 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
 /// operations on `RistrettoPoint`s are exactly as fast as operations on
 /// `EdwardsPoint`s.
 ///
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, SchemaRead, SchemaWrite)]
+#[repr(transparent)]
 pub struct RistrettoPoint(pub(crate) EdwardsPoint);
 
 impl RistrettoPoint {
@@ -1305,23 +1308,27 @@ mod test {
     fn serde_bincode_basepoint_roundtrip() {
         use bincode;
 
-        let encoded = bincode::serialize(&constants::RISTRETTO_BASEPOINT_POINT).expect("serialization should succeed");
-        let enc_compressed =
-            bincode::serialize(&constants::RISTRETTO_BASEPOINT_COMPRESSED).expect("serialization should succeed");
+        let encoded = bincode::serialize(&constants::RISTRETTO_BASEPOINT_POINT)
+            .expect("serialization should succeed");
+        let enc_compressed = bincode::serialize(&constants::RISTRETTO_BASEPOINT_COMPRESSED)
+            .expect("serialization should succeed");
         assert_eq!(encoded, enc_compressed);
 
         // Check that the encoding is 32 bytes exactly
         assert_eq!(encoded.len(), 32);
 
-        let dec_uncompressed: RistrettoPoint = bincode::deserialize(&encoded).expect("deserialization should succeed");
-        let dec_compressed: CompressedRistretto = bincode::deserialize(&encoded).expect("deserialization should succeed");
+        let dec_uncompressed: RistrettoPoint =
+            bincode::deserialize(&encoded).expect("deserialization should succeed");
+        let dec_compressed: CompressedRistretto =
+            bincode::deserialize(&encoded).expect("deserialization should succeed");
 
         assert_eq!(dec_uncompressed, constants::RISTRETTO_BASEPOINT_POINT);
         assert_eq!(dec_compressed, constants::RISTRETTO_BASEPOINT_COMPRESSED);
 
         // Check that the encoding itself matches the usual one
         let raw_bytes = constants::RISTRETTO_BASEPOINT_COMPRESSED.as_bytes();
-        let bp: RistrettoPoint = bincode::deserialize(raw_bytes).expect("deserialization from bytes should succeed");
+        let bp: RistrettoPoint =
+            bincode::deserialize(raw_bytes).expect("deserialization from bytes should succeed");
         assert_eq!(bp, constants::RISTRETTO_BASEPOINT_POINT);
     }
 
@@ -1377,7 +1384,9 @@ mod test {
     #[test]
     fn decompress_id() {
         let compressed_id = CompressedRistretto::identity();
-        let id = compressed_id.decompress().expect("identity should decompress successfully");
+        let id = compressed_id
+            .decompress()
+            .expect("identity should decompress successfully");
         let mut identity_in_coset = false;
         for P in &id.coset4() {
             if P.compress() == CompressedEdwardsY::identity() {
@@ -1396,7 +1405,10 @@ mod test {
     #[test]
     fn basepoint_roundtrip() {
         let bp_compressed_ristretto = constants::RISTRETTO_BASEPOINT_POINT.compress();
-        let bp_recaf = bp_compressed_ristretto.decompress().expect("basepoint should decompress successfully").0;
+        let bp_recaf = bp_compressed_ristretto
+            .decompress()
+            .expect("basepoint should decompress successfully")
+            .0;
         // Check that bp_recaf differs from bp by a point of order 4
         let diff = constants::RISTRETTO_BASEPOINT_POINT.0 - bp_recaf;
         let diff4 = diff.mul_by_pow_2(2);
@@ -1820,7 +1832,9 @@ mod test {
         for _ in 0..100 {
             let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
             let compressed_P = P.compress();
-            let Q = compressed_P.decompress().expect("random point should decompress successfully");
+            let Q = compressed_P
+                .decompress()
+                .expect("random point should decompress successfully");
             assert_eq!(P, Q);
         }
     }

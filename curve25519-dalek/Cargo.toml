@@ -5,7 +5,7 @@ name = "curve25519-dalek"
 # - update README if required by semver
 version = "5.0.0-pre.4"
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.89.0"
 authors = [
     "Isis Lovecruft <isis@patternsinthevoid.net>",
     "Henry de Valence <hdevalence@hdevalence.ca>",

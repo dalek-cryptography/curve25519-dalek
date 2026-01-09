@@ -15,7 +15,7 @@
     "avx2",
     conditional(
         "avx512ifma,avx512vl",
-        all(curve25519_dalek_backend = "unstable_avx512", nightly)
+        curve25519_dalek_backend = "avx512"
     )
 )]
 pub mod spec {

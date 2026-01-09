@@ -3,7 +3,7 @@
 #![deny(clippy::unwrap_used, dead_code)]
 
 #[allow(non_camel_case_types)]
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 enum DalekBits {
     Dalek32,
     Dalek64,
@@ -35,17 +35,6 @@ fn main() {
 
     println!("cargo:rustc-cfg=curve25519_dalek_bits=\"{curve25519_dalek_bits}\"");
 
-    let nightly = if rustc_version::version_meta()
-        .expect("failed to detect rustc version")
-        .channel
-        == rustc_version::Channel::Nightly
-    {
-        println!("cargo:rustc-cfg=nightly");
-        true
-    } else {
-        false
-    };
-
     let rustc_version = rustc_version::version().expect("failed to detect rustc version");
     if rustc_version.major == 1 && rustc_version.minor <= 64 {
         // Old versions of Rust complain when you have an `unsafe fn` and you use `unsafe {}` inside,
@@ -68,30 +57,30 @@ fn main() {
                 false => panic!("Could not override curve25519_dalek_backend to simd"),
             }
         }
-        Ok("unstable_avx512") if nightly => {
-            // simd can only be enabled on x86_64 & 64bit target_pointer_width
+        Ok("avx512") => {
+            // AVX-512 can only be enabled on x86_64 & 64bit target_pointer_width
             match is_capable_simd(&target_arch, curve25519_dalek_bits) {
                 true => {
-                    // In addition enable Avx2 fallback through simd stable backend
+                    // Enable SIMD as fallback through stable backend
                     // NOTE: Compiler permits duplicate / multi value on the same key
                     println!("cargo:rustc-cfg=curve25519_dalek_backend=\"simd\"");
-
-                    "unstable_avx512"
+                    "avx512"
                 }
                 // If override is not possible this must result to compile error
                 // See: issues/532
-                false => panic!("Could not override curve25519_dalek_backend to unstable_avx512"),
+                false => panic!("Could not override curve25519_dalek_backend to avx512"),
             }
         }
-        Ok("unstable_avx512") if !nightly => {
-            panic!(
-                "Could not override curve25519_dalek_backend to unstable_avx512, as this is nightly only"
-            );
-        }
-        // default between serial / simd (if potentially capable)
-        _ => match is_capable_simd(&target_arch, curve25519_dalek_bits) {
-            true => "simd",
-            false => "serial",
+        // default between serial / simd / avx512 (if potentially capable)
+        _ => match is_capable_avx512(&target_arch, curve25519_dalek_bits) {
+            true => {
+                println!("cargo:rustc-cfg=curve25519_dalek_backend=\"simd\"");
+                "avx512"
+            }
+            false => match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+                true => "simd",
+                false => "serial",
+            },
         },
     };
     println!("cargo:rustc-cfg=curve25519_dalek_backend=\"{curve25519_dalek_backend}\"");
@@ -100,6 +89,11 @@ fn main() {
 // Is the target arch & curve25519_dalek_bits potentially simd capable ?
 fn is_capable_simd(arch: &str, bits: DalekBits) -> bool {
     arch == "x86_64" && bits == DalekBits::Dalek64
+}
+
+// Is the target arch & curve25519_dalek_bits potentially AVX-512 capable ?
+fn is_capable_avx512(arch: &str, bits: DalekBits) -> bool {
+    is_capable_simd(arch, bits) && is_x86_feature_detected!("avx512ifma") && is_x86_feature_detected!("avx512vl")
 }
 
 // Deterministic cfg(curve25519_dalek_bits) when this is not explicitly set.

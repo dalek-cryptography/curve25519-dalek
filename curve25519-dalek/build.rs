@@ -43,46 +43,45 @@ fn main() {
     }
 
     // Backend overrides / defaults
-    let curve25519_dalek_backend = match std::env::var("CARGO_CFG_CURVE25519_DALEK_BACKEND")
-        .as_deref()
-    {
-        Ok("fiat") => "fiat",
-        Ok("serial") => "serial",
-        Ok("simd") => {
-            // simd can only be enabled on x86_64 & 64bit target_pointer_width
-            match is_capable_simd(&target_arch, curve25519_dalek_bits) {
-                true => "simd",
-                // If override is not possible this must result to compile error
-                // See: issues/532
-                false => panic!("Could not override curve25519_dalek_backend to simd"),
+    let curve25519_dalek_backend =
+        match std::env::var("CARGO_CFG_CURVE25519_DALEK_BACKEND").as_deref() {
+            Ok("fiat") => "fiat",
+            Ok("serial") => "serial",
+            Ok("simd") => {
+                // simd can only be enabled on x86_64 & 64bit target_pointer_width
+                match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+                    true => "simd",
+                    // If override is not possible this must result to compile error
+                    // See: issues/532
+                    false => panic!("Could not override curve25519_dalek_backend to simd"),
+                }
             }
-        }
-        Ok("avx512") => {
-            // AVX-512 can only be enabled on x86_64 & 64bit target_pointer_width
-            match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+            Ok("avx512") => {
+                // AVX-512 can only be enabled on x86_64 & 64bit target_pointer_width
+                match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+                    true => {
+                        // Enable SIMD as fallback through stable backend
+                        // NOTE: Compiler permits duplicate / multi value on the same key
+                        println!("cargo:rustc-cfg=curve25519_dalek_backend=\"simd\"");
+                        "avx512"
+                    }
+                    // If override is not possible this must result to compile error
+                    // See: issues/532
+                    false => panic!("Could not override curve25519_dalek_backend to avx512"),
+                }
+            }
+            // default between serial / simd / avx512 (if potentially capable)
+            _ => match is_capable_avx512(&target_arch, curve25519_dalek_bits) {
                 true => {
-                    // Enable SIMD as fallback through stable backend
-                    // NOTE: Compiler permits duplicate / multi value on the same key
                     println!("cargo:rustc-cfg=curve25519_dalek_backend=\"simd\"");
                     "avx512"
                 }
-                // If override is not possible this must result to compile error
-                // See: issues/532
-                false => panic!("Could not override curve25519_dalek_backend to avx512"),
-            }
-        }
-        // default between serial / simd / avx512 (if potentially capable)
-        _ => match is_capable_avx512(&target_arch, curve25519_dalek_bits) {
-            true => {
-                println!("cargo:rustc-cfg=curve25519_dalek_backend=\"simd\"");
-                "avx512"
-            }
-            false => match is_capable_simd(&target_arch, curve25519_dalek_bits) {
-                true => "simd",
-                false => "serial",
+                false => match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+                    true => "simd",
+                    false => "serial",
+                },
             },
-        },
-    };
+        };
     println!("cargo:rustc-cfg=curve25519_dalek_backend=\"{curve25519_dalek_backend}\"");
 }
 
@@ -93,7 +92,9 @@ fn is_capable_simd(arch: &str, bits: DalekBits) -> bool {
 
 // Is the target arch & curve25519_dalek_bits potentially AVX-512 capable ?
 fn is_capable_avx512(arch: &str, bits: DalekBits) -> bool {
-    is_capable_simd(arch, bits) && is_x86_feature_detected!("avx512ifma") && is_x86_feature_detected!("avx512vl")
+    is_capable_simd(arch, bits)
+        && is_x86_feature_detected!("avx512ifma")
+        && is_x86_feature_detected!("avx512vl")
 }
 
 // Deterministic cfg(curve25519_dalek_bits) when this is not explicitly set.

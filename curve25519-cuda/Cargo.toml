@@ -1,0 +1,22 @@
+[package]
+name = "curve25519-cuda"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+curve25519-dalek = { path = "../curve25519-dalek" }
+rand = "0.8"
+rand_chacha = "0.3"
+rand_core = "0.6"
+rayon = "1.10"
+
+[build-dependencies]
+cc = "1.0"
+which = "4.4"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "msm"
+harness = false

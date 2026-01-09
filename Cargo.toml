@@ -1,5 +1,6 @@
 [workspace]
-members = [
+members = [ 
+    "curve25519-cuda",
     "curve25519-dalek",
     "curve25519-dalek-derive",
     "ed25519-dalek",

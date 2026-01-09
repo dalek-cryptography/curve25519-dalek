@@ -66,6 +66,9 @@ pub mod montgomery;
 // Point operations on the Edwards form of Curve25519
 pub mod edwards;
 
+// Point operations on the short Weierstrass form of Curve25519
+pub mod short_weierstrass;
+
 // Group operations on the Ristretto group
 pub mod ristretto;
 

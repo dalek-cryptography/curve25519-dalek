@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SPPARK_DIR="${ROOT_DIR}/sppark"
 REMOTE_URL="https://github.com/zz-sol/sppark.git"
-REMOTE_BRANCH="ed25519"
+REMOTE_BRANCH="ed25519-cuda"
 BLST_DIR="${SPPARK_DIR}/blst"
 BLST_REMOTE_URL="https://github.com/supranational/blst.git"
 

@@ -147,7 +147,7 @@ For a given CPU feature, you can also specify an appropriate `-C target_feature`
 | Backend | `RUSTFLAGS`                               | Requires nightly? |
 | :---    | :---                                      | :---              |
 | AVX2    | `-C target_feature=+avx2`                 | no                |
-| AVX512  | `-C target_feature=+avx512ifma,+avx512vl` | no                |
+| AVX512  | `-C target_feature=+avx512ifma,+avx512vl` | yes if `<= 1.89`  |
 
 # Documentation
 

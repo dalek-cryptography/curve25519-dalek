@@ -71,7 +71,7 @@ fn main() {
                 }
             }
             // default between serial / simd / avx512 (if potentially capable)
-            _ => match is_capable_avx512(&target_arch, curve25519_dalek_bits) {
+            _ => match is_capable_avx512(&target_arch, curve25519_dalek_bits, rustc_version) {
                 true => {
                     println!("cargo:rustc-cfg=curve25519_dalek_backend=\"simd\"");
                     "avx512"
@@ -91,7 +91,18 @@ fn is_capable_simd(arch: &str, bits: DalekBits) -> bool {
 }
 
 // Is the target arch & curve25519_dalek_bits potentially AVX-512 capable ?
-fn is_capable_avx512(arch: &str, bits: DalekBits) -> bool {
+fn is_capable_avx512(arch: &str, bits: DalekBits, rustc_version: rustc_version::Version) -> bool {
+    // AVX-512 requires rustc >=1.89 or nightly
+    if rustc_version.major == 1 && rustc_version.minor < 89 {
+        let channel = rustc_version::version_meta()
+            .expect("failed to detect rustc version")
+            .channel;
+
+        if channel != rustc_version::Channel::Nightly {
+            return false;
+        }
+    }
+
     is_capable_simd(arch, bits)
         && is_x86_feature_detected!("avx512ifma")
         && is_x86_feature_detected!("avx512vl")

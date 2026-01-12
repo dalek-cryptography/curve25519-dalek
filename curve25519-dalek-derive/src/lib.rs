@@ -117,6 +117,15 @@ pub fn unsafe_target_feature_specialize(
         let ident = syn::Ident::new(&name, item_mod.ident.span());
         let mut attrs = item_mod.attrs.clone();
         if let Some(condition) = attributes.condition() {
+            // Build target_feature conditions for each feature
+            let target_features = features.iter().map(|feature| {
+                let feature_str = syn::LitStr::new(feature, attributes.lit().span());
+                quote::quote! { target_feature = #feature_str }
+            });
+            
+            // Combine all conditions with 'all'
+            let cfg_tokens = quote::quote! { all(#(#target_features),*, #condition) };
+            
             attrs.push(syn::Attribute {
                 pound_token: Default::default(),
                 style: syn::AttrStyle::Outer,
@@ -124,7 +133,7 @@ pub fn unsafe_target_feature_specialize(
                 meta: syn::Meta::List(syn::MetaList {
                     path: syn::Ident::new("cfg", attributes.lit().span()).into(),
                     delimiter: syn::MacroDelimiter::Paren(Default::default()),
-                    tokens: condition.clone(),
+                    tokens: cfg_tokens,
                 }),
             });
         }

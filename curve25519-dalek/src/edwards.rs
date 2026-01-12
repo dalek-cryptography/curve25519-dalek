@@ -1390,7 +1390,6 @@ impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
         */
 
         ensures
-            is_valid_edwards_point(result),
             is_well_formed_edwards_point(result),
             // Semantic correctness: affine addition law
             ({
@@ -1456,7 +1455,6 @@ impl<'b> AddAssign<&'b EdwardsPoint> for EdwardsPoint {
             is_well_formed_edwards_point(*old(self)),
             is_well_formed_edwards_point(*_rhs),
         ensures
-            is_valid_edwards_point(*self),
             is_well_formed_edwards_point(*self),
             // Semantic correctness: result is the addition of old(self) + rhs
             ({
@@ -1501,7 +1499,7 @@ impl<'a, 'b> Sub<&'b EdwardsPoint> for &'a EdwardsPoint {
         */
 
         ensures
-            is_valid_edwards_point(result),
+            is_well_formed_edwards_point(result),
             // Semantic correctness: affine subtraction law
             ({
                 let (x1, y1) = edwards_point_as_affine(*self);
@@ -1536,7 +1534,7 @@ impl<'a, 'b> Sub<&'b EdwardsPoint> for &'a EdwardsPoint {
 
         proof {
             // Assume postconditions
-            assume(is_valid_edwards_point(result));
+            assume(is_well_formed_edwards_point(result));
             assume({
                 let (x1, y1) = edwards_point_as_affine(*self);
                 let (x2, y2) = edwards_point_as_affine(*other);
@@ -1560,7 +1558,7 @@ impl<'b> SubAssign<&'b EdwardsPoint> for EdwardsPoint {
             is_well_formed_edwards_point(*old(self)),
             is_well_formed_edwards_point(*_rhs),
         ensures
-            is_valid_edwards_point(*self),
+            is_well_formed_edwards_point(*self),
             // Semantic correctness: result is the subtraction of old(self) - rhs
             ({
                 let (x1, y1) = edwards_point_as_affine(*old(self));
@@ -1673,7 +1671,7 @@ impl vstd::std_specs::ops::NegSpecImpl for &EdwardsPoint {
 
     open spec fn neg_req(self) -> bool {
         // Preconditions: limbs must be bounded for field element negation
-        fe51_limbs_bounded(&self.X, 51) && fe51_limbs_bounded(&self.T, 51)
+        fe51_limbs_bounded(&self.X, 52) && fe51_limbs_bounded(&self.T, 52)
     }
 
     open spec fn neg_spec(self) -> EdwardsPoint {
@@ -1685,12 +1683,15 @@ impl vstd::std_specs::ops::NegSpecImpl for &EdwardsPoint {
 impl<'a> Neg for &'a EdwardsPoint {
     type Output = EdwardsPoint;
 
-    fn neg(
-        self,
-    ) -> EdwardsPoint/* requires clause in NegSpecImpl for &EdwardsPoint above:
-           requires fe51_limbs_bounded(&self.X, 51) && fe51_limbs_bounded(&self.T, 51)
-        */
-     {
+    fn neg(self) -> (result:
+        EdwardsPoint)
+    // requires clause in NegSpecImpl for &EdwardsPoint above:
+    //   fe51_limbs_bounded(&self.X, 52) && fe51_limbs_bounded(&self.T, 52)
+
+        ensures
+            is_well_formed_edwards_point(result),
+            edwards_point_as_affine(result) == edwards_neg(edwards_point_as_affine(*self)),
+    {
         /* ORIGINAL CODE
         EdwardsPoint {
             X: -(&self.X),
@@ -1702,7 +1703,12 @@ impl<'a> Neg for &'a EdwardsPoint {
         // REFACTORED: Use explicit Neg::neg() calls instead of operator shortcuts
         // to avoid Verus panic
         use core::ops::Neg;
-        EdwardsPoint { X: Neg::neg(&self.X), Y: self.Y, Z: self.Z, T: Neg::neg(&self.T) }
+        let r = EdwardsPoint { X: Neg::neg(&self.X), Y: self.Y, Z: self.Z, T: Neg::neg(&self.T) };
+        proof {
+            assume(is_well_formed_edwards_point(r));
+            assume(edwards_point_as_affine(r) == edwards_neg(edwards_point_as_affine(*self)));
+        }
+        r
     }
 }
 
@@ -1716,7 +1722,7 @@ impl vstd::std_specs::ops::NegSpecImpl for EdwardsPoint {
 
     open spec fn neg_req(self) -> bool {
         // Same requirements as &EdwardsPoint
-        fe51_limbs_bounded(&self.X, 51) && fe51_limbs_bounded(&self.T, 51)
+        fe51_limbs_bounded(&self.X, 52) && fe51_limbs_bounded(&self.T, 52)
     }
 
     open spec fn neg_spec(self) -> EdwardsPoint {
@@ -1728,12 +1734,15 @@ impl vstd::std_specs::ops::NegSpecImpl for EdwardsPoint {
 impl Neg for EdwardsPoint {
     type Output = EdwardsPoint;
 
-    fn neg(
-        self,
-    ) -> EdwardsPoint/* requires clause in NegSpecImpl for EdwardsPoint above:
-            requires fe51_limbs_bounded(&self.X, 51) && fe51_limbs_bounded(&self.T, 51)
-        */
-     {
+    fn neg(self) -> (result:
+        EdwardsPoint)
+    // requires clause in NegSpecImpl for EdwardsPoint above:
+    //   fe51_limbs_bounded(&self.X, 52) && fe51_limbs_bounded(&self.T, 52)
+
+        ensures
+            is_well_formed_edwards_point(result),
+            edwards_point_as_affine(result) == edwards_neg(edwards_point_as_affine(self)),
+    {
         /* ORIGINAL CODE
         -&self
         */

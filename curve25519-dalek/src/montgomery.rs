@@ -877,7 +877,7 @@ fn differential_add_and_double(
 
 define_mul_assign_variants!(LHS = MontgomeryPoint, RHS = Scalar);
 
-define_mul_variants!(
+define_mul_variants_verus!(
     LHS = MontgomeryPoint,
     RHS = Scalar,
     Output = MontgomeryPoint

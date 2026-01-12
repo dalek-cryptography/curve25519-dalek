@@ -632,7 +632,7 @@ impl vstd::std_specs::ops::NegSpecImpl for &FieldElement51 {
 
     // Pre-condition of neg
     open spec fn neg_req(self) -> bool {
-        fe51_limbs_bounded(self, 51)
+        fe51_limbs_bounded(self, 52)
     }
 
     // Postcondition of neg
@@ -798,12 +798,9 @@ impl FieldElement51 {
     /// - For 52-bit limbs (< 2^52): 2^55 - 2^52 = 7*2^52 > 0 ✓ (no underflow)
     /// - For 54-bit limbs (< 2^54): 2^55 - 2^54 = 2^54 > 0 ✓ (no underflow)
     ///
-    /// The verified spec conservatively requires 51-bit input, but the implementation
-    /// safely handles up to 54-bit. Wrappers like `negate_field_element` and
-    /// `conditional_negate_field_element` in `subtle_assumes.rs` use relaxed 52-bit bounds.
     pub fn negate(&mut self)
         requires
-            forall|i: int| 0 <= i < 5 ==> old(self).limbs[i] < (1u64 << 51),
+            forall|i: int| 0 <= i < 5 ==> old(self).limbs[i] < (1u64 << 52),
         ensures
             forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
             // Assume we start with l = (l0, l1, l2, l3, l4).

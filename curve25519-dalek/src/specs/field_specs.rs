@@ -480,6 +480,33 @@ pub open spec fn math_is_sqrt_ratio_times_i(u: nat, v: nat, r: nat) -> bool {
     (r * r * v) % p() == (spec_sqrt_m1() * u) % p()
 }
 
+/// Spec predicate: a field element is negative if its canonical low bit is 1.
+pub open spec fn math_is_negative(a: nat) -> bool {
+    (a % p()) % 2 == 1
+}
+
+/// Spec-only model of inverse square root with a canonical sign choice.
+///
+/// Returns a nonnegative r such that either r^2 * a = 1 (mod p) or r^2 * a = i (mod p).
+pub open spec fn math_invsqrt(a: nat) -> nat {
+    if a % p() == 0 {
+        0
+    } else {
+        choose|r: nat|
+            #![auto]
+            !math_is_negative(r) && (math_is_sqrt_ratio(1, a, r) || math_is_sqrt_ratio_times_i(
+                1,
+                a,
+                r,
+            ))
+    }
+}
+
+/// Canonical little-endian bytes for a nat (mod 2^256).
+pub open spec fn spec_bytes32_from_nat(n: nat) -> [u8; 32] {
+    choose|b: [u8; 32]| bytes32_to_nat(&b) == n % pow2(256)
+}
+
 /// Spec function capturing sqrt_ratio_i math correctness postconditions.
 ///
 /// This encapsulates the four mathematical postconditions of sqrt_ratio_i:

@@ -122,10 +122,10 @@ pub fn unsafe_target_feature_specialize(
                 let feature_str = syn::LitStr::new(feature, attributes.lit().span());
                 quote::quote! { target_feature = #feature_str }
             });
-            
+
             // Combine all conditions with 'all'
             let cfg_tokens = quote::quote! { all(#(#target_features),*, #condition) };
-            
+
             attrs.push(syn::Attribute {
                 pound_token: Default::default(),
                 style: syn::AttrStyle::Outer,

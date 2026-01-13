@@ -387,4 +387,23 @@ pub proof fn lemma_mul_by_minus_one_is_negation(a: nat, m: nat)
     assert((a * m_minus_1) % m == neg_a % m);
 }
 
+/// If a ≡ b (mod m), then (a + c) ≡ (b + c) (mod m)
+///
+/// This is a fundamental property of modular congruence: adding the same
+/// value to both sides preserves the congruence.
+///
+/// Proof: By lemma_add_mod_noop, (x + y) % m == (x % m + y % m) % m
+/// Since a % m == b % m, both (a + c) % m and (b + c) % m equal
+/// ((a % m) + (c % m)) % m.
+pub proof fn lemma_mod_add_eq(a: int, b: int, c: int, m: int)
+    requires
+        m > 0,
+        a % m == b % m,
+    ensures
+        (a + c) % m == (b + c) % m,
+{
+    lemma_add_mod_noop(a, c, m);
+    lemma_add_mod_noop(b, c, m);
+}
+
 } // verus!

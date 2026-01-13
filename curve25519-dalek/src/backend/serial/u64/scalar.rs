@@ -1012,40 +1012,74 @@ impl Scalar52 {
     }
 
     /// Helper function for Montgomery reduction
+    /// Computes p such that sum + p*L[0] is divisible by 2^52, returns (carry, p).
     /// VER NOTE: spec validation needed concurrent with proof for montgomery_reduce
     #[inline(always)]
     fn part1(sum: u128) -> (res: (u128, u64))
+        requires
+    // Bound needed to ensure no overflow and carry bounds
+
+            sum < (1u128 << 108),
         ensures
             ({
                 let carry = res.0;
                 let p = res.1;
-                &&& p < (1u64 << 52)  // VER NOTE: p is bounded by 52 bits
-                // VER NOTE: The sum plus p*L[0] equals carry shifted left by 52 bits (i.e., divisible by 2^52)
+                &&& p < (1u64 << 52)  // p is bounded by 52 bits
                 &&& sum + (p as u128) * (constants::L.limbs[0] as u128) == carry << 52
             }),
     {
-        assert((1u64 << 52) > 1) by (bit_vector);
-        assert((1u64 << 52) - 1 > 0);
-        let p = (sum as u64).wrapping_mul(constants::LFACTOR) & ((1u64 << 52) - 1);
-        proof {
-            let piece1 = (sum as u64).wrapping_mul(constants::LFACTOR) as u64;
-            let piece2 = ((1u64 << 52) - 1) as u64;
-            assert(p == piece1 & piece2);
-            assert(piece1 & piece2 < (1u64 << 52)) by (bit_vector)
-                requires
-                    piece2 == ((1u64 << 52) - 1),
-            ;
+        /* ORIGINAL CODE:
+         #[inline(always)]
+        fn part1(sum: u128) -> (u128, u64) {
+            let p = (sum as u64).wrapping_mul(constants::LFACTOR) & ((1u64 << 52) - 1);
+            ((sum + m(p, constants::L.limbs[0])) >> 52, p)
         }
+         */
+        //
+        // Verus's `by (bit_vector)` mode cannot reason about wrapping_mul.
+        //
+        // EQUIVALENT REFACTORING: Extract low 52 bits first, then multiply in u128.
+        // This avoids wrapping_mul and is mathematically equivalent because:
+        //   (a.wrapping_mul(b)) & MASK52 = (a * b) mod 2^52 = ((a mod 2^52) * b) mod 2^52
+        // The tests test_part1_wrapping_mul_equivalence and
+        // test_wrapping_mul_mask_equals_mod test this equivalence.
+        let mask52: u64 = 0xFFFFFFFFFFFFFu64;  // (1 << 52) - 1
+        let sum_low52: u64 = (sum as u64) & mask52;
+        let product: u128 = (sum_low52 as u128) * (constants::LFACTOR as u128);
+        let p: u64 = (product as u64) & mask52;
+
+        // Bounds for m() precondition - must be outside proof block for exec code
+        assert(p < 0x10000000000000u64) by (bit_vector)
+            requires
+                p == (product as u64) & mask52,
+                mask52 == 0xFFFFFFFFFFFFFu64,
+        ;
+        assert(0x10000000000000u64 == (1u64 << 52)) by (bit_vector);
         assert(p < (1u64 << 52));
-        assert(constants::L.limbs[0] == 0x0002631a5cf5d3ed);
-        assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
+
         assert(constants::L.limbs[0] < (1u64 << 52));
-        // Going to need a precondition on sum to ensure it's small enough
-        // This bound may not be the right bound
-        assume(sum + p * constants::L.limbs[0] < ((2 as u64) << 63));
-        let carry = (sum + m(p, constants::L.limbs[0])) >> 52;
-        // Is this actually true? Not sure that the right shift and left shift cancel.
-        assume(sum + (p as u128) * (constants::L.limbs[0] as u128) == carry << 52);
+
+        let pL0: u128 = m(p, constants::L.limbs[0]);
+
+        proof {
+            assert((p as u128) * (constants::L.limbs[0] as u128) < (1u128 << 102)) by (bit_vector)
+                requires
+                    p < 0x10000000000000u64,
+                    constants::L.limbs[0] < 0x4000000000000u64,
+            ;
+            assert((1u128 << 108) + (1u128 << 102) < (1u128 << 110)) by (bit_vector);
+        }
+
+        let total: u128 = sum + pL0;
+        let carry: u128 = total >> 52;
+
+        // =====================================================================
+        // PROOF (encapsulated in lemma_part1_correctness)
+        // =====================================================================
+        proof {
+            lemma_part1_correctness(sum);
+        }
+
         (carry, p)
     }
 
@@ -1610,6 +1644,101 @@ pub mod test {
             prop_assert!(&result_nat < &l,
                 "Result not in canonical form (>= L), but input was product of bounded × canonical");
         }
+    }
+
+    /// Test that our refactoring of part1 is equivalent to the original wrapping_mul version.
+    ///
+    /// ORIGINAL CODE:
+    ///   let p = (sum as u64).wrapping_mul(LFACTOR) & MASK52;
+    ///
+    /// REFACTORED CODE (to avoid Verus wrapping_mul limitation):
+    ///   let sum_low52 = (sum as u64) & MASK52;
+    ///   let product = (sum_low52 as u128) * (LFACTOR as u128);
+    ///   let p = (product as u64) & MASK52;
+    ///
+    /// This test verifies:
+    ///   (a.wrapping_mul(b)) & MASK52 == ((a & MASK52) * b) & MASK52
+    ///
+    /// for all relevant values of `sum` that part1 might receive.
+    #[test]
+    fn test_part1_wrapping_mul_equivalence() {
+        use proptest::prelude::*;
+        use proptest::test_runner::{Config, TestRunner};
+
+        let mask52: u64 = (1u64 << 52) - 1;
+        let lfactor: u64 = 0x51da312547e1b;
+
+        let mut runner = TestRunner::new(Config {
+            cases: 10000,
+            ..Config::default()
+        });
+
+        runner
+            .run(
+                &(0u128..(1u128 << 108)), // sum < 2^108 (part1's precondition)
+                |sum| {
+                    // ORIGINAL: using wrapping_mul
+                    let p_original = (sum as u64).wrapping_mul(lfactor) & mask52;
+
+                    // REFACTORED: extract low 52 bits first, multiply in u128
+                    let sum_low52 = (sum as u64) & mask52;
+                    let product = (sum_low52 as u128) * (lfactor as u128);
+                    let p_refactored = (product as u64) & mask52;
+
+                    // They must be equal
+                    prop_assert_eq!(
+                        p_original,
+                        p_refactored,
+                        "Mismatch for sum = {}: original = {}, refactored = {}",
+                        sum,
+                        p_original,
+                        p_refactored
+                    );
+
+                    Ok(())
+                },
+            )
+            .expect("Property test failed");
+    }
+
+    /// Test that wrapping_mul followed by masking equals mod 2^52
+    ///
+    /// This verifies: (a.wrapping_mul(b)) & MASK52 == (a * b) mod 2^52
+    #[test]
+    fn test_wrapping_mul_mask_equals_mod() {
+        use proptest::prelude::*;
+        use proptest::test_runner::{Config, TestRunner};
+
+        let mask52: u64 = (1u64 << 52) - 1;
+        let mod_52: u128 = 1u128 << 52;
+
+        let mut runner = TestRunner::new(Config {
+            cases: 10000,
+            ..Config::default()
+        });
+
+        runner
+            .run(&(any::<u64>(), any::<u64>()), |(a, b)| {
+                // Using wrapping_mul and mask
+                let result_wrapping = a.wrapping_mul(b) & mask52;
+
+                // Using full multiplication and mod
+                let product_full = (a as u128) * (b as u128);
+                let result_mod = (product_full % mod_52) as u64;
+
+                prop_assert_eq!(
+                    result_wrapping,
+                    result_mod,
+                    "wrapping_mul & mask != mod for a={}, b={}: {} != {}",
+                    a,
+                    b,
+                    result_wrapping,
+                    result_mod
+                );
+
+                Ok(())
+            })
+            .expect("Property test failed");
     }
 }
 // #[cfg(test)]

@@ -104,8 +104,8 @@ fn is_capable_avx512(arch: &str, bits: DalekBits, rustc_version: rustc_version::
     }
 
     is_capable_simd(arch, bits)
-        && is_x86_feature_detected!("avx512ifma")
-        && is_x86_feature_detected!("avx512vl")
+        && cfg!(target_feature = "avx512ifma")
+        && cfg!(target_feature = "avx512vl")
 }
 
 // Deterministic cfg(curve25519_dalek_bits) when this is not explicitly set.

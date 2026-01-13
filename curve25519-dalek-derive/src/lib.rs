@@ -298,9 +298,16 @@ fn process_function(
     function: syn::ItemFn,
     outer: Option<(syn::Generics, Box<syn::Type>)>,
 ) -> TokenStream {
+    // Split comma-separated features and create enable tokens for each
+    let tmp = attributes.value();
+    let features = tmp.split(',').map(|f| {
+        let feature_lit = syn::LitStr::new(f, attributes.span());
+        quote::quote! { enable = #feature_lit }
+    });
+
     if function.sig.unsafety.is_some() {
         return quote::quote! {
-            #[target_feature(enable = #attributes)]
+            #[target_feature(#(#features),*)]
             #function
         }
         .into();
@@ -437,7 +444,7 @@ fn process_function(
 
         let item_trait_impl = quote::quote! {
             impl #outer_impl_generics #trait_ident #outer_ty_generics for #self_ty #outer_where_clause {
-                #[target_feature(enable = #attributes)]
+                #[target_feature(#(#features),*)]
                 #maybe_inline
                 unsafe fn #function_inner_name #fn_impl_generics (#(#function_args_inner),*) #function_return #fn_where_clause #function_body
             }
@@ -460,7 +467,7 @@ fn process_function(
             #maybe_cfg
             #(#maybe_outer_attributes)*
             #function_visibility fn #function_name #fn_impl_generics (#(#function_args_outer),*) #function_return #fn_where_clause {
-                #[target_feature(enable = #attributes)]
+                #[target_feature(#(#features),*)]
                 #maybe_inline
                 unsafe fn #function_inner_name #fn_impl_generics (#(#function_args_inner),*) #function_return #fn_where_clause #function_body
                 unsafe {

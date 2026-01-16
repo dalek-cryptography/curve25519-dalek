@@ -444,6 +444,25 @@ pub open spec fn spec_product_of_field_elems(fields: Seq<FieldElement51>) -> nat
     }
 }
 
+/// Spec function: product of non-zero field elements in a sequence (mod p)
+/// Skips zero elements in constant-time fashion by multiplying by 1 instead
+pub open spec fn spec_product_of_nonzeros(fields: Seq<FieldElement51>) -> nat
+    decreases fields.len(),
+{
+    if fields.len() == 0 {
+        1
+    } else {
+        let first_val = spec_field_element(&fields[0]);
+        let rest_product = spec_product_of_nonzeros(fields.subrange(1, fields.len() as int));
+        // Skip zeros: if first_val is 0, treat it as 1 (multiply by identity)
+        if first_val == 0 {
+            rest_product
+        } else {
+            (rest_product * first_val) % p()
+        }
+    }
+}
+
 /// Spec function: b is a square root of a (mod p), i.e., b^2 = a (mod p)
 pub open spec fn is_square_of(a: &FieldElement51, b: &FieldElement51) -> bool {
     (spec_field_element(b) * spec_field_element(b)) % p() == spec_field_element(a) % p()

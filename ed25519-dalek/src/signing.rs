@@ -22,8 +22,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "digest")]
 use curve25519_dalek::digest::{
-    Key,
-    crypto_common::{InvalidKey, KeySizeUser, TryKeyInit},
+    crypto_common::{InvalidKey, KeySizeUser, TryKeyInit, Key},
     typenum::U32,
 };
 

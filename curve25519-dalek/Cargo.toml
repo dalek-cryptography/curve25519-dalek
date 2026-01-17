@@ -50,7 +50,7 @@ cfg-if = "1"
 ff = { version = "=0.14.0-pre.0", package = "rustcrypto-ff", default-features = false, optional = true }
 group = { version = "=0.14.0-pre.0", package = "rustcrypto-group", default-features = false, optional = true }
 rand_core = { version = "0.10.0-rc-3", default-features = false, optional = true }
-digest = { version = "0.11.0-rc.4", default-features = false, optional = true, features = [
+digest = { version = "0.11.0-rc.5", default-features = false, optional = true, features = [
     "block-api",
 ] }
 subtle = { version = "2.6.0", default-features = false, features = [
@@ -76,6 +76,7 @@ group = ["dep:group", "rand_core"]
 group-bits = ["group", "ff/bits"]
 digest = ["dep:digest"]
 lizard = ["digest"]
+rand_core = ["dep:rand_core", "digest/rand_core"]
 
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
 curve25519-dalek-derive = "0.1"

@@ -569,7 +569,9 @@ impl TryKeyInit for SigningKey {
 
 #[cfg(all(feature = "digest", feature = "rand_core"))]
 impl Generate for SigningKey {
-    fn try_generate_from_rng<R: rand_core::TryCryptoRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+    fn try_generate_from_rng<R: rand_core::TryCryptoRng + ?Sized>(
+        rng: &mut R,
+    ) -> Result<Self, R::Error> {
         let mut secret = SecretKey::default();
         rng.try_fill_bytes(&mut secret)?;
         Ok(Self::from_bytes(&secret))

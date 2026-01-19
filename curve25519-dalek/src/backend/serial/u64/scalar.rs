@@ -63,7 +63,7 @@ use crate::lemmas::common_lemmas::to_nat_lemmas::lemma_bytes32_to_nat_equals_suf
 #[allow(unused_imports)]
 use crate::lemmas::scalar_lemmas_extra::*;
 #[cfg(verus_keep_ghost)]
-use crate::lemmas::scalar_montgomery_lemmas::lemma_from_montgomery_is_product_with_one;
+use crate::lemmas::scalar_montgomery_lemmas::*;
 #[cfg(verus_keep_ghost)]
 use crate::specs::core_specs::bytes32_to_nat;
 #[cfg(verus_keep_ghost)]
@@ -1217,7 +1217,24 @@ impl Scalar52 {
             limbs_bounded(&result),
             (scalar52_to_nat(&result) * montgomery_radix()) % group_order() == (scalar52_to_nat(&a)
                 * scalar52_to_nat(&b)) % group_order(),
+            // Canonicity: if either input is canonical, result is canonical
+            (scalar52_to_nat(a) < group_order() || scalar52_to_nat(b) < group_order())
+                ==> scalar52_to_nat(&result) < group_order(),
     {
+        proof {
+            // Establish the existential witness for montgomery_reduce's canonicity postcondition.
+            // montgomery_reduce's postcondition 2 requires: exists|bounded, canonical| ...
+            // We provide the witness directly with assert.
+            if scalar52_to_nat(b) < group_order() {
+                // Witness: bounded = a, canonical = b
+                assert(limbs_bounded(a) && limbs_bounded(b) && scalar52_to_nat(b) < group_order()
+                    && spec_mul_internal(a, b) == spec_mul_internal(a, b));
+            } else if scalar52_to_nat(a) < group_order() {
+                // Witness: bounded = b, canonical = a (commutativity inferred by Verus)
+                assert(limbs_bounded(b) && limbs_bounded(a) && scalar52_to_nat(a) < group_order()
+                    && spec_mul_internal(b, a) == spec_mul_internal(a, b));
+            }
+        }
         Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b))
     }
 
@@ -1245,9 +1262,13 @@ impl Scalar52 {
             #[trigger] (scalar52_to_nat(&result) % group_order()) == #[trigger] ((scalar52_to_nat(
                 self,
             ) * montgomery_radix()) % group_order()),
+            // Result is canonical because RR is canonical
+            scalar52_to_nat(&result) < group_order(),
     {
         proof {
             lemma_rr_limbs_bounded();
+            // RR is canonical (< group_order), so montgomery_mul's canonicity postcondition applies
+            lemma_rr_equals_spec(constants::RR);
             assert(group_order() > 0);
         }
         let result = Scalar52::montgomery_mul(self, &constants::RR);

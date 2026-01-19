@@ -5,7 +5,11 @@ use core::array::TryFromSliceError;
 use core::convert::TryInto;
 
 #[allow(unused_imports)]
+use crate::field::FieldElement;
+#[allow(unused_imports)]
 use crate::montgomery::MontgomeryPoint;
+#[allow(unused_imports)]
+use crate::ristretto::RistrettoPoint;
 #[allow(unused_imports)]
 use crate::specs::core_specs::*;
 #[allow(unused_imports)]
@@ -18,6 +22,13 @@ use vstd::prelude::*;
 
 #[cfg(feature = "rand_core")]
 use rand_core::RngCore;
+
+#[cfg(feature = "digest")]
+use digest::Digest;
+
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use crate::specs::proba_specs::is_uniform_bytes;
 
 verus! {
 
@@ -48,6 +59,31 @@ pub fn try_into_32_bytes_array(bytes: &[u8]) -> (result: Result<[u8; 32], TryFro
     bytes.try_into()
 }
 
+/// Extract the first 32 bytes from a 64-byte array.
+#[verifier::external_body]
+pub fn first_32_bytes(bytes: &[u8; 64]) -> (result: [u8; 32])
+    ensures
+        forall|i: int| 0 <= i < 32 ==> result[i] == bytes[i],
+        result@ == bytes@.subrange(0, 32),
+{
+    let mut result = [0u8;32];
+    result.copy_from_slice(&bytes[0..32]);
+    result
+}
+
+/// Extract the last 32 bytes from a 64-byte array.
+#[verifier::external_body]
+pub fn last_32_bytes(bytes: &[u8; 64]) -> (result: [u8; 32])
+    ensures
+        forall|i: int| 0 <= i < 32 ==> result[i] == bytes[(32 + i) as int],
+        result@ == bytes@.subrange(32, 64),
+{
+    let mut result = [0u8;32];
+    result.copy_from_slice(&bytes[32..64]);
+    result
+}
+
+// NOTE: Probabilistic specs (is_uniform_*, axiom_uniform_*) are in proba_specs.rs.
 // External type specifications for formatters
 #[verifier::external_type_specification]
 #[verifier::external_body]
@@ -155,36 +191,6 @@ pub fn negate_field<T>(a: &T) -> (result: T) where for <'a>&'a T: core::ops::Neg
     -a
 }
 
-// annotations for random values
-pub uninterp spec fn is_random(x: u8) -> bool;
-
-pub uninterp spec fn is_random_bytes(bytes: &[u8]) -> bool;
-
-pub uninterp spec fn is_random_scalar(scalar: &Scalar) -> bool;
-
-#[cfg(feature = "rand_core")]
-#[verifier::external_body]
-pub fn fill_bytes<R: RngCore>(rng: &mut R, bytes: &mut [u8; 64])
-    ensures
-        is_random_bytes(bytes),
-{
-    rng.fill_bytes(bytes)
-}
-
-/* Hash and Digest specifications */
-
-#[cfg(feature = "digest")]
-#[verifier::external_body]
-pub fn sha512_hash_bytes(input: &[u8]) -> (result: [u8; 64])
-    ensures
-        is_random_bytes(input) ==> is_random_bytes(&result),
-{
-    use digest::Digest;
-    let mut hasher = sha2::Sha512::new();
-    hasher.update(input);
-    hasher.finalize().into()
-}
-
 // Assume specification for array hash implementation
 // This is used when hashing fixed-size arrays like [u8; 32] in Hash implementations
 pub assume_specification<T, const N: usize, H>[ <[T; N] as core::hash::Hash>::hash ](
@@ -209,7 +215,7 @@ pub open spec fn spec_state_after_hash_montgomery<H>(
     spec_state_after_hash(initial_state, &canonical_bytes)
 }
 
-pub proof fn lemma_hash_is_canonical<H>(
+pub proof fn axiom_hash_is_canonical<H>(
     point1: &MontgomeryPoint,
     point2: &MontgomeryPoint,
     state: H,
@@ -226,17 +232,8 @@ pub proof fn lemma_hash_is_canonical<H>(
             point2,
         ),
 {
-    // Get canonical byte sequences
-    let ghost canonical_seq1 = spec_fe51_to_bytes(&spec_fe51_from_bytes(&point1.0));
-    let ghost canonical_seq2 = spec_fe51_to_bytes(&spec_fe51_from_bytes(&point2.0));
-
-    // Convert to arrays for use with hash_determinism_axiom
-    let ghost canonical1 = seq_to_array_32(canonical_seq1);
-    let ghost canonical2 = seq_to_array_32(canonical_seq2);
-
-    assume(canonical_seq1 == canonical_seq2);
-    assert(canonical1@ == canonical2@);
-
+    // Axiom: hashing depends only on the canonical field-element value.
+    admit();
 }
 
 // Convert a Seq<u8> to a [u8; 32] array (requires seq.len() >= 32)
@@ -313,6 +310,63 @@ pub fn zeroize_bool(b: &mut bool)
 {
     use zeroize::Zeroize;
     b.zeroize();
+}
+
+// =============================================================================
+// RNG and Hash Function Wrappers
+// =============================================================================
+// In normal Rust builds we provide exec wrappers without probabilistic specs.
+// In `cargo verus verify`, we use `verus_keep_ghost` variants with `ensures`.
+#[cfg(all(feature = "rand_core", not(verus_keep_ghost)))]
+#[verifier::external_body]
+pub fn fill_bytes<R: RngCore>(rng: &mut R, bytes: &mut [u8; 64]) {
+    rng.fill_bytes(bytes)
+}
+
+#[cfg(all(feature = "rand_core", verus_keep_ghost))]
+#[verifier::external_body]
+/// Fill bytes from a cryptographic RNG, producing uniform random bytes.
+pub fn fill_bytes<R: RngCore>(rng: &mut R, bytes: &mut [u8; 64])
+    ensures
+        is_uniform_bytes(bytes),
+{
+    rng.fill_bytes(bytes)
+}
+
+#[cfg(all(feature = "digest", not(verus_keep_ghost)))]
+#[verifier::external_body]
+pub fn sha512_hash_bytes(input: &[u8]) -> (result: [u8; 64]) {
+    let mut hasher = sha2::Sha512::new();
+    hasher.update(input);
+    hasher.finalize().into()
+}
+
+#[cfg(all(feature = "digest", verus_keep_ghost))]
+/// Uninterpreted spec function for SHA-512 hash.
+/// Models the SHA-512 hash as a function from input bytes to 64 output bytes.
+pub uninterp spec fn spec_sha512(input: Seq<u8>) -> Seq<u8>;
+
+#[cfg(all(feature = "digest", verus_keep_ghost))]
+/// Axiom: SHA-512 always produces exactly 64 bytes of output.
+pub proof fn axiom_sha512_output_length(input: Seq<u8>)
+    ensures
+        spec_sha512(input).len() == 64,
+{
+    admit();
+}
+
+#[cfg(all(feature = "digest", verus_keep_ghost))]
+#[verifier::external_body]
+/// Compute SHA-512 hash of input bytes.
+/// If input is uniform, output is computationally indistinguishable from uniform.
+pub fn sha512_hash_bytes(input: &[u8]) -> (result: [u8; 64])
+    ensures
+        result@ == spec_sha512(input@),
+        is_uniform_bytes(input) ==> is_uniform_bytes(&result),
+{
+    let mut hasher = sha2::Sha512::new();
+    hasher.update(input);
+    hasher.finalize().into()
 }
 
 } // verus!

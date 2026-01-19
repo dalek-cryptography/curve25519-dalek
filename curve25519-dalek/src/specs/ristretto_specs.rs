@@ -53,13 +53,12 @@ verus! {
 // =============================================================================
 // Ristretto Group Mathematical Specifications
 // =============================================================================
-/// Spec-only model of Ristretto compression
-///
-/// This captures the canonical encoding of a Ristretto point.
+// TODO: Add subgroup-preservation lemmas (e.g., closure of 2*E under edwards_add)
+//       once group-law lemmas for Edwards points are available.
+/// Core Ristretto compression from extended coordinates (X, Y, Z, T).
 /// Reference: [RISTRETTO], §5.3 "Ristretto255 Encoding";
 ///            [DECAF], Section 6 (encoding formulas), and https://ristretto.group/formulas/encoding.html.
-pub open spec fn spec_ristretto_compress(point: RistrettoPoint) -> [u8; 32] {
-    let (x, y, z, t) = spec_edwards_point(point.0);
+pub open spec fn spec_ristretto_compress_extended(x: nat, y: nat, z: nat, t: nat) -> [u8; 32] {
     let u1 = math_field_mul(math_field_add(z, y), math_field_sub(z, y));
     let u2 = math_field_mul(x, y);
     let invsqrt = math_invsqrt(math_field_mul(u1, math_field_square(u2)));
@@ -105,6 +104,25 @@ pub open spec fn spec_ristretto_compress(point: RistrettoPoint) -> [u8; 32] {
     };
 
     spec_bytes32_from_nat(s_final)
+}
+
+/// Spec-only model of Ristretto compression from a RistrettoPoint.
+///
+/// This captures the canonical encoding of a Ristretto point.
+/// Reference: [RISTRETTO], §5.3 "Ristretto255 Encoding"
+pub open spec fn spec_ristretto_compress(point: RistrettoPoint) -> [u8; 32] {
+    let (x, y, z, t) = spec_edwards_point(point.0);
+    spec_ristretto_compress_extended(x, y, z, t)
+}
+
+/// Spec-only model of Ristretto compression from affine coordinates.
+///
+/// For affine coords (x, y), we use z = 1 and t = x * y
+/// (since T = XY/Z = xy/1 = xy in extended coords).
+///
+/// Reference: [RISTRETTO], §5.3 "Ristretto255 Encoding"
+pub open spec fn spec_ristretto_compress_affine(x: nat, y: nat) -> [u8; 32] {
+    spec_ristretto_compress_extended(x, y, 1, math_field_mul(x, y))
 }
 
 /// Spec-only model of Ristretto decompression.
@@ -197,6 +215,128 @@ pub proof fn axiom_ristretto_basepoint_table_valid()
         constants::RISTRETTO_BASEPOINT_TABLE.0,
         spec_ristretto_basepoint(),
     ));
+}
+
+// =============================================================================
+// Ristretto Elligator Map
+// =============================================================================
+/// Spec-only model of the Ristretto Elligator map (MAP function).
+///
+/// This maps a field element r_0 to a Ristretto point deterministically.
+/// Reference: [RISTRETTO], §4.3.4 "MAP" function;
+///            https://ristretto.group/formulas/elligator.html
+///
+/// The algorithm:
+/// 1. r = i * r_0²  (where i = sqrt(-1))
+/// 2. N_s = (r + 1) * (1 - d²)
+/// 3. D = (c - d*r) * (r + d) where c = -1 initially
+/// 4. (was_square, s) = sqrt_ratio_i(N_s, D)
+/// 5. Conditionally adjust s and c based on was_square
+/// 6. Compute final point coordinates
+///
+/// Returns the affine (x, y) coordinates of the resulting Ristretto point.
+pub open spec fn spec_elligator_ristretto_flavor(r_0: nat) -> (nat, nat) {
+    let i = spec_sqrt_m1();
+    let d = spec_field_element(&EDWARDS_D);
+    let one_minus_d_sq = math_field_mul(math_field_sub(1, d), math_field_add(1, d));  // (1-d)(1+d) = 1 - d²
+    let d_minus_one_sq = math_field_square(math_field_sub(d, 1));  // (d-1)²
+    let c_init: nat = math_field_neg(1);  // -1
+
+    let r = math_field_mul(i, math_field_square(r_0));
+    let n_s = math_field_mul(math_field_add(r, 1), one_minus_d_sq);
+    let d_val = math_field_mul(math_field_sub(c_init, math_field_mul(d, r)), math_field_add(r, d));
+
+    // sqrt_ratio_i(N_s, D) returns (was_square, s)
+    // invsqrt = 1/sqrt(N_s * D), so s = invsqrt * N_s = sqrt(N_s/D)
+    let invsqrt = math_invsqrt(math_field_mul(n_s, d_val));
+    let s_if_square = math_field_mul(invsqrt, n_s);
+    // was_square checks if s² · D = N_s (i.e., N_s/D is a square)
+    let was_square = math_is_sqrt_ratio(n_s, d_val, s_if_square);
+
+    // s' = s * r_0, then conditionally negate to make it negative
+    let s_prime_raw = math_field_mul(s_if_square, r_0);
+    let s_prime = if !math_is_negative(s_prime_raw) {
+        math_field_neg(s_prime_raw)
+    } else {
+        s_prime_raw
+    };
+
+    // If !was_square: s = s', c = r
+    let s = if was_square {
+        s_if_square
+    } else {
+        s_prime
+    };
+    let c = if was_square {
+        c_init
+    } else {
+        r
+    };
+
+    // N_t = c * (r - 1) * (d - 1)² - D
+    let n_t = math_field_sub(
+        math_field_mul(math_field_mul(c, math_field_sub(r, 1)), d_minus_one_sq),
+        d_val,
+    );
+    let s_sq = math_field_square(s);
+
+    // Final point in completed coordinates, then converted to affine:
+    // X = 2*s*D, Z = N_t * sqrt(a*d - 1), Y = 1 - s², T = 1 + s²
+    // Affine: x = X*T / (Z*T) = X/Z, y = Y*Z / (Z*T) = Y/T
+    let sqrt_ad_minus_one = spec_sqrt_ad_minus_one();
+    let x_completed = math_field_mul(math_field_mul(2, s), d_val);
+    let z_completed = math_field_mul(n_t, sqrt_ad_minus_one);
+    let y_completed = math_field_sub(1, s_sq);
+    let t_completed = math_field_add(1, s_sq);
+
+    // Convert completed point ((X:Z), (Y:T)) to affine (X/Z, Y/T)
+    let x_affine = math_field_mul(x_completed, math_field_inv(z_completed));
+    let y_affine = math_field_mul(y_completed, math_field_inv(t_completed));
+
+    (x_affine, y_affine)
+}
+
+/// Spec helper: first 32 bytes of a 64-byte input.
+pub open spec fn spec_uniform_bytes_first(bytes: &[u8; 64]) -> [u8; 32] {
+    choose|b: [u8; 32]| b@ == bytes@.subrange(0, 32)
+}
+
+/// Spec helper: second 32 bytes of a 64-byte input.
+pub open spec fn spec_uniform_bytes_second(bytes: &[u8; 64]) -> [u8; 32] {
+    choose|b: [u8; 32]| b@ == bytes@.subrange(32, 64)
+}
+
+/// Spec-only model of RistrettoPoint::from_uniform_bytes.
+///
+/// Constructs a Ristretto point from 64 uniform random bytes using the
+/// "hash-to-group" construction for Ristretto.
+///
+/// Reference: [RISTRETTO], §4.3.4 "Hash-to-group";
+///            https://ristretto.group/formulas/encoding.html
+///
+/// Algorithm:
+/// 1. Split 64 bytes into two 32-byte halves: b1 = bytes[0..32], b2 = bytes[32..64]
+/// 2. Convert each half to a field element: r1 = from_bytes(b1), r2 = from_bytes(b2)
+/// 3. Map each field element to a Ristretto point via Elligator: p1 = MAP(r1), p2 = MAP(r2)
+/// 4. Add the two points: result = p1 + p2
+///
+/// Returns the affine (x, y) coordinates of the resulting Ristretto point.
+pub open spec fn spec_ristretto_from_uniform_bytes(bytes: &[u8; 64]) -> (nat, nat) {
+    let b1 = spec_uniform_bytes_first(bytes);
+    let b2 = spec_uniform_bytes_second(bytes);
+    let r1 = spec_field_element_from_bytes(&b1);
+    let r2 = spec_field_element_from_bytes(&b2);
+    let p1 = spec_elligator_ristretto_flavor(r1);
+    let p2 = spec_elligator_ristretto_flavor(r2);
+    edwards_add(p1.0, p1.1, p2.0, p2.1)
+}
+
+/// Spec for sqrt(a*d - 1) where a = -1 for Ed25519.
+/// This equals sqrt(-d - 1).
+pub open spec fn spec_sqrt_ad_minus_one() -> nat {
+    // sqrt(-1 * d - 1) = sqrt(-d - 1)
+    // This is a constant defined in the codebase
+    spec_field_element(&u64_constants::SQRT_AD_MINUS_ONE)
 }
 
 // =============================================================================

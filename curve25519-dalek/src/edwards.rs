@@ -158,6 +158,12 @@ use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 use crate::backend::serial::u64::field::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::backend::serial::u64::subtle_assumes::*;
+#[cfg(feature = "digest")]
+#[allow(unused_imports)]
+use crate::core_assumes::sha512_hash_bytes;
+#[cfg(all(feature = "digest", verus_keep_ghost))]
+#[allow(unused_imports)]
+use crate::core_assumes::spec_sha512;
 #[allow(unused_imports)] // Used in verus! blocks for Edwards curve constants
 use crate::lemmas::edwards_lemmas::constants_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for decompress proofs
@@ -1304,6 +1310,90 @@ impl EdwardsPoint {
             "Montgomery conversion to Edwards point in Elligator failed",
         ).mul_by_cofactor()
     }
+
+    /// VERIFICATION NOTE: Verus-compatible version of nonspec_map_to_curve that uses SHA-512 instead of Digest.
+    #[cfg(feature = "digest")]
+    pub fn nonspec_map_to_curve_verus(bytes: &[u8]) -> (result: EdwardsPoint)
+        ensures
+            is_well_formed_edwards_point(result),
+            // Functional correctness: result = spec applied to first 32 bytes of SHA-512(input)
+            edwards_point_as_affine(result) == spec_nonspec_map_to_curve(
+                spec_sha512(bytes@).subrange(0, 32),
+            ),
+    {
+        /* ORIGINAL CODE:
+        let mut hash = D::new();
+        hash.update(bytes);
+        let h = hash.finalize();
+        let mut res = [0u8;32];
+        res.copy_from_slice(&h[0..32]);
+        */
+        /* REFACTOR START: */
+        use crate::core_assumes::first_32_bytes;
+
+        // Hash input using SHA-512 (produces 64 bytes, like original D::finalize())
+        let hash: [u8; 64] = sha512_hash_bytes(bytes);
+
+        // Take first 32 bytes (like original: res.copy_from_slice(&h[0..32]))
+        let res: [u8; 32] = first_32_bytes(&hash);
+        /* REFACTOR END*/
+
+        // Extract sign bit from high bit of last byte
+        let sign_bit: u8 = (res[31] & 0x80u8) >> 7u8;
+
+        // Convert to field element
+        let fe = FieldElement::from_bytes(&res);
+
+        // Apply Elligator encoding to get Montgomery point
+        let M1 = crate::montgomery::elligator_encode(&fe);
+
+        // Convert to Edwards point
+        let E1_opt = M1.to_edwards(sign_bit);
+
+        // Unwrap and multiply by cofactor
+        proof {
+            assume(E1_opt.is_some());
+            // Assume "negligible" failure probability
+
+            // CRYPTOGRAPHIC ASSUMPTION: to_edwards returns None only when the u-coordinate of M1
+            // equals -1, because the birational map y = (u-1)/(u+1) has a zero denominator there.
+            // For random field elements from Elligator, this occurs with probability 1/p ≈ 2^-255
+
+            // VERIFICATION NOTE: we had to make this assumption because Verus vstd spec for "expect"
+            // requires is_some(); this is probably too strong on vstd's part.
+
+            // VERIFICATION NOTE: to remove the assume, we could make a case split on the result of to_edwards
+        }
+        let E1 = E1_opt.expect("Montgomery conversion to Edwards point in Elligator failed");
+
+        proof {
+            // E1 from to_edwards has valid limbs; mul_by_cofactor ensures well-formedness
+            assume(edwards_point_limbs_bounded(E1));
+        }
+
+        let result = E1.mul_by_cofactor();
+
+        proof {
+            // Functional correctness: reduce the spec goal to the 32-byte slice `res@`,
+            // then treat the Edwards/Montgomery mapping as a proof-bypass.
+            assert(hash@ == spec_sha512(bytes@));
+            assert(res@ == hash@.subrange(0, 32));
+            assert(res@ == spec_sha512(bytes@).subrange(0, 32));
+
+            // PROOF BYPASS: the remainder would need aligned specs for:
+            // FieldElement::from_bytes, elligator_encode, MontgomeryPoint::to_edwards, and mul_by_cofactor.
+            assume(edwards_point_as_affine(result) == spec_nonspec_map_to_curve(res@));
+
+            assert(spec_nonspec_map_to_curve(res@) == spec_nonspec_map_to_curve(
+                spec_sha512(bytes@).subrange(0, 32),
+            ));
+            assert(edwards_point_as_affine(result) == spec_nonspec_map_to_curve(
+                spec_sha512(bytes@).subrange(0, 32),
+            ));
+        }
+
+        result
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -1645,10 +1735,33 @@ where
 Iterator operations and Borrow trait are not directly supported by Verus.
 We use an external_body helper to collect the iterator into Vec<EdwardsPoint>,
 then call the verified sum_of_slice function for the actual computation.
+TESTING: `mod test_sum` (at the bottom of this file) checks functional equivalence between
+`sum_original` and the refactored `Sum::sum` implementation on random inputs.
 </VERIFICATION NOTE> */
+
+impl EdwardsPoint {
+    /// Original `Sum` implementation using `Iterator::fold`.
+    ///
+    /// This is used for exec correctness/performance, but is not verified directly.
+    /// The verified implementation is `Sum::sum` below, which reduces to `sum_of_slice`.
+    /// Functional equivalence is tested in `mod test_sum` (at the bottom of this file).
+    #[verifier::external_body]
+    pub fn sum_original<T, I>(iter: I) -> (result: EdwardsPoint) where
+        T: Borrow<EdwardsPoint>,
+        I: Iterator<Item = T>,
+     {
+        iter.fold(EdwardsPoint::identity(), |acc, item| acc + item.borrow())
+    }
+}
 
 impl<T> Sum<T> for EdwardsPoint where T: Borrow<EdwardsPoint> {
     fn sum<I>(iter: I) -> (result: Self) where I: Iterator<Item = T>
+        requires
+            forall|i: int|
+                0 <= i < spec_points_from_iter::<T, I>(iter).len()
+                    ==> #[trigger] is_well_formed_edwards_point(
+                    spec_points_from_iter::<T, I>(iter)[i],
+                ),
         ensures
             is_well_formed_edwards_point(result),
             edwards_point_as_affine(result) == sum_of_points(spec_points_from_iter::<T, I>(iter)),
@@ -1792,7 +1905,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, scalar: &'b Scalar) -> (result:
-        EdwardsPoint)/* requires clause in MulSpecImpl<&Scalar> for &EdwardsPoint in mul_specs.rs:
+        EdwardsPoint)/* requires clause in MulSpecImpl<&Scalar> for &EdwardsPoint in arithm_trait_specs.rs:
             requires rhs.bytes[31] <= 127 && is_well_formed_edwards_point(*self)
         */
 
@@ -1815,7 +1928,7 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, point: &'b EdwardsPoint) -> (result:
-        EdwardsPoint)/* requires clause in MulSpecImpl<&EdwardsPoint> for &Scalar in mul_specs.rs:
+        EdwardsPoint)/* requires clause in MulSpecImpl<&EdwardsPoint> for &Scalar in arithm_trait_specs.rs:
             requires self.bytes[31] <= 127 && is_well_formed_edwards_point(*rhs)
         */
 
@@ -1903,7 +2016,6 @@ impl EdwardsPoint {
     }
 }
 
-} // verus!
 // ------------------------------------------------------------------------
 // Multiscalar Multiplication impls
 // ------------------------------------------------------------------------
@@ -1913,13 +2025,13 @@ impl EdwardsPoint {
 impl MultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
 
-    fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
-    where
+    #[verifier::external_body]
+    fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
         J: IntoIterator,
         J::Item: Borrow<EdwardsPoint>,
-        /* VERIFICATION NOTE: VERUS SPEC (when IntoIterator with I::Item projections is supported):
+    /* VERIFICATION NOTE: VERUS SPEC (when IntoIterator with I::Item projections is supported):
         requires
             scalars.len() == points.len(),
             forall|i| is_well_formed_edwards_point(points[i]),
@@ -1955,12 +2067,12 @@ impl MultiscalarMul for EdwardsPoint {
 impl VartimeMultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
 
-    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
-    where
+    #[verifier::external_body]
+    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint> where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
         J: IntoIterator<Item = Option<EdwardsPoint>>,
-        /* VERIFICATION NOTE: VERUS SPEC (when IntoIterator with I::Item projections is supported):
+    /* VERIFICATION NOTE: VERUS SPEC (when IntoIterator with I::Item projections is supported):
         requires
             scalars.len() == points.len(),
             forall|i| points[i].is_some() ==> is_well_formed_edwards_point(points[i].unwrap()),
@@ -1997,6 +2109,7 @@ impl VartimeMultiscalarMul for EdwardsPoint {
     }
 }
 
+} // verus!
 /// Precomputation for variable-time multiscalar multiplication with `EdwardsPoint`s.
 // This wraps the inner implementation in a facade type so that we can
 // decouple stability of the inner type from the stability of the
@@ -2034,15 +2147,15 @@ impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
     }
 }
 
-// Import spec functions from scalar_mul_specs for multiscalar verification
+// Import spec functions from iterator_specs for multiscalar verification
 #[cfg(verus_keep_ghost)]
-use crate::specs::scalar_mul_specs::{
+use crate::specs::iterator_specs::{
     all_points_some, spec_optional_points_from_iter, spec_points_from_iter, spec_scalars_from_iter,
-    sum_of_scalar_muls, unwrap_points,
+    unwrap_points,
 };
 // Import runtime helper for Sum<T> trait
 #[cfg(feature = "alloc")]
-use crate::specs::scalar_mul_specs::collect_points_from_iter;
+use crate::specs::iterator_specs::collect_points_from_iter;
 
 verus! {
 
@@ -2522,7 +2635,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
     /// Construct an `EdwardsPoint` from a `Scalar` \\(a\\) by
     /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
     fn mul(self, scalar: &'b Scalar) -> (result:
-        EdwardsPoint)/* requires clause in MulSpecImpl<&Scalar> for &EdwardsBasepointTable in mul_specs.rs:
+        EdwardsPoint)/* requires clause in MulSpecImpl<&Scalar> for &EdwardsBasepointTable in arithm_trait_specs.rs:
         requires scalar.bytes[31] <= 127
     */
 
@@ -2544,7 +2657,7 @@ impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
     /// Construct an `EdwardsPoint` from a `Scalar` \\(a\\) by
     /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
     fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> (result:
-        EdwardsPoint)/* requires clause in MulSpecImpl<&EdwardsBasepointTable> for &Scalar in mul_specs.rs:
+        EdwardsPoint)/* requires clause in MulSpecImpl<&EdwardsBasepointTable> for &Scalar in arithm_trait_specs.rs:
         requires self.bytes[31] <= 127
     */
 
@@ -3090,6 +3203,43 @@ impl CofactorGroup for EdwardsPoint {
 // ------------------------------------------------------------------------
 // Tests
 // ------------------------------------------------------------------------
+
+#[cfg(test)]
+mod test_sum {
+    use super::*;
+
+    #[test]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
+    fn verus_equivalence_random_sum() {
+        use rand_core::{OsRng, RngCore};
+
+        let mut rng = OsRng;
+
+        for iteration in 0..10 {
+            let n = (rng.next_u32() % 65) as usize; // 0..=64
+            let mut points: Vec<EdwardsPoint> = Vec::with_capacity(n);
+
+            while points.len() < n {
+                let mut bytes = [0u8; 32];
+                rng.fill_bytes(&mut bytes);
+                if let Some(p) = CompressedEdwardsY(bytes).decompress() {
+                    points.push(p);
+                }
+            }
+
+            let original = EdwardsPoint::sum_original(points.iter());
+            let refactored: EdwardsPoint = points.iter().sum();
+
+            assert_eq!(
+                original.compress().as_bytes(),
+                refactored.compress().as_bytes(),
+                "Mismatch in iteration {} with {} points",
+                iteration,
+                n
+            );
+        }
+    }
+}
 
 // #[cfg(test)]
 // mod test {

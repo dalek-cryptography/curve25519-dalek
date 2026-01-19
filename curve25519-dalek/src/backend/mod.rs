@@ -40,9 +40,9 @@ use crate::Scalar;
 use crate::specs::edwards_specs::*;
 #[cfg(all(feature = "alloc", verus_keep_ghost))]
 #[allow(unused_imports)]
-use crate::specs::scalar_mul_specs::{
+use crate::specs::iterator_specs::{
     all_points_some, spec_optional_points_from_iter, spec_points_from_iter, spec_scalars_from_iter,
-    sum_of_scalar_muls, unwrap_points,
+    unwrap_points,
 };
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)]

@@ -24,16 +24,16 @@ use vstd::prelude::*;
 #[cfg(verus_keep_ghost)]
 use crate::specs::edwards_specs::*;
 
-// Re-export spec functions from scalar_mul_specs for use by other modules
+// Re-export spec functions from iterator_specs for use by other modules
 #[cfg(verus_keep_ghost)]
-pub use crate::specs::scalar_mul_specs::{
+pub use crate::specs::iterator_specs::{
     all_points_some, spec_optional_points_from_iter, spec_points_from_iter, spec_scalars_from_iter,
-    sum_of_scalar_muls, unwrap_points,
+    unwrap_points,
 };
 
-// Re-export runtime helpers from scalar_mul_specs
+// Re-export runtime helpers from iterator_specs
 #[cfg(feature = "alloc")]
-pub use crate::specs::scalar_mul_specs::{
+pub use crate::specs::iterator_specs::{
     collect_optional_points_from_iter, collect_points_from_iter, collect_scalars_from_iter,
 };
 
@@ -101,7 +101,7 @@ impl VartimeMultiscalarMul for Pippenger {
          * The verified version `optional_multiscalar_mul_verus` below uses:
          *   - Iterator bounds instead of IntoIterator
          *   - spec_scalars_from_iter / spec_optional_points_from_iter to convert
-         *     iterators to logical sequences (see specs/scalar_mul_specs.rs)
+         *     iterators to logical sequences (see specs/iterator_specs.rs)
          */
     {
         use crate::traits::Identity;

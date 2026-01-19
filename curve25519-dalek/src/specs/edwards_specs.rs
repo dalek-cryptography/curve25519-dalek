@@ -1,4 +1,6 @@
 // Specifications for mathematical operations on Curve25519 (Edwards curve)
+// TODO: Add group-law lemmas (associativity/commutativity/identity/inverses and scalar-mul linearity)
+//       for edwards_add/edwards_scalar_mul to support subgroup proofs in Ristretto specs.
 //
 // ## References
 //
@@ -37,9 +39,14 @@ use crate::edwards::EdwardsBasepointTable;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 #[allow(unused_imports)]
+use crate::scalar::Scalar;
+#[allow(unused_imports)]
 use crate::specs::field_specs_u64::*;
 #[allow(unused_imports)]
 use crate::specs::montgomery_specs::*;
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use crate::specs::scalar_specs::spec_scalar;
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)]
 use vstd::arithmetic::div_mod::{lemma_mod_bound, lemma_small_mod};
@@ -49,6 +56,10 @@ use vstd::arithmetic::power2::pow2;
 use vstd::prelude::*;
 
 verus! {
+
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use super::core_specs::{bytes32_to_nat, bytes_seq_to_nat};
 
 // =============================================================================
 // Ed25519 Basepoint
@@ -837,6 +848,29 @@ pub open spec fn sum_of_points(points: Seq<EdwardsPoint>) -> (nat, nat)
     }
 }
 
+/// Spec function to compute sum of scalar multiplications.
+/// Returns the affine coordinates of sum(scalars[i] * points[i] for i in 0..min(len_s, len_p)).
+pub open spec fn sum_of_scalar_muls(scalars: Seq<Scalar>, points: Seq<EdwardsPoint>) -> (nat, nat)
+    decreases scalars.len(),
+{
+    let len = if scalars.len() <= points.len() {
+        scalars.len()
+    } else {
+        points.len()
+    };
+    if len == 0 {
+        // Identity point in affine coordinates: (0, 1)
+        (0, 1)
+    } else {
+        let last = (len - 1) as int;
+        let prev = sum_of_scalar_muls(scalars.subrange(0, last), points.subrange(0, last));
+        let point_affine = edwards_point_as_affine(points[last]);
+        let scalar_nat = spec_scalar(&scalars[last]);
+        let scaled = edwards_scalar_mul(point_affine, scalar_nat);
+        edwards_add(prev.0, prev.1, scaled.0, scaled.1)
+    }
+}
+
 /// Lemma: The identity point has affine coordinates (0, 1).
 ///
 /// For an identity point where x == 0 and y == z (with z != 0):
@@ -890,6 +924,103 @@ pub proof fn lemma_identity_affine_coords(point: EdwardsPoint)
     // Since z % p() == z, we have z * z_inv % p() == 1
     assert(math_field_mul(z, z_inv) == 1nat);
     assert(math_field_mul(y, z_inv) == 1nat);
+}
+
+// =============================================================================
+// Spec for nonspec_map_to_curve_verus
+// =============================================================================
+//
+// The hash-to-curve pipeline is:
+//
+//   bytes ──┬──> field element ──> Elligator2 ──> Montgomery u ──> Edwards (x,y) ──> [8]P
+//           │         │                 │                │                │
+//           │    from_bytes        elligator         birational      cofactor
+//           │    (mod 2^255)        encode        y=(u-1)/(u+1)       clear
+//           │
+//           └──> sign_bit (bit 255)  ─────────────────────────────────────┘
+//                                                                    selects x sign
+//
+// Spec functions (in pipeline order):
+//   1. spec_nonspec_map_to_curve           -- top-level: bytes -> [8]P
+//   2. spec_montgomery_to_edwards_affine   -- Montgomery u -> Edwards (x,y)
+//   3. spec_edwards_decompress_from_y      -- Edwards y + sign -> (x,y)
+//
+// Helper functions (defined elsewhere):
+//   - bytes_seq_to_nat                     -- bytes -> nat (core_specs)
+//   - spec_elligator_encode                -- field element -> Montgomery u (montgomery_specs)
+//   - edwards_y_from_montgomery_u          -- birational map (montgomery_specs)
+//   - edwards_scalar_mul                   -- P -> [k]P (this file)
+//
+// Cofactor clearing ([8]P):
+//   The full Edwards curve has order 8·ℓ where ℓ is the prime subgroup order.
+//   Multiplying by 8 ensures the result is in the prime-order subgroup,
+//   killing any small-order component from the 8-torsion. This is required
+//   for the Ristretto abstraction which operates on the prime-order quotient.
+// =============================================================================
+/// Top-level spec for `EdwardsPoint::nonspec_map_to_curve_verus`.
+///
+/// Reference: RFC 9380 Section 6.7.1 - Elligator 2 Method
+/// <https://www.rfc-editor.org/rfc/rfc9380.html#section-6.7.1>
+///
+/// Note from Dalek code: This is NOT a proper hash-to-curve (non-uniform distribution).
+/// A proper hash-to-curve applies Elligator twice and adds the results.
+pub open spec fn spec_nonspec_map_to_curve(hash_bytes: Seq<u8>) -> (nat, nat)
+    recommends
+        hash_bytes.len() == 32,
+{
+    // Extract sign bit from bit 255 (MSB of last byte)
+    let sign_bit: u8 = (hash_bytes[31] & 0x80u8) >> 7;
+    // Interpret bytes as field element (mod 2^255 to clear high bit)
+    let fe_nat = bytes_seq_to_nat(hash_bytes) % pow2(255);
+    // Elligator2 encoding: field element -> Montgomery u-coordinate
+    let u = spec_elligator_encode(fe_nat);
+    // Convert Montgomery to Edwards with sign bit selecting x
+    let P = spec_montgomery_to_edwards_affine_with_sign(u, sign_bit);
+    // Cofactor clearing: multiply by 8 to ensure prime-order subgroup
+    edwards_scalar_mul(P, 8)
+}
+
+/// Spec for Montgomery-to-Edwards conversion with sign bit selection.
+///
+/// Converts Montgomery u-coordinate to Edwards affine (x, y) via:
+/// 1. Birational map: y = (u-1)/(u+1)
+/// 2. Decompression: recover x from y with given sign_bit
+///
+/// Returns identity (0, 1) on failure (u = -1 or invalid y).
+pub open spec fn spec_montgomery_to_edwards_affine_with_sign(u: nat, sign_bit: u8) -> (nat, nat) {
+    if u == math_field_sub(0, 1) {
+        // u = -1: birational map has zero denominator
+        math_edwards_identity()
+    } else {
+        let y = edwards_y_from_montgomery_u(u);
+        match spec_edwards_decompress_from_y_and_sign(y, sign_bit) {
+            Some(P) => P,
+            None => math_edwards_identity(),
+        }
+    }
+}
+
+/// Spec for Edwards decompression: given y and a sign bit, compute (x, y) on the curve.
+///
+/// Mathematical definition:
+/// - Returns None if y is not a valid y-coordinate (no x exists on curve)
+/// - Returns None if x = 0 but sign_bit = 1 (invalid sign for zero)
+/// - Otherwise returns the unique (x, y) on the curve with x % 2 == sign_bit
+pub open spec fn spec_edwards_decompress_from_y_and_sign(y: nat, sign_bit: u8) -> Option<
+    (nat, nat),
+> {
+    if !math_is_valid_y_coordinate(y) {
+        None
+    } else if math_field_square(y) == 1 && sign_bit == 1u8 {
+        // When y² = 1, we have x = 0, and sign_bit must be 0
+        None
+    } else {
+        // VERIFICATION NOTE: "choose" could be replaced with concrete value using sqrt_ratio_i upon need.
+        // Choose x such that (x, y) is on the curve with the correct sign
+        let x = choose|x: nat|
+            math_on_edwards_curve(x, y) && x < p() && (x % 2) == (sign_bit as nat);
+        Some((x, y))
+    }
 }
 
 } // verus!

@@ -117,9 +117,9 @@ use crate::lemmas::common_lemmas::sum_lemmas::*;
 use crate::lemmas::common_lemmas::to_nat_lemmas::*;
 use crate::scalar_helpers::*;
 #[cfg(feature = "alloc")]
-use crate::specs::scalar_mul_specs::collect_scalars_from_iter;
+use crate::specs::iterator_specs::collect_scalars_from_iter;
 #[cfg(all(feature = "alloc", verus_keep_ghost))]
-use crate::specs::scalar_mul_specs::spec_scalars_from_iter;
+use crate::specs::iterator_specs::spec_scalars_from_iter;
 use core::borrow::Borrow;
 use core::fmt::Debug;
 use core::iter::{Product, Sum};
@@ -184,6 +184,9 @@ use crate::core_assumes::*;
 
 #[allow(unused_imports)]
 use crate::specs::scalar_specs::*;
+
+#[allow(unused_imports)]
+use crate::specs::proba_specs::*;
 
 #[cfg(feature = "digest")]
 #[allow(unused_imports)]
@@ -287,6 +290,9 @@ impl Scalar {
                 % group_order(),
             // Result satisfies Scalar invariants #1 and #2
             is_canonical_scalar(&result),
+            // Uniformity: reducing 512 uniform bits mod L (≈2^253) produces nearly uniform scalar.
+            // Bias: at most L/2^512 ≈ 2^-259 statistical distance from uniform (cryptographically negligible).
+            is_uniform_bytes(input) ==> is_uniform_scalar(&result),
     {
         /* <ORIGINAL CODE>
         UnpackedScalar::from_bytes_wide(input).pack()
@@ -319,6 +325,10 @@ impl Scalar {
             //                                              == bytes_seq_to_nat(input@) % group_order()
             lemma_mod_bound(bytes_seq_to_nat(input@) as int, group_order() as int);
             lemma_small_mod(bytes32_to_nat(&result.bytes), group_order());
+
+            // Uniformity: reducing 512 uniform bits mod L (≈2^253) produces nearly uniform scalar.
+            // Bias: at most L/2^512 ≈ 2^-259 statistical distance (cryptographically negligible).
+            axiom_uniform_mod_reduction(input, &result);
         }
 
         result  /* </MODIFIED CODE> */
@@ -990,7 +1000,7 @@ impl ConditionallySelectable for Scalar {
 
 /* <VERIFICATION NOTE>
  Trait implementations for Product and Sum use iterators which are not directly supported by Verus.
- Both use external_body helpers (collect_scalars_from_iter from scalar_mul_specs) to collect
+ Both use external_body helpers (collect_scalars_from_iter from iterator_specs) to collect
  the iterator into Vec<Scalar>, then call verified product_of_slice/sum_of_slice functions.
 </VERIFICATION NOTE> */
 
@@ -1417,14 +1427,18 @@ impl Scalar {
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
     /* <VERIFICATION NOTE>
-     No verifier::external_body annotation but it is NOT verified
+     Uses fill_bytes wrapper from core_assumes to establish is_uniform_bytes,
+     then from_bytes_mod_order_wide propagates uniformity to is_uniform_scalar.
     </VERIFICATION NOTE> */
     pub fn random<R: CryptoRngCore + ?Sized>(rng: &mut R) -> (result: Self)
         ensures
-            is_random_scalar(&result),
+            is_uniform_scalar(&result),
             is_canonical_scalar(&result),
     {
         let mut scalar_bytes = [0u8;64];
+        #[cfg(verus_keep_ghost)]
+        crate::core_assumes::fill_bytes(rng, &mut scalar_bytes);
+        #[cfg(not(verus_keep_ghost))]
         rng.fill_bytes(&mut scalar_bytes);
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)
     }
@@ -1478,14 +1492,14 @@ impl Scalar {
     /// # Returns
     ///
     /// A scalar reduced modulo the group order
+    #[cfg(feature = "digest")]
     pub fn hash_from_bytes_verus(input: &[u8]) -> (result: Scalar)
         ensures
-            is_random_bytes(input) ==> is_random_scalar(&result),
+            is_uniform_bytes(input) ==> is_uniform_scalar(&result),
             // Result satisfies Scalar invariants #1 and #2
             is_canonical_scalar(&result),
     {
-        use crate::core_assumes as assumes;
-        let hash_bytes: [u8; 64] = assumes::sha512_hash_bytes(input);
+        let hash_bytes: [u8; 64] = sha512_hash_bytes(input);
         Scalar::from_hash_verus(hash_bytes)
     }
 
@@ -1510,8 +1524,7 @@ impl Scalar {
     /// h.update(b"perhaps all architecture, rather than being about functional standards, is");
     /// h.update(b"about love and death.");
     ///
-    /// let hash_bytes: [u8; 64] = h.finalize().into();
-    /// let s = Scalar::from_hash(hash_bytes);
+    /// let s = Scalar::from_hash(h);
     ///
     /// println!("{:?}", s.to_bytes());
     /// assert_eq!(
@@ -1533,7 +1546,7 @@ impl Scalar {
         D: digest::Digest<OutputSize = digest::generic_array::typenum::U64>,
 
         ensures
-    //is_random_digest(&hash) ==> is_random_scalar(&result),
+    // is_uniform_digest(&hash) ==> is_uniform_scalar(&result),
     // Result satisfies Scalar invariants #1 and #2
 
             is_canonical_scalar(&result),
@@ -1557,7 +1570,7 @@ impl Scalar {
     /// A scalar reduced modulo the group order
     pub fn from_hash_verus(hash_bytes: [u8; 64]) -> (result: Scalar)
         ensures
-            is_random_bytes(&hash_bytes) ==> is_random_scalar(&result),
+            is_uniform_bytes(&hash_bytes) ==> is_uniform_scalar(&result),
             // Result satisfies Scalar invariants #1 and #2
             is_canonical_scalar(&result),
     {

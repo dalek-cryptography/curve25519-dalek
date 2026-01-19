@@ -37,8 +37,8 @@ Scalar::from(u32),curve25519_dalek::scalar,From<u32> for Scalar
 Scalar::from(u64),curve25519_dalek::scalar,From<u64> for Scalar
 Scalar::from(u128),curve25519_dalek::scalar,From<u128> for Scalar
 Scalar::zeroize(&self),curve25519_dalek::scalar,Zeroize for Scalar
-Scalar::hash_from_bytes(&[u8]),curve25519_dalek::scalar,Scalar
-Scalar::from_hash(D),curve25519_dalek::scalar,Scalar
+Scalar::hash_from_bytes_verus(&[u8]),curve25519_dalek::scalar,Scalar
+Scalar::from_hash_verus([u8; 64]),curve25519_dalek::scalar,Scalar
 Scalar::to_bytes(&self),curve25519_dalek::scalar,Scalar
 Scalar::as_bytes(&self),curve25519_dalek::scalar,Scalar
 Scalar::invert(&self),curve25519_dalek::scalar,Scalar
@@ -95,7 +95,7 @@ EdwardsPoint::as_projective(&self),curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::as_affine_niels(&self),curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::to_montgomery(&self),curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::compress(&self),curve25519_dalek::edwards,EdwardsPoint
-EdwardsPoint::nonspec_map_to_curve(&[u8]),curve25519_dalek::edwards,EdwardsPoint
+EdwardsPoint::nonspec_map_to_curve_verus(&[u8]),curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::double(&self),curve25519_dalek::edwards,EdwardsPoint
 EdwardsPoint::add(&EdwardsPoint),curve25519_dalek::edwards,Add<&'b EdwardsPoint> for EdwardsPoint
 EdwardsPoint::add_assign(&EdwardsPoint),curve25519_dalek::edwards,AddAssign<&'b EdwardsPoint> for EdwardsPoint
@@ -125,14 +125,14 @@ step_1(&CompressedRistretto),curve25519_dalek::ristretto,
 step_2(FieldElement),curve25519_dalek::ristretto,
 CompressedRistretto::identity(),curve25519_dalek::ristretto,Identity for CompressedRistretto
 RistrettoPoint::compress(&self),curve25519_dalek::ristretto,RistrettoPoint
-RistrettoPoint::double_and_compress_batch(I),curve25519_dalek::ristretto,RistrettoPoint
+RistrettoPoint::double_and_compress_batch_verus(&[RistrettoPoint]),curve25519_dalek::ristretto,RistrettoPoint
 BatchCompressState::efgh(&self),curve25519_dalek::ristretto,BatchCompressState
 BatchCompressState::from(&RistrettoPoint),curve25519_dalek::ristretto,From<&'a RistrettoPoint> for BatchCompressState
 coset4(&self),curve25519_dalek::ristretto,
 elligator_ristretto_flavor(&FieldElement),curve25519_dalek::ristretto,
-hash_from_bytes(&[u8]),curve25519_dalek::ristretto,
-from_hash(D),curve25519_dalek::ristretto,
-from_uniform_bytes(&[u8; 64]),curve25519_dalek::ristretto,
+RistrettoPoint::hash_from_bytes_verus(&[u8]),curve25519_dalek::ristretto,RistrettoPoint
+from_uniform_bytes(&[u8; 64]),curve25519_dalek::ristretto,RistrettoPoint
+RistrettoPoint::from_hash_verus([u8; 64]),curve25519_dalek::ristretto,RistrettoPoint
 RistrettoPoint::identity(),curve25519_dalek::ristretto,Identity for RistrettoPoint
 RistrettoPoint::default(),curve25519_dalek::ristretto,Default for RistrettoPoint
 RistrettoPoint::ct_eq(&RistrettoPoint),curve25519_dalek::ristretto,ConstantTimeEq for RistrettoPoint
@@ -153,8 +153,8 @@ RistrettoBasepointTable::basepoint(&self),curve25519_dalek::ristretto,RistrettoB
 "RistrettoPoint::conditional_select(&RistrettoPoint, &RistrettoPoint, Choice)",curve25519_dalek::ristretto,ConditionallySelectable for RistrettoPoint
 CompressedRistretto::zeroize(&self),curve25519_dalek::ristretto,Zeroize for CompressedRistretto
 RistrettoPoint::zeroize(&self),curve25519_dalek::ristretto,Zeroize for RistrettoPoint
-"RistrettoPoint::multiscalar_mul(I, J)",curve25519_dalek::ristretto,MultiscalarMul for RistrettoPoint
-"RistrettoPoint::optional_multiscalar_mul(I, J)",curve25519_dalek::ristretto,VartimeMultiscalarMul for RistrettoPoint
+"RistrettoPoint::multiscalar_mul_verus(I, J)",curve25519_dalek::ristretto,RistrettoPoint
+"RistrettoPoint::optional_multiscalar_mul_verus(I, J)",curve25519_dalek::ristretto,RistrettoPoint
 Scalar52::zeroize(&self),curve25519_dalek::backend::serial::u64::scalar,Zeroize for Scalar52
 Scalar52::index(usize),curve25519_dalek::backend::serial::u64::scalar,Index<usize> for Scalar52
 "m(u64, u64)",curve25519_dalek::backend::serial::u64::scalar,

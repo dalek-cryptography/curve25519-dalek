@@ -30,15 +30,15 @@ use vstd::prelude::*;
 #[cfg(verus_keep_ghost)]
 use crate::specs::edwards_specs::*;
 
-// Import spec functions from scalar_mul_specs (ghost only)
+// Import spec functions from iterator_specs (ghost only)
 #[cfg(verus_keep_ghost)]
-use crate::specs::scalar_mul_specs::{
+use crate::specs::iterator_specs::{
     all_points_some, spec_optional_points_from_iter, spec_points_from_iter, spec_scalars_from_iter,
-    sum_of_scalar_muls, unwrap_points,
+    unwrap_points,
 };
 
-// Import runtime helpers from scalar_mul_specs
-use crate::specs::scalar_mul_specs::{
+// Import runtime helpers from iterator_specs
+use crate::specs::iterator_specs::{
     collect_optional_points_from_iter, collect_points_from_iter, collect_scalars_from_iter,
 };
 
@@ -138,7 +138,7 @@ impl MultiscalarMul for Straus {
          * The verified version `multiscalar_mul_verus` below uses:
          *   - Iterator bounds instead of IntoIterator
          *   - spec_scalars_from_iter / spec_points_from_iter to convert
-         *     iterators to logical sequences (see specs/scalar_mul_specs.rs)
+         *     iterators to logical sequences (see specs/iterator_specs.rs)
          */
     {
         let lookup_tables: Vec<_> = points
@@ -206,7 +206,7 @@ impl VartimeMultiscalarMul for Straus {
          * The verified version `optional_multiscalar_mul_verus` below uses:
          *   - Iterator bounds instead of IntoIterator
          *   - spec_scalars_from_iter / spec_optional_points_from_iter to convert
-         *     iterators to logical sequences (see specs/scalar_mul_specs.rs)
+         *     iterators to logical sequences (see specs/iterator_specs.rs)
          */
     {
         let nafs: Vec<_> = scalars

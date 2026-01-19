@@ -1,21 +1,170 @@
+//! Arithmetic trait specifications for Verus verification.
+//!
+//! This file contains specifications for arithmetic operations (Add, Sub, Mul)
+//! as trait implementations (AddSpecImpl, SubSpecImpl, MulSpecImpl).
+//!
+//! The actual implementations are in their respective files (edwards.rs, ristretto.rs, etc.).
+//! These specs define preconditions (via *_req) that Verus uses for verification.
 #[cfg(feature = "precomputed-tables")]
+#[allow(unused_imports)]
 use crate::edwards::EdwardsBasepointTable;
+#[cfg(feature = "precomputed-tables")]
+#[allow(unused_imports)]
+use crate::ristretto::RistrettoBasepointTable;
+#[allow(unused_imports)]
+use crate::ristretto::RistrettoPoint;
+#[allow(unused_imports)]
 use crate::specs::edwards_specs::*;
+#[allow(unused_imports)]
 use crate::specs::montgomery_specs::*;
+#[allow(unused_imports)]
 use crate::specs::scalar_specs::*;
+#[allow(unused_imports)]
 use crate::{EdwardsPoint, MontgomeryPoint, Scalar};
 use vstd::prelude::*;
 
-/* VERIFICATION NOTE: this file contains
-- inlined macro definitions for multiplicaitons between Scalar, EdwardsPoint, and MontgomeryPoint.
-- their specifications as trait implementations MulSpecImpl.
-*/
 verus! {
 
 // =============================================================================
-// SECTION 1: EdwardsPoint * Scalar
+// SECTION 1: RistrettoPoint + RistrettoPoint (AddSpecImpl)
 // =============================================================================
-// Specifications only - reference implementations (&EdwardsPoint * &Scalar) are in edwards.rs
+// Requires: both RistrettoPoints have well-formed underlying EdwardsPoints
+/// Spec for &RistrettoPoint + &RistrettoPoint
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::AddSpecImpl<&RistrettoPoint> for &RistrettoPoint {
+    open spec fn obeys_add_spec() -> bool {
+        false
+    }
+
+    open spec fn add_req(self, rhs: &RistrettoPoint) -> bool {
+        is_well_formed_edwards_point(self.0) && is_well_formed_edwards_point(rhs.0)
+    }
+
+    open spec fn add_spec(self, rhs: &RistrettoPoint) -> RistrettoPoint {
+        arbitrary()
+    }
+}
+
+/// Spec for RistrettoPoint + RistrettoPoint (both owned)
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::AddSpecImpl<RistrettoPoint> for RistrettoPoint {
+    open spec fn obeys_add_spec() -> bool {
+        false
+    }
+
+    open spec fn add_req(self, rhs: RistrettoPoint) -> bool {
+        is_well_formed_edwards_point(self.0) && is_well_formed_edwards_point(rhs.0)
+    }
+
+    open spec fn add_spec(self, rhs: RistrettoPoint) -> RistrettoPoint {
+        arbitrary()
+    }
+}
+
+/// Spec for RistrettoPoint + &RistrettoPoint (owned lhs)
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::AddSpecImpl<&RistrettoPoint> for RistrettoPoint {
+    open spec fn obeys_add_spec() -> bool {
+        false
+    }
+
+    open spec fn add_req(self, rhs: &RistrettoPoint) -> bool {
+        is_well_formed_edwards_point(self.0) && is_well_formed_edwards_point(rhs.0)
+    }
+
+    open spec fn add_spec(self, rhs: &RistrettoPoint) -> RistrettoPoint {
+        arbitrary()
+    }
+}
+
+/// Spec for &RistrettoPoint + RistrettoPoint (owned rhs)
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::AddSpecImpl<RistrettoPoint> for &RistrettoPoint {
+    open spec fn obeys_add_spec() -> bool {
+        false
+    }
+
+    open spec fn add_req(self, rhs: RistrettoPoint) -> bool {
+        is_well_formed_edwards_point(self.0) && is_well_formed_edwards_point(rhs.0)
+    }
+
+    open spec fn add_spec(self, rhs: RistrettoPoint) -> RistrettoPoint {
+        arbitrary()
+    }
+}
+
+// =============================================================================
+// SECTION 2: RistrettoPoint - RistrettoPoint (SubSpecImpl)
+// =============================================================================
+// Requires: both RistrettoPoints have well-formed underlying EdwardsPoints
+/// Spec for &RistrettoPoint - &RistrettoPoint
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::SubSpecImpl<&RistrettoPoint> for &RistrettoPoint {
+    open spec fn obeys_sub_spec() -> bool {
+        false
+    }
+
+    open spec fn sub_req(self, rhs: &RistrettoPoint) -> bool {
+        is_well_formed_edwards_point(self.0) && is_well_formed_edwards_point(rhs.0)
+    }
+
+    open spec fn sub_spec(self, rhs: &RistrettoPoint) -> RistrettoPoint {
+        arbitrary()
+    }
+}
+
+/// Spec for RistrettoPoint - RistrettoPoint (both owned)
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::SubSpecImpl<RistrettoPoint> for RistrettoPoint {
+    open spec fn obeys_sub_spec() -> bool {
+        false
+    }
+
+    open spec fn sub_req(self, rhs: RistrettoPoint) -> bool {
+        is_well_formed_edwards_point(self.0) && is_well_formed_edwards_point(rhs.0)
+    }
+
+    open spec fn sub_spec(self, rhs: RistrettoPoint) -> RistrettoPoint {
+        arbitrary()
+    }
+}
+
+/// Spec for RistrettoPoint - &RistrettoPoint (owned lhs)
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::SubSpecImpl<&RistrettoPoint> for RistrettoPoint {
+    open spec fn obeys_sub_spec() -> bool {
+        false
+    }
+
+    open spec fn sub_req(self, rhs: &RistrettoPoint) -> bool {
+        is_well_formed_edwards_point(self.0) && is_well_formed_edwards_point(rhs.0)
+    }
+
+    open spec fn sub_spec(self, rhs: &RistrettoPoint) -> RistrettoPoint {
+        arbitrary()
+    }
+}
+
+/// Spec for &RistrettoPoint - RistrettoPoint (owned rhs)
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::SubSpecImpl<RistrettoPoint> for &RistrettoPoint {
+    open spec fn obeys_sub_spec() -> bool {
+        false
+    }
+
+    open spec fn sub_req(self, rhs: RistrettoPoint) -> bool {
+        is_well_formed_edwards_point(self.0) && is_well_formed_edwards_point(rhs.0)
+    }
+
+    open spec fn sub_spec(self, rhs: RistrettoPoint) -> RistrettoPoint {
+        arbitrary()
+    }
+}
+
+// =============================================================================
+// SECTION 3: EdwardsPoint * Scalar (MulSpecImpl)
+// =============================================================================
+// Requires: scalar.bytes[31] <= 127, EdwardsPoint is well-formed
 /// Spec for &EdwardsPoint * &Scalar (reference implementation)
 #[cfg(verus_keep_ghost)]
 impl vstd::std_specs::ops::MulSpecImpl<&Scalar> for &EdwardsPoint {
@@ -81,10 +230,9 @@ impl vstd::std_specs::ops::MulSpecImpl<Scalar> for EdwardsPoint {
 }
 
 // =============================================================================
-// SECTION 2: Scalar * EdwardsPoint
+// SECTION 4: Scalar * EdwardsPoint (MulSpecImpl)
 // =============================================================================
-// NOTE: Manual implementations needed because macro-generated code is outside verus! blocks
-// and cannot be used from inside verus! blocks (e.g., EdwardsPoint::mul_clamped).
+// Requires: scalar.bytes[31] <= 127, EdwardsPoint is well-formed
 /// Spec for &Scalar * &EdwardsPoint
 #[cfg(verus_keep_ghost)]
 impl vstd::std_specs::ops::MulSpecImpl<&EdwardsPoint> for &Scalar {
@@ -150,16 +298,14 @@ impl vstd::std_specs::ops::MulSpecImpl<EdwardsPoint> for Scalar {
 }
 
 // =============================================================================
-// SECTION 3: MontgomeryPoint * Scalar
+// SECTION 5: MontgomeryPoint * Scalar (MulSpecImpl)
 // =============================================================================
-// Specifications only - implementations are in montgomery.rs
-// Requires: MontgomeryPoint must be valid
+// Requires: MontgomeryPoint is valid
 /// Spec for &MontgomeryPoint * &Scalar (reference implementation)
 #[cfg(verus_keep_ghost)]
 impl vstd::std_specs::ops::MulSpecImpl<&Scalar> for &MontgomeryPoint {
     open spec fn obeys_mul_spec() -> bool {
-        false  // Set to false since we use ensures clause instead of concrete spec
-
+        false
     }
 
     open spec fn mul_req(self, rhs: &Scalar) -> bool {
@@ -167,8 +313,7 @@ impl vstd::std_specs::ops::MulSpecImpl<&Scalar> for &MontgomeryPoint {
     }
 
     open spec fn mul_spec(self, rhs: &Scalar) -> MontgomeryPoint {
-        arbitrary()  // Placeholder - actual spec is in ensures clause
-
+        arbitrary()
     }
 }
 
@@ -221,16 +366,14 @@ impl vstd::std_specs::ops::MulSpecImpl<Scalar> for MontgomeryPoint {
 }
 
 // =============================================================================
-// SECTION 4: Scalar * MontgomeryPoint
+// SECTION 6: Scalar * MontgomeryPoint (MulSpecImpl)
 // =============================================================================
-// Specifications only - implementations are in montgomery.rs
-// Requires: MontgomeryPoint must be valid
+// Requires: MontgomeryPoint is valid
 /// Spec for &Scalar * &MontgomeryPoint (reference implementation)
 #[cfg(verus_keep_ghost)]
 impl vstd::std_specs::ops::MulSpecImpl<&MontgomeryPoint> for &Scalar {
     open spec fn obeys_mul_spec() -> bool {
-        false  // Set to false since we use ensures clause instead of concrete spec
-
+        false
     }
 
     open spec fn mul_req(self, rhs: &MontgomeryPoint) -> bool {
@@ -238,8 +381,7 @@ impl vstd::std_specs::ops::MulSpecImpl<&MontgomeryPoint> for &Scalar {
     }
 
     open spec fn mul_spec(self, rhs: &MontgomeryPoint) -> MontgomeryPoint {
-        arbitrary()  // Placeholder - actual spec is in ensures clause
-
+        arbitrary()
     }
 }
 
@@ -292,9 +434,9 @@ impl vstd::std_specs::ops::MulSpecImpl<MontgomeryPoint> for Scalar {
 }
 
 // =============================================================================
-// SECTION 5: EdwardsBasepointTable * Scalar
+// SECTION 7: EdwardsBasepointTable * Scalar (MulSpecImpl)
 // =============================================================================
-// Specifications for basepoint table scalar multiplication
+// Requires: scalar.bytes[31] <= 127
 /// Spec for &EdwardsBasepointTable * &Scalar
 #[cfg(feature = "precomputed-tables")]
 #[cfg(verus_keep_ghost)]
@@ -330,13 +472,10 @@ impl vstd::std_specs::ops::MulSpecImpl<&EdwardsBasepointTable> for &Scalar {
 }
 
 // =============================================================================
-// SECTION 6: RistrettoBasepointTable * Scalar
+// SECTION 8: RistrettoBasepointTable * Scalar (MulSpecImpl)
 // =============================================================================
-// Specifications for basepoint table scalar multiplication (Ristretto)
-use crate::ristretto::RistrettoBasepointTable;
-
+// Requires: scalar.bytes[31] <= 127
 /// Spec for &RistrettoBasepointTable * &Scalar
-/// Postcondition provided in function body (see `ristretto.rs`)
 #[cfg(feature = "precomputed-tables")]
 #[cfg(verus_keep_ghost)]
 impl vstd::std_specs::ops::MulSpecImpl<&Scalar> for &RistrettoBasepointTable {
@@ -348,14 +487,12 @@ impl vstd::std_specs::ops::MulSpecImpl<&Scalar> for &RistrettoBasepointTable {
         rhs.bytes[31] <= 127
     }
 
-    // Result spec provided via `ensures` in the `Mul` impl
     open spec fn mul_spec(self, rhs: &Scalar) -> RistrettoPoint {
         arbitrary()
     }
 }
 
 /// Spec for &Scalar * &RistrettoBasepointTable
-/// Postcondition provided in function body (see `ristretto.rs`)
 #[cfg(feature = "precomputed-tables")]
 #[cfg(verus_keep_ghost)]
 impl vstd::std_specs::ops::MulSpecImpl<&RistrettoBasepointTable> for &Scalar {
@@ -367,18 +504,15 @@ impl vstd::std_specs::ops::MulSpecImpl<&RistrettoBasepointTable> for &Scalar {
         self.bytes[31] <= 127
     }
 
-    // Result spec provided via `ensures` in the `Mul` impl
     open spec fn mul_spec(self, rhs: &RistrettoBasepointTable) -> RistrettoPoint {
         arbitrary()
     }
 }
 
 // =============================================================================
-// SECTION 4: RistrettoPoint * Scalar
+// SECTION 9: RistrettoPoint * Scalar (MulSpecImpl)
 // =============================================================================
-// Specifications for multiplication between RistrettoPoint and Scalar
-use crate::ristretto::RistrettoPoint;
-
+// Requires: scalar.bytes[31] <= 127, RistrettoPoint has well-formed EdwardsPoint
 /// Spec for &RistrettoPoint * &Scalar (reference implementation)
 #[cfg(verus_keep_ghost)]
 impl vstd::std_specs::ops::MulSpecImpl<&Scalar> for &RistrettoPoint {
@@ -444,8 +578,9 @@ impl vstd::std_specs::ops::MulSpecImpl<Scalar> for RistrettoPoint {
 }
 
 // =============================================================================
-// SECTION 5: Scalar * RistrettoPoint
+// SECTION 10: Scalar * RistrettoPoint (MulSpecImpl)
 // =============================================================================
+// Requires: scalar.bytes[31] <= 127, RistrettoPoint has well-formed EdwardsPoint
 /// Spec for &Scalar * &RistrettoPoint
 #[cfg(verus_keep_ghost)]
 impl vstd::std_specs::ops::MulSpecImpl<&RistrettoPoint> for &Scalar {

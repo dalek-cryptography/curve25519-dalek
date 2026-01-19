@@ -2,6 +2,8 @@
 #[allow(unused_imports)]
 use crate::scalar::Scalar;
 #[allow(unused_imports)]
+use vstd::arithmetic::div_mod::*;
+#[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
@@ -223,6 +225,26 @@ pub open spec fn radix_16_digit_bounded(digit: i8) -> bool {
 /// All radix-16 digits are bounded by [-8, 8]
 pub open spec fn radix_16_all_bounded(digits: &[i8; 64]) -> bool {
     forall|i: int| 0 <= i < 64 ==> radix_16_digit_bounded(#[trigger] digits[i])
+}
+
+/// Convert a boolean slice (bits in big-endian order) to a natural number
+/// This interprets bits[0] as the most significant bit
+/// Used for scalar multiplication where bits are processed MSB first
+pub open spec fn bits_be_to_nat(bits: &[bool], len: int) -> nat
+    recommends
+        0 <= len <= bits.len(),
+    decreases len,
+{
+    if len <= 0 {
+        0
+    } else {
+        let bit_value = if bits[len - 1] {
+            1nat
+        } else {
+            0nat
+        };
+        bit_value + 2 * bits_be_to_nat(bits, len - 1)
+    }
 }
 
 } // verus!

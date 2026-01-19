@@ -6,6 +6,8 @@ pub mod scalar_lemmas;
 
 pub mod scalar_montgomery_lemmas;
 
+pub mod scalar_batch_invert_lemmas;
+
 pub mod montgomery_lemmas;
 
 pub mod scalar_lemmas_extra;

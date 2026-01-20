@@ -664,7 +664,6 @@ macro_rules! lemma_right_left_shift {
         #[cfg(verus_keep_ghost)]
         verus! {
         /// Right-shift then left-shift by n zeros out the low n bits.
-        ///
         /// Mathematical reasoning:
         /// - x >> n == x / 2^n (integer division, drops low n bits)
         /// - (x / 2^n) << n == (x / 2^n) * 2^n
@@ -680,17 +679,21 @@ macro_rules! lemma_right_left_shift {
             let q = (x as nat) / pow2(n_nat);
             let r = (x as nat) % pow2(n_nat);
 
-            assert((x >> n) << n == x - r) by {
-                // pow2(n) > 0 and pow2(n) <= MAX
-                assert(pow2(n_nat) > 0) by { lemma_pow2_pos(n_nat); }
-                assert(pow2(n_nat) <= <$uN>::MAX) by { $pow2_le_max(n_nat); }
+            // pow2(n) > 0 and pow2(n) <= MAX
+            assert(pow2(n_nat) > 0) by { lemma_pow2_pos(n_nat); }
+            assert(pow2(n_nat) <= <$uN>::MAX) by { $pow2_le_max(n_nat); }
 
+            assert((x >> n) << n == x - r) by {
                 // x >> n == x / 2^n == q
                 assert(x >> n == q) by { $shr_is_div(x, n); }
 
                 // By fundamental division/mod identity: x == q * 2^n + r
                 assert(x == q * pow2(n_nat) + r) by {
                     lemma_fundamental_div_mod(x as int, pow2(n_nat) as int);
+                    // r = x % pow2(n) < pow2(n) <= MAX, so r fits in $uN
+                    assert(r < pow2(n_nat)) by {
+                        vstd::arithmetic::div_mod::lemma_mod_bound(x as int, pow2(n_nat) as int);
+                    }
                 }
 
                 // q * 2^n <= x <= MAX, so q * 2^n fits in $uN

@@ -167,12 +167,14 @@ pub proof fn lemma_neg(elem: &FieldElement51)
         if (x == 0) {
             assert(y % p() == 0);  // follows from (y + x) % p == 0
             assert(y == 0) by {
-                // contradiction proof
-                if (y > 0) {
-                    assert(y >= p()) by {
-                        lemma_mod_is_zero(y, p());
-                    }
-                }
+                // contradiction proof - if y % p == 0 and 0 <= y < p, then y == 0
+                // We know y < p from lemma_mod_bound
+                assert(y == 0) by (nonlinear_arith)
+                    requires
+                        y < p(),
+                        y % p() == 0,
+                        p() > 0,
+                ;
             }
             assert(p() % p() == 0) by {
                 lemma_mod_self_0(p() as int);
@@ -189,33 +191,18 @@ pub proof fn lemma_neg(elem: &FieldElement51)
 
             assert(y + x == p()) by {
                 let z = y + x;
-                assert(z == p() * (z / p())) by {
-                    // we know z % p == 0
-                    lemma_fundamental_div_mod(z as int, p() as int);
-                }
-                assert(z / p() == 1) by {
-                    assert(z / p() >= 1) by {
-                        assert(z >= p()) by {
-                            lemma_mod_is_zero(z, p());
-                        }
-                    }
-                    assert(z / p() < 2) by {
-                        assert(z <= 2 * p()) by {
-                            // known
-                            assert(x < p());
-                            assert(y < p());
-                        }
-                        assert(2 * p() / p() == 2) by {
-                            lemma_div_by_multiple(2, p() as int);
-                        }
-                        lemma_div_by_multiple_is_strongly_ordered(
-                            z as int,
-                            (2 * p()) as int,
-                            2,
-                            p() as int,
-                        );
-                    }
-                }
+                // z % p == 0 and z > 0 and 0 < z < 2*p implies z == p
+                assert(z % p() == 0);
+                assert(z > 0);
+                assert(z < 2 * p());  // since x < p and y < p
+                // Use nonlinear_arith to conclude z == p
+                assert(z == p()) by (nonlinear_arith)
+                    requires
+                        z % p() == 0,
+                        z > 0,
+                        z < 2 * p(),
+                        p() > 0,
+                ;
             }
 
         }

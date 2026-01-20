@@ -1,5 +1,6 @@
 use super::MERLIN_PROTOCOL_LABEL;
 use super::strobe::Strobe128;
+use core::convert::Infallible;
 
 fn encode_usize_as_u32(x: usize) -> [u8; 4] {
     u32::try_from(x).expect("usize too large").to_le_bytes()
@@ -185,23 +186,27 @@ pub struct TranscriptRng {
     strobe: Strobe128,
 }
 
-impl rand_core::RngCore for TranscriptRng {
-    fn next_u32(&mut self) -> u32 {
+impl rand_core::TryRngCore for TranscriptRng {
+    type Error = Infallible;
+
+    fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
         rand_core::utils::next_word_via_fill(self)
     }
 
-    fn next_u64(&mut self) -> u64 {
+    fn try_next_u64(&mut self) -> Result<u64, Self::Error> {
         rand_core::utils::next_word_via_fill(self)
     }
 
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Self::Error> {
         let dest_len = encode_usize_as_u32(dest.len());
         self.strobe.meta_ad(&dest_len, false);
         self.strobe.prf(dest, false);
+
+        Ok(())
     }
 }
 
-impl rand_core::CryptoRng for TranscriptRng {}
+impl rand_core::TryCryptoRng for TranscriptRng {}
 
 #[cfg(test)]
 mod tests {

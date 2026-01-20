@@ -14,6 +14,7 @@ mod transcript;
 
 use alloc::vec::Vec;
 
+use core::convert::Infallible;
 use core::iter::once;
 
 use curve25519_dalek::constants;
@@ -48,12 +49,14 @@ const MERLIN_PROTOCOL_LABEL: &[u8] = b"Merlin v1.0";
 /// yields a PRG whose input is the hashed transcript.
 struct ZeroRng;
 
-impl rand_core::RngCore for ZeroRng {
-    fn next_u32(&mut self) -> u32 {
+impl rand_core::TryRngCore for ZeroRng {
+    type Error = Infallible;
+
+    fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
         rand_core::utils::next_word_via_fill(self)
     }
 
-    fn next_u64(&mut self) -> u64 {
+    fn try_next_u64(&mut self) -> Result<u64, Self::Error> {
         rand_core::utils::next_word_via_fill(self)
     }
 
@@ -65,11 +68,13 @@ impl rand_core::RngCore for ZeroRng {
     /// STROBE state based on external randomness, we're doing an
     /// `ENC_{state}(00000000000000000000000000000000)` operation, which is
     /// identical to the STROBE `MAC` operation.
-    fn fill_bytes(&mut self, _dest: &mut [u8]) {}
+    fn try_fill_bytes(&mut self, _dest: &mut [u8]) -> Result<(), Self::Error> {
+        Ok(())
+    }
 }
 
 // `TranscriptRngBuilder::finalize()` requires a `CryptoRng`
-impl rand_core::CryptoRng for ZeroRng {}
+impl rand_core::TryCryptoRng for ZeroRng {}
 
 // We write our own gen() function so we don't need to pull in the rand crate
 fn gen_u128<R: RngCore>(rng: &mut R) -> u128 {

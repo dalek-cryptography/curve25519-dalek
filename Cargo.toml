@@ -14,5 +14,3 @@ opt-level = 2
 curve25519-dalek-derive = { path = "./curve25519-dalek-derive" }
 curve25519-dalek = { path = "./curve25519-dalek" }
 x25519-dalek = { path = "./x25519-dalek" }
-
-rand = { git = "https://github.com/rust-random/rand", rev = "ff07ec205347dd749a586aaee7218cb21590ea4c" }

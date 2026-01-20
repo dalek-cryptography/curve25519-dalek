@@ -24,6 +24,97 @@ use vstd::prelude::*;
 verus! {
 
 // =============================================================================
+// Identity Point Lemmas
+// =============================================================================
+/// Lemma: The identity point (0, 1) is on the Edwards curve
+///
+/// ## Mathematical Proof
+///
+/// The Edwards curve equation is: y² - x² = 1 + d·x²·y²
+///
+/// For (0, 1):
+/// - LHS: 1² - 0² = 1 - 0 = 1
+/// - RHS: 1 + d·0²·1² = 1 + 0 = 1
+/// - LHS = RHS ✓
+pub proof fn lemma_identity_on_curve()
+    ensures
+        math_on_edwards_curve(0, 1),
+{
+    let modulus = p();
+    p_gt_2();
+
+    let d = spec_field_element(&EDWARDS_D);
+
+    // x² = 0² = 0
+    let x2 = math_field_square(0nat);
+    assert(x2 == 0) by {
+        lemma_small_mod(0nat, modulus);
+    }
+
+    // y² = 1² = 1
+    let y2 = math_field_square(1nat);
+    assert(y2 == 1) by {
+        lemma_small_mod(1nat, modulus);
+    }
+
+    // LHS = y² - x² = 1 - 0 = 1 (using math_field_sub)
+    // math_field_sub(a, b) = ((a % p) + p - (b % p)) % p
+    let lhs = math_field_sub(y2, x2);
+    assert(lhs == 1) by {
+        // y2 = 1, x2 = 0
+        // math_field_sub(1, 0) = ((1 % p) + p - (0 % p)) % p
+        //                      = (1 + p - 0) % p
+        //                      = (p + 1) % p = 1
+        lemma_small_mod(1nat, modulus);
+        lemma_small_mod(0nat, modulus);
+        // (p + 1) % p = 1 because (p + 1) = p * 1 + 1, and remainder is 1
+        lemma_mod_multiples_vanish(1, 1, modulus as int);
+    }
+
+    // x²·y² = 0·1 = 0
+    let x2y2 = math_field_mul(x2, y2);
+    assert(x2y2 == 0) by {
+        lemma_small_mod(0nat, modulus);
+    }
+
+    // d·x²·y² = d·0 = 0
+    let d_x2y2 = math_field_mul(d, x2y2);
+    assert(d_x2y2 == 0) by {
+        lemma_mul_by_zero_is_zero(d as int);
+        lemma_small_mod(0nat, modulus);
+    }
+
+    // RHS = 1 + d·x²·y² = 1 + 0 = 1
+    let rhs = math_field_add(1nat, d_x2y2);
+    assert(rhs == 1) by {
+        lemma_small_mod(1nat, modulus);
+    }
+
+    // LHS = RHS = 1, so math_on_edwards_curve(0, 1) holds
+    assert(lhs == rhs);
+}
+
+/// Lemma: The identity point (0, 1, 1, 0) is a valid extended Edwards point
+///
+/// This combines lemma_identity_on_curve with lemma_affine_to_extended_valid.
+pub proof fn lemma_identity_is_valid_extended()
+    ensures
+        math_is_valid_extended_edwards_point(0, 1, 1, 0),
+{
+    // First prove (0, 1) is on the curve
+    lemma_identity_on_curve();
+
+    // t = x * y = 0 * 1 = 0
+    assert(math_field_mul(0nat, 1nat) == 0) by {
+        p_gt_2();
+        lemma_small_mod(0nat, p());
+    }
+
+    // Use the affine-to-extended lemma
+    lemma_affine_to_extended_valid(0nat, 1nat, 0nat);
+}
+
+// =============================================================================
 // Negation Lemmas
 // =============================================================================
 /// Lemma: Negation preserves the curve equation

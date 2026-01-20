@@ -1,6 +1,6 @@
-//! Lemmas about the ONE field element constant
+//! Lemmas about field element constants (ZERO and ONE)
 //!
-//! This module contains fully proved lemmas about the FieldElement::ONE constant.
+//! This module contains fully proved lemmas about FieldElement::ZERO and FieldElement::ONE constants.
 //!
 //! ## Mathematical Background
 //!
@@ -9,6 +9,10 @@
 //! value = limbs[0] + 2^51·limbs[1] + 2^102·limbs[2] + 2^153·limbs[3] + 2^204·limbs[4]
 //! ```
 //!
+//! ZERO = [0, 0, 0, 0, 0] represents 0:
+//! - `u64_5_as_nat([0, 0, 0, 0, 0]) = 0` (all terms are 0)
+//! - `spec_field_element(ZERO) = 0 % p = 0`
+//!
 //! ONE = [1, 0, 0, 0, 0] represents 1:
 //! - `u64_5_as_nat([1, 0, 0, 0, 0]) = 1 + 0 + 0 + 0 + 0 = 1` (since n·0 = 0)
 //! - `spec_field_element(ONE) = 1 % p = 1` (since p > 2 > 1)
@@ -16,7 +20,6 @@
 //! ## Note
 //!
 //! - Edwards curve-specific constants (EDWARDS_D, EDWARDS_D2) are in `edwards_lemmas::constants_lemmas`.
-//! - ZERO constant lemmas are in `unused_constants_lemmas.rs` (currently unused).
 #![allow(unused_imports)]
 use crate::backend::serial::u64::field::FieldElement51;
 use crate::specs::field_specs::*;
@@ -26,6 +29,50 @@ use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
 verus! {
+
+// =============================================================================
+// FieldElement::ZERO Lemmas
+// =============================================================================
+/// ZERO = [0, 0, 0, 0, 0] has 51-bit bounded limbs
+pub proof fn lemma_zero_limbs_bounded_51()
+    ensures
+        fe51_limbs_bounded(&FieldElement51::ZERO, 51),
+{
+    assert(fe51_limbs_bounded(&FieldElement51::ZERO, 51)) by {
+        assert(0u64 < (1u64 << 51)) by (bit_vector);
+    };
+}
+
+/// spec_field_element(ZERO) = 0  ✅ FULLY PROVED
+///
+/// ## Mathematical Proof
+/// ```text
+/// u64_5_as_nat([0, 0, 0, 0, 0])
+///   = 0 + 2^51·0 + 2^102·0 + 2^153·0 + 2^204·0
+///   = 0
+///
+/// spec_field_element(ZERO) = 0 % p = 0  (since 0 < p)
+/// ```
+pub proof fn lemma_zero_field_element_value()
+    ensures
+        spec_field_element(&FieldElement51::ZERO) == 0,
+{
+    assert(spec_field_element(&FieldElement51::ZERO) == 0) by {
+        // Subgoal 1: ZERO.limbs = [0, 0, 0, 0, 0]
+        assert(FieldElement51::ZERO.limbs[0] == 0);
+        assert(FieldElement51::ZERO.limbs[1] == 0);
+        assert(FieldElement51::ZERO.limbs[2] == 0);
+        assert(FieldElement51::ZERO.limbs[3] == 0);
+        assert(FieldElement51::ZERO.limbs[4] == 0);
+
+        // Subgoal 2: u64_5_as_nat([0, 0, 0, 0, 0]) = 0
+        assert(u64_5_as_nat(FieldElement51::ZERO.limbs) == 0);
+
+        // Subgoal 3: 0 % p = 0
+        p_gt_2();
+        lemma_small_mod(0nat, p());
+    };
+}
 
 // =============================================================================
 // FieldElement::ONE Lemmas

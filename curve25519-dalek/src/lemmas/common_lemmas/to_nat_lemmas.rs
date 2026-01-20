@@ -731,6 +731,33 @@ pub proof fn lemma_bytes32_to_nat_equals_suffix_64(bytes: &[u8; 64])
 }
 
 // ============================================================================
+// Identity bytes lemma (for CompressedEdwardsY::identity)
+// ============================================================================
+/// Lemma: bytes32_to_nat([1, 0, 0, ..., 0]) == 1
+///
+/// This proves that the little-endian interpretation of a 32-byte array
+/// with byte[0] = 1 and all other bytes = 0 equals the natural number 1.
+/// Used in CompressedEdwardsY::identity() verification.
+pub proof fn lemma_bytes32_to_nat_identity(bytes: &[u8; 32])
+    requires
+        bytes[0] == 1,
+        forall|i: int| 1 <= i < 32 ==> bytes[i] == 0,
+    ensures
+        bytes32_to_nat(bytes) == 1,
+{
+    // bytes[0] * pow2(0) = 1 * 1 = 1
+    assert(bytes[0] as nat * pow2(0) == 1) by {
+        lemma2_to64();
+    }
+
+    // All other terms are 0 * pow2(k*8) = 0
+    assert forall|i: nat| 1 <= i < 32 implies (bytes[i as int] as nat) * #[trigger] pow2(i * 8)
+        == 0 by {
+        lemma_mul_basics(pow2(i * 8) as int);
+    }
+}
+
+// ============================================================================
 // PART 2: WORD-TO-NAT LEMMAS
 // ============================================================================
 //

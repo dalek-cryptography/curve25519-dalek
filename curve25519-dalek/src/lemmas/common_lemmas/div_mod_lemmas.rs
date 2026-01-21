@@ -220,12 +220,17 @@ pub proof fn lemma_divisibility_factor(n: nat, a: nat, b: nat)
     // Both terms are non-negative and sum to 0, so both must be 0
     assert((n / a) % b == 0) by {
         lemma_mod_breakdown(n as int, a as int, b as int);
+        // From lemma_mod_breakdown: n % (a * b) == a * ((n / a) % b) + n % a
+        // Since n % (a * b) == 0: 0 == a * ((n / a) % b) + n % a
         let qb = (n / a) % b;
         let ra = n % a;
         assert(0 == a * qb + ra);
+        // Both qb and ra are non-negative (mod results)
         assert(qb >= 0);
         assert(ra >= 0);
+        // a * qb >= 0 and ra >= 0 and sum is 0, so both must be 0
         assert(a * qb == 0);
+        // Since a > 0 and a * qb == 0, we have qb == 0
         assert(qb == 0) by (nonlinear_arith)
             requires
                 a > 0,

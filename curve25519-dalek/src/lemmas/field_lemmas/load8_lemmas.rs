@@ -215,8 +215,28 @@ pub proof fn lemma_load8_at_plus_version_is_spec(input: &[u8], i: usize)
                 }
 
                 assert((input[i + j] as u64) << j * 8 <= u8::MAX * pow2(j * 8)) by {
-                    // input[k] < MAX8 => input[k] * 2^(8j) < MAX8 * 2^(8j)
-                    lemma_mul_inequality(input[i + j] as int, u8::MAX as int, pow2(j * 8) as int);
+                    let byte_val = input[i + j] as u64;
+                    let shift_bits = (j * 8) as u64;
+
+                    // byte_val <= 255, j <= 7, so shift_bits <= 56
+                    // 255 * 2^56 < 2^64
+                    lemma2_to64();
+                    assert(u8::MAX as nat * pow2(56) <= u64::MAX as nat) by (compute);
+                    if shift_bits < 56 {
+                        lemma_pow2_strictly_increases(shift_bits as nat, 56);
+                    }
+                    lemma_mul_le(
+                        byte_val as nat,
+                        u8::MAX as nat,
+                        pow2(shift_bits as nat),
+                        pow2(56),
+                    );
+
+                    // Convert shift to multiplication
+                    lemma_u64_shl_is_mul(byte_val, shift_bits);
+
+                    // Establish the actual goal: byte_val * pow2(j*8) <= u8::MAX * pow2(j*8)
+                    lemma_mul_inequality(byte_val as int, u8::MAX as int, pow2(j * 8) as int);
                 }
 
                 assert(load8_at_plus_version_rec(input, i, (j - 1) as nat) + ((input[i + j] as u64)

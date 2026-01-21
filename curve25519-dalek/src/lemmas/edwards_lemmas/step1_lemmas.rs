@@ -332,9 +332,57 @@ pub proof fn lemma_u_zero_implies_identity_point(y: nat)
         let x2y2 = math_field_mul(x2, y2);
         let d_x2y2 = math_field_mul(d, x2y2);
 
+        // x2 = (0 * 0) % p = 0
+        assert(x2 == 0) by {
+            assert(0int * 0int == 0int) by {
+                lemma_mul_basics(0int);
+            }
+            lemma_small_mod(0nat, p);
+        }
+
+        // x2y2 = (0 * y2) % p = 0
+        assert(x2y2 == 0) by {
+            assert(0int * (y2 as int) == 0int) by {
+                lemma_mul_basics(y2 as int);
+            }
+            lemma_small_mod(0nat, p);
+        }
+
+        // d_x2y2 = (d * 0) % p = 0
+        assert(d_x2y2 == 0) by {
+            assert((d as int) * 0int == 0int) by {
+                lemma_mul_basics(d as int);
+            }
+            lemma_small_mod(0nat, p);
+        }
+
+        // RHS: math_field_add(1, 0) = (1 + 0) % p = 1
+        assert(math_field_add(1, d_x2y2) == 1) by {
+            assert(d_x2y2 == 0);
+            lemma_small_mod(1nat, p);
+        }
+
         // LHS: y² - 0 = y² = 1
+        // math_field_sub(y2, x2) = (((y2 % p) + p) - (x2 % p)) % p
+        // = ((1 + p) - 0) % p = (p + 1) % p = 1
         assert(math_field_sub(y2, x2) == 1) by {
-            lemma_mod_multiples_vanish(1, 1, p as int);
+            assert(x2 == 0);
+            assert(y2 == 1);
+            // math_field_sub(1, 0) = (((1 % p) + p) - (0 % p)) % p
+            //                      = ((1 + p) - 0) % p
+            //                      = (p + 1) % p = 1
+            assert(1nat % p == 1) by {
+                lemma_small_mod(1nat, p);
+            }
+            assert(0nat % p == 0) by {
+                lemma_small_mod(0nat, p);
+            }
+            // (p + 1) % p = 1
+            assert((p + 1) % p == 1) by {
+                lemma_mod_adds(p as int, 1, p as int);
+                lemma_mod_self_0(p as int);
+                lemma_small_mod(1nat, p);
+            }
         };
 
         // LHS == RHS == 1, so curve equation holds

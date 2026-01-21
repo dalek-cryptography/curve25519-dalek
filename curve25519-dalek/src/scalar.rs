@@ -1728,6 +1728,7 @@ impl Scalar {
     // solution is to use assume_specification to tell Verus what zeroize does.
     // In the short-term, I've just told verus to ignore the body.
     // (SB update: alternative is to exclude just the zeroize call, as below)
+    #[verifier::rlimit(50)]  // The backward loop has many invariants that need more solver time
     pub fn batch_invert(inputs: &mut [Scalar]) -> (result:
         Scalar)/* <VERIFICATION NOTE>
      Refactored for Verus: Index loops instead of iterators, manual Vec construction, ..

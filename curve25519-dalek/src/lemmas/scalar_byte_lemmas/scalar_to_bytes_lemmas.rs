@@ -1245,21 +1245,9 @@ pub proof fn lemma_limb4_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
     lemma_byte_from_limb_shift_52(limbs[4], 32, bytes[30]);
     lemma_byte_from_limb_shift_52(limbs[4], 40, bytes[31]);
 
-    // TODO: Prove limbs[4] < 2^48
-    //
     // This bound is required because 6 bytes can only represent 48 bits.
     // The structural constraint for 256-bit scalars is that limb 4 occupies
     // only 48 bits (256 - 4*52 = 48), not the full 52 bits.
-    //
-    // However, scalar arithmetic operations use a 52-bit mask for all limbs,
-    // so this bound is not maintained by the implementation.
-    // See docs_22_oct/scalar_limb4_bound_issue.md for details.
-    //
-    // This assume is sound because:
-    // - The packing predicate guarantees bytes 26-31 encode limbs[4]
-    // - 6 bytes can only represent values < 2^48
-    // - Therefore limbs[4] must be < 2^48
-    // But we cannot formally derive this from the current preconditions.
     assert(l < pow2(48)) by {
         lemma_pow2_pos(48);
         lemma_mod_bound(limbs[4] as int, pow2(48) as int);
@@ -1324,36 +1312,29 @@ pub proof fn lemma_limb4_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
         208,
     ) + bytes[28] as nat * pow2(16) * pow2(208) + bytes[29] as nat * pow2(24) * pow2(208)
         + bytes[30] as nat * pow2(32) * pow2(208) + bytes[31] as nat * pow2(40) * pow2(208))) by {
-        // Distribute pow2(208) across the sum using repeated application of distributivity
-        lemma_mul_is_distributive_add(
-            pow2(208) as int,
-            (bytes[26] as nat * pow2(0)) as int,
-            (bytes[27] as nat * pow2(8)) as int,
+        // Use lemma_mul_is_distributive_add_other_way for (a + b) * x = a*x + b*x
+        let b26 = bytes[26] as nat * pow2(0);
+        let b27 = bytes[27] as nat * pow2(8);
+        let b28 = bytes[28] as nat * pow2(16);
+        let b29 = bytes[29] as nat * pow2(24);
+        let b30 = bytes[30] as nat * pow2(32);
+        let b31 = bytes[31] as nat * pow2(40);
+        let p = pow2(208) as int;
+
+        // Step by step: (b26 + b27 + b28 + b29 + b30 + b31) * p
+        // = ((b26 + b27 + b28 + b29 + b30) + b31) * p
+        // = (b26 + b27 + b28 + b29 + b30) * p + b31 * p
+        // ... and so on
+
+        lemma_mul_is_distributive_add_other_way(
+            p,
+            (b26 + b27 + b28 + b29 + b30) as int,
+            b31 as int,
         );
-        lemma_mul_is_distributive_add(
-            pow2(208) as int,
-            (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8)) as int,
-            (bytes[28] as nat * pow2(16)) as int,
-        );
-        lemma_mul_is_distributive_add(
-            pow2(208) as int,
-            (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8) + bytes[28] as nat * pow2(
-                16,
-            )) as int,
-            (bytes[29] as nat * pow2(24)) as int,
-        );
-        lemma_mul_is_distributive_add(
-            pow2(208) as int,
-            (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8) + bytes[28] as nat * pow2(16)
-                + bytes[29] as nat * pow2(24)) as int,
-            (bytes[30] as nat * pow2(32)) as int,
-        );
-        lemma_mul_is_distributive_add(
-            pow2(208) as int,
-            (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8) + bytes[28] as nat * pow2(16)
-                + bytes[29] as nat * pow2(24) + bytes[30] as nat * pow2(32)) as int,
-            (bytes[31] as nat * pow2(40)) as int,
-        );
+        lemma_mul_is_distributive_add_other_way(p, (b26 + b27 + b28 + b29) as int, b30 as int);
+        lemma_mul_is_distributive_add_other_way(p, (b26 + b27 + b28) as int, b29 as int);
+        lemma_mul_is_distributive_add_other_way(p, (b26 + b27) as int, b28 as int);
+        lemma_mul_is_distributive_add_other_way(p, b26 as int, b27 as int);
     };
 
     assert((bytes[26] as nat * pow2(0) * pow2(208) + bytes[27] as nat * pow2(8) * pow2(208)

@@ -49,6 +49,15 @@ pub proof fn lemma_m(x: u64, y: u64, bx: u64, by: u64)
     lemma_mul_lt(x as nat, bx as nat, y as nat, by as nat);
 }
 
+/// Distributive property for nat: (y + z) * x == y * x + z * x
+/// Bridges the int distributive lemma to work with nat values
+pub proof fn lemma_nat_distributive(x: nat, y: nat, z: nat)
+    ensures
+        (y + z) * x == y * x + z * x,
+{
+    lemma_mul_is_distributive_add_other_way(x as int, y as int, z as int);
+}
+
 pub proof fn lemma_mul_distributive_3_terms(n: int, x1: int, x2: int, x3: int)
     ensures
         n * (x1 + x2 + x3) == (x1 + x2 + x3) * n == n * x1 + n * x2 + n * x3,

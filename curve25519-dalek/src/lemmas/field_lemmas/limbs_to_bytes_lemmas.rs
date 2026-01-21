@@ -474,6 +474,91 @@ proof fn lemma_5_bytes_reconstruct(
     }
 }
 
+/// Helper: Scale a 5-byte sum by a power of 2
+/// If byte0*pow2(0) + ... + byte4*pow2(32) == value, then
+/// byte0*pow2(scale) + ... + byte4*pow2(scale+32) == value * pow2(scale)
+proof fn lemma_5_bytes_scale(
+    value: nat,
+    byte0: u8,
+    byte1: u8,
+    byte2: u8,
+    byte3: u8,
+    byte4: u8,
+    scale: nat,
+)
+    requires
+        byte0 as nat * pow2(0) + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + byte3 as nat
+            * pow2(24) + byte4 as nat * pow2(32) == value,
+    ensures
+        byte0 as nat * pow2(scale) + byte1 as nat * pow2(scale + 8) + byte2 as nat * pow2(
+            scale + 16,
+        ) + byte3 as nat * pow2(scale + 24) + byte4 as nat * pow2(scale + 32) == value * pow2(
+            scale,
+        ),
+{
+    let sum = byte0 as nat * pow2(0) + byte1 as nat * pow2(8) + byte2 as nat * pow2(16)
+        + byte3 as nat * pow2(24) + byte4 as nat * pow2(32);
+    let p = pow2(scale);
+
+    // Step 1: sum * p == value * p (since sum == value)
+    assert(sum * p == value * p);
+
+    // Step 2: Distribute p into each term using repeated distributivity
+    // (a + b + c + d + e) * p == a*p + b*p + c*p + d*p + e*p
+    let t0 = byte0 as nat * pow2(0);
+    let t1 = byte1 as nat * pow2(8);
+    let t2 = byte2 as nat * pow2(16);
+    let t3 = byte3 as nat * pow2(24);
+    let t4 = byte4 as nat * pow2(32);
+
+    // Distribute: (t0 + t1 + t2 + t3 + t4) * p == t0*p + t1*p + t2*p + t3*p + t4*p
+    assert(sum * p == t0 * p + t1 * p + t2 * p + t3 * p + t4 * p) by {
+        lemma_mul_distributive_5_terms(
+            p as int,
+            t0 as int,
+            t1 as int,
+            t2 as int,
+            t3 as int,
+            t4 as int,
+        );
+    }
+
+    // Step 3: Simplify each term using associativity and pow2 addition
+    // t0 * p = byte0 * pow2(0) * pow2(scale) = byte0 * pow2(scale)
+    assert(t0 * p == byte0 as nat * pow2(scale)) by {
+        lemma_mul_is_associative(byte0 as int, pow2(0) as int, p as int);
+        lemma_pow2_adds(0, scale);
+    }
+
+    // t1 * p = byte1 * pow2(8) * pow2(scale) = byte1 * pow2(scale + 8)
+    assert(t1 * p == byte1 as nat * pow2(scale + 8)) by {
+        lemma_mul_is_associative(byte1 as int, pow2(8) as int, p as int);
+        lemma_pow2_adds(8, scale);
+        lemma_mul_is_commutative(pow2(8) as int, p as int);
+    }
+
+    // t2 * p = byte2 * pow2(16) * pow2(scale) = byte2 * pow2(scale + 16)
+    assert(t2 * p == byte2 as nat * pow2(scale + 16)) by {
+        lemma_mul_is_associative(byte2 as int, pow2(16) as int, p as int);
+        lemma_pow2_adds(16, scale);
+        lemma_mul_is_commutative(pow2(16) as int, p as int);
+    }
+
+    // t3 * p = byte3 * pow2(24) * pow2(scale) = byte3 * pow2(scale + 24)
+    assert(t3 * p == byte3 as nat * pow2(scale + 24)) by {
+        lemma_mul_is_associative(byte3 as int, pow2(24) as int, p as int);
+        lemma_pow2_adds(24, scale);
+        lemma_mul_is_commutative(pow2(24) as int, p as int);
+    }
+
+    // t4 * p = byte4 * pow2(32) * pow2(scale) = byte4 * pow2(scale + 32)
+    assert(t4 * p == byte4 as nat * pow2(scale + 32)) by {
+        lemma_mul_is_associative(byte4 as int, pow2(32) as int, p as int);
+        lemma_pow2_adds(32, scale);
+        lemma_mul_is_commutative(pow2(32) as int, p as int);
+    }
+}
+
 /// Helper: 6-byte reconstruction lemma
 /// Proves that 6 consecutive bytes reconstruct a 48-bit value
 pub proof fn lemma_6_bytes_reconstruct(
@@ -707,53 +792,12 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
         + bytes[10] as nat * pow2(24) + bytes[11] as nat * pow2(32) == middle_value);
 
     // Now multiply both sides by 2^56 to get the bytes at their actual positions
-    lemma_mul_is_distributive_add(
-        pow2(56) as int,
-        (bytes[7] as nat * pow2(0)) as int,
-        (bytes[8] as nat * pow2(8)) as int,
-    );
-    lemma_mul_is_distributive_add(
-        pow2(56) as int,
-        (bytes[7] as nat * pow2(0) + bytes[8] as nat * pow2(8)) as int,
-        (bytes[9] as nat * pow2(16)) as int,
-    );
-    lemma_mul_is_distributive_add(
-        pow2(56) as int,
-        (bytes[7] as nat * pow2(0) + bytes[8] as nat * pow2(8) + bytes[9] as nat * pow2(16)) as int,
-        (bytes[10] as nat * pow2(24)) as int,
-    );
-    lemma_mul_is_distributive_add(
-        pow2(56) as int,
-        (bytes[7] as nat * pow2(0) + bytes[8] as nat * pow2(8) + bytes[9] as nat * pow2(16)
-            + bytes[10] as nat * pow2(24)) as int,
-        (bytes[11] as nat * pow2(32)) as int,
-    );
+    // Use the helper lemma that encapsulates the distributivity/associativity pattern
+    lemma_5_bytes_scale(middle_value, bytes[7], bytes[8], bytes[9], bytes[10], bytes[11], 56);
 
-    // Distribute the multiplication into each term
-    lemma_mul_is_associative(bytes[7] as int, pow2(0) as int, pow2(56) as int);
-    lemma_mul_is_associative(bytes[8] as int, pow2(8) as int, pow2(56) as int);
-    lemma_mul_is_associative(bytes[9] as int, pow2(16) as int, pow2(56) as int);
-    lemma_mul_is_associative(bytes[10] as int, pow2(24) as int, pow2(56) as int);
-    lemma_mul_is_associative(bytes[11] as int, pow2(32) as int, pow2(56) as int);
-
-    // Simplify using pow2 addition: 2^56 * 2^k = 2^(56+k)
-    lemma_pow2_adds(56, 0);
-
-    lemma_pow2_adds(56, 8);
-
-    lemma_pow2_adds(56, 16);
-
-    lemma_pow2_adds(56, 24);
-
-    lemma_pow2_adds(56, 32);
-    assert(pow2(88) == pow2(11 * 8));
-
-    // Final result§
-    assert(bytes[7] as nat * pow2(7 * 8) + bytes[8] as nat * pow2(8 * 8) + bytes[9] as nat * pow2(
-        9 * 8,
-    ) + bytes[10] as nat * pow2(10 * 8) + bytes[11] as nat * pow2(11 * 8) == middle_value * pow2(
-        56,
-    ));
+    // Final result: bytes at positions 56, 64, 72, 80, 88 sum to middle_value * pow2(56)
+    assert(bytes[7] as nat * pow2(56) + bytes[8] as nat * pow2(64) + bytes[9] as nat * pow2(72)
+        + bytes[10] as nat * pow2(80) + bytes[11] as nat * pow2(88) == middle_value * pow2(56));
 
     // Step 3: Handle boundary bytes
     // Low 5 bits (byte 6 high part): (limbs[1] % 2^5) * 8 * 2^48 = (limbs[1] % 2^5) * 2^51
@@ -878,69 +922,48 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // We have: contribution = ((limbs[1] % 2^5) * 8) * 2^48 + middle_value_at_position + ((limbs[1] / 2^45) % 2^6) * 2^96
     // Where: middle_value_at_position = ((limbs[1] / 2^5) % 2^40) * 2^56
 
-    // First, simplify the low term: ((limbs[1] % 2^5) * 8) * 2^48 = (limbs[1] % 2^5) * (8 * 2^48) = (limbs[1] % 2^5) * 2^51
-    // We proved earlier that 8 * 2^48 = 2^51
-    let low_part = (limbs[1] as nat % pow2(5));
-    assert(((limbs[1] as nat % pow2(5)) * 8) * pow2(48) == low_part * (8 * pow2(48))) by {
-        lemma_mul_is_associative(low_part as int, 8, pow2(48) as int);
-    }
+    // Key power relationships
+    lemma_pow2_adds(48, 3);  // 8 * 2^48 = 2^51
+    lemma_pow2_adds(51, 5);  // 2^56 = 2^51 * 2^5
+    lemma_pow2_adds(51, 45);  // 2^96 = 2^51 * 2^45
 
-    // So contribution = (limbs[1] % 2^5) * 2^51 + ((limbs[1] / 2^5) % 2^40) * 2^56 + ((limbs[1] / 2^45) % 2^6) * 2^96
-    assert(contribution == low_part * pow2(51) + ((limbs[1] as nat / pow2(5)) % pow2(40)) * pow2(56)
-        + ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(96));
-
-    // Rewrite using 2^56 = 2^51 * 2^5 and 2^96 = 2^51 * 2^45
-    assert(contribution == low_part * pow2(51) + ((limbs[1] as nat / pow2(5)) % pow2(40)) * (pow2(
-        51,
-    ) * pow2(5)) + ((limbs[1] as nat / pow2(45)) % pow2(6)) * (pow2(51) * pow2(45)));
-
-    // Apply associativity to move pow2(51) to the left
-    let middle_part = (limbs[1] as nat / pow2(5)) % pow2(40);
+    // Define the three parts for clarity
+    let low_part = limbs[1] as nat % pow2(5);
+    let mid_part = (limbs[1] as nat / pow2(5)) % pow2(40);
     let high_part = (limbs[1] as nat / pow2(45)) % pow2(6);
 
-    assert(middle_part * (pow2(51) * pow2(5)) == (middle_part * pow2(51)) * pow2(5)) by {
-        lemma_mul_is_associative(middle_part as int, pow2(51) as int, pow2(5) as int);
-    }
-    assert((middle_part * pow2(51)) * pow2(5) == pow2(51) * middle_part * pow2(5)) by {
-        lemma_mul_is_commutative((middle_part * pow2(51)) as int, pow2(5) as int);
-    }
-    assert(pow2(51) * middle_part * pow2(5) == pow2(51) * (middle_part * pow2(5))) by {
-        lemma_mul_is_associative(pow2(51) as int, middle_part as int, pow2(5) as int);
+    // Simplify each term to factor out pow2(51)
+    // Term 1: ((limbs[1] % 2^5) * 8) * 2^48 = low_part * 2^51
+    assert(((limbs[1] as nat % pow2(5)) * 8) * pow2(48) == low_part * pow2(51)) by {
+        lemma_mul_is_associative((limbs[1] as nat % pow2(5)) as int, 8, pow2(48) as int);
     }
 
-    assert(high_part * (pow2(51) * pow2(45)) == (high_part * pow2(51)) * pow2(45)) by {
-        lemma_mul_is_associative(high_part as int, pow2(51) as int, pow2(45) as int);
-    }
-    assert((high_part * pow2(51)) * pow2(45) == pow2(51) * high_part * pow2(45)) by {
-        lemma_mul_is_commutative((high_part * pow2(51)) as int, pow2(45) as int);
-    }
-    assert(pow2(51) * high_part * pow2(45) == pow2(51) * (high_part * pow2(45))) by {
-        lemma_mul_is_associative(pow2(51) as int, high_part as int, pow2(45) as int);
+    // Term 2: mid_part * 2^56 = mid_part * 2^5 * 2^51
+    assert(mid_part * pow2(56) == mid_part * pow2(5) * pow2(51)) by {
+        lemma_mul_is_associative(mid_part as int, pow2(5) as int, pow2(51) as int);
+        lemma_mul_is_commutative((mid_part * pow2(5)) as int, pow2(51) as int);
     }
 
-    // Now factor out pow2(51)
-    assert(contribution == low_part * pow2(51) + pow2(51) * (middle_part * pow2(5)) + pow2(51) * (
-    high_part * pow2(45)));
-
-    // Use distributivity to factor out pow2(51)
-    assert(contribution == pow2(51) * (low_part + middle_part * pow2(5) + high_part * pow2(45)))
-        by {
-        lemma_mul_is_distributive_add(
-            pow2(51) as int,
-            low_part as int,
-            (middle_part * pow2(5)) as int,
-        );
-        lemma_mul_is_distributive_add(
-            pow2(51) as int,
-            (low_part + middle_part * pow2(5)) as int,
-            (high_part * pow2(45)) as int,
-        );
+    // Term 3: high_part * 2^96 = high_part * 2^45 * 2^51
+    assert(pow2(96) == pow2(45) * pow2(51)) by {
+        lemma_pow2_adds(45, 51);
+    }
+    assert(high_part * pow2(96) == high_part * pow2(45) * pow2(51)) by {
+        lemma_mul_is_associative(high_part as int, pow2(45) as int, pow2(51) as int);
     }
 
-    // The part in parentheses equals limbs[1] by our reconstruction identity!
-    assert(contribution == limbs[1] as nat * pow2(51)) by {
-        lemma_mul_is_commutative(pow2(51) as int, limbs[1] as int);
-    }
+    // So contribution = low_part * 2^51 + mid_part * 2^5 * 2^51 + high_part * 2^45 * 2^51
+    //                 = (low_part + mid_part * 2^5 + high_part * 2^45) * 2^51
+    //                 = limbs[1] * 2^51 (by reconstruction identity)
+
+    // Use nonlinear_arith to factor out pow2(51) and connect to limbs[1]
+    assert(contribution == limbs[1] as nat * pow2(51)) by (nonlinear_arith)
+        requires
+            limbs[1] as nat == low_part + mid_part * pow2(5) + high_part * pow2(45),
+            contribution == low_part * pow2(51) + mid_part * pow2(56) + high_part * pow2(96),
+            pow2(56) == pow2(51) * pow2(5),
+            pow2(96) == pow2(51) * pow2(45),
+    ;
 
 }
 
@@ -1493,7 +1516,6 @@ proof fn lemma_limb3_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
 
     lemma_pow2_adds(160, 32);
 
-    // Final result
     assert(bytes[20] as nat * pow2(20 * 8) + bytes[21] as nat * pow2(21 * 8) + bytes[22] as nat
         * pow2(22 * 8) + bytes[23] as nat * pow2(23 * 8) + bytes[24] as nat * pow2(24 * 8)
         == middle_value * pow2(160));

@@ -965,6 +965,17 @@ macro_rules! lemma_pow2_sum_bounds {
                 }
                 // trigger forall
                 assert(coefs[(offset + 0) as int] < pow2(step));
+                // Reveal the spec to show what pow2_sum equals
+                assert($pow2_sum_uN(coefs, offset, step, 0) == coefs[offset as int] as nat * pow2(0)) by {
+                    reveal_with_fuel($pow2_sum_uN, 1);
+                }
+                // (0 + 1) * step == 1 * step == step
+                assert(1 * step == step) by {
+                    lemma_mul_basics_3(step as int);
+                }
+                assert((0 + 1) * step == step);
+                // Explicit final
+                assert($pow2_sum_uN(coefs, offset, step, k) < pow2((k + 1) * step));
             } else {
                 assert($pow2_sum_uN(coefs, offset, step, k) == $pow2_sum_uN(coefs, offset, step, (k - 1) as nat)
                     + coefs[(offset + k) as int] * pow2(k * step)) by {
@@ -986,6 +997,11 @@ macro_rules! lemma_pow2_sum_bounds {
                         lemma_pow2_mul_bound_general(coefs[(offset + k) as int] as nat, step, k * step);
                     }
                 }
+
+                // Final step: combine the bounds
+                // sum(k-1) < pow2(k * step) AND coefs[k] * pow2(k * step) <= pow2((k+1) * step) - pow2(k * step)
+                // => sum(k) = sum(k-1) + coefs[k] * pow2(k * step) < pow2((k+1) * step)
+                assert($pow2_sum_uN(coefs, offset, step, k) < pow2((k + 1) * step));
             }
         }
     }

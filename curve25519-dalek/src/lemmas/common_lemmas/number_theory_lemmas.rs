@@ -121,6 +121,10 @@ pub proof fn lemma_gcd_positive(a: nat, b: nat)
 }
 
 /// Lemma: Any common divisor of a and b divides gcd(a, b)
+///
+/// Proof by induction on b, following the Euclidean algorithm structure:
+/// - Base case: gcd(a, 0) = a, and d | a by assumption
+/// - Inductive case: gcd(a, b) = gcd(b, a % b), show d | (a % b), then apply IH
 pub proof fn lemma_common_divisor_divides_gcd(a: nat, b: nat, d: nat)
     requires
         d > 0,
@@ -131,23 +135,35 @@ pub proof fn lemma_common_divisor_divides_gcd(a: nat, b: nat, d: nat)
     decreases b,
 {
     if b == 0 {
-        // gcd(a, 0) = a, and d | a by assumption
+        // Base case: gcd(a, 0) = a, and d | a by assumption
+        assert(spec_gcd(a, b) == a);
+        // d | a is given in precondition
     } else {
+        // Inductive case: gcd(a, b) = gcd(b, a % b)
         let q = a / b;
         let r = a % b;
 
-        lemma_fundamental_div_mod(a as int, b as int);
+        // Step 1: Establish a = b * q + r (fundamental division property)
+        assert(a == b * q + r) by {
+            lemma_fundamental_div_mod(a as int, b as int);
+        }
 
-        assert((b * q) % d == 0) by {
-            lemma_mul_mod_noop_right(q as int, b as int, d as int);
-            lemma_mul_is_commutative(q as int, b as int);
-        };
-
+        // Step 2: Show r % d == 0 (d divides the remainder)
+        // Since r = a - b * q, and d | a and d | b, we have d | r
         assert(r % d == 0) by {
-            lemma_sub_mod_noop(a as int, (b * q) as int, d as int);
-        };
+            assert(a >= q * b) by {
+                lemma_fundamental_div_mod(a as int, b as int);
+            }
+            lemma_divides_linear_combo_sub(a, b, q, d);
+        }
 
-        lemma_common_divisor_divides_gcd(b, r, d);
+        // Step 3: Apply induction hypothesis to gcd(b, r)
+        assert(spec_gcd(b, r) % d == 0) by {
+            lemma_common_divisor_divides_gcd(b, r, d);
+        }
+
+        // Step 4: Conclude since gcd(a, b) = gcd(b, r)
+        assert(spec_gcd(a, b) == spec_gcd(b, r));
     }
 }
 
@@ -638,6 +654,9 @@ proof fn lemma_partial_binomial_sum_mod_p(a: nat, p: nat, j: nat)
         let term_p = binomial(p, p) * pow_a_p;
         assert(term_p == pow_a_p) by {
             assert(binomial(p, p) == 1);
+            assert(1 * pow_a_p == pow_a_p) by {
+                lemma_mul_basics(pow_a_p as int);
+            }
         };
 
         // S_p = S_{p-1} + a^p

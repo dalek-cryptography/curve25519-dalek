@@ -256,7 +256,16 @@ pub proof fn lemma_x_zero_implies_y_squared_one(x: nat, y: nat)
     // Strategy: From curve equation y² - x² = 1 + d·x²·y², show all terms simplify
 
     assert(x2 == 0) by {
+        // x % p == 0 means x * x % p == 0
+        // (x * x) % p == ((x % p) * (x % p)) % p == (0 * 0) % p == 0
         lemma_mul_mod_noop_general(x as int, x as int, modulus as int);
+        assert((x as int * x as int) % (modulus as int) == (((x as int) % (modulus as int)) * ((
+        x as int) % (modulus as int))) % (modulus as int));
+        assert((x as int) % (modulus as int) == 0);
+        assert(0int * 0int == 0int) by {
+            lemma_mul_basics(0int);
+        }
+        lemma_small_mod(0nat, modulus);
     };
 
     assert(x2y2 == 0) by {

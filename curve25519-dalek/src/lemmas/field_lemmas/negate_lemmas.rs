@@ -189,20 +189,52 @@ pub proof fn lemma_neg(elem: &FieldElement51)
                 lemma_small_mod((p() - (x % p())) as nat, p());
             }
 
+            // Define z outside the by block so the solver can connect it to (y + x) % p() == 0
+            let z = y + x;
+            // This follows from (y + x) % p() == 0 established at line 153
+            assert(z % p() == 0);
+
             assert(y + x == p()) by {
-                let z = y + x;
-                // z % p == 0 and z > 0 and 0 < z < 2*p implies z == p
-                assert(z % p() == 0);
-                assert(z > 0);
-                assert(z < 2 * p());  // since x < p and y < p
-                // Use nonlinear_arith to conclude z == p
-                assert(z == p()) by (nonlinear_arith)
-                    requires
-                        z % p() == 0,
-                        z > 0,
-                        z < 2 * p(),
-                        p() > 0,
-                ;
+                assert(z == p() * (z / p())) by {
+                    // lemma_fundamental_div_mod gives: z = p() * (z / p()) + z % p()
+                    // Combined with z % p() == 0, we get z = p() * (z / p())
+                    lemma_fundamental_div_mod(z as int, p() as int);
+                }
+                assert(z / p() == 1) by {
+                    assert(z / p() >= 1) by {
+                        assert(z >= p()) by {
+                            lemma_mod_is_zero(z, p());
+                        }
+                        assert(z / p() >= p() / p()) by {
+                            // we already know p > 0
+                            lemma_div_is_ordered(p() as int, z as int, p() as int);
+                        }
+                        assert(p() / p() == 1) by {
+                            lemma_div_by_self(p() as int);
+                        }
+                    }
+                    assert(z / p() < 2) by {
+                        assert(z <= 2 * p()) by {
+                            // known
+                            assert(x < p());
+                            assert(y < p());
+                        }
+                        assert(2 * p() / p() == 2) by {
+                            lemma_div_by_multiple(2, p() as int);
+                        }
+                        lemma_div_by_multiple_is_strongly_ordered(
+                            z as int,
+                            (2 * p()) as int,
+                            2,
+                            p() as int,
+                        );
+                    }
+                }
+                // Connect the pieces: z == p() * (z / p()) and z / p() == 1 imply z == p()
+                assert(z == p() * 1) by {
+                    lemma_mul_basics(p() as int);
+                }
+                assert(z == p());
             }
 
         }

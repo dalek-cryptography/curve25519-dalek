@@ -83,3 +83,8 @@ lizard = ["digest"]
 
 [package.metadata.verus]
 verify = true
+# Verus release version for CI workflows (should be compatible with the vstd git revision above)
+# Find releases at: https://github.com/verus-lang/verus/releases
+release = "0.2026.01.14.88f7396"
+# Rust toolchain version required by this Verus release
+rust-version = "1.92.0"

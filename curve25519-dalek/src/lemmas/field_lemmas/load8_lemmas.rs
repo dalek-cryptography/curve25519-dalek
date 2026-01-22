@@ -221,7 +221,7 @@ pub proof fn lemma_load8_at_plus_version_is_spec(input: &[u8], i: usize)
                     // byte_val <= 255, j <= 7, so shift_bits <= 56
                     // 255 * 2^56 < 2^64
                     lemma2_to64();
-                    assert(u8::MAX as nat * pow2(56) <= u64::MAX as nat) by (compute);
+                    assert(u8::MAX as nat * 0x100000000000000 <= u64::MAX as nat) by (compute);
                     if shift_bits < 56 {
                         lemma_pow2_strictly_increases(shift_bits as nat, 56);
                     }

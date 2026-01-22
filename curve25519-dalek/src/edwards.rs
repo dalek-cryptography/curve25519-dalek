@@ -1933,6 +1933,9 @@ impl<'a> Neg for &'a EdwardsPoint {
         // REFACTORED: Use explicit Neg::neg() calls instead of operator shortcuts
         // to avoid Verus panic
         use core::ops::Neg;
+
+        assert(1u64 << 52 < 1u64 << 54) by (bit_vector);
+
         let r = EdwardsPoint { X: Neg::neg(&self.X), Y: self.Y, Z: self.Z, T: Neg::neg(&self.T) };
         proof {
             assume(is_well_formed_edwards_point(r));

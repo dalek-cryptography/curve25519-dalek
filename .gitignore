@@ -9,6 +9,7 @@ build*.txt
 *.swp
 *.orig
 *.bak
+.DS_Store
 
 *.s
 .aider*

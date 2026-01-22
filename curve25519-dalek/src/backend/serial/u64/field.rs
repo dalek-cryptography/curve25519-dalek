@@ -636,7 +636,7 @@ impl vstd::std_specs::ops::NegSpecImpl for &FieldElement51 {
 
     // Pre-condition of neg
     open spec fn neg_req(self) -> bool {
-        fe51_limbs_bounded(self, 52)
+        fe51_limbs_bounded(self, 54)
     }
 
     // Postcondition of neg
@@ -810,7 +810,7 @@ impl FieldElement51 {
     ///
     pub fn negate(&mut self)
         requires
-            forall|i: int| 0 <= i < 5 ==> old(self).limbs[i] < (1u64 << 52),
+            forall|i: int| 0 <= i < 5 ==> old(self).limbs[i] < (1u64 << 54),
         ensures
             forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
             // Assume we start with l = (l0, l1, l2, l3, l4).

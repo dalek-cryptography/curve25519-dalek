@@ -26,6 +26,8 @@ use vstd::prelude::*;
 #[allow(unused_imports)]
 use super::common_lemmas::bit_lemmas::*;
 #[allow(unused_imports)]
+use super::common_lemmas::mul_lemmas::*;
+#[allow(unused_imports)]
 use super::common_lemmas::pow_lemmas::*;
 #[allow(unused_imports)]
 use super::common_lemmas::shift_lemmas::*;
@@ -33,32 +35,6 @@ use super::common_lemmas::shift_lemmas::*;
 use crate::lemmas::common_lemmas::to_nat_lemmas::*;
 
 verus! {
-
-pub proof fn lemma_52_52(x: u64, y: u64)
-    requires
-        x < (1u64 << 52),
-        y < (1u64 << 52),
-    ensures
-        (x as u128) * (y as u128) < (1u128 << 104),
-{
-    assert(1u128 << 52 == 1u64 << 52) by (bit_vector);
-    calc! {
-        (<)
-        (x as u128) * (y as u128); (<=) {
-            if x > 0 {
-                lemma_mul_strict_inequality(y as int, (1u128 << 52) as int, x as int);
-                assert(x * y < x * (1u128 << 52));
-            } else {
-                assert((0 as u128) * (y as u128) == 0);
-            }
-        }
-        (x as u128) * (1u128 << 52); (<) {
-            lemma_mul_strict_inequality(x as int, (1u128 << 52) as int, (1u128 << 52) as int);
-        }
-        (1u128 << 52) * (1u128 << 52);
-    }
-    assert((1u128 << 52) * (1u128 << 52) == (1u128 << 104)) by (compute);
-}
 
 pub proof fn lemma_square_internal_no_overflow()
     ensures
@@ -75,7 +51,7 @@ pub proof fn lemma_square_internal_no_overflow()
 
 pub proof fn lemma_square_internal_correct(a: &[u64; 5], z: &[u128; 9])
     requires
-        forall|i: int| 0 <= i < 5 ==> a[i] < (1u64 << 52),
+        limb_prod_bounded_u128(*a, *a, 5),
         z[0] == (a[0] * a[0]),
         z[1] == (a[0] * a[1]) * 2,
         z[2] == (a[0] * a[2]) * 2 + (a[1] * a[1]),
@@ -126,8 +102,7 @@ pub proof fn lemma_mul_internal_no_overflow()
 
 pub proof fn lemma_mul_internal_correct(a: &[u64; 5], b: &[u64; 5], z: &[u128; 9])
     requires
-        forall|i: int| 0 <= i < 5 ==> a[i] < (1u64 << 52),
-        forall|i: int| 0 <= i < 5 ==> b[i] < (1u64 << 52),
+        limb_prod_bounded_u128(*a, *b, 5),
         z[0] == (a[0] * b[0]),
         z[1] == (a[0] * b[1]) + (a[1] * b[0]),
         z[2] == (a[0] * b[2]) + (a[1] * b[1]) + (a[2] * b[0]),
@@ -740,6 +715,35 @@ pub proof fn lemma_from_montgomery_limbs_conversion(limbs: &[u128; 9], self_limb
     ));
 }
 
+pub proof fn lemma_limbs_bounded_implies_prod_bounded(s: &Scalar52, t: &Scalar52)
+    requires
+        limbs_bounded(s) || limbs_bounded(t),
+    ensures
+        limb_prod_bounded_u128(s.limbs, t.limbs, 5),
+{
+    assert forall|i: int, j: int| 0 <= i < 5 && 0 <= j < 5 implies (s.limbs[i] * t.limbs[j]) * 5
+        <= u128::MAX by {
+        if (limbs_bounded(s)) {
+            lemma_mul_le(
+                s.limbs[i] as nat,
+                (1u64 << 52) as nat,
+                t.limbs[j] as nat,
+                u64::MAX as nat,
+            );
+        } else {  // limbs_bounded(t)
+            lemma_mul_le(
+                t.limbs[j] as nat,
+                (1u64 << 52) as nat,
+                s.limbs[i] as nat,
+                u64::MAX as nat,
+            );
+        }
+        lemma_mul_is_commutative(s.limbs[i] as int, t.limbs[j] as int);
+        assert(((1u64 << 52) * u64::MAX) * 5 <= u128::MAX) by (compute);
+    }
+}
+
+/// R = 2^260 % L, its limbs are defined in `constants.rs` and are all bounded
 pub proof fn lemma_r_limbs_bounded()
     ensures
         0x000f48bd6721e6edu64 < (1u64 << 52),

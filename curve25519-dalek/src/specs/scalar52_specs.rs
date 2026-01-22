@@ -93,6 +93,10 @@ pub open spec fn limbs_bounded(s: &Scalar52) -> bool {
     forall|i: int| 0 <= i < 5 ==> s.limbs[i] < (1u64 << 52)
 }
 
+pub open spec fn limb_prod_bounded_u128(limbs1: [u64; 5], limbs2: [u64; 5], k: nat) -> bool {
+    forall|i: int, j: int| 0 <= i < 5 && 0 <= j < 5 ==> (limbs1[i] * limbs2[j]) * k <= u128::MAX
+}
+
 /// Checks if a Scalar52 is in canonical form:
 /// - All limbs are properly bounded (< 2^52)
 /// - The value is reduced modulo group order (< L)

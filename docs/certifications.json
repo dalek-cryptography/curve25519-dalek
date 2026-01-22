@@ -1,0 +1,30 @@
+{
+  "certifications": [
+    {
+      "timestamp": "2026-01-22T09:03:12Z",
+      "commit_sha": "a078d99d24052b8a492e7cffc50181476f4d2ad0",
+      "commit_short": "a078d99",
+      "artifact_url": "https://github.com/Beneficial-AI-Foundation/dalek-lite/actions/runs/21242239695",
+      "content_hash": "0x3a2f7ee72226a1058250d400d2c2733ea5e4391897c565fb66f362aa3c3e1a19",
+      "mainnet_tx": "0x31ecf1e408f7c3a1076a91f5cc94590302902de73117afd40c45f08f18369362",
+      "mainnet_etherscan": "https://etherscan.io/tx/0x31ecf1e408f7c3a1076a91f5cc94590302902de73117afd40c45f08f18369362",
+      "sepolia_tx": "",
+      "sepolia_etherscan": "",
+      "verified_count": 0,
+      "total_functions": 0
+    },
+    {
+      "timestamp": "2026-01-09T11:55:12Z",
+      "commit_sha": "8443656e1a6475721bc2423cbad440ab67e3722a",
+      "commit_short": "8443656",
+      "artifact_url": "https://github.com/Beneficial-AI-Foundation/dalek-lite/actions/runs/20851024323",
+      "content_hash": "0xd208bbba127dfdf12db56e11d54781c9c526824b4a03f1e6c01ee9c5d35ad0f2",
+      "mainnet_tx": "0xb6897f66d8c7fa283cd87f62c663d1c4206d247fc178aa6d500c845633e77ad7",
+      "mainnet_etherscan": "https://etherscan.io/tx/0xb6897f66d8c7fa283cd87f62c663d1c4206d247fc178aa6d500c845633e77ad7",
+      "sepolia_tx": "",
+      "sepolia_etherscan": "",
+      "verified_count": 0,
+      "total_functions": 0
+    }
+  ]
+}

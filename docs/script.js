@@ -345,8 +345,162 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Load certifications history
+    async function loadCertifications() {
+        try {
+            const response = await fetch('certifications.json');
+            const data = await response.json();
+            
+            const tbody = document.getElementById('certificationsTableBody');
+            const description = document.getElementById('certificationsDescription');
+            
+            if (!data.certifications || data.certifications.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="certifications-empty">
+                            No certifications recorded yet. Certifications will appear here after verification runs.
+                        </td>
+                    </tr>
+                `;
+                description.innerHTML = '<em>Certifications will be recorded automatically on each verification run.</em>';
+                return;
+            }
+            
+            // Escape HTML special characters to prevent XSS
+            const escapeHtml = (str) => {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = String(str);
+                return div.innerHTML;
+            };
+            
+            // Validate URL matches expected patterns
+            const isValidEtherscanUrl = (url) => {
+                if (!url) return false;
+                return /^https:\/\/(sepolia\.)?etherscan\.io\/tx\/0x[a-fA-F0-9]{64}$/.test(url);
+            };
+            
+            const isValidGitHubUrl = (url) => {
+                if (!url) return false;
+                // Disallow consecutive dots and trailing dots in owner/repo; require alpha/underscore start; constrain final segment
+                return /^https:\/\/github\.com\/(?!.*\.\.)[a-zA-Z_](?:[\w.-]*[\w])?\/[a-zA-Z_](?:[\w.-]*[\w])?\/(commit|actions\/runs)\/(?:[0-9a-fA-F]{40}|\d+)$/.test(url);
+            };
+            
+            const isValidHex = (str) => {
+                if (!str) return false;
+                return /^(0x)?[a-fA-F0-9]+$/.test(str);
+            };
+            
+            // Format date and time nicely
+            const formatDateTime = (isoDate) => {
+                if (!isoDate) return '—';
+                const date = new Date(isoDate);
+                // Check if date is valid
+                if (isNaN(date.getTime())) {
+                    return '—';
+                }
+                return date.toLocaleString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            };
+            
+            // Truncate hash for display
+            const truncateHash = (hash) => {
+                if (!hash) return '';
+                
+                const hashStr = String(hash);
+                
+                // If the hash is too short to meaningfully truncate (10 + 6),
+                // return it as-is to avoid overlapping or duplicated segments.
+                if (hashStr.length <= 16) {
+                    return escapeHtml(hashStr);
+                }
+                
+                return escapeHtml(hashStr.slice(0, 10) + '...' + hashStr.slice(-6));
+            };
+            
+            tbody.innerHTML = data.certifications.map(cert => {
+                // Validate and sanitize URLs before use
+                const mainnetLink = (cert.mainnet_etherscan && isValidEtherscanUrl(cert.mainnet_etherscan))
+                    ? `<a href="${escapeHtml(cert.mainnet_etherscan)}" target="_blank" rel="noopener noreferrer" class="tx-link">View ↗</a>`
+                    : '<span class="no-data">—</span>';
+                    
+                const sepoliaLink = (cert.sepolia_etherscan && isValidEtherscanUrl(cert.sepolia_etherscan))
+                    ? `<a href="${escapeHtml(cert.sepolia_etherscan)}" target="_blank" rel="noopener noreferrer" class="tx-link">View ↗</a>`
+                    : '<span class="no-data">—</span>';
+                
+                // Validate commit SHA is hex before constructing URL
+                const commitSha = isValidHex(cert.commit_sha) ? String(cert.commit_sha).toLowerCase() : '';
+                const commitShort = escapeHtml(cert.commit_short || '');
+                const commitLink = commitSha
+                    ? `<a href="https://github.com/Beneficial-AI-Foundation/dalek-lite/commit/${commitSha}" target="_blank" rel="noopener noreferrer" class="commit-link">${commitShort}</a>`
+                    : `<span class="no-data">${commitShort || '—'}</span>`;
+                
+                const artifactLink = (cert.artifact_url && isValidGitHubUrl(cert.artifact_url))
+                    ? `<a href="${escapeHtml(cert.artifact_url)}" target="_blank" rel="noopener noreferrer" class="artifact-link">Download ↗</a>`
+                    : '<span class="no-data">—</span>';
+                
+                // Validate content hash is hex
+                const safeContentHash = isValidHex(cert.content_hash) ? escapeHtml(cert.content_hash) : '';
+                const contentHashDisplay = safeContentHash
+                    ? `<span class="content-hash" title="${safeContentHash}">${truncateHash(cert.content_hash)}</span>`
+                    : '<span class="no-data">—</span>';
+                
+                // Validate numeric values
+                const verifiedCount = Number.isInteger(cert.verified_count) ? cert.verified_count : null;
+                const totalFunctions = Number.isInteger(cert.total_functions) ? cert.total_functions : null;
+                const verifiedDisplay = (verifiedCount !== null && totalFunctions !== null)
+                    ? `<span class="verified-count">${verifiedCount}</span>/${totalFunctions}`
+                    : '<span class="no-data">—</span>';
+                
+                return `
+                    <tr>
+                        <td>${formatDateTime(cert.timestamp)}</td>
+                        <td>${commitLink}</td>
+                        <td>${verifiedDisplay}</td>
+                        <td>${contentHashDisplay}</td>
+                        <td>${mainnetLink}</td>
+                        <td>${sepoliaLink}</td>
+                        <td>${artifactLink}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            const totalCerts = data.certifications.length;
+            const latestCert = data.certifications[0];
+            const latestCommitSha = isValidHex(latestCert.commit_sha) ? String(latestCert.commit_sha) : '';
+            const latestCommitShort = escapeHtml(latestCert.commit_short || '');
+            const latestCommitLink = latestCommitSha
+                ? `<a href="https://github.com/Beneficial-AI-Foundation/dalek-lite/commit/${latestCommitSha}" target="_blank" rel="noopener noreferrer">${latestCommitShort}</a>`
+                : latestCommitShort;
+            description.innerHTML = `
+                <strong>${totalCerts} certification${totalCerts === 1 ? '' : 's'}</strong> recorded. 
+                Latest: ${formatDateTime(latestCert.timestamp)} 
+                (${latestCommitLink})
+            `;
+            
+        } catch (error) {
+            console.error('Error loading certifications:', error);
+            const tbody = document.getElementById('certificationsTableBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="certifications-empty">
+                        Unable to load certifications. They will appear here after the first verification run.
+                    </td>
+                </tr>
+            `;
+            document.getElementById('certificationsDescription').innerHTML = 
+                '<em>Certifications will be recorded automatically on each verification run.</em>';
+        }
+    }
+    
     // Load time period on page load
     loadTimePeriod();
     loadStats();
+    loadCertifications();
 });
 

@@ -806,6 +806,101 @@ body {
     }
 }
 
+/* Certifications Table */
+.certifications-table-container {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.certifications-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.certifications-table thead {
+    background: var(--dark-bg);
+    color: white;
+}
+
+.certifications-table th {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.certifications-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.certifications-table tbody tr:hover {
+    background: var(--light-bg);
+}
+
+.certifications-table .tx-hash {
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.certifications-table .content-hash {
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 0.75rem;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--accent-color);
+}
+
+.certifications-table .commit-link {
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.certifications-table .tx-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--primary-color);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.certifications-table .tx-link:hover {
+    text-decoration: underline;
+}
+
+.certifications-table .verified-count {
+    font-weight: 600;
+    color: var(--success);
+}
+
+.certifications-table .artifact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+.certifications-table .no-data {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.certifications-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
 /* Smooth Scrolling */
 html {
     scroll-behavior: smooth;

@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+
     paths:
       - 'docs/**'
       - 'functions_to_track.csv'
@@ -17,6 +18,7 @@ on:
       - 'curve25519-dalek/build.rs'
       # Note: Callgraph is generated separately by generate-callgraph.yml
       # and cached. This workflow deploys immediately using cached callgraph.
+  # Also triggered when certify-verification.yml updates docs/certifications.json
   workflow_dispatch:
 
 # Sets permissions for GitHub Pages deployment

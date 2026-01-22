@@ -21,6 +21,7 @@
                 <li><a href="#progress">Progress</a></li>
                 <li><a href="#about">About</a></li>
                 <li><a href="#trust">Trust Model</a></li>
+                <li><a href="#certifications">Certifications</a></li>
                 <li><a href="https://github.com/Beneficial-AI-Foundation/dalek-lite" target="_blank">GitHub</a></li>
             </ul>
         </div>
@@ -198,6 +199,57 @@ cargo verus verify</code></pre>
                     <li>Cryptographic assumptions (e.g., DLP hardness)</li>
                     <li>Bugs in unverified dependencies or system libraries</li>
                 </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="certifications" class="section">
+        <div class="container">
+            <h2 class="section-title">On-Chain Certifications</h2>
+            <p class="section-subtitle">Verification attestations recorded on the Ethereum blockchain</p>
+            
+            <div class="content-grid">
+                <div class="content-card">
+                    <h3>🔗 Blockchain Attestations</h3>
+                    <p>Each verification run produces a JSON with results. The hash of this JSON is recorded on both Ethereum Mainnet (via Gnosis Safe) and Sepolia testnet for transparency and immutability.</p>
+                </div>
+
+                <div class="content-card">
+                    <h3>📜 What Gets Certified?</h3>
+                    <ul>
+                        <li>Verification results JSON (content hash)</li>
+                        <li>Commit hash of verified code</li>
+                        <li>Number of verified functions</li>
+                        <li>Link to downloadable artifact</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h3>📋 Certification History</h3>
+                <div class="certifications-table-container">
+                    <table class="certifications-table" id="certificationsTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Commit</th>
+                                <th>Verified</th>
+                                <th>Content Hash</th>
+                                <th>Mainnet Tx</th>
+                                <th>Sepolia Tx</th>
+                                <th>Artifact</th>
+                            </tr>
+                        </thead>
+                        <tbody id="certificationsTableBody">
+                            <tr>
+                                <td colspan="7" class="loading">Loading certifications...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="chart-description" id="certificationsDescription">
+                    <em>Loading certification data...</em>
+                </p>
             </div>
         </div>
     </section>

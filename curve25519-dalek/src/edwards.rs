@@ -176,6 +176,9 @@ use crate::lemmas::edwards_lemmas::decompress_lemmas::*;
 use crate::lemmas::edwards_lemmas::step1_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for bound weakening
 use crate::lemmas::field_lemmas::add_lemmas::*;
+#[allow(unused_imports)]
+// Used in verus! blocks for is_valid proof (canonical bytes ↔ field value)
+use crate::lemmas::field_lemmas::as_bytes_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for general field constants (ONE, ZERO)
 use crate::lemmas::field_lemmas::constants_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for field algebra lemmas
@@ -981,6 +984,7 @@ impl ValidityCheck for EdwardsPoint {
     fn is_valid(&self) -> (result: bool)
         requires
             edwards_point_limbs_bounded(*self),
+            spec_field_element(&self.Z) != 0,
         ensures
             result == is_valid_edwards_point(*self),
     {
@@ -1002,12 +1006,68 @@ impl ValidityCheck for EdwardsPoint {
             // Weaken self's coordinates for mul preconditions
             lemma_edwards_point_weaken_to_54(self);
         }
-        let on_segre_image = (&self.X * &self.Y) == (&self.Z * &self.T);
+        // REFACTORED from ORIGINAL: let on_segre_image = (&self.X * &self.Y) == (&self.Z * &self.T);
+        // Split to allow proof block to reference intermediate products
+        let xy = &self.X * &self.Y;
+        let zt = &self.Z * &self.T;
+        let on_segre_image = xy == zt;
 
         let result = point_on_curve && on_segre_image;
         proof {
-            // postcondition: capturing both point_on_curve and on_segre_image
-            assume(result == is_valid_edwards_point(*self));
+            // Connect runtime checks to spec predicate
+            let x = spec_field_element(&self.X);
+            let y = spec_field_element(&self.Y);
+            let z = spec_field_element(&self.Z);
+            let t = spec_field_element(&self.T);
+
+            // proj.is_valid() checks ONLY the projective curve equation (not z != 0)
+            assert(proj.X == self.X && proj.Y == self.Y && proj.Z == self.Z);
+            assert(point_on_curve == math_on_edwards_curve_projective(x, y, z));
+
+            // on_segre_image checks XY == ZT via PartialEq (compares canonical bytes)
+            // PartialEq ensures: (a == b) <==> spec_fe51_to_bytes(a) == spec_fe51_to_bytes(b)
+            assert(on_segre_image == (spec_fe51_to_bytes(&xy) == spec_fe51_to_bytes(&zt)));
+
+            // Multiplication postcondition: spec_field_element of product = math_field_mul
+            assert(spec_field_element(&xy) == math_field_mul(x, y));
+            assert(spec_field_element(&zt) == math_field_mul(z, t));
+
+            // Relate the exec equality check to the math-level equality.
+            assert(on_segre_image == (math_field_mul(x, y) == math_field_mul(z, t))) by {
+                // Forward: bytes_equal ==> values_equal
+                if on_segre_image {
+                    assert(spec_fe51_to_bytes(&xy) == spec_fe51_to_bytes(&zt));
+                    lemma_fe51_to_bytes_equal_implies_field_element_equal(&xy, &zt);
+                    assert(spec_field_element(&xy) == spec_field_element(&zt));
+                    assert(math_field_mul(x, y) == math_field_mul(z, t));
+                }
+                // Reverse: values_equal ==> bytes_equal
+
+                if math_field_mul(x, y) == math_field_mul(z, t) {
+                    assert(spec_field_element(&xy) == spec_field_element(&zt));
+                    lemma_field_element_equal_implies_fe51_to_bytes_equal(&xy, &zt);
+                    assert(spec_fe51_to_bytes(&xy) == spec_fe51_to_bytes(&zt));
+                    assert(on_segre_image);
+                }
+            };
+
+            // With Z ≠ 0 as precondition, prove result equals the spec validity predicate.
+            let curve_eq = math_on_edwards_curve_projective(x, y, z);
+            let segre_eq = math_field_mul(x, y) == math_field_mul(z, t);
+
+            assert(result == (curve_eq && segre_eq)) by {
+                assert(result == (point_on_curve && on_segre_image));
+                assert(point_on_curve == curve_eq);
+                assert(on_segre_image == segre_eq);
+            };
+
+            // Connect local z to precondition: z == spec_field_element(&self.Z) != 0
+            assert(z != 0);  // Follows from precondition spec_field_element(&self.Z) != 0
+
+            assert(is_valid_edwards_point(*self) == (z != 0 && curve_eq && segre_eq));
+            // Since z != 0 is known, simplify: (true && curve_eq && segre_eq) == (curve_eq && segre_eq)
+            assert(is_valid_edwards_point(*self) == (curve_eq && segre_eq));
+            assert(result == is_valid_edwards_point(*self));
         }
         result
     }

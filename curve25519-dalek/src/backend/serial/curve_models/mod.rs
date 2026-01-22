@@ -134,6 +134,8 @@ use zeroize::Zeroize;
 use crate::backend::serial::u64::subtle_assumes::choice_is_true;
 use crate::constants;
 use crate::core_assumes::negate_field;
+#[allow(unused_imports)] // Used in verus! blocks for affine↔projective curve equation
+use crate::lemmas::edwards_lemmas::curve_equation_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::lemmas::field_lemmas::add_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for as_projective proof
@@ -619,7 +621,27 @@ impl CompletedPoint {
 
             // Therefore result is a valid projective point (same affine point as completed,
             // which is on the curve by precondition)
-            assert(is_valid_projective_point(result));
+            // Use the lemma to convert from affine curve equation to projective form
+            let (result_x, result_y, result_z_spec) = spec_projective_point_edwards(result);
+
+            // result_z_spec = spec_field_element(&result.Z) = math_field_mul(z_abs, t_abs) = result_z
+            // We showed result_z != 0 above, and result_z < p (since it's a field element)
+            // Therefore result_z_spec % p == result_z_spec != 0
+            assert(result_z_spec == result_z);  // They're the same value
+            assert(result_z_spec < p()) by {
+                lemma_mod_bound((z_abs * t_abs) as int, p() as int);
+            };
+            assert(result_z_spec % p() != 0) by {
+                lemma_small_mod(result_z_spec, p());
+            };
+
+            assert(math_on_edwards_curve(
+                math_field_mul(result_x, math_field_inv(result_z_spec)),
+                math_field_mul(result_y, math_field_inv(result_z_spec)),
+            ));
+            assert(is_valid_projective_point(result)) by {
+                lemma_affine_curve_implies_projective(result_x, result_y, result_z_spec);
+            };
         }
         result
     }

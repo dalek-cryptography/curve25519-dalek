@@ -1226,9 +1226,12 @@ impl Scalar52 {
                 assert(limb_prod_bounded_u128(a.limbs, b.limbs, 5) && scalar52_to_nat(b)
                     < group_order() && spec_mul_internal(a, b) == spec_mul_internal(a, b));
             } else if scalar52_to_nat(a) < group_order() {
-                // Witness: bounded = b, canonical = a (commutativity inferred by Verus)
+                // Witness: bounded = b, canonical = a
+                assert(spec_mul_internal(b, a) == spec_mul_internal(a, b)) by {
+                    lemma_spec_mul_internal_commutative(a, b);
+                }
                 assert(limb_prod_bounded_u128(b.limbs, a.limbs, 5) && scalar52_to_nat(a)
-                    < group_order() && spec_mul_internal(b, a) == spec_mul_internal(a, b));
+                    < group_order());
             }
         }
         Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b))

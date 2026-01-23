@@ -1466,59 +1466,49 @@ proof fn lemma_limb3_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_byte_extraction_commutes_with_mod(v, 4, 40);  // 4*8 + 8 = 40 <= 40 ✓
 
     // Now apply lemma_5_bytes_reconstruct
-    lemma_5_bytes_reconstruct(middle_value, bytes[20], bytes[21], bytes[22], bytes[23], bytes[24]);
-
     // This gives us:
     assert(bytes[20] as nat * pow2(0) + bytes[21] as nat * pow2(8) + bytes[22] as nat * pow2(16)
-        + bytes[23] as nat * pow2(24) + bytes[24] as nat * pow2(32) == middle_value);
+        + bytes[23] as nat * pow2(24) + bytes[24] as nat * pow2(32) == middle_value) by {
+        lemma_5_bytes_reconstruct(
+            middle_value,
+            bytes[20],
+            bytes[21],
+            bytes[22],
+            bytes[23],
+            bytes[24],
+        );
+    }
 
     // Now multiply both sides by 2^160 to get the bytes at their actual positions
-    lemma_mul_is_distributive_add(
-        pow2(160) as int,
-        (bytes[20] as nat * pow2(0)) as int,
-        (bytes[21] as nat * pow2(8)) as int,
-    );
-    lemma_mul_is_distributive_add(
-        pow2(160) as int,
-        (bytes[20] as nat * pow2(0) + bytes[21] as nat * pow2(8)) as int,
-        (bytes[22] as nat * pow2(16)) as int,
-    );
-    lemma_mul_is_distributive_add(
-        pow2(160) as int,
-        (bytes[20] as nat * pow2(0) + bytes[21] as nat * pow2(8) + bytes[22] as nat * pow2(
-            16,
-        )) as int,
-        (bytes[23] as nat * pow2(24)) as int,
-    );
-    lemma_mul_is_distributive_add(
-        pow2(160) as int,
-        (bytes[20] as nat * pow2(0) + bytes[21] as nat * pow2(8) + bytes[22] as nat * pow2(16)
-            + bytes[23] as nat * pow2(24)) as int,
-        (bytes[24] as nat * pow2(32)) as int,
-    );
+    assert(middle_value * pow2(160) == bytes[20] as nat * pow2(20 * 8) + bytes[21] as nat * pow2(
+        21 * 8,
+    ) + bytes[22] as nat * pow2(22 * 8) + bytes[23] as nat * pow2(23 * 8) + bytes[24] as nat * pow2(
+        24 * 8,
+    )) by {
+        lemma_mul_distributive_5_terms(
+            pow2(160) as int,
+            (bytes[20] as nat * pow2(0)) as int,
+            (bytes[21] as nat * pow2(8)) as int,
+            (bytes[22] as nat * pow2(16)) as int,
+            (bytes[23] as nat * pow2(24)) as int,
+            (bytes[24] as nat * pow2(32)) as int,
+        );
 
-    // Distribute the multiplication into each term
-    lemma_mul_is_associative(bytes[20] as int, pow2(0) as int, pow2(160) as int);
-    lemma_mul_is_associative(bytes[21] as int, pow2(8) as int, pow2(160) as int);
-    lemma_mul_is_associative(bytes[22] as int, pow2(16) as int, pow2(160) as int);
-    lemma_mul_is_associative(bytes[23] as int, pow2(24) as int, pow2(160) as int);
-    lemma_mul_is_associative(bytes[24] as int, pow2(32) as int, pow2(160) as int);
+        // Distribute the multiplication into each term
+        lemma_mul_is_associative(bytes[20] as int, pow2(0) as int, pow2(160) as int);
+        lemma_mul_is_associative(bytes[21] as int, pow2(8) as int, pow2(160) as int);
+        lemma_mul_is_associative(bytes[22] as int, pow2(16) as int, pow2(160) as int);
+        lemma_mul_is_associative(bytes[23] as int, pow2(24) as int, pow2(160) as int);
+        lemma_mul_is_associative(bytes[24] as int, pow2(32) as int, pow2(160) as int);
 
-    // Simplify using pow2 addition: 2^160 * 2^k = 2^(160+k)
-    lemma_pow2_adds(160, 0);
+        // Simplify using pow2 addition: 2^160 * 2^k = 2^(160+k)
+        lemma_pow2_adds(160, 0);
+        lemma_pow2_adds(160, 8);
+        lemma_pow2_adds(160, 16);
+        lemma_pow2_adds(160, 24);
+        lemma_pow2_adds(160, 32);
 
-    lemma_pow2_adds(160, 8);
-
-    lemma_pow2_adds(160, 16);
-    assert(pow2(160) * pow2(16) == pow2(176));
-
-    lemma_pow2_adds(160, 24);
-
-    lemma_pow2_adds(160, 32);
-
-    assert(bytes[20] as nat * pow2(20 * 8) + bytes[21] as nat * pow2(21 * 8) + bytes[22] as nat
-        * pow2(22 * 8) + bytes[23] as nat * pow2(23 * 8) + bytes[24] as nat * pow2(24 * 8)
-        == middle_value * pow2(160));
+    }
 
     // Step 3: Handle boundary bytes
     // Low 7 bits (byte 19 high part): (limbs[3] % 2^7) * 2 * 2^152 = (limbs[3] % 2^7) * 2^153

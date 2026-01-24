@@ -38,7 +38,7 @@ subtle = { version = "2.3.0", default-features = false }
 
 # optional features
 keccak = { version = "0.2.0-rc.0", default-features = false, optional = true }
-rand_core = { version = "0.10.0-rc-5", default-features = false, optional = true }
+rand_core = { version = "=0.10.0-rc-5", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 zeroize = { version = "1.5", default-features = false, optional = true }
 

@@ -710,7 +710,7 @@ impl<'d> Deserialize<'d> for VerifyingKey {
             type Value = VerifyingKey;
 
             fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                write!(formatter, concat!("An ed25519 verifying (public) key"))
+                write!(formatter, "An ed25519 verifying (public) key")
             }
 
             fn visit_bytes<E: serde::de::Error>(self, bytes: &[u8]) -> Result<Self::Value, E> {

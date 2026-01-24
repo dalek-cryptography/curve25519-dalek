@@ -189,11 +189,10 @@ impl SigningKey {
     #[cfg_attr(feature = "rand_core", doc = "```")]
     #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// # fn main() {
-    /// use rand::rngs::SysRng;
-    /// use rand_core::TryRngCore;
+    /// use getrandom::{SysRng, rand_core::{TryRng, UnwrapErr}};
     /// use ed25519_dalek::{Signature, SigningKey};
     ///
-    /// let mut csprng = SysRng.unwrap_err();
+    /// let mut csprng = UnwrapErr(SysRng);
     /// let signing_key: SigningKey = SigningKey::generate(&mut csprng);
     /// # }
     /// ```
@@ -242,11 +241,10 @@ impl SigningKey {
     /// use ed25519_dalek::SigningKey;
     /// use ed25519_dalek::Signature;
     /// use sha2::Sha512;
-    /// use rand::rngs::SysRng;
-    /// use rand_core::TryRngCore;
+    /// use getrandom::{SysRng, rand_core::{TryRng, UnwrapErr}};
     ///
     /// # fn main() {
-    /// let mut csprng = SysRng.unwrap_err();
+    /// let mut csprng = UnwrapErr(SysRng);
     /// let signing_key: SigningKey = SigningKey::generate(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///
@@ -288,11 +286,10 @@ impl SigningKey {
     /// # use ed25519_dalek::Signature;
     /// # use ed25519_dalek::SignatureError;
     /// # use sha2::Sha512;
-    /// # use rand::rngs::SysRng;
-    /// # use rand_core::TryRngCore;
+    /// # use getrandom::{SysRng, rand_core::{TryRng, UnwrapErr}};
     /// #
     /// # fn do_test() -> Result<Signature, SignatureError> {
-    /// # let mut csprng = SysRng.unwrap_err();
+    /// # let mut csprng = UnwrapErr(SysRng);
     /// # let signing_key: SigningKey = SigningKey::generate(&mut csprng);
     /// # let message: &[u8] = b"All I want is to pet all of the dogs.";
     /// # let mut prehashed: Sha512 = Sha512::new();
@@ -368,11 +365,10 @@ impl SigningKey {
     /// use ed25519_dalek::Signature;
     /// use ed25519_dalek::SignatureError;
     /// use sha2::Sha512;
-    /// use rand::rngs::SysRng;
-    /// use rand_core::TryRngCore;
+    /// use getrandom::{SysRng, rand_core::{TryRng, UnwrapErr}};
     ///
     /// # fn do_test() -> Result<(), SignatureError> {
-    /// let mut csprng = SysRng.unwrap_err();
+    /// let mut csprng = UnwrapErr(SysRng);
     /// let signing_key: SigningKey = SigningKey::generate(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///
@@ -790,7 +786,7 @@ impl<'d> Deserialize<'d> for SigningKey {
             type Value = SigningKey;
 
             fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                write!(formatter, concat!("An ed25519 signing (private) key"))
+                write!(formatter, "An ed25519 signing (private) key")
             }
 
             fn visit_bytes<E: serde::de::Error>(self, bytes: &[u8]) -> Result<Self::Value, E> {

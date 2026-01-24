@@ -156,7 +156,7 @@ impl TranscriptRngBuilder {
     /// transcript data.
     pub fn finalize<R>(mut self, rng: &mut R) -> TranscriptRng
     where
-        R: rand_core::RngCore + rand_core::CryptoRng,
+        R: rand_core::Rng + rand_core::CryptoRng,
     {
         let random_bytes = {
             let mut bytes = [0u8; 32];
@@ -186,7 +186,7 @@ pub struct TranscriptRng {
     strobe: Strobe128,
 }
 
-impl rand_core::TryRngCore for TranscriptRng {
+impl rand_core::TryRng for TranscriptRng {
     type Error = Infallible;
 
     fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
@@ -309,8 +309,9 @@ mod tests {
 
     #[test]
     fn transcript_rng_is_bound_to_transcript_and_witnesses() {
+        use chacha20::ChaCha8Rng;
         use curve25519_dalek::scalar::Scalar;
-        use rand::{SeedableRng, rngs::ChaCha8Rng};
+        use rand_core::SeedableRng;
 
         // Check that the TranscriptRng is bound to the transcript and
         // the witnesses.  This is done by producing a sequence of

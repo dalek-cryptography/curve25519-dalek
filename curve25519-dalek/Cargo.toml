@@ -84,7 +84,7 @@ curve25519-dalek-derive = "0.1"
 level = "warn"
 check-cfg = [
     'cfg(allow_unused_unsafe)',
-    'cfg(curve25519_dalek_backend, values("fiat", "serial", "simd", "unstable_avx512"))',
+    'cfg(curve25519_dalek_backend, values("fiat", "serial", "simd", "avx512"))',
     'cfg(curve25519_dalek_diagnostics, values("build"))',
     'cfg(curve25519_dalek_bits, values("32", "64"))',
     'cfg(nightly)',

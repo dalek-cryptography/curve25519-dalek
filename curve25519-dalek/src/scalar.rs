@@ -149,6 +149,8 @@ use zeroize::Zeroize;
 use crate::backend;
 use crate::constants;
 
+pub(crate) const HEEA_MAX_INDEX: usize = 129;
+
 cfg_if! {
     if #[cfg(curve25519_dalek_backend = "fiat")] {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.

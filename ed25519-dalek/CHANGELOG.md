@@ -8,6 +8,10 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # 3.x series
 
+## 3.0.0-pre.5
+
+* Upgrade `rand_core` dependency to v0.10.0-rc-6
+
 ## 3.0.0-pre.4
 
 * Upgrade `rand_core` dependency to v0.10.0-rc-3

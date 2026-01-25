@@ -5,6 +5,10 @@ major series.
 
 ## 5.x series
 
+## 5.0.0-pre.5
+
+* Upgrade `rand_core` dependency to v0.10.0-rc-6
+
 ## 5.0.0-pre.4
 
 * Add allocation-free `EdwardsPoint::compress_batch()`

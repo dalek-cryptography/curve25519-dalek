@@ -27,7 +27,7 @@ pub use curve25519_dalek::digest::Digest;
 
 use transcript::Transcript;
 
-use rand_core::RngCore;
+use rand_core::Rng;
 
 use sha2::Sha512;
 
@@ -44,12 +44,12 @@ use crate::signature::InternalSignature;
 /// but implement the same 1.0 protocol.
 const MERLIN_PROTOCOL_LABEL: &[u8] = b"Merlin v1.0";
 
-/// An implementation of `rand_core::RngCore` which does nothing. This is necessary because merlin
+/// An implementation of `rand_core::Rng` which does nothing. This is necessary because merlin
 /// demands an `Rng` as input to `TranscriptRngBuilder::finalize()`. Using this with `finalize()`
 /// yields a PRG whose input is the hashed transcript.
 struct ZeroRng;
 
-impl rand_core::TryRngCore for ZeroRng {
+impl rand_core::TryRng for ZeroRng {
     type Error = Infallible;
 
     fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
@@ -77,7 +77,7 @@ impl rand_core::TryRngCore for ZeroRng {
 impl rand_core::TryCryptoRng for ZeroRng {}
 
 // We write our own gen() function so we don't need to pull in the rand crate
-fn gen_u128<R: RngCore>(rng: &mut R) -> u128 {
+fn gen_u128<R: Rng>(rng: &mut R) -> u128 {
     let mut buf = [0u8; 16];
     rng.fill_bytes(&mut buf);
     u128::from_le_bytes(buf)
@@ -129,11 +129,10 @@ fn gen_u128<R: RngCore>(rng: &mut R) -> u128 {
 /// use ed25519_dalek::{
 ///     verify_batch, SigningKey, VerifyingKey, Signer, Signature,
 /// };
-/// use rand::rngs::SysRng;
-/// use rand_core::TryRngCore;
+/// use getrandom::{SysRng, rand_core::{TryRng, UnwrapErr}};
 ///
 /// # fn main() {
-/// let mut csprng = SysRng.unwrap_err();
+/// let mut csprng = UnwrapErr(SysRng);
 /// let signing_keys: Vec<_> = (0..64).map(|_| SigningKey::generate(&mut csprng)).collect();
 /// let msg: &[u8] = b"They're good dogs Brant";
 /// let messages: Vec<_> = (0..64).map(|_| msg).collect();

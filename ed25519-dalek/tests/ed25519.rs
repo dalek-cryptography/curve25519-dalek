@@ -20,6 +20,7 @@ use hex_literal::hex;
 #[cfg(test)]
 mod vectors {
     use super::*;
+    use getrandom::{SysRng, rand_core::UnwrapErr};
 
     use curve25519_dalek::{
         constants::ED25519_BASEPOINT_POINT,
@@ -27,7 +28,6 @@ mod vectors {
         scalar::Scalar,
         traits::IsIdentity,
     };
-    use rand::TryRngCore;
 
     #[cfg(not(feature = "digest"))]
     use sha2::{Sha512, digest::Digest};
@@ -183,7 +183,7 @@ mod vectors {
 
     // Pick a random Scalar
     fn non_null_scalar() -> Scalar {
-        let mut rng = rand::rngs::SysRng.unwrap_err();
+        let mut rng = UnwrapErr(SysRng);
         let mut s_candidate = Scalar::random(&mut rng);
         while s_candidate == Scalar::ZERO {
             s_candidate = Scalar::random(&mut rng);
@@ -295,7 +295,7 @@ mod vectors {
 #[cfg(feature = "rand_core")]
 mod integrations {
     use super::*;
-    use rand::{TryRngCore, rngs::SysRng};
+    use getrandom::{SysRng, rand_core::UnwrapErr};
     use std::collections::HashMap;
 
     #[test]
@@ -305,7 +305,7 @@ mod integrations {
         let good: &[u8] = "test message".as_bytes();
         let bad: &[u8] = "wrong message".as_bytes();
 
-        let mut csprng = SysRng.unwrap_err();
+        let mut csprng = UnwrapErr(SysRng);
 
         let signing_key: SigningKey = SigningKey::generate(&mut csprng);
         let verifying_key = signing_key.verifying_key();
@@ -346,7 +346,7 @@ mod integrations {
     fn sign_verify_digest_equivalence() {
         // TestSignVerify
 
-        let mut csprng = SysRng.unwrap_err();
+        let mut csprng = UnwrapErr(SysRng);
 
         let good: &[u8] = "test message".as_bytes();
         let bad: &[u8] = "wrong message".as_bytes();
@@ -391,7 +391,7 @@ mod integrations {
         let good: &[u8] = b"test message";
         let bad: &[u8] = b"wrong message";
 
-        let mut csprng = SysRng.unwrap_err();
+        let mut csprng = UnwrapErr(SysRng);
 
         // ugh… there's no `impl Copy for Sha512`… i hope we can all agree these are the same hashes
         let mut prehashed_good1: Sha512 = Sha512::default();
@@ -466,7 +466,7 @@ mod integrations {
             b"Fuck dumbin' it down, spit ice, skip jewellery: Molotov cocktails on me like accessories.",
             b"Hey, I never cared about your bucks, so if I run up with a mask on, probably got a gas can too.",
             b"And I'm not here to fill 'er up. Nope, we came to riot, here to incite, we don't want any of your stuff.", ];
-        let mut csprng = SysRng.unwrap_err();
+        let mut csprng = UnwrapErr(SysRng);
         let mut signing_keys: Vec<SigningKey> = Vec::new();
         let mut signatures: Vec<Signature> = Vec::new();
 
@@ -485,7 +485,7 @@ mod integrations {
 
     #[test]
     fn public_key_hash_trait_check() {
-        let mut csprng = SysRng.unwrap_err();
+        let mut csprng = UnwrapErr(SysRng);
         let secret: SigningKey = SigningKey::generate(&mut csprng);
         let public_from_secret: VerifyingKey = (&secret).into();
 
@@ -512,7 +512,7 @@ mod integrations {
 
     #[test]
     fn montgomery_and_edwards_conversion() {
-        let mut rng = rand::rngs::SysRng.unwrap_err();
+        let mut rng = UnwrapErr(SysRng);
         let signing_key = SigningKey::generate(&mut rng);
         let verifying_key = signing_key.verifying_key();
 

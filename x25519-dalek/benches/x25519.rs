@@ -13,25 +13,25 @@
 
 use criterion::{Criterion, criterion_group, criterion_main};
 
-use rand::{TryRngCore, rngs::SysRng};
+use getrandom::{SysRng, rand_core::UnwrapErr};
 
 use x25519_dalek::EphemeralSecret;
 use x25519_dalek::PublicKey;
 
 fn bench_diffie_hellman(c: &mut Criterion) {
-    let bob_secret = EphemeralSecret::random_from_rng(&mut SysRng.unwrap_err());
+    let bob_secret = EphemeralSecret::random_from_rng(&mut UnwrapErr(SysRng));
     let bob_public = PublicKey::from(&bob_secret);
 
     c.bench_function("diffie_hellman", move |b| {
         b.iter_with_setup(
-            || EphemeralSecret::random_from_rng(&mut SysRng.unwrap_err()),
+            || EphemeralSecret::random_from_rng(&mut UnwrapErr(SysRng)),
             |alice_secret| alice_secret.diffie_hellman(&bob_public),
         )
     });
 }
 
 fn bench_pubkey_constructor(c: &mut Criterion) {
-    let bob_secret = EphemeralSecret::random_from_rng(&mut SysRng.unwrap_err());
+    let bob_secret = EphemeralSecret::random_from_rng(&mut UnwrapErr(SysRng));
 
     c.bench_function("PublicKey::from", move |b| {
         b.iter(|| PublicKey::from(&bob_secret))

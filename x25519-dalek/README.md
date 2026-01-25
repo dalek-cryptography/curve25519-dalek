@@ -51,9 +51,9 @@ loudly meows `bob_public` back to Alice.  Alice now computes her
 shared secret with Bob by doing:
 
 ```rust
-# use rand::{rngs::SysRng, TryRngCore};
+# use getrandom::{SysRng, rand_core::UnwrapErr};
 # use x25519_dalek::{EphemeralSecret, PublicKey};
-# let mut rng = SysRng.unwrap_err();
+# let mut rng = UnwrapErr(SysRng);
 # let alice_secret = EphemeralSecret::random_from_rng(&mut rng);
 # let alice_public = PublicKey::from(&alice_secret);
 # let bob_secret = EphemeralSecret::random_from_rng(&mut rng);
@@ -64,9 +64,9 @@ let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
 Similarly, Bob computes a shared secret by doing:
 
 ```rust
-# use rand::{rngs::SysRng, TryRngCore};
+# use getrandom::{SysRng, rand_core::UnwrapErr};
 # use x25519_dalek::{EphemeralSecret, PublicKey};
-# let mut rng = SysRng.unwrap_err();
+# let mut rng = UnwrapErr(SysRng);
 # let alice_secret = EphemeralSecret::random_from_rng(&mut rng);
 # let alice_public = PublicKey::from(&alice_secret);
 # let bob_secret = EphemeralSecret::random_from_rng(&mut rng);
@@ -77,9 +77,9 @@ let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
 These secrets are the same:
 
 ```rust
-# use rand::{rngs::SysRng, TryRngCore};
+# use getrandom::{SysRng, rand_core::UnwrapErr};
 # use x25519_dalek::{EphemeralSecret, PublicKey};
-# let mut rng = SysRng.unwrap_err();
+# let mut rng = UnwrapErr(SysRng);
 # let alice_secret = EphemeralSecret::random_from_rng(&mut rng);
 # let alice_public = PublicKey::from(&alice_secret);
 # let bob_secret = EphemeralSecret::random_from_rng(&mut rng);

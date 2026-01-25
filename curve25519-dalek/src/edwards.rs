@@ -113,12 +113,12 @@ use digest::{
 #[cfg(feature = "group")]
 use {
     group::{GroupEncoding, cofactor::CofactorGroup, prime::PrimeGroup},
-    rand_core::TryRngCore,
+    rand_core::TryRng,
     subtle::CtOption,
 };
 
 #[cfg(feature = "rand_core")]
-use rand_core::RngCore;
+use rand_core::Rng;
 
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
@@ -753,7 +753,7 @@ impl EdwardsPoint {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements `RngCore`
+    /// * `rng`: any RNG which implements `Rng`
     ///
     /// # Returns
     ///
@@ -764,7 +764,7 @@ impl EdwardsPoint {
     /// Uses rejection sampling, generating a random `CompressedEdwardsY` and then attempting point
     /// decompression, rejecting invalid points.
     #[cfg(feature = "rand_core")]
-    pub fn random<R: RngCore + ?Sized>(rng: &mut R) -> Self {
+    pub fn random<R: Rng + ?Sized>(rng: &mut R) -> Self {
         let mut repr = CompressedEdwardsY([0u8; 32]);
         loop {
             rng.fill_bytes(&mut repr.0);
@@ -1461,7 +1461,7 @@ impl Debug for EdwardsPoint {
 impl group::Group for EdwardsPoint {
     type Scalar = Scalar;
 
-    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+    fn try_from_rng<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         let mut repr = CompressedEdwardsY([0u8; 32]);
         loop {
             rng.try_fill_bytes(&mut repr.0)?;
@@ -1713,7 +1713,7 @@ impl Zeroize for SubgroupPoint {
 impl group::Group for SubgroupPoint {
     type Scalar = Scalar;
 
-    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+    fn try_from_rng<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         use group::ff::Field;
 
         // This will almost never loop, but `Group::random` is documented as returning a
@@ -1790,8 +1790,10 @@ impl CofactorGroup for EdwardsPoint {
 #[cfg(test)]
 mod test {
     use super::*;
-
-    use rand::TryRngCore;
+    use getrandom::{
+        SysRng,
+        rand_core::{TryRng, UnwrapErr},
+    };
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
@@ -2080,7 +2082,7 @@ mod test {
     /// Check that mul_base_clamped and mul_clamped agree
     #[test]
     fn mul_base_clamped() {
-        let mut csprng = rand::rngs::SysRng;
+        let mut csprng = UnwrapErr(SysRng);
 
         // Make a random curve point in the curve. Give it torsion to make things interesting.
         #[cfg(feature = "precomputed-tables")]
@@ -2201,7 +2203,7 @@ mod test {
     #[cfg(feature = "rand_core")]
     #[test]
     fn compress_batch() {
-        let mut rng = rand::rng();
+        let mut rng = UnwrapErr(SysRng);
 
         // TODO(tarcieri): proptests?
 
@@ -2272,7 +2274,7 @@ mod test {
     // A single iteration of a consistency check for MSM.
     #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn multiscalar_consistency_iter(n: usize) {
-        let mut rng = rand::rng();
+        let mut rng = UnwrapErr(SysRng);
 
         // Construct random coefficients x0, ..., x_{n-1},
         // followed by some extra hardcoded ones.
@@ -2335,7 +2337,7 @@ mod test {
     #[test]
     #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn batch_to_montgomery() {
-        let mut rng = rand::rng();
+        let mut rng = UnwrapErr(SysRng);
 
         let scalars = (0..128)
             .map(|_| Scalar::random(&mut rng))
@@ -2360,7 +2362,7 @@ mod test {
     #[test]
     #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
-        let mut rng = rand::rng();
+        let mut rng = UnwrapErr(SysRng);
 
         let static_scalars = (0..128)
             .map(|_| Scalar::random(&mut rng))

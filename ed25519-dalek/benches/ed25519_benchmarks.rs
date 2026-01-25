@@ -14,8 +14,8 @@ mod ed25519_benches {
     use ed25519_dalek::Signature;
     use ed25519_dalek::Signer;
     use ed25519_dalek::SigningKey;
-    use rand::prelude::ThreadRng;
-    use rand::rng;
+    use rand_core::prelude::ThreadRng;
+    use rand_core::rng;
 
     fn sign(c: &mut Criterion) {
         let mut csprng: ThreadRng = rng();

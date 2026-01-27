@@ -1196,13 +1196,12 @@ impl FieldElement51 {
                 0 < k <= k0,
             ensures
                 k == 0,
-                forall|j: int| 0 <= j < 5 ==> a[j] < 1u64 << 52,
-                // 52-bit implies 54-bit (for compatibility)
-                forall|j: int| 0 <= j < 5 ==> a[j] < 1u64 << 54,
+                forall|j: int| 0 <= j < 5 ==> a[j] < (1u64 << 52),
                 u64_5_as_nat(a) % p() == pow(
                     u64_5_as_nat(self.limbs) as int,
                     pow2(k0 as nat),
                 ) as nat % p(),
+                (1u64 << 52) < (1u64 << 54),
             decreases k,
         {
             proof {
@@ -1298,15 +1297,6 @@ impl FieldElement51 {
             a[0] &= LOW_51_BIT_MASK;
 
             // Now all a[i] < 2^(51 + epsilon) < 2^52 and a = self^(2^k).
-            proof {
-                // After masking and carry propagation:
-                // a[0] is masked to 51 bits: a[0] < 2^51 < 2^52
-                // a[2], a[3], a[4] were masked earlier, so < 2^51 < 2^52
-                // a[1] < 2^51 + 2^13 < 2^52 (from old masked value + carry)
-                // GAP: proving these bounds requires tracking mask effects through the loop
-                // TODO:
-                assume(forall|j: int| 0 <= j < 5 ==> a[j] < (1u64 << 52));
-            }
 
             k -= 1;
             if k == 0 {

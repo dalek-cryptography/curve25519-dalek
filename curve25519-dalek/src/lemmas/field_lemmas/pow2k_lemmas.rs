@@ -226,11 +226,12 @@ pub open spec fn pow2k_loop_boundary_spec(a: [u64; 5]) -> bool {
     &&& ci_0_val_boundaries(a, 1u64 << 54)
     &&& ci_val_boundaries(a)
     &&& ai_val_boundaries(a)
-    &&& pow2k_loop_return(a)[0] < 1u64 << 54
-    &&& pow2k_loop_return(a)[1] < 1u64 << 54
-    &&& pow2k_loop_return(a)[2] < 1u64 << 54
-    &&& pow2k_loop_return(a)[3] < 1u64 << 54
-    &&& pow2k_loop_return(a)[4] < 1u64 << 54
+    &&& pow2k_loop_return(a)[0] < 1u64 << 52
+    &&& pow2k_loop_return(a)[1] < 1u64 << 52
+    &&& pow2k_loop_return(a)[2] < 1u64 << 52
+    &&& pow2k_loop_return(a)[3] < 1u64 << 52
+    &&& pow2k_loop_return(a)[4] < 1u64 << 52
+    &&& (1u64 << 52) < (1u64 << 54)
 }
 
 pub proof fn lemma_pow2k_loop_boundary(a: [u64; 5])
@@ -319,9 +320,8 @@ pub proof fn lemma_pow2k_loop_boundary(a: [u64; 5])
         }
     }
 
-    // bv arithmetic, some bounds have 51, some have 52, all therefore have 54
-    assert((1u64 << 51) < (1u64 << 52)) by (bit_vector);
-    assert((1u64 << 52) < (1u64 << 54)) by (bit_vector);
+    // bv arithmetic, some bounds have 51, some have 52, all have 54
+    assert((1u64 << 51) < (1u64 << 52) < (1u64 << 54)) by (bit_vector);
 }
 
 pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)

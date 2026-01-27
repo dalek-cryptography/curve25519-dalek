@@ -253,6 +253,71 @@ macro_rules! define_mul_variants_verus {
     };
 }
 
+/// Define wrapper variants for `EdwardsPoint * Scalar` with functional-correctness postconditions.
+///
+/// Exec-wise, this is equivalent to what
+/// `define_mul_variants_verus!(LHS = EdwardsPoint, RHS = Scalar, Output = EdwardsPoint)`
+/// would generate (each impl forwards to a borrowed-argument multiplication).
+///
+/// We write it as a specialized macro so we can attach `ensures` postconditions to
+/// the wrapper variants, instead of only having specs on `&EdwardsPoint * &Scalar`.
+macro_rules! define_edwards_scalar_mul_variants_verus {
+    () => {
+        verus! {
+        impl<'b> core::ops::Mul<&'b $crate::scalar::Scalar> for $crate::edwards::EdwardsPoint {
+            type Output = $crate::edwards::EdwardsPoint;
+
+            fn mul(self, scalar: &'b $crate::scalar::Scalar) -> (result: $crate::edwards::EdwardsPoint)
+                ensures
+                    $crate::specs::edwards_specs::is_well_formed_edwards_point(result),
+                    $crate::specs::edwards_specs::edwards_point_as_affine(result)
+                        == $crate::specs::edwards_specs::edwards_scalar_mul(
+                        $crate::specs::edwards_specs::edwards_point_as_affine(self),
+                        $crate::specs::scalar_specs::scalar_to_nat(scalar),
+                    ),
+            {
+                // Calls &EdwardsPoint * &Scalar (the verified implementation)
+                &self * scalar
+            }
+        }
+
+        impl<'a> core::ops::Mul<$crate::scalar::Scalar> for &'a $crate::edwards::EdwardsPoint {
+            type Output = $crate::edwards::EdwardsPoint;
+
+            fn mul(self, scalar: $crate::scalar::Scalar) -> (result: $crate::edwards::EdwardsPoint)
+                ensures
+                    $crate::specs::edwards_specs::is_well_formed_edwards_point(result),
+                    $crate::specs::edwards_specs::edwards_point_as_affine(result)
+                        == $crate::specs::edwards_specs::edwards_scalar_mul(
+                        $crate::specs::edwards_specs::edwards_point_as_affine(*self),
+                        $crate::specs::scalar_specs::scalar_to_nat(&scalar),
+                    ),
+            {
+                // Calls &EdwardsPoint * &Scalar (the verified implementation)
+                self * &scalar
+            }
+        }
+
+        impl core::ops::Mul<$crate::scalar::Scalar> for $crate::edwards::EdwardsPoint {
+            type Output = $crate::edwards::EdwardsPoint;
+
+            fn mul(self, scalar: $crate::scalar::Scalar) -> (result: $crate::edwards::EdwardsPoint)
+                ensures
+                    $crate::specs::edwards_specs::is_well_formed_edwards_point(result),
+                    $crate::specs::edwards_specs::edwards_point_as_affine(result)
+                        == $crate::specs::edwards_specs::edwards_scalar_mul(
+                        $crate::specs::edwards_specs::edwards_point_as_affine(self),
+                        $crate::specs::scalar_specs::scalar_to_nat(&scalar),
+                    ),
+            {
+                // Calls &EdwardsPoint * &Scalar (the verified implementation)
+                &self * &scalar
+            }
+        }
+        }
+    };
+}
+
 /// Define non-borrow variants of `MulAssign`.
 macro_rules! define_mul_assign_variants {
     (LHS = $lhs:ty, RHS = $rhs:ty) => {

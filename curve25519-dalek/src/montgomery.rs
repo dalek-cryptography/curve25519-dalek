@@ -79,7 +79,7 @@ use crate::specs::scalar_specs::*;
 #[cfg(verus_keep_ghost)]
 use crate::specs::scalar_specs::bits_be_to_nat;
 #[cfg(verus_keep_ghost)]
-use crate::specs::scalar_specs::{spec_clamp_integer, spec_scalar};
+use crate::specs::scalar_specs::spec_clamp_integer;
 
 use crate::traits::Identity;
 
@@ -261,9 +261,10 @@ impl MontgomeryPoint {
         ensures
             is_valid_montgomery_point(result),
             // Functional correctness: result.u = [scalar] * basepoint (u-coordinate)
+            // Use scalar_to_nat (not spec_scalar) to match implementation behavior
             spec_montgomery(result) == montgomery_scalar_mul_u(
                 spec_x25519_basepoint_u(),
-                spec_scalar(scalar),
+                scalar_to_nat(scalar),
             ),
     {
         // ORIGINAL CODE: EdwardsPoint::mul_base(scalar).to_montgomery()
@@ -280,7 +281,7 @@ impl MontgomeryPoint {
             assume(is_valid_montgomery_point(result));
             assume(spec_montgomery(result) == montgomery_scalar_mul_u(
                 spec_x25519_basepoint_u(),
-                spec_scalar(scalar),
+                scalar_to_nat(scalar),
             ));
         }
         result
@@ -330,9 +331,11 @@ impl MontgomeryPoint {
         ensures
             is_valid_montgomery_point(result),
             // Functional correctness: result.u = [clamp(bytes)] * basepoint (u-coordinate)
+            // Use scalar_to_nat (not spec_scalar) because clamped values are in [2^254, 2^255)
+            // which exceeds group_order ℓ ≈ 2^252, so spec_scalar would incorrectly reduce
             spec_montgomery(result) == montgomery_scalar_mul_u(
                 spec_x25519_basepoint_u(),
-                spec_scalar(&Scalar { bytes: spec_clamp_integer(bytes) }),
+                scalar_to_nat(&Scalar { bytes: spec_clamp_integer(bytes) }),
             ),
     {
         // See reasoning in Self::mul_clamped why it is OK to make an unreduced Scalar here. We
@@ -344,7 +347,7 @@ impl MontgomeryPoint {
         proof {
             assume(spec_montgomery(result) == montgomery_scalar_mul_u(
                 spec_x25519_basepoint_u(),
-                spec_scalar(&Scalar { bytes: spec_clamp_integer(bytes) }),
+                scalar_to_nat(&Scalar { bytes: spec_clamp_integer(bytes) }),
             ));
         }
         result

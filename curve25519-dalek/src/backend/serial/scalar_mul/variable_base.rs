@@ -14,7 +14,7 @@ use crate::specs::edwards_specs::{
 #[cfg(verus_keep_ghost)]
 use crate::specs::field_specs::{fe51_limbs_bounded, sum_of_limbs_bounded};
 #[cfg(verus_keep_ghost)]
-use crate::specs::scalar_specs::{radix_16_all_bounded, radix_16_digit_bounded, spec_scalar};
+use crate::specs::scalar_specs::{radix_16_all_bounded, radix_16_digit_bounded, scalar_to_nat};
 #[cfg(verus_keep_ghost)]
 use crate::specs::window_specs::lookup_table_projective_limbs_bounded;
 
@@ -40,7 +40,7 @@ pub(crate) fn mul(point: &EdwardsPoint, scalar: &Scalar) -> (result: EdwardsPoin
         // Functional correctness: result represents scalar * point
         edwards_point_as_affine(result) == edwards_scalar_mul(
             edwards_point_as_affine(*point),
-            spec_scalar(scalar),
+            scalar_to_nat(scalar),
         ),
 {
     // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
@@ -119,7 +119,7 @@ pub(crate) fn mul(point: &EdwardsPoint, scalar: &Scalar) -> (result: EdwardsPoin
         // postconditions
         assume(edwards_point_as_affine(result) == edwards_scalar_mul(
             edwards_point_as_affine(*point),
-            spec_scalar(scalar),
+            scalar_to_nat(scalar),
         ));
     }
     result

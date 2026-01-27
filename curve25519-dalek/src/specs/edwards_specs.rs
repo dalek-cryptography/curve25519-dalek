@@ -46,7 +46,7 @@ use crate::specs::field_specs_u64::*;
 use crate::specs::montgomery_specs::*;
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)]
-use crate::specs::scalar_specs::spec_scalar;
+use crate::specs::scalar_specs::scalar_to_nat;
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)]
 use vstd::arithmetic::div_mod::{lemma_mod_bound, lemma_small_mod};
@@ -796,15 +796,23 @@ pub open spec fn spec_projective_to_extended(point: ProjectivePoint) -> (nat, na
     (math_field_mul(x, z), math_field_mul(y, z), math_field_square(z), math_field_mul(x, y))
 }
 
-/// Scalar multiplication on Edwards curve points (affine coordinates)
-/// Computes n * P using repeated addition
-/// Takes the affine coordinates (x, y) of a point P and returns n * P
+/// Scalar multiplication on Edwards curve points (affine coordinates).
+///
+/// Uses double-and-add instead of linear recursion to closer match the implementation of mul_by_pow_2
+///
+/// - **Linear**: `n*P = (n-1)*P + P` — reveal gives `add(scalar_mul(P, n-1), P)`
+/// - **Double-and-add**: even n → `double(scalar_mul(P, n/2))`
 pub open spec fn edwards_scalar_mul(point_affine: (nat, nat), n: nat) -> (nat, nat)
     decreases n,
 {
     if n == 0 {
         math_edwards_identity()  // (0, 1)
 
+    } else if n == 1 {
+        point_affine
+    } else if n % 2 == 0 {
+        let half = edwards_scalar_mul(point_affine, (n / 2) as nat);
+        edwards_double(half.0, half.1)
     } else {
         let prev = edwards_scalar_mul(point_affine, (n - 1) as nat);
         edwards_add(prev.0, prev.1, point_affine.0, point_affine.1)
@@ -862,7 +870,8 @@ pub open spec fn sum_of_scalar_muls(scalars: Seq<Scalar>, points: Seq<EdwardsPoi
         let last = (len - 1) as int;
         let prev = sum_of_scalar_muls(scalars.subrange(0, last), points.subrange(0, last));
         let point_affine = edwards_point_as_affine(points[last]);
-        let scalar_nat = spec_scalar(&scalars[last]);
+        // Use scalar_to_nat (not spec_scalar) to match implementation ensures clauses
+        let scalar_nat = scalar_to_nat(&scalars[last]);
         let scaled = edwards_scalar_mul(point_affine, scalar_nat);
         edwards_add(prev.0, prev.1, scaled.0, scaled.1)
     }

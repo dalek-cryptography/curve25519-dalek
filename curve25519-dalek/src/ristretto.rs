@@ -1807,7 +1807,7 @@ impl<'b> MulAssign<&'b Scalar> for RistrettoPoint {
             // Functional correctness: self = [scalar] * old(self)
             edwards_point_as_affine(self.0) == edwards_scalar_mul(
                 edwards_point_as_affine(old(self).0),
-                spec_scalar(scalar),
+                scalar_to_nat(scalar),
             ),
     {
         // ORIGINAL CODE: let result = (self as &RistrettoPoint) * scalar;
@@ -1831,7 +1831,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoPoint {
             is_well_formed_edwards_point(result.0),
             edwards_point_as_affine(result.0) == edwards_scalar_mul(
                 edwards_point_as_affine(self.0),
-                spec_scalar(scalar),
+                scalar_to_nat(scalar),
             ),
     {
         // Edwards mul ensures: is_well_formed_edwards_point(result) and scalar_mul correctness
@@ -1852,7 +1852,7 @@ impl<'a, 'b> Mul<&'b RistrettoPoint> for &'a Scalar {
             is_well_formed_edwards_point(result.0),
             edwards_point_as_affine(result.0) == edwards_scalar_mul(
                 edwards_point_as_affine(point.0),
-                spec_scalar(self),
+                scalar_to_nat(self),
             ),
     {
         // Edwards mul ensures: is_well_formed_edwards_point(result) and scalar_mul correctness
@@ -1873,7 +1873,7 @@ impl RistrettoPoint {
             // Functional correctness: result = [scalar] * B where B is the Ristretto basepoint
             edwards_point_as_affine(result.0) == edwards_scalar_mul(
                 spec_ristretto_basepoint(),
-                spec_scalar(scalar),
+                scalar_to_nat(scalar),
             ),
     {
         let r = {
@@ -1890,7 +1890,7 @@ impl RistrettoPoint {
             assume(is_well_formed_edwards_point(r.0));
             assume(edwards_point_as_affine(r.0) == edwards_scalar_mul(
                 spec_ristretto_basepoint(),
-                spec_scalar(scalar),
+                scalar_to_nat(scalar),
             ));
         }
         r
@@ -2138,8 +2138,8 @@ impl RistrettoPoint {
             is_well_formed_edwards_point(result.0),
             // Functional correctness: result = a*A + b*B where B is the Ristretto basepoint
             edwards_point_as_affine(result.0) == {
-                let aA = edwards_scalar_mul(edwards_point_as_affine(A.0), spec_scalar(a));
-                let bB = edwards_scalar_mul(spec_ristretto_basepoint(), spec_scalar(b));
+                let aA = edwards_scalar_mul(edwards_point_as_affine(A.0), scalar_to_nat(a));
+                let bB = edwards_scalar_mul(spec_ristretto_basepoint(), scalar_to_nat(b));
                 edwards_add(aA.0, aA.1, bB.0, bB.1)
             },
     {
@@ -2178,7 +2178,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
             // Functional correctness: result = [scalar] * B
             edwards_point_as_affine(result.0) == edwards_scalar_mul(
                 spec_ristretto_basepoint(),
-                spec_scalar(scalar),
+                scalar_to_nat(scalar),
             ),
     {
         RistrettoPoint(&self.0 * scalar)
@@ -2199,7 +2199,7 @@ impl<'a, 'b> Mul<&'a RistrettoBasepointTable> for &'b Scalar {
             // Functional correctness: result = [scalar] * B
             edwards_point_as_affine(result.0) == edwards_scalar_mul(
                 spec_ristretto_basepoint(),
-                spec_scalar(self),
+                scalar_to_nat(self),
             ),
     {
         RistrettoPoint(self * &basepoint_table.0)

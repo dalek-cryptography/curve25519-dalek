@@ -63,13 +63,6 @@ pub open spec fn five_limbs_to_nat_aux(limbs: [u64; 5]) -> nat {
     pow2(208) * (limbs[4] as nat)
 }
 
-/// Returns the mathematical value of a Scalar52 modulo the group order.
-/// This is the Scalar52 equivalent of spec_scalar for Scalar.
-/// Returns a value in [0, L).
-pub open spec fn spec_scalar52(s: &Scalar52) -> nat {
-    scalar52_to_nat(s) % group_order()
-}
-
 // bytes32_to_nat, bytes_seq_to_nat, and bytes_to_nat_suffix (all generic)
 // are now in core_specs.rs. They are imported via `use super::core_specs::*`
 // Group order: the value of L as a natural number

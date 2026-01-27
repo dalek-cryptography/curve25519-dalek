@@ -1,4 +1,4 @@
-//! Lemmas about the Edwards curve equation
+//! Lemmas about the Edwards curve equation and operations
 //!
 //! This module contains proofs for general properties of the twisted Edwards curve
 //! equation and coordinate representations. These are fundamental mathematical facts
@@ -9,16 +9,21 @@
 //! 1. **Negation preserves curve**: (-x, y) is on the curve if (x, y) is (since x² = (-x)²)
 //! 2. **Affine to extended validity**: (x, y, 1, xy) is a valid extended point when (x, y) is on curve
 //! 3. **x=0 implies y²=1**: If x ≡ 0 and (x, y) is on curve, then y² = 1
+//! 4. **Scalar mul pow2 successor**: [2^(k+1)]P = double([2^k]P)
 #![allow(unused_imports)]
 use crate::backend::serial::u64::constants::EDWARDS_D;
 use crate::backend::serial::u64::field::FieldElement51;
 use crate::lemmas::common_lemmas::number_theory_lemmas::*;
+#[cfg(verus_keep_ghost)]
+use crate::lemmas::common_lemmas::pow_lemmas::{lemma_pow2_even, pow2_MUL_div};
 use crate::lemmas::field_lemmas::field_algebra_lemmas::*;
 use crate::specs::edwards_specs::*;
 use crate::specs::field_specs::*;
 use crate::specs::field_specs_u64::*;
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
+#[cfg(verus_keep_ghost)]
+use vstd::arithmetic::power2::{lemma2_to64, lemma_pow2_pos, pow2};
 use vstd::prelude::*;
 
 verus! {
@@ -521,6 +526,52 @@ pub proof fn lemma_affine_curve_implies_projective(x: nat, y: nat, z: nat)
     // affine_rhs · z⁴ = proj_rhs (shown above)
 
     assert(proj_lhs == proj_rhs);
+}
+
+// =============================================================================
+// Scalar Multiplication Lemmas
+// =============================================================================
+/// Lemma: scalar multiplication by a power-of-two exponent unfolds to a doubling.
+///
+/// For any point P and exponent k ≥ 0:
+///   [2^(k+1)]P = double([2^k]P)
+///
+/// This is used to prove `mul_by_pow_2` correct by showing each doubling step
+/// computes the next power-of-two multiple.
+pub proof fn lemma_edwards_scalar_mul_pow2_succ(point_affine: (nat, nat), k: nat)
+    ensures
+        edwards_scalar_mul(point_affine, pow2(k + 1)) == {
+            let half = edwards_scalar_mul(point_affine, pow2(k));
+            edwards_double(half.0, half.1)
+        },
+{
+    // Unfold one step of scalar multiplication at n = 2^(k+1).
+    reveal_with_fuel(edwards_scalar_mul, 1);
+
+    // pow2(k+1) is positive and even.
+    assert(pow2(k + 1) != 0 && pow2(k + 1) % 2 == 0) by {
+        lemma_pow2_pos(k + 1);
+        lemma_pow2_even(k + 1);
+    }
+
+    // pow2(k+1) / 2 == pow2(k).
+    assert(pow2(k + 1) / 2 == pow2(k)) by {
+        pow2_MUL_div(1, k + 1, 1);  // (1 * pow2(k+1)) / pow2(1) == 1 * pow2(k)
+        assert(pow2(1) == 2) by {
+            lemma2_to64();
+        }
+    }
+
+    // Since pow2(k+1) is even and nonzero, it cannot be 1.
+    assert(pow2(k + 1) != 1) by {
+        assert(1nat % 2 == 1) by (compute);
+    }
+
+    // Now the even branch applies.
+    assert(edwards_scalar_mul(point_affine, pow2(k + 1)) == {
+        let half = edwards_scalar_mul(point_affine, (pow2(k + 1) / 2) as nat);
+        edwards_double(half.0, half.1)
+    });
 }
 
 } // verus!

@@ -264,7 +264,7 @@ pub fn variable_base_mul(point: &EdwardsPoint, scalar: &Scalar) -> (result: Edwa
         // Functional correctness: result represents scalar * point
         edwards_point_as_affine(result) == edwards_scalar_mul(
             edwards_point_as_affine(*point),
-            spec_scalar(scalar),
+            scalar_to_nat(scalar),
         ),
 {
     match get_selected_backend() {
@@ -287,8 +287,8 @@ pub fn vartime_double_base_mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> (res
         is_well_formed_edwards_point(result),
         // Functional correctness: result = a*A + b*B where B is the Ed25519 basepoint
         edwards_point_as_affine(result) == {
-            let aA = edwards_scalar_mul(edwards_point_as_affine(*A), spec_scalar(a));
-            let bB = edwards_scalar_mul(spec_ed25519_basepoint(), spec_scalar(b));
+            let aA = edwards_scalar_mul(edwards_point_as_affine(*A), scalar_to_nat(a));
+            let bB = edwards_scalar_mul(spec_ed25519_basepoint(), scalar_to_nat(b));
             edwards_add(aA.0, aA.1, bB.0, bB.1)
         },
 {

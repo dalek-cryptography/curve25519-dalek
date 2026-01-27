@@ -136,7 +136,7 @@ use crate::backend::serial::curve_models::ProjectivePoint;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::core_assumes::{compressed_edwards_y_from_array_result, try_into_32_bytes_array};
 #[cfg(verus_keep_ghost)]
-use vstd::arithmetic::power2::{lemma2_to64, lemma_pow2_strictly_increases, pow2};
+use vstd::arithmetic::power2::*;
 
 /* VERIFICATION NOTE: Only importing LookupTableRadix16 since other radix variants
 were removed during manual expansion focusing on radix-16. */
@@ -164,6 +164,8 @@ use crate::core_assumes::sha512_hash_bytes;
 #[cfg(all(feature = "digest", verus_keep_ghost))]
 #[allow(unused_imports)]
 use crate::core_assumes::spec_sha512;
+#[allow(unused_imports)] // Used in verus! blocks for pow2 arithmetic facts
+use crate::lemmas::common_lemmas::pow_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for identity bytes proof
 use crate::lemmas::common_lemmas::to_nat_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for Edwards curve constants
@@ -183,6 +185,10 @@ use crate::lemmas::field_lemmas::as_bytes_lemmas::*;
 use crate::lemmas::field_lemmas::constants_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for field algebra lemmas
 use crate::lemmas::field_lemmas::field_algebra_lemmas::*;
+#[allow(unused_imports)] // Used in verus! blocks for bytes/word conversion lemmas
+use crate::lemmas::scalar_byte_lemmas::bytes_to_scalar_lemmas::*;
+#[allow(unused_imports)] // Used in verus! blocks for bytes_to_nat_prefix / words_to_nat_u64
+use crate::specs::core_specs::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::specs::core_specs::*;
 #[allow(unused_imports)] // Used in verus! blocks
@@ -1085,23 +1091,32 @@ impl ConditionallySelectable for EdwardsPoint {
             !choice_is_true(choice) ==> result == *a,
             // If choice is true (1), return b
             choice_is_true(choice) ==> result == *b,
+            // Well-formedness is preserved by selection
+            is_well_formed_edwards_point(*a) && is_well_formed_edwards_point(*b)
+                ==> is_well_formed_edwards_point(result),
     {
-        let result = EdwardsPoint {
-            X: FieldElement::conditional_select(&a.X, &b.X, choice),
-            Y: FieldElement::conditional_select(&a.Y, &b.Y, choice),
-            Z: FieldElement::conditional_select(&a.Z, &b.Z, choice),
-            T: FieldElement::conditional_select(&a.T, &b.T, choice),
-        };
+        let X = FieldElement::conditional_select(&a.X, &b.X, choice);
+        let Y = FieldElement::conditional_select(&a.Y, &b.Y, choice);
+        let Z = FieldElement::conditional_select(&a.Z, &b.Z, choice);
+        let T = FieldElement::conditional_select(&a.T, &b.T, choice);
+
+        let result = EdwardsPoint { X, Y, Z, T };
 
         proof {
-            // When all limbs of all fields match, the structs should be equal by extensionality
-            // However, Verus requires explicit extensionality axioms for struct equality
-            // To prove this without assumes would require:
-            // 1. Lemma: FieldElement equality from limb equality (extensionality for FieldElement)
-            // 2. Lemma: EdwardsPoint equality from field equality (extensionality for EdwardsPoint)
-            // For now, we assume the postcondition as it's straightforward from the field-level specs
-            assume(!choice_is_true(choice) ==> result == *a);
-            assume(choice_is_true(choice) ==> result == *b);
+            if choice_is_true(choice) {
+                // choice is true: result should be exactly `b`
+                // Use extensional equality on limbs to prove struct equality
+                assert(X.limbs =~= b.X.limbs);
+                assert(Y.limbs =~= b.Y.limbs);
+                assert(Z.limbs =~= b.Z.limbs);
+                assert(T.limbs =~= b.T.limbs);
+            } else {
+                // choice is false: result should be exactly `a`
+                assert(X.limbs =~= a.X.limbs);
+                assert(Y.limbs =~= a.Y.limbs);
+                assert(Z.limbs =~= a.Z.limbs);
+                assert(T.limbs =~= a.T.limbs);
+            }
         }
 
         result
@@ -1141,10 +1156,12 @@ impl ConstantTimeEq for EdwardsPoint {
             )),
     {
         proof {
-            // Preconditions from ConstantTimeEqSpecImpl::ct_eq_req needed for multiplications below
-            /* VERIFICATION NOTE:
-            - Verus does not support adding a "requires" clause to ct_eq with ConstantTimeEqSpecImpl,
-            - For standard types like Add, a "requires" clause for "add" was supported through the AddSpecImpl
+            /* VERUS LIMITATION: Must assume precondition
+
+            ConstantTimeEq is an external trait (subtle crate). Approaches tried:
+            - External trait specs don't support precondition methods (unlike AddSpecImpl::add_req)
+            - Cannot use assume_specification (we implement the trait = duplicate spec error)
+            - Type invariants don't work (require private fields; pub(crate) treated as opaque)
             */
             assume(self.ct_eq_req(other));
             // Weaken from 52-bounded (EdwardsPoint invariant) to 54-bounded (mul precondition)
@@ -1485,7 +1502,7 @@ impl EdwardsPoint {
 
         proof {
             // E1 from to_edwards has valid limbs; mul_by_cofactor ensures well-formedness
-            assume(edwards_point_limbs_bounded(E1));
+            assume(is_well_formed_edwards_point(E1));
         }
 
         let result = E1.mul_by_cofactor();
@@ -1997,7 +2014,7 @@ impl<'b> MulAssign<&'b Scalar> for EdwardsPoint {
             is_well_formed_edwards_point(*self),
             edwards_point_as_affine(*self) == edwards_scalar_mul(
                 edwards_point_as_affine(*old(self)),
-                spec_scalar(scalar),
+                scalar_to_nat(scalar),
             ),
     {
         /* ORIGINAL CODE
@@ -2011,7 +2028,7 @@ impl<'b> MulAssign<&'b Scalar> for EdwardsPoint {
 } // verus!
 define_mul_assign_variants!(LHS = EdwardsPoint, RHS = Scalar);
 
-define_mul_variants_verus!(LHS = EdwardsPoint, RHS = Scalar, Output = EdwardsPoint);
+define_edwards_scalar_mul_variants_verus!();
 
 define_mul_variants_verus!(LHS = Scalar, RHS = EdwardsPoint, Output = EdwardsPoint);
 
@@ -2033,7 +2050,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
             is_well_formed_edwards_point(result),
             edwards_point_as_affine(result) == edwards_scalar_mul(
                 edwards_point_as_affine(*self),
-                spec_scalar(scalar),
+                scalar_to_nat(scalar),
             ),
     {
         crate::backend::variable_base_mul(self, scalar)
@@ -2056,7 +2073,7 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
             is_well_formed_edwards_point(result),
             edwards_point_as_affine(result) == edwards_scalar_mul(
                 edwards_point_as_affine(*point),
-                spec_scalar(self),
+                scalar_to_nat(self),
             ),
     {
         point * self
@@ -2076,7 +2093,7 @@ impl EdwardsPoint {
             // Functional correctness: result = [scalar] * B where B is the basepoint
             edwards_point_as_affine(result) == edwards_scalar_mul(
                 spec_ed25519_basepoint(),
-                spec_scalar(scalar),
+                scalar_to_nat(scalar),
             ),
     {
         #[cfg(not(feature = "precomputed-tables"))]
@@ -2095,7 +2112,7 @@ impl EdwardsPoint {
             // Result is scalar multiplication of self by the clamped scalar
             edwards_point_as_affine(result) == edwards_scalar_mul(
                 edwards_point_as_affine(self),
-                spec_scalar(&Scalar { bytes: spec_clamp_integer(bytes) }),
+                scalar_to_nat(&Scalar { bytes: spec_clamp_integer(bytes) }),
             ),
     {
         // We have to construct a Scalar that is not reduced mod l, which breaks scalar invariant
@@ -2111,7 +2128,7 @@ impl EdwardsPoint {
             assume(is_well_formed_edwards_point(result));
             assume(edwards_point_as_affine(result) == edwards_scalar_mul(
                 edwards_point_as_affine(self),
-                spec_scalar(&Scalar { bytes: spec_clamp_integer(bytes) }),
+                scalar_to_nat(&Scalar { bytes: spec_clamp_integer(bytes) }),
             ));
         }
         result
@@ -2125,7 +2142,7 @@ impl EdwardsPoint {
             // Functional correctness: result = [clamped_scalar] * B where B is the basepoint
             edwards_point_as_affine(result) == edwards_scalar_mul(
                 spec_ed25519_basepoint(),
-                spec_scalar(&Scalar { bytes: spec_clamp_integer(bytes) }),
+                scalar_to_nat(&Scalar { bytes: spec_clamp_integer(bytes) }),
             ),
     {
         // See reasoning in Self::mul_clamped why it is OK to make an unreduced Scalar here. We
@@ -2289,8 +2306,8 @@ impl EdwardsPoint {
             is_well_formed_edwards_point(result),
             // Functional correctness: result = a*A + b*B where B is the Ed25519 basepoint
             edwards_point_as_affine(result) == {
-                let aA = edwards_scalar_mul(edwards_point_as_affine(*A), spec_scalar(a));
-                let bB = edwards_scalar_mul(spec_ed25519_basepoint(), spec_scalar(b));
+                let aA = edwards_scalar_mul(edwards_point_as_affine(*A), scalar_to_nat(a));
+                let bB = edwards_scalar_mul(spec_ed25519_basepoint(), scalar_to_nat(b));
                 edwards_add(aA.0, aA.1, bB.0, bB.1)
             },
     {
@@ -2551,18 +2568,13 @@ impl BasepointTable for EdwardsBasepointTable {
         // XXX use init_with
         let mut table = EdwardsBasepointTable([LookupTableRadix16::default();32]);
         let mut P = *basepoint;
-        for i in 0..32 {
+        for i in 0..32
+            invariant
+                is_well_formed_edwards_point(*basepoint),
+                is_well_formed_edwards_point(P),
+        {
             // P = (16²)^i * basepoint
             table.0[i] = LookupTableRadix16::from(&P);
-            proof {
-                // P is 52-bounded via loop invariant:
-                // - Initial: is_well_formed_edwards_point(*basepoint) includes edwards_point_limbs_bounded (52)
-                // - Maintained: mul_by_pow_2 ensures is_well_formed_edwards_point(result)
-                assume(fe51_limbs_bounded(&P.X, 52));
-                assume(fe51_limbs_bounded(&P.Y, 52));
-                assume(fe51_limbs_bounded(&P.Z, 52));
-                assume(fe51_limbs_bounded(&P.T, 52));
-            }
             P = P.mul_by_pow_2(4 + 4);  // P = P * 2^8 = P * 256 = P * 16²
         }
         proof {
@@ -2660,7 +2672,7 @@ impl BasepointTable for EdwardsBasepointTable {
             // Functional correctness: result = [scalar] * B
             edwards_point_as_affine(result) == edwards_scalar_mul(
                 spec_ed25519_basepoint(),
-                spec_scalar(scalar),
+                scalar_to_nat(scalar),
             ),
     {
         let a = scalar.as_radix_2w(4);
@@ -2702,8 +2714,8 @@ impl BasepointTable for EdwardsBasepointTable {
         }
 
         proof {
-            assume(edwards_point_limbs_bounded(P));
-            assume(fe51_limbs_bounded(&P.T, 54));
+            assume(is_well_formed_edwards_point(P));
+            assume(fe51_limbs_bounded(&P.T, 54));  // T limb bound is tighter than well-formedness requires
         }
         P = P.mul_by_pow_2(4);
         // ORIGINAL CODE (doesn't work with Verus - .filter() not supported in ghost for loops):
@@ -2742,7 +2754,7 @@ impl BasepointTable for EdwardsBasepointTable {
             assume(is_well_formed_edwards_point(P));
             assume(edwards_point_as_affine(P) == edwards_scalar_mul(
                 spec_ed25519_basepoint(),
-                spec_scalar(scalar),
+                scalar_to_nat(scalar),
             ));
         }
         P
@@ -2764,7 +2776,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
             // Functional correctness: result = [scalar] * B
             edwards_point_as_affine(result) == edwards_scalar_mul(
                 spec_ed25519_basepoint(),
-                spec_scalar(scalar),
+                scalar_to_nat(scalar),
             ),
     {
         self.mul_base(scalar)
@@ -2786,7 +2798,7 @@ impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
             // Functional correctness: result = [scalar] * B
             edwards_point_as_affine(result) == edwards_scalar_mul(
                 spec_ed25519_basepoint(),
-                spec_scalar(self),
+                scalar_to_nat(self),
             ),
     {
         basepoint_table * self
@@ -2825,7 +2837,7 @@ impl EdwardsPoint {
     /// Multiply by the cofactor: return \\(\[8\]P\\).
     pub fn mul_by_cofactor(&self) -> (result: EdwardsPoint)
         requires
-            edwards_point_limbs_bounded(*self),
+            is_well_formed_edwards_point(*self),
         ensures
             is_well_formed_edwards_point(result),
             // Functional correctness: result = [8]P
@@ -2850,7 +2862,7 @@ impl EdwardsPoint {
     pub(crate) fn mul_by_pow_2(&self, k: u32) -> (result: EdwardsPoint)
         requires
             k > 0,
-            edwards_point_limbs_bounded(*self),
+            is_well_formed_edwards_point(*self),
         ensures
             is_well_formed_edwards_point(result),
             // Functional correctness: result = [2^k]P
@@ -2861,43 +2873,65 @@ impl EdwardsPoint {
     {
         #[cfg(not(verus_keep_ghost))]
         debug_assert!(k > 0);
+        let ghost point_affine = edwards_point_as_affine(*self);
         let mut r: CompletedPoint;
         let mut s = self.as_projective();
-        for _ in 0..(k - 1) {
-            proof {
-                assume(is_valid_projective_point(s));
-                assume(sum_of_limbs_bounded(&s.X, &s.Y, u64::MAX));
-                // ProjectivePoint invariant: 52-bounded (from as_projective postcondition)
-                assume(fe51_limbs_bounded(&s.X, 52));
-                assume(fe51_limbs_bounded(&s.Y, 52));
-                assume(fe51_limbs_bounded(&s.Z, 52));
-            }
-            r = s.double();
-            proof {
-                // CompletedPoint invariant: 54-bounded
-                assume(fe51_limbs_bounded(&r.X, 54));
-                assume(fe51_limbs_bounded(&r.Y, 54));
-                assume(fe51_limbs_bounded(&r.Z, 54));
-            }
-            s = r.as_projective();
-        }
-        // Unroll last iteration so we can go directly as_extended()
+
         proof {
-            assume(is_valid_projective_point(s));
-            assume(sum_of_limbs_bounded(&s.X, &s.Y, u64::MAX));
-            // ProjectivePoint invariant: 52-bounded
-            assume(fe51_limbs_bounded(&s.X, 52));
-            assume(fe51_limbs_bounded(&s.Y, 52));
-            assume(fe51_limbs_bounded(&s.Z, 52));
-        }
-        let result = s.double().as_extended();
-        proof {
-            assume(is_well_formed_edwards_point(result));
-            assume(edwards_point_as_affine(result) == edwards_scalar_mul(
-                edwards_point_as_affine(*self),
-                pow2(k as nat),
+            // Establish ProjectivePoint::double preconditions for the initial s.
+            assert(sum_of_limbs_bounded(&s.X, &s.Y, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&s.X, &s.Y, 52);
+            }
+            assert(is_valid_projective_point(s)) by {
+                assert(is_valid_edwards_point(*self));
+            }
+
+            // Base case: pow2(0) == 1 and [1]P == P.
+            assert(pow2(0) == 1) by {
+                lemma2_to64();
+            }
+            reveal_with_fuel(edwards_scalar_mul, 1);
+            // Add mul_basics lemmas for stability (1 * x == x inference)
+            vstd::arithmetic::mul::lemma_mul_basics_3(1int);
+            vstd::arithmetic::mul::lemma_mul_basics_4(1int);
+            assert(projective_point_as_affine_edwards(s) == point_affine);
+            assert(projective_point_as_affine_edwards(s) == edwards_scalar_mul(
+                point_affine,
+                pow2(0),
             ));
         }
+
+        // ORIGINAL: for _ in 0..(k - 1) { ... }
+        // Changed to track iteration index `i` for loop invariant
+        for i in 0..(k - 1)
+            invariant
+                is_valid_projective_point(s),
+                fe51_limbs_bounded(&s.X, 52),
+                fe51_limbs_bounded(&s.Y, 52),
+                fe51_limbs_bounded(&s.Z, 52),
+                sum_of_limbs_bounded(&s.X, &s.Y, u64::MAX),
+                projective_point_as_affine_edwards(s) == edwards_scalar_mul(
+                    point_affine,
+                    pow2(i as nat),
+                ),
+        {
+            r = s.double();
+            s = r.as_projective();
+
+            proof {
+                lemma_edwards_scalar_mul_pow2_succ(point_affine, i as nat);
+            }
+        }
+
+        // Unroll last iteration to go directly to as_extended() (avoids extra as_projective conversion)
+        // ORIGINAL: let result = s.double().as_extended();
+        r = s.double();
+        let result = r.as_extended();
+
+        proof {
+            lemma_edwards_scalar_mul_pow2_succ(point_affine, (k - 1) as nat);
+        }
+
         result
     }
 
@@ -2926,7 +2960,7 @@ impl EdwardsPoint {
     /// ```
     pub fn is_small_order(&self) -> (result: bool)
         requires
-            edwards_point_limbs_bounded(*self),
+            is_well_formed_edwards_point(*self),
         ensures
     // A point has small order iff [8]P = O (identity)
 
@@ -2982,13 +3016,15 @@ impl EdwardsPoint {
     {
         /* ORIGINAL CODE: (self * constants::BASEPOINT_ORDER_PRIVATE).is_identity() */
         let order_mul = self * constants::BASEPOINT_ORDER_PRIVATE;
-        // Mul ensures: edwards_point_as_affine(order_mul) == edwards_scalar_mul(..., spec_scalar(&BASEPOINT_ORDER_PRIVATE))
         let result = order_mul.is_identity();
-        // is_identity ensures: result == (edwards_point_as_affine(order_mul) == math_edwards_identity())
         proof {
-            // TODO: Need lemma that spec_scalar(&BASEPOINT_ORDER_PRIVATE) == group_order()
-            // BASEPOINT_ORDER_PRIVATE represents ℓ = 2^252 + 27742317777372353535851937790883648493
-            assume(spec_scalar(&constants::BASEPOINT_ORDER_PRIVATE) == group_order());
+            assert(edwards_point_as_affine(order_mul) == edwards_scalar_mul(
+                edwards_point_as_affine(*self),
+                group_order(),
+            )) by {
+                // BASEPOINT_ORDER_PRIVATE encodes ℓ in little-endian bytes.
+                lemma_scalar_to_nat_basepoint_order_private_equals_group_order();
+            }
         }
         result
     }

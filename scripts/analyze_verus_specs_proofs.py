@@ -406,9 +406,14 @@ def parse_function_in_file(
         fn_region = content[fn_start:next_fn_pos]
 
         # Additional check: assume anywhere in the fn region (between this fn and next fn)
-        # Check each line to exclude comments
+        # First, strip all block comments /* ... */ from the region
+        fn_region_no_block_comments = re.sub(
+            r"/\*.*?\*/", "", fn_region, flags=re.DOTALL
+        )
+
+        # Check each line to exclude line comments
         has_assume_in_region = False
-        for line in fn_region.split("\n"):
+        for line in fn_region_no_block_comments.split("\n"):
             # Skip lines that are comments (starting with //)
             stripped = line.lstrip()
             if stripped.startswith("//"):

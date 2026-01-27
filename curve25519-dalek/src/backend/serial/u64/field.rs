@@ -1151,9 +1151,7 @@ impl FieldElement51 {
             forall|i: int|
                 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54  // 51 + b for b = 3
             ,
-        ensures/*  VERIFICATION NOTE: spec updated
-         - spec needs cleanup
-         - proof needs completed: one assume left */
+        ensures
     // Actual bound: 2^51 + 2^13 < 2^52 (from carry propagation in reduction)
 
             forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 52,

@@ -348,7 +348,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load certifications history
     async function loadCertifications() {
         try {
-            const response = await fetch('certifications.json');
+            // Fetch from certifications-data branch (avoids protected main branch)
+            // Falls back to local path for development
+            const CERTIFICATIONS_URL = 'https://raw.githubusercontent.com/Beneficial-AI-Foundation/dalek-lite/certifications-data/certifications.json';
+            
+            let response;
+            try {
+                response = await fetch(CERTIFICATIONS_URL);
+                if (!response.ok) throw new Error('Remote fetch failed');
+            } catch (e) {
+                // Fallback for local development
+                console.log('Falling back to local certifications.json');
+                response = await fetch('certifications.json');
+            }
             const data = await response.json();
             
             const tbody = document.getElementById('certificationsTableBody');
@@ -357,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!data.certifications || data.certifications.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="certifications-empty">
+                        <td colspan="8" class="certifications-empty">
                             No certifications recorded yet. Certifications will appear here after verification runs.
                         </td>
                     </tr>
@@ -457,10 +469,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     ? `<span class="verified-count">${verifiedCount}</span>/${totalFunctions}`
                     : '<span class="no-data">—</span>';
                 
+                // Display Verus version (sanitized)
+                const verusVersion = cert.verus_version ? escapeHtml(cert.verus_version) : '';
+                const verusDisplay = verusVersion
+                    ? `<span class="verus-version" title="${verusVersion}">${verusVersion}</span>`
+                    : '<span class="no-data">—</span>';
+                
                 return `
                     <tr>
                         <td>${formatDateTime(cert.timestamp)}</td>
                         <td>${commitLink}</td>
+                        <td>${verusDisplay}</td>
                         <td>${verifiedDisplay}</td>
                         <td>${contentHashDisplay}</td>
                         <td>${mainnetLink}</td>
@@ -488,7 +507,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const tbody = document.getElementById('certificationsTableBody');
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="certifications-empty">
+                    <td colspan="8" class="certifications-empty">
                         Unable to load certifications. They will appear here after the first verification run.
                     </td>
                 </tr>

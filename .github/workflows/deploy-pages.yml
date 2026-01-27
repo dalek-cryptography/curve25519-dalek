@@ -18,7 +18,8 @@ on:
       - 'curve25519-dalek/build.rs'
       # Note: Callgraph is generated separately by generate-callgraph.yml
       # and cached. This workflow deploys immediately using cached callgraph.
-  # Also triggered when certify-verification.yml updates docs/certifications.json
+      # Note: certifications.json is stored in the certifications-data branch
+      # and fetched directly by script.js from raw.githubusercontent.com
   workflow_dispatch:
 
 # Sets permissions for GitHub Pages deployment

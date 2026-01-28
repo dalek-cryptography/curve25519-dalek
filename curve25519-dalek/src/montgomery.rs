@@ -81,6 +81,11 @@ use crate::specs::scalar_specs::bits_be_to_nat;
 #[cfg(verus_keep_ghost)]
 use crate::specs::scalar_specs::spec_clamp_integer;
 
+#[cfg(verus_keep_ghost)]
+use crate::lemmas::field_lemmas::constants_lemmas::*;
+#[cfg(verus_keep_ghost)]
+use crate::lemmas::montgomery_lemmas::*;
+
 use crate::traits::Identity;
 
 #[cfg(verus_keep_ghost)]
@@ -105,11 +110,6 @@ verus! {
 #[derive(Copy, Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MontgomeryPoint(pub [u8; 32]);
-
-/// Spec function: extract the u-coordinate of a MontgomeryPoint as a field element
-pub open spec fn spec_montgomery(point: MontgomeryPoint) -> nat {
-    spec_field_element_from_bytes(&point.0)
-}
 
 /// Equality of `MontgomeryPoint`s is defined mod p.
 impl ConstantTimeEq for MontgomeryPoint {
@@ -247,8 +247,9 @@ impl Zeroize for MontgomeryPoint {
         /* ORIGINAL CODE: self.0.zeroize(); */
         crate::core_assumes::zeroize_bytes32(&mut self.0);
         proof {
-            // After zeroizing, all bytes are 0, so the field element is 0
-            assume(spec_field_element_from_bytes(&self.0) == 0);
+            assert(spec_montgomery(*self) == 0) by {
+                lemma_zero_limbs_is_zero(*self);
+            }
         }
     }
 }
@@ -296,11 +297,11 @@ impl MontgomeryPoint {
       The corresponding scalar is not reduced modulo the group order. */
 
             ({
-                let P = canonical_montgomery_lift(spec_montgomery_point(self));
+                let P = canonical_montgomery_lift(spec_montgomery(self));
                 let clamped_bytes = spec_clamp_integer(bytes);
                 let n = bytes32_to_nat(&clamped_bytes);
                 let R = montgomery_scalar_mul(P, n);
-                spec_montgomery_point(result) == spec_u_coordinate(R)
+                spec_montgomery(result) == spec_u_coordinate(R)
             }),
     {
         // We have to construct a Scalar that is not reduced mod l, which breaks scalar invariant
@@ -315,11 +316,11 @@ impl MontgomeryPoint {
         proof {
             // postcondition
             assume({
-                let P = canonical_montgomery_lift(spec_montgomery_point(self));
+                let P = canonical_montgomery_lift(spec_montgomery(self));
                 let clamped_bytes = spec_clamp_integer(bytes);
                 let n = bytes32_to_nat(&clamped_bytes);
                 let R = montgomery_scalar_mul(P, n);
-                spec_montgomery_point(result) == spec_u_coordinate(R)
+                spec_montgomery(result) == spec_u_coordinate(R)
             });
         }
         result
@@ -404,12 +405,12 @@ impl MontgomeryPoint {
         ensures
             ({
                 // Let P be the canonical affine lift of input u-coordinate
-                let P = canonical_montgomery_lift(spec_montgomery_point(*self));
+                let P = canonical_montgomery_lift(spec_montgomery(*self));
                 let n = bits_be_to_nat(bits, bits@.len() as int);
                 let R = montgomery_scalar_mul(P, n);
 
                 // result encodes u([n]P)
-                spec_montgomery_point(result) == spec_u_coordinate(R)
+                spec_montgomery(result) == spec_u_coordinate(R)
             }),
     {
         // Algorithm 8 of Costello-Smith 2017
@@ -453,11 +454,11 @@ impl MontgomeryPoint {
         proof {
             // postcondition using canonical lift
             assume({
-                let u0 = spec_montgomery_point(*self);
+                let u0 = spec_montgomery(*self);
                 let P = canonical_montgomery_lift(u0);
                 let n = bits_be_to_nat(bits, bits@.len() as int);
                 let R = montgomery_scalar_mul(P, n);
-                spec_montgomery_point(result) == spec_u_coordinate(R)
+                spec_montgomery(result) == spec_u_coordinate(R)
             });
         }
         result
@@ -499,7 +500,7 @@ impl MontgomeryPoint {
         ensures
             match result {
                 Some(edwards) => montgomery_corresponds_to_edwards(*self, edwards),
-                None => is_equal_to_minus_one(spec_montgomery_point(*self)),
+                None => is_equal_to_minus_one(spec_montgomery(*self)),
             },
     {
         // To decompress the Montgomery u coordinate to an
@@ -519,7 +520,7 @@ impl MontgomeryPoint {
 
         if u == FieldElement::MINUS_ONE {
             proof {
-                assume(is_equal_to_minus_one(spec_montgomery_point(*self)));
+                assume(is_equal_to_minus_one(spec_montgomery(*self)));
             }
             return None;
         }
@@ -542,7 +543,7 @@ impl MontgomeryPoint {
                     assume(montgomery_corresponds_to_edwards(*self, edwards));
                 },
                 None => {
-                    assume(is_equal_to_minus_one(spec_montgomery_point(*self)));
+                    assume(is_equal_to_minus_one(spec_montgomery(*self)));
                 },
             }
         }
@@ -563,8 +564,8 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
     requires
         fe51_limbs_bounded(r_0, 51),
     ensures
-        spec_montgomery_point(result) == spec_elligator_encode(spec_field_element(r_0)),
-        spec_montgomery_point(result) < p(),
+        spec_montgomery(result) == spec_elligator_encode(spec_field_element(r_0)),
+        spec_montgomery(result) < p(),
 {
     proof {
         // Preconditions for constants (MONTGOMERY_A = 486662, MONTGOMERY_A_NEG = -486662 mod p)
@@ -643,8 +644,8 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
 
     proof {
         // PROOF BYPASS: Assume postconditions
-        assume(spec_montgomery_point(result) == spec_elligator_encode(spec_field_element(r_0)));
-        assume(spec_montgomery_point(result) < p());
+        assume(spec_montgomery(result) == spec_elligator_encode(spec_field_element(r_0)));
+        assume(spec_montgomery(result) < p());
     }
 
     result
@@ -670,8 +671,12 @@ impl Identity for ProjectivePoint {
         let result = ProjectivePoint { U: FieldElement::ONE, W: FieldElement::ZERO };
         proof {
             // The identity point is (1, 0) in projective coordinates
-            assume(spec_field_element(&result.U) == 1);
-            assume(spec_field_element(&result.W) == 0);
+            assert(spec_field_element(&result.U) == 1) by {
+                lemma_one_field_element_value();
+            }
+            assert(spec_field_element(&result.W) == 0) by {
+                lemma_zero_field_element_value();
+            }
         }
         result
     }
@@ -757,7 +762,7 @@ impl ProjectivePoint {
         ensures
     // For projective point (U:W), the affine u-coordinate is u = U/W (or 0 if W=0)
 
-            spec_montgomery_point(result) == {
+            spec_montgomery(result) == {
                 let u_proj = spec_field_element(&self.U);
                 let w_proj = spec_field_element(&self.W);
                 if w_proj == 0 {
@@ -774,7 +779,7 @@ impl ProjectivePoint {
             // The affine u-coordinate is U * W^(-1) = U / W
             let u_proj = spec_field_element(&self.U);
             let w_proj = spec_field_element(&self.W);
-            assume(spec_montgomery_point(result) == if w_proj == 0 {
+            assume(spec_montgomery(result) == if w_proj == 0 {
                 0
             } else {
                 math_field_mul(u_proj, math_field_inv(w_proj))
@@ -908,10 +913,10 @@ impl Mul<&Scalar> for &MontgomeryPoint {
     // is multiplied by the unreduced scalar value
 
             ({
-                let P = canonical_montgomery_lift(spec_montgomery_point(*self));
+                let P = canonical_montgomery_lift(spec_montgomery(*self));
                 let n_unreduced = scalar_to_nat(scalar);
                 let R = montgomery_scalar_mul(P, n_unreduced);
-                spec_montgomery_point(result) == spec_u_coordinate(R)
+                spec_montgomery(result) == spec_u_coordinate(R)
             }),
     {
         // We multiply by the integer representation of the given Scalar. By scalar invariant #1,
@@ -933,10 +938,10 @@ impl Mul<&Scalar> for &MontgomeryPoint {
         proof {
             // postcondition: multiplication by unreduced scalar value using canonical lift
             assume({
-                let P = canonical_montgomery_lift(spec_montgomery_point(*self));
+                let P = canonical_montgomery_lift(spec_montgomery(*self));
                 let n_unreduced = scalar_to_nat(scalar);
                 let R = montgomery_scalar_mul(P, n_unreduced);
-                spec_montgomery_point(result) == spec_u_coordinate(R)
+                spec_montgomery(result) == spec_u_coordinate(R)
             });
         }
         ;
@@ -953,10 +958,10 @@ impl MulAssign<&Scalar> for MontgomeryPoint {
     // Uses canonical Montgomery lift
 
             ({
-                let P = canonical_montgomery_lift(spec_montgomery_point(*old(self)));
+                let P = canonical_montgomery_lift(spec_montgomery(*old(self)));
                 let n_unreduced = scalar_to_nat(scalar);
                 let R = montgomery_scalar_mul(P, n_unreduced);
-                spec_montgomery_point(*self) == spec_u_coordinate(R)
+                spec_montgomery(*self) == spec_u_coordinate(R)
             }),
     {
         *self = &*self * scalar;
@@ -976,10 +981,10 @@ impl Mul<&MontgomeryPoint> for &Scalar {
     // Delegates to point * self, which multiplies by the unreduced scalar using canonical lift
 
             ({
-                let P = canonical_montgomery_lift(spec_montgomery_point(*point));
+                let P = canonical_montgomery_lift(spec_montgomery(*point));
                 let n_unreduced = scalar_to_nat(self);
                 let R = montgomery_scalar_mul(P, n_unreduced);
-                spec_montgomery_point(result) == spec_u_coordinate(R)
+                spec_montgomery(result) == spec_u_coordinate(R)
             }),
     {
         point * self

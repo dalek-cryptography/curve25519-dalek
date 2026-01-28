@@ -5,10 +5,45 @@ use crate::backend::serial::u64::constants;
 use crate::specs::scalar52_specs::*;
 use crate::specs::scalar_specs::*;
 use vstd::arithmetic::div_mod::*;
+use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
+use crate::specs::core_specs::*;
+use crate::specs::field_specs_u64::*;
+use crate::specs::montgomery_specs::*;
+
+use crate::MontgomeryPoint;
+
 verus! {
+
+pub proof fn lemma_zero_limbs_is_zero(point: MontgomeryPoint)
+    requires
+        forall|i: int| 0 <= i < 32 ==> #[trigger] point.0[i] == 0u8,
+    ensures
+        spec_montgomery(point) == 0,
+{
+    // spec_montgomery(point) ==
+    // spec_field_element_from_bytes(point.0) ==
+    // (bytes32_to_nat(point.0) % pow2(255)) % p() ==
+    // \sum_{i = 0} ^ 31 (bytes[i] as nat) * pow2(i * 8)
+    assert(bytes32_to_nat(&point.0) == 0) by {
+        assert forall|i: nat| 0 <= i < 32 implies point.0[i as int] * pow2(i * 8) == 0 by {
+            /// trigger requirement:
+            assert(point.0[i as int] == 0u8);
+            assert(0u8 * pow2(i * 8) == 0) by {
+                lemma_mul_basics_1(pow2(i * 8) as int);
+            }
+        }
+    }
+    assert((0nat % pow2(255)) % p() == 0) by {
+        assert(0 < p() < pow2(255)) by {
+            pow255_gt_19();
+        }
+        lemma_small_mod(0, p());
+        lemma_small_mod(0, pow2(255));
+    }
+}
 
 /// Proves that the precomputed RR constant equals R² mod L
 ///

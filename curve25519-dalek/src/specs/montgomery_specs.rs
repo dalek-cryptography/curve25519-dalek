@@ -93,7 +93,7 @@ pub open spec fn canonical_montgomery_lift(u: nat) -> MontgomeryAffine
 /// which requires that montgomery_rhs(u) = u³ + A·u² + u is a quadratic residue (square) mod p.
 /// This ensures there exists a v such that v² = montgomery_rhs(u), making (u,v) a point on the curve.
 pub open spec fn is_valid_montgomery_point(point: crate::montgomery::MontgomeryPoint) -> bool {
-    let u = spec_montgomery_point(point);
+    let u = spec_montgomery(point);
     is_valid_u_coordinate(u)
 }
 
@@ -181,7 +181,7 @@ pub open spec fn spec_u_coordinate(point: MontgomeryAffine) -> nat {
 
 /// Returns the u-coordinate of a Montgomery point as a field element
 /// Montgomery points only store the u-coordinate; sign information is lost
-pub open spec fn spec_montgomery_point(point: crate::montgomery::MontgomeryPoint) -> nat {
+pub open spec fn spec_montgomery(point: crate::montgomery::MontgomeryPoint) -> nat {
     spec_field_element_from_bytes(&point.0)
 }
 
@@ -192,7 +192,7 @@ pub open spec fn montgomery_corresponds_to_edwards(
     montgomery: crate::montgomery::MontgomeryPoint,
     edwards: crate::edwards::EdwardsPoint,
 ) -> bool {
-    let u = spec_montgomery_point(montgomery);
+    let u = spec_montgomery(montgomery);
     let (x, y) = crate::specs::edwards_specs::edwards_point_as_affine(edwards);
     let denominator = math_field_sub(1, y);
 

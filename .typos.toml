@@ -18,3 +18,4 @@ extend-ignore-re = [
 "Tung" = "Tung" # Name
 "Monts" = "Monts" # Abbreviation for Montgomery
 "pn" = "pn" # Variable name for prime number
+"ba" = "ba" # Variable name for B+A curve point addition

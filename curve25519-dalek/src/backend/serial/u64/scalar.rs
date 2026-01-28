@@ -934,6 +934,7 @@ impl Scalar52 {
         ensures
             slice128_to_nat(&z) == scalar52_to_nat(&a) * scalar52_to_nat(&a),
             spec_mul_internal(a, a) == z,
+            limbs_bounded(&a) ==> forall|i: int| 0 <= i < 9 ==> z[i] < 5 * (1u128 << 104),
     {
         proof { lemma_square_internal_no_overflow() }
 
@@ -953,6 +954,40 @@ impl Scalar52 {
 
         proof {
             lemma_square_internal_correct(&a.limbs, &z);
+
+            if (limbs_bounded(&a)) {
+                assert((1u64 << 52) * (1u64 << 52) == 1u128 << 104) by (bit_vector);
+                assert(5 * (1u128 << 104) <= u128::MAX) by (bit_vector);
+                let bound = 1u64 << 52;
+                let b2 = 1u128 << 104;
+                assert forall|i: int| 0 <= i < 9 implies z[i] < 5 * b2 by {
+                    assert forall|j: int, k: int| 0 <= j < 5 && 0 <= k < 5 implies (
+                    a.limbs[j] as u128) * (a.limbs[k] as u128) < b2 by {
+                        // trigger foralls in limbs_bounded:
+                        assert(a.limbs[j] < bound);
+                        assert(a.limbs[k] < bound);
+                        lemma_mul_lt(
+                            a.limbs[j] as nat,
+                            bound as nat,
+                            a.limbs[k] as nat,
+                            bound as nat,
+                        );
+                    }
+                    assert(z[i] < b2 * 2 + b2 * 2 + b2);
+                    assert(b2 * 2 + b2 * 2 + b2 == 5 * b2) by {
+                        assert(b2 * 2 + b2 * 2 == b2 * 4) by {
+                            lemma_mul_is_distributive_add(b2 as int, 2, 2);
+                        }
+                        assert(b2 == b2 * 1) by {
+                            lemma_mul_basics_3(b2 as int);
+                        }
+                        assert(b2 * 4 + b2 * 1 == 5 * b2) by {
+                            lemma_mul_is_distributive_add(b2 as int, 4, 1);
+                            lemma_mul_is_commutative(b2 as int, 5);
+                        }
+                    }
+                }
+            }
         }
 
         z

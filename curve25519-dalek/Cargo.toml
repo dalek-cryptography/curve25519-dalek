@@ -35,7 +35,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 getrandom = { version = "0.4.0-rc.1", features = ["sys_rng"] }
 hex = "0.4.2"
 proptest = "1"
-sha2 = { version = "0.11.0-rc.4", default-features = false }
+sha2 = { version = "0.11.0-rc.5", default-features = false }
 
 [build-dependencies]
 rustc_version = "0.4.0"
@@ -50,7 +50,7 @@ cfg-if = "1"
 ff = { version = "=0.14.0-pre.1", package = "rustcrypto-ff", default-features = false, optional = true }
 group = { version = "=0.14.0-pre.1", package = "rustcrypto-group", default-features = false, optional = true }
 rand_core = { version = "0.10.0-rc-6", default-features = false, optional = true }
-digest = { version = "0.11.0-rc.8", default-features = false, optional = true, features = [
+digest = { version = "0.11.0-rc.11", default-features = false, optional = true, features = [
     "block-api",
 ] }
 subtle = { version = "2.6.0", default-features = false, features = [

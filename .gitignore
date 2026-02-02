@@ -13,6 +13,7 @@ build*.txt
 
 *.s
 .aider*
+.claude/
 .verus-solver-log
 .verus-log
 

@@ -10,6 +10,8 @@ pub mod scalar_batch_invert_lemmas;
 
 pub mod montgomery_lemmas;
 
+pub mod montgomery_curve_lemmas;
+
 pub mod scalar_lemmas_extra;
 
 pub mod scalar_byte_lemmas;

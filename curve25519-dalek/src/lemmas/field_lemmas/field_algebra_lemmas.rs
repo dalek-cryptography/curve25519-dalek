@@ -1471,4 +1471,27 @@ pub proof fn lemma_nonzero_product(a: nat, b: nat)
     };
 }
 
+/// Lemma: Subtracting a value from itself gives zero
+///
+/// math_field_sub(x, x) = (((x % p) + p) - (x % p)) % p = p % p = 0
+pub proof fn lemma_field_sub_self(x: nat)
+    ensures
+        math_field_sub(x, x) == 0,
+{
+    let p = p();
+    p_gt_2();
+    let x_mod = x % p;
+
+    // math_field_sub(x, x) = (((x % p) + p) - (x % p)) % p
+    assert(math_field_sub(x, x) == (((x_mod + p) - x_mod) as nat) % p);
+    // (x_mod + p) - x_mod == p by commutativity: (a + b) - a == (b + a) - a == b
+    assert((x_mod + p) - x_mod == p) by {
+        assert(x_mod + p == p + x_mod);  // commutativity
+        assert((p + x_mod) - x_mod == p);  // cancellation
+    }
+    assert(p % p == 0) by {
+        vstd::arithmetic::div_mod::lemma_mod_self_0(p as int);
+    }
+}
+
 } // verus!

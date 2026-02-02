@@ -33,7 +33,7 @@ curve25519-dalek = { version = "=5.0.0-pre.5", default-features = false, feature
 ] }
 ed25519 = { version = "3.0.0-rc.2", default-features = false }
 signature = { version = "3.0.0-rc.9", optional = true, default-features = false }
-sha2 = { version = "0.11.0-rc.4", default-features = false }
+sha2 = { version = "0.11.0-rc.5", default-features = false }
 subtle = { version = "2.3.0", default-features = false }
 
 # optional features

@@ -411,6 +411,7 @@ impl MontgomeryPoint {
     /// x0 and x1 represent consecutive scalar multiples of P:
     /// - When `bit` is true:  x0 = [k+1]P, x1 = [k]P
     /// - When `bit` is false: x0 = [k]P,   x1 = [k+1]P
+    #[verifier::opaque]
     pub open spec fn ladder_invariant(
         x0: ProjectivePoint,
         x1: ProjectivePoint,
@@ -607,6 +608,10 @@ impl MontgomeryPoint {
                         lemma_field_mul_one_right(spec_u_coordinate(P));
                     }
                 }
+
+                // Establish the ladder invariant at i = 0 (k = 0, prev_bit = false).
+                reveal(MontgomeryPoint::ladder_invariant);
+                assert(MontgomeryPoint::ladder_invariant(x0, x1, P, 0, false));
             }
         }
         // VERIFICATION NOTE: refactoring lemma calls into `assert...by` style breaks rlimit.
@@ -690,12 +695,86 @@ impl MontgomeryPoint {
                     }
 
                     // After the swap, the invariant switches from prev_bit to cur_bit.
-                    assert(Self::ladder_invariant(x0, x1, P, k, cur_bit));
+                    if swapped_now {
+                        // swapped_now == (prev_bit ^ cur_bit) means cur_bit == !prev_bit
+                        assert(cur_bit == !prev_bit) by {
+                            assert(swapped_now == (prev_bit ^ cur_bit));
+                        }
+                        crate::lemmas::montgomery_lemmas::lemma_ladder_invariant_swap(
+                            x0_before_swap,
+                            x1_before_swap,
+                            P,
+                            k,
+                            prev_bit,
+                        );
+                        assert(Self::ladder_invariant(
+                            x1_before_swap,
+                            x0_before_swap,
+                            P,
+                            k,
+                            !prev_bit,
+                        ));
+                        // conditional_swap: x0 = old(x1), x1 = old(x0)
+                        assert(x0 == x1_before_swap) by {
+                            assert(x0.U == x1_before_swap.U);
+                            assert(x0.W == x1_before_swap.W);
+                        }
+                        assert(x1 == x0_before_swap) by {
+                            assert(x1.U == x0_before_swap.U);
+                            assert(x1.W == x0_before_swap.W);
+                        }
+                        assert(Self::ladder_invariant(x0, x1, P, k, cur_bit));
+                    } else {
+                        // swapped_now == false means cur_bit == prev_bit, and no swap occurred.
+                        assert(cur_bit == prev_bit) by {
+                            assert(swapped_now == (prev_bit ^ cur_bit));
+                        }
+                        assert(x0 == x0_before_swap) by {
+                            assert(x0.U == x0_before_swap.U);
+                            assert(x0.W == x0_before_swap.W);
+                        }
+                        assert(x1 == x1_before_swap) by {
+                            assert(x1.U == x1_before_swap.U);
+                            assert(x1.W == x1_before_swap.W);
+                        }
+                        assert(Self::ladder_invariant(x0, x1, P, k, cur_bit));
+                    }
 
                 }
 
                 // The call to `differential_add_and_double` below is justified by the limb-bound
                 // invariants on x0/x1 and affine_u.
+            }
+            proof {
+                // Prepare the antecedents needed to instantiate the postconditions of
+                // `differential_add_and_double` (Cases 1 and 2 depend on the old(P)/old(Q) representations).
+                let u0 = spec_montgomery(*self);
+                if u0 != 0 {
+                    let P = canonical_montgomery_lift(u0);
+                    let k = bits_be_to_nat(bits, i as int);
+                    // After the conditional swap, (x0, x1) satisfy ladder_invariant with `cur_bit`.
+                    assert(Self::ladder_invariant(x0, x1, P, k, cur_bit));
+                    reveal(MontgomeryPoint::ladder_invariant);
+                    if cur_bit {
+                        assert(projective_represents_montgomery_or_infinity(
+                            x0,
+                            montgomery_scalar_mul(P, k + 1),
+                        ));
+                        assert(projective_represents_montgomery_or_infinity(
+                            x1,
+                            montgomery_scalar_mul(P, k),
+                        ));
+                    } else {
+                        assert(projective_represents_montgomery_or_infinity(
+                            x0,
+                            montgomery_scalar_mul(P, k),
+                        ));
+                        assert(projective_represents_montgomery_or_infinity(
+                            x1,
+                            montgomery_scalar_mul(P, k + 1),
+                        ));
+                    }
+                }
             }
             let ghost x0_before_dad = x0;
             let ghost x1_before_dad = x1;
@@ -756,7 +835,59 @@ impl MontgomeryPoint {
                     0nat
                 };
                 assert(bits_be_to_nat(bits, i as int) == b + 2nat * k);
-                // The invariant follows from above: x0 and x1 represent the appropriate scalar multiples.
+                // Re-establish ladder_invariant at the updated k (i has been incremented) and prev_bit.
+                if u0 != 0 {
+                    let k_next = bits_be_to_nat(bits, i as int);
+                    // k_next == 2*k + b
+                    assert(k_next == b + 2nat * k);
+                    reveal(MontgomeryPoint::ladder_invariant);
+                    if prev_bit {
+                        // x0 = [k_next+1]P and x1 = [k_next]P
+                        assert(cur_bit);
+                        assert(b == 1nat);
+                        assert(k_next == 2nat * k + 1nat);
+                        assert(k_next + 1 == 2nat * k + 2nat);
+                        assert(projective_represents_montgomery_or_infinity(
+                            x0,
+                            montgomery_scalar_mul(P, 2nat * k + 2nat),
+                        ));
+                        assert(projective_represents_montgomery_or_infinity(
+                            x1,
+                            montgomery_scalar_mul(P, 2nat * k + 1nat),
+                        ));
+                        assert(projective_represents_montgomery_or_infinity(
+                            x0,
+                            montgomery_scalar_mul(P, k_next + 1),
+                        ));
+                        assert(projective_represents_montgomery_or_infinity(
+                            x1,
+                            montgomery_scalar_mul(P, k_next),
+                        ));
+                    } else {
+                        // x0 = [k_next]P and x1 = [k_next+1]P
+                        assert(!cur_bit);
+                        assert(b == 0nat);
+                        assert(k_next == 2nat * k);
+                        assert(k_next + 1 == 2nat * k + 1nat);
+                        assert(projective_represents_montgomery_or_infinity(
+                            x0,
+                            montgomery_scalar_mul(P, 2nat * k),
+                        ));
+                        assert(projective_represents_montgomery_or_infinity(
+                            x1,
+                            montgomery_scalar_mul(P, 2nat * k + 1nat),
+                        ));
+                        assert(projective_represents_montgomery_or_infinity(
+                            x0,
+                            montgomery_scalar_mul(P, k_next),
+                        ));
+                        assert(projective_represents_montgomery_or_infinity(
+                            x1,
+                            montgomery_scalar_mul(P, k_next + 1),
+                        ));
+                    }
+                    assert(Self::ladder_invariant(x0, x1, P, k_next, prev_bit));
+                }
             }
         }
         // The final value of prev_bit above is scalar.bits()[0], i.e., the LSB of scalar
@@ -800,10 +931,15 @@ impl MontgomeryPoint {
                 // From loop invariant, we have projective_represents_montgomery_or_infinity
                 // for x0_before_final_swap or x1_before_final_swap (depending on saved_prev_bit).
                 // Note: use saved_prev_bit since prev_bit may have been zeroized
+                reveal(MontgomeryPoint::ladder_invariant);
                 if saved_prev_bit {
                     assert(x0.U == x1_before_final_swap.U);
                     assert(x0.W == x1_before_final_swap.W);
                     // x1_before_final_swap represents [n]P
+                    assert(projective_represents_montgomery_or_infinity(
+                        x1_before_final_swap,
+                        montgomery_scalar_mul(P, n),
+                    ));
                     assert(projective_represents_montgomery_or_infinity(
                         x1_before_final_swap,
                         montgomery_scalar_mul(P, n),
@@ -817,6 +953,10 @@ impl MontgomeryPoint {
                     assert(x0.U == x0_before_final_swap.U);
                     assert(x0.W == x0_before_final_swap.W);
                     // x0_before_final_swap represents [n]P
+                    assert(projective_represents_montgomery_or_infinity(
+                        x0_before_final_swap,
+                        montgomery_scalar_mul(P, n),
+                    ));
                     assert(projective_represents_montgomery_or_infinity(
                         x0_before_final_swap,
                         montgomery_scalar_mul(P, n),

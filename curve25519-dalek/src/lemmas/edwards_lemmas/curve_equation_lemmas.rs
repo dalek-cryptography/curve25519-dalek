@@ -11,6 +11,7 @@
 //! 3. **x=0 implies y²=1**: If x ≡ 0 and (x, y) is on curve, then y² = 1
 //! 4. **Scalar mul pow2 successor**: [2^(k+1)]P = double([2^k]P)
 #![allow(unused_imports)]
+use crate::backend::serial::curve_models::AffineNielsPoint;
 use crate::backend::serial::u64::constants::EDWARDS_D;
 use crate::backend::serial::u64::field::FieldElement51;
 use crate::lemmas::common_lemmas::number_theory_lemmas::*;
@@ -202,7 +203,6 @@ pub proof fn lemma_affine_to_extended_valid(x: nat, y: nat, t: nat)
             lemma_small_mod(1, p);
         };
         assert(z4 == 1) by {
-            assert(z2 == 1);
             lemma_mul_basics(1int);
             lemma_small_mod(1, p);
         };
@@ -210,17 +210,13 @@ pub proof fn lemma_affine_to_extended_valid(x: nat, y: nat, t: nat)
         // LHS: (y2 - x2)·1 = (y2 - x2)
         let lhs = math_field_mul(math_field_sub(y2, x2), z2);
         assert(lhs == math_field_sub(y2, x2)) by {
-            assert(z2 == 1);
             lemma_mul_basics((math_field_sub(y2, x2)) as int);
-            // lhs = (sub * 1) % p = sub % p = sub (since sub is already reduced mod p)
             lemma_mod_twice((((y2 % p) + p) - (x2 % p)) as int, p as int);
         };
 
-        // RHS: 1 + d·x2·y2
+        // RHS: 1 + d·x2·y2 (z4 == 1)
         let rhs = math_field_add(z4, math_field_mul(d, math_field_mul(x2, y2)));
-        assert(rhs == math_field_add(1, math_field_mul(d, math_field_mul(x2, y2)))) by {
-            assert(z4 == 1);
-        };
+        assert(rhs == math_field_add(1, math_field_mul(d, math_field_mul(x2, y2))));
 
         // Affine curve equation gives the same equality.
         assert(math_field_sub(y2, x2) == math_field_add(
@@ -627,11 +623,10 @@ pub proof fn lemma_edwards_add_commutative(x1: nat, y1: nat, x2: nat, y2: nat)
     assert(edwards_add(x1, y1, x2, y2) == edwards_add(x2, y2, x1, y1));
 }
 
-/// Lemma: Edwards addition is associative.
+/// Axiom: Edwards addition is associative.
 ///
-/// This is a standard group-law property. We admit it for now to unblock proofs that rely on
-/// re-associating long addition chains (e.g. scalar multiplication linearity).
-pub proof fn lemma_edwards_add_associative(x1: nat, y1: nat, x2: nat, y2: nat, x3: nat, y3: nat)
+/// This is a standard group-law property.
+pub proof fn axiom_edwards_add_associative(x1: nat, y1: nat, x2: nat, y2: nat, x3: nat, y3: nat)
     ensures
         ({
             let ab = edwards_add(x1, y1, x2, y2);
@@ -673,7 +668,7 @@ pub proof fn lemma_edwards_double_of_add(x1: nat, y1: nat, x2: nat, y2: nat)
         }
         edwards_add(ab.0, ab.1, ab.0, ab.1); (==) {
             // (A+B) + (A+B) == A + (B + (A+B))
-            lemma_edwards_add_associative(x1, y1, x2, y2, ab.0, ab.1);
+            axiom_edwards_add_associative(x1, y1, x2, y2, ab.0, ab.1);
         }
         {
             let bc = edwards_add(x2, y2, ab.0, ab.1);
@@ -681,7 +676,7 @@ pub proof fn lemma_edwards_double_of_add(x1: nat, y1: nat, x2: nat, y2: nat)
         }; (==) {
             // B + (A+B) == (B+A) + B
             let bc = edwards_add(x2, y2, ab.0, ab.1);
-            lemma_edwards_add_associative(x2, y2, x1, y1, x2, y2);
+            axiom_edwards_add_associative(x2, y2, x1, y1, x2, y2);
             assert(bc == edwards_add(ba.0, ba.1, x2, y2));
         }
         {
@@ -695,7 +690,7 @@ pub proof fn lemma_edwards_double_of_add(x1: nat, y1: nat, x2: nat, y2: nat)
             edwards_add(x1, y1, bc.0, bc.1)
         }; (==) {
             // A + (ab + B) == (A + ab) + B
-            lemma_edwards_add_associative(x1, y1, ab.0, ab.1, x2, y2);
+            axiom_edwards_add_associative(x1, y1, ab.0, ab.1, x2, y2);
         }
         {
             let left = edwards_add(x1, y1, ab.0, ab.1);
@@ -703,7 +698,7 @@ pub proof fn lemma_edwards_double_of_add(x1: nat, y1: nat, x2: nat, y2: nat)
         }; (==) {
             // A + (A+B) == (A+A) + B
             let left = edwards_add(x1, y1, ab.0, ab.1);
-            lemma_edwards_add_associative(x1, y1, x1, y1, x2, y2);
+            axiom_edwards_add_associative(x1, y1, x1, y1, x2, y2);
             assert(left == edwards_add(aa.0, aa.1, x2, y2));
         }
         {
@@ -711,7 +706,7 @@ pub proof fn lemma_edwards_double_of_add(x1: nat, y1: nat, x2: nat, y2: nat)
             edwards_add(left.0, left.1, x2, y2)
         }; (==) {
             // (aa + B) + B == aa + (B + B)
-            lemma_edwards_add_associative(aa.0, aa.1, x2, y2, x2, y2);
+            axiom_edwards_add_associative(aa.0, aa.1, x2, y2, x2, y2);
         }
         {
             let right = edwards_add(x2, y2, x2, y2);
@@ -799,15 +794,10 @@ pub proof fn lemma_edwards_scalar_mul_succ(point_affine: (nat, nat), n: nat)
                 assert(nm1 == m * 2 - 2);
                 assert(m * 2 - 2 == (m - 1) * 2) by (compute);
             }
+            // nm1 == mm1 * 2, so nm1 % 2 == 0
             assert(nm1 % 2 == 0) by {
-                assert(nm1 == mm1 * 2);
                 lemma_mul_mod_noop_right(mm1 as int, 2, 2);
-                assert(nm1 % 2 == (mm1 * (2nat % 2nat)) % 2);
-                assert(2nat % 2nat == 0nat) by (compute);
-                assert(mm1 * 0 == 0) by {
-                    lemma_mul_by_zero_is_zero(mm1 as int);
-                }
-                assert(0nat % 2 == 0) by (compute);
+                lemma_mul_by_zero_is_zero(mm1 as int);
             }
 
             reveal_with_fuel(edwards_scalar_mul, 1);
@@ -817,7 +807,6 @@ pub proof fn lemma_edwards_scalar_mul_succ(point_affine: (nat, nat), n: nat)
                 edwards_double(half.0, half.1)
             });
             assert((nm1 / 2) as nat == mm1) by {
-                assert(nm1 == mm1 * 2);
                 lemma_div_by_multiple(mm1 as int, 2);
             }
 
@@ -895,7 +884,7 @@ pub proof fn lemma_edwards_scalar_mul_succ(point_affine: (nat, nat), n: nat)
                     // (nP)+P = (n-1)P + 2P
                     let p_n = edwards_scalar_mul(point_affine, n);
                     let d_p = edwards_double(point_affine.0, point_affine.1);
-                    lemma_edwards_add_associative(
+                    axiom_edwards_add_associative(
                         p_nm1.0,
                         p_nm1.1,
                         point_affine.0,
@@ -963,87 +952,693 @@ pub proof fn lemma_edwards_scalar_mul_pow2_succ(point_affine: (nat, nat), k: nat
     };
 }
 
-/// **Lemma**: Scalar multiplication composition for powers of 2
-///
-/// Simplified version for powers of 2: `edwards_scalar_mul(edwards_scalar_mul(P, a), pow2(k)) == edwards_scalar_mul(P, a * pow2(k))`
-/// This is easier to prove than the general case because powers of 2 always take the even branch.
-///
-/// The proof proceeds by induction on `k`, using `lemma_edwards_scalar_mul_pow2_succ` to
-/// unfold the `pow2(k)` recursion and basic arithmetic facts about powers of 2.
-pub proof fn lemma_edwards_scalar_mul_composition_pow2(point_affine: (nat, nat), a: nat, k: nat)
+pub proof fn lemma_edwards_add_identity_left(x: nat, y: nat)
     ensures
-        edwards_scalar_mul(edwards_scalar_mul(point_affine, a), pow2(k)) == edwards_scalar_mul(
-            point_affine,
-            a * pow2(k),
-        ),
-    decreases k,
+        edwards_add(0, 1, x, y) == (x % p(), y % p()),
 {
-    if k == 0 {
-        lemma2_to64();
-        reveal_with_fuel(edwards_scalar_mul, 1);
-        assert(pow2(0) == 1);
-        assert(a * 1 == a) by (nonlinear_arith);
-        assert(a * pow2(0) == a);
+    p_gt_2();
+    lemma_field_inv_one();
+
+    let d = spec_field_element(&EDWARDS_D);
+
+    // x1x2 = 0*x = 0
+    let x1x2 = math_field_mul(0nat, x);
+    assert(x1x2 == 0) by {
+        assert(0nat % p() == 0) by {
+            lemma_small_mod(0nat, p());
+        }
+        lemma_field_mul_zero_left(0nat, x);
+    }
+
+    // y1y2 = 1*y = y % p
+    let y1y2 = math_field_mul(1nat, y);
+    assert(y1y2 == y % p()) by {
+        lemma_field_mul_one_left(y);
+    }
+
+    // x1y2 = 0*y = 0
+    let x1y2 = math_field_mul(0nat, y);
+    assert(x1y2 == 0) by {
+        lemma_small_mod(0nat, p());
+        lemma_field_mul_zero_left(0nat, y);
+    }
+
+    // y1x2 = 1*x = x % p
+    let y1x2 = math_field_mul(1nat, x);
+    assert(y1x2 == x % p()) by {
+        lemma_field_mul_one_left(x);
+    }
+
+    // t = d * (0 * (y%p)) = 0
+    let t = math_field_mul(d, math_field_mul(x1x2, y1y2));
+    assert(t == 0) by {
+        lemma_small_mod(0nat, p());
+        lemma_field_mul_zero_left(x1x2, y1y2);
+        lemma_field_mul_zero_right(d, 0nat);
+    }
+
+    let denom_x = math_field_add(1nat, t);
+    assert(denom_x == 1) by {
+        lemma_small_mod(1nat, p());
+    }
+
+    let denom_y = math_field_sub(1nat, t);
+    assert(denom_y == 1) by {
+        lemma_small_mod(1nat, p());
+        lemma_small_mod(0nat, p());
+        lemma_mod_multiples_vanish(1, 1, p() as int);
+    }
+
+    assert(math_field_inv(denom_x) == 1);
+    assert(math_field_inv(denom_y) == 1);
+
+    // x3 = (0*y + 1*x) / 1 = x % p
+    let x3 = math_field_mul(math_field_add(x1y2, y1x2), math_field_inv(denom_x));
+    assert(x3 == x % p()) by {
+        lemma_small_mod(x % p(), p());
+        lemma_field_mul_one_right(x % p());
+    }
+
+    // y3 = (1*y + 0*x) / 1 = y % p
+    let y3 = math_field_mul(math_field_add(y1y2, x1x2), math_field_inv(denom_y));
+    assert(y3 == y % p()) by {
+        lemma_small_mod(y % p(), p());
+        lemma_field_mul_one_right(y % p());
+    }
+
+    assert(edwards_add(0, 1, x, y) == (x % p(), y % p()));
+}
+
+// =============================================================================
+// Axioms: Signed scalar multiplication linearity (group law)
+// =============================================================================
+/// Axiom: Scalar multiplication distributes over point negation.
+/// [n](-P) = -([n]P)
+pub proof fn axiom_scalar_mul_distributes_over_neg(P: (nat, nat), n: nat)
+    ensures
+        edwards_scalar_mul(edwards_neg(P), n) == edwards_neg(edwards_scalar_mul(P, n)),
+{
+    admit();
+}
+
+/// Axiom: Negation distributes over addition (group homomorphism property).
+/// (-P) + (-Q) = -(P + Q)
+pub proof fn axiom_neg_distributes_over_add(P: (nat, nat), Q: (nat, nat))
+    ensures
+        edwards_add(edwards_neg(P).0, edwards_neg(P).1, edwards_neg(Q).0, edwards_neg(Q).1)
+            == edwards_neg(edwards_add(P.0, P.1, Q.0, Q.1)),
+{
+    admit();
+}
+
+/// Axiom: Adding a point and its negation gives identity.
+/// P + (-P) = O (identity)
+pub proof fn axiom_add_neg_is_identity(P: (nat, nat))
+    ensures
+        edwards_add(P.0, P.1, edwards_neg(P).0, edwards_neg(P).1) == math_edwards_identity(),
+{
+    admit();
+}
+
+/// Axiom: [a]P + [b]P = [a+b]P for signed scalars a, b.
+///
+/// This is the group law for scalar multiplication linearity (group homomorphism property).
+pub proof fn axiom_edwards_scalar_mul_signed_additive(P: (nat, nat), a: int, b: int)
+    ensures
+        ({
+            let pa = edwards_scalar_mul_signed(P, a);
+            let pb = edwards_scalar_mul_signed(P, b);
+            edwards_add(pa.0, pa.1, pb.0, pb.1)
+        }) == edwards_scalar_mul_signed(P, a + b),
+{
+    admit();
+}
+
+/// Lemma: [b]([a]P) = [a*b]P for signed a, unsigned b.
+/// Proved using the unsigned composition lemma and axiom_scalar_mul_distributes_over_neg.
+pub proof fn lemma_edwards_scalar_mul_signed_composition(P: (nat, nat), a: int, b: nat)
+    ensures
+        edwards_scalar_mul(edwards_scalar_mul_signed(P, a), b) == edwards_scalar_mul_signed(
+            P,
+            a * (b as int),
+        ),
+{
+    reveal(edwards_scalar_mul_signed);
+    if a >= 0 {
+        // a >= 0: both sides use unsigned scalar_mul
+        let an = a as nat;
+        lemma_edwards_scalar_mul_composition(P, an, b);
+        assert(a * (b as int) >= 0) by {
+            lemma_mul_nonnegative(a, b as int);
+        }
+        assert((a * (b as int)) as nat == an * b) by {
+            lemma_mul_is_commutative(a, b as int);
+        }
     } else {
-        let km1 = (k - 1) as nat;
+        // a < 0: LHS = [b](-[|a|]P), RHS = -[|a|*b]P
+        let abs_a = (-a) as nat;
+        let (x, y) = edwards_scalar_mul(P, abs_a);
 
-        // Induction hypothesis at k-1.
-        lemma_edwards_scalar_mul_composition_pow2(point_affine, a, km1);
+        // LHS: [b]((neg_x, y)) where (x, y) = [|a|]P
+        // By axiom: [b](-Q) = -([b]Q)
+        axiom_scalar_mul_distributes_over_neg(edwards_scalar_mul(P, abs_a), b);
 
-        // Unfold the `pow2(k)` scalar multiplication on the left.
-        lemma_edwards_scalar_mul_pow2_succ(edwards_scalar_mul(point_affine, a), km1);
+        // [b]([|a|]P) = [|a|*b]P by unsigned composition
+        lemma_edwards_scalar_mul_composition(P, abs_a, b);
 
-        if a == 0 {
-            // scalar_mul(P, 0) = identity, and doubling identity = identity
+        // a * b <= 0 since a < 0 and b >= 0
+        // So RHS = -[|a*b|]P = -[|a|*b]P (or identity if b = 0)
+        if b == 0 {
+            // Special case: both sides are identity
             reveal_with_fuel(edwards_scalar_mul, 1);
-            lemma_edwards_double_identity();
-            assert(edwards_scalar_mul(point_affine, 0) == math_edwards_identity());
-            assert(0nat * pow2(k) == 0);
-            // IH: scalar_mul(scalar_mul(P,0), pow2(k-1)) == scalar_mul(P,0) == identity
-            // So double(identity) == identity
+            assert(a * (b as int) == 0) by {
+                lemma_mul_by_zero_is_zero(a);
+            }
         } else {
-            // Lemmas needed for arithmetic reasoning
-            reveal_with_fuel(edwards_scalar_mul, 1);
-            lemma_pow2_even(k);
-            lemma_pow2_pos(k);
-            lemma2_to64();
-            pow2_MUL_div(a, k, 1);
-            lemma_mul_mod_noop_right(a as int, pow2(k) as int, 2);
-            lemma_mul_by_zero_is_zero(a as int);
-            lemma_mul_nonzero(a as int, pow2(k) as int);
-
-            // a * pow2(k) is even, nonzero, != 1, and divides correctly
-            assert(pow2(k) % 2 == 0);
-            assert((a * pow2(k)) % 2 == 0);
-            assert((a * pow2(k)) / 2 == a * pow2(km1));
-            assert(a * pow2(k) != 0 && a * pow2(k) != 1);
-
-            // Rewrite both sides to the same "double" form.
-            calc! {
-                (==)
-                edwards_scalar_mul(edwards_scalar_mul(point_affine, a), pow2(k)); (==) {
-                    // From lemma_edwards_scalar_mul_pow2_succ on the left:
-                    // scalar_mul(Q, 2^k) = double(scalar_mul(Q, 2^(k-1))).
-                }
-                {
-                    let half = edwards_scalar_mul(edwards_scalar_mul(point_affine, a), pow2(km1));
-                    edwards_double(half.0, half.1)
-                }; (==) {
-                    // Apply IH to rewrite the inner scalar multiplication.
-                    assert(edwards_scalar_mul(edwards_scalar_mul(point_affine, a), pow2(km1))
-                        == edwards_scalar_mul(point_affine, a * pow2(km1)));
-                }
-                {
-                    let half = edwards_scalar_mul(point_affine, a * pow2(km1));
-                    edwards_double(half.0, half.1)
-                }; (==) {
-                    // Unfold RHS at n = a*pow2(k) and use the computed half.
-                    assert(((a * pow2(k)) / 2) as nat == a * pow2(km1));
-                }
-                edwards_scalar_mul(point_affine, a * pow2(k));
+            // a < 0 and b > 0, so a * b < 0
+            assert(a * (b as int) < 0) by {
+                lemma_mul_strictly_positive(-a, b as int);
+                lemma_mul_unary_negation(a, b as int);
+            }
+            assert((-(a * (b as int))) as nat == abs_a * b) by {
+                lemma_mul_unary_negation(a, b as int);
             }
         }
     }
+}
+
+/// Lemma: Scalar multiplication is additive in the scalar for positive scalars:
+///
+///   [m]P + [n]P = [m+n]P, for m,n ≥ 1.
+pub proof fn lemma_edwards_scalar_mul_additive(point_affine: (nat, nat), m: nat, n: nat)
+    requires
+        m >= 1,
+        n >= 1,
+    ensures
+        ({
+            let pm = edwards_scalar_mul(point_affine, m);
+            let pn = edwards_scalar_mul(point_affine, n);
+            edwards_add(pm.0, pm.1, pn.0, pn.1)
+        }) == edwards_scalar_mul(point_affine, m + n),
+    decreases n,
+{
+    if n == 1 {
+        lemma_edwards_scalar_mul_succ(point_affine, m);
+        assert(edwards_scalar_mul(point_affine, m + 1) == {
+            let pm = edwards_scalar_mul(point_affine, m);
+            edwards_add(pm.0, pm.1, point_affine.0, point_affine.1)
+        });
+        assert(edwards_scalar_mul(point_affine, 1) == point_affine) by {
+            reveal_with_fuel(edwards_scalar_mul, 1);
+        }
+    } else {
+        let nm1 = (n - 1) as nat;
+        assert(nm1 >= 1);
+
+        let pm = edwards_scalar_mul(point_affine, m);
+        let pnm1 = edwards_scalar_mul(point_affine, nm1);
+        let pn = edwards_scalar_mul(point_affine, n);
+        let pm_plus_nm1 = edwards_scalar_mul(point_affine, m + nm1);
+
+        // pn == [n-1]P + P by successor lemma (n == nm1 + 1)
+        assert(pn == edwards_add(pnm1.0, pnm1.1, point_affine.0, point_affine.1)) by {
+            lemma_edwards_scalar_mul_succ(point_affine, nm1);
+        }
+
+        // By associativity: [m]P + ([n-1]P + P) == ([m]P + [n-1]P) + P
+        assert(edwards_add(
+            pm.0,
+            pm.1,
+            edwards_add(pnm1.0, pnm1.1, point_affine.0, point_affine.1).0,
+            edwards_add(pnm1.0, pnm1.1, point_affine.0, point_affine.1).1,
+        ) == {
+            let left = edwards_add(pm.0, pm.1, pnm1.0, pnm1.1);
+            edwards_add(left.0, left.1, point_affine.0, point_affine.1)
+        }) by {
+            axiom_edwards_add_associative(
+                pm.0,
+                pm.1,
+                pnm1.0,
+                pnm1.1,
+                point_affine.0,
+                point_affine.1,
+            );
+        }
+
+        // By IH: [m]P + [n-1]P == [m+n-1]P
+        assert(edwards_add(pm.0, pm.1, pnm1.0, pnm1.1) == pm_plus_nm1) by {
+            lemma_edwards_scalar_mul_additive(point_affine, m, nm1);
+        }
+
+        // By successor: [m+n-1]P + P == [m+n]P
+        assert(edwards_add(pm_plus_nm1.0, pm_plus_nm1.1, point_affine.0, point_affine.1)
+            == edwards_scalar_mul(point_affine, m + n)) by {
+            lemma_edwards_scalar_mul_succ(point_affine, m + nm1);
+        }
+    }
+}
+
+/// Proves that `edwards_scalar_mul(edwards_scalar_mul(P, a), b) == edwards_scalar_mul(P, a * b)`
+///
+/// This is the scalar multiplication composition lemma: applying scalar multiplication twice
+/// composes multiplicatively. The proof uses `lemma_edwards_scalar_mul_additive` for the odd-b
+/// case, which in turn relies on `axiom_edwards_add_associative`.
+pub proof fn lemma_edwards_scalar_mul_composition(point_affine: (nat, nat), a: nat, b: nat)
+    ensures
+        edwards_scalar_mul(edwards_scalar_mul(point_affine, a), b) == edwards_scalar_mul(
+            point_affine,
+            a * b,
+        ),
+    decreases b,
+{
+    // The proof proceeds by induction on b:
+    // - The `b % 2 == 0` case unfolds to doubling and uses the induction hypothesis.
+    // - The `b % 2 == 1` case uses `lemma_edwards_scalar_mul_additive` to rewrite
+    //   [b]Q = [b-1]Q + Q, then applies the IH.
+    if a == 0 {
+        // Special case: [b]([0]P) == [0]P for all b.
+        reveal_with_fuel(edwards_scalar_mul, 1);
+        assert(edwards_scalar_mul(point_affine, 0) == math_edwards_identity());
+        assert(a * b == 0);
+
+        if b == 0 {
+            // Both sides are scalar_mul(_, 0) == identity.
+        } else if b == 1 {
+            // scalar_mul(identity, 1) == identity.
+            assert(edwards_scalar_mul(math_edwards_identity(), 1) == math_edwards_identity());
+        } else if b % 2 == 0 {
+            let hb = (b / 2) as nat;
+            lemma_edwards_scalar_mul_composition(point_affine, 0, hb);
+
+            // Unfold the left at even b: [b]I = double([b/2]I).
+            assert(edwards_scalar_mul(edwards_scalar_mul(point_affine, 0), b) == {
+                let half = edwards_scalar_mul(edwards_scalar_mul(point_affine, 0), hb);
+                edwards_double(half.0, half.1)
+            });
+
+            // IH gives [b/2]I == I.
+            let half = edwards_scalar_mul(edwards_scalar_mul(point_affine, 0), hb);
+            assert(half == math_edwards_identity());
+
+            // double(I) == I
+            assert(edwards_double(half.0, half.1) == math_edwards_identity()) by {
+                lemma_edwards_double_identity();
+            }
+        } else {
+            // Odd b (>1): [b]I = [b-1]I + I, but [b-1]I = I, so this is I + I = I.
+            let bm1 = (b - 1) as nat;
+            lemma_edwards_scalar_mul_composition(point_affine, 0, bm1);
+
+            let prev = edwards_scalar_mul(edwards_scalar_mul(point_affine, 0), bm1);
+            assert(prev == math_edwards_identity());
+
+            // I + I == I (identity added to itself is identity)
+            assert(edwards_add(0, 1, 0, 1) == math_edwards_identity()) by {
+                lemma_edwards_double_identity();
+            }
+        }
+    } else if b == 0 {
+        reveal_with_fuel(edwards_scalar_mul, 1);
+        assert(a * b == 0);
+    } else if b == 1 {
+        // [1]([a]P) == [a]P and [a*1]P == [a]P
+        reveal_with_fuel(edwards_scalar_mul, 1);
+        assert(a * b == a);
+    } else if b % 2 == 0 {
+        let hb = (b / 2) as nat;
+        lemma_edwards_scalar_mul_composition(point_affine, a, hb);
+
+        // Unfold LHS at even b.
+        reveal_with_fuel(edwards_scalar_mul, 1);
+        assert(edwards_scalar_mul(edwards_scalar_mul(point_affine, a), b) == {
+            let half = edwards_scalar_mul(edwards_scalar_mul(point_affine, a), hb);
+            edwards_double(half.0, half.1)
+        });
+
+        // Unfold RHS at n = a*b, which is even since b is even.
+        assert((a * b) % 2 == 0) by {
+            lemma_mul_mod_noop_right(a as int, b as int, 2);
+            assert((a * b) % 2 == (a * (b % 2)) % 2);
+            assert(b % 2 == 0);
+            assert(a * (b % 2) == 0) by {
+                lemma_mul_by_zero_is_zero(a as int);
+            }
+            assert(0nat % 2 == 0) by (compute);
+        }
+
+        // Compute (a*b)/2 = a*(b/2) (valid since b is even).
+        assert((a * b) / 2 == a * hb) by {
+            // b = (b/2)*2 + b%2, and b%2=0, so b == hb * 2
+            lemma_fundamental_div_mod(b as int, 2);
+            lemma_mul_is_associative(a as int, hb as int, 2);
+            lemma_div_by_multiple((a * hb) as int, 2);
+        }
+
+        assert(a * b != 0) by {
+            lemma_mul_nonzero(a as int, b as int);
+        }
+        // a * b is even (since b is even), so a * b != 1
+        assert(a * b != 1) by (compute);
+
+        assert(edwards_scalar_mul(point_affine, a * b) == {
+            let half = edwards_scalar_mul(point_affine, ((a * b) / 2) as nat);
+            edwards_double(half.0, half.1)
+        });
+
+        // Put it together using the IH.
+        calc! {
+            (==)
+            edwards_scalar_mul(edwards_scalar_mul(point_affine, a), b); (==) {
+                // Unfolded above.
+            }
+            {
+                let half = edwards_scalar_mul(edwards_scalar_mul(point_affine, a), hb);
+                edwards_double(half.0, half.1)
+            }; (==) {
+                assert(edwards_scalar_mul(edwards_scalar_mul(point_affine, a), hb)
+                    == edwards_scalar_mul(point_affine, a * hb));
+            }
+            {
+                let half = edwards_scalar_mul(point_affine, a * hb);
+                edwards_double(half.0, half.1)
+            }; (==) {
+                assert(((a * b) / 2) as nat == a * hb);
+            }
+            edwards_scalar_mul(point_affine, a * b);
+        }
+    } else {
+        // Odd b (>1): use linearity of scalar multiplication in the scalar.
+        let bm1 = (b - 1) as nat;
+        lemma_edwards_scalar_mul_composition(point_affine, a, bm1);
+
+        let pa = edwards_scalar_mul(point_affine, a);
+        let prev = edwards_scalar_mul(pa, bm1);
+
+        // Unfold LHS at odd b: [b]([a]P) = [b-1]([a]P) + [a]P.
+        reveal_with_fuel(edwards_scalar_mul, 1);
+        assert(b != 0 && b != 1);
+        assert(b % 2 != 0);
+        assert(edwards_scalar_mul(pa, b) == edwards_add(prev.0, prev.1, pa.0, pa.1));
+
+        // Induction hypothesis: [b-1]([a]P) = [a*(b-1)]P.
+        assert(prev == edwards_scalar_mul(point_affine, a * bm1)) by {
+            assert(edwards_scalar_mul(edwards_scalar_mul(point_affine, a), bm1)
+                == edwards_scalar_mul(point_affine, a * bm1));
+        }
+
+        // Scalar-mul additivity for positive scalars: [a*(b-1)]P + [a]P = [a*b]P.
+        assert(a >= 1);
+        assert(bm1 >= 1);
+        assert(a * bm1 >= 1) by {
+            lemma_mul_nonzero(a as int, bm1 as int);
+        }
+
+        // b == bm1 + 1, so a * bm1 + a == a * (bm1 + 1) == a * b
+        assert(a * bm1 + a == a * b) by {
+            lemma_mul_is_distributive_add(a as int, bm1 as int, 1);
+            lemma_mul_basics(a as int);
+        }
+
+        calc! {
+            (==)
+            edwards_scalar_mul(edwards_scalar_mul(point_affine, a), b); (==) {
+                assert(edwards_scalar_mul(edwards_scalar_mul(point_affine, a), b)
+                    == edwards_scalar_mul(pa, b));
+            }
+            edwards_scalar_mul(pa, b); (==) {}
+            edwards_add(prev.0, prev.1, pa.0, pa.1); (==) {
+                assert(prev == edwards_scalar_mul(point_affine, a * bm1));
+            }
+            edwards_add(
+                edwards_scalar_mul(point_affine, a * bm1).0,
+                edwards_scalar_mul(point_affine, a * bm1).1,
+                edwards_scalar_mul(point_affine, a).0,
+                edwards_scalar_mul(point_affine, a).1,
+            ); (==) {
+                // [a*(b-1)]P + [a]P = [a*(b-1) + a]P by scalar-mul additivity
+                lemma_edwards_scalar_mul_additive(point_affine, a * bm1, a);
+            }
+            edwards_scalar_mul(point_affine, a * bm1 + a); (==) {
+                assert(a * bm1 + a == a * b);
+            }
+            edwards_scalar_mul(point_affine, a * b);
+        }
+    }
+}
+
+/// Lemma: P + O = P (group identity law) for reduced points.
+/// The identity point is (0, 1) in affine coordinates.
+pub proof fn lemma_edwards_add_identity_right_canonical(P: (nat, nat))
+    requires
+        P.0 < p(),
+        P.1 < p(),
+    ensures
+        edwards_add(P.0, P.1, 0, 1) == P,
+{
+    lemma_edwards_add_identity_right(P.0, P.1);
+    lemma_small_mod(P.0, p());
+    lemma_small_mod(P.1, p());
+}
+
+/// Lemma: edwards_scalar_mul always produces reduced coordinates (< p()).
+/// This follows from the fact that edwards_add/edwards_double use math_field_* operations
+/// which always return results mod p().
+pub proof fn lemma_edwards_scalar_mul_canonical(point_affine: (nat, nat), n: nat)
+    requires
+        point_affine.0 < p(),
+        point_affine.1 < p(),
+    ensures
+        edwards_scalar_mul(point_affine, n).0 < p(),
+        edwards_scalar_mul(point_affine, n).1 < p(),
+    decreases n,
+{
+    p_gt_2();
+    if n == 0 {
+        reveal_with_fuel(edwards_scalar_mul, 1);
+        // identity is (0, 1), both < p()
+    } else if n == 1 {
+        reveal_with_fuel(edwards_scalar_mul, 1);
+        // result is point_affine, which is reduced by precondition
+    } else if n % 2 == 0 {
+        reveal_with_fuel(edwards_scalar_mul, 1);
+        let half = edwards_scalar_mul(point_affine, (n / 2) as nat);
+        lemma_edwards_scalar_mul_canonical(point_affine, (n / 2) as nat);
+        // edwards_double returns math_field_mul results which are < p()
+        lemma_edwards_add_canonical(half.0, half.1, half.0, half.1);
+    } else {
+        reveal_with_fuel(edwards_scalar_mul, 1);
+        let prev = edwards_scalar_mul(point_affine, (n - 1) as nat);
+        lemma_edwards_scalar_mul_canonical(point_affine, (n - 1) as nat);
+        // edwards_add returns math_field_mul results which are < p()
+        lemma_edwards_add_canonical(prev.0, prev.1, point_affine.0, point_affine.1);
+    }
+}
+
+/// Lemma: edwards_scalar_mul_signed always returns canonical coordinates (< p()).
+/// This follows from the definition: either edwards_scalar_mul (induction) or neg + edwards_scalar_mul.
+pub proof fn lemma_edwards_scalar_mul_signed_canonical(point_affine: (nat, nat), n: int)
+    requires
+        point_affine.0 < p(),
+        point_affine.1 < p(),
+    ensures
+        edwards_scalar_mul_signed(point_affine, n).0 < p(),
+        edwards_scalar_mul_signed(point_affine, n).1 < p(),
+{
+    reveal(edwards_scalar_mul_signed);
+    if n >= 0 {
+        lemma_edwards_scalar_mul_canonical(point_affine, n as nat);
+    } else {
+        lemma_edwards_scalar_mul_canonical(point_affine, (-n) as nat);
+        // neg(x) = (p - x%p) % p, so < p
+        p_gt_2();
+        let (x, y) = edwards_scalar_mul(point_affine, (-n) as nat);
+        lemma_mod_bound((p() - (x % p())) as int, p() as int);
+    }
+}
+
+/// Lemma: edwards_add always produces reduced coordinates (< p()).
+pub proof fn lemma_edwards_add_canonical(x1: nat, y1: nat, x2: nat, y2: nat)
+    ensures
+        edwards_add(x1, y1, x2, y2).0 < p(),
+        edwards_add(x1, y1, x2, y2).1 < p(),
+{
+    // edwards_add computes x3 = math_field_mul(...) and y3 = math_field_mul(...)
+    // math_field_mul(a, b) = (a * b) % p(), so result is always < p()
+    p_gt_2();
+    lemma_mod_bound(
+        math_field_add(math_field_mul(x1, y2), math_field_mul(y1, x2)) as int * math_field_inv(
+            math_field_add(
+                1,
+                math_field_mul(
+                    spec_field_element(&EDWARDS_D),
+                    math_field_mul(math_field_mul(x1, x2), math_field_mul(y1, y2)),
+                ),
+            ),
+        ) as int,
+        p() as int,
+    );
+    lemma_mod_bound(
+        math_field_add(math_field_mul(y1, y2), math_field_mul(x1, x2)) as int * math_field_inv(
+            math_field_sub(
+                1,
+                math_field_mul(
+                    spec_field_element(&EDWARDS_D),
+                    math_field_mul(math_field_mul(x1, x2), math_field_mul(y1, y2)),
+                ),
+            ),
+        ) as int,
+        p() as int,
+    );
+}
+
+// =============================================================================
+// AffineNiels Point Conversion Lemmas
+// =============================================================================
+/// Lemma: identity_affine_niels decodes to the identity point (0, 1).
+///
+/// The identity in AffineNiels representation has y_plus_x = y_minus_x = 1,
+/// which decodes to x = (1-1)/2 = 0 and y = (1+1)/2 = 1.
+pub proof fn lemma_identity_affine_niels_is_identity()
+    ensures
+        affine_niels_point_as_affine_edwards(identity_affine_niels()) == math_edwards_identity(),
+{
+    // identity_affine_niels has y_plus_x = [1,0,0,0,0], y_minus_x = [1,0,0,0,0]
+    // so spec_field_element gives 1 for both
+    let id = identity_affine_niels();
+    let y_plus_x = spec_field_element(&id.y_plus_x);
+    let y_minus_x = spec_field_element(&id.y_minus_x);
+
+    // Show y_plus_x == 1 and y_minus_x == 1
+    // id.y_plus_x.limbs = [1, 0, 0, 0, 0]
+    // u64_5_as_nat([1,0,0,0,0]) = 1 + 0 + 0 + 0 + 0 = 1
+    // spec_field_element = u64_5_as_nat % p = 1 % p = 1 (since 1 < p)
+    assert(y_plus_x == 1) by {
+        assert(id.y_plus_x.limbs[0] == 1);
+        assert(id.y_plus_x.limbs[1] == 0);
+        assert(id.y_plus_x.limbs[2] == 0);
+        assert(id.y_plus_x.limbs[3] == 0);
+        assert(id.y_plus_x.limbs[4] == 0);
+        // u64_5_as_nat gives 1 + 0 + 0 + 0 + 0 = 1
+        assert(spec_field_element_as_nat(&id.y_plus_x) == 1nat) by {
+            reveal(pow2);
+            assert(pow2(51) * 0 == 0) by (nonlinear_arith);
+            assert(pow2(102) * 0 == 0) by (nonlinear_arith);
+            assert(pow2(153) * 0 == 0) by (nonlinear_arith);
+            assert(pow2(204) * 0 == 0) by (nonlinear_arith);
+        }
+        p_gt_2();
+        lemma_small_mod(1nat, p());
+    }
+    assert(y_minus_x == 1) by {
+        assert(id.y_minus_x.limbs[0] == 1);
+        assert(id.y_minus_x.limbs[1] == 0);
+        assert(id.y_minus_x.limbs[2] == 0);
+        assert(id.y_minus_x.limbs[3] == 0);
+        assert(id.y_minus_x.limbs[4] == 0);
+        assert(spec_field_element_as_nat(&id.y_minus_x) == 1nat) by {
+            reveal(pow2);
+            assert(pow2(51) * 0 == 0) by (nonlinear_arith);
+            assert(pow2(102) * 0 == 0) by (nonlinear_arith);
+            assert(pow2(153) * 0 == 0) by (nonlinear_arith);
+            assert(pow2(204) * 0 == 0) by (nonlinear_arith);
+        }
+        p_gt_2();
+        lemma_small_mod(1nat, p());
+    }
+
+    // x = (y_plus_x - y_minus_x) * inv(2) = (1 - 1) * inv(2) = 0 * inv(2) = 0
+    let diff = math_field_sub(y_plus_x, y_minus_x);
+    assert(diff == 0) by {
+        // math_field_sub(1, 1) = (((1 % p) + p) - (1 % p)) % p = (1 + p - 1) % p = p % p = 0
+        p_gt_2();
+        lemma_small_mod(1nat, p());
+        lemma_mod_self_0(p() as int);
+    }
+    let x = math_field_mul(diff, math_field_inv(2));
+    assert(x == 0) by {
+        // diff == 0, so diff % p() == 0
+        p_gt_2();
+        lemma_small_mod(0nat, p());
+        assert(diff % p() == 0);
+        lemma_field_mul_zero_left(diff, math_field_inv(2));
+    }
+
+    // y = (y_plus_x + y_minus_x) * inv(2) = (1 + 1) * inv(2) = 2 * inv(2) = 1
+    let sum = math_field_add(y_plus_x, y_minus_x);
+    assert(sum == 2) by {
+        // math_field_add(1, 1) = (1 + 1) % p = 2 (since 2 < p)
+        p_gt_2();
+        lemma_small_mod(2nat, p());
+    }
+    let y = math_field_mul(sum, math_field_inv(2));
+    assert(y == 1) by {
+        // 2 * inv(2) = 1 by field_inv_property
+        p_gt_2();
+        assert(2nat % p() != 0) by {
+            lemma_small_mod(2nat, p());
+        }
+        field_inv_property(2nat);
+        lemma_field_mul_comm(2nat, math_field_inv(2));
+    }
+}
+
+/// Lemma: negating an AffineNielsPoint negates the x-coordinate.
+///
+/// AffineNiels negation swaps y_plus_x and y_minus_x, which results in
+/// negating the x-coordinate while preserving the y-coordinate.
+pub proof fn lemma_negate_affine_niels_is_edwards_neg(pt: AffineNielsPoint)
+    ensures
+        affine_niels_point_as_affine_edwards(negate_affine_niels(pt)) == edwards_neg(
+            affine_niels_point_as_affine_edwards(pt),
+        ),
+{
+    // negate_affine_niels swaps y_plus_x and y_minus_x:
+    //   neg.y_plus_x = pt.y_minus_x
+    //   neg.y_minus_x = pt.y_plus_x
+    let y_plus_x = spec_field_element(&pt.y_plus_x);
+    let y_minus_x = spec_field_element(&pt.y_minus_x);
+    let inv2 = math_field_inv(2);
+
+    // Original point coords:
+    let x = math_field_mul(math_field_sub(y_plus_x, y_minus_x), inv2);
+    let y = math_field_mul(math_field_add(y_plus_x, y_minus_x), inv2);
+
+    // Negated point coords (after swapping y_plus_x and y_minus_x):
+    let x_neg = math_field_mul(math_field_sub(y_minus_x, y_plus_x), inv2);
+    let y_neg = math_field_mul(math_field_add(y_minus_x, y_plus_x), inv2);
+
+    // y' = y because field addition is commutative: (a + b) % p == (b + a) % p
+    assert(y_neg == y) by {
+        assert((y_minus_x + y_plus_x) == (y_plus_x + y_minus_x));
+    }
+
+    // x' = -x because:
+    // 1. sub(b, a) == neg(sub(a, b)) -- antisymmetry
+    // 2. neg(a) * b == neg(a * b) -- negation distributes
+    assert(x_neg == math_field_neg(x)) by {
+        let diff = math_field_sub(y_plus_x, y_minus_x);
+        let neg_diff = math_field_neg(diff);
+
+        // Step 1: sub(y_minus_x, y_plus_x) == neg(sub(y_plus_x, y_minus_x))
+        lemma_field_sub_antisymmetric(y_plus_x, y_minus_x);
+        assert(math_field_sub(y_minus_x, y_plus_x) == neg_diff);
+
+        // Step 2: x_neg = mul(neg_diff, inv2)
+        //               = mul(inv2, neg_diff)   [by commutativity]
+        //               = neg(mul(inv2, diff))   [by lemma_field_mul_neg]
+        //               = neg(mul(diff, inv2))   [by commutativity]
+        //               = neg(x)
+        lemma_field_mul_comm(neg_diff, inv2);
+        assert(math_field_mul(neg_diff, inv2) == math_field_mul(inv2, neg_diff));
+
+        lemma_field_mul_neg(inv2, diff);
+        assert(math_field_mul(inv2, neg_diff) == math_field_neg(math_field_mul(inv2, diff)));
+
+        lemma_field_mul_comm(inv2, diff);
+        assert(math_field_mul(inv2, diff) == math_field_mul(diff, inv2));
+    }
+
+    // Therefore (x', y') = (-x, y) = edwards_neg((x, y))
 }
 
 } // verus!

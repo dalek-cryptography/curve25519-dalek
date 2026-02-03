@@ -29,7 +29,8 @@ use crate::specs::field_specs_u64::*;
 use crate::specs::scalar52_specs::group_order;
 #[cfg(verus_keep_ghost)]
 use crate::specs::scalar_specs::scalar_to_nat;
-use vstd::arithmetic::power2::*;
+#[cfg(verus_keep_ghost)]
+use vstd::arithmetic::power2::{lemma2_to64, lemma2_to64_rest, lemma_pow2_adds, pow2};
 use vstd::prelude::*;
 
 verus! {

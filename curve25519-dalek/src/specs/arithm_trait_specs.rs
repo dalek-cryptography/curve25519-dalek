@@ -446,7 +446,8 @@ impl vstd::std_specs::ops::MulSpecImpl<&Scalar> for &EdwardsBasepointTable {
     }
 
     open spec fn mul_req(self, rhs: &Scalar) -> bool {
-        rhs.bytes[31] <= 127
+        &&& rhs.bytes[31] <= 127
+        &&& is_valid_edwards_basepoint_table(*self, spec_ed25519_basepoint())
     }
 
     open spec fn mul_spec(self, rhs: &Scalar) -> EdwardsPoint {
@@ -463,7 +464,8 @@ impl vstd::std_specs::ops::MulSpecImpl<&EdwardsBasepointTable> for &Scalar {
     }
 
     open spec fn mul_req(self, rhs: &EdwardsBasepointTable) -> bool {
-        self.bytes[31] <= 127
+        &&& self.bytes[31] <= 127
+        &&& is_valid_edwards_basepoint_table(*rhs, spec_ed25519_basepoint())
     }
 
     open spec fn mul_spec(self, rhs: &EdwardsBasepointTable) -> EdwardsPoint {
@@ -484,7 +486,8 @@ impl vstd::std_specs::ops::MulSpecImpl<&Scalar> for &RistrettoBasepointTable {
     }
 
     open spec fn mul_req(self, rhs: &Scalar) -> bool {
-        rhs.bytes[31] <= 127
+        &&& rhs.bytes[31] <= 127
+        &&& is_valid_edwards_basepoint_table(self.0, spec_ed25519_basepoint())
     }
 
     open spec fn mul_spec(self, rhs: &Scalar) -> RistrettoPoint {
@@ -501,7 +504,8 @@ impl vstd::std_specs::ops::MulSpecImpl<&RistrettoBasepointTable> for &Scalar {
     }
 
     open spec fn mul_req(self, rhs: &RistrettoBasepointTable) -> bool {
-        self.bytes[31] <= 127
+        &&& self.bytes[31] <= 127
+        &&& is_valid_edwards_basepoint_table(rhs.0, spec_ed25519_basepoint())
     }
 
     open spec fn mul_spec(self, rhs: &RistrettoBasepointTable) -> RistrettoPoint {

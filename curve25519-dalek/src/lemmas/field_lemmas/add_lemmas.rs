@@ -46,6 +46,21 @@ pub proof fn lemma_field51_add(lhs: &FieldElement51, rhs: &FieldElement51)
     }
 }
 
+/// Lemma: limb-wise equality implies `FieldElement51` equality.
+///
+/// This is useful when a function specifies equality of each limb (e.g. conditional_select),
+/// but a caller needs equality of the whole `FieldElement51` value.
+pub proof fn lemma_field_element51_eq_from_limbs_eq(a: FieldElement51, b: FieldElement51)
+    requires
+        forall|i: int| 0 <= i < 5 ==> a.limbs[i] == b.limbs[i],
+    ensures
+        a == b,
+{
+    // Establish extensional equality of the limb arrays; Verus can then lift to struct equality.
+    assert(a.limbs =~= b.limbs);
+    assert(a == b);
+}
+
 pub proof fn lemma_field_add_16p_no_overflow(lhs: &FieldElement51, rhs: &FieldElement51)
     requires
         fe51_limbs_bounded(lhs, 54),

@@ -18,6 +18,12 @@ pub open spec fn scalar_to_nat(s: &Scalar) -> nat {
     bytes32_to_nat(&s.bytes)
 }
 
+/// Returns the scalar value reduced modulo group order.
+/// This is the value used in scalar multiplication: [n]P where n = scalar_as_canonical(s).
+pub open spec fn scalar_as_canonical(s: &Scalar) -> nat {
+    bytes32_to_nat(&s.bytes) % group_order()
+}
+
 /// Checks if a Scalar satisfies the canonical representation invariants:
 /// - Invariant #1: High bit (bit 255) is clear, ensuring s < 2^255
 /// - Invariant #2: Scalar is reduced modulo group order, i.e., s < ℓ

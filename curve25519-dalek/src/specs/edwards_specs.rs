@@ -76,6 +76,26 @@ pub open spec fn spec_ed25519_basepoint() -> (nat, nat) {
     (u64_5_as_nat(ED25519_BASEPOINT_POINT.X.limbs), u64_5_as_nat(ED25519_BASEPOINT_POINT.Y.limbs))
 }
 
+/// The Ed25519 basepoint has reduced coordinates (both < p)
+///
+/// This is a property of the specific basepoint constant definition from the Ed25519 spec.
+/// The basepoint X and Y coordinates are canonical field elements < p.
+///
+/// ## Values
+/// - X = 15112221349535807912866137220509078935008241517709382056166116785143545249788
+/// - Y = 46316835694926478169428394003475163141307993866256225615783033603165251855960
+/// - p = 57896044618658097711785492504343953926634992332820282019728792003956564819949
+///
+/// Both X < p and Y < p by direct comparison.
+///
+pub proof fn axiom_ed25519_basepoint_canonical()
+    ensures
+        spec_ed25519_basepoint().0 < p(),
+        spec_ed25519_basepoint().1 < p(),
+{
+    admit();
+}
+
 /// Proof: The basepoint is on the Edwards curve
 /* SEE IF WE NEED THIS
 pub proof fn lemma_basepoint_on_curve()
@@ -96,6 +116,7 @@ pub open spec fn pow256(n: nat) -> nat {
 
 /// Spec: A valid EdwardsBasepointTable for a basepoint B contains 32 LookupTables where:
 /// - table.0[i] contains [1·(16²)^i·B, 2·(16²)^i·B, ..., 8·(16²)^i·B]
+/// - All entries have bounded limbs (< 2^54)
 ///
 /// This enables computing [scalar] * B via radix-16 representation of scalar.
 #[cfg(feature = "precomputed-tables")]
@@ -104,23 +125,28 @@ pub open spec fn is_valid_edwards_basepoint_table(
     basepoint: (nat, nat),
 ) -> bool {
     // Each of the 32 LookupTables contains correct multiples of (16²)^i * B
+    // and has bounded limbs
     forall|i: int|
         #![trigger table.0[i]]
-        0 <= i < 32 ==> crate::specs::window_specs::is_valid_lookup_table_affine_coords(
-            table.0[i].0,
-            edwards_scalar_mul(basepoint, pow256(i as nat)),
-            8,
-        )
+        0 <= i < 32 ==> {
+            &&& crate::specs::window_specs::is_valid_lookup_table_affine_coords(
+                table.0[i].0,
+                edwards_scalar_mul(basepoint, pow256(i as nat)),
+                8,
+            )
+            &&& crate::specs::window_specs::lookup_table_affine_limbs_bounded(table.0[i].0)
+        }
 }
 
 /// Axiom: ED25519_BASEPOINT_TABLE is a valid basepoint table for the Ed25519 basepoint.
 /// This connects the hardcoded constant to our specification.
 #[cfg(feature = "precomputed-tables")]
-#[verifier::external_body]
 pub proof fn axiom_ed25519_basepoint_table_valid()
     ensures
         is_valid_edwards_basepoint_table(*ED25519_BASEPOINT_TABLE, spec_ed25519_basepoint()),
 {
+    admit();
+    // VERIFICATION NOTE: we probably have to prove this
 }
 
 /// Axiom: All 8-torsion points are well-formed.

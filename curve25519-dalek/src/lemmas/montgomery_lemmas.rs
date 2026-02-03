@@ -13,9 +13,41 @@ use crate::specs::core_specs::*;
 use crate::specs::field_specs_u64::*;
 use crate::specs::montgomery_specs::*;
 
+use crate::montgomery::ProjectivePoint;
 use crate::MontgomeryPoint;
 
 verus! {
+
+/// Swapping the two ladder state points flips the `bit` parameter.
+pub proof fn lemma_ladder_invariant_swap(
+    x0: ProjectivePoint,
+    x1: ProjectivePoint,
+    P: MontgomeryAffine,
+    k: nat,
+    bit: bool,
+)
+    requires
+        MontgomeryPoint::ladder_invariant(x0, x1, P, k, bit),
+    ensures
+        MontgomeryPoint::ladder_invariant(x1, x0, P, k, !bit),
+{
+    reveal(MontgomeryPoint::ladder_invariant);
+    if bit {
+        // bit = true: x0=[k+1]P and x1=[k]P. After swapping, !bit=false expects x1=[k]P and x0=[k+1]P.
+        assert(projective_represents_montgomery_or_infinity(x0, montgomery_scalar_mul(P, k + 1)));
+        assert(projective_represents_montgomery_or_infinity(x1, montgomery_scalar_mul(P, k)));
+        assert(projective_represents_montgomery_or_infinity(x1, montgomery_scalar_mul(P, k)));
+        assert(projective_represents_montgomery_or_infinity(x0, montgomery_scalar_mul(P, k + 1)));
+        assert(MontgomeryPoint::ladder_invariant(x1, x0, P, k, false));
+    } else {
+        // bit = false: x0=[k]P and x1=[k+1]P. After swapping, !bit=true expects x1=[k+1]P and x0=[k]P.
+        assert(projective_represents_montgomery_or_infinity(x0, montgomery_scalar_mul(P, k)));
+        assert(projective_represents_montgomery_or_infinity(x1, montgomery_scalar_mul(P, k + 1)));
+        assert(projective_represents_montgomery_or_infinity(x1, montgomery_scalar_mul(P, k + 1)));
+        assert(projective_represents_montgomery_or_infinity(x0, montgomery_scalar_mul(P, k)));
+        assert(MontgomeryPoint::ladder_invariant(x1, x0, P, k, true));
+    }
+}
 
 pub proof fn lemma_zero_limbs_is_zero(point: MontgomeryPoint)
     requires

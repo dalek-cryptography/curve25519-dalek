@@ -43,6 +43,18 @@ pub open spec fn lookup_table_projective_limbs_bounded<const N: usize>(
         }
 }
 
+/// Spec: All entries in an AffineNiels lookup table have bounded limbs
+pub open spec fn lookup_table_affine_limbs_bounded<const N: usize>(
+    table: [AffineNielsPoint; N],
+) -> bool {
+    forall|j: int|
+        0 <= j < table.len() ==> {
+            let entry = #[trigger] table[j];
+            fe51_limbs_bounded(&entry.y_plus_x, 54) && fe51_limbs_bounded(&entry.y_minus_x, 54)
+                && fe51_limbs_bounded(&entry.xy2d, 54)
+        }
+}
+
 /// Spec: Check if a lookup table contains [P, 2P, 3P, ..., size*P] in AffineNiels form
 /// where P is given as affine coordinates (nat, nat).
 pub open spec fn is_valid_lookup_table_affine_coords<const N: usize>(

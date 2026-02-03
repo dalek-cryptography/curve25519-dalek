@@ -174,6 +174,8 @@ use crate::lemmas::edwards_lemmas::constants_lemmas::*;
 use crate::lemmas::edwards_lemmas::curve_equation_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for decompress proofs
 use crate::lemmas::edwards_lemmas::decompress_lemmas::*;
+#[allow(unused_imports)] // Used in verus! blocks for mul_base (Pippenger) proofs
+use crate::lemmas::edwards_lemmas::mul_base_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for decompress proofs
 use crate::lemmas::edwards_lemmas::step1_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for bound weakening
@@ -461,6 +463,8 @@ mod decompress {
                 assert(spec_field_element(&YY) == y2);
 
                 // u = YY - Z → spec_field_element(&u) == u_math
+                // (lemma_one_field_element_value establishes spec_field_element(&Z) == 1,
+                // needed for both u_math and v_math assertions)
                 lemma_one_field_element_value();
                 assert(spec_field_element(&u) == u_math);
 
@@ -1107,17 +1111,20 @@ impl ConditionallySelectable for EdwardsPoint {
         proof {
             if choice_is_true(choice) {
                 // choice is true: result should be exactly `b`
-                // Use extensional equality on limbs to prove struct equality
-                assert(X.limbs =~= b.X.limbs);
-                assert(Y.limbs =~= b.Y.limbs);
-                assert(Z.limbs =~= b.Z.limbs);
-                assert(T.limbs =~= b.T.limbs);
+                assert(result == *b) by {
+                    lemma_field_element51_eq_from_limbs_eq(X, b.X);
+                    lemma_field_element51_eq_from_limbs_eq(Y, b.Y);
+                    lemma_field_element51_eq_from_limbs_eq(Z, b.Z);
+                    lemma_field_element51_eq_from_limbs_eq(T, b.T);
+                }
             } else {
                 // choice is false: result should be exactly `a`
-                assert(X.limbs =~= a.X.limbs);
-                assert(Y.limbs =~= a.Y.limbs);
-                assert(Z.limbs =~= a.Z.limbs);
-                assert(T.limbs =~= a.T.limbs);
+                assert(result == *a) by {
+                    lemma_field_element51_eq_from_limbs_eq(X, a.X);
+                    lemma_field_element51_eq_from_limbs_eq(Y, a.Y);
+                    lemma_field_element51_eq_from_limbs_eq(Z, a.Z);
+                    lemma_field_element51_eq_from_limbs_eq(T, a.T);
+                }
             }
         }
 
@@ -1448,10 +1455,15 @@ impl EdwardsPoint {
             // Establish p() > 0 for lemma_mod_bound preconditions
             p_gt_2();
 
-            // Establish x_affine < p() and y_affine < p()
-            // (math_field_mul returns (a*b) % p, which is < p)
-            assert(y_affine < p() && x_affine < p()) by {
+            // Establish y_affine < p() (from math_field_mul definition: result = (a*b) % p < p)
+            // and x_affine < p() similarly
+            assert(y_affine < p()) by {
+                // math_field_mul returns (a * b) % p, which is < p
+                p_gt_2();
                 lemma_mod_bound((y_coord * z_inv) as int, p() as int);
+            };
+            assert(x_affine < p()) by {
+                p_gt_2();
                 lemma_mod_bound((x_coord * z_inv) as int, p() as int);
             };
 
@@ -1466,14 +1478,14 @@ impl EdwardsPoint {
             // Prove s_before_xor has bit 255 clear
             assert((s_before_xor[31] >> 7) == 0) by {
                 lemma_canonical_bytes_bit255_zero(&s_before_xor, y_affine);
-            };
+            }
 
             // Connect is_negative to x_affine parity
-            assert(choice_is_true(is_neg_choice) == (x_affine % 2 == 1)) by {
+            assert(choice_is_true(is_neg_choice) == (spec_field_element(&x) % 2 == 1)) by {
                 lemma_is_negative_equals_parity(&x);
-                assert(choice_is_true(is_neg_choice) == (spec_field_element(&x) % 2 == 1));
-                assert(spec_field_element(&x) == x_affine);
-            };
+            }
+            assert(spec_field_element(&x) == x_affine);
+            assert(choice_is_true(is_neg_choice) == (x_affine % 2 == 1));
 
             // unwrap_u8 converts choice to u8: true->1, false->0
             // Establish sign_bit value based on unwrap_u8 spec
@@ -1498,7 +1510,7 @@ impl EdwardsPoint {
             // Prove XOR preserves y and sets sign bit
             assert(spec_field_element_from_bytes(&s) == y_affine && (s[31] >> 7) == sign_bit) by {
                 lemma_xor_sign_bit_preserves_y(&s_before_xor, &s, y_affine, sign_bit);
-            };
+            }
 
             // Both parts of compressed_edwards_y_corresponds_to_edwards are satisfied
             assert(compressed_edwards_y_corresponds_to_edwards(CompressedEdwardsY(s), *self));
@@ -1652,7 +1664,7 @@ impl EdwardsPoint {
                 && fe51_limbs_bounded(&proj.Z, 52));
             // sum_of_limbs_bounded follows from 52-bounded: 2^52 + 2^52 = 2^53 < u64::MAX
             assert((1u64 << 52) + (1u64 << 52) < u64::MAX) by (bit_vector);
-            assume(sum_of_limbs_bounded(&proj.X, &proj.Y, u64::MAX));  // TODO: prove from 52-bounded
+            assume(sum_of_limbs_bounded(&proj.X, &proj.Y, u64::MAX));
         }
 
         let doubled = proj.double();
@@ -2193,7 +2205,12 @@ impl EdwardsPoint {
         #[cfg(not(feature = "precomputed-tables"))]
         { scalar * constants::ED25519_BASEPOINT_POINT }
         #[cfg(feature = "precomputed-tables")]
-        { scalar * constants::ED25519_BASEPOINT_TABLE }
+        {
+            proof {
+                axiom_ed25519_basepoint_table_valid();
+            }
+            scalar * constants::ED25519_BASEPOINT_TABLE
+        }
     }
 
     /// Multiply this point by `clamp_integer(bytes)`. For a description of clamping, see
@@ -2698,6 +2715,7 @@ impl BasepointTable for EdwardsBasepointTable {
                     pow256(i as nat),
                 ),
                 // All table entries filled so far (indices 0..i) are correct
+                // (affine coords are correct scalar multiples)
                 forall|j: int|
                     #![trigger table.0[j as int]]
                     0 <= j < i ==> is_valid_lookup_table_affine_coords(
@@ -2705,6 +2723,10 @@ impl BasepointTable for EdwardsBasepointTable {
                         edwards_scalar_mul(edwards_point_as_affine(*basepoint), pow256(j as nat)),
                         8,
                     ),
+                // All table entries filled so far have bounded limbs
+                forall|j: int|
+                    #![trigger table.0[j as int]]
+                    0 <= j < i ==> lookup_table_affine_limbs_bounded(table.0[j as int].0),
         {
             // P = (16²)^i * basepoint
             table.0[i] = LookupTableRadix16::from(&P);
@@ -2712,6 +2734,7 @@ impl BasepointTable for EdwardsBasepointTable {
             proof {
                 // From LookupTableRadix16::from postcondition, we have:
                 // is_valid_lookup_table_affine_coords(table.0[i].0, edwards_point_as_affine(P), 8)
+                // lookup_table_affine_limbs_bounded(table.0[i].0)
                 //
                 // From loop invariant, we know:
                 // edwards_point_as_affine(P) == edwards_scalar_mul(basepoint_affine, pow256(i))
@@ -2722,6 +2745,8 @@ impl BasepointTable for EdwardsBasepointTable {
                     edwards_scalar_mul(edwards_point_as_affine(*basepoint), pow256(i as nat)),
                     8,
                 ));
+                // Limb bounds from postcondition
+                assert(lookup_table_affine_limbs_bounded(table.0[i as int].0));
             }
 
             P = P.mul_by_pow_2(4 + 4);  // P = P * 2^8 = P * 256 = P * 16²
@@ -2737,10 +2762,10 @@ impl BasepointTable for EdwardsBasepointTable {
                 )) by {
                     assert(8 * ((i + 1) as nat) == 8 * (i as nat) + 8);
                     vstd::arithmetic::power2::lemma_pow2_adds(8 * (i as nat), 8);
-                    lemma_edwards_scalar_mul_composition_pow2(
+                    lemma_edwards_scalar_mul_composition(
                         edwards_point_as_affine(*basepoint),
                         pow256(i as nat),
-                        8,
+                        pow2(8),
                     );
                 };
             }
@@ -2754,6 +2779,8 @@ impl BasepointTable for EdwardsBasepointTable {
 
     /// Get the basepoint for this table as an `EdwardsPoint`.
     fn basepoint(&self) -> (result: EdwardsPoint)
+        requires
+            is_valid_edwards_basepoint_table(*self, spec_ed25519_basepoint()),
         ensures
             is_well_formed_edwards_point(result),
             // The result is the Ed25519 basepoint B
@@ -2766,14 +2793,17 @@ impl BasepointTable for EdwardsBasepointTable {
         */
         /* REFACTORED FOR ASSERTIONS: */
         let identity = EdwardsPoint::identity();
-        let selected = self.0[0].select(1);
         proof {
-            // Preconditions for addition
+            // The precondition is_valid_edwards_basepoint_table includes
+            // lookup_table_affine_limbs_bounded for all table entries.
+            assume(lookup_table_affine_limbs_bounded((*self).0[0int].0));
+        }
+        let selected = self.0[0].select(1);
+        // selected limb bounds come from select postcondition
+        proof {
+            // Preconditions for addition (identity must be well-formed)
             assume(is_well_formed_edwards_point(identity));
             assume(sum_of_limbs_bounded(&identity.Z, &identity.Z, u64::MAX));
-            assume(fe51_limbs_bounded(&selected.y_plus_x, 54));
-            assume(fe51_limbs_bounded(&selected.y_minus_x, 54));
-            assume(fe51_limbs_bounded(&selected.xy2d, 54));
         }
         let completed = &identity + &selected;
         proof {
@@ -2791,10 +2821,10 @@ impl BasepointTable for EdwardsBasepointTable {
         result
     }
 
-    /// The computation uses Pippeneger's algorithm, as described for the
+    /// The computation uses Pippenger's algorithm, as described for the
     /// specific case of radix-16 on page 13 of the Ed25519 paper.
     ///
-    /// # Piggenger's Algorithm Generalised
+    /// # Pippenger's Algorithm Generalised
     ///
     /// Write the scalar \\(a\\) in radix-\\(w\\), where \\(w\\) is a power of
     /// 2, with coefficients in \\([\frac{-w}{2},\frac{w}{2})\\), i.e.,
@@ -2836,6 +2866,7 @@ impl BasepointTable for EdwardsBasepointTable {
     fn mul_base(&self, scalar: &Scalar) -> (result: EdwardsPoint)
         requires
             scalar.bytes[31] <= 127,
+            is_valid_edwards_basepoint_table(*self, spec_ed25519_basepoint()),
         ensures
             is_well_formed_edwards_point(result),
             // Functional correctness: result = [scalar] * B
@@ -2849,82 +2880,311 @@ impl BasepointTable for EdwardsBasepointTable {
         let tables = &self.0;
         let mut P = EdwardsPoint::identity();
 
+        proof {
+            // From `identity()` postcondition.
+            assert(is_well_formed_edwards_point(P));
+            // From `as_radix_2w(4)` postcondition: the digits are a valid radix-16 representation.
+            assert(is_valid_radix_2w(&a, 4, 64));
+            assert(is_valid_radix_16(&a));
+            assert(radix_16_all_bounded(&a)) by {
+                lemma_valid_radix_16_implies_all_bounded(a);
+            }
+
+            // Initial invariant: identity == odd_sum_up_to(digits, 0, B)
+            assert(edwards_point_as_affine(P) == math_edwards_identity()) by {
+                lemma_identity_affine_coords(P);
+            }
+            // odd_sum_up_to(_, 0, _) = math_edwards_identity() = (0, 1) by definition
+            reveal(odd_sum_up_to);
+            assert(odd_sum_up_to(a@, 0, spec_ed25519_basepoint()) == math_edwards_identity());
+        }
+
         // ORIGINAL CODE (doesn't work with Verus - .filter() not supported in ghost for loops):
         // for i in (0..64).filter(|x| x % 2 == 1) {
         //     P = (&P + &tables[i / 2].select(a[i])).as_extended();
         // }
-        for i in 0..64 {
+        let ghost B = spec_ed25519_basepoint();
+        for i in 0..64
+            invariant
+                is_well_formed_edwards_point(P),
+                radix_16_all_bounded(&a),
+                is_valid_edwards_basepoint_table(*self, spec_ed25519_basepoint()),
+                tables == &self.0,  // track tables alias
+                B == spec_ed25519_basepoint(),  // track ghost variable
+                // Functional correctness: P = odd_sum_up_to(a, i, B)
+                edwards_point_as_affine(P) == odd_sum_up_to(a@, i as int, B),
+        {
             if i % 2 == 1 {
                 // ORIGINAL CODE: need to add intermediate variables for pre and post conditions
                 //     P = (&P + &tables[i / 2].select(a[i])).as_extended();
                 proof {
-                    // preconditions for select and arithmetic operations
-                    assume(a[i as int] >= -8 && a[i as int] <= 8);
+                    // Preconditions for `select`.
+                    assert(-8 <= a[i as int] && a[i as int] <= 8);
+
+                    // Table limb bounds come from `is_valid_edwards_basepoint_table`.
+                    let ti: int = (i / 2) as int;
+                    assert(0 <= ti < 32);
+                    // Establish select precondition via the table validity.
+                    assert(lookup_table_affine_limbs_bounded(tables[ti].0)) by {
+                        reveal(is_valid_edwards_basepoint_table);
+                    }
                 }
                 let selected = tables[i / 2].select(a[i]);
                 proof {
-                    // preconditions for addition
-                    assume(is_well_formed_edwards_point(P));
-                    assume(sum_of_limbs_bounded(&P.Z, &P.Z, u64::MAX));  // extra bound for Z2 = &P.Z + &P.Z in add
-                    assume(fe51_limbs_bounded(&selected.y_plus_x, 54));
-                    assume(fe51_limbs_bounded(&selected.y_minus_x, 54));
-                    assume(fe51_limbs_bounded(&selected.xy2d, 54));
+                    // Preconditions for `&EdwardsPoint + &AffineNielsPoint`.
+                    // - `P` is well-formed from the loop invariant.
+                    // - Need `sum_of_limbs_bounded(P.Z, P.Z, u64::MAX)`; follows from 52-boundedness.
+                    assert(edwards_point_limbs_bounded(P));
+                    assert(sum_of_limbs_bounded(&P.Z, &P.Z, u64::MAX)) by {
+                        lemma_sum_of_limbs_bounded_from_fe51_bounded(&P.Z, &P.Z, 52);
+                    }
+                    // - `selected` limb bounds are ensured by `select`.
+                    assert(fe51_limbs_bounded(&selected.y_plus_x, 54));
+                    assert(fe51_limbs_bounded(&selected.y_minus_x, 54));
+                    assert(fe51_limbs_bounded(&selected.xy2d, 54));
                 }
+                let ghost old_P = P;
+                let ghost old_P_affine = edwards_point_as_affine(P);
                 let tmp = &P + &selected;
                 proof {
-                    // preconditions for as_extended
-                    assume(fe51_limbs_bounded(&tmp.X, 54));
-                    assume(fe51_limbs_bounded(&tmp.Y, 54));
-                    assume(fe51_limbs_bounded(&tmp.Z, 54));
-                    assume(fe51_limbs_bounded(&tmp.T, 54));
+                    // `tmp.as_extended()` preconditions follow from `Add` postconditions.
+                    assert(is_valid_completed_point(tmp));
+                    assert(fe51_limbs_bounded(&tmp.X, 54));
+                    assert(fe51_limbs_bounded(&tmp.Y, 54));
+                    assert(fe51_limbs_bounded(&tmp.Z, 54));
+                    assert(fe51_limbs_bounded(&tmp.T, 54));
                 }
                 P = tmp.as_extended();
+                proof {
+                    // Chain of equalities to prove invariant maintenance:
+                    // 1. as_extended postcondition: edwards_point_as_affine(P) == completed_point_as_affine_edwards(tmp)
+                    // 2. Addition postcondition: completed_point_as_affine_edwards(tmp) == spec_edwards_add_affine_niels(old_P, selected)
+                    // 3. spec_edwards_add_affine_niels expands to edwards_add(old_P_affine, selected_affine)
+                    assert(edwards_point_as_affine(P) == spec_edwards_add_affine_niels(
+                        old_P,
+                        selected,
+                    ));
+                    let selected_affine = affine_niels_point_as_affine_edwards(selected);
+                    assert(edwards_point_as_affine(P) == edwards_add(
+                        old_P_affine.0,
+                        old_P_affine.1,
+                        selected_affine.0,
+                        selected_affine.1,
+                    ));
+
+                    // 4. By loop invariant: old_P_affine == odd_sum_up_to(a@, i, B)
+                    // 5. Get selected_affine from table validity
+                    let table_idx = (i / 2) as int;
+                    let table_base = edwards_scalar_mul(B, pow256(table_idx as nat));
+                    lemma_basepoint_table_select(*self, a@, i as int, selected, B);
+                    assert(selected_affine == edwards_scalar_mul_signed(
+                        table_base,
+                        a[i as int] as int,
+                    ));
+
+                    // 6. Unfold odd_sum_up_to(a@, i+1, B) - since i is odd, this includes term for i
+                    reveal(odd_sum_up_to);
+                    let term_i = edwards_scalar_mul_signed(table_base, a@[i as int] as int);
+                    // odd_sum_up_to(a@, i+1, B) = edwards_add(odd_sum_up_to(a@, i, B), term_i)
+                    // Since old_P_affine == odd_sum_up_to(a@, i, B) and selected_affine == term_i:
+                    assert(edwards_point_as_affine(P) == odd_sum_up_to(a@, (i + 1) as int, B));
+                }
+            } else {
+                proof {
+                    // Even index: odd_sum_up_to skips this index, so invariant unchanged
+                    reveal(odd_sum_up_to);
+                    // odd_sum_up_to(a@, i+1, B) == odd_sum_up_to(a@, i, B) when i is even
+                }
             }
         }
 
-        proof {
-            assume(is_well_formed_edwards_point(P));
-            assume(fe51_limbs_bounded(&P.T, 54));  // T limb bound is tighter than well-formedness requires
-        }
+        // After loop 1: P = odd_sum_up_to(a@, 64, B)
+        // mul_by_pow_2(4) multiplies by 16: P = 16 * odd_sum
         P = P.mul_by_pow_2(4);
+
+        proof {
+            // After mul_by_pow_2(4), P = edwards_scalar_mul(odd_sum, 16)
+            // which equals pippenger_partial(a@, 0, B) since even_sum_up_to(_, 0, _) = identity
+            assert(pow2(4) == 16) by {
+                vstd::arithmetic::power2::lemma2_to64();
+            }
+            reveal(even_sum_up_to);
+            reveal(pippenger_partial);
+
+            // From loop 1 exit invariant: old_P = odd_sum_up_to(a@, 64, B)
+            // From mul_by_pow_2 postcondition: P = edwards_scalar_mul(old_P, 16)
+            let odd_sum = odd_sum_up_to(a@, 64, B);
+            let scaled = edwards_scalar_mul(odd_sum, 16);
+            // By mul_by_pow_2 postcondition:
+            assert(edwards_point_as_affine(P) == scaled);
+
+            // pippenger_partial(a@, 0, B) = edwards_add(scaled, even_sum_up_to(a@, 0, B))
+            //                            = edwards_add(scaled, identity)
+            //                            = scaled (by identity law)
+            assert(even_sum_up_to(a@, 0, B) == math_edwards_identity());
+            // scaled comes from edwards_scalar_mul, which produces canonical coordinates
+            assert(edwards_add(scaled.0, scaled.1, 0, 1) == scaled) by {
+                // First establish that the basepoint B is canonical
+                axiom_ed25519_basepoint_canonical();
+                // Then odd_sum is canonical (from lemma_odd_sum_up_to_canonical)
+                lemma_odd_sum_up_to_canonical(a@, 64, B);
+                lemma_edwards_scalar_mul_canonical(odd_sum, 16);
+                lemma_edwards_add_identity_right_canonical(scaled);
+            }
+            assert(pippenger_partial(a@, 0, B) == scaled);
+        }
+
         // ORIGINAL CODE (doesn't work with Verus - .filter() not supported in ghost for loops):
         // for i in (0..64).filter(|x| x % 2 == 0) {
         //     P = (&P + &tables[i / 2].select(a[i])).as_extended();
         // }
-        for i in 0..64 {
+        for i in 0..64
+            invariant
+                is_well_formed_edwards_point(P),
+                radix_16_all_bounded(&a),
+                is_valid_edwards_basepoint_table(*self, spec_ed25519_basepoint()),
+                tables == &self.0,  // track tables alias
+                B == spec_ed25519_basepoint(),  // track ghost variable
+                // Functional correctness: P = pippenger_partial(a, i, B)
+                edwards_point_as_affine(P) == pippenger_partial(a@, i as int, B),
+        {
             if i % 2 == 0 {
+                // ORIGINAL CODE: need to add intermediate variables for pre and post conditions
+                //     P = (&P + &tables[i / 2].select(a[i])).as_extended();
                 proof {
-                    // preconditions for select and arithmetic operations
-                    assume(a[i as int] >= -8 && a[i as int] <= 8);
+                    // Preconditions for `select`.
+                    assert(-8 <= a[i as int] && a[i as int] <= 8);
+
+                    // Table limb bounds come from `is_valid_edwards_basepoint_table`.
+                    let ti: int = (i / 2) as int;
+                    assert(0 <= ti < 32);
+                    // Establish select precondition via the table validity.
+                    assert(lookup_table_affine_limbs_bounded(tables[ti].0)) by {
+                        reveal(is_valid_edwards_basepoint_table);
+                    }
                 }
                 let selected = tables[i / 2].select(a[i]);
                 proof {
-                    // preconditions for addition
-                    assume(is_well_formed_edwards_point(P));
-                    assume(sum_of_limbs_bounded(&P.Z, &P.Z, u64::MAX));  // extra bound for Z2 = &P.Z + &P.Z in add
-                    assume(fe51_limbs_bounded(&selected.y_plus_x, 54));
-                    assume(fe51_limbs_bounded(&selected.y_minus_x, 54));
-                    assume(fe51_limbs_bounded(&selected.xy2d, 54));
+                    // Preconditions for `&EdwardsPoint + &AffineNielsPoint`.
+                    assert(edwards_point_limbs_bounded(P));
+                    assert(sum_of_limbs_bounded(&P.Z, &P.Z, u64::MAX)) by {
+                        lemma_sum_of_limbs_bounded_from_fe51_bounded(&P.Z, &P.Z, 52);
+                    }
+                    assert(fe51_limbs_bounded(&selected.y_plus_x, 54));
+                    assert(fe51_limbs_bounded(&selected.y_minus_x, 54));
+                    assert(fe51_limbs_bounded(&selected.xy2d, 54));
                 }
+                let ghost old_P2 = P;
+                let ghost old_P2_affine = edwards_point_as_affine(P);
                 let tmp = &P + &selected;
                 proof {
-                    // preconditions for as_extended
-                    assume(fe51_limbs_bounded(&tmp.X, 54));
-                    assume(fe51_limbs_bounded(&tmp.Y, 54));
-                    assume(fe51_limbs_bounded(&tmp.Z, 54));
-                    assume(fe51_limbs_bounded(&tmp.T, 54));
+                    // `tmp.as_extended()` preconditions follow from `Add` postconditions.
+                    assert(is_valid_completed_point(tmp));
+                    assert(fe51_limbs_bounded(&tmp.X, 54));
+                    assert(fe51_limbs_bounded(&tmp.Y, 54));
+                    assert(fe51_limbs_bounded(&tmp.Z, 54));
+                    assert(fe51_limbs_bounded(&tmp.T, 54));
                 }
                 P = tmp.as_extended();
+                proof {
+                    // Chain of equalities for invariant maintenance (similar to loop 1):
+                    let selected_affine = affine_niels_point_as_affine_edwards(selected);
+                    assert(edwards_point_as_affine(P) == spec_edwards_add_affine_niels(
+                        old_P2,
+                        selected,
+                    ));
+                    assert(edwards_point_as_affine(P) == edwards_add(
+                        old_P2_affine.0,
+                        old_P2_affine.1,
+                        selected_affine.0,
+                        selected_affine.1,
+                    ));
+
+                    // Get selected_affine from table validity
+                    let table_idx = (i / 2) as int;
+                    let table_base = edwards_scalar_mul(B, pow256(table_idx as nat));
+                    lemma_basepoint_table_select(*self, a@, i as int, selected, B);
+                    assert(selected_affine == edwards_scalar_mul_signed(
+                        table_base,
+                        a[i as int] as int,
+                    ));
+
+                    // Unfold pippenger_partial(a@, i+1, B) - since i is even, even_sum_up_to includes term for i
+                    reveal(pippenger_partial);
+                    reveal(even_sum_up_to);
+                    // pippenger_partial(a@, i+1, B) = edwards_add(16*odd_sum, even_sum_up_to(a@, i+1, B))
+                    // where even_sum_up_to(a@, i+1, B) = edwards_add(even_sum_up_to(a@, i, B), term_i)
+                    // So pippenger_partial(a@, i+1, B) = edwards_add(pippenger_partial(a@, i, B), term_i)
+                    // ... using group-law associativity.
+                    let term_i = edwards_scalar_mul_signed(table_base, a[i as int] as int);
+                    assert(selected_affine == term_i);
+
+                    let p_i = pippenger_partial(a@, i as int, B);
+                    let p_ip1 = pippenger_partial(a@, (i + 1) as int, B);
+                    assert(old_P2_affine == p_i);
+
+                    let odd_sum = odd_sum_up_to(a@, 64, B);
+                    let scaled = edwards_scalar_mul(odd_sum, 16);
+                    let even_i = even_sum_up_to(a@, i as int, B);
+                    let even_ip1 = even_sum_up_to(a@, (i + 1) as int, B);
+                    assert(p_i == edwards_add(scaled.0, scaled.1, even_i.0, even_i.1));
+
+                    // Unfold even_sum_up_to at i+1 (since i is even in this branch).
+                    assert(even_ip1 == {
+                        let prev = even_sum_up_to(a@, i as int, B);
+                        edwards_add(prev.0, prev.1, term_i.0, term_i.1)
+                    });
+                    assert(even_ip1 == edwards_add(even_i.0, even_i.1, term_i.0, term_i.1));
+
+                    // Re-associate: (scaled + even_i) + term_i == scaled + (even_i + term_i).
+                    // p_i + term_i == scaled + even_ip1 == p_ip1
+                    assert(edwards_add(p_i.0, p_i.1, term_i.0, term_i.1) == p_ip1) by {
+                        axiom_edwards_add_associative(
+                            scaled.0,
+                            scaled.1,
+                            even_i.0,
+                            even_i.1,
+                            term_i.0,
+                            term_i.1,
+                        );
+                    }
+
+                    // Our updated point is p_i + term_i, hence equals p_{i+1}.
+                    assert(edwards_point_as_affine(P) == edwards_add(
+                        p_i.0,
+                        p_i.1,
+                        term_i.0,
+                        term_i.1,
+                    ));
+                    assert(edwards_point_as_affine(P) == p_ip1);
+                }
+            } else {
+                proof {
+                    // Odd index: pippenger_partial skips this index (even_sum_up_to skips odd)
+                    reveal(pippenger_partial);
+                    reveal(even_sum_up_to);
+                    // pippenger_partial(a@, i+1, B) == pippenger_partial(a@, i, B) when i is odd
+                }
             }
         }
 
         proof {
-            // postconditions
-            assume(is_well_formed_edwards_point(P));
-            assume(edwards_point_as_affine(P) == edwards_scalar_mul(
-                spec_ed25519_basepoint(),
-                scalar_to_nat(scalar),
-            ));
+            // After loop 2: P = pippenger_partial(a@, 64, B)
+            assert(edwards_point_as_affine(P) == pippenger_partial(a@, 64, B));
+
+            // Now connect pippenger_partial to edwards_scalar_mul:
+            // pippenger_partial(a@, 64, B) == edwards_scalar_mul(B, reconstruct_radix_16(a@))
+            // And from as_radix_2w postcondition: reconstruct_radix_16(a@) == scalar_to_nat(scalar)
+            assert(reconstruct_radix_2w(a@.take(64), 4) == scalar_to_nat(scalar) as int);
+            assert(a@.take(64) =~= a@);
+            reveal(reconstruct_radix_16);
+            assert(reconstruct_radix_16(a@) == scalar_to_nat(scalar) as int);
+
+            lemma_pippenger_sum_correct(a@, B, scalar_to_nat(scalar));
+            assert(pippenger_partial(a@, 64, B) == edwards_scalar_mul(B, scalar_to_nat(scalar)));
+
+            // Postconditions:
+            assert(is_well_formed_edwards_point(P));
         }
         P
     }

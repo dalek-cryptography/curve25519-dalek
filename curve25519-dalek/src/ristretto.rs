@@ -1881,7 +1881,12 @@ impl RistrettoPoint {
             { scalar * constants::RISTRETTO_BASEPOINT_POINT }
 
             #[cfg(feature = "precomputed-tables")]
-            { scalar * constants::RISTRETTO_BASEPOINT_TABLE }
+            {
+                proof {
+                    axiom_ristretto_basepoint_table_valid();
+                }
+                scalar * constants::RISTRETTO_BASEPOINT_TABLE
+            }
         };
         proof {
             // The underlying Edwards mul_base ensures the functional correctness.
@@ -2181,6 +2186,9 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
                 scalar_to_nat(scalar),
             ),
     {
+        proof {
+            axiom_ristretto_basepoint_table_valid();
+        }
         RistrettoPoint(&self.0 * scalar)
     }
 }
@@ -2202,6 +2210,9 @@ impl<'a, 'b> Mul<&'a RistrettoBasepointTable> for &'b Scalar {
                 scalar_to_nat(self),
             ),
     {
+        proof {
+            axiom_ristretto_basepoint_table_valid();
+        }
         RistrettoPoint(self * &basepoint_table.0)
     }
 }
@@ -2220,11 +2231,15 @@ impl RistrettoBasepointTable {
 
     /// Get the basepoint for this table as a `RistrettoPoint`.
     pub fn basepoint(&self) -> (result: RistrettoPoint)
+        requires
+            is_valid_edwards_basepoint_table(self.0, spec_ristretto_basepoint()),
         ensures
             is_well_formed_edwards_point(result.0),
             // The result is the Ristretto basepoint B
             edwards_point_as_affine(result.0) == spec_ristretto_basepoint(),
     {
+        // Since spec_ristretto_basepoint() == spec_ed25519_basepoint(),
+        // the EdwardsBasepointTable::basepoint precondition is satisfied
         RistrettoPoint(self.0.basepoint())
     }
 }

@@ -339,6 +339,92 @@ pub proof fn lemma_inv_mul_cancel(a: nat)
 // =============================================================================
 // Subtraction and Negation Lemmas
 // =============================================================================
+/// Lemma: sub(b, a) = neg(sub(a, b)) in field arithmetic (antisymmetry)
+///
+/// Field subtraction is antisymmetric: reversing the operands negates the result.
+///
+/// ## Mathematical Proof
+/// ```text
+/// Case a ≡ b (mod p): sub(a,b) = 0, sub(b,a) = 0, neg(0) = 0 ✓
+/// Case a > b (mod p): sub(a,b) = a-b, sub(b,a) = p-(a-b), neg(a-b) = p-(a-b) ✓
+/// Case a < b (mod p): sub(a,b) = p-(b-a), sub(b,a) = b-a, neg(p-(b-a)) = b-a ✓
+/// ```
+pub proof fn lemma_field_sub_antisymmetric(a: nat, b: nat)
+    ensures
+        math_field_sub(b, a) == math_field_neg(math_field_sub(a, b)),
+{
+    let p = p();
+    p_gt_2();
+
+    let a_mod = a % p;
+    let b_mod = b % p;
+
+    // sub(a, b) = ((a_mod + p) - b_mod) % p
+    // sub(b, a) = ((b_mod + p) - a_mod) % p
+    let sub_ab = math_field_sub(a, b);
+    let sub_ba = math_field_sub(b, a);
+
+    // Both are < p by definition of mod
+    assert(sub_ab < p) by {
+        lemma_mod_bound(((a_mod + p) - b_mod) as int, p as int);
+    }
+    assert(sub_ba < p) by {
+        lemma_mod_bound(((b_mod + p) - a_mod) as int, p as int);
+    }
+
+    // Case analysis based on a_mod vs b_mod
+    if a_mod == b_mod {
+        // sub_ab = p % p = 0, sub_ba = p % p = 0, neg(0) = p % p = 0
+        assert(sub_ab == 0) by {
+            lemma_mod_self_0(p as int);
+        }
+        assert(sub_ba == 0) by {
+            lemma_mod_self_0(p as int);
+        }
+        assert(math_field_neg(sub_ab) == 0) by {
+            lemma_mod_self_0(p as int);
+        }
+    } else if a_mod > b_mod {
+        // sub_ab = (a_mod + p - b_mod) % p = (a_mod - b_mod) since sum > p
+        // sub_ba = (b_mod + p - a_mod) % p = (p - (a_mod - b_mod)) since sum < p
+        let diff = (a_mod - b_mod) as nat;
+        assert(sub_ab == diff) by {
+            assert(a_mod + p - b_mod == p + diff);
+            lemma_mod_add_multiples_vanish(diff as int, p as int);
+            lemma_small_mod(diff, p);
+        }
+        assert(sub_ba == p - diff) by {
+            assert(b_mod + p - a_mod == p - diff);
+            lemma_small_mod((p - diff) as nat, p);
+        }
+        // neg(sub_ab) = (p - diff) % p = p - diff (since diff > 0, so p - diff < p)
+        assert(math_field_neg(sub_ab) == p - diff) by {
+            lemma_small_mod(diff, p);
+            lemma_small_mod((p - diff) as nat, p);
+        }
+    } else {
+        // a_mod < b_mod
+        // sub_ab = (a_mod + p - b_mod) % p = (p - (b_mod - a_mod)) since sum < p
+        // sub_ba = (b_mod + p - a_mod) % p = (b_mod - a_mod) since sum > p
+        let diff = (b_mod - a_mod) as nat;
+        assert(sub_ab == p - diff) by {
+            assert(a_mod + p - b_mod == p - diff);
+            lemma_small_mod((p - diff) as nat, p);
+        }
+        assert(sub_ba == diff) by {
+            assert(b_mod + p - a_mod == p + diff);
+            lemma_mod_add_multiples_vanish(diff as int, p as int);
+            lemma_small_mod(diff, p);
+        }
+        // neg(sub_ab) = (p - (p - diff)) % p = diff % p = diff
+        assert(math_field_neg(sub_ab) == diff) by {
+            assert(p - (p - diff) == diff);
+            lemma_small_mod((p - diff) as nat, p);
+            lemma_small_mod(diff, p);
+        }
+    }
+}
+
 /// Lemma: sub(a, b) = add(a, neg(b)) in field arithmetic
 ///
 /// Field subtraction is addition with the additive inverse.

@@ -104,12 +104,17 @@ impl LookupTable<AffineNielsPoint> {
         requires
             -8 <= x,
             x <= 8,
+            lookup_table_affine_limbs_bounded(self.0),
         ensures
     // Formal specification for all cases:
 
             (x > 0 ==> result == self.0[(x - 1) as int]),
             (x == 0 ==> result == identity_affine_niels()),
             (x < 0 ==> result == negate_affine_niels(self.0[((-x) - 1) as int])),
+            // Limb bounds on result
+            fe51_limbs_bounded(&result.y_plus_x, 54),
+            fe51_limbs_bounded(&result.y_minus_x, 54),
+            fe51_limbs_bounded(&result.xy2d, 54),
     {
         // Debug assertions from original macro - ignored by Verus
         #[cfg(not(verus_keep_ghost))]
@@ -359,6 +364,8 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
 
         ensures
             is_valid_lookup_table_affine(result.0, *P, 8 as nat),
+            // All entries have bounded limbs
+            lookup_table_affine_limbs_bounded(result.0),
     {
         /* ORIGINAL CODE: for generic $name, $size, and conv_range.
 
@@ -409,6 +416,7 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
         let result = LookupTable(points);
         proof {
             assume(is_valid_lookup_table_affine(result.0, *P, 8 as nat));
+            assume(lookup_table_affine_limbs_bounded(result.0));
         }
         result
     }

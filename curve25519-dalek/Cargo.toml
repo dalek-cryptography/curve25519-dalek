@@ -32,7 +32,7 @@ all-features = true
 [dev-dependencies]
 bincode = "1"
 criterion = { version = "0.5", features = ["html_reports"] }
-getrandom = { version = "0.4.0-rc.1", features = ["sys_rng"] }
+getrandom = { version = "0.4", features = ["sys_rng"] }
 hex = "0.4.2"
 proptest = "1"
 sha2 = { version = "0.11.0-rc.5", default-features = false }
@@ -47,9 +47,9 @@ required-features = ["alloc", "rand_core"]
 
 [dependencies]
 cfg-if = "1"
-ff = { version = "=0.14.0-pre.1", package = "rustcrypto-ff", default-features = false, optional = true }
-group = { version = "=0.14.0-pre.1", package = "rustcrypto-group", default-features = false, optional = true }
-rand_core = { version = "0.10.0-rc-6", default-features = false, optional = true }
+ff = { version = "0.14.0-rc.0", package = "rustcrypto-ff", default-features = false, optional = true }
+group = { version = "0.14.0-rc.0", package = "rustcrypto-group", default-features = false, optional = true }
+rand_core = { version = "0.10", default-features = false, optional = true }
 digest = { version = "0.11.0-rc.11", default-features = false, optional = true, features = [
     "block-api",
 ] }

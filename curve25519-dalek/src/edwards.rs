@@ -106,7 +106,7 @@ use core::ops::{Mul, MulAssign};
 
 #[cfg(feature = "digest")]
 use digest::{
-    FixedOutput, HashMarker, array::typenum::U64, consts::True, crypto_common::BlockSizeUser,
+    FixedOutput, HashMarker, array::typenum::U64, common::BlockSizeUser, consts::True,
     typenum::IsGreater,
 };
 

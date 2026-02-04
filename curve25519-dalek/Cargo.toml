@@ -3,7 +3,7 @@ name = "curve25519-dalek"
 # Before incrementing:
 # - update CHANGELOG
 # - update README if required by semver
-version = "5.0.0-pre.5"
+version = "5.0.0-pre.6"
 edition = "2024"
 rust-version = "1.85.0"
 authors = [

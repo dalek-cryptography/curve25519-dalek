@@ -5,6 +5,11 @@ major series.
 
 ## 5.x series
 
+## 5.0.0-pre.6
+
+* Upgrade `rand_core` dependency to v0.10.0
+* Upgrade `digest` and `sha2` deps
+
 ## 5.0.0-pre.5
 
 * Upgrade `rand_core` dependency to v0.10.0-rc-6

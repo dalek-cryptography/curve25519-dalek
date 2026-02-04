@@ -77,6 +77,70 @@ pub(crate) proof fn lemma_edwards_d_limbs_bounded_54()
 }
 
 // =============================================================================
+// EDWARDS_D2 Lemmas
+// =============================================================================
+/// EDWARDS_D2 has 51-bit bounded limbs
+///
+/// ## Mathematical Proof
+/// Each limb of EDWARDS_D2 is a specific constant < 2^51:
+/// - limbs[0] = 1859910466990425 < 2^51 ✓
+/// - limbs[1] = 932731440258426 < 2^51 ✓
+/// - limbs[2] = 1072319116312658 < 2^51 ✓
+/// - limbs[3] = 1815898335770999 < 2^51 ✓
+/// - limbs[4] = 633789495995903 < 2^51 ✓
+pub(crate) proof fn lemma_edwards_d2_limbs_bounded()
+    ensures
+        fe51_limbs_bounded(&constants::EDWARDS_D2, 51),
+{
+    assert(fe51_limbs_bounded(&constants::EDWARDS_D2, 51)) by {
+        assert(1859910466990425u64 < (1u64 << 51)) by (bit_vector);
+        assert(932731440258426u64 < (1u64 << 51)) by (bit_vector);
+        assert(1072319116312658u64 < (1u64 << 51)) by (bit_vector);
+        assert(1815898335770999u64 < (1u64 << 51)) by (bit_vector);
+        assert(633789495995903u64 < (1u64 << 51)) by (bit_vector);
+    };
+}
+
+/// EDWARDS_D2 has 54-bit bounded limbs
+///
+/// ## Mathematical Proof
+/// 51-bit bounded ⟹ 54-bit bounded since 2^51 < 2^54
+pub(crate) proof fn lemma_edwards_d2_limbs_bounded_54()
+    ensures
+        fe51_limbs_bounded(&constants::EDWARDS_D2, 54),
+{
+    assert(fe51_limbs_bounded(&constants::EDWARDS_D2, 54)) by {
+        lemma_edwards_d2_limbs_bounded();
+        assert((1u64 << 51) < (1u64 << 54)) by (bit_vector);
+    };
+}
+
+/// EDWARDS_D2 equals 2 * EDWARDS_D in the field
+///
+/// ## Mathematical Background
+/// EDWARDS_D2 is precomputed as 2*d mod p in the curve25519-dalek library.
+/// This is a well-established relationship for the curve25519 constants.
+///
+/// The postcondition states that spec_field_element(&EDWARDS_D2) equals
+/// math_field_mul(2, spec_field_element(&EDWARDS_D)), i.e., 2*d mod p.
+pub(crate) proof fn axiom_edwards_d2_is_2d()
+    ensures
+        spec_field_element(&constants::EDWARDS_D2) == math_field_mul(
+            2,
+            spec_field_element(&EDWARDS_D),
+        ),
+{
+    // Trusted assumption.
+    //
+    // `constants::EDWARDS_D2` is the concrete FieldElement constant intended to equal
+    // `2 * constants::EDWARDS_D` in GF(p), where p = 2^255 - 19.
+    //
+    // This relationship is enforced by a runtime unit test (see `curve25519-dalek/src/constants.rs`)
+    // and matches the upstream curve25519-dalek definition of EDWARDS_D2.
+    admit();
+}
+
+// =============================================================================
 // BASEPOINT_ORDER_PRIVATE Lemmas
 // =============================================================================
 /// BASEPOINT_ORDER_PRIVATE encodes the (prime) subgroup order ℓ in little-endian bytes.

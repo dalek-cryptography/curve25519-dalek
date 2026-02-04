@@ -114,6 +114,7 @@ pub open spec fn radix16_odd_scalar(digits: Seq<i8>, n: nat) -> int
 ///
 /// This matches the structure of Loop 1 in mul_base which processes odd indices.
 /// For odd index i, table[i/2] contains 256^(i/2) * B multiples.
+#[verifier::opaque]
 pub open spec fn odd_sum_up_to(digits: Seq<i8>, upper_i: int, B: (nat, nat)) -> (nat, nat)
     decreases upper_i,
 {
@@ -137,6 +138,7 @@ pub open spec fn odd_sum_up_to(digits: Seq<i8>, upper_i: int, B: (nat, nat)) -> 
 /// Partial sum of even-indexed radix-16 digits: sum over even i < upper_i of a[i] * 256^(i/2) * B
 ///
 /// This matches the structure of Loop 2 in mul_base which processes even indices.
+#[verifier::opaque]
 pub open spec fn even_sum_up_to(digits: Seq<i8>, upper_i: int, B: (nat, nat)) -> (nat, nat)
     decreases upper_i,
 {
@@ -161,6 +163,7 @@ pub open spec fn even_sum_up_to(digits: Seq<i8>, upper_i: int, B: (nat, nat)) ->
 ///
 /// After loop 1 and mul_by_pow_2(4), the point equals 16 * odd_sum.
 /// Loop 2 then adds even-indexed terms one at a time.
+#[verifier::opaque]
 pub open spec fn pippenger_partial(digits: Seq<i8>, even_upper_i: int, B: (nat, nat)) -> (
     nat,
     nat,
@@ -169,6 +172,104 @@ pub open spec fn pippenger_partial(digits: Seq<i8>, even_upper_i: int, B: (nat, 
     let scaled = edwards_scalar_mul(odd_sum, 16);
     let even_sum = even_sum_up_to(digits, even_upper_i, B);
     edwards_add(scaled.0, scaled.1, even_sum.0, even_sum.1)
+}
+
+// =============================================================================
+// Lemmas: One-step unfoldings (avoid rlimit in loop proofs)
+// =============================================================================
+pub proof fn lemma_even_sum_up_to_step_even(digits: Seq<i8>, i: int, B: (nat, nat))
+    requires
+        0 <= i,
+        i % 2 == 0,
+    ensures
+        even_sum_up_to(digits, i + 1, B) == ({
+            let prev = even_sum_up_to(digits, i, B);
+            let base = edwards_scalar_mul(B, pow256((i / 2) as nat));
+            let term = edwards_scalar_mul_signed(base, digits[i] as int);
+            edwards_add(prev.0, prev.1, term.0, term.1)
+        }),
+{
+    reveal_with_fuel(even_sum_up_to, 2);
+}
+
+pub proof fn lemma_even_sum_up_to_step_odd(digits: Seq<i8>, i: int, B: (nat, nat))
+    requires
+        0 <= i,
+        i % 2 == 1,
+    ensures
+        even_sum_up_to(digits, i + 1, B) == even_sum_up_to(digits, i, B),
+{
+    reveal_with_fuel(even_sum_up_to, 2);
+}
+
+pub proof fn lemma_pippenger_partial_step_even(digits: Seq<i8>, i: int, B: (nat, nat))
+    requires
+        0 <= i,
+        i % 2 == 0,
+    ensures
+        ({
+            let pi = pippenger_partial(digits, i, B);
+            let base = edwards_scalar_mul(B, pow256((i / 2) as nat));
+            let term = edwards_scalar_mul_signed(base, digits[i] as int);
+            edwards_add(pi.0, pi.1, term.0, term.1)
+        }) == pippenger_partial(digits, i + 1, B),
+{
+    reveal(pippenger_partial);
+    let odd_sum = odd_sum_up_to(digits, 64, B);
+    let scaled = edwards_scalar_mul(odd_sum, 16);
+
+    let even_i = even_sum_up_to(digits, i, B);
+    lemma_even_sum_up_to_step_even(digits, i, B);
+    let even_ip1 = even_sum_up_to(digits, i + 1, B);
+
+    let base = edwards_scalar_mul(B, pow256((i / 2) as nat));
+    let term = edwards_scalar_mul_signed(base, digits[i] as int);
+
+    // pippenger_partial(digits, i, B) == scaled + even_i
+    let pi = pippenger_partial(digits, i, B);
+    assert(pi == edwards_add(scaled.0, scaled.1, even_i.0, even_i.1));
+
+    // even_ip1 == even_i + term
+    assert(even_ip1 == {
+        let prev = even_sum_up_to(digits, i, B);
+        edwards_add(prev.0, prev.1, term.0, term.1)
+    });
+    assert(even_ip1 == edwards_add(even_i.0, even_i.1, term.0, term.1));
+
+    // (scaled + even_i) + term == scaled + (even_i + term)
+    axiom_edwards_add_associative(scaled.0, scaled.1, even_i.0, even_i.1, term.0, term.1);
+    assert(edwards_add(pi.0, pi.1, term.0, term.1) == edwards_add(
+        scaled.0,
+        scaled.1,
+        even_ip1.0,
+        even_ip1.1,
+    ));
+    assert(edwards_add(scaled.0, scaled.1, even_ip1.0, even_ip1.1) == pippenger_partial(
+        digits,
+        i + 1,
+        B,
+    ));
+}
+
+pub proof fn lemma_pippenger_partial_step_odd(digits: Seq<i8>, i: int, B: (nat, nat))
+    requires
+        0 <= i,
+        i % 2 == 1,
+    ensures
+        pippenger_partial(digits, i + 1, B) == pippenger_partial(digits, i, B),
+{
+    reveal(pippenger_partial);
+    let odd_sum = odd_sum_up_to(digits, 64, B);
+    let scaled = edwards_scalar_mul(odd_sum, 16);
+    lemma_even_sum_up_to_step_odd(digits, i, B);
+    assert(pippenger_partial(digits, i, B) == {
+        let even_sum = even_sum_up_to(digits, i, B);
+        edwards_add(scaled.0, scaled.1, even_sum.0, even_sum.1)
+    });
+    assert(pippenger_partial(digits, i + 1, B) == {
+        let even_sum = even_sum_up_to(digits, i + 1, B);
+        edwards_add(scaled.0, scaled.1, even_sum.0, even_sum.1)
+    });
 }
 
 // =============================================================================

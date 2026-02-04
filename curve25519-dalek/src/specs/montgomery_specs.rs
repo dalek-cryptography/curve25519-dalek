@@ -476,4 +476,41 @@ pub open spec fn spec_elligator_encode(r: nat) -> nat {
     }
 }
 
+/// Montgomery ladder invariant used in the proof of `mul_bits_be`.
+///
+/// x0 and x1 represent consecutive scalar multiples of P:
+/// - When `bit` is true:  x0 = [k+1]P, x1 = [k]P
+/// - When `bit` is false: x0 = [k]P,   x1 = [k+1]P
+#[verifier::opaque]
+pub open spec fn montgomery_ladder_invariant(
+    x0: crate::montgomery::ProjectivePoint,
+    x1: crate::montgomery::ProjectivePoint,
+    P: MontgomeryAffine,
+    k: nat,
+    bit: bool,
+) -> bool {
+    &&& projective_represents_montgomery_or_infinity(
+        x0,
+        montgomery_scalar_mul(
+            P,
+            if bit {
+                k + 1
+            } else {
+                k
+            },
+        ),
+    )
+    &&& projective_represents_montgomery_or_infinity(
+        x1,
+        montgomery_scalar_mul(
+            P,
+            if bit {
+                k
+            } else {
+                k + 1
+            },
+        ),
+    )
+}
+
 } // verus!

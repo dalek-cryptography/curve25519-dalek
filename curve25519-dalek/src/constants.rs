@@ -201,6 +201,16 @@ pub const RISTRETTO_BASEPOINT_TABLE: &'static RistrettoBasepointTable = unsafe {
 };
 
 } // verus!
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_edwards_d2_is_double_d() {
+        let d2 = &EDWARDS_D + &EDWARDS_D;
+        assert_eq!(d2, EDWARDS_D2);
+    }
+}
 // #[cfg(test)]
 // mod test {
 //     use crate::constants;

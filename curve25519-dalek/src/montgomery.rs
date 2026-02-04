@@ -406,43 +406,6 @@ impl MontgomeryPoint {
     }
     </ORIGINAL CODE>
     */
-    /// Montgomery ladder invariant used in the proof of `mul_bits_be`.
-    ///
-    /// x0 and x1 represent consecutive scalar multiples of P:
-    /// - When `bit` is true:  x0 = [k+1]P, x1 = [k]P
-    /// - When `bit` is false: x0 = [k]P,   x1 = [k+1]P
-    #[verifier::opaque]
-    pub open spec fn ladder_invariant(
-        x0: ProjectivePoint,
-        x1: ProjectivePoint,
-        P: MontgomeryAffine,
-        k: nat,
-        bit: bool,
-    ) -> bool {
-        &&& projective_represents_montgomery_or_infinity(
-            x0,
-            montgomery_scalar_mul(
-                P,
-                if bit {
-                    k + 1
-                } else {
-                    k
-                },
-            ),
-        )
-        &&& projective_represents_montgomery_or_infinity(
-            x1,
-            montgomery_scalar_mul(
-                P,
-                if bit {
-                    k
-                } else {
-                    k + 1
-                },
-            ),
-        )
-    }
-
     /// Version of mul_bits_be that takes a slice of bits instead of an iterator.
     /// This version uses a while loop instead of for-loop to be Verus-compatible.
     ///
@@ -610,8 +573,8 @@ impl MontgomeryPoint {
                 }
 
                 // Establish the ladder invariant at i = 0 (k = 0, prev_bit = false).
-                reveal(MontgomeryPoint::ladder_invariant);
-                assert(MontgomeryPoint::ladder_invariant(x0, x1, P, 0, false));
+                reveal(montgomery_ladder_invariant);
+                assert(montgomery_ladder_invariant(x0, x1, P, 0, false));
             }
         }
         // VERIFICATION NOTE: refactoring lemma calls into `assert...by` style breaks rlimit.
@@ -638,7 +601,7 @@ impl MontgomeryPoint {
                     } else {
                         let P = canonical_montgomery_lift(u0);
                         let k = bits_be_to_nat(bits, i as int);
-                        Self::ladder_invariant(x0, x1, P, k, prev_bit)
+                        montgomery_ladder_invariant(x0, x1, P, k, prev_bit)
                     }
                 }),
             decreases bits.len() - i,
@@ -672,7 +635,13 @@ impl MontgomeryPoint {
                     let P = canonical_montgomery_lift(u0);
 
                     // Representation facts from the loop invariant (before the swap).
-                    assert(Self::ladder_invariant(x0_before_swap, x1_before_swap, P, k, prev_bit));
+                    assert(montgomery_ladder_invariant(
+                        x0_before_swap,
+                        x1_before_swap,
+                        P,
+                        k,
+                        prev_bit,
+                    ));
 
                     // Determine whether the swap occurred: swap iff (prev_bit ^ cur_bit)
                     let swapped_now = prev_bit ^ cur_bit;
@@ -707,7 +676,7 @@ impl MontgomeryPoint {
                             k,
                             prev_bit,
                         );
-                        assert(Self::ladder_invariant(
+                        assert(montgomery_ladder_invariant(
                             x1_before_swap,
                             x0_before_swap,
                             P,
@@ -723,7 +692,7 @@ impl MontgomeryPoint {
                             assert(x1.U == x0_before_swap.U);
                             assert(x1.W == x0_before_swap.W);
                         }
-                        assert(Self::ladder_invariant(x0, x1, P, k, cur_bit));
+                        assert(montgomery_ladder_invariant(x0, x1, P, k, cur_bit));
                     } else {
                         // swapped_now == false means cur_bit == prev_bit, and no swap occurred.
                         assert(cur_bit == prev_bit) by {
@@ -737,7 +706,7 @@ impl MontgomeryPoint {
                             assert(x1.U == x1_before_swap.U);
                             assert(x1.W == x1_before_swap.W);
                         }
-                        assert(Self::ladder_invariant(x0, x1, P, k, cur_bit));
+                        assert(montgomery_ladder_invariant(x0, x1, P, k, cur_bit));
                     }
 
                 }
@@ -753,8 +722,8 @@ impl MontgomeryPoint {
                     let P = canonical_montgomery_lift(u0);
                     let k = bits_be_to_nat(bits, i as int);
                     // After the conditional swap, (x0, x1) satisfy ladder_invariant with `cur_bit`.
-                    assert(Self::ladder_invariant(x0, x1, P, k, cur_bit));
-                    reveal(MontgomeryPoint::ladder_invariant);
+                    assert(montgomery_ladder_invariant(x0, x1, P, k, cur_bit));
+                    reveal(montgomery_ladder_invariant);
                     if cur_bit {
                         assert(projective_represents_montgomery_or_infinity(
                             x0,
@@ -840,7 +809,7 @@ impl MontgomeryPoint {
                     let k_next = bits_be_to_nat(bits, i as int);
                     // k_next == 2*k + b
                     assert(k_next == b + 2nat * k);
-                    reveal(MontgomeryPoint::ladder_invariant);
+                    reveal(montgomery_ladder_invariant);
                     if prev_bit {
                         // x0 = [k_next+1]P and x1 = [k_next]P
                         assert(cur_bit);
@@ -886,7 +855,7 @@ impl MontgomeryPoint {
                             montgomery_scalar_mul(P, k_next + 1),
                         ));
                     }
-                    assert(Self::ladder_invariant(x0, x1, P, k_next, prev_bit));
+                    assert(montgomery_ladder_invariant(x0, x1, P, k_next, prev_bit));
                 }
             }
         }
@@ -931,7 +900,7 @@ impl MontgomeryPoint {
                 // From loop invariant, we have projective_represents_montgomery_or_infinity
                 // for x0_before_final_swap or x1_before_final_swap (depending on saved_prev_bit).
                 // Note: use saved_prev_bit since prev_bit may have been zeroized
-                reveal(MontgomeryPoint::ladder_invariant);
+                reveal(montgomery_ladder_invariant);
                 if saved_prev_bit {
                     assert(x0.U == x1_before_final_swap.U);
                     assert(x0.W == x1_before_final_swap.W);
@@ -1755,7 +1724,20 @@ fn differential_add_and_double(
         if u_diff == 0 && spec_projective_u_coordinate(*old(P)) == 0
             && spec_projective_u_coordinate(*old(Q)) == 0 {
             // Q.W includes a factor of u_diff, so Q is ∞ and u(Q)=0.
-            assert(spec_field_element(&Q.W) == 0);
+            assert(spec_field_element(&Q.W) == 0) by {
+                assert(Q.W == t17);
+                assert(spec_field_element(&Q.W) == spec_field_element(&t17));
+                assert(spec_field_element(&t17) == math_field_mul(
+                    u_diff,
+                    spec_field_element(&t12),
+                ));
+                // u_diff == 0 implies u_diff % p() == 0
+                p_gt_2();
+                lemma_small_mod(0nat, p());
+                assert(u_diff % p() == 0);
+                lemma_field_mul_zero_left(u_diff, spec_field_element(&t12));
+                assert(math_field_mul(u_diff, spec_field_element(&t12)) == 0);
+            };
             assert(spec_projective_u_coordinate(*Q) == 0);
 
             // For P, u(old(P))=0 implies either W=0 or U=0, which makes (U+W)^2 == (U-W)^2 and hence P.W=0.

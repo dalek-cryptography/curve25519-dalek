@@ -153,6 +153,63 @@ pub proof fn lemma_negation_preserves_curve(x: nat, y: nat)
     };
 }
 
+/// Lemma: Negation preserves extended Edwards point validity
+///
+/// If (X, Y, Z, T) is a valid extended Edwards point, then (-X, Y, Z, -T) is also valid.
+/// This is because:
+/// 1. Z ≠ 0 is unchanged
+/// 2. The projective curve equation uses X² and (-X)² = X²
+/// 3. The Segre relation: (-X)·Y = -(X·Y) = -(Z·T) = Z·(-T)
+pub proof fn lemma_negation_preserves_extended_validity(x: nat, y: nat, z: nat, t: nat)
+    requires
+        math_is_valid_extended_edwards_point(x, y, z, t),
+    ensures
+        math_is_valid_extended_edwards_point(math_field_neg(x), y, z, math_field_neg(t)),
+{
+    let p = p();
+    p_gt_2();
+    let neg_x = math_field_neg(x);
+    let neg_t = math_field_neg(t);
+
+    // From precondition: z != 0, curve equation holds, x*y = z*t
+
+    // 1) Z ≠ 0 is unchanged (z remains the same)
+
+    // 2) Projective curve equation: uses X², and (-X)² = X²
+    assert(math_on_edwards_curve_projective(neg_x, y, z)) by {
+        // Key insight: (-x)² = x²
+        assert(math_field_square(neg_x) == math_field_square(x)) by {
+            lemma_neg_square_eq(x);
+            lemma_square_mod_noop(x);
+        };
+        // With (-x)² = x², the projective curve equation is unchanged
+    };
+
+    // 3) Segre relation: (-X)·Y = Z·(-T)
+    // Need to prove: math_field_mul(neg_x, y) == math_field_mul(z, neg_t)
+    assert(math_field_mul(neg_x, y) == math_field_mul(z, neg_t)) by {
+        // From precondition: x*y = z*t
+        let xy = math_field_mul(x, y);
+        let zt = math_field_mul(z, t);
+        assert(xy == zt);
+
+        // (-x)*y = -(x*y)
+        assert(math_field_mul(neg_x, y) == math_field_neg(xy)) by {
+            lemma_field_mul_neg(y, x);  // y * neg(x) = neg(y * x)
+            lemma_field_mul_comm(neg_x, y);
+            lemma_field_mul_comm(y, x);
+        };
+
+        // z*(-t) = -(z*t)
+        assert(math_field_mul(z, neg_t) == math_field_neg(zt)) by {
+            lemma_field_mul_neg(z, t);
+        };
+
+        // neg(x*y) = neg(z*t) since x*y = z*t
+        assert(math_field_neg(xy) == math_field_neg(zt));
+    };
+}
+
 // =============================================================================
 // Extended Coordinates Validity
 // =============================================================================
@@ -1639,6 +1696,98 @@ pub proof fn lemma_negate_affine_niels_is_edwards_neg(pt: AffineNielsPoint)
     }
 
     // Therefore (x', y') = (-x, y) = edwards_neg((x, y))
+}
+
+/// Lemma: When a ProjectiveNielsPoint corresponds to an EdwardsPoint,
+/// their affine representations are equal.
+///
+/// ## Mathematical Proof
+///
+/// Given `projective_niels_corresponds_to_edwards(niels, point)`:
+/// - y_plus_x == Y + X
+/// - y_minus_x == Y - X
+/// - niels_z == Z
+///
+/// From `projective_niels_point_as_affine_edwards`:
+/// - x_proj = (y_plus_x - y_minus_x) / 2 = ((Y+X) - (Y-X)) / 2 = 2X / 2 = X
+/// - y_proj = (y_plus_x + y_minus_x) / 2 = ((Y+X) + (Y-X)) / 2 = 2Y / 2 = Y
+/// - x_affine = x_proj / z = X / Z
+/// - y_affine = y_proj / z = Y / Z
+///
+/// This equals `edwards_point_as_affine(point) = (X/Z, Y/Z)`.
+pub proof fn lemma_projective_niels_affine_equals_edwards_affine(
+    niels: crate::backend::serial::curve_models::ProjectiveNielsPoint,
+    point: crate::edwards::EdwardsPoint,
+)
+    requires
+        projective_niels_corresponds_to_edwards(niels, point),
+        is_valid_edwards_point(point),
+    ensures
+        projective_niels_point_as_affine_edwards(niels) == edwards_point_as_affine(point),
+{
+    // Extract field values from correspondence
+    let x = spec_field_element(&point.X);
+    let y = spec_field_element(&point.Y);
+    let z = spec_field_element(&point.Z);
+
+    let y_plus_x = spec_field_element(&niels.Y_plus_X);
+    let y_minus_x = spec_field_element(&niels.Y_minus_X);
+    let niels_z = spec_field_element(&niels.Z);
+
+    assert(y_plus_x == math_field_add(y, x)) by {
+        reveal(projective_niels_corresponds_to_edwards);
+    }
+    assert(y_minus_x == math_field_sub(y, x)) by {
+        reveal(projective_niels_corresponds_to_edwards);
+    }
+    assert(niels_z == z) by {
+        reveal(projective_niels_corresponds_to_edwards);
+    }
+
+    let inv2 = math_field_inv(2);
+
+    // Step 1: Recover X in projective coordinates.
+    let diff = math_field_sub(y_plus_x, y_minus_x);
+    let x_proj = math_field_mul(diff, inv2);
+    assert(diff == math_field_mul(2, x)) by {
+        lemma_field_add_sub_recover_double(y, x);
+    }
+    assert(x_proj == x % p()) by {
+        // (2x) * inv(2) = x (mod p)
+        lemma_field_halve_double(x);
+    }
+
+    // Step 2: Recover Y in projective coordinates.
+    let sum = math_field_add(y_plus_x, y_minus_x);
+    let y_proj = math_field_mul(sum, inv2);
+    assert(sum == math_field_mul(2, y)) by {
+        lemma_field_add_add_recover_double(y, x);
+    }
+    assert(y_proj == y % p()) by {
+        // (2y) * inv(2) = y (mod p)
+        lemma_field_halve_double(y);
+    }
+
+    // Step 3: x_affine = x_proj / z = x / z (since x_proj == x % p and x < p)
+    // y_affine = y_proj / z = y / z
+    // This matches edwards_point_as_affine(point) = (x/z, y/z)
+
+    // spec_field_element returns (val % p) which is always < p
+    assert(x < p()) by {
+        p_gt_2();
+        lemma_mod_bound(spec_field_element_as_nat(&point.X) as int, p() as int);
+    }
+    assert(y < p()) by {
+        p_gt_2();
+        lemma_mod_bound(spec_field_element_as_nat(&point.Y) as int, p() as int);
+    }
+
+    assert(x_proj == x) by {
+        lemma_small_mod(x, p());
+    }
+    assert(y_proj == y) by {
+        lemma_small_mod(y, p());
+    }
 }
 
 } // verus!

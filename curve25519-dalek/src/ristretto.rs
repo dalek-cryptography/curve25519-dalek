@@ -1731,8 +1731,8 @@ impl vstd::std_specs::ops::NegSpecImpl for &RistrettoPoint {
     }
 
     open spec fn neg_req(self) -> bool {
-        // Requires limb bounds on X and T for field element negation
-        fe51_limbs_bounded(&self.0.X, 52) && fe51_limbs_bounded(&self.0.T, 52)
+        // Strengthened to match EdwardsPoint::neg_req
+        is_well_formed_edwards_point(self.0)
     }
 
     open spec fn neg_spec(self) -> RistrettoPoint {
@@ -1748,8 +1748,8 @@ impl vstd::std_specs::ops::NegSpecImpl for RistrettoPoint {
     }
 
     open spec fn neg_req(self) -> bool {
-        // Requires limb bounds on X and T for field element negation
-        fe51_limbs_bounded(&self.0.X, 52) && fe51_limbs_bounded(&self.0.T, 52)
+        // Strengthened to match EdwardsPoint::neg_req
+        is_well_formed_edwards_point(self.0)
     }
 
     open spec fn neg_spec(self) -> RistrettoPoint {

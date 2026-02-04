@@ -1269,7 +1269,8 @@ impl EdwardsPoint {
         proof {
             // Weaken from 52-bounded (EdwardsPoint invariant) to 54-bounded (sub/mul precondition)
             lemma_edwards_point_weaken_to_54(self);
-            assume(fe51_limbs_bounded(&constants::EDWARDS_D2, 54));  // for T2d
+            // EDWARDS_D2 is 54-bounded (actually 51-bounded)
+            lemma_edwards_d2_limbs_bounded_54();
         }
 
         let result = ProjectiveNielsPoint {
@@ -1280,12 +1281,75 @@ impl EdwardsPoint {
         };
 
         proof {
-            // postconditions:
-            assume(projective_niels_corresponds_to_edwards(result, *self));
-            assume(fe51_limbs_bounded(&result.Y_plus_X, 54));
-            assume(fe51_limbs_bounded(&result.Y_minus_X, 54));
-            assume(fe51_limbs_bounded(&result.Z, 54));
-            assume(fe51_limbs_bounded(&result.T2d, 54));
+            // === Limb bounds proofs ===
+            // Y_plus_X: add of 52-bounded gives 53-bounded, weaken to 54
+            assert(fe51_limbs_bounded(&spec_add_fe51_limbs(&self.Y, &self.X), 53)) by {
+                lemma_add_bounds_propagate(&self.Y, &self.X, 52);
+            }
+            assert(fe51_limbs_bounded(&result.Y_plus_X, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&result.Y_plus_X, 53, 54);
+            }
+
+            // Y_minus_X: sub postcondition guarantees 54-bounded (nothing to do)
+            assert(fe51_limbs_bounded(&result.Y_minus_X, 54));
+
+            // Z: copy of 52-bounded, weaken to 54
+            assert(fe51_limbs_bounded(&result.Z, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&result.Z, 52, 54);
+            }
+
+            // T2d: mul postcondition guarantees 54-bounded (nothing to do)
+            assert(fe51_limbs_bounded(&result.T2d, 54));
+
+            // === Correspondence proof ===
+            // Need: projective_niels_corresponds_to_edwards(result, *self)
+            // Which requires (from the spec):
+            //   y_plus_x == math_field_add(y, x)
+            //   y_minus_x == math_field_sub(y, x)
+            //   niels_z == z
+            //   t2d == math_field_mul(math_field_mul(2, d), t)
+
+            // Extract field element values for readability
+            let x = spec_field_element(&self.X);
+            let y = spec_field_element(&self.Y);
+            let z = spec_field_element(&self.Z);
+            let t = spec_field_element(&self.T);
+            let d = spec_field_element(&crate::backend::serial::u64::constants::EDWARDS_D);
+            let y_plus_x = spec_field_element(&result.Y_plus_X);
+            let y_minus_x = spec_field_element(&result.Y_minus_X);
+            let niels_z = spec_field_element(&result.Z);
+            let t2d = spec_field_element(&result.T2d);
+
+            // 1. y_plus_x == math_field_add(y, x) -- from add postcondition
+            assert(y_plus_x == math_field_add(y, x));
+
+            // 2. y_minus_x == math_field_sub(y, x) -- from sub postcondition
+            assert(y_minus_x == math_field_sub(y, x));
+
+            // 3. niels_z == z -- trivial since Z is copied
+            assert(niels_z == z);
+
+            // 4. t2d == math_field_mul(math_field_mul(2, d), t)
+            assert(t2d == math_field_mul(math_field_mul(2, d), t)) by {
+                // From mul postcondition: t2d == t * EDWARDS_D2
+                assert(t2d == math_field_mul(t, spec_field_element(&constants::EDWARDS_D2)));
+
+                // EDWARDS_D2 equals 2*d in the field.
+                assert(spec_field_element(&constants::EDWARDS_D2) == math_field_mul(2, d)) by {
+                    axiom_edwards_d2_is_2d();
+                }
+
+                // Rewrite and commute.
+                assert(t2d == math_field_mul(t, math_field_mul(2, d)));
+                lemma_field_mul_comm(t, math_field_mul(2, d));
+                assert(math_field_mul(t, math_field_mul(2, d)) == math_field_mul(
+                    math_field_mul(2, d),
+                    t,
+                ));
+            }
+
+            // All four conditions are satisfied, so correspondence holds
+            assert(projective_niels_corresponds_to_edwards(result, *self));
         }
 
         result
@@ -1363,6 +1427,7 @@ impl EdwardsPoint {
     /// model does not retain sign information.
     pub fn to_montgomery(&self) -> (result: MontgomeryPoint)
         requires
+            is_valid_edwards_point(*self),  // Gives us z != 0 for birational map
             fe51_limbs_bounded(&self.X, 54),
             // Y and Z need 51-bit bounds so U = Z + Y is 52-bit bounded (< 54 for mul)
             fe51_limbs_bounded(&self.Y, 51) && fe51_limbs_bounded(&self.Z, 51),
@@ -1381,6 +1446,11 @@ impl EdwardsPoint {
             assert(fe51_limbs_bounded(&self.Y, 54));
             assert(fe51_limbs_bounded(&self.Z, 54));
         }
+
+        // Ghost values for proof
+        let ghost z = spec_field_element(&self.Z);
+        let ghost y = spec_field_element(&self.Y);
+
         let U = &self.Z + &self.Y;
         let W = &self.Z - &self.Y;
         // W bounded by 54 from sub() postcondition
@@ -1390,10 +1460,109 @@ impl EdwardsPoint {
             assert((1u64 << 52) < (1u64 << 54)) by (bit_vector);
             assert(fe51_limbs_bounded(&U, 54));
         }
-        let u = &U * &W.invert();
-        let result = MontgomeryPoint(u.as_bytes());
+
+        // Ghost: track field element values through operations
+        let ghost u_val = spec_field_element(&U);
+        let ghost w_val = spec_field_element(&W);
         proof {
-            assume(montgomery_corresponds_to_edwards(result, *self));
+            // Operation postconditions give us:
+            assert(u_val == math_field_add(z, y));  // add postcondition
+            assert(w_val == math_field_sub(z, y));  // sub postcondition
+        }
+
+        /* ORIGINAL CODE:
+         *   let u = &U * &W.invert();
+         *   let result = MontgomeryPoint(u.as_bytes());
+         *
+         * Refactor: split `invert()`/`as_bytes()` into named intermediates to use their
+         * postconditions locally
+         */
+        let W_inv = W.invert();
+        let ghost w_inv_val = spec_field_element(&W_inv);
+        proof {
+            // invert postcondition
+            assert(w_inv_val == math_field_inv(w_val));
+        }
+
+        let u = &U * &W_inv;
+        let ghost u_field = spec_field_element(&u);
+        proof {
+            // mul postcondition: u_field = (Z+Y) * inv(Z-Y)
+            assert(u_field == math_field_mul(u_val, w_inv_val));
+            assert(u_field == math_field_mul(
+                math_field_add(z, y),
+                math_field_inv(math_field_sub(z, y)),
+            ));
+        }
+
+        let u_bytes = u.as_bytes();
+        let result = MontgomeryPoint(u_bytes);
+
+        proof {
+            // === Correspondence proof ===
+            // Need: montgomery_corresponds_to_edwards(result, *self)
+            // Step 1: Connect spec_montgomery(result) to u_field
+            // as_bytes postcondition: bytes32_to_nat(&u.as_bytes()) == spec_field_element(&u)
+            assert(bytes32_to_nat(&u_bytes) == spec_field_element(&u));
+
+            // spec_montgomery(result) = spec_field_element_from_bytes(&result.0)
+            //                         = (bytes32_to_nat(&result.0) % pow2(255)) % p()
+            // Since spec_field_element(&u) < p() < pow2(255), double mod is identity
+            assert(spec_field_element(&u) < p()) by {
+                p_gt_2();
+                lemma_mod_bound(spec_field_element_as_nat(&u) as int, p() as int);
+            }
+            assert(p() < pow2(255)) by {
+                pow255_gt_19();  // establishes p() < pow2(255)
+            }
+
+            // u_field = spec_field_element(&u) < p() < pow2(255)
+            // So: spec_field_element(&u) % pow2(255) = spec_field_element(&u)
+            //     spec_field_element(&u) % p() = spec_field_element(&u)
+            assert(spec_field_element_from_bytes(&result.0) == u_field) by {
+                lemma_small_mod(u_field, pow2(255));
+                lemma_small_mod(u_field, p());
+            }
+
+            // Step 2: Get affine y-coordinate
+            let (_x_affine, y_affine) = edwards_point_as_affine(*self);
+            assert(y_affine == math_field_mul(y, math_field_inv(z)));
+
+            // Step 3: Establish the birational map precondition.
+            // Since `is_valid_edwards_point(*self)` implies `z != 0` and `z < p()`,
+            // we get `z % p() != 0`.
+            assert(z % p() != 0) by {
+                assert(z != 0);  // From is_valid_edwards_point -> math_is_valid_extended_edwards_point
+                lemma_small_mod(z, p());  // z < p() implies z % p() == z
+            }
+            // Step 4: Connect the formulas
+            // u_field = (z+y) * inv(z-y)  [from operations above]
+            // By axiom: this equals (1+y_affine) * inv(1-y_affine)
+            let one_plus_y = math_field_add(1, y_affine);
+            let one_minus_y = math_field_sub(1, y_affine);
+            let affine_result = math_field_mul(one_plus_y, math_field_inv(one_minus_y));
+            assert(u_field == affine_result) by {
+                axiom_birational_edwards_montgomery(y, z);
+            }
+
+            // Step 5: Match the spec
+            // montgomery_corresponds_to_edwards requires:
+            //   if denominator == 0: u == 0  (identity case)
+            //   else: u == (1+y)/(1-y)
+            let denominator = math_field_sub(1, y_affine);
+            if denominator == 0 {
+                // Identity case: y_affine = 1, meaning Y = Z
+                // one_minus_y == denominator == 0
+                // math_field_inv(0) == 0 by definition
+                // affine_result = math_field_mul(one_plus_y, 0) == 0
+                assert(one_minus_y == 0);  // same as denominator
+                assert(math_field_inv(one_minus_y) == 0);  // math_field_inv(0) = 0
+                assert(affine_result == 0) by {
+                    lemma_field_mul_zero_right(one_plus_y, math_field_inv(one_minus_y));
+                }
+                assert(u_field == 0);
+            }
+            assert(montgomery_corresponds_to_edwards(result, *self));
         }
         result
     }
@@ -1663,8 +1832,7 @@ impl EdwardsPoint {
             assert(fe51_limbs_bounded(&proj.X, 52) && fe51_limbs_bounded(&proj.Y, 52)
                 && fe51_limbs_bounded(&proj.Z, 52));
             // sum_of_limbs_bounded follows from 52-bounded: 2^52 + 2^52 = 2^53 < u64::MAX
-            assert((1u64 << 52) + (1u64 << 52) < u64::MAX) by (bit_vector);
-            assume(sum_of_limbs_bounded(&proj.X, &proj.Y, u64::MAX));
+            lemma_sum_of_limbs_bounded_from_fe51_bounded(&proj.X, &proj.Y, 52);
         }
 
         let doubled = proj.double();
@@ -1731,42 +1899,78 @@ impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
         /* ORIGINAL CODE
         (self + &other.as_projective_niels()).as_extended()
         */
+        // From is_well_formed_edwards_point preconditions:
+        // - edwards_point_limbs_bounded(*self) and (*other)
+        // - sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX) and for other
         assert(sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX));
+        assert(edwards_point_limbs_bounded(*other));
+        assert(sum_of_limbs_bounded(&other.Y, &other.X, u64::MAX));
 
         let other_niels = other.as_projective_niels();
 
         proof {
-            // Preconditions for EdwardsPoint + ProjectiveNielsPoint addition
-            // The limb bounds for self are inherited from the outer function's add_req
-            // We need to assume the sum_of_limbs_bounded precondition
-            assert(sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX));
-
-            // Assume limb bounds for other_niels (from as_projective_niels postconditions)
-            assume(fe51_limbs_bounded(&other_niels.Y_plus_X, 54));
-            assume(fe51_limbs_bounded(&other_niels.Y_minus_X, 54));
-            assume(fe51_limbs_bounded(&other_niels.Z, 54));
-            assume(fe51_limbs_bounded(&other_niels.T2d, 54));
+            // Limb bounds for other_niels follow from as_projective_niels postconditions
+            // (which we proved earlier in this file)
+            assert(fe51_limbs_bounded(&other_niels.Y_plus_X, 54));
+            assert(fe51_limbs_bounded(&other_niels.Y_minus_X, 54));
+            assert(fe51_limbs_bounded(&other_niels.Z, 54));
+            assert(fe51_limbs_bounded(&other_niels.T2d, 54));
         }
 
         let sum = self + &other_niels;
 
         proof {
-            // preconditions for CompletedPoint.as_extended()
-            assume(is_valid_completed_point(sum));
-            assume(fe51_limbs_bounded(&sum.X, 54) && fe51_limbs_bounded(&sum.Y, 54)
-                && fe51_limbs_bounded(&sum.Z, 54) && fe51_limbs_bounded(&sum.T, 54));
+            // The inner add operation (EdwardsPoint + ProjectiveNielsPoint) → CompletedPoint
+            // has postconditions that give us validity and limb bounds.
+            // These follow from the ensures clause of the inner add.
+            assert(is_valid_completed_point(sum));
+            assert(fe51_limbs_bounded(&sum.X, 54));
+            assert(fe51_limbs_bounded(&sum.Y, 54));
+            assert(fe51_limbs_bounded(&sum.Z, 54));
+            assert(fe51_limbs_bounded(&sum.T, 54));
         }
 
         let result = sum.as_extended();
 
         proof {
-            // CompletedPoint::as_extended ensures is_well_formed_edwards_point(result)
-            // Assume affine semantics postcondition
-            assume({
-                let (x1, y1) = edwards_point_as_affine(*self);
-                let (x2, y2) = edwards_point_as_affine(*other);
-                edwards_point_as_affine(result) == edwards_add(x1, y1, x2, y2)
-            });
+            // CompletedPoint::as_extended postconditions give us:
+            // - is_well_formed_edwards_point(result)
+            // - edwards_point_as_affine(result) == completed_point_as_affine_edwards(sum)
+            assert(is_well_formed_edwards_point(result));
+            assert(edwards_point_as_affine(result) == completed_point_as_affine_edwards(sum));
+
+            // The inner add postcondition also gives us:
+            // - completed_point_as_affine_edwards(sum) == spec_edwards_add_projective_niels(self, other_niels)
+            assert(completed_point_as_affine_edwards(sum) == spec_edwards_add_projective_niels(
+                *self,
+                other_niels,
+            ));
+
+            // The as_projective_niels postcondition gives us correspondence between other and other_niels
+            assert(projective_niels_corresponds_to_edwards(other_niels, *other));
+
+            // Now we need to connect spec_edwards_add_projective_niels to edwards_add
+            // Use the lemma that shows the affine representations are equal
+            use crate::lemmas::edwards_lemmas::curve_equation_lemmas::lemma_projective_niels_affine_equals_edwards_affine;
+            lemma_projective_niels_affine_equals_edwards_affine(other_niels, *other);
+            assert(projective_niels_point_as_affine_edwards(other_niels) == edwards_point_as_affine(
+                *other,
+            ));
+
+            // From spec_edwards_add_projective_niels definition:
+            // spec_edwards_add_projective_niels(self, other_niels) =
+            //   edwards_add(edwards_point_as_affine(self), projective_niels_point_as_affine_edwards(other_niels))
+            // Since projective_niels_point_as_affine_edwards(other_niels) == edwards_point_as_affine(other):
+            // spec_edwards_add_projective_niels(self, other_niels) = edwards_add(x1, y1, x2, y2)
+            let (x1, y1) = edwards_point_as_affine(*self);
+            let (x2, y2) = edwards_point_as_affine(*other);
+            assert(spec_edwards_add_projective_niels(*self, other_niels) == edwards_add(
+                x1,
+                y1,
+                x2,
+                y2,
+            ));
+            assert(edwards_point_as_affine(result) == edwards_add(x1, y1, x2, y2));
         }
 
         result
@@ -2023,8 +2227,9 @@ impl vstd::std_specs::ops::NegSpecImpl for &EdwardsPoint {
     }
 
     open spec fn neg_req(self) -> bool {
-        // Preconditions: limbs must be bounded for field element negation
-        fe51_limbs_bounded(&self.X, 52) && fe51_limbs_bounded(&self.T, 52)
+        // Strengthened precondition: require well-formed point (validity + bounds + sum bounded)
+        // This enables proving all postconditions without assumes
+        is_well_formed_edwards_point(*self)
     }
 
     open spec fn neg_spec(self) -> EdwardsPoint {
@@ -2039,7 +2244,7 @@ impl<'a> Neg for &'a EdwardsPoint {
     fn neg(self) -> (result:
         EdwardsPoint)
     // requires clause in NegSpecImpl for &EdwardsPoint above:
-    //   fe51_limbs_bounded(&self.X, 52) && fe51_limbs_bounded(&self.T, 52)
+    //   is_well_formed_edwards_point(*self)
 
         ensures
             is_well_formed_edwards_point(result),
@@ -2059,10 +2264,61 @@ impl<'a> Neg for &'a EdwardsPoint {
 
         assert(1u64 << 52 < 1u64 << 54) by (bit_vector);
 
+        // Store ghost values before negation
+        let ghost old_x = spec_field_element(&self.X);
+        let ghost old_y = spec_field_element(&self.Y);
+        let ghost old_z = spec_field_element(&self.Z);
+        let ghost old_t = spec_field_element(&self.T);
+
         let r = EdwardsPoint { X: Neg::neg(&self.X), Y: self.Y, Z: self.Z, T: Neg::neg(&self.T) };
+
         proof {
-            assume(is_well_formed_edwards_point(r));
-            assume(edwards_point_as_affine(r) == edwards_neg(edwards_point_as_affine(*self)));
+            // Ghost values for r
+            let new_x = spec_field_element(&r.X);
+            let new_y = spec_field_element(&r.Y);
+            let new_z = spec_field_element(&r.Z);
+            let new_t = spec_field_element(&r.T);
+
+            // From FieldElement51::neg postconditions:
+            // - new_x = math_field_neg(old_x)
+            // - new_t = math_field_neg(old_t)
+            // - X and T limbs are 52-bounded
+            assert(new_x == math_field_neg(old_x));
+            assert(new_t == math_field_neg(old_t));
+            assert(new_y == old_y);  // Y unchanged
+            assert(new_z == old_z);  // Z unchanged
+
+            // 1. Prove edwards_point_limbs_bounded(r)
+            // X and T are 52-bounded from neg postcondition
+            assert(fe51_limbs_bounded(&r.X, 52));
+            assert(fe51_limbs_bounded(&r.T, 52));
+            // Y and Z bounds from precondition: is_well_formed_edwards_point implies edwards_point_limbs_bounded
+            assert(fe51_limbs_bounded(&r.Y, 52));  // Y unchanged, bounded from precondition
+            assert(fe51_limbs_bounded(&r.Z, 52));  // Z unchanged, bounded from precondition
+
+            // 2. Prove sum_of_limbs_bounded(&r.Y, &r.X, u64::MAX)
+            lemma_sum_of_limbs_bounded_from_fe51_bounded(&r.Y, &r.X, 52);
+
+            // 3. Prove is_valid_edwards_point(r)
+            // Use lemma_negation_preserves_extended_validity: (-X, Y, Z, -T) is valid if (X, Y, Z, T) is
+            lemma_negation_preserves_extended_validity(old_x, old_y, old_z, old_t);
+            assert(is_valid_edwards_point(r));
+
+            // 4. Prove affine semantics: edwards_point_as_affine(r) == edwards_neg(edwards_point_as_affine(*self))
+            let z_inv = math_field_inv(old_z);
+
+            // Key algebraic fact: (-x) * z_inv = -(x * z_inv)
+            assert(math_field_mul(new_x, z_inv) == math_field_neg(math_field_mul(old_x, z_inv)))
+                by {
+                // new_x = math_field_neg(old_x)
+                // math_field_mul(neg(a), b) = neg(math_field_mul(a, b)) by field algebra
+                lemma_field_mul_comm(new_x, z_inv);
+                lemma_field_mul_neg(z_inv, old_x);
+                lemma_field_mul_comm(z_inv, old_x);
+            };
+
+            // The affine coords match: (neg(x/z), y/z) = edwards_neg((x/z, y/z))
+            assert(edwards_point_as_affine(r) == edwards_neg(edwards_point_as_affine(*self)));
         }
         r
     }
@@ -2077,8 +2333,8 @@ impl vstd::std_specs::ops::NegSpecImpl for EdwardsPoint {
     }
 
     open spec fn neg_req(self) -> bool {
-        // Same requirements as &EdwardsPoint
-        fe51_limbs_bounded(&self.X, 52) && fe51_limbs_bounded(&self.T, 52)
+        // Same requirements as &EdwardsPoint - strengthened to require well-formed point
+        is_well_formed_edwards_point(self)
     }
 
     open spec fn neg_spec(self) -> EdwardsPoint {
@@ -3109,45 +3365,20 @@ impl BasepointTable for EdwardsBasepointTable {
                         a[i as int] as int,
                     ));
 
-                    // Unfold pippenger_partial(a@, i+1, B) - since i is even, even_sum_up_to includes term for i
-                    reveal(pippenger_partial);
-                    reveal(even_sum_up_to);
-                    // pippenger_partial(a@, i+1, B) = edwards_add(16*odd_sum, even_sum_up_to(a@, i+1, B))
-                    // where even_sum_up_to(a@, i+1, B) = edwards_add(even_sum_up_to(a@, i, B), term_i)
-                    // So pippenger_partial(a@, i+1, B) = edwards_add(pippenger_partial(a@, i, B), term_i)
-                    // ... using group-law associativity.
                     let term_i = edwards_scalar_mul_signed(table_base, a[i as int] as int);
                     assert(selected_affine == term_i);
 
                     let p_i = pippenger_partial(a@, i as int, B);
-                    let p_ip1 = pippenger_partial(a@, (i + 1) as int, B);
                     assert(old_P2_affine == p_i);
 
-                    let odd_sum = odd_sum_up_to(a@, 64, B);
-                    let scaled = edwards_scalar_mul(odd_sum, 16);
-                    let even_i = even_sum_up_to(a@, i as int, B);
-                    let even_ip1 = even_sum_up_to(a@, (i + 1) as int, B);
-                    assert(p_i == edwards_add(scaled.0, scaled.1, even_i.0, even_i.1));
-
-                    // Unfold even_sum_up_to at i+1 (since i is even in this branch).
-                    assert(even_ip1 == {
-                        let prev = even_sum_up_to(a@, i as int, B);
-                        edwards_add(prev.0, prev.1, term_i.0, term_i.1)
-                    });
-                    assert(even_ip1 == edwards_add(even_i.0, even_i.1, term_i.0, term_i.1));
-
-                    // Re-associate: (scaled + even_i) + term_i == scaled + (even_i + term_i).
-                    // p_i + term_i == scaled + even_ip1 == p_ip1
-                    assert(edwards_add(p_i.0, p_i.1, term_i.0, term_i.1) == p_ip1) by {
-                        axiom_edwards_add_associative(
-                            scaled.0,
-                            scaled.1,
-                            even_i.0,
-                            even_i.1,
-                            term_i.0,
-                            term_i.1,
-                        );
-                    }
+                    // Update step for the spec-side loop state, isolated in a small lemma to avoid rlimit.
+                    crate::lemmas::edwards_lemmas::mul_base_lemmas::lemma_pippenger_partial_step_even(
+                    a@, i as int, B);
+                    assert(edwards_add(p_i.0, p_i.1, term_i.0, term_i.1) == pippenger_partial(
+                        a@,
+                        (i + 1) as int,
+                        B,
+                    ));
 
                     // Our updated point is p_i + term_i, hence equals p_{i+1}.
                     assert(edwards_point_as_affine(P) == edwards_add(
@@ -3156,14 +3387,13 @@ impl BasepointTable for EdwardsBasepointTable {
                         term_i.0,
                         term_i.1,
                     ));
-                    assert(edwards_point_as_affine(P) == p_ip1);
+                    assert(edwards_point_as_affine(P) == pippenger_partial(a@, (i + 1) as int, B));
                 }
             } else {
                 proof {
                     // Odd index: pippenger_partial skips this index (even_sum_up_to skips odd)
-                    reveal(pippenger_partial);
-                    reveal(even_sum_up_to);
-                    // pippenger_partial(a@, i+1, B) == pippenger_partial(a@, i, B) when i is odd
+                    crate::lemmas::edwards_lemmas::mul_base_lemmas::lemma_pippenger_partial_step_odd(
+                    a@, i as int, B);
                 }
             }
         }

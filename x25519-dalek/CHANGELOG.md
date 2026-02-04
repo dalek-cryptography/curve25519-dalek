@@ -4,6 +4,10 @@ Entries are listed in reverse chronological order.
 
 # 3.x Series
 
+## 3.0.0-pre.6
+
+* Upgrade `rand_core` dependency to v0.10.0
+
 ## 3.0.0-pre.5
 
 * Upgrade `rand_core` dependency to v0.10.0-rc-6

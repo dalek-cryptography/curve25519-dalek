@@ -1385,32 +1385,60 @@ impl EdwardsPoint {
         proof {
             // Weaken from 52-bounded (EdwardsPoint invariant) to 54-bounded (invert/mul precondition)
             lemma_edwards_point_weaken_to_54(self);
+            // EDWARDS_D2 is 54-bounded (actually 51-bounded)
+            lemma_edwards_d2_limbs_bounded_54();
         }
         let recip = self.Z.invert();
         // recip bounded by 54 from invert() postcondition
 
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
-        // x, y bounded by 54 from mul() postcondition
+        // x, y bounded by 52 (and thus 54) from mul() postcondition
 
         let xy = &x * &y;
-        // xy bounded by 54 from mul() postcondition
-
-        proof {
-            assume(fe51_limbs_bounded(&constants::EDWARDS_D2, 54));
-        }
+        // xy bounded by 52 (and thus 54) from mul() postcondition
 
         let xy2d = &xy * &constants::EDWARDS_D2;
 
         proof {
-            assume(sum_of_limbs_bounded(&y, &x, u64::MAX));  // for y_plus_x
-            assume(fe51_limbs_bounded(&y, 54) && fe51_limbs_bounded(&x, 54));  // for y_minus_x
+            // x and y are 52-bounded from mul postcondition, so sum_of_limbs_bounded holds
+            assert(sum_of_limbs_bounded(&y, &x, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&y, &x, 52);
+            }
+            // x and y are already 54-bounded from mul postcondition (line 502 in field.rs)
+            assert(fe51_limbs_bounded(&y, 54) && fe51_limbs_bounded(&x, 54));
         }
 
         let result = AffineNielsPoint { y_plus_x: &y + &x, y_minus_x: &y - &x, xy2d };
 
         proof {
-            assume(affine_niels_corresponds_to_edwards(result, *self));
+            // Prove affine_niels_corresponds_to_edwards(result, *self)
+            let X = spec_field_element(&self.X);
+            let Y = spec_field_element(&self.Y);
+            let Z = spec_field_element(&self.Z);
+            let d = spec_field_element(&crate::backend::serial::u64::constants::EDWARDS_D);
+
+            let z_inv = math_field_inv(Z);
+            let x_affine = math_field_mul(X, z_inv);  // X/Z
+            let y_affine = math_field_mul(Y, z_inv);  // Y/Z
+
+            assert(spec_field_element(&recip) == z_inv);
+            assert(spec_field_element(&x) == x_affine);
+            assert(spec_field_element(&y) == y_affine);
+
+            assert(spec_field_element(&result.y_plus_x) == math_field_add(y_affine, x_affine));
+            assert(spec_field_element(&result.y_minus_x) == math_field_sub(y_affine, x_affine));
+
+            // xy2d: need to show (x*y)*(2*d) == ((x*y)*2)*d
+            assert(spec_field_element(&xy) == math_field_mul(x_affine, y_affine));
+            assert(spec_field_element(&constants::EDWARDS_D2) == math_field_mul(2, d)) by {
+                axiom_edwards_d2_is_2d();
+            }
+
+            let xy_val = math_field_mul(x_affine, y_affine);
+            lemma_field_mul_assoc(xy_val, 2, d);
+
+            assert(affine_niels_corresponds_to_edwards(result, *self));
         }
 
         result
@@ -1950,12 +1978,11 @@ impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
             assert(projective_niels_corresponds_to_edwards(other_niels, *other));
 
             // Now we need to connect spec_edwards_add_projective_niels to edwards_add
-            // Use the lemma that shows the affine representations are equal
-            use crate::lemmas::edwards_lemmas::curve_equation_lemmas::lemma_projective_niels_affine_equals_edwards_affine;
-            lemma_projective_niels_affine_equals_edwards_affine(other_niels, *other);
             assert(projective_niels_point_as_affine_edwards(other_niels) == edwards_point_as_affine(
                 *other,
-            ));
+            )) by {
+                lemma_projective_niels_affine_equals_edwards_affine(other_niels, *other);
+            }
 
             // From spec_edwards_add_projective_niels definition:
             // spec_edwards_add_projective_niels(self, other_niels) =
@@ -2044,11 +2071,18 @@ impl<'a, 'b> Sub<&'b EdwardsPoint> for &'a EdwardsPoint {
         /* ORIGINAL CODE
         (self - &other.as_projective_niels()).as_extended()
         */
+        // From is_well_formed_edwards_point preconditions:
+        // - edwards_point_limbs_bounded(*self) and (*other)
+        // - sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX) and for other
+        assert(sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX));
+        assert(edwards_point_limbs_bounded(*other));
+        assert(sum_of_limbs_bounded(&other.Y, &other.X, u64::MAX));
+
         let other_niels = other.as_projective_niels();
 
         proof {
-            // Preconditions for EdwardsPoint - ProjectiveNielsPoint subtraction
-            assert(sum_of_limbs_bounded(&self.Y, &self.X, u64::MAX));
+            // Limb bounds for other_niels follow from as_projective_niels postconditions
+            // (which we proved earlier in this file)
             assert(fe51_limbs_bounded(&other_niels.Y_plus_X, 54));
             assert(fe51_limbs_bounded(&other_niels.Y_minus_X, 54));
             assert(fe51_limbs_bounded(&other_niels.Z, 54));
@@ -2058,22 +2092,50 @@ impl<'a, 'b> Sub<&'b EdwardsPoint> for &'a EdwardsPoint {
         let diff = self - &other_niels;
 
         proof {
-            // Preconditions for CompletedPoint.as_extended()
-            assume(is_valid_completed_point(diff));
-            assume(fe51_limbs_bounded(&diff.X, 54) && fe51_limbs_bounded(&diff.Y, 54)
-                && fe51_limbs_bounded(&diff.Z, 54) && fe51_limbs_bounded(&diff.T, 54));
+            // The inner sub operation (EdwardsPoint - ProjectiveNielsPoint) → CompletedPoint
+            // has postconditions that give us validity and limb bounds.
+            // These follow from the ensures clause of the inner sub.
+            assert(is_valid_completed_point(diff));
+            assert(fe51_limbs_bounded(&diff.X, 54));
+            assert(fe51_limbs_bounded(&diff.Y, 54));
+            assert(fe51_limbs_bounded(&diff.Z, 54));
+            assert(fe51_limbs_bounded(&diff.T, 54));
         }
 
         let result = diff.as_extended();
 
         proof {
-            // Assume postconditions
-            assume(is_well_formed_edwards_point(result));
-            assume({
-                let (x1, y1) = edwards_point_as_affine(*self);
-                let (x2, y2) = edwards_point_as_affine(*other);
-                edwards_point_as_affine(result) == edwards_sub(x1, y1, x2, y2)
-            });
+            // CompletedPoint::as_extended postconditions give us:
+            // - is_well_formed_edwards_point(result)
+            // - edwards_point_as_affine(result) == completed_point_as_affine_edwards(diff)
+            assert(is_well_formed_edwards_point(result));
+            assert(edwards_point_as_affine(result) == completed_point_as_affine_edwards(diff));
+
+            // The inner sub postcondition gives us:
+            // completed_point_as_affine_edwards(diff) == edwards_sub(self_affine, other_niels_affine)
+            let self_affine = edwards_point_as_affine(*self);
+            let other_niels_affine = projective_niels_point_as_affine_edwards(other_niels);
+            assert(completed_point_as_affine_edwards(diff) == edwards_sub(
+                self_affine.0,
+                self_affine.1,
+                other_niels_affine.0,
+                other_niels_affine.1,
+            ));
+
+            // The as_projective_niels postcondition gives us correspondence between other and other_niels
+            assert(projective_niels_corresponds_to_edwards(other_niels, *other));
+
+            // Use the lemma that shows the affine representations are equal
+            assert(projective_niels_point_as_affine_edwards(other_niels) == edwards_point_as_affine(
+                *other,
+            )) by {
+                lemma_projective_niels_affine_equals_edwards_affine(other_niels, *other);
+            }
+
+            // Now connect: edwards_sub with other_niels_affine == edwards_sub with other_affine
+            let (x1, y1) = edwards_point_as_affine(*self);
+            let (x2, y2) = edwards_point_as_affine(*other);
+            assert(edwards_point_as_affine(result) == edwards_sub(x1, y1, x2, y2));
         }
 
         result
@@ -2392,8 +2454,6 @@ define_mul_assign_variants!(LHS = EdwardsPoint, RHS = Scalar);
 
 define_edwards_scalar_mul_variants_verus!();
 
-define_mul_variants_verus!(LHS = Scalar, RHS = EdwardsPoint, Output = EdwardsPoint);
-
 verus! {
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
@@ -2490,12 +2550,15 @@ impl EdwardsPoint {
         // issues arising from the fact that the curve point is not necessarily in the prime-order
         // subgroup.
         let s = Scalar { bytes: clamp_integer(bytes) };
+        proof {
+            assert(is_clamped_integer(&s.bytes));
+            assert(s.bytes[31] <= 127);  // needed for mul precondition
+            assert(s.bytes == spec_clamp_integer(bytes));
+        }
         let result = s * self;
         proof {
-            assume(is_well_formed_edwards_point(result));
-            assume(edwards_point_as_affine(result) == edwards_scalar_mul(
-                edwards_point_as_affine(self),
-                scalar_to_nat(&Scalar { bytes: spec_clamp_integer(bytes) }),
+            assert(scalar_to_nat(&s) == scalar_to_nat(
+                &Scalar { bytes: spec_clamp_integer(bytes) },
             ));
         }
         result
@@ -3044,35 +3107,79 @@ impl BasepointTable for EdwardsBasepointTable {
     {
         // self.0[0].select(1) = 1*(16^2)^0*B
         // but as an `AffineNielsPoint`, so add identity to convert to extended.
-        /* ORIGINAL CODE:
-            (&EdwardsPoint::identity() + &self.0[0].select(1)).as_extended()
-        */
-        /* REFACTORED FOR ASSERTIONS: */
         let identity = EdwardsPoint::identity();
         proof {
-            // The precondition is_valid_edwards_basepoint_table includes
-            // lookup_table_affine_limbs_bounded for all table entries.
-            assume(lookup_table_affine_limbs_bounded((*self).0[0int].0));
+            reveal(is_valid_edwards_basepoint_table);
+            assert(lookup_table_affine_limbs_bounded((*self).0[0int].0));
         }
         let selected = self.0[0].select(1);
-        // selected limb bounds come from select postcondition
         proof {
-            // Preconditions for addition (identity must be well-formed)
-            assume(is_well_formed_edwards_point(identity));
-            assume(sum_of_limbs_bounded(&identity.Z, &identity.Z, u64::MAX));
+            assert(is_well_formed_edwards_point(identity));
+            assert(fe51_limbs_bounded(&identity.Z, 52));
+            assert(sum_of_limbs_bounded(&identity.Z, &identity.Z, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&identity.Z, &identity.Z, 52);
+            }
         }
         let completed = &identity + &selected;
         proof {
-            // Preconditions for as_extended
-            assume(fe51_limbs_bounded(&completed.X, 54));
-            assume(fe51_limbs_bounded(&completed.Y, 54));
-            assume(fe51_limbs_bounded(&completed.Z, 54));
-            assume(fe51_limbs_bounded(&completed.T, 54));
+            assert(fe51_limbs_bounded(&completed.X, 54));
+            assert(fe51_limbs_bounded(&completed.Y, 54));
+            assert(fe51_limbs_bounded(&completed.Z, 54));
+            assert(fe51_limbs_bounded(&completed.T, 54));
         }
         let result = completed.as_extended();
         proof {
-            assume(is_well_formed_edwards_point(result));
-            assume(edwards_point_as_affine(result) == spec_ed25519_basepoint());
+            assert(is_well_formed_edwards_point(result));
+
+            let B = spec_ed25519_basepoint();
+
+            assert(pow256(0) == 1) by {
+                reveal(pow256);
+                reveal(pow2);
+                vstd::arithmetic::power::lemma_pow0(2);
+            }
+            assert(edwards_scalar_mul(B, 1) == B) by {
+                reveal_with_fuel(edwards_scalar_mul, 2);
+            }
+
+            // Table validity: table[0] contains multiples of B
+            assert(is_valid_lookup_table_affine_coords((*self).0[0int].0, B, 8));
+            assert(affine_niels_point_as_affine_edwards((*self).0[0int].0[0int]) == B);
+            assert(selected == (*self).0[0int].0[0int]);
+            assert(affine_niels_point_as_affine_edwards(selected) == B);
+
+            // Identity has affine coords (0, 1)
+            assert(is_identity_edwards_point(identity));
+            assert(edwards_point_as_affine(identity) == (0nat, 1nat)) by {
+                lemma_identity_affine_coords(identity);
+            }
+
+            // Add: identity + B = B
+            assert(completed_point_as_affine_edwards(completed) == spec_edwards_add_affine_niels(
+                identity,
+                selected,
+            ));
+            assert(spec_edwards_add_affine_niels(identity, selected) == edwards_add(
+                0nat,
+                1nat,
+                B.0,
+                B.1,
+            ));
+            assert(edwards_add(0nat, 1nat, B.0, B.1) == (B.0 % p(), B.1 % p())) by {
+                lemma_edwards_add_identity_left(B.0, B.1);
+            }
+
+            // B is canonical, so B % p == B
+            assert(B.0 < p() && B.1 < p()) by {
+                axiom_ed25519_basepoint_canonical();
+            }
+            assert(B.0 % p() == B.0 && B.1 % p() == B.1) by {
+                vstd::arithmetic::div_mod::lemma_small_mod(B.0, p());
+                vstd::arithmetic::div_mod::lemma_small_mod(B.1, p());
+            }
+
+            assert(edwards_point_as_affine(result) == completed_point_as_affine_edwards(completed));
+            assert(edwards_point_as_affine(result) == B);
         }
         result
     }

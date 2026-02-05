@@ -253,10 +253,12 @@ macro_rules! define_mul_variants_verus {
     };
 }
 
-/// Define wrapper variants for `EdwardsPoint * Scalar` with functional-correctness postconditions.
+/// Define wrapper variants for `EdwardsPoint * Scalar` and `Scalar * EdwardsPoint`
+/// with functional-correctness postconditions.
 ///
 /// Exec-wise, this is equivalent to what
 /// `define_mul_variants_verus!(LHS = EdwardsPoint, RHS = Scalar, Output = EdwardsPoint)`
+/// and `define_mul_variants_verus!(LHS = Scalar, RHS = EdwardsPoint, Output = EdwardsPoint)`
 /// would generate (each impl forwards to a borrowed-argument multiplication).
 ///
 /// We write it as a specialized macro so we can attach `ensures` postconditions to
@@ -264,6 +266,9 @@ macro_rules! define_mul_variants_verus {
 macro_rules! define_edwards_scalar_mul_variants_verus {
     () => {
         verus! {
+        // =======================================================================
+        // EdwardsPoint * Scalar variants (forwards to &EdwardsPoint * &Scalar)
+        // =======================================================================
         impl<'b> core::ops::Mul<&'b $crate::scalar::Scalar> for $crate::edwards::EdwardsPoint {
             type Output = $crate::edwards::EdwardsPoint;
 
@@ -312,6 +317,60 @@ macro_rules! define_edwards_scalar_mul_variants_verus {
             {
                 // Calls &EdwardsPoint * &Scalar (the verified implementation)
                 &self * &scalar
+            }
+        }
+
+        // =======================================================================
+        // Scalar * EdwardsPoint variants (forwards to &Scalar * &EdwardsPoint)
+        // =======================================================================
+        impl<'b> core::ops::Mul<&'b $crate::edwards::EdwardsPoint> for $crate::scalar::Scalar {
+            type Output = $crate::edwards::EdwardsPoint;
+
+            fn mul(self, point: &'b $crate::edwards::EdwardsPoint) -> (result: $crate::edwards::EdwardsPoint)
+                ensures
+                    $crate::specs::edwards_specs::is_well_formed_edwards_point(result),
+                    $crate::specs::edwards_specs::edwards_point_as_affine(result)
+                        == $crate::specs::edwards_specs::edwards_scalar_mul(
+                        $crate::specs::edwards_specs::edwards_point_as_affine(*point),
+                        $crate::specs::scalar_specs::scalar_to_nat(&self),
+                    ),
+            {
+                // Calls &Scalar * &EdwardsPoint (the verified implementation)
+                &self * point
+            }
+        }
+
+        impl<'a> core::ops::Mul<$crate::edwards::EdwardsPoint> for &'a $crate::scalar::Scalar {
+            type Output = $crate::edwards::EdwardsPoint;
+
+            fn mul(self, point: $crate::edwards::EdwardsPoint) -> (result: $crate::edwards::EdwardsPoint)
+                ensures
+                    $crate::specs::edwards_specs::is_well_formed_edwards_point(result),
+                    $crate::specs::edwards_specs::edwards_point_as_affine(result)
+                        == $crate::specs::edwards_specs::edwards_scalar_mul(
+                        $crate::specs::edwards_specs::edwards_point_as_affine(point),
+                        $crate::specs::scalar_specs::scalar_to_nat(self),
+                    ),
+            {
+                // Calls &Scalar * &EdwardsPoint (the verified implementation)
+                self * &point
+            }
+        }
+
+        impl core::ops::Mul<$crate::edwards::EdwardsPoint> for $crate::scalar::Scalar {
+            type Output = $crate::edwards::EdwardsPoint;
+
+            fn mul(self, point: $crate::edwards::EdwardsPoint) -> (result: $crate::edwards::EdwardsPoint)
+                ensures
+                    $crate::specs::edwards_specs::is_well_formed_edwards_point(result),
+                    $crate::specs::edwards_specs::edwards_point_as_affine(result)
+                        == $crate::specs::edwards_specs::edwards_scalar_mul(
+                        $crate::specs::edwards_specs::edwards_point_as_affine(point),
+                        $crate::specs::scalar_specs::scalar_to_nat(&self),
+                    ),
+            {
+                // Calls &Scalar * &EdwardsPoint (the verified implementation)
+                &self * &point
             }
         }
         }

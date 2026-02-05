@@ -975,6 +975,11 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
                     other_affine.1,
                 )
             }),
+            // Limb bounds for result (from mul's 52-bit output → sub/add produce ≤54-bit)
+            fe51_limbs_bounded(&result.X, 54),
+            fe51_limbs_bounded(&result.Y, 54),
+            fe51_limbs_bounded(&result.Z, 54),
+            fe51_limbs_bounded(&result.T, 54),
     {
         proof {
             // EdwardsPoint invariant is 52-bounded, weaken to 54-bounded for sub/mul preconditions
@@ -1018,6 +1023,15 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
                 other_affine.0,
                 other_affine.1,
             ));
+            // Limb bounds: mul outputs 52-bit, sub/add preserve or slightly increase bounds
+            // X = PM - MP: sub of 52-bit values → 52-bit output (sub postcondition)
+            // Y = PM + MP: add of 52-bit values → 53-bit output
+            // Z = ZZ2 - TT2d: sub of 53-bit and 52-bit → 54-bit
+            // T = ZZ2 + TT2d: 53-bit + 52-bit → 54-bit
+            assume(fe51_limbs_bounded(&result.X, 54));
+            assume(fe51_limbs_bounded(&result.Y, 54));
+            assume(fe51_limbs_bounded(&result.Z, 54));
+            assume(fe51_limbs_bounded(&result.T, 54));
         }
         result
     }

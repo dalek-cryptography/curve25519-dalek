@@ -117,6 +117,15 @@ pub fn unsafe_target_feature_specialize(
         let ident = syn::Ident::new(&name, item_mod.ident.span());
         let mut attrs = item_mod.attrs.clone();
         if let Some(condition) = attributes.condition() {
+            // Build target_feature conditions for each feature
+            let target_features = features.iter().map(|feature| {
+                let feature_str = syn::LitStr::new(feature, attributes.lit().span());
+                quote::quote! { target_feature = #feature_str }
+            });
+
+            // Combine all conditions with 'all'
+            let cfg_tokens = quote::quote! { all(#(#target_features),*, #condition) };
+
             attrs.push(syn::Attribute {
                 pound_token: Default::default(),
                 style: syn::AttrStyle::Outer,
@@ -124,7 +133,7 @@ pub fn unsafe_target_feature_specialize(
                 meta: syn::Meta::List(syn::MetaList {
                     path: syn::Ident::new("cfg", attributes.lit().span()).into(),
                     delimiter: syn::MacroDelimiter::Paren(Default::default()),
-                    tokens: condition.clone(),
+                    tokens: cfg_tokens,
                 }),
             });
         }
@@ -289,9 +298,16 @@ fn process_function(
     function: syn::ItemFn,
     outer: Option<(syn::Generics, Box<syn::Type>)>,
 ) -> TokenStream {
+    // Split comma-separated features and create enable tokens for each
+    let tmp = attributes.value();
+    let features = tmp.split(',').map(|f| {
+        let feature_lit = syn::LitStr::new(f, attributes.span());
+        quote::quote! { enable = #feature_lit }
+    });
+
     if function.sig.unsafety.is_some() {
         return quote::quote! {
-            #[target_feature(enable = #attributes)]
+            #[target_feature(#(#features),*)]
             #function
         }
         .into();
@@ -428,7 +444,7 @@ fn process_function(
 
         let item_trait_impl = quote::quote! {
             impl #outer_impl_generics #trait_ident #outer_ty_generics for #self_ty #outer_where_clause {
-                #[target_feature(enable = #attributes)]
+                #[target_feature(#(#features),*)]
                 #maybe_inline
                 unsafe fn #function_inner_name #fn_impl_generics (#(#function_args_inner),*) #function_return #fn_where_clause #function_body
             }
@@ -451,7 +467,7 @@ fn process_function(
             #maybe_cfg
             #(#maybe_outer_attributes)*
             #function_visibility fn #function_name #fn_impl_generics (#(#function_args_outer),*) #function_return #fn_where_clause {
-                #[target_feature(enable = #attributes)]
+                #[target_feature(#(#features),*)]
                 #maybe_inline
                 unsafe fn #function_inner_name #fn_impl_generics (#(#function_args_inner),*) #function_return #fn_where_clause #function_body
                 unsafe {

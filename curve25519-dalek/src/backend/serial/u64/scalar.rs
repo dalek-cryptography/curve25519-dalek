@@ -434,7 +434,7 @@ impl Scalar52 {
             let ghost hi_before_nat = scalar52_to_nat(&hi_raw);
             let ghost hi_after_nat = scalar52_to_nat(&hi);
             let ghost rr_nat = scalar52_to_nat(&constants::RR);
-            lemma_rr_equals_spec(constants::RR);
+            lemma_rr_equals_spec();
             // hi: multiply by R², reduce => extra_factor = R
             lemma_montgomery_reduce_cancels_r(
                 hi_after_nat,
@@ -1166,7 +1166,7 @@ impl Scalar52 {
 
         proof {
             // 1. Prove RR ≡ R² (mod L)
-            lemma_rr_equals_spec(constants::RR);
+            lemma_rr_equals_spec();
 
             // 2. Apply cancellation lemma to get: result ≡ ab*R (mod L)
             //    Combined with ab*R ≡ a*b (mod L), we get result ≡ a*b (mod L)
@@ -1218,7 +1218,7 @@ impl Scalar52 {
 
         proof {
             // 1. prove (scalar52_to_nat(&constants::RR) % group_order() == (montgomery_radix()*montgomery_radix()) % group_order()
-            lemma_rr_equals_spec(constants::RR);
+            lemma_rr_equals_spec();
 
             // 2. Reduce to (scalar52_to_nat(&result)) % group_order() == (scalar52_to_nat(self) * scalar52_to_nat(self)) % group_order()
             lemma_cancel_mul_montgomery_mod(
@@ -1303,7 +1303,7 @@ impl Scalar52 {
             lemma_rr_limbs_bounded();
             lemma_limbs_bounded_implies_prod_bounded(&self, &constants::RR);
             // RR is canonical (< group_order), so montgomery_mul's canonicity postcondition applies
-            lemma_rr_equals_spec(constants::RR);
+            lemma_rr_equals_spec();
             assert(group_order() > 0);
         }
         let result = Scalar52::montgomery_mul(self, &constants::RR);

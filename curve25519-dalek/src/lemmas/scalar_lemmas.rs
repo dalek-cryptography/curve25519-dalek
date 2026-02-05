@@ -1,6 +1,8 @@
 #[allow(unused_imports)]
 use super::super::specs::core_specs::*;
 #[allow(unused_imports)]
+use super::common_lemmas::div_mod_lemmas::*;
+#[allow(unused_imports)]
 use super::common_lemmas::*;
 #[allow(unused_imports)]
 use crate::backend::serial::u64::constants;
@@ -823,8 +825,37 @@ pub proof fn lemma_cancel_mul_montgomery_mod(x: nat, a: nat, rr: nat)
         group_order() as int,
     );
 
-    assert((x * montgomery_radix() * inv_montgomery_radix()) % group_order() == (a
-        * montgomery_radix() * montgomery_radix() * inv_montgomery_radix()) % group_order());
+    let L = group_order();
+    let R = montgomery_radix();
+    let R_inv = inv_montgomery_radix();
+
+    assert(((x * R) as int) % (L as int) == ((a * R * R) as int) % (L as int)) by {
+        lemma_int_nat_mod_equiv((x * R) as int, L);
+        lemma_int_nat_mod_equiv((a * R * R) as int, L);
+    }
+
+    assert(((R_inv * (x * R)) as int) % (L as int) == ((R_inv * (a * R * R)) as int) % (L as int))
+        by {
+        lemma_mul_factors_congruent_implies_products_congruent(
+            R_inv as int,
+            (x * R) as int,
+            (a * R * R) as int,
+            L as int,
+        );
+    }
+
+    assert((R_inv * (x * R)) % L == (R_inv * (a * R * R)) % L) by {
+        lemma_int_nat_mod_equiv((R_inv * (x * R)) as int, L);
+        lemma_int_nat_mod_equiv((R_inv * (a * R * R)) as int, L);
+    }
+
+    assert((x * R * R_inv) % L == (R_inv * (x * R)) % L) by {
+        lemma_mul_is_commutative(R_inv as int, (x * R) as int);
+    }
+    assert((a * R * R * R_inv) % L == (R_inv * (a * R * R)) % L) by {
+        lemma_mul_is_commutative(R_inv as int, (a * R * R) as int);
+    }
+    assert((x * R * R_inv) % L == (a * R * R * R_inv) % L);
 
     // Step 2: Group (R * R^-1) together using associativity
     // x * (R * R^-1) and (a * R) * (R * R^-1)
@@ -918,22 +949,13 @@ pub(crate) proof fn lemma_r_equals_spec(r: Scalar52)
     }
 }
 
-pub(crate) proof fn lemma_rr_equals_spec(rr: Scalar52)
-    requires
-        rr == (Scalar52 {
-            limbs: [
-                0x0009d265e952d13b,
-                0x000d63c715bea69f,
-                0x0005be65cb687604,
-                0x0003dceec73d217f,
-                0x000009411b7c309a,
-            ],
-        }),
+pub(crate) proof fn lemma_rr_equals_spec()
     ensures
-        scalar52_to_nat(&rr) % group_order() == (montgomery_radix() * montgomery_radix())
+        scalar52_to_nat(&constants::RR) % group_order() == (montgomery_radix() * montgomery_radix())
             % group_order(),
-        scalar52_to_nat(&rr) < group_order(),
+        scalar52_to_nat(&constants::RR) < group_order(),
 {
+    let rr = constants::RR;
     lemma_five_limbs_equals_to_nat(&rr.limbs);
 
     lemma2_to64_rest();

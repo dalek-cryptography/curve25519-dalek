@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verus Proof Helper"
+  short_description: "Complete Verus proofs; fix rlimit/timeouts"
+  default_prompt: "Use $verus-proof-helper to replace admit()/assume(...) with real Verus proofs."

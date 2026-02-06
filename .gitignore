@@ -13,7 +13,15 @@ build*.txt
 
 *.s
 .aider*
-.claude/
+.claude/settings.local.json
+
+# Repository-scoped Claude/Codex skills (keep local settings ignored)
+!.claude/
+!.claude/skills/
+!.claude/skills/**
+!.codex/
+!.codex/skills/
+!.codex/skills/**
 .verus-solver-log
 .verus-log
 

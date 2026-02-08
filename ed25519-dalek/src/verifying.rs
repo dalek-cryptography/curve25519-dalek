@@ -10,7 +10,7 @@
 //! ed25519 public keys.
 
 #[cfg(feature = "digest")]
-use curve25519_dalek::digest::{crypto_common::KeySizeUser, typenum::U32};
+use curve25519_dalek::digest::{common::KeySizeUser, typenum::U32};
 
 use core::fmt::Debug;
 use core::hash::{Hash, Hasher};

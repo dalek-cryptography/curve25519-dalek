@@ -22,12 +22,12 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "digest")]
 use curve25519_dalek::digest::{
-    crypto_common::{InvalidKey, Key, KeySizeUser, TryKeyInit},
+    common::{InvalidKey, Key, KeySizeUser, TryKeyInit},
     typenum::U32,
 };
 
 #[cfg(all(feature = "digest", feature = "rand_core"))]
-use curve25519_dalek::digest::crypto_common::Generate;
+use curve25519_dalek::digest::common::Generate;
 
 use sha2::Sha512;
 use subtle::{Choice, ConstantTimeEq};

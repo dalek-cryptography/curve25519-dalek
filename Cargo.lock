@@ -294,11 +294,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6f8441110cea75afde0b89a8d796e2bc67b23432f5a9566cb15d9d365d91a2b0"
 dependencies = [
  "hybrid-array",
+ "rand_core 0.10.0",
 ]
 
 [[package]]
 name = "curve25519-dalek"
-version = "5.0.0-pre.5"
+version = "5.0.0-pre.6"
 dependencies = [
  "bincode",
  "cfg-if",
@@ -365,7 +366,7 @@ dependencies = [
 
 [[package]]
 name = "ed25519-dalek"
-version = "3.0.0-pre.5"
+version = "3.0.0-pre.6"
 dependencies = [
  "bincode",
  "blake2",
@@ -1048,6 +1049,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f1880df446116126965eeec169136b2e0251dba37c6223bcc819569550edea3"
 dependencies = [
  "digest",
+ "rand_core 0.10.0",
 ]
 
 [[package]]
@@ -1456,7 +1458,7 @@ dependencies = [
 
 [[package]]
 name = "x25519-dalek"
-version = "3.0.0-pre.5"
+version = "3.0.0-pre.6"
 dependencies = [
  "bincode",
  "criterion",

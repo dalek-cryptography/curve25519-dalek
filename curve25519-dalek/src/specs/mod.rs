@@ -22,4 +22,6 @@ pub mod scalar_specs;
 
 pub mod scalar52_specs;
 
+pub mod montgomery_reduce_specs;
+
 pub mod window_specs;

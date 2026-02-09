@@ -177,6 +177,9 @@ use crate::lemmas::scalar_lemmas::*;
 use crate::lemmas::scalar_batch_invert_lemmas::*;
 
 #[allow(unused_imports)]
+use crate::lemmas::scalar_lemmas_::montgomery_reduce_lemmas::*;
+
+#[allow(unused_imports)]
 use crate::backend::serial::u64::subtle_assumes::*;
 
 #[allow(unused_imports)]
@@ -524,10 +527,6 @@ impl<'a> MulAssign<&'a Scalar> for Scalar {
                 &self_unpacked,
             ) * scalar52_to_nat(&rhs_unpacked)) % group_order());
             assert(limbs_bounded(&result_unpacked));
-            assert(scalar52_to_nat(&result_unpacked) % group_order() == (scalar52_to_nat(
-                &self_unpacked,
-            ) * scalar52_to_nat(&rhs_unpacked)) % group_order());
-            assert(limbs_bounded(&result_unpacked));
         }
 
         *self = result_unpacked.pack();
@@ -561,8 +560,7 @@ impl vstd::std_specs::ops::MulSpecImpl<&Scalar> for &Scalar {
     }
 
     open spec fn mul_req(self, rhs: &Scalar) -> bool {
-        true  // No preconditions
-
+        is_canonical_scalar(self) && is_canonical_scalar(rhs)
     }
 
     open spec fn mul_spec(self, rhs: &Scalar) -> Scalar {
@@ -575,6 +573,7 @@ impl<'b> Mul<&'b Scalar> for &Scalar {
     type Output = Scalar;
 
     // VERIFICATION NOTE: VERIFIED
+    // NOTE: MulSpecImpl::mul_req requires is_canonical_scalar for both inputs
     fn mul(self, _rhs: &'b Scalar) -> (result: Scalar)
         ensures
             bytes32_to_nat(&result.bytes) % group_order() == (bytes32_to_nat(&self.bytes)
@@ -908,8 +907,21 @@ impl Neg for &Scalar {
         }
 
         let self_R = UnpackedScalar::mul_internal(&self_unpacked, &constants::R);
+
+        proof {
+            // Establish montgomery_reduce's preconditions
+            lemma_bounded_product_satisfies_input_bounds(&self_unpacked, &constants::R, &self_R);
+            // R is canonical (< L), so product satisfies canonical_bound
+            lemma_r_equals_spec(constants::R);
+            lemma_canonical_product_satisfies_canonical_bound(
+                &self_unpacked,
+                &constants::R,
+                &self_R,
+            );
+        }
         /* </MODIFIED CODE> */
         let self_mod_l = UnpackedScalar::montgomery_reduce(&self_R);
+        // is_canonical_scalar52(&self_mod_l) follows from montgomery_reduce postcondition
 
         /* <ORIGINAL CODE>
         let result = UnpackedScalar::sub(&UnpackedScalar::ZERO, &self_mod_l).pack();
@@ -1812,7 +1824,8 @@ impl Scalar {
             invariant
                 scratch.len() == n,
                 n == inputs.len(),
-                limbs_bounded(&acc),
+                // acc is canonical (needed for montgomery_mul and montgomery_invert)
+                is_canonical_scalar52(&acc),
                 forall|j: int| 0 <= j < i ==> #[trigger] limbs_bounded(&scratch[j]),
                 // SEMANTIC INVARIANT: acc represents R * partial_product(original_inputs, i) in Montgomery form
                 scalar52_to_nat(&acc) % group_order() == (montgomery_radix() * partial_product(
@@ -1956,8 +1969,8 @@ impl Scalar {
                 scratch.len() == n,
                 n == inputs.len(),
                 i <= n,
-                limbs_bounded(&acc),
-                scalar52_to_nat(&acc) < group_order(),
+                // acc is canonical (needed for montgomery_mul)
+                is_canonical_scalar52(&acc),
                 forall|j: int| 0 <= j < scratch.len() ==> #[trigger] limbs_bounded(&scratch[j]),
                 original_inputs == old(inputs)@,
                 n == original_inputs.len(),
@@ -2796,6 +2809,7 @@ impl Scalar {
             limbs_bounded(&result),
             limb_prod_bounded_u128(result.limbs, result.limbs, 5),
             scalar52_to_nat(&result) == bytes32_to_nat(&self.bytes),
+            is_canonical_scalar(self) ==> is_canonical_scalar52(&result),
     {
         UnpackedScalar::from_bytes(&self.bytes)
     }
@@ -2825,7 +2839,17 @@ impl Scalar {
         proof { lemma_limbs_bounded_implies_prod_bounded(&x, &constants::R) }
 
         let xR = UnpackedScalar::mul_internal(&x, &constants::R);
+
+        proof {
+            // Establish montgomery_reduce's preconditions
+            lemma_bounded_product_satisfies_input_bounds(&x, &constants::R, &xR);
+            // R is canonical (< L), so product satisfies canonical_bound
+            lemma_r_equals_spec(constants::R);
+            lemma_canonical_product_satisfies_canonical_bound(&x, &constants::R, &xR);
+        }
+
         let x_mod_l = UnpackedScalar::montgomery_reduce(&xR);
+        // is_canonical_scalar52(&x_mod_l) follows from montgomery_reduce postcondition
         let result = x_mod_l.pack();
 
         proof {
@@ -2905,11 +2929,14 @@ fn square_multiply(
 */
 
     requires
-        limb_prod_bounded_u128(old(y).limbs, old(y).limbs, 5),
-        limbs_bounded(x),
+// Both inputs must be canonical for montgomery_square/montgomery_mul
+
+        is_canonical_scalar52(old(y)),
+        is_canonical_scalar52(x),
     ensures
-        limbs_bounded(y),
         limb_prod_bounded_u128(y.limbs, y.limbs, 5),
+        // Output is canonical
+        is_canonical_scalar52(y),
         // VERIFICATION NOTE: Changed postcondition from the original incorrect version
         // which used `montgomery_radix()` instead of `pow(montgomery_radix(), pow2(squarings))`
         (scalar52_to_nat(y) * pow(montgomery_radix() as int, pow2(squarings as nat)) as nat)
@@ -2934,7 +2961,9 @@ fn square_multiply(
     // VERIFICATION NOTE: Named loop variable allows tracking iteration count
     for idx in 0..squarings
         invariant
-            limb_prod_bounded_u128(y.limbs, y.limbs, 5),
+    // Maintain canonicity for montgomery_square
+
+            is_canonical_scalar52(y),
             L == group_order(),
             R == montgomery_radix(),
             L > 0,
@@ -2948,7 +2977,7 @@ fn square_multiply(
         *y = y.montgomery_square();
         proof {
             lemma_square_multiply_step(scalar52_to_nat(y), y_before, y0, R, L, idx as nat);
-            lemma_limbs_bounded_implies_prod_bounded(y, y);
+            // limbs_bounded is maintained by montgomery_square's ensures clause
         }
     }
 
@@ -3085,6 +3114,10 @@ impl UnpackedScalar {
     }
 
     /// Inverts an UnpackedScalar in Montgomery form.
+    ///
+    /// # Preconditions
+    /// - Input must be canonical for `montgomery_square`/`montgomery_mul`
+    ///
     #[rustfmt::skip]  // keep alignment of addition chain and squarings
     #[allow(clippy::just_underscores_and_digits)]
     pub fn montgomery_invert(&self) -> (result:
@@ -3093,10 +3126,13 @@ impl UnpackedScalar {
     */
 
         requires
-            limb_prod_bounded_u128(self.limbs, self.limbs, 5),
+    // Must be canonical for montgomery_square/montgomery_mul
+
+            is_canonical_scalar52(self),
         ensures
-            limbs_bounded(&result),
             limb_prod_bounded_u128(result.limbs, result.limbs, 5),
+            // Output is canonical
+            is_canonical_scalar52(&result),
             (scalar52_to_nat(&result) * scalar52_to_nat(self)) % group_order() == (
             montgomery_radix() * montgomery_radix())
                 % group_order(),
@@ -3107,6 +3143,7 @@ impl UnpackedScalar {
         // Uses the addition chain from
         // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
         let _1 = *self;
+        // _1 has limbs_bounded from self's precondition
         let _10 = _1.montgomery_square();
         let _100 = _10.montgomery_square();
         assert(limb_prod_bounded_u128(_10.limbs, _1.limbs, 5)) by {

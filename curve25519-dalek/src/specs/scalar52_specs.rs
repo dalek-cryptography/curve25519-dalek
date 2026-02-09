@@ -63,6 +63,22 @@ pub open spec fn five_limbs_to_nat_aux(limbs: [u64; 5]) -> nat {
     pow2(208) * (limbs[4] as nat)
 }
 
+/// Converts 5 u64 limbs to a single nat value in radix-2^52.
+///
+/// Same as `five_limbs_to_nat_aux` but takes individual arguments instead of an array,
+/// and uses `limb * pow2(k)` ordering (vs `pow2(k) * limb` in five_limbs_to_nat_aux).
+///
+/// Relation: `five_u64_limbs_to_nat(a[0], a[1], a[2], a[3], a[4]) == five_limbs_to_nat_aux(a)`
+/// (the two orderings are equivalent by commutativity of multiplication)
+#[verusfmt::skip]
+pub open spec fn five_u64_limbs_to_nat(n0: u64, n1: u64, n2: u64, n3: u64, n4: u64) -> nat {
+    (n0 as nat) +
+    (n1 as nat) * pow2( 52) +
+    (n2 as nat) * pow2(104) +
+    (n3 as nat) * pow2(156) +
+    (n4 as nat) * pow2(208)
+}
+
 // bytes32_to_nat, bytes_seq_to_nat, and bytes_to_nat_suffix (all generic)
 // are now in core_specs.rs. They are imported via `use super::core_specs::*`
 // Group order: the value of L as a natural number
@@ -84,6 +100,18 @@ pub open spec fn inv_montgomery_radix() -> nat {
 // Check that all limbs of a Scalar52 are properly bounded (< 2^52)
 pub open spec fn limbs_bounded(s: &Scalar52) -> bool {
     forall|i: int| 0 <= i < 5 ==> s.limbs[i] < (1u64 << 52)
+}
+
+/// Relaxed bound for sub's first argument: limbs 0-3 bounded, limb 4 can exceed 2^52 by up to b[4].
+///
+/// This is needed for montgomery_reduce where the intermediate result has r4 > 2^52.
+/// The sub algorithm still works correctly because:
+///   - For limbs 0-3: standard bounded subtraction
+///   - For limb 4: a[4] - b[4] < 2^52, so masking doesn't lose bits
+///
+pub open spec fn limbs_bounded_for_sub(a: &Scalar52, b: &Scalar52) -> bool {
+    &&& forall|i: int| 0 <= i < 4 ==> a.limbs[i] < (1u64 << 52)
+    &&& a.limbs[4] < (1u64 << 52) + b.limbs[4]
 }
 
 pub open spec fn limb_prod_bounded_u128(limbs1: [u64; 5], limbs2: [u64; 5], k: nat) -> bool {

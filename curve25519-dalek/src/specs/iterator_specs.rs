@@ -19,6 +19,9 @@ use crate::scalar::Scalar;
 use crate::specs::edwards_specs::{
     edwards_add, edwards_point_as_affine, is_well_formed_edwards_point, sum_of_points,
 };
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use crate::specs::scalar_specs::is_canonical_scalar;
 
 verus! {
 
@@ -75,6 +78,7 @@ pub fn collect_scalars_from_iter<S, I>(iter: I) -> (result: Vec<Scalar>) where
 
     ensures
         result@ == spec_scalars_from_iter::<S, I>(iter),
+        forall|i: int| #![auto] 0 <= i < result@.len() ==> is_canonical_scalar(&result@[i]),
 {
     iter.map(|s| *s.borrow()).collect()
 }

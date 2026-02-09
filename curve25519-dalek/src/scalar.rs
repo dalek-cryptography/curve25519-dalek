@@ -180,6 +180,9 @@ use crate::lemmas::scalar_batch_invert_lemmas::*;
 use crate::lemmas::scalar_lemmas_::montgomery_reduce_lemmas::*;
 
 #[allow(unused_imports)]
+use crate::lemmas::scalar_lemmas_::radix16_lemmas::*;
+
+#[allow(unused_imports)]
 use crate::backend::serial::u64::subtle_assumes::*;
 
 #[allow(unused_imports)]
@@ -2437,10 +2440,7 @@ impl Scalar {
     /// The largest value that can be decomposed like this is just over \\(2^{255}\\). Thus, in
     /// order to not error, the top bit MUST NOT be set, i.e., `Self` MUST be less than
     /// \\(2^{255}\\).
-    pub(crate) fn as_radix_16(&self) -> (result:
-        [i8; 64])
-    // VERIFICATION NOTE: PROOF BYPASS
-
+    pub(crate) fn as_radix_16(&self) -> (result: [i8; 64])
         requires
     // Top bit must be clear (scalar < 2^255)
 
@@ -2478,17 +2478,101 @@ impl Scalar {
                 output[2 * i + 1] = top_half(self[i]) as i8;
             }
             </ORIGINAL CODE> */
-        for i in 0..32 {
+        for i in 0..32
+            invariant
+        // Assigned entries: nibbles of processed bytes (pair relationship)
+
+                forall|j: int|
+                    #![trigger output[2 * j], output[2 * j + 1]]
+                    0 <= j < i ==> output[2 * j] as int + 16 * (output[2 * j + 1] as int)
+                        == self.bytes[j] as int,
+                // All assigned entries are non-negative (in [0, 15])
+                forall|j: int| 0 <= j < 2 * i ==> 0 <= #[trigger] output[j] && output[j] <= 15,
+                // Unassigned entries are still zero
+                forall|j: int| 2 * i <= j < 64 ==> #[trigger] output[j] == 0,
+        {
             output[2 * i] = bot_half(self.bytes[i]) as i8;
             output[2 * i + 1] = top_half(self.bytes[i]) as i8;
+            proof {
+                // Nibble identity: byte == (byte % 16) + 16 * (byte / 16)
+                let b = self.bytes[i as int];
+                assert((b as u8) == (b as u8) % 16 + 16 * ((b as u8) / 16)) by (bit_vector);
+            }
         }
-        // Precondition note: since self[31] <= 127, output[63] <= 7
+        proof {
+            // output[63] <= 7: from nibble identity at j=31 and precondition bytes[31] <= 127
+            // Trigger the quantifier for j=31: output[2*31] and output[2*31+1]
+            let j: int = 31;
+            assert(output[2 * j] as int + 16 * (output[2 * j + 1] as int) == self.bytes[j] as int);
+            assert(output[2 * j] >= 0);
+            assert(self.bytes[31] <= 127);
+            assert(output[63] <= 7) by (nonlinear_arith)
+                requires
+                    output[62] >= 0i8,
+                    output[62] as int + 16 * (output[63] as int) <= 127,
+            ;
+
+            // Establish the reconstruction property
+            lemma_bytes32_to_radix16_nibbles(output, self.bytes);
+        }
 
         // Step 2: recenter coefficients from [0,16) to [-8,8)
-        for i in 0..63 {
-            assume(false);
+        for i in 0..63
+            invariant
+        // Reconstruction is preserved through carry operations
+
+                reconstruct_radix_16(output@) == scalar_to_nat(self) as int,
+                // Recentered prefix: digits 0..i are in [-8, 8)
+                forall|j: int| 0 <= j < i ==> -8 <= #[trigger] output[j] && output[j] < 8,
+                // Current entry: could have received carry from previous iteration
+                0 <= output[i as int] && output[i as int] <= 16,
+                // Untouched suffix: digits (i+1)..62 are in [0, 15]
+                forall|j: int| i < j < 63 ==> 0 <= #[trigger] output[j] && output[j] <= 15,
+                // Last digit: output[63] <= 7 before carry from i=62, <= 8 after
+                0 <= output[63],
+                i <= 62 ==> output[63] <= 7,
+                i > 62 ==> output[63] <= 8,
+        {
+            // Save old value for proofs
+            let old_oi = output[i];
+            let ghost old_output = output;
+
+            // Exec intermediate for bit_vector proofs (needs i8 type)
+            let oi_plus_8: i8 = old_oi + 8;
+
             let carry = (output[i] + 8) >> 4;
+            // carry is 0 or 1
+            assert(oi_plus_8 >> 4u32 == 0i8 || oi_plus_8 >> 4u32 == 1i8) by (bit_vector)
+                requires
+                    8i8 <= oi_plus_8 && oi_plus_8 <= 24i8,
+            ;
+            proof {
+                assert(carry == 0 || carry == 1);
+            }
+            // carry << 4 is 0 or 16 (no overflow)
+            assert(carry << 4u32 == 0i8 || carry << 4u32 == 16i8) by (bit_vector)
+                requires
+                    carry == 0i8 || carry == 1i8,
+            ;
+
             output[i] -= carry << 4;
+            // output[i] is now in [-8, 7]
+            assert(old_oi - ((oi_plus_8 >> 4u32) << 4u32) >= -8i8) by (bit_vector)
+                requires
+                    8i8 <= oi_plus_8 && oi_plus_8 <= 24i8,
+                    old_oi == oi_plus_8 - 8i8,
+            ;
+            assert(old_oi - ((oi_plus_8 >> 4u32) << 4u32) < 8i8) by (bit_vector)
+                requires
+                    8i8 <= oi_plus_8 && oi_plus_8 <= 24i8,
+                    old_oi == oi_plus_8 - 8i8,
+            ;
+            // carry * 16 == carry << 4 (connects bit shift to arithmetic)
+            assert((oi_plus_8 >> 4u32) * 16i8 == (oi_plus_8 >> 4u32) << 4u32) by (bit_vector)
+                requires
+                    8i8 <= oi_plus_8 && oi_plus_8 <= 24i8,
+            ;
+
             /* <ORIGINAL CODE> :
                 output[i + 1] += carry;
                 </ORIGINAL CODE> */
@@ -2496,15 +2580,58 @@ impl Scalar {
             // Verus doesn't support += on indexed arrays with computed indices
             let next_idx = i + 1;
             output[next_idx] += carry;
-        }
-        // Precondition note: output[63] is not recentered.  It
-        // increases by carry <= 1.  Thus output[63] <= 8.
+            proof {
+                // output[i+1] is still bounded after carry
+                if i + 1 < 63 {
+                    assert(0 <= output[(i + 1) as int] && output[(i + 1) as int] <= 16);
+                } else {
+                    assert(0 <= output[63] && output[63] <= 8);
+                }
 
+                // Reconstruction is preserved: prove preconditions then apply lemma
+                let new_output = output;
+                assert(pow2(4) == 16) by {
+                    lemma2_to64();
+                }
+                assert(new_output@[i as int] == old_output@[i as int] - (carry as int) * 16);
+                assert(new_output@[(i + 1) as int] == old_output@[(i + 1) as int] + carry as int);
+                assert forall|j: int| 0 <= j < 64 && j != i && j != i + 1 implies old_output@[j]
+                    == new_output@[j] by {}
+                lemma_carry_preserves_reconstruction(
+                    old_output@,
+                    new_output@,
+                    i as nat,
+                    carry as int,
+                    4,
+                );
+            }
+        }
         proof {
-            // postconditions
-            assume(is_valid_radix_16(&output));
-            assume(radix_16_all_bounded(&output));
-            assume(reconstruct_radix_16(output@) == scalar_to_nat(self) as int);
+            // Postcondition 1: is_valid_radix_16
+            assert(pow2(3) == 8) by {
+                lemma2_to64();
+            }
+            assert forall|idx: int| 0 <= idx < 64 implies {
+                let bound = pow2(3) as int;
+                if idx < 63 {
+                    -bound <= (#[trigger] output[idx]) && output[idx] < bound
+                } else {
+                    -bound <= (#[trigger] output[idx]) && output[idx] <= bound
+                }
+            } by {
+                if idx < 63 {
+                    assert(-8 <= output[idx] && output[idx] < 8);
+                } else {
+                    assert(0 <= output[63] && output[63] <= 8);
+                }
+            }
+            assert(is_valid_radix_16(&output));
+
+            // Postcondition 2: radix_16_all_bounded (follows from is_valid_radix_16)
+            lemma_valid_radix_16_implies_all_bounded(output);
+
+            // Postcondition 3: reconstruction property (maintained by loop 2 invariant)
+            assert(reconstruct_radix_16(output@) == scalar_to_nat(self) as int);
         }
 
         output

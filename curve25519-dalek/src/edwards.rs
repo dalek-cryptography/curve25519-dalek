@@ -189,6 +189,8 @@ use crate::lemmas::field_lemmas::constants_lemmas::*;
 use crate::lemmas::field_lemmas::field_algebra_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for bytes/word conversion lemmas
 use crate::lemmas::scalar_byte_lemmas::bytes_to_scalar_lemmas::*;
+#[allow(unused_imports)] // Used in verus! blocks for radix-16 lemmas
+use crate::lemmas::scalar_lemmas_::radix16_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for bytes_to_nat_prefix / words_to_nat_u64
 use crate::specs::core_specs::*;
 #[allow(unused_imports)] // Used in verus! blocks

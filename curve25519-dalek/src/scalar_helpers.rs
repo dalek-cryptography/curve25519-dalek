@@ -49,15 +49,18 @@ pub proof fn lemma_bytes32_to_nat_one()
     }
 }
 
-/// Combined lemma for ZERO: value is 0, less than L, and congruent to 0
+/// Combined lemma for ZERO: value is 0, less than L, canonical, and congruent to 0
 pub proof fn lemma_scalar_zero_properties()
     ensures
         scalar_to_nat(&Scalar::ZERO) == 0,
         scalar_to_nat(&Scalar::ZERO) < group_order(),
+        is_canonical_scalar(&Scalar::ZERO),
         scalar_congruent_nat(&Scalar::ZERO, 0),
 {
     lemma_bytes32_to_nat_zero();
     lemma_small_mod(0nat, group_order());
+    // bytes[31] == 0 <= 127 for all-zero bytes
+    assert(Scalar::ZERO.bytes[31] <= 127);
 }
 
 /// Combined lemma for ONE: value is 1, less than L, and congruent to 1
@@ -173,8 +176,11 @@ impl Scalar {
     /// ```
     #[allow(clippy::needless_range_loop, clippy::op_ref)]
     pub fn sum_of_slice(scalars: &[Scalar]) -> (result: Scalar)
+        requires
+            forall|i: int| #![auto] 0 <= i < scalars@.len() ==> is_canonical_scalar(&scalars@[i]),
         ensures
             scalar_to_nat(&result) < group_order(),
+            is_canonical_scalar(&result),
             scalar_congruent_nat(&result, sum_of_scalars(scalars@)),
     {
         let n = scalars.len();
@@ -188,7 +194,11 @@ impl Scalar {
         for i in 0..n
             invariant
                 n == scalars.len(),
+                forall|j: int|
+                    #![auto]
+                    0 <= j < scalars@.len() ==> is_canonical_scalar(&scalars@[j]),
                 scalar_to_nat(&acc) < group_order(),
+                is_canonical_scalar(&acc),
                 scalar_congruent_nat(&acc, sum_of_scalars(scalars@.subrange(0, i as int))),
         {
             let _old_acc = acc;

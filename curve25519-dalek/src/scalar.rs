@@ -641,8 +641,7 @@ impl vstd::std_specs::ops::AddSpecImpl<&Scalar> for &Scalar {
     }
 
     open spec fn add_req(self, rhs: &Scalar) -> bool {
-        true  // No preconditions yet
-
+        is_canonical_scalar(self) && is_canonical_scalar(rhs)
     }
 
     open spec fn add_spec(self, rhs: &Scalar) -> Scalar {
@@ -654,15 +653,15 @@ impl vstd::std_specs::ops::AddSpecImpl<&Scalar> for &Scalar {
 impl<'a> Add<&'a Scalar> for &Scalar {
     type Output = Scalar;
 
-    /* <VERIFICATION NOTE>
-    PROOF BYPASS; may need to add preconditions to spec
-    </VERIFICATION NOTE> */
+    // VERIFICATION NOTE: VERIFIED
+    // PRECONDITION is_canonical_scalar(self) && is_canonical_scalar(_rhs)
     #[allow(non_snake_case)]
     fn add(self, _rhs: &'a Scalar) -> (result: Scalar)
         ensures
             bytes32_to_nat(&result.bytes) == (bytes32_to_nat(&self.bytes) + bytes32_to_nat(
                 &_rhs.bytes,
             )) % group_order(),
+            is_canonical_scalar(&result),
     {
         // The UnpackedScalar::add function produces reduced outputs if the inputs are reduced. By
         // Scalar invariant #1, this is always the case.
@@ -675,43 +674,12 @@ impl<'a> Add<&'a Scalar> for &Scalar {
         /* <MODIFIED CODE> */
         let self_unpacked = self.unpack();
         let rhs_unpacked = _rhs.unpack();
-        proof {
-            assert(scalar52_to_nat(&self_unpacked) == bytes32_to_nat(&self.bytes));
-            assert(scalar52_to_nat(&rhs_unpacked) == bytes32_to_nat(&_rhs.bytes));
-            assert(limbs_bounded(&self_unpacked));
-            assert(limbs_bounded(&rhs_unpacked));
-        }
-
-        // UnpackedScalar::add requires inputs < group_order()
-        // By Scalar invariant #2, scalars should be canonical
-        // However, we cannot add requires clauses to trait implementations,
-        // so we assume this property holds
-        proof {
-            assume(scalar52_to_nat(&self_unpacked) < group_order());
-            assume(scalar52_to_nat(&rhs_unpacked) < group_order());
-        }
-
         let result_unpacked = UnpackedScalar::add(&self_unpacked, &rhs_unpacked);
-        proof {
-            assert(scalar52_to_nat(&result_unpacked) == (scalar52_to_nat(&self_unpacked)
-                + scalar52_to_nat(&rhs_unpacked)) % group_order());
-            assert(limbs_bounded(&result_unpacked));
-        }
 
         let result = result_unpacked.pack();
         proof {
-            assert(scalar52_to_nat(&result_unpacked) == scalar52_to_nat(&result_unpacked) % pow2(
-                256,
-            )) by {
-                assert(group_order() < pow2(256)) by {
-                    assume(false);
-                }
-                lemma_small_mod(scalar52_to_nat(&result_unpacked), pow2(256));
-            }
-            assert(bytes32_to_nat(&result.bytes) == scalar52_to_nat(&result_unpacked));
-            assert(bytes32_to_nat(&result.bytes) == (bytes32_to_nat(&self.bytes) + bytes32_to_nat(
-                &_rhs.bytes,
-            )) % group_order());
+            lemma_group_order_smaller_than_pow256();
+            lemma_small_mod(scalar52_to_nat(&result_unpacked), pow2(256));
         }
         /* </MODIFIED CODE> */
 
@@ -725,6 +693,9 @@ impl<'a> AddAssign<&'a Scalar> for Scalar {
     // VERIFICATION NOTE: VERIFIED
     #[allow(clippy::op_ref)]
     fn add_assign(&mut self, _rhs: &'a Scalar)
+        requires
+            is_canonical_scalar(old(self)),
+            is_canonical_scalar(_rhs),
         ensures
             bytes32_to_nat(&self.bytes) == (bytes32_to_nat(&old(self).bytes) + bytes32_to_nat(
                 &_rhs.bytes,

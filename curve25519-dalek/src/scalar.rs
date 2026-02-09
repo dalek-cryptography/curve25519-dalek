@@ -3443,7 +3443,6 @@ PROOF BYPASS
 /// See [here](https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/) for
 /// more details.
 #[must_use]
-// VERIFICATION NOTE: PROOF BYPASS
 pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
     ensures
 // Result is a valid clamped integer for X25519
@@ -3470,15 +3469,42 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
     result[31] |= 0b0100_0000;
 
     proof {
-        // The bitwise operations above produce a clamped integer
-        // (includes result[31] <= 127 since MSB is cleared)
-        assume(is_clamped_integer(&result));
-        // The result matches the spec function
-        assume(result == spec_clamp_integer(bytes));
-        // Bits 3-7 of byte 0 are preserved
-        assume(result[0] & 0b1111_1000 == bytes[0] & 0b1111_1000);
-        // Bits 0-5 of byte 31 are preserved
-        assume(result[31] & 0b0011_1111 == bytes[31] & 0b0011_1111);
+        let r0: u8 = result[0];
+        let r31: u8 = result[31];
+        let b0: u8 = bytes[0];
+        let b31: u8 = bytes[31];
+
+        // is_clamped_integer: low 3 bits of byte 0 are cleared
+        assert(r0 & 0b0000_0111u8 == 0u8) by (bit_vector)
+            requires
+                r0 == b0 & 0b1111_1000u8,
+        ;
+        // is_clamped_integer: bit 7 of byte 31 is cleared
+        assert(r31 & 0b1000_0000u8 == 0u8) by (bit_vector)
+            requires
+                r31 == (b31 & 0b0111_1111u8) | 0b0100_0000u8,
+        ;
+        // is_clamped_integer: bit 6 of byte 31 is set
+        assert(r31 & 0b0100_0000u8 == 0b0100_0000u8) by (bit_vector)
+            requires
+                r31 == (b31 & 0b0111_1111u8) | 0b0100_0000u8,
+        ;
+        // is_clamped_integer: byte 31 <= 127
+        assert(r31 <= 127u8) by (bit_vector)
+            requires
+                r31 == (b31 & 0b0111_1111u8) | 0b0100_0000u8,
+        ;
+
+        // Bit preservation: bits 3-7 of byte 0
+        assert(r0 & 0b1111_1000u8 == b0 & 0b1111_1000u8) by (bit_vector)
+            requires
+                r0 == b0 & 0b1111_1000u8,
+        ;
+        // Bit preservation: bits 0-5 of byte 31
+        assert(r31 & 0b0011_1111u8 == b31 & 0b0011_1111u8) by (bit_vector)
+            requires
+                r31 == (b31 & 0b0111_1111u8) | 0b0100_0000u8,
+        ;
     }
 
     result

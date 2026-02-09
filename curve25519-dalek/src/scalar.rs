@@ -367,11 +367,10 @@ define_sub_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
 impl Neg for &Scalar {
     type Output = Scalar;
-    #[allow(non_snake_case)]
     fn neg(self) -> Scalar {
-        let self_R = UnpackedScalar::mul_internal(&self.unpack(), &constants::R);
-        let self_mod_l = UnpackedScalar::montgomery_reduce(&self_R);
-        UnpackedScalar::sub(&UnpackedScalar::ZERO, &self_mod_l).pack()
+        // The UnpackedScalar::sub function produces reduced outputs if the inputs are reduced. By
+        // Scalar invariant #2, this is always the case.
+        UnpackedScalar::sub(&UnpackedScalar::ZERO, &self.unpack()).pack()
     }
 }
 

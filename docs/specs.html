@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Specs Browser | Dalek-Lite Verification</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="specs.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Prism.js for Rust syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <img src="https://cdn.jsdelivr.net/gh/dalek-cryptography/curve25519-dalek/docs/assets/dalek-logo-clear.png" alt="Dalek Logo" class="logo">
+                <span>Dalek-Lite Verification</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#progress">Progress</a></li>
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="index.html#trust">Trust Model</a></li>
+                <li><a href="index.html#certifications">Certifications</a></li>
+                <li class="nav-sep"></li>
+                <li><a href="specs.html" class="active">Specs</a></li>
+                <li><a href="https://github.com/Beneficial-AI-Foundation/dalek-lite" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="specs-hero">
+        <div class="container">
+            <h1>Verified Function Specifications</h1>
+            <div class="specs-stats">
+                <div class="spec-stat">
+                    <span class="spec-stat-number" id="totalFunctions">0</span>
+                    <span class="spec-stat-label">Functions</span>
+                </div>
+                <div class="spec-stat">
+                    <span class="spec-stat-number" id="totalSpecs">0</span>
+                    <span class="spec-stat-label">Spec Functions</span>
+                </div>
+                <div class="spec-stat">
+                    <span class="spec-stat-number" id="totalAxioms">0</span>
+                    <span class="spec-stat-label">Axioms</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Horizontal module filter toolbar -->
+    <section class="module-toolbar-section">
+        <div class="container">
+            <div class="module-toolbar">
+                <span class="module-toolbar-label">Module:</span>
+                <nav class="module-pills" id="moduleTree">
+                    <!-- Populated by JS -->
+                </nav>
+                <span class="filter-sep"></span>
+                <span class="module-toolbar-label">Filter:</span>
+                <nav class="attr-pills" id="attrFilters">
+                    <!-- Populated by JS -->
+                </nav>
+                <div class="download-bar">
+                    <span class="download-label">Download:</span>
+                    <span class="download-btn" onclick="downloadMarkdown()">MD</span>
+                    <span class="download-btn" onclick="downloadCSV()">CSV</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="specs-browser">
+        <div class="container">
+            <div class="specs-layout">
+                <!-- Left panel: verified function contracts -->
+                <div class="panel panel-left">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Functions</h2>
+                        <div class="panel-toolbar">
+                            <input type="text" id="searchLeft" placeholder="Search contracts..." class="search-input search-sm">
+                            <span class="panel-count" id="countLeft">0</span>
+                            <button id="expandAllLeft" class="toolbar-btn" title="Expand all">&#9660;</button>
+                            <button id="collapseAllLeft" class="toolbar-btn" title="Collapse all">&#9650;</button>
+                        </div>
+                    </div>
+                    <div class="panel-scroll">
+                        <div class="panel-list" id="listLeft">
+                            <div class="loading-spinner">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right panel: spec function definitions -->
+                <div class="panel panel-right">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Spec Functions and Axioms</h2>
+                        <div class="panel-toolbar">
+                            <input type="text" id="searchRight" placeholder="Search specs..." class="search-input search-sm">
+                            <span class="panel-count" id="countRight">0</span>
+                            <button id="expandAllRight" class="toolbar-btn" title="Expand all">&#9660;</button>
+                            <button id="collapseAllRight" class="toolbar-btn" title="Collapse all">&#9650;</button>
+                        </div>
+                    </div>
+                    <!-- Filter banner (shown when filtering by a verified function's refs) -->
+                    <div class="spec-filter-banner" id="specFilterBanner" style="display: none;">
+                        <span id="specFilterText"></span>
+                        <button id="specFilterClear" class="filter-clear-btn">Show All</button>
+                    </div>
+                    <div class="panel-scroll">
+                        <div class="panel-list" id="listRight">
+                            <div class="loading-spinner">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Dalek-Lite Verification</h4>
+                    <p>Formally verifying curve25519-dalek with Verus</p>
+                    <p>Part of the Beneficial AI Foundation</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="https://github.com/Beneficial-AI-Foundation/dalek-lite" target="_blank">GitHub Repository</a></li>
+                        <li><a href="https://github.com/verus-lang/verus" target="_blank">Verus Project</a></li>
+                        <li><a href="https://www.beneficialaifoundation.org/" target="_blank">Beneficial AI Foundation</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Spec browser generated from source</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK (compat for simplicity) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <!-- Prism.js core + Rust grammar -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
+
+    <script src="specs.js"></script>
+</body>
+</html>

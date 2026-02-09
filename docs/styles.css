@@ -80,6 +80,17 @@ body {
     color: var(--secondary-color);
 }
 
+.nav-links a.active {
+    color: var(--secondary-color);
+    border-bottom: 2px solid var(--secondary-color);
+    padding-bottom: 2px;
+}
+
+.nav-sep {
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+    margin: 0 0.25rem;
+}
+
 /* Hero Section */
 .hero {
     background: linear-gradient(135deg, var(--dark-bg) 0%, #1e3a8a 100%);

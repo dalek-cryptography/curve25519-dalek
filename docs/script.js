@@ -43,12 +43,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Navigation items — declared early so anchor-click handler below can use them
+    const sections = document.querySelectorAll('section[id]');
+    const navItems = document.querySelectorAll('.nav-links a');
+
     // Smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
+            const href = this.getAttribute('href');
+            const target = document.querySelector(href);
             if (target) {
+                // Immediately highlight the clicked link
+                navItems.forEach(item => item.classList.remove('active'));
+                this.classList.add('active');
+                // Update URL hash without jumping
+                history.pushState(null, '', href);
                 target.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'
@@ -91,8 +101,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Add active state to nav links based on scroll position
-    const sections = document.querySelectorAll('section[id]');
-    const navItems = document.querySelectorAll('.nav-links a');
 
     function highlightNavigation() {
         const scrollY = window.pageYOffset;
@@ -114,6 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.addEventListener('scroll', highlightNavigation);
+    highlightNavigation(); // highlight on initial load
 
     // CSV Modal functionality
     let csvFunctionsData = [];

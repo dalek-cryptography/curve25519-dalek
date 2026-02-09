@@ -1,0 +1,1172 @@
+/* ============================================================
+   Specs Browser Styles — Dual-List Layout
+   Left panel:  verified function contracts (accordion cards)
+   Right panel: spec function definitions   (accordion cards)
+   Sidebar:     module filter
+   ============================================================ */
+
+/* Hero */
+.specs-hero {
+    background: linear-gradient(135deg, var(--dark-bg) 0%, #1e3a8a 100%);
+    color: white;
+    padding: 3rem 0;
+    text-align: center;
+}
+
+.specs-hero h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.specs-hero .subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 1.5rem;
+}
+
+.specs-stats {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+}
+
+.download-bar {
+    margin-left: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.download-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.download-btn {
+    display: inline-block;
+    background: #e8f0fe;
+    color: var(--primary);
+    border: 1px solid #c2d5f2;
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.download-btn:hover {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+}
+
+.spec-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.spec-stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+}
+
+.spec-stat-label {
+    font-size: 0.85rem;
+    opacity: 0.85;
+    margin-top: 0.25rem;
+}
+
+/* ── Horizontal module toolbar ────────────────────────────── */
+.module-toolbar-section {
+    background: white;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 60px;         /* sits right below the navbar */
+    z-index: 90;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.module-toolbar-section > .container {
+    max-width: none;           /* full width — no centering cap */
+    padding: 0 5rem;
+}
+
+.module-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;        /* prevent shrinking when pills hide */
+    padding: 0.35rem 0;
+    flex-wrap: wrap;
+}
+
+.module-toolbar-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.module-pills {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.module-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--light-bg);
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    transition: all 0.15s;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.module-pill:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.module-pill.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.module-pill .pill-count {
+    font-size: 0.62rem;
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.06);
+    padding: 0.08rem 0.35rem;
+    border-radius: 10px;
+}
+
+.module-pill.active .pill-count {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Separator between module pills and attribute pills */
+.filter-sep {
+    width: 1px;
+    height: 1.4rem;
+    background: var(--border-color);
+    flex-shrink: 0;
+    margin-left: auto;         /* push separator + attrs to the right */
+    margin-right: 0.75rem;
+}
+
+/* Attribute filter pills (Public, Libsignal) */
+.attr-pills {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+}
+
+.attr-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--light-bg);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    transition: all 0.15s;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.attr-pill .pill-count {
+    font-size: 0.62rem;
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.06);
+    padding: 0.08rem 0.35rem;
+    border-radius: 10px;
+}
+
+.attr-pill:hover {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.attr-public:hover, .attr-public.active {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.attr-public.active {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+}
+
+.attr-public.active .pill-count {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.attr-libsignal:hover, .attr-libsignal.active {
+    border-color: #8b5cf6;
+    color: #8b5cf6;
+}
+
+.attr-libsignal.active {
+    background: #8b5cf6;
+    color: white;
+    border-color: #8b5cf6;
+}
+
+.attr-libsignal.active .pill-count {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Layout: two panels ──────────────────────────────────── */
+.specs-browser {
+    padding: 1.25rem 0 4rem;
+}
+
+.specs-browser .container {
+    max-width: 1800px;
+}
+
+.specs-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+/* Toolbar expand/collapse buttons */
+.toolbar-btn {
+    padding: 0.2rem 0.45rem;
+    border: 1px solid var(--border-color);
+    background: var(--light-bg);
+    border-radius: 5px;
+    font-size: 0.6rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+    line-height: 1;
+}
+
+.toolbar-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* ── Panel (shared for left and right) ────────────────────── */
+.panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    /* Each panel sticks to the viewport and scrolls independently */
+    position: sticky;
+    top: 102px;   /* navbar 60 + module toolbar ~42 */
+    max-height: calc(100vh - 112px);
+}
+
+.panel-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px; /* room for scrollbar */
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 2px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.panel-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    white-space: nowrap;
+}
+
+.panel-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.search-sm {
+    width: 180px;
+    padding: 0.4rem 0.65rem;
+    border: 1.5px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-family: inherit;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+}
+
+.search-sm:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.panel-count {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.panel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+/* ── Filter banner (right panel) ──────────────────────────── */
+.spec-filter-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.75rem;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: #3730a3;
+    font-weight: 500;
+}
+
+.filter-clear-btn {
+    padding: 0.25rem 0.65rem;
+    border: 1px solid #818cf8;
+    background: white;
+    color: #4f46e5;
+    border-radius: 5px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.filter-clear-btn:hover {
+    background: #4f46e5;
+    color: white;
+}
+
+/* ── Module group headers ─────────────────────────────────── */
+.module-group-header {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    padding: 0.6rem 0 0.2rem;
+    margin-top: 0.35rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.module-group-header:first-child {
+    margin-top: 0;
+}
+
+/* Axiom group header at bottom of right panel */
+.axiom-group-header {
+    color: #92400e;
+    border-bottom-color: #f59e0b;
+    margin-top: 1rem;
+}
+
+.axiom-group-count {
+    font-size: 0.65rem;
+    font-weight: 600;
+    background: #fef3c7;
+    padding: 0.08rem 0.35rem;
+    border-radius: 8px;
+    margin-left: 0.3rem;
+}
+
+/* ── Accordion cards (shared) ─────────────────────────────── */
+.spec-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+
+.spec-card:hover {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.09);
+}
+
+.spec-card.highlight-card {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+/* Card header */
+.spec-header {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 0.85rem;
+    cursor: pointer;
+    gap: 0.6rem;
+    user-select: none;
+}
+
+.spec-toggle {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: transform 0.2s;
+    font-size: 0.7rem;
+}
+
+.spec-card.open .spec-toggle {
+    transform: rotate(90deg);
+}
+
+.spec-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.spec-name {
+    font-family: 'JetBrains Mono', 'Monaco', 'Courier New', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.spec-meta {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.spec-module {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    background: var(--light-bg);
+    padding: 0.08rem 0.4rem;
+    border-radius: 4px;
+}
+
+.spec-visibility {
+    font-size: 0.65rem;
+    color: var(--accent-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.spec-math {
+    font-size: 0.7rem;
+    color: var(--primary-color);
+    font-style: italic;
+}
+
+/* Function status badges */
+.fn-badge {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 4px;
+    padding: 0.06rem 0.35rem;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+    line-height: 1.4;
+}
+
+.fn-badge-proof {
+    color: #065f46;
+    background: #d1fae5;
+    border: 1px solid #6ee7b7;
+}
+
+.fn-badge-spec {
+    color: #1e40af;
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+}
+
+.fn-badge-nospec {
+    color: #6b7280;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+}
+
+.fn-badge-libsignal {
+    color: #5b21b6;
+    background: #ede9fe;
+    border: 1px solid #c4b5fd;
+}
+
+/* Card border accents based on status */
+.spec-card.card-proved {
+    border-left: 3px solid #10b981;
+}
+
+.spec-card.card-nospec {
+    border-left: 3px solid #d1d5db;
+    opacity: 0.85;
+}
+
+/* Axiom badge (amber pill) */
+.axiom-badge {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 4px;
+    padding: 0.06rem 0.35rem;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+    line-height: 1.4;
+}
+
+/* Axiom card — subtle amber left border */
+.spec-card.axiom-card {
+    border-left: 3px solid #f59e0b;
+}
+
+.spec-github {
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    text-decoration: none;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.spec-github:hover {
+    background: var(--light-bg);
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+/* Card body (expandable) */
+.spec-body {
+    display: none;
+    border-top: 1px solid var(--border-color);
+}
+
+.spec-card.open .spec-body {
+    display: block;
+}
+
+/* Doc comment */
+.spec-doc {
+    padding: 0.6rem 0.85rem;
+    background: #fafbfe;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
+
+.spec-doc p {
+    margin: 0 0 0.35rem;
+}
+
+.spec-doc p:last-child {
+    margin-bottom: 0;
+}
+
+/* Interpretation badges */
+.spec-interpretations {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.5rem 0.85rem;
+    background: #f0f4ff;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.spec-interp {
+    font-size: 0.75rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+}
+
+.spec-interp-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.spec-interp-value {
+    color: var(--text-primary);
+}
+
+/* ── "Show referenced specs" button on verified cards ─────── */
+.show-refs-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.7rem;
+    margin: 0.5rem 0.85rem;
+    background: #eef2ff;
+    color: #4338ca;
+    border: 1px solid #c7d2fe;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.show-refs-btn:hover {
+    background: #4338ca;
+    color: white;
+    border-color: #4338ca;
+}
+
+.show-refs-btn .refs-count {
+    background: rgba(67, 56, 202, 0.12);
+    padding: 0.1rem 0.4rem;
+    border-radius: 8px;
+    font-size: 0.65rem;
+}
+
+.show-refs-btn:hover .refs-count {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Referenced spec tags (inside verified card body) */
+.contract-refs {
+    padding: 0.45rem 0.85rem;
+    background: #f8faff;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.contract-refs-label {
+    font-weight: 600;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.3rem;
+}
+
+.contract-refs-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.contract-ref-tag {
+    display: inline-block;
+    padding: 0.12rem 0.5rem;
+    background: #e0e7ff;
+    color: #3730a3;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.contract-ref-tag:hover {
+    background: #c7d2fe;
+    color: #1e1b4b;
+}
+
+/* ── "Show referenced specs" active state ─────────────────── */
+.show-refs-btn.active {
+    background: #4338ca;
+    color: white;
+    border-color: #4338ca;
+}
+
+.show-refs-btn.active .refs-count {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Inline referenced spec cards (nested inside a spec card) */
+.inline-refs-container {
+    margin: 0.4rem 0.85rem 0.5rem;
+    border-left: 3px solid #c7d2fe;
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.inline-ref-card {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    transition: all 0.15s;
+}
+
+.inline-ref-card.open {
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.inline-ref-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background 0.15s;
+}
+
+.inline-ref-header:hover {
+    background: #e2e8f0;
+}
+
+.inline-ref-toggle {
+    font-size: 0.55rem;
+    color: #64748b;
+    transition: transform 0.2s;
+}
+
+.inline-ref-card.open > .inline-ref-header > .inline-ref-toggle {
+    transform: rotate(90deg);
+}
+
+.inline-ref-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.75rem;
+}
+
+.inline-ref-module {
+    color: #94a3b8;
+    font-size: 0.65rem;
+}
+
+.inline-ref-math {
+    color: #6366f1;
+    font-size: 0.65rem;
+    font-style: italic;
+    margin-left: auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 40%;
+}
+
+.inline-ref-body {
+    display: none;
+    border-top: 1px solid #e2e8f0;
+}
+
+.inline-ref-card.open > .inline-ref-body {
+    display: block;
+}
+
+.inline-ref-body pre {
+    margin: 0;
+    font-size: 0.72rem;
+    border-radius: 0;
+}
+
+.inline-ref-body pre code {
+    padding: 0.6rem 0.75rem;
+}
+
+.inline-ref-tags {
+    padding: 0.35rem 0.6rem 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.inline-ref-missing {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* Label for the always-visible referenced specs section */
+.inline-refs-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6366f1;
+    padding: 0.25rem 0 0.15rem;
+}
+
+.inline-refs-label .refs-count {
+    background: rgba(99, 102, 241, 0.12);
+    padding: 0.08rem 0.35rem;
+    border-radius: 8px;
+    font-size: 0.6rem;
+}
+
+/* Cycle detection marker */
+.inline-ref-cycle {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.inline-ref-cycle-label {
+    font-size: 0.65rem;
+    color: #94a3b8;
+    font-style: italic;
+    margin-left: 0.3rem;
+}
+
+/* Nested refs inside inline ref cards (same style as top-level container) */
+.inline-refs-nested {
+    border-top: 1px solid #e2e8f0;
+    margin: 0.25rem 0 0;
+    padding: 0.3rem 0.4rem 0.3rem 0.5rem;
+}
+
+/* ── Clickable spec links inside contract code ────────────── */
+.spec-link {
+    color: #3b82f6;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+    transition: all 0.15s;
+    border-radius: 2px;
+}
+
+.spec-link:hover {
+    color: #1d4ed8;
+    text-decoration-style: solid;
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.spec-link.active {
+    color: #1d4ed8;
+    background: rgba(59, 130, 246, 0.12);
+    text-decoration-style: solid;
+}
+
+/* ── Code block ───────────────────────────────────────────── */
+.spec-code-wrapper {
+    position: relative;
+}
+
+.spec-code-wrapper pre {
+    margin: 0;
+    border-radius: 0;
+    font-size: 0.78rem;
+    line-height: 1.55;
+    max-height: 500px;
+    overflow: auto;
+}
+
+.spec-code-wrapper pre code {
+    font-family: 'JetBrains Mono', 'Monaco', 'Courier New', monospace;
+}
+
+.spec-code-wrapper .copy-btn {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: #ccc;
+    font-size: 0.65rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 2;
+}
+
+.spec-code-wrapper .copy-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* ── Comments section ─────────────────────────────────────── */
+.spec-comments {
+    border-top: 1px solid var(--border-color);
+    padding: 0.6rem 0.85rem;
+}
+
+.comments-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0;
+    cursor: pointer;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    user-select: none;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.comments-toggle:hover {
+    color: var(--primary-color);
+}
+
+.comments-toggle .comment-count {
+    background: var(--light-bg);
+    padding: 0.08rem 0.4rem;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+
+.comments-content {
+    display: none;
+    padding-top: 0.6rem;
+}
+
+.comments-content.open {
+    display: block;
+}
+
+.comment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.comment-item {
+    background: var(--light-bg);
+    padding: 0.55rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    position: relative;
+}
+
+.comment-author {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.75rem;
+}
+
+.comment-delete-btn {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 0.65rem;
+    font-weight: 500;
+    line-height: 1;
+    padding: 0.25rem 0.45rem;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.comment-item:hover .comment-delete-btn {
+    opacity: 1;
+}
+
+.comment-delete-btn:hover {
+    color: #ef4444;
+    background: #fef2f2;
+}
+
+.comment-time {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    margin-left: 0.4rem;
+}
+
+.comment-text {
+    margin-top: 0.25rem;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+/* Outdated comment (spec/contract changed since this comment was posted) */
+.comment-item.outdated {
+    opacity: 0.6;
+    border-left: 3px solid #f59e0b;
+    background: #fffbeb;
+    padding-left: calc(0.75rem - 3px);
+}
+
+.comment-outdated-badge {
+    display: inline-block;
+    font-size: 0.58rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 4px;
+    padding: 0.08rem 0.35rem;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+}
+
+.comment-empty {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 0.4rem 0;
+}
+
+/* Comment form */
+.comment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.comment-form input,
+.comment-form textarea {
+    padding: 0.4rem 0.6rem;
+    border: 1.5px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.comment-form input:focus,
+.comment-form textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.comment-form textarea {
+    min-height: 50px;
+    resize: vertical;
+}
+
+.comment-form button {
+    align-self: flex-end;
+    padding: 0.4rem 1rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.comment-form button:hover {
+    background: #1d4ed8;
+}
+
+.comment-form button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.firebase-notice {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    padding: 0.75rem;
+    background: #fffbeb;
+    border: 1px dashed #f59e0b;
+    border-radius: 8px;
+    margin-top: 0.4rem;
+}
+
+/* Loading / No results */
+.loading-spinner {
+    text-align: center;
+    padding: 2.5rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.no-results {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-secondary);
+}
+
+.no-results h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.4rem;
+    color: var(--text-primary);
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 1200px) {
+    .search-sm {
+        width: 140px;
+    }
+}
+
+@media (max-width: 900px) {
+    .specs-layout {
+        grid-template-columns: 1fr;
+    }
+    .specs-hero h1 {
+        font-size: 1.75rem;
+    }
+    .panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .module-toolbar {
+        flex-wrap: wrap;
+        height: auto;        /* allow wrapping on small screens */
+    }
+}

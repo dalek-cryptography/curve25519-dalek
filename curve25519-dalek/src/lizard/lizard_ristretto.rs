@@ -47,7 +47,7 @@ impl RistrettoPoint {
         let mut result: [u8; 16] = Default::default();
         let fes = self.elligator_ristretto_flavor_inverse();
         let mut n_found = 0;
-        for fe in fes {
+        for fe in fes.into_iter().take(8) {
             let mut ok = fe.is_some();
             let fe = fe.unwrap_or(FieldElement::ZERO);
             let bytes = fe.to_bytes();

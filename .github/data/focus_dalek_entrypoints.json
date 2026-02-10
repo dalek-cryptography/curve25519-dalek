@@ -1,0 +1,246 @@
+{
+  "focus_nodes": [
+    "probe:curve25519-dalek/4.1.3/edwards/&CompressedEdwardsY#impl<Option<EdwardsPoint>>#[CompressedEdwardsY]decompress()",
+    "probe:curve25519-dalek/4.1.3/edwards/&CompressedEdwardsY#impl<[u8;/{const}]>#[CompressedEdwardsY]as_bytes()",
+    "probe:curve25519-dalek/4.1.3/edwards/&EdwardsPoint#impl<CompressedEdwardsY>#[EdwardsPoint]compress()",
+    "probe:curve25519-dalek/4.1.3/edwards/&EdwardsPoint#impl<EdwardsPoint>#[EdwardsPoint]mul_by_cofactor()",
+    "probe:curve25519-dalek/4.1.3/edwards/&EdwardsPoint#impl<MontgomeryPoint>#[EdwardsPoint]to_montgomery()",
+    "probe:curve25519-dalek/4.1.3/edwards/&EdwardsPoint#impl<bool>#[EdwardsPoint]is_small_order()",
+    "probe:curve25519-dalek/4.1.3/edwards/EdwardsPoint#impl<EdwardsPoint>#[EdwardsPoint][Neg]neg()",
+    "probe:curve25519-dalek/4.1.3/edwards/impl<&EdwardsPoint>#[EdwardsPoint]vartime_double_scalar_mul_basepoint()",
+    "probe:curve25519-dalek/4.1.3/lizard/lizard_ristretto/&RistrettoPoint#impl<(u8,/[[u8;/{const}];/{const}])>#[RistrettoPoint]decode_253_bits()",
+    "probe:curve25519-dalek/4.1.3/lizard/lizard_ristretto/&RistrettoPoint#impl<Option<[u8;/{const}]>\nwhere\n////D:/Digest,\n////D:/Digest<OutputSize/=/U32>,>#[RistrettoPoint]lizard_decode()",
+    "probe:curve25519-dalek/4.1.3/lizard/lizard_ristretto/impl<&[u8;/{const}]>#[RistrettoPoint]from_uniform_bytes_single_elligator()",
+    "probe:curve25519-dalek/4.1.3/lizard/lizard_ristretto/impl<&[u8;/{const}]>#[RistrettoPoint]lizard_encode()",
+    "probe:curve25519-dalek/4.1.3/montgomery/&MontgomeryPoint#impl<u8>#[MontgomeryPoint]to_edwards()",
+    "probe:curve25519-dalek/4.1.3/ristretto/&CompressedRistretto#impl<Option<RistrettoPoint>>#[CompressedRistretto]decompress()",
+    "probe:curve25519-dalek/4.1.3/ristretto/&CompressedRistretto#impl<[u8;/{const}]>#[CompressedRistretto]as_bytes()",
+    "probe:curve25519-dalek/4.1.3/ristretto/&CompressedRistretto#impl<[u8;/{const}]>#[CompressedRistretto]to_bytes()",
+    "probe:curve25519-dalek/4.1.3/ristretto/&RistrettoBasepointTable#impl<&Scalar>#[`&'a/RistrettoBasepointTable`][`Mul<&'b/Scalar>`]mul()",
+    "probe:curve25519-dalek/4.1.3/ristretto/&RistrettoPoint#impl<&RistrettoPoint>#[RistrettoPoint][ConstantTimeEq]ct_eq()",
+    "probe:curve25519-dalek/4.1.3/ristretto/&RistrettoPoint#impl<&RistrettoPoint>#[RistrettoPoint][`PartialEq<Self>`]eq()",
+    "probe:curve25519-dalek/4.1.3/ristretto/&RistrettoPoint#impl<&RistrettoPoint>#[`&'a/RistrettoPoint`][`Sub<&'b/RistrettoPoint>`]sub()",
+    "probe:curve25519-dalek/4.1.3/ristretto/&RistrettoPoint#impl<&Scalar>#[`&'a/RistrettoPoint`][`Mul<&'b/Scalar>`]mul()",
+    "probe:curve25519-dalek/4.1.3/ristretto/&RistrettoPoint#impl<CompressedRistretto>#[RistrettoPoint]compress()",
+    "probe:curve25519-dalek/4.1.3/ristretto/&Scalar#impl<&RistrettoPoint>#[`&'a/Scalar`][`Mul<&'b/RistrettoPoint>`]mul()",
+    "probe:curve25519-dalek/4.1.3/ristretto/RistrettoPoint#impl<RistrettoPoint>#[RistrettoPoint][Neg]neg()",
+    "probe:curve25519-dalek/4.1.3/ristretto/impl<&RistrettoPoint>#[RistrettoPoint][ConditionallySelectable]conditional_select()",
+    "probe:curve25519-dalek/4.1.3/ristretto/impl<&Scalar>#[RistrettoPoint]mul_base()",
+    "probe:curve25519-dalek/4.1.3/ristretto/impl<&[u8;/{const}]>#[RistrettoPoint]from_uniform_bytes()",
+    "probe:curve25519-dalek/4.1.3/ristretto/impl<&[u8]>#[CompressedRistretto]from_slice()",
+    "probe:curve25519-dalek/4.1.3/ristretto/impl<I>#[RistrettoPoint]double_and_compress_batch()",
+    "probe:curve25519-dalek/4.1.3/ristretto/impl<J>#[RistrettoPoint][MultiscalarMul]multiscalar_mul()",
+    "probe:curve25519-dalek/4.1.3/ristretto/impl<RistrettoPoint>#[RistrettoPoint][Default]default()",
+    "probe:curve25519-dalek/4.1.3/ristretto/impl<RistrettoPoint>#[RistrettoPoint][Identity]identity()",
+    "probe:curve25519-dalek/4.1.3/scalar/&Scalar#impl<&Self>#[Scalar][ConstantTimeEq]ct_eq()",
+    "probe:curve25519-dalek/4.1.3/scalar/&Scalar#impl<&Self>#[Scalar][`PartialEq<Self>`]eq()",
+    "probe:curve25519-dalek/4.1.3/scalar/&Scalar#impl<Scalar>#[Scalar]invert()",
+    "probe:curve25519-dalek/4.1.3/scalar/&Scalar#impl<[u8;/{const}]>#[Scalar]as_bytes()",
+    "probe:curve25519-dalek/4.1.3/scalar/&Scalar#impl<[u8;/{const}]>#[Scalar]to_bytes()",
+    "probe:curve25519-dalek/4.1.3/scalar/Scalar#impl<Scalar>#[Scalar][Neg]neg()",
+    "probe:curve25519-dalek/4.1.3/scalar/clamp_integer()",
+    "probe:curve25519-dalek/4.1.3/scalar/impl<&[u8;/{const}]>#[Scalar]from_bytes_mod_order_wide()",
+    "probe:curve25519-dalek/4.1.3/scalar/impl<&[u8]>#[Scalar]hash_from_bytes()",
+    "probe:curve25519-dalek/4.1.3/scalar/impl<D>#[Scalar]from_hash()",
+    "probe:curve25519-dalek/4.1.3/scalar/impl<[u8;/{const}]>#[Scalar]from_bytes_mod_order()",
+    "probe:curve25519-dalek/4.1.3/scalar/impl<[u8;/{const}]>#[Scalar]from_canonical_bytes()",
+    "probe:curve25519-dalek/4.1.3/scalar/impl<u32>#[Scalar][`From<u32>`]from()",
+    "probe:curve25519-dalek/4.1.3/scalar/impl<u64>#[Scalar][`From<u64>`]from()",
+    "probe:curve25519-dalek/4.1.3/scalar/impl<u8>#[Scalar][`From<u8>`]from()",
+    "probe:curve25519-dalek/4.1.3/traits/&T#impl<bool>#[T][IsIdentity]is_identity()",
+    "probe:curve25519-dalek/4.1.3/traits/Identity#identity()",
+    "probe:curve25519-dalek/4.1.3/traits/VartimeMultiscalarMul<J>#vartime_multiscalar_mul()"
+  ],
+  "focus_functions": [
+    {
+      "display_name": "as_bytes",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "as_bytes",
+      "relative_path": "curve25519-dalek/src/scalar.rs"
+    },
+    {
+      "display_name": "as_bytes",
+      "relative_path": "curve25519-dalek/src/edwards.rs"
+    },
+    {
+      "display_name": "clamp_integer",
+      "relative_path": "curve25519-dalek/src/scalar.rs"
+    },
+    {
+      "display_name": "compress",
+      "relative_path": "curve25519-dalek/src/edwards.rs"
+    },
+    {
+      "display_name": "compress",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "conditional_select",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "ct_eq",
+      "relative_path": "curve25519-dalek/src/scalar.rs"
+    },
+    {
+      "display_name": "ct_eq",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "decode_253_bits",
+      "relative_path": "curve25519-dalek/src/lizard/lizard_ristretto.rs"
+    },
+    {
+      "display_name": "decompress",
+      "relative_path": "curve25519-dalek/src/edwards.rs"
+    },
+    {
+      "display_name": "decompress",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "default",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "double_and_compress_batch",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "eq",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "eq",
+      "relative_path": "curve25519-dalek/src/scalar.rs"
+    },
+    {
+      "display_name": "from",
+      "relative_path": "curve25519-dalek/src/scalar.rs"
+    },
+    {
+      "display_name": "from_bytes_mod_order",
+      "relative_path": "curve25519-dalek/src/scalar.rs"
+    },
+    {
+      "display_name": "from_bytes_mod_order_wide",
+      "relative_path": "curve25519-dalek/src/scalar.rs"
+    },
+    {
+      "display_name": "from_canonical_bytes",
+      "relative_path": "curve25519-dalek/src/scalar.rs"
+    },
+    {
+      "display_name": "from_hash",
+      "relative_path": "curve25519-dalek/src/scalar.rs"
+    },
+    {
+      "display_name": "from_slice",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "from_uniform_bytes",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "from_uniform_bytes_single_elligator",
+      "relative_path": "curve25519-dalek/src/lizard/lizard_ristretto.rs"
+    },
+    {
+      "display_name": "hash_from_bytes",
+      "relative_path": "curve25519-dalek/src/scalar.rs"
+    },
+    {
+      "display_name": "identity",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "identity",
+      "relative_path": "curve25519-dalek/src/backend/vector/avx2/edwards.rs"
+    },
+    {
+      "display_name": "invert",
+      "relative_path": "curve25519-dalek/src/scalar.rs"
+    },
+    {
+      "display_name": "is_identity",
+      "relative_path": "curve25519-dalek/src/traits.rs"
+    },
+    {
+      "display_name": "is_small_order",
+      "relative_path": "curve25519-dalek/src/edwards.rs"
+    },
+    {
+      "display_name": "lizard_decode",
+      "relative_path": "curve25519-dalek/src/lizard/lizard_ristretto.rs"
+    },
+    {
+      "display_name": "lizard_encode",
+      "relative_path": "curve25519-dalek/src/lizard/lizard_ristretto.rs"
+    },
+    {
+      "display_name": "mul",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "mul_base",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "mul_by_cofactor",
+      "relative_path": "curve25519-dalek/src/edwards.rs"
+    },
+    {
+      "display_name": "multiscalar_mul",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "neg",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "neg",
+      "relative_path": "curve25519-dalek/src/scalar.rs"
+    },
+    {
+      "display_name": "neg",
+      "relative_path": "curve25519-dalek/src/edwards.rs"
+    },
+    {
+      "display_name": "sub",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "to_bytes",
+      "relative_path": "curve25519-dalek/src/ristretto.rs"
+    },
+    {
+      "display_name": "to_bytes",
+      "relative_path": "curve25519-dalek/src/scalar.rs"
+    },
+    {
+      "display_name": "to_edwards",
+      "relative_path": "curve25519-dalek/src/montgomery.rs"
+    },
+    {
+      "display_name": "to_montgomery",
+      "relative_path": "curve25519-dalek/src/edwards.rs"
+    },
+    {
+      "display_name": "vartime_double_scalar_mul_basepoint",
+      "relative_path": "curve25519-dalek/src/edwards.rs"
+    },
+    {
+      "display_name": "vartime_multiscalar_mul",
+      "relative_path": "curve25519-dalek/src/traits.rs"
+    }
+  ],
+  "metadata": {
+    "description": "curve25519-dalek functions called by libsignal",
+    "generated_at": "2026-02-10T08:51:39.361508",
+    "total": 50,
+    "unique_functions": 46
+  }
+}

@@ -9,6 +9,7 @@ on:
       - 'curve25519-dalek/build.rs'
       - 'curve25519-dalek/Cargo.toml'
       - '.github/workflows/generate-callgraph.yml'
+      - '.github/data/focus_dalek_entrypoints.json'
   schedule:
     # Run daily at 6:00 UTC to keep cache fresh (caches expire after 7 days of no access)
     - cron: '0 6 * * *'
@@ -80,11 +81,27 @@ jobs:
     needs: generate
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout (for focus set data)
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/data/focus_dalek_entrypoints.json
+          sparse-checkout-cone-mode: false
+
       - name: Download callgraph viewer artifact
         uses: actions/download-artifact@v4
         with:
           name: callgraph-viewer
           path: callgraph
+
+      - name: Add focus set to callgraph artifact
+        run: |
+          if [ -f .github/data/focus_dalek_entrypoints.json ]; then
+            cp .github/data/focus_dalek_entrypoints.json callgraph/focus_dalek_entrypoints.json
+            TOTAL=$(python3 -c "import json; print(json.load(open('.github/data/focus_dalek_entrypoints.json'))['metadata']['total'])" 2>/dev/null || echo "?")
+            echo "✓ Added focus set (${TOTAL} entry-point functions)"
+          else
+            echo "⚠ No focus set file found at .github/data/focus_dalek_entrypoints.json, skipping"
+          fi
 
       - name: Fix callgraph asset paths for subpath deployment
         run: |

@@ -116,12 +116,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         searchRight = e.target.value.toLowerCase().trim();
         renderRightPanel();
     });
-    document.getElementById("specFilterClear").addEventListener("click", clearSpecFilter);
+    document.getElementById("specFilterClear").addEventListener("click", () => {
+        if (autoFilterBypassed) {
+            autoFilterBypassed = false;
+            renderRightPanel();
+        } else {
+            clearSpecFilter();
+        }
+    });
 
-    document.getElementById("expandAllLeft").addEventListener("click", () => toggleAllIn("listLeft", true));
-    document.getElementById("collapseAllLeft").addEventListener("click", () => toggleAllIn("listLeft", false));
-    document.getElementById("expandAllRight").addEventListener("click", () => toggleAllIn("listRight", true));
-    document.getElementById("collapseAllRight").addEventListener("click", () => toggleAllIn("listRight", false));
 
     // Event delegation for inline ref cards in right panel (registered once)
     document.getElementById("listRight").addEventListener("click", e => {
@@ -154,7 +157,12 @@ let attrPillLibsignal = null;
 function buildModuleTree(modules) {
     const container = document.getElementById("moduleTree");
 
-    const sorted = [...modules].sort();
+    // Sort modules alphabetically, but push "backend" to the end
+    const sorted = [...modules].sort((a, b) => {
+        if (a === "backend") return 1;
+        if (b === "backend") return -1;
+        return a.localeCompare(b);
+    });
     for (const mod of sorted) {
         const count = verifiedFunctions.filter(v => v.module === mod).length;
         const pill = createModulePill(mod, count, mod);
@@ -179,7 +187,9 @@ function createModulePill(displayName, count, moduleId) {
             activeModules.add(moduleId);
             el.classList.add("active");
         }
+        autoFilterBypassed = false;
         renderLeftPanel();
+        renderRightPanel();
     });
     return { el, moduleId, countEl };
 }
@@ -195,7 +205,9 @@ function buildAttributeFilters(publicCount, libsignalCount) {
     publicEl.addEventListener("click", () => {
         filterPublic = !filterPublic;
         publicEl.classList.toggle("active", filterPublic);
+        autoFilterBypassed = false;
         renderLeftPanel();
+        renderRightPanel();
     });
     container.appendChild(publicEl);
     attrPillPublic = { el: publicEl, countEl: publicEl.querySelector(".pill-count") };
@@ -206,7 +218,9 @@ function buildAttributeFilters(publicCount, libsignalCount) {
     libsignalEl.addEventListener("click", () => {
         filterLibsignal = !filterLibsignal;
         libsignalEl.classList.toggle("active", filterLibsignal);
+        autoFilterBypassed = false;
         renderLeftPanel();
+        renderRightPanel();
     });
     container.appendChild(libsignalEl);
     attrPillLibsignal = { el: libsignalEl, countEl: libsignalEl.querySelector(".pill-count") };
@@ -262,16 +276,24 @@ function getFilteredVerified() {
     }
     if (searchLeft) {
         list = list.filter(v => {
+            // Search top-level fields only (name, module, docs,
+            // interpretations) — exclude contract body and referenced
+            // spec names to avoid false matches.
             const h = (
                 v.name + " " + v.display_name + " " + v.module + " " +
-                v.contract + " " + (v.doc_comment || "") + " " +
-                (v.math_interpretation || "") + " " + (v.informal_interpretation || "") +
-                " " + (v.referenced_specs || []).join(" ")
+                (v.doc_comment || "") + " " +
+                (v.math_interpretation || "") + " " + (v.informal_interpretation || "")
             ).toLowerCase();
             return h.includes(searchLeft);
         });
     }
-    list.sort((a, b) => a.module.localeCompare(b.module) || a.display_name.localeCompare(b.display_name));
+    // Sort by module (backend last), then by display name
+    list.sort((a, b) => {
+        const ma = a.module === "backend" ? 1 : 0;
+        const mb = b.module === "backend" ? 1 : 0;
+        if (ma !== mb) return ma - mb;
+        return a.module.localeCompare(b.module) || a.display_name.localeCompare(b.display_name);
+    });
     return list;
 }
 
@@ -303,80 +325,20 @@ function renderLeftPanel() {
 
     container.innerHTML = html;
 
-    // Syntax highlight
-    container.querySelectorAll("pre code.language-rust").forEach(b => Prism.highlightElement(b));
-
-    // Card toggle
+    // Card toggle — inflate body lazily on first open
     container.querySelectorAll(".spec-header").forEach(h => {
-        h.addEventListener("click", () => h.closest(".spec-card").classList.toggle("open"));
-    });
-
-    // Copy buttons
-    container.querySelectorAll(".copy-btn").forEach(btn => {
-        btn.addEventListener("click", e => {
-            e.stopPropagation();
-            const code = btn.closest(".spec-code-wrapper").querySelector("code").textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                btn.textContent = "Copied!";
-                setTimeout(() => { btn.textContent = "Copy"; }, 1500);
-            });
-        });
-    });
-
-    // "Show referenced specs" buttons
-    container.querySelectorAll(".show-refs-btn").forEach(btn => {
-        btn.addEventListener("click", e => {
-            e.stopPropagation();
-            const fnId = btn.dataset.fnId;
-            const fn = verifiedFunctions.find(v => v.id === fnId);
-            if (fn && fn.referenced_specs && fn.referenced_specs.length > 0) {
-                setSpecFilter(fn.referenced_specs, fn.display_name);
-            }
-        });
-    });
-
-    // Spec-link clicks (in contract code) — scroll to / highlight the spec card on the right
-    container.querySelectorAll(".spec-link").forEach(link => {
-        link.addEventListener("click", e => {
-            e.stopPropagation();
-            scrollToSpecCard(link.dataset.spec);
-        });
-    });
-
-    // Ref-tag clicks
-    container.querySelectorAll(".contract-ref-tag").forEach(tag => {
-        tag.addEventListener("click", e => {
-            e.stopPropagation();
-            scrollToSpecCard(tag.dataset.spec);
-        });
-    });
-
-    // Comment toggle
-    container.querySelectorAll(".comments-toggle").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const content = btn.nextElementSibling;
-            content.classList.toggle("open");
-            if (content.classList.contains("open")) {
-                loadComments(btn.dataset.fnId, content);
-            }
+        h.addEventListener("click", () => {
+            const card = h.closest(".spec-card");
+            inflateVerifiedBody(card);
+            card.classList.toggle("open");
         });
     });
 }
 
 function renderVerifiedCard(fn) {
-    const hasDoc = fn.doc_comment && fn.doc_comment.trim();
-    const hasMath = fn.math_interpretation && fn.math_interpretation.trim();
-    const hasInformal = fn.informal_interpretation && fn.informal_interpretation.trim();
-    const hasInterpretations = hasMath || hasInformal;
-    const hasRefs = fn.referenced_specs && fn.referenced_specs.length > 0;
-    const hasSpec = fn.has_spec;
     const hasProof = fn.has_proof;
-
-    const docHtml = hasDoc
-        ? fn.doc_comment.split("\n").filter(Boolean).map(p => `<p>${escapeHtml(p)}</p>`).join("")
-        : "";
-
-    const contractHtml = highlightSpecNames(fn.contract, fn.referenced_specs || []);
+    const hasSpec = fn.has_spec;
+    const hasMath = fn.math_interpretation && fn.math_interpretation.trim();
 
     // Status badges
     const badges = [];
@@ -384,7 +346,47 @@ function renderVerifiedCard(fn) {
     else if (hasSpec) badges.push(`<span class="fn-badge fn-badge-spec">spec</span>`);
     else badges.push(`<span class="fn-badge fn-badge-nospec">no spec</span>`);
     if (fn.is_libsignal) badges.push(`<span class="fn-badge fn-badge-libsignal">libsignal</span>`);
-    const badgesHtml = badges.join("");
+
+    // Render only the header; body is injected lazily on first open
+    return `
+    <div class="spec-card${hasProof ? " card-proved" : hasSpec ? " card-spec" : " card-nospec"}" data-id="${escapeAttr(fn.id)}" data-module="${escapeAttr(fn.module)}">
+        <div class="spec-header">
+            <div class="spec-toggle">&#9654;</div>
+            <div class="spec-info">
+                <div class="spec-name">${escapeHtml(fn.display_name)} ${badges.join("")}</div>
+                <div class="spec-meta">
+                    <span class="spec-module">${escapeHtml(fn.module)}</span>
+                    ${hasMath ? `<span class="spec-math">${escapeHtml(fn.math_interpretation)}</span>` : ""}
+                </div>
+            </div>
+            <a class="spec-github" href="${escapeAttr(fn.github_link)}" target="_blank" rel="noopener"
+               title="View source on GitHub" onclick="event.stopPropagation()">
+                Source &nearr;
+            </a>
+        </div>
+        <div class="spec-body"></div>
+    </div>`;
+}
+
+/** Populate a verified-function card body on first open. */
+function inflateVerifiedBody(card) {
+    if (card.dataset.inflated) return;
+    card.dataset.inflated = "1";
+
+    const fnId = card.dataset.id;
+    const fn = verifiedFunctions.find(f => f.id === fnId);
+    if (!fn) return;
+
+    const hasDoc = fn.doc_comment && fn.doc_comment.trim();
+    const hasMath = fn.math_interpretation && fn.math_interpretation.trim();
+    const hasInformal = fn.informal_interpretation && fn.informal_interpretation.trim();
+    const hasInterpretations = hasMath || hasInformal;
+    const hasRefs = fn.referenced_specs && fn.referenced_specs.length > 0;
+    const contractHtml = highlightSpecNames(fn.contract, fn.referenced_specs || []);
+
+    const docHtml = hasDoc
+        ? fn.doc_comment.split("\n").filter(Boolean).map(p => `<p>${escapeHtml(p)}</p>`).join("")
+        : "";
 
     const refsHtml = hasRefs ? `
         <div class="contract-refs">
@@ -399,47 +401,114 @@ function renderVerifiedCard(fn) {
             Focus referenced specs <span class="refs-count">${fn.referenced_specs.length}</span>
         </button>` : "";
 
-    return `
-    <div class="spec-card${hasProof ? " card-proved" : hasSpec ? " card-spec" : " card-nospec"}" data-id="${escapeAttr(fn.id)}" data-module="${escapeAttr(fn.module)}">
-        <div class="spec-header">
-            <div class="spec-toggle">&#9654;</div>
-            <div class="spec-info">
-                <div class="spec-name">${escapeHtml(fn.display_name)} ${badgesHtml}</div>
-                <div class="spec-meta">
-                    <span class="spec-module">${escapeHtml(fn.module)}</span>
-                    ${hasMath ? `<span class="spec-math">${escapeHtml(fn.math_interpretation)}</span>` : ""}
-                </div>
-            </div>
-            <a class="spec-github" href="${escapeAttr(fn.github_link)}" target="_blank" rel="noopener"
-               title="View source on GitHub" onclick="event.stopPropagation()">
-                Source &nearr;
-            </a>
+    const body = card.querySelector(".spec-body");
+    body.innerHTML = `
+        ${hasDoc ? `<div class="spec-doc">${docHtml}</div>` : ""}
+        ${hasInterpretations ? `
+        <div class="spec-interpretations">
+            ${hasMath ? `<div class="spec-interp"><span class="spec-interp-label">Math:</span> <span class="spec-interp-value">${escapeHtml(fn.math_interpretation)}</span></div>` : ""}
+            ${hasInformal ? `<div class="spec-interp"><span class="spec-interp-label">Meaning:</span> <span class="spec-interp-value">${escapeHtml(fn.informal_interpretation)}</span></div>` : ""}
+        </div>` : ""}
+        ${refsHtml}
+        ${showRefsBtn}
+        <div class="spec-code-wrapper">
+            <button class="copy-btn">Copy</button>
+            <pre><code class="language-rust">${contractHtml}</code></pre>
         </div>
-        <div class="spec-body">
-            ${hasDoc ? `<div class="spec-doc">${docHtml}</div>` : ""}
-            ${hasInterpretations ? `
-            <div class="spec-interpretations">
-                ${hasMath ? `<div class="spec-interp"><span class="spec-interp-label">Math:</span> <span class="spec-interp-value">${escapeHtml(fn.math_interpretation)}</span></div>` : ""}
-                ${hasInformal ? `<div class="spec-interp"><span class="spec-interp-label">Meaning:</span> <span class="spec-interp-value">${escapeHtml(fn.informal_interpretation)}</span></div>` : ""}
-            </div>` : ""}
-            ${refsHtml}
-            ${showRefsBtn}
-            <div class="spec-code-wrapper">
-                <button class="copy-btn">Copy</button>
-                <pre><code class="language-rust">${contractHtml}</code></pre>
-            </div>
-            <div class="spec-comments">
-                <button class="comments-toggle" data-fn-id="${escapeAttr(fn.id)}">
-                    <span>Comments</span>
-                    <span class="comment-count" id="count-${escapeAttr(fn.id)}">...</span>
-                </button>
-                <div class="comments-content" id="comments-${fn.id}"></div>
-            </div>
-        </div>
-    </div>`;
+        <div class="spec-comments">
+            <button class="comments-toggle" data-fn-id="${escapeAttr(fn.id)}">
+                <span>Comments</span>
+                <span class="comment-count" id="count-${escapeAttr(fn.id)}">...</span>
+            </button>
+            <div class="comments-content" id="comments-${fn.id}"></div>
+        </div>`;
+
+    // Syntax highlight
+    body.querySelectorAll("pre code.language-rust").forEach(b => {
+        Prism.highlightElement(b);
+        b.classList.add("prism-highlighted");
+    });
+
+    // Wire up copy button
+    body.querySelectorAll(".copy-btn").forEach(btn => {
+        btn.addEventListener("click", e => {
+            e.stopPropagation();
+            const code = btn.closest(".spec-code-wrapper").querySelector("code").textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = "Copied!";
+                setTimeout(() => { btn.textContent = "Copy"; }, 1500);
+            });
+        });
+    });
+
+    // Wire up "Show referenced specs" button
+    body.querySelectorAll(".show-refs-btn").forEach(btn => {
+        btn.addEventListener("click", e => {
+            e.stopPropagation();
+            const refs = fn.referenced_specs || [];
+            if (refs.length) setSpecFilter(refs, fn.display_name || fn.name);
+        });
+    });
+
+    // Wire up comment toggle
+    body.querySelectorAll(".comments-toggle").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const content = btn.nextElementSibling;
+            if (!content) return;
+            content.classList.toggle("open");
+            if (content.classList.contains("open")) {
+                loadComments(btn.dataset.fnId, content);
+            }
+        });
+    });
+
+    // Wire up ref tag clicks
+    body.querySelectorAll(".contract-ref-tag").forEach(tag => {
+        tag.addEventListener("click", e => {
+            e.stopPropagation();
+            scrollToSpecCard(tag.dataset.spec);
+        });
+    });
+
+    // Wire up spec-link clicks (highlighted spec names in contract code)
+    body.querySelectorAll(".spec-link").forEach(link => {
+        link.addEventListener("click", e => {
+            e.stopPropagation();
+            scrollToSpecCard(link.dataset.spec);
+        });
+    });
 }
 
 // ── Right panel: spec functions ──────────────────────────────
+/**
+ * Compute the transitive closure of spec names reachable from a set of
+ * verified functions.  Each verified function's `referenced_specs` are the
+ * seeds; we then recursively follow each spec's own `referenced_specs`.
+ */
+function getReachableSpecs(verifiedList) {
+    const reachable = new Set();
+    const queue = [];
+    for (const fn of verifiedList) {
+        for (const s of (fn.referenced_specs || [])) {
+            if (!reachable.has(s)) { reachable.add(s); queue.push(s); }
+        }
+    }
+    while (queue.length) {
+        const name = queue.pop();
+        const spec = specLookup[name];
+        if (!spec) continue;
+        for (const dep of (spec.referenced_specs || [])) {
+            if (!reachable.has(dep)) { reachable.add(dep); queue.push(dep); }
+        }
+    }
+    return reachable;
+}
+
+/** True when any left-panel filter (module, public, libsignal) is active. */
+function hasLeftFilter() {
+    return activeModules.size > 0 || filterPublic || filterLibsignal;
+}
+
 function getFilteredSpecs() {
     let list = specFunctions;
 
@@ -448,10 +517,21 @@ function getFilteredSpecs() {
         list = list.filter(s => specFilterRefs.has(s.name));
     }
 
+    // Auto-filter: when a left-panel filter is active, show only specs
+    // reachable (transitively) from the visible verified functions.
+    // Skip when autoFilterBypassed (user navigated to an out-of-scope spec).
+    if (!specFilterRefs && !autoFilterBypassed && hasLeftFilter()) {
+        const reachable = getReachableSpecs(getFilteredVerified());
+        list = list.filter(s => reachable.has(s.name));
+    }
+
     if (searchRight) {
         list = list.filter(s => {
+            // Search top-level fields only (name, module, signature, docs,
+            // interpretations) — exclude body to avoid matching on referenced
+            // spec names that appear inside the function definition.
             const h = (
-                s.name + " " + s.module + " " + s.signature + " " + s.body + " " +
+                s.name + " " + s.module + " " + s.signature + " " +
                 (s.doc_comment || "") + " " + (s.math_interpretation || "") +
                 " " + (s.informal_interpretation || "")
             ).toLowerCase();
@@ -481,14 +561,29 @@ function renderRightPanel() {
     const bannerText = document.getElementById("specFilterText");
 
     // Show/hide filter banner
+    const filtered = getFilteredSpecs();
+    const clearBtn = document.getElementById("specFilterClear");
     if (specFilterRefs) {
         banner.style.display = "flex";
         bannerText.textContent = `Showing ${specFilterRefs.size} specs related to ${specFilterSource}`;
+        clearBtn.textContent = "Show All";
+        clearBtn.style.display = "";
+    } else if (autoFilterBypassed && hasLeftFilter()) {
+        banner.style.display = "flex";
+        bannerText.textContent = `Showing all specs (navigated outside filtered scope)`;
+        clearBtn.textContent = "Re-apply filter";
+        clearBtn.style.display = "";
+    } else if (hasLeftFilter()) {
+        banner.style.display = "flex";
+        const labels = [];
+        if (activeModules.size > 0) labels.push([...activeModules].join(", "));
+        if (filterPublic) labels.push("Public");
+        if (filterLibsignal) labels.push("Libsignal");
+        bannerText.textContent = `Showing ${filtered.length} specs referenced by ${labels.join(" + ")} functions`;
+        clearBtn.style.display = "none";
     } else {
         banner.style.display = "none";
     }
-
-    const filtered = getFilteredSpecs();
 
     if (filtered.length === 0) {
         container.innerHTML = '<div class="no-results"><h3>No matching specs</h3><p>Try a different search or clear the filter.</p></div>';
@@ -496,7 +591,8 @@ function renderRightPanel() {
         return;
     }
 
-    countEl.textContent = filtered.length;
+    // Show only spec count (axioms are counted separately in the hero bar)
+    countEl.textContent = filtered.filter(s => s.category !== "axiom").length;
 
     let html = "";
     let currentMod = null;
@@ -520,34 +616,12 @@ function renderRightPanel() {
 
     container.innerHTML = html;
 
-    // Syntax highlight
-    container.querySelectorAll("pre code.language-rust").forEach(b => Prism.highlightElement(b));
-
-    // Card toggle
+    // Card toggle — inflate body lazily on first open
     container.querySelectorAll(".spec-header").forEach(h => {
-        h.addEventListener("click", () => h.closest(".spec-card").classList.toggle("open"));
-    });
-
-    // Copy buttons
-    container.querySelectorAll(".copy-btn").forEach(btn => {
-        btn.addEventListener("click", e => {
-            e.stopPropagation();
-            const code = btn.closest(".spec-code-wrapper").querySelector("code").textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                btn.textContent = "Copied!";
-                setTimeout(() => { btn.textContent = "Copy"; }, 1500);
-            });
-        });
-    });
-
-    // Comment toggle
-    container.querySelectorAll(".comments-toggle").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const content = btn.nextElementSibling;
-            content.classList.toggle("open");
-            if (content.classList.contains("open")) {
-                loadComments(btn.dataset.fnId, content);
-            }
+        h.addEventListener("click", () => {
+            const card = h.closest(".spec-card");
+            inflateSpecBody(card);
+            card.classList.toggle("open");
         });
     });
 }
@@ -597,7 +671,41 @@ function renderInlineRefCard(spec, visited) {
 }
 
 function renderSpecCard(spec) {
-    const escapedBody = escapeHtml(spec.body);
+    const isAxiom = spec.category === "axiom";
+    const hasMath = spec.math_interpretation && spec.math_interpretation.trim();
+    const axiomBadge = isAxiom ? `<span class="axiom-badge">AXIOM</span>` : "";
+
+    // Render only the header; body is injected lazily on first open
+    return `
+    <div class="spec-card${isAxiom ? " axiom-card" : ""}" data-id="${escapeAttr(spec.id)}" data-spec-name="${escapeAttr(spec.name)}" data-module="${escapeAttr(spec.module)}" data-category="${escapeAttr(spec.category || "spec")}">
+        <div class="spec-header">
+            <div class="spec-toggle">&#9654;</div>
+            <div class="spec-info">
+                <div class="spec-name">${escapeHtml(spec.name)} ${axiomBadge}</div>
+                <div class="spec-meta">
+                    <span class="spec-module">${escapeHtml(spec.module)}</span>
+                    ${spec.visibility && !isAxiom ? `<span class="spec-visibility">${escapeHtml(spec.visibility)}</span>` : ""}
+                    ${hasMath ? `<span class="spec-math">${escapeHtml(spec.math_interpretation)}</span>` : ""}
+                </div>
+            </div>
+            <a class="spec-github" href="${escapeAttr(spec.github_link)}" target="_blank" rel="noopener"
+               title="View source on GitHub" onclick="event.stopPropagation()">
+                Source &nearr;
+            </a>
+        </div>
+        <div class="spec-body"></div>
+    </div>`;
+}
+
+/** Populate a spec-function card body on first open. */
+function inflateSpecBody(card) {
+    if (card.dataset.inflated) return;
+    card.dataset.inflated = "1";
+
+    const specName = card.dataset.specName;
+    const spec = specLookup[specName];
+    if (!spec) return;
+
     const isAxiom = spec.category === "axiom";
     const hasDoc = spec.doc_comment && spec.doc_comment.trim();
     const hasMath = spec.math_interpretation && spec.math_interpretation.trim();
@@ -620,56 +728,79 @@ function renderSpecCard(spec) {
             }).join("")}
         </div>` : "";
 
-    const axiomBadge = isAxiom ? `<span class="axiom-badge">AXIOM</span>` : "";
-
-    return `
-    <div class="spec-card${isAxiom ? " axiom-card" : ""}" data-id="${escapeAttr(spec.id)}" data-spec-name="${escapeAttr(spec.name)}" data-module="${escapeAttr(spec.module)}" data-category="${escapeAttr(spec.category || "spec")}">
-        <div class="spec-header">
-            <div class="spec-toggle">&#9654;</div>
-            <div class="spec-info">
-                <div class="spec-name">${escapeHtml(spec.name)} ${axiomBadge}</div>
-                <div class="spec-meta">
-                    <span class="spec-module">${escapeHtml(spec.module)}</span>
-                    ${spec.visibility && !isAxiom ? `<span class="spec-visibility">${escapeHtml(spec.visibility)}</span>` : ""}
-                    ${hasMath ? `<span class="spec-math">${escapeHtml(spec.math_interpretation)}</span>` : ""}
-                </div>
-            </div>
-            <a class="spec-github" href="${escapeAttr(spec.github_link)}" target="_blank" rel="noopener"
-               title="View source on GitHub" onclick="event.stopPropagation()">
-                Source &nearr;
-            </a>
-        </div>
-        <div class="spec-body">
-            ${hasDoc ? `<div class="spec-doc">${docHtml}</div>` : ""}
-            ${(() => {
-                // For axioms: skip "Meaning" (redundant with docstring), show only Math
-                // For specs: show both Math and Meaning
-                if (isAxiom) {
-                    return hasMath ? `
-                    <div class="spec-interpretations">
-                        <div class="spec-interp"><span class="spec-interp-label">Math:</span> <span class="spec-interp-value">${escapeHtml(spec.math_interpretation)}</span></div>
-                    </div>` : "";
-                }
-                return hasInterpretations ? `
+    const body = card.querySelector(".spec-body");
+    body.innerHTML = `
+        ${hasDoc ? `<div class="spec-doc">${docHtml}</div>` : ""}
+        ${(() => {
+            if (isAxiom) {
+                return hasMath ? `
                 <div class="spec-interpretations">
-                    ${hasMath ? `<div class="spec-interp"><span class="spec-interp-label">Math:</span> <span class="spec-interp-value">${escapeHtml(spec.math_interpretation)}</span></div>` : ""}
-                    ${hasInformal ? `<div class="spec-interp"><span class="spec-interp-label">Meaning:</span> <span class="spec-interp-value">${escapeHtml(spec.informal_interpretation)}</span></div>` : ""}
+                    <div class="spec-interp"><span class="spec-interp-label">Math:</span> <span class="spec-interp-value">${escapeHtml(spec.math_interpretation)}</span></div>
                 </div>` : "";
-            })()}
-            <div class="spec-code-wrapper">
-                <button class="copy-btn">Copy</button>
-                <pre><code class="language-rust">${escapedBody}</code></pre>
-            </div>
-            ${inlineRefsHtml}
-            <div class="spec-comments">
-                <button class="comments-toggle" data-fn-id="${escapeAttr(spec.id)}">
-                    <span>Comments</span>
-                    <span class="comment-count" id="count-${escapeAttr(spec.id)}">...</span>
-                </button>
-                <div class="comments-content" id="comments-${spec.id}"></div>
-            </div>
+            }
+            return hasInterpretations ? `
+            <div class="spec-interpretations">
+                ${hasMath ? `<div class="spec-interp"><span class="spec-interp-label">Math:</span> <span class="spec-interp-value">${escapeHtml(spec.math_interpretation)}</span></div>` : ""}
+                ${hasInformal ? `<div class="spec-interp"><span class="spec-interp-label">Meaning:</span> <span class="spec-interp-value">${escapeHtml(spec.informal_interpretation)}</span></div>` : ""}
+            </div>` : "";
+        })()}
+        <div class="spec-code-wrapper">
+            <button class="copy-btn">Copy</button>
+            <pre><code class="language-rust">${escapeHtml(spec.body)}</code></pre>
         </div>
-    </div>`;
+        ${inlineRefsHtml}
+        <div class="spec-comments">
+            <button class="comments-toggle" data-fn-id="${escapeAttr(spec.id)}">
+                <span>Comments</span>
+                <span class="comment-count" id="count-${escapeAttr(spec.id)}">...</span>
+            </button>
+            <div class="comments-content" id="comments-${spec.id}"></div>
+        </div>`;
+
+    // Syntax highlight
+    body.querySelectorAll("pre code.language-rust").forEach(b => {
+        Prism.highlightElement(b);
+        b.classList.add("prism-highlighted");
+    });
+
+    // Wire up copy button
+    body.querySelectorAll(".copy-btn").forEach(btn => {
+        btn.addEventListener("click", e => {
+            e.stopPropagation();
+            const code = btn.closest(".spec-code-wrapper").querySelector("code").textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = "Copied!";
+                setTimeout(() => { btn.textContent = "Copy"; }, 1500);
+            });
+        });
+    });
+
+    // Wire up comment toggle
+    body.querySelectorAll(".comments-toggle").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const content = btn.nextElementSibling;
+            if (!content) return;
+            content.classList.toggle("open");
+            if (content.classList.contains("open")) {
+                loadComments(btn.dataset.fnId, content);
+            }
+        });
+    });
+
+    // Wire up inline ref toggles
+    body.querySelectorAll(".inline-ref-header").forEach(h => {
+        h.addEventListener("click", e => {
+            e.stopPropagation();
+            const refCard = h.closest(".inline-ref-card");
+            refCard.classList.toggle("open");
+            if (refCard.classList.contains("open")) {
+                refCard.querySelectorAll("pre code.language-rust:not(.prism-highlighted)").forEach(b => {
+                    Prism.highlightElement(b);
+                    b.classList.add("prism-highlighted");
+                });
+            }
+        });
+    });
 }
 
 // ── Spec filter (from "Show referenced specs" button) ────────
@@ -689,17 +820,31 @@ function clearSpecFilter() {
 }
 
 // ── Scroll to and highlight a spec card on the right ─────────
+let autoFilterBypassed = false;  // true when we showed all specs to reach a target
+
 function scrollToSpecCard(specName) {
-    // If the right panel is filtered and the target isn't visible, clear filter first
+    // If the right panel is filtered by "Focus referenced specs" and the
+    // target isn't in that set, clear the per-function filter first.
     if (specFilterRefs && !specFilterRefs.has(specName)) {
         clearSpecFilter();
     }
 
     // Find the card
-    const card = document.querySelector(`.panel-right .spec-card[data-spec-name="${cssSelectorEscape(specName)}"]`);
+    let card = document.querySelector(`.panel-right .spec-card[data-spec-name="${cssSelectorEscape(specName)}"]`);
+
+    // If the card isn't in the DOM it may be hidden by the auto-filter
+    // (left-panel module/public/libsignal filters).  Bypass the auto-filter
+    // so the full spec list renders, then scroll to the target.
+    if (!card && hasLeftFilter()) {
+        autoFilterBypassed = true;
+        renderRightPanel();
+        card = document.querySelector(`.panel-right .spec-card[data-spec-name="${cssSelectorEscape(specName)}"]`);
+    }
+
     if (!card) return;
 
-    // Open it
+    // Inflate & open it
+    inflateSpecBody(card);
     card.classList.add("open");
 
     // Highlight briefly
@@ -750,13 +895,6 @@ function highlightSpecNames(contractText, referencedSpecs) {
 }
 
 // ── Expand / Collapse All ────────────────────────────────────
-function toggleAllIn(containerId, open) {
-    document.getElementById(containerId).querySelectorAll(".spec-card").forEach(card => {
-        if (open) card.classList.add("open");
-        else card.classList.remove("open");
-    });
-}
-
 // ── Comments (Firebase) ──────────────────────────────────────
 async function loadComments(functionId, container) {
     if (!FIREBASE_ENABLED || !db) {

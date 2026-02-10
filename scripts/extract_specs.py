@@ -1112,6 +1112,66 @@ def extract_all_tracked_functions(
     return functions
 
 
+# ── Discover and extract all spec fns from source ─────────────────────
+
+
+def discover_all_spec_fns(src_dir: str) -> list[dict]:
+    """Scan all .rs files and extract every ``spec fn`` with its full body.
+
+    Returns a list of spec function dicts (same shape as extract_spec_functions
+    output) for every spec fn found in the source tree.
+    """
+    results: list[dict] = []
+    src = Path(src_dir)
+    rs_files = sorted(src.rglob("*.rs"))
+
+    for rs_file in rs_files:
+        filepath = str(rs_file)
+        lines = _read_file_lines(filepath)
+        if lines is None:
+            continue
+
+        for line_idx, line_text in enumerate(lines):
+            match = SPEC_FN_PATTERN.match(line_text)
+            if not match:
+                continue
+
+            fn_name = match.group(3)
+            indent = match.group(1)
+            qualifier = match.group(2).strip()
+
+            body, end_idx = extract_function_body(lines, line_idx)
+            body = dedent_body(body, indent)
+            signature = extract_signature(lines, line_idx, end_idx, indent)
+            doc_comment = extract_doc_comment(lines, line_idx)
+
+            module = derive_module(filepath)
+            short_module = derive_category_module(filepath)
+            fn_id = f"{module.replace('::', '__')}__{fn_name}"
+            github_link = f"{GITHUB_BASE}{filepath}#L{line_idx + 1}"
+
+            results.append(
+                {
+                    "id": fn_id,
+                    "name": fn_name,
+                    "signature": signature,
+                    "body": body.rstrip(),
+                    "file": filepath,
+                    "line": line_idx + 1,
+                    "module": module,
+                    "short_module": short_module,
+                    "visibility": qualifier,
+                    "doc_comment": doc_comment,
+                    "math_interpretation": "",
+                    "informal_interpretation": "",
+                    "github_link": github_link,
+                    "category": "spec",
+                }
+            )
+
+    return results
+
+
 # ── Axiom extraction (auto-discovery) ─────────────────────────────────
 
 
@@ -1243,7 +1303,48 @@ def main():
     spec_functions = extract_spec_functions(args.spec_csv)
     spec_functions.sort(key=lambda s: (s["module"], s["name"]))
 
-    # Build set of spec function names for cross-referencing
+    # Discover ALL spec fns from source and merge with curated list.
+    # Curated entries keep their math/informal interpretations; newly discovered
+    # ones get empty interpretations but still appear in the right panel.
+    curated_names = {s["name"] for s in spec_functions}
+    print(f"Discovering all spec functions from {args.src_dir}...")
+    all_discovered = discover_all_spec_fns(args.src_dir)
+    print(f"  Found {len(all_discovered)} spec fn definitions in source")
+
+    # Add discovered specs not already in the curated list
+    added = 0
+    for spec in all_discovered:
+        if spec["name"] not in curated_names:
+            spec_functions.append(spec)
+            curated_names.add(spec["name"])
+            added += 1
+
+    # Auto-generate interpretations for spec functions missing them
+    auto_math = 0
+    auto_informal = 0
+    for spec in spec_functions:
+        doc = spec.get("doc_comment", "")
+        # Math interpretation: extract formula from doc comment
+        if not spec.get("math_interpretation") and doc:
+            math = _extract_math_from_doc(doc)
+            if math:
+                spec["math_interpretation"] = math
+                auto_math += 1
+        # Informal interpretation: use first meaningful line of doc comment
+        if not spec.get("informal_interpretation") and doc:
+            for doc_line in doc.split("\n"):
+                doc_line = doc_line.strip()
+                if doc_line and not doc_line.startswith("#"):
+                    spec["informal_interpretation"] = doc_line
+                    auto_informal += 1
+                    break
+
+    spec_functions.sort(key=lambda s: (s["module"], s["name"]))
+    print(f"  Added {added} spec functions from source (total: {len(spec_functions)})")
+    print(
+        f"  Auto-generated {auto_math} math + {auto_informal} informal interpretations"
+    )
+
     spec_names = {s["name"] for s in spec_functions}
 
     # Add spec-to-spec cross-references (which other specs does each spec call?)
@@ -1292,10 +1393,49 @@ def main():
     axiom_functions = extract_axioms(args.src_dir, spec_names)
     axiom_functions.sort(key=lambda a: (a["module"], a["name"]))
 
+    # 4. Filter spec functions to only those reachable from tracked functions.
+    #    Compute transitive closure: start from directly referenced specs,
+    #    then follow spec-to-spec references.
+    direct_refs: set[str] = set()
+    for fn in verified_functions:
+        direct_refs.update(fn.get("referenced_specs", []))
+    # Also include axiom-referenced specs
+    for ax in axiom_functions:
+        direct_refs.update(ax.get("referenced_specs", []))
+
+    reachable: set[str] = set(direct_refs)
+    spec_lookup_by_name = {s["name"]: s for s in spec_functions}
+    frontier = set(direct_refs)
+    while frontier:
+        new_frontier: set[str] = set()
+        for name in frontier:
+            spec = spec_lookup_by_name.get(name)
+            if spec:
+                for ref in spec.get("referenced_specs", []):
+                    if ref not in reachable:
+                        reachable.add(ref)
+                        new_frontier.add(ref)
+        frontier = new_frontier
+
+    before = len(spec_functions)
+    spec_functions = [s for s in spec_functions if s["name"] in reachable]
+    print(
+        f"\nFiltered spec functions: {before} -> {len(spec_functions)} "
+        f"(keeping {len(direct_refs)} directly referenced + "
+        f"{len(reachable) - len(direct_refs)} transitively referenced)"
+    )
+
     # Append axioms to spec_functions list so they appear in the right panel
     all_right_panel = spec_functions + axiom_functions
 
-    # 4. Output combined JSON
+    # Strip fields not used by the frontend to reduce JSON size
+    for fn in verified_functions:
+        fn.pop("requires", None)
+        fn.pop("ensures", None)
+    for spec in all_right_panel:
+        spec.pop("short_module", None)
+
+    # 5. Output minified JSON (saves ~10% over pretty-printed)
     output = {
         "spec_functions": all_right_panel,
         "verified_functions": verified_functions,
@@ -1305,7 +1445,7 @@ def main():
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, indent=2, ensure_ascii=False)
+        json.dump(output, f, ensure_ascii=False, separators=(",", ":"))
 
     # Summary
     spec_mods = sorted(set(s["module"] for s in spec_functions))

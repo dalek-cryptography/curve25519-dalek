@@ -1002,8 +1002,8 @@ pub open spec fn spec_nonspec_map_to_curve(hash_bytes: Seq<u8>) -> (nat, nat)
 {
     // Extract sign bit from bit 255 (MSB of last byte)
     let sign_bit: u8 = (hash_bytes[31] & 0x80u8) >> 7;
-    // Interpret bytes as field element (mod 2^255 to clear high bit)
-    let fe_nat = bytes_seq_to_nat(hash_bytes) % pow2(255);
+    // Interpret bytes as field element (mod 2^255 to clear high bit, then reduce mod p)
+    let fe_nat = (bytes_seq_to_nat(hash_bytes) % pow2(255)) % p();
     // Elligator2 encoding: field element -> Montgomery u-coordinate
     let u = spec_elligator_encode(fe_nat);
     // Convert Montgomery to Edwards with sign bit selecting x

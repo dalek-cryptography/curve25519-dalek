@@ -78,7 +78,8 @@ pub const MONTGOMERY_A: FieldElement51 = FieldElement51 { limbs: [486662, 0, 0, 
 
 /// `MONTGOMERY_A_NEG` is equal to -486662. (This is used internally within the
 /// Elligator map.)
-pub(crate) const MONTGOMERY_A_NEG: FieldElement51 = FieldElement51 {
+/// VERIFICATION NOTE: made public
+pub const MONTGOMERY_A_NEG: FieldElement51 = FieldElement51 {
     limbs: [
         2251799813198567,
         2251799813685247,

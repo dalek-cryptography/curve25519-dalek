@@ -551,12 +551,22 @@ mod decompress {
             // 51-bit bounded implies 52-bit bounded (for conditional_negate precondition)
             assert((1u64 << 51) < (1u64 << 52)) by (bit_vector);
             assert(fe51_limbs_bounded(&X, 52));
+            // Also establish 54-bit bound, since the wrapper uses the standard 54-bit precondition.
+            lemma_fe51_limbs_bounded_weaken(&X, 52, 54);
         }
         conditional_negate_field_element(&mut X, compressed_sign_bit);
 
         proof {
-            // conditional_negate_field_element ensures limbs bounded by 52 < 54
-            assert(fe51_limbs_bounded(&X, 52));
+            // `conditional_negate_field_element` is a no-op when `compressed_sign_bit` is false,
+            // and performs a reduce()'d negation (52-bit bounded) when it is true.
+            assert(fe51_limbs_bounded(&X, 52)) by {
+                if choice_is_true(compressed_sign_bit) {
+                    assert(choice_is_true(compressed_sign_bit) ==> fe51_limbs_bounded(&X, 52));
+                } else {
+                    assert(!choice_is_true(compressed_sign_bit) ==> X == original_X);
+                    assert(X == original_X);
+                }
+            }
             // Y is bounded by 51 < 54 from requires
             assert(fe51_limbs_bounded(&Y, 51));
             // conditional_negate_field_element ensures the semantic property
@@ -1789,46 +1799,38 @@ impl EdwardsPoint {
         // Convert to Edwards point
         let E1_opt = M1.to_edwards(sign_bit);
 
-        // Unwrap and multiply by cofactor
+        // elligator_encode never produces u = -1 (lemma_elligator_never_minus_one),
+        // so to_edwards always returns Some. Unwrap and multiply by cofactor.
         proof {
-            assume(E1_opt.is_some());
-            // Assume "negligible" failure probability
-
-            // CRYPTOGRAPHIC ASSUMPTION: to_edwards returns None only when the u-coordinate of M1
-            // equals -1, because the birational map y = (u-1)/(u+1) has a zero denominator there.
-            // For random field elements from Elligator, this occurs with probability 1/p ≈ 2^-255
-
-            // VERIFICATION NOTE: we had to make this assumption because Verus vstd spec for "expect"
-            // requires is_some(); this is probably too strong on vstd's part.
-
-            // VERIFICATION NOTE: to remove the assume, we could make a case split on the result of to_edwards
+            // to_edwards returns None only when is_equal_to_minus_one(u),
+            // but elligator_encode guarantees !is_equal_to_minus_one(u).
+            assert(!is_equal_to_minus_one(spec_montgomery(M1)));
+            match E1_opt {
+                Some(_) => {},
+                None => {
+                    assert(false);
+                },
+            }
+            assert(E1_opt.is_some());
         }
         let E1 = E1_opt.expect("Montgomery conversion to Edwards point in Elligator failed");
-
-        proof {
-            // E1 from to_edwards has valid limbs; mul_by_cofactor ensures well-formedness
-            assume(is_well_formed_edwards_point(E1));
-        }
-
         let result = E1.mul_by_cofactor();
 
         proof {
-            // Functional correctness: reduce the spec goal to the 32-byte slice `res@`,
-            // then treat the Edwards/Montgomery mapping as a proof-bypass.
-            assert(hash@ == spec_sha512(bytes@));
-            assert(res@ == hash@.subrange(0, 32));
+            // Chain: from_bytes → elligator_encode → to_edwards → mul_by_cofactor = spec
             assert(res@ == spec_sha512(bytes@).subrange(0, 32));
+            lemma_bytes32_to_nat_eq_bytes_seq_to_nat(&res);
 
-            // PROOF BYPASS: the remainder would need aligned specs for:
-            // FieldElement::from_bytes, elligator_encode, MontgomeryPoint::to_edwards, and mul_by_cofactor.
-            assume(edwards_point_as_affine(result) == spec_nonspec_map_to_curve(res@));
+            let fe_nat_spec = (bytes_seq_to_nat(res@) % pow2(255)) % p();
+            assert(spec_field_element(&fe) == fe_nat_spec);
+            let u = spec_elligator_encode(fe_nat_spec);
+            assert(spec_montgomery(M1) == u);
 
-            assert(spec_nonspec_map_to_curve(res@) == spec_nonspec_map_to_curve(
-                spec_sha512(bytes@).subrange(0, 32),
-            ));
-            assert(edwards_point_as_affine(result) == spec_nonspec_map_to_curve(
-                spec_sha512(bytes@).subrange(0, 32),
-            ));
+            let P = spec_montgomery_to_edwards_affine_with_sign(u, sign_bit);
+            assert(edwards_point_as_affine(E1) == P);
+
+            assert(edwards_point_as_affine(result) == edwards_scalar_mul(P, 8));
+            assert(edwards_point_as_affine(result) == spec_nonspec_map_to_curve(res@));
         }
 
         result

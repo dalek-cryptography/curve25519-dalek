@@ -260,19 +260,37 @@ pub fn conditional_negate_generic<T>(a: &mut T, choice: Choice) where
 /// Specialized wrapper for conditional_negate on FieldElement51 with proper specs.
 /// Use this when you need verified limb bounds and functional correctness guarantees.
 ///
-/// Note: The implementation internally uses field negation which calls reduce(),
-/// so 52-bit bounded input is safe (reduce handles up to 64-bit limbs).
-/// The output is always 52-bit bounded from the reduce operation.
+/// # How reduction happens
+///
+/// The `subtle` crate provides a blanket impl of `ConditionallyNegatable` for any type
+/// implementing `ConditionallySelectable` + `Neg`. When called, it invokes our local impls:
+///
+/// ```text
+/// subtle::conditional_negate()  // blanket impl
+///     ├─► Neg::neg()            // field.rs - calls negate()
+///     │       └─► reduce()      // field.rs - performs modular reduction
+///     └─► conditional_assign()  // field.rs - selects original or negated
+/// ```
+///
+/// Verus note: we keep this as an `external_body` wrapper because the underlying
+/// `subtle::ConditionallyNegatable::conditional_negate` is defined in an external crate.
+/// We attach a precise functional contract here without verifying the external implementation.
+///
+/// Bounds note:
+/// - If `choice` is true, this performs a field negation, which calls `reduce()` and yields a 52-bit bound.
+/// - If `choice` is false, this is a no-op, so we can only preserve whatever limb bounds `old(a)` had.
 #[verifier::external_body]
 pub fn conditional_negate_field_element(a: &mut FieldElement51, choice: Choice)
     requires
         fe51_limbs_bounded(
             old(a),
-            52,
-        ),  // Relaxed from 51 to 52 to match mul/square output
+            54,
+        ),  // Allow the standard 54-bit bound used by most field ops
 
     ensures
-        fe51_limbs_bounded(a, 52),
+        fe51_limbs_bounded(a, 54),
+        choice_is_true(choice) ==> fe51_limbs_bounded(a, 52),
+        !choice_is_true(choice) ==> *a == *old(a),
         spec_field_element(a) == if choice_is_true(choice) {
             math_field_neg(spec_field_element(old(a)))
         } else {

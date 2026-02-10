@@ -1,4 +1,4 @@
-//! Lemmas about field element constants (ZERO and ONE)
+//! Lemmas about field element constants (ZERO, ONE, and selected curve constants)
 //!
 //! This module contains fully proved lemmas about FieldElement::ZERO and FieldElement::ONE constants.
 //!
@@ -21,6 +21,7 @@
 //!
 //! - Edwards curve-specific constants (EDWARDS_D, EDWARDS_D2) are in `edwards_lemmas::constants_lemmas`.
 #![allow(unused_imports)]
+use crate::backend::serial::u64::constants::{MONTGOMERY_A, MONTGOMERY_A_NEG};
 use crate::backend::serial::u64::field::FieldElement51;
 use crate::specs::field_specs::*;
 use crate::specs::field_specs_u64::*;
@@ -130,6 +131,32 @@ pub proof fn lemma_one_field_element_value()
         // Subgoal 3: 1 % p = 1
         p_gt_2();  // proves p > 2, hence p > 1
         lemma_small_mod(1, p());  // x < m ==> x % m = x
+    };
+}
+
+// =============================================================================
+// Curve constants (backend::serial::u64::constants)
+// =============================================================================
+/// `MONTGOMERY_A` has 51-bit bounded limbs.
+///
+/// (Moved here from `montgomery_constants_lemmas.rs` to keep small constant facts centralized.)
+pub proof fn lemma_montgomery_a_limbs_bounded_51()
+    ensures
+        fe51_limbs_bounded(&MONTGOMERY_A, 51),
+{
+    assert(fe51_limbs_bounded(&MONTGOMERY_A, 51)) by {
+        assert(0u64 < (1u64 << 51) && 486662u64 < (1u64 << 51)) by (bit_vector);
+    };
+}
+
+/// `MONTGOMERY_A_NEG` has 51-bit bounded limbs.
+pub proof fn lemma_montgomery_a_neg_limbs_bounded_51()
+    ensures
+        fe51_limbs_bounded(&MONTGOMERY_A_NEG, 51),
+{
+    assert(fe51_limbs_bounded(&MONTGOMERY_A_NEG, 51)) by {
+        assert(2251799813198567u64 < (1u64 << 51) && 2251799813685247u64 < (1u64 << 51))
+            by (bit_vector);
     };
 }
 

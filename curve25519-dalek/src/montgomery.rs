@@ -80,11 +80,15 @@ use crate::specs::scalar_specs::*;
 use crate::specs::scalar_specs::bits_be_to_nat;
 
 #[allow(unused_imports)]
+use crate::lemmas::common_lemmas::pow_lemmas::*;
+#[allow(unused_imports)]
 use crate::lemmas::field_lemmas::add_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::constants_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::field_algebra_lemmas::*;
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::sqrt_ratio_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::montgomery_curve_lemmas::*;
 #[cfg(verus_keep_ghost)]
@@ -1009,7 +1013,9 @@ impl MontgomeryPoint {
     pub fn to_edwards(&self, sign: u8) -> (result: Option<EdwardsPoint>)
         ensures
             match result {
-                Some(edwards) => montgomery_corresponds_to_edwards(*self, edwards),
+                Some(edwards) => montgomery_corresponds_to_edwards(*self, edwards)
+                    && is_well_formed_edwards_point(edwards) && edwards_point_as_affine(edwards)
+                    == spec_montgomery_to_edwards_affine_with_sign(spec_montgomery(*self), sign),
                 None => is_equal_to_minus_one(spec_montgomery(*self)),
             },
     {
@@ -1051,6 +1057,12 @@ impl MontgomeryPoint {
             match result {
                 Some(edwards) => {
                     assume(montgomery_corresponds_to_edwards(*self, edwards));
+                    assume(is_well_formed_edwards_point(edwards));
+                    assume(edwards_point_as_affine(edwards)
+                        == spec_montgomery_to_edwards_affine_with_sign(
+                        spec_montgomery(*self),
+                        sign,
+                    ));
                 },
                 None => {
                     assume(is_equal_to_minus_one(spec_montgomery(*self)));
@@ -1076,86 +1088,469 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
     ensures
         spec_montgomery(result) == spec_elligator_encode(spec_field_element(r_0)),
         spec_montgomery(result) < p(),
+        !is_equal_to_minus_one(spec_montgomery(result)),
 {
-    proof {
-        // Preconditions for constants (MONTGOMERY_A = 486662, MONTGOMERY_A_NEG = -486662 mod p)
-        assume(fe51_limbs_bounded(&FieldElement::ONE, 51));
-        assume(fe51_limbs_bounded(&FieldElement::ZERO, 51));
-        assume(fe51_limbs_bounded(&MONTGOMERY_A, 51));
-        assume(fe51_limbs_bounded(&MONTGOMERY_A_NEG, 51));
-    }
-
     let one = FieldElement::ONE;
-
-    // ORIGINAL CODE: let d_1 = &one + &r_0.square2(); // 2r^2
+    let zero = FieldElement::ZERO;  // moved from after sqrt_ratio_i for proof block access
     proof {
-        assume(fe51_limbs_bounded(r_0, 54));
+        // Constant limb bounds
+        lemma_one_limbs_bounded_51();
+        lemma_zero_limbs_bounded_51();
+        lemma_montgomery_a_limbs_bounded_51();
+
+        // Common weakenings used to satisfy 54-bit preconditions
+        lemma_fe51_limbs_bounded_weaken(&one, 51, 54);
+        lemma_fe51_limbs_bounded_weaken(&zero, 51, 54);
+        lemma_fe51_limbs_bounded_weaken(&MONTGOMERY_A, 51, 54);
+        lemma_fe51_limbs_bounded_weaken(r_0, 51, 54);
     }
+
+    /* ORIGINAL CODE: let d_1 = &one + &r_0.square2(); */
     let r_0_sq2 = r_0.square2();
     proof {
-        assume(sum_of_limbs_bounded(&one, &r_0_sq2, u64::MAX));
+        assert(fe51_limbs_bounded(&r_0_sq2, 53));  // from square2 postcondition
+        assert(sum_of_limbs_bounded(&one, &r_0_sq2, u64::MAX)) by {
+            lemma_fe51_limbs_bounded_weaken(&one, 51, 53);
+            lemma_sum_of_limbs_bounded_from_fe51_bounded(&one, &r_0_sq2, 53);
+        }
     }
     let d_1 = &one + &r_0_sq2;  // 2r^2
 
     proof {
-        assume(fe51_limbs_bounded(&d_1, 54));
-        assume(fe51_limbs_bounded(&MONTGOMERY_A_NEG, 54));
+        assert(fe51_limbs_bounded(&d_1, 54)) by {
+            lemma_fe51_limbs_bounded_weaken(&one, 51, 53);
+            lemma_add_bounds_propagate(&one, &r_0_sq2, 53);
+        }
     }
-    let d = &MONTGOMERY_A_NEG * &(d_1.invert());  // A/(1+2r^2)
-
-    // ORIGINAL CODE: let d_sq = &d.square();
-    // (Changed: removed & because Verus doesn't auto-deref &&FieldElement in Add trait)
     proof {
-        assume(fe51_limbs_bounded(&d, 54));
-        assume(fe51_limbs_bounded(&MONTGOMERY_A, 54));
+        assert(fe51_limbs_bounded(&MONTGOMERY_A_NEG, 54)) by {
+            lemma_montgomery_a_neg_limbs_bounded_51();
+            lemma_fe51_limbs_bounded_weaken(&MONTGOMERY_A_NEG, 51, 54);
+        }
     }
-    let d_sq = d.square();
+    /* ORIGINAL CODE: let d = &MONTGOMERY_A_NEG * &(d_1.invert()); */
+    let d_1_inv = d_1.invert();
+    let d = &MONTGOMERY_A_NEG * &d_1_inv;  // (-A)/(1+2r^2)
+    proof {
+        assert(fe51_limbs_bounded(&d, 54)) by {
+            lemma_fe51_limbs_bounded_weaken(&d, 52, 54);
+        }
+    }
+
+    let d_sq = &d.square();
     let au = &MONTGOMERY_A * &d;
 
-    // ORIGINAL CODE: let inner = &(d_sq + &au) + &one;
+    /* ORIGINAL CODE: let inner = &(d_sq + &au) + &one; */
     proof {
-        assume(sum_of_limbs_bounded(&d_sq, &au, u64::MAX));
+        assert(sum_of_limbs_bounded(d_sq, &au, u64::MAX)) by {
+            lemma_fe51_limbs_bounded_weaken(d_sq, 52, 54);
+            lemma_sum_of_limbs_bounded_from_fe51_bounded(d_sq, &au, 54);
+        }
     }
-    let d_sq_plus_au = &d_sq + &au;
+    let d_sq_plus_au = d_sq + &au;
     proof {
-        assume(sum_of_limbs_bounded(&d_sq_plus_au, &one, u64::MAX));
+        assert(fe51_limbs_bounded(&d_sq_plus_au, 53)) by {
+            assert forall|i: int| 0 <= i < 5 implies d_sq_plus_au.limbs[i] < (1u64 << 53) by {
+                assert(d_sq.limbs[i] < (1u64 << 52));
+                assert(au.limbs[i] < (1u64 << 52));
+                assert((1u64 << 52) + (1u64 << 52) == (1u64 << 53)) by (bit_vector);
+            }
+        }
+        assert(sum_of_limbs_bounded(&d_sq_plus_au, &one, u64::MAX)) by {
+            lemma_fe51_limbs_bounded_weaken(&one, 51, 53);
+            lemma_sum_of_limbs_bounded_from_fe51_bounded(&d_sq_plus_au, &one, 53);
+        }
     }
     let inner = &d_sq_plus_au + &one;  // inner = d^2 + A*d + 1
 
     proof {
-        assume(fe51_limbs_bounded(&inner, 54));
+        assert(fe51_limbs_bounded(&inner, 54)) by {
+            lemma_fe51_limbs_bounded_weaken(&one, 51, 53);
+            lemma_add_bounds_propagate(&d_sq_plus_au, &one, 53);
+        }
     }
     let eps = &d * &inner;  // eps = d^3 + Ad^2 + d
 
     proof {
-        assume(fe51_limbs_bounded(&eps, 54));
-        assume(fe51_limbs_bounded(&one, 54));
+        assert(fe51_limbs_bounded(&one, 54)) by {
+            lemma_fe51_limbs_bounded_weaken(&one, 51, 54);
+        }
     }
     let (eps_is_sq, _eps) = FieldElement::sqrt_ratio_i(&eps, &one);
 
-    let zero = FieldElement::ZERO;
+    /* ORIGINAL CODE: let Atemp = FieldElement::conditional_select(&MONTGOMERY_A, &zero, eps_is_sq); */
     let Atemp = conditional_select_field_element(&MONTGOMERY_A, &zero, eps_is_sq);  // 0, or A if nonsquare
 
     proof {
-        assume(sum_of_limbs_bounded(&d, &Atemp, u64::MAX));
+        assert(fe51_limbs_bounded(&Atemp, 54)) by {
+            if choice_is_true(eps_is_sq) {
+                assert(Atemp == zero);
+                assert(fe51_limbs_bounded(&Atemp, 54));
+            } else {
+                assert(Atemp == MONTGOMERY_A);
+                assert(fe51_limbs_bounded(&Atemp, 54));
+            }
+        }
+        assert(sum_of_limbs_bounded(&d, &Atemp, u64::MAX)) by {
+            lemma_sum_of_limbs_bounded_from_fe51_bounded(&d, &Atemp, 54);
+        }
     }
     let mut u = &d + &Atemp;  // d, or d+A if nonsquare
+    let ghost u_pre = u;
 
-    // ORIGINAL CODE: u.conditional_negate(!eps_is_sq);
+    /* ORIGINAL CODE: u.conditional_negate(!eps_is_sq); */
+    let neg_choice = choice_not(eps_is_sq);
     proof {
-        assume(fe51_limbs_bounded(&u, 51));
+        assert(fe51_limbs_bounded(&u, 54)) by {
+            assert(fe51_limbs_bounded(&d, 52));  // from mul postcondition
+            lemma_fe51_limbs_bounded_weaken(&Atemp, 51, 52);
+            lemma_add_bounds_propagate(&d, &Atemp, 52);
+            lemma_fe51_limbs_bounded_weaken(&u, 53, 54);
+        }
     }
-    conditional_negate_field_element(&mut u, choice_not(eps_is_sq));  // d, or -d-A if nonsquare
+    conditional_negate_field_element(&mut u, neg_choice);  // d, or -d-A if nonsquare
 
-    proof {
-        assume(fe51_limbs_bounded(&u, 51));
-    }
+    /* ORIGINAL CODE: MontgomeryPoint(u.as_bytes()) */
     let result = MontgomeryPoint(u.as_bytes());
 
     proof {
-        // PROOF BYPASS: Assume postconditions
-        assume(spec_montgomery(result) == spec_elligator_encode(spec_field_element(r_0)));
-        assume(spec_montgomery(result) < p());
+        let r = spec_field_element(r_0);
+        let A = spec_field_element(&MONTGOMERY_A);
+
+        // ---------------------------------------------------------------------
+        // Step 0: Bridge exec variables to spec-level math expressions.
+        //   Show each intermediate FieldElement (r_0_sq2, d_1, d, d_sq, au,
+        //   inner, eps) equals its counterpart in spec_elligator_encode.
+        // ---------------------------------------------------------------------
+        // r_0_sq2 matches 2*r^2
+        assert(spec_field_element(&r_0_sq2) == math_field_mul(2, math_field_square(r))) by {
+            // square2 postcondition: u64_5_as_nat(r_0_sq2.limbs) % p == 2 * pow(u64_5_as_nat(r0.limbs),2) % p
+            let r0_raw = u64_5_as_nat(r_0.limbs);
+            let r0_sq_raw = pow(r0_raw as int, 2) as nat;
+            assert(spec_field_element(r_0) == r0_raw % p());
+
+            // square2 postcondition
+            assert(u64_5_as_nat(r_0_sq2.limbs) % p() == (2 * pow(r0_raw as int, 2)) as nat % p());
+
+            // Reduce r0_sq_raw modulo p to math_field_square(r0_raw%p)
+            assert(r0_sq_raw % p() == math_field_square(r0_raw % p())) by {
+                assert(r0_sq_raw % p() == pow(r0_raw as int, 2) as nat % p());
+                lemma_square_matches_math_field_square(r0_raw, r0_sq_raw);
+            }
+
+            // (2 * r0_sq_raw) % p = math_field_mul(2, r0_sq_raw % p)
+            assert((2 * r0_sq_raw) % p() == math_field_mul(2, r0_sq_raw % p())) by {
+                p_gt_2();
+                lemma_mul_mod_noop_general(2, r0_sq_raw as int, p() as int);
+                lemma_small_mod(2nat, p());
+            }
+
+            assert(spec_field_element(&r_0_sq2) == u64_5_as_nat(r_0_sq2.limbs) % p());
+            // Connect square2's postcondition to our `r0_sq_raw` name.
+            assert(u64_5_as_nat(r_0_sq2.limbs) % p() == (2 * r0_sq_raw) % p()) by {
+                // square2 gives: u64_5_as_nat(...) % p == ((2 * pow(r0_raw,2)) as nat) % p
+                // and r0_sq_raw is `pow(r0_raw,2) as nat`.
+                assert(pow(r0_raw as int, 2) >= 0) by {
+                    lemma_pow_nonnegative(r0_raw as int, 2);
+                }
+                assert((2 * pow(r0_raw as int, 2)) as nat == 2 * (pow(r0_raw as int, 2) as nat))
+                    by (compute);
+                assert(r0_sq_raw == pow(r0_raw as int, 2) as nat);
+            }
+            assert(r0_raw % p() == r);
+        }
+
+        // d_1 = 1 + 2*r^2
+        assert(spec_field_element(&d_1) == math_field_add(1, spec_field_element(&r_0_sq2))) by {
+            lemma_one_field_element_value();
+            assert(spec_field_element(&one) == 1);
+            assert(spec_field_element(&d_1) == math_field_add(
+                spec_field_element(&one),
+                spec_field_element(&r_0_sq2),
+            ));
+        }
+        assert(spec_field_element(&d_1) == math_field_add(
+            1,
+            math_field_mul(2, math_field_square(r)),
+        ));
+
+        // d = (-A) / (1 + 2*r^2)
+        assert(spec_field_element(&d) == math_field_mul(
+            math_field_neg(A),
+            math_field_inv(math_field_add(1, math_field_mul(2, math_field_square(r)))),
+        )) by {
+            // From invert:
+            assert(spec_field_element(&d_1_inv) == math_field_inv(spec_field_element(&d_1)));
+            // From mul:
+            assert(spec_field_element(&d) == math_field_mul(
+                spec_field_element(&MONTGOMERY_A_NEG),
+                spec_field_element(&d_1_inv),
+            ));
+            // MONTGOMERY_A_NEG encodes -A:
+            assert(spec_field_element(&MONTGOMERY_A_NEG) == math_field_neg(A)) by {
+                axiom_montgomery_a_neg_is_neg_a();
+            }
+            // Replace d_1 with denom (asserted above).
+            assert(spec_field_element(&d_1) == math_field_add(
+                1,
+                math_field_mul(2, math_field_square(r)),
+            ));
+        }
+
+        // d_sq = d^2
+        assert(spec_field_element(&d_sq) == math_field_square(spec_field_element(&d))) by {
+            // square postcondition is in terms of u64_5_as_nat; bridge to math_field_square
+            let d_raw = u64_5_as_nat(d.limbs);
+            let d_sq_raw = u64_5_as_nat(d_sq.limbs);
+            assert(spec_field_element(&d) == d_raw % p());
+            assert(d_sq_raw % p() == pow(d_raw as int, 2) as nat % p());
+            lemma_square_matches_math_field_square(d_raw, d_sq_raw);
+        }
+
+        // au = A * d
+        assert(spec_field_element(&au) == math_field_mul(A, spec_field_element(&d)));
+
+        // inner = d^2 + A*d + 1
+        assert(spec_field_element(&inner) == math_field_add(
+            math_field_add(spec_field_element(&d_sq), spec_field_element(&au)),
+            1,
+        )) by {
+            lemma_one_field_element_value();
+            assert(spec_field_element(&one) == 1);
+            assert(spec_field_element(&d_sq_plus_au) == math_field_add(
+                spec_field_element(&d_sq),
+                spec_field_element(&au),
+            ));
+            assert(spec_field_element(&inner) == math_field_add(
+                spec_field_element(&d_sq_plus_au),
+                spec_field_element(&one),
+            ));
+        }
+
+        // eps = d * inner
+        assert(spec_field_element(&eps) == math_field_mul(
+            spec_field_element(&d),
+            spec_field_element(&inner),
+        ));
+
+        let eps_nat = spec_field_element(&eps);
+
+        // ---------------------------------------------------------------------
+        // Step 1: Prove choice_is_true(eps_is_sq) <==> math_is_square(eps).
+        //   The exec code branches on the Choice from sqrt_ratio_i, but
+        //   spec_elligator_encode branches on math_is_square. This equivalence
+        //   lets Steps 2-3 align the exec branches with the spec branches.
+        // ---------------------------------------------------------------------
+        assert(choice_is_true(eps_is_sq) <==> math_is_square(eps_nat)) by {
+            let v_nat = spec_field_element(&one);
+            p_gt_2();
+            assert(v_nat == 1) by {
+                lemma_one_field_element_value();
+            }
+
+            if choice_is_true(eps_is_sq) {
+                // Success: either eps=0 or is_sqrt_ratio(eps, 1, _eps), giving a square witness.
+                if eps_nat == 0 {
+                    assert(math_is_square(eps_nat)) by {
+                        // witness y = 0
+                        assert((0nat * 0nat) % p() == (eps_nat % p()));
+                    }
+                } else {
+                    assert(is_sqrt_ratio(&eps, &one, &_eps));
+                    let y = spec_field_element(&_eps);
+                    assert((y * y) % p() == (eps_nat % p())) by {
+                        // is_sqrt_ratio with v=1 means y^2 == eps (mod p)
+                        assert((y * y * v_nat) % p() == eps_nat);
+                        assert(v_nat == 1);
+                        assert((y * y * 1nat) % p() == (y * y) % p()) by (compute);
+                        // LHS is a mod result, so eps_nat < p() and eps_nat % p() = eps_nat
+                        p_gt_2();
+                        lemma_mod_bound((y * y) as int, p() as int);
+                        assert(eps_nat < p());
+                        lemma_small_mod(eps_nat, p());
+                    }
+                    assert(math_is_square(eps_nat)) by {
+                        assert(exists|w: nat| (#[trigger] (w * w) % p()) == (eps_nat % p())) by {
+                            let w = y;
+                            assert((w * w) % p() == (eps_nat % p()));
+                        }
+                    }
+                }
+            } else {
+                // Failure implies eps != 0 (sqrt_ratio_i spec: u==0 => success).
+                assert(eps_nat != 0);
+                assert(is_sqrt_ratio_times_i(&eps, &one, &_eps));
+                // Show eps is not a quadratic residue: if it had a sqrt, contradiction.
+                assert(!math_is_square(eps_nat)) by {
+                    if math_is_square(eps_nat) {
+                        let y0 = choose|y: nat| (#[trigger] (y * y) % p()) == (eps_nat % p());
+                        let y = y0 % p();
+                        lemma_square_mod_noop(y0);
+                        assert(math_field_square(y) == math_field_square(y0));
+                        // Build the "times i" witness x from sqrt_ratio_i failure.
+                        let x = spec_field_element(&_eps);
+                        assert(x < p()) by {
+                            lemma_mod_bound(u64_5_as_nat(_eps.limbs) as int, p() as int);
+                        }
+                        assert(exists|w: nat|
+                            w < p() && #[trigger] math_field_mul(math_field_square(w), 1) == (
+                            spec_sqrt_m1() * eps_nat) % p()) by {
+                            let w = x;
+                            // from is_sqrt_ratio_times_i with v=1
+                            assert((x * x * 1nat) % p() == (spec_sqrt_m1() * eps_nat) % p());
+                            // math_field_mul(math_field_square(w), 1) == math_field_square(w)
+                            p_gt_2();
+                            let a = math_field_square(w);
+                            // a is already reduced mod p, so a < p
+                            lemma_mod_bound((w * w) as int, p() as int);
+                            assert(a < p());
+                            assert(math_field_mul(a, 1) == a) by {
+                                assert(a * 1 == a);
+                                lemma_small_mod(a, p());
+                            }
+                            assert(math_field_square(w) == (spec_sqrt_m1() * eps_nat) % p()) by {
+                                assert((w * w) % p() == (spec_sqrt_m1() * eps_nat) % p());
+                            }
+                        }
+                        // Apply lemma: no y with y^2 = eps_nat (mod p)
+                        // Strengthen eps_nat != 0 to eps_nat % p != 0 for the lemma's precondition.
+                        p_gt_2();
+                        assert(eps_nat == u64_5_as_nat(eps.limbs) % p());
+                        lemma_mod_bound(u64_5_as_nat(eps.limbs) as int, p() as int);
+                        assert(eps_nat < p());
+                        lemma_small_mod(eps_nat, p());
+                        assert(eps_nat % p() == eps_nat);
+                        assert(eps_nat % p() != 0);
+                        lemma_no_square_root_when_times_i(eps_nat, 1, y);
+                        assert(false);
+                    }
+                }
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // Step 2: Derive the spec value of u after conditional_select + negate.
+        //   u = d when eps is square, u = -(d+A) otherwise — matching
+        //   the two branches of spec_elligator_encode.
+        // ---------------------------------------------------------------------
+        assert(spec_field_element(&u) == if choice_is_true(eps_is_sq) {
+            spec_field_element(&d)
+        } else {
+            math_field_neg(math_field_add(spec_field_element(&d), A))
+        }) by {
+            // conditional_select: Atemp = 0 if square, else A
+            assert(spec_field_element(&Atemp) == if choice_is_true(eps_is_sq) {
+                0
+            } else {
+                A
+            }) by {
+                if choice_is_true(eps_is_sq) {
+                    assert(Atemp == zero);
+                    assert(spec_field_element(&Atemp) == 0) by {
+                        lemma_zero_field_element_value();
+                    }
+                } else {
+                    assert(Atemp == MONTGOMERY_A);
+                    // spec_field_element(&MONTGOMERY_A) is A by definition
+                }
+            }
+            assert(spec_field_element(&u_pre) == if choice_is_true(eps_is_sq) {
+                spec_field_element(&d)
+            } else {
+                math_field_add(spec_field_element(&d), A)
+            }) by {
+                if choice_is_true(eps_is_sq) {
+                    assert(spec_field_element(&u_pre) == math_field_add(spec_field_element(&d), 0));
+                    // math_field_add(x, 0) = x for any field element x
+                    assert(math_field_add(spec_field_element(&d), 0) == spec_field_element(&d)) by {
+                        let x = spec_field_element(&d);
+                        p_gt_2();
+                        // x < p, so (x + 0) % p = x
+                        lemma_mod_bound(u64_5_as_nat(d.limbs) as int, p() as int);
+                        lemma_small_mod(x, p());
+                    }
+                } else {
+                    assert(spec_field_element(&u_pre) == math_field_add(spec_field_element(&d), A));
+                }
+            }
+            // conditional_negate with choice_not: negates when nonsquare
+            if choice_is_true(eps_is_sq) {
+                assert(!choice_is_true(neg_choice));
+                assert(spec_field_element(&u) == spec_field_element(&u_pre));
+            } else {
+                assert(choice_is_true(neg_choice));
+                assert(spec_field_element(&u) == math_field_neg(spec_field_element(&u_pre)));
+                assert(spec_field_element(&u) == math_field_neg(
+                    math_field_add(spec_field_element(&d), A),
+                ));
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // Step 3: Encode u into MontgomeryPoint bytes and prove postconditions.
+        //   Show spec_montgomery(result) == spec_elligator_encode(r),
+        //   result < p(), and result != -1 (for safe to_edwards conversion).
+        // ---------------------------------------------------------------------
+        let u_bytes = result.0;
+        assert(spec_montgomery(result) == spec_field_element(&u)) by {
+            // as_bytes gives canonical bytes whose nat value equals the field element (already < p)
+            assert(bytes32_to_nat(&u_bytes) == spec_field_element(&u));
+            pow255_gt_19();
+            lemma_small_mod(spec_field_element(&u), pow2(255));
+            lemma_small_mod(spec_field_element(&u), p());
+        }
+
+        // Now match the spec_elligator_encode definition.
+        let spec_u = spec_elligator_encode(r);
+        assert(spec_montgomery(result) == spec_u) by {
+            // Unfold spec_elligator_encode and rewrite it in terms of our computed `d` and `eps`.
+            let denom = math_field_add(1, math_field_mul(2, math_field_square(r)));
+            let d_spec = math_field_mul(math_field_neg(A), math_field_inv(denom));
+            assert(d_spec == spec_field_element(&d));
+
+            let d_sq_spec = math_field_square(d_spec);
+            let eps_spec = math_field_mul(
+                d_spec,
+                math_field_add(math_field_add(d_sq_spec, math_field_mul(A, d_spec)), 1),
+            );
+            assert(eps_spec == eps_nat);
+
+            // By definition:
+            //   spec_elligator_encode(r) = if math_is_square(eps_spec) { d_spec } else { -(d_spec + A) }
+            assert(spec_u == if math_is_square(eps_nat) {
+                spec_field_element(&d)
+            } else {
+                math_field_neg(math_field_add(spec_field_element(&d), A))
+            }) by {
+                // Directly unfold the spec function body.
+                // (Avoid `compute` here; the expression involves exec-derived values.)
+                assert(spec_u == if math_is_square(eps_spec) {
+                    d_spec
+                } else {
+                    math_field_neg(math_field_add(d_spec, A))
+                });
+            }
+
+            // Finally, use the established case-split for `u` (which matches `math_is_square(eps_nat)`).
+            if math_is_square(eps_nat) {
+                assert(choice_is_true(eps_is_sq));
+                assert(spec_montgomery(result) == spec_field_element(&d));
+            } else {
+                assert(!choice_is_true(eps_is_sq));
+                assert(spec_montgomery(result) == math_field_neg(
+                    math_field_add(spec_field_element(&d), A),
+                ));
+            }
+        }
+
+        assert(spec_montgomery(result) < p()) by {
+            p_gt_2();
+            lemma_mod_bound(spec_montgomery(result) as int, p() as int);
+        }
+
+        assert(!is_equal_to_minus_one(spec_montgomery(result))) by {
+            lemma_elligator_never_minus_one(r);
+        }
     }
 
     result

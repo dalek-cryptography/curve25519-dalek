@@ -17,7 +17,7 @@
 //! - **Scalar Multiplication Lemmas**: distribution `[m+n]P = [m]P + [n]P`, doubling `[2n]P = [n]P + [n]P`
 //! - **Projective Representation Lemmas**: connecting projective `(U:W)` to affine `u = U/W`
 #![allow(unused)]
-use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A};
+use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
 use crate::lemmas::common_lemmas::number_theory_lemmas::*;
 use crate::lemmas::field_lemmas::field_algebra_lemmas::*;
 use crate::specs::field_specs::*;
@@ -25,6 +25,8 @@ use crate::specs::field_specs_u64::*;
 use crate::specs::montgomery_specs::*;
 use crate::specs::primality_specs::*;
 use vstd::arithmetic::div_mod::*;
+#[cfg(verus_keep_ghost)]
+use vstd::arithmetic::power2::{lemma2_to64, lemma_pow2_strictly_increases, pow2};
 use vstd::prelude::*;
 
 verus! {
@@ -710,4 +712,392 @@ proof fn lemma_montgomery_add_u_coord_reduced(P: MontgomeryAffine, Q: Montgomery
     }
 }
 
+// =============================================================================
+// ELLIGATOR2: u = -1 is unreachable
+// =============================================================================
+/// Axiom: 486660 (= A - 2) is not a quadratic residue mod p.
+/// Equivalently, Legendre symbol (486660 / p) = -1.
+/// Verified by runtime test `test_486660_not_qr`.
+pub proof fn axiom_486660_not_quadratic_residue()
+    ensures
+        !math_is_square(486660nat),
+{
+    admit();
+}
+
+/// Axiom: 2 * 486661 (= 2*(A-1)) is not a quadratic residue mod p.
+/// Since p ≡ 5 (mod 8), 2 is a non-QR; 486661 = A-1 is a QR; product is non-QR.
+/// Verified by runtime test `test_2_times_486661_not_qr`.
+pub proof fn axiom_2_times_486661_not_qr()
+    ensures
+        !math_is_square((2nat * 486661nat) % p()),
+{
+    admit();
+}
+
+/// Lemma: the modular inverse of a non-zero non-QR is also a non-QR.
+///
+/// Proof: suppose inv(a) is QR with witness y² = inv(a).
+/// Then inv(y²) = inv(inv(a)) = a, and inv(y²) = inv(y)², so inv(y)² = a,
+/// meaning a is QR — contradiction.
+pub proof fn lemma_inv_preserves_non_qr(a: nat)
+    requires
+        !math_is_square(a % p()),
+        a % p() != 0,
+    ensures
+        !math_is_square(math_field_inv(a % p())),
+{
+    let a_mod = a % p();
+    let inv_a = math_field_inv(a_mod);
+
+    if math_is_square(inv_a) {
+        // Witness: y such that y² ≡ inv(a) (mod p)
+        let y: nat = choose|y: nat| (#[trigger] (y * y) % p()) == (inv_a % p());
+        p_gt_2();
+
+        assert(math_field_square(y) == inv_a) by {
+            lemma_mod_bound(a as int, p() as int);
+            lemma_small_mod(a_mod, p());
+            assert(inv_a < p()) by {
+                field_inv_property(a_mod);
+            }
+            lemma_small_mod(inv_a, p());
+        }
+
+        // inv(inv(a)) = a_mod, so inv(y²) = a_mod
+        assert(math_field_inv(math_field_square(y)) == a_mod) by {
+            lemma_inv_of_inv(a_mod);
+            lemma_mod_bound(a as int, p() as int);
+            lemma_small_mod(a_mod, p());
+        }
+
+        // inv(y²) = inv(y)²
+        assert(math_field_inv(math_field_square(y)) == math_field_square(math_field_inv(y))) by {
+            lemma_inv_of_square(y);
+        }
+
+        // So inv(y)² = a_mod, meaning a is QR — contradiction
+        assert(math_is_square(a_mod)) by {
+            let w = math_field_inv(y);
+            lemma_small_mod(a_mod, p());
+        }
+        assert(false);
+    }
+}
+
+/// Helper: spec_field_element(&MONTGOMERY_A) == 486662.
+proof fn lemma_montgomery_a_value()
+    ensures
+        spec_field_element(&MONTGOMERY_A) == 486662nat,
+{
+    // MONTGOMERY_A.limbs = [486662, 0, 0, 0, 0]
+    // u64_5_as_nat = 486662 + pow2(51)*0 + ... = 486662
+    let limbs = MONTGOMERY_A.limbs;
+    assert(limbs[0] == 486662u64);
+    assert(limbs[1] == 0u64 && limbs[2] == 0u64 && limbs[3] == 0u64 && limbs[4] == 0u64);
+    assert(u64_5_as_nat(limbs) == 486662nat) by {
+        // All higher limbs are 0, so u64_5_as_nat = limbs[0] + 0 + 0 + 0 + 0
+        lemma2_to64();
+        assert(pow2(51) > 0 && pow2(102) > 0 && pow2(153) > 0 && pow2(204) > 0) by {
+            lemma_pow2_strictly_increases(5, 51);
+            lemma_pow2_strictly_increases(5, 102);
+            lemma_pow2_strictly_increases(5, 153);
+            lemma_pow2_strictly_increases(5, 204);
+        }
+    }
+    assert(spec_field_element(&MONTGOMERY_A) == 486662nat) by {
+        lemma_p_gt_small(486662nat);
+        lemma_small_mod(486662nat, p());
+    }
+}
+
+/// MONTGOMERY_A_NEG represents math_field_neg(A) where A = 486662.
+/// Its limbs encode p - 486662 in the 51-bit representation.
+/// Verified by runtime test `test_montgomery_a_neg_value`.
+pub proof fn axiom_montgomery_a_neg_is_neg_a()
+    ensures
+        spec_field_element(&MONTGOMERY_A_NEG) == math_field_neg(spec_field_element(&MONTGOMERY_A)),
+{
+    // The limbs of MONTGOMERY_A_NEG are [2^51-19-486662, 2^51-1, 2^51-1, 2^51-1, 2^51-1],
+    // which is exactly p - 486662 in the 51-bit limb representation.
+    // The concrete large-number arithmetic is verified by the runtime test.
+    admit();
+}
+
+/// Helper: show that small constants (< 1048576) are less than p.
+proof fn lemma_p_gt_small(n: nat)
+    requires
+        n < 1048576,
+    ensures
+        n < p(),
+{
+    // pow2(21) = 2097152 > 1048576. pow2(255) >= pow2(21), so p() > 1048576 > n.
+    pow255_gt_19();
+    lemma2_to64();
+    assert(pow2(5) == 32nat) by {
+        lemma2_to64();
+    }
+    vstd::arithmetic::power2::lemma_pow2_adds(5, 5);
+    assert(pow2(10) == 1024nat);
+    vstd::arithmetic::power2::lemma_pow2_adds(10, 10);
+    assert(pow2(20) == 1048576nat);
+    vstd::arithmetic::power2::lemma_pow2_adds(20, 1);
+    assert(pow2(1) == 2nat) by {
+        lemma2_to64();
+    }
+    assert(pow2(21) == 2097152nat);
+    lemma_pow2_strictly_increases(21, 255);
+    // pow2(255) > pow2(21) = 2097152, so p = pow2(255) - 19 >= 2097134 > 1048576 > n
+}
+
+/// Algebraic lemma for the square branch: when d = -1 (mod p),
+///   d * (d² + A*d + 1) = A - 2 = 486660 (mod p).
+proof fn lemma_eps_when_d_is_minus_one(d: nat, A: nat)
+    requires
+        d == math_field_sub(0, 1),
+        A == 486662nat,
+    ensures
+        ({
+            let d_sq = math_field_square(d);
+            let A_d = math_field_mul(A, d);
+            let inner = math_field_add(math_field_add(d_sq, A_d), 1);
+            let eps = math_field_mul(d, inner);
+            eps == 486660nat
+        }),
+{
+    let pp = p();
+    p_gt_2();
+    lemma_p_gt_small(486662nat);
+
+    // d = neg(1) = p - 1
+    assert(d == math_field_neg(1)) by {
+        lemma_small_mod(0nat, pp);
+        lemma_small_mod(1nat, pp);
+    }
+
+    // d² = (-1)² = 1² = 1
+    let d_sq = math_field_square(d);
+    assert(d_sq == 1nat) by {
+        lemma_neg_square_eq(1);
+        lemma_small_mod(1nat, pp);
+        assert(math_field_square(d) == math_field_square(1nat % pp));
+        assert(math_field_square(1nat) == (1nat * 1nat) % pp);
+        lemma_small_mod(1nat, pp);
+    }
+
+    // A*d = A*(-1) = -A
+    let A_d = math_field_mul(A, d);
+    assert(A_d == math_field_neg(A)) by {
+        lemma_field_mul_neg(A, 1);
+        assert(math_field_mul(A, math_field_neg(1)) == math_field_neg(math_field_mul(A, 1)));
+        lemma_field_mul_one_right(A);
+        lemma_small_mod(A, pp);
+    }
+
+    // d² + A*d = 1 + neg(A) = sub(1, A)
+    let sum1 = math_field_add(d_sq, A_d);
+    assert(sum1 == math_field_sub(1, A)) by {
+        lemma_field_sub_eq_add_neg(1, A);
+    }
+
+    // Compute sub(1, A) = p - 486661 concretely
+    let val_486661 = (pp - 486661) as nat;
+    assert(sum1 == val_486661) by {
+        lemma_small_mod(1nat, pp);
+        lemma_small_mod(A, pp);
+        lemma_p_gt_small(486662nat);
+        lemma_small_mod(val_486661, pp);
+    }
+
+    // inner = add(sum1, 1) = add(p - 486661, 1) = p - 486660
+    let inner = math_field_add(sum1, 1);
+    let val_486660 = (pp - 486660) as nat;
+    assert(inner == val_486660) by {
+        lemma_p_gt_small(486660nat);
+        lemma_small_mod(val_486660, pp);
+    }
+
+    // eps = mul(neg(1), inner) = neg(inner) = neg(p - 486660) = 486660
+    let eps = math_field_mul(d, inner);
+    assert(eps == 486660nat) by {
+        lemma_neg_one_times_is_neg(inner);
+        // eps == neg(inner) == neg(p - 486660) == 486660
+        lemma_p_gt_small(486660nat);
+        lemma_small_mod(val_486660, pp);
+        lemma_small_mod(486660nat, pp);
+    }
+}
+
+/// Axiom: if d = -A/(1+2r²) and d+A = 1 (mod p), then r² = inv(2·(A-1)).
+/// Verified by runtime test `test_nonsquare_branch_identity`.
+proof fn axiom_nonsquare_branch_r_sq(A: nat, d: nat, d_denom: nat, r_sq: nat)
+    requires
+        A == 486662nat,
+        d_denom == math_field_add(1, math_field_mul(2, r_sq)),
+        d == math_field_mul(math_field_neg(A), math_field_inv(d_denom)),
+        math_field_neg(math_field_add(d, A)) == math_field_sub(0, 1),
+    ensures
+        r_sq == math_field_inv((2nat * 486661nat) % p()),
+{
+    admit();
+}
+
+/// Elligator2 encoding never produces u = -1 (mod p).
+///
+/// Proof by contradiction in each branch of `spec_elligator_encode`:
+/// - Square branch (u = d): d = -1 ⟹ eps ≡ 486660 (non-QR), contradicts square branch.
+/// - Non-square branch (u = -(d+A)): u = -1 ⟹ r² = inv(2*486661) (non-QR), contradicts r² being QR.
+pub proof fn lemma_elligator_never_minus_one(r: nat)
+    ensures
+        !is_equal_to_minus_one(spec_elligator_encode(r)),
+{
+    axiom_486660_not_quadratic_residue();
+
+    let A = spec_field_element(&MONTGOMERY_A);
+    let r_sq = math_field_square(r);
+    let two_r_sq = math_field_mul(2, r_sq);
+    let d_denom = math_field_add(1, two_r_sq);
+    let d = math_field_mul(math_field_neg(A), math_field_inv(d_denom));
+    let d_sq = math_field_square(d);
+    let A_d = math_field_mul(A, d);
+    let inner = math_field_add(math_field_add(d_sq, A_d), 1);
+    let eps = math_field_mul(d, inner);
+
+    let minus_one = math_field_sub(0, 1);
+
+    if math_is_square(eps) {
+        // Square branch: u = d. Suppose d == -1.
+        if d == minus_one {
+            assert(eps == 486660nat) by {
+                lemma_montgomery_a_value();
+                lemma_eps_when_d_is_minus_one(d, A);
+            }
+            // math_is_square(eps) with eps = 486660 implies math_is_square(486660) — contradiction
+            assert(math_is_square(486660nat)) by {
+                p_gt_2();
+                lemma_p_gt_small(486660nat);
+                lemma_small_mod(eps, p());
+                lemma_small_mod(486660nat, p());
+                let y_w: nat = choose|y: nat| (#[trigger] (y * y) % p()) == (eps % p());
+            }
+            assert(false);
+        }
+    } else {
+        // Non-square branch: u = -(d + A). Suppose u == -1.
+        let u = math_field_neg(math_field_add(d, A));
+        if u == minus_one {
+            let two_a1 = (2nat * 486661nat) % p();
+
+            // r² = inv(2*486661) by axiom
+            assert(r_sq == math_field_inv(two_a1)) by {
+                lemma_montgomery_a_value();
+                axiom_nonsquare_branch_r_sq(A, d, d_denom, r_sq);
+            }
+
+            // inv(2*486661) is not a QR
+            assert(!math_is_square(math_field_inv(two_a1))) by {
+                axiom_2_times_486661_not_qr();
+                assert(two_a1 != 0nat) by {
+                    p_gt_2();
+                    lemma_p_gt_small(973322nat);
+                    assert(2nat * 486661nat == 973322nat) by (compute);
+                    lemma_small_mod(973322nat, p());
+                }
+                lemma_inv_preserves_non_qr(2nat * 486661nat);
+            }
+
+            // But r² is always a QR — contradiction
+            assert(math_is_square(r_sq)) by {
+                p_gt_2();
+                lemma_mod_bound((r * r) as int, p() as int);
+                lemma_small_mod(r_sq, p());
+            }
+            assert(false);
+        }
+    }
+}
+
 } // verus!
+#[cfg(test)]
+mod test_qr_axioms {
+    use num_bigint::BigUint;
+    use num_traits::One;
+
+    /// p = 2^255 - 19
+    fn p() -> BigUint {
+        (BigUint::one() << 255) - BigUint::from(19u32)
+    }
+
+    /// Euler's criterion: a is a QR mod p iff a^((p-1)/2) ≡ 1 (mod p)
+    fn is_qr(a: &BigUint, p: &BigUint) -> bool {
+        let exp = (p - BigUint::one()) / BigUint::from(2u32);
+        a.modpow(&exp, p) == BigUint::one()
+    }
+
+    #[test]
+    fn test_486660_not_qr() {
+        let p = p();
+        assert!(
+            !is_qr(&BigUint::from(486660u32), &p),
+            "486660 should NOT be a QR mod p"
+        );
+    }
+
+    #[test]
+    fn test_2_times_486661_not_qr() {
+        let p = p();
+        let val = (BigUint::from(2u32) * BigUint::from(486661u32)) % &p;
+        assert!(!is_qr(&val, &p), "2*486661 should NOT be a QR mod p");
+    }
+
+    /// Modular inverse via Fermat's little theorem: a^(-1) = a^(p-2) mod p
+    fn mod_inv(a: &BigUint, p: &BigUint) -> BigUint {
+        a.modpow(&(p - BigUint::from(2u32)), p)
+    }
+
+    #[test]
+    fn test_nonsquare_branch_identity() {
+        // Verify: for any r, if -(d+A) = -1 with d = -A/(1+2r²),
+        // then r² = inv(2*486661) mod p.
+        // We check: inv(2*486661) is not a QR, confirming no such r exists.
+        let p = p();
+        let a = BigUint::from(486662u32);
+        let two_a1 = (BigUint::from(2u32) * BigUint::from(486661u32)) % &p;
+        let inv_two_a1 = mod_inv(&two_a1, &p);
+
+        // inv(2*486661) should not be a QR (same as 2*486661 not being QR)
+        assert!(
+            !is_qr(&inv_two_a1, &p),
+            "inv(2*486661) should NOT be a QR mod p"
+        );
+
+        // Also verify the algebra: if d = 1-A and d = -A/(1+2r²),
+        // then 1+2r² = A/(A-1) and r² = 1/(2*(A-1)) = inv(2*486661)
+        let one_minus_a = (&p + BigUint::one() - &a) % &p;
+        let a_minus_1 = BigUint::from(486661u32);
+        let denom = (&a * mod_inv(&a_minus_1, &p)) % &p; // A/(A-1)
+        let two_r_sq = (&denom + &p - BigUint::one()) % &p; // denom - 1
+        let r_sq = (&two_r_sq * mod_inv(&BigUint::from(2u32), &p)) % &p;
+        assert_eq!(r_sq, inv_two_a1, "r² should equal inv(2*486661)");
+    }
+
+    #[test]
+    fn test_montgomery_a_neg_value() {
+        // Verify MONTGOMERY_A_NEG encodes -486662 mod p.
+        // Its limbs are [2^51-19-486662, 2^51-1, 2^51-1, 2^51-1, 2^51-1],
+        // which sums to p - 486662.
+        let p = p();
+        let a = BigUint::from(486662u32);
+        let neg_a = (&p - &a) % &p;
+
+        // Compute u64_5_as_nat from the constant's limbs
+        let l0 = BigUint::from(2251799813198567u64);
+        let l1 = BigUint::from(2251799813685247u64);
+        let pow2_51 = BigUint::one() << 51;
+        let pow2_102 = BigUint::one() << 102;
+        let pow2_153 = BigUint::one() << 153;
+        let pow2_204 = BigUint::one() << 204;
+        let nat = &l0 + &l1 * &pow2_51 + &l1 * &pow2_102 + &l1 * &pow2_153 + &l1 * &pow2_204;
+        assert_eq!(&nat % &p, neg_a, "MONTGOMERY_A_NEG should encode -A mod p");
+    }
+}

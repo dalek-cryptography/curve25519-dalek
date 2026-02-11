@@ -273,6 +273,22 @@ _MATH_SUBSTITUTIONS = [
     (r"p\(\)", "p"),
     (r"pow\(([^,]+),\s*(\w+)\)", r"(\1)^\2"),
     (r"binomial_sum\((\w+),\s*(\w+),\s*(\w+)\)", r"Σ C(\2,k)·\1^k"),
+    # Spec function simplifications for verified function contracts
+    (r"spec_field_element\(&?(\w+)\)", r"fe(\1)"),
+    (r"spec_field_element_as_nat\(&?(\w+)\)", r"nat(\1)"),
+    (r"spec_add_fe51_limbs\((\w+),\s*&?(\w+)\)", r"\1 + \2 (limbs)"),
+    (r"bytes32_to_nat\(&?(\w+)(?:\.bytes)?\)", r"nat(\1)"),
+    (r"scalar52_to_nat\(&?(\w+)\)", r"nat(\1)"),
+    (r"scalar_to_nat\(&?(\w+)\)", r"nat(\1)"),
+    (r"group_order\(\)", "L"),
+    (r"is_canonical_scalar\(&?(\w+)\)", r"\1 < L"),
+    (r"is_canonical_scalar52\(&?(\w+)\)", r"\1 < L"),
+    (r"fe51_limbs_bounded\(&?(\w+),\s*(\d+)\)", r"limbs(\1) < 2^\2"),
+    (r"is_well_formed_edwards_point\(\*?(\w+)\)", r"\1 well-formed"),
+    (r"edwards_point_as_affine\(\*?(\w+)\)", r"aff(\1)"),
+    (r"is_identity_edwards_point\((\w+)\)", r"\1 = O"),
+    (r"is_valid_edwards_point\(\*?(\w+)\)", r"\1 on curve"),
+    (r"choice_is_true\((\w+)\)", r"\1"),
     (r"\bas\s+(?:int|nat)\b", ""),
     (r"\s*==\s*", " = "),
     (r"\s*%\s*", " mod "),
@@ -377,28 +393,8 @@ def _is_libsignal(base_name: str, module: str) -> bool:
     return False
 
 
-def _generate_math_from_ensures(
-    ensures_clauses: list[str], contract_text: str = ""
-) -> str:
-    """Best-effort symbolic substitution on ensures clauses."""
-    # Try to extract raw ensures section from contract text (avoids comma-splitting issues)
-    text = ""
-    if contract_text:
-        ensures_match = re.search(
-            r"\bensures\b\s*\n?(.*?)(?:\n\s*\{|$)", contract_text, re.DOTALL
-        )
-        if ensures_match:
-            text = ensures_match.group(1).strip()
-            # Remove trailing comma
-            text = text.rstrip(",").strip()
-
-    if not text and ensures_clauses:
-        text = ", ".join(c.rstrip(",") for c in ensures_clauses)
-
-    if not text:
-        return ""
-
-    # Strip outer ({ ... })
+def _apply_math_substitutions(text: str) -> str:
+    """Apply symbolic substitutions and cleanup to a single text fragment."""
     text = re.sub(r"^\(\{", "", text)
     text = re.sub(r"\}\)$", "", text)
     text = text.strip()
@@ -409,15 +405,70 @@ def _generate_math_from_ensures(
     # Clean up remaining Rust syntax
     text = re.sub(r"\blet\s+\w+\s*=\s*", "", text)  # remove let bindings
     text = re.sub(r"\{|\}", "", text)  # remove remaining braces
+    text = re.sub(r"&(\w)", r"\1", text)  # remove & references
     text = re.sub(r"\s+", " ", text).strip()  # normalize whitespace
-
-    # If the result still looks too Rust-like (many :: or parens), skip
-    if text.count("::") > 2 or text.count("(") > 6:
-        return ""
-    # If result is too long, skip
-    if len(text) > 100:
-        return ""
     return text
+
+
+def _is_clean_math(text: str, max_len: int = 100) -> bool:
+    """Check if a substituted text is clean enough for display."""
+    if not text:
+        return False
+    if text.count("::") > 2 or text.count("(") > 6:
+        return False
+    if len(text) > max_len:
+        return False
+    # Reject unbalanced parentheses (truncated clauses)
+    if text.count("(") != text.count(")"):
+        return False
+    return True
+
+
+def _generate_math_from_ensures(
+    ensures_clauses: list[str], contract_text: str = ""
+) -> str:
+    """Best-effort symbolic substitution on ensures clauses.
+
+    Strategy:
+      1. Try the full ensures section from contract text
+      2. If too long/complex, try each ensures clause individually and pick the best
+    """
+    # Try to extract raw ensures section from contract text (avoids comma-splitting issues)
+    text = ""
+    if contract_text:
+        ensures_match = re.search(
+            r"\bensures\b\s*\n?(.*?)(?:\n\s*\{|$)", contract_text, re.DOTALL
+        )
+        if ensures_match:
+            text = ensures_match.group(1).strip()
+            text = text.rstrip(",").strip()
+
+    if not text and ensures_clauses:
+        text = ", ".join(c.rstrip(",") for c in ensures_clauses)
+
+    if not text:
+        return ""
+
+    # Pass 1: try the full ensures text
+    full_result = _apply_math_substitutions(text)
+    if _is_clean_math(full_result):
+        return full_result
+
+    # Pass 2: try each ensures clause individually, pick the most informative
+    #   Prefer clauses with '=' (functional meaning) over pure boolean predicates
+    best = ""
+    for clause in ensures_clauses:
+        clause = clause.rstrip(",").strip()
+        if not clause:
+            continue
+        result = _apply_math_substitutions(clause)
+        if not _is_clean_math(result):
+            continue
+        # Prefer clauses with '=' sign (equality/functional specs)
+        if not best or ("=" in result and "=" not in best) or len(result) > len(best):
+            best = result
+
+    return best
 
 
 def generate_axiom_math_interpretation(
@@ -444,15 +495,31 @@ def generate_axiom_math_interpretation(
 
 
 def extract_doc_comment(lines: list[str], fn_line_idx: int) -> str:
-    """Extract /// doc comment lines immediately above a function."""
-    doc_lines = []
+    """Extract /// doc comment lines immediately above a function.
+
+    Skips #[...] attributes and plain // comments between the doc comment
+    and the fn declaration.
+    """
+    doc_lines: list[str] = []
     i = fn_line_idx - 1
-    while i >= 0 and lines[i].strip().startswith("#["):
-        i -= 1
+    # Phase 1: skip attributes (#[...]) and plain comments (//) above the fn line
+    while i >= 0:
+        stripped = lines[i].strip()
+        if stripped.startswith("#["):
+            i -= 1
+        elif stripped.startswith("//") and not stripped.startswith("///"):
+            # Plain comment (not doc comment) — skip over it
+            i -= 1
+        else:
+            break
+    # Phase 2: collect consecutive /// doc comment lines
     while i >= 0:
         stripped = lines[i].strip()
         if stripped.startswith("///"):
             doc_lines.insert(0, stripped[3:].strip())
+            i -= 1
+        elif stripped.startswith("//") and not stripped.startswith("///"):
+            # Plain comment interspersed — skip and keep looking
             i -= 1
         else:
             break
@@ -1107,6 +1174,39 @@ def extract_all_tracked_functions(
     print(
         f"  {public_count} public, {libsignal_count} libsignal-used,"
         f" {spec_count} with specs, {proof_count} with proofs"
+    )
+
+    # 4. Auto-generate interpretations for tracked functions missing them
+    auto_math = 0
+    auto_informal = 0
+    for fn in functions:
+        doc = fn.get("doc_comment", "")
+
+        # Math interpretation: try doc comment formula, then ensures clauses
+        if not fn.get("math_interpretation"):
+            math = ""
+            if doc:
+                math = _extract_math_from_doc(doc)
+            if not math:
+                math = _generate_math_from_ensures(
+                    fn.get("ensures", []), fn.get("contract", "")
+                )
+            if math:
+                fn["math_interpretation"] = math
+                auto_math += 1
+
+        # Informal interpretation: use first meaningful line of doc comment
+        if not fn.get("informal_interpretation") and doc:
+            for doc_line in doc.split("\n"):
+                doc_line = doc_line.strip()
+                if doc_line and not doc_line.startswith("#"):
+                    fn["informal_interpretation"] = doc_line
+                    auto_informal += 1
+                    break
+
+    print(
+        f"  Auto-generated {auto_math} math + {auto_informal} informal"
+        f" interpretations for tracked functions"
     )
 
     return functions

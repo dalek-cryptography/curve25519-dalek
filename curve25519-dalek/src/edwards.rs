@@ -1458,9 +1458,8 @@ impl EdwardsPoint {
         requires
             is_valid_edwards_point(*self),  // Gives us z != 0 for birational map
             fe51_limbs_bounded(&self.X, 54),
-            // Y and Z need 51-bit bounds so U = Z + Y is 52-bit bounded (< 54 for mul)
-            fe51_limbs_bounded(&self.Y, 51) && fe51_limbs_bounded(&self.Z, 51),
-            sum_of_limbs_bounded(&self.Z, &self.Y, u64::MAX),
+            // Y and Z need 52-bit bounds so U = Z + Y is 53-bit bounded (< 54 for mul)
+            fe51_limbs_bounded(&self.Y, 52) && fe51_limbs_bounded(&self.Z, 52),
         ensures
             montgomery_corresponds_to_edwards(result, *self),
     {
@@ -1470,10 +1469,12 @@ impl EdwardsPoint {
         // the Edwards curve.  Since 0.invert() = 0, in this case we
         // compute the 2-torsion point (0,0).
         proof {
-            // 51-bit bounded implies 54-bit bounded (for sub precondition)
-            assert((1u64 << 51) < (1u64 << 54)) by (bit_vector);
+            // 52-bit bounded implies 54-bit bounded (for sub precondition)
+            assert((1u64 << 52) < (1u64 << 54)) by (bit_vector);
             assert(fe51_limbs_bounded(&self.Y, 54));
             assert(fe51_limbs_bounded(&self.Z, 54));
+            // Derive sum_of_limbs_bounded for add precondition
+            lemma_sum_of_limbs_bounded_from_fe51_bounded(&self.Z, &self.Y, 52);
         }
 
         // Ghost values for proof
@@ -1483,10 +1484,10 @@ impl EdwardsPoint {
         let U = &self.Z + &self.Y;
         let W = &self.Z - &self.Y;
         // W bounded by 54 from sub() postcondition
-        // U bounded by 52 from add() postcondition (51-bit inputs → 52-bit output)
+        // U bounded by 53 from add() postcondition (52-bit inputs → 53-bit output)
         proof {
-            assert(fe51_limbs_bounded(&U, 52));  // from add postcondition
-            assert((1u64 << 52) < (1u64 << 54)) by (bit_vector);
+            assert(fe51_limbs_bounded(&U, 53));  // from add postcondition
+            assert((1u64 << 53) < (1u64 << 54)) by (bit_vector);
             assert(fe51_limbs_bounded(&U, 54));
         }
 
@@ -1568,7 +1569,7 @@ impl EdwardsPoint {
             let one_minus_y = field_sub(1, y_affine);
             let affine_result = field_mul(one_plus_y, field_inv(one_minus_y));
             assert(u_field == affine_result) by {
-                axiom_birational_edwards_montgomery(y, z);
+                axiom_edwards_to_montgomery_correspondence(y, z);
             }
 
             // Step 5: Match the spec

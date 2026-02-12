@@ -286,21 +286,41 @@ impl MontgomeryPoint {
             ),
     {
         // ORIGINAL CODE: EdwardsPoint::mul_base(scalar).to_montgomery()
-        // REFACTORED: to assume postconditions for EdwardsPoint::mul_base
         let temp = EdwardsPoint::mul_base(scalar);
         proof {
-            assume(fe51_limbs_bounded(&temp.X, 54));
-            // to_montgomery requires 51-bit bounds for Y, Z so U = Z + Y fits in 52 bits
-            assume(fe51_limbs_bounded(&temp.Y, 51) && fe51_limbs_bounded(&temp.Z, 51));
-            assume(sum_of_limbs_bounded(&temp.Z, &temp.Y, u64::MAX));
+            assert((1u64 << 52) < (1u64 << 54)) by (bit_vector);
+            assert(fe51_limbs_bounded(&temp.X, 54));
         }
         let result = temp.to_montgomery();
         proof {
-            assume(is_valid_montgomery_point(result));
-            assume(spec_montgomery(result) == montgomery_scalar_mul_u(
-                spec_x25519_basepoint_u(),
-                scalar_as_nat(scalar),
+            let B = spec_ed25519_basepoint();
+            let n = scalar_as_nat(scalar);
+
+            assert(spec_montgomery(result) == montgomery_u_from_edwards_y(
+                edwards_scalar_mul(B, n).1,
             ));
+
+            assert(math_on_edwards_curve(B.0, B.1)) by {
+                axiom_basepoint_on_curve();
+            }
+            assert(math_on_edwards_curve(edwards_scalar_mul(B, n).0, edwards_scalar_mul(B, n).1))
+                by {
+                axiom_edwards_to_montgomery_commutes_with_scalar_mul(B.0, B.1, n);
+            }
+            assert(montgomery_u_from_edwards_y(edwards_scalar_mul(B, n).1)
+                == montgomery_scalar_mul_u(montgomery_u_from_edwards_y(B.1), n)) by {
+                axiom_edwards_to_montgomery_commutes_with_scalar_mul(B.0, B.1, n);
+            }
+            assert(montgomery_u_from_edwards_y(B.1) == spec_x25519_basepoint_u()) by {
+                axiom_edwards_basepoint_maps_to_montgomery_basepoint();
+            }
+            assert(is_valid_u_coordinate(montgomery_u_from_edwards_y(edwards_scalar_mul(B, n).1)))
+                by {
+                axiom_edwards_to_montgomery_preserves_validity(
+                    edwards_scalar_mul(B, n).0,
+                    edwards_scalar_mul(B, n).1,
+                );
+            }
         }
         result
     }
@@ -362,12 +382,7 @@ impl MontgomeryPoint {
         let s = Scalar { bytes: clamp_integer(bytes) };
         // clamp_integer ensures s.bytes[31] <= 127, satisfying mul_base's requires
         let result = Self::mul_base(&s);
-        proof {
-            assume(spec_montgomery(result) == montgomery_scalar_mul_u(
-                spec_x25519_basepoint_u(),
-                scalar_as_nat(&Scalar { bytes: spec_clamp_integer(bytes) }),
-            ));
-        }
+        // Postconditions follow from mul_base since s.bytes == spec_clamp_integer(bytes)
         result
     }
 

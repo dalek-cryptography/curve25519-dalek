@@ -1751,19 +1751,11 @@ pub proof fn lemma_field_sub_self(x: nat)
     }
 }
 
-/// Lemma: Birational map identity for Edwards-to-Montgomery conversion
+/// Axiom: For field elements Y, Z with Z ≠ 0: (Z+Y)/(Z-Y) == (1+y)/(1-y) where y = Y/Z.
 ///
-/// ## Mathematical Proof
-/// The birational map from Edwards to Montgomery is u = (1+y)/(1-y).
-/// In projective coordinates with affine y = Y/Z, this becomes:
-///
-/// ```text
-/// (1 + Y/Z) / (1 - Y/Z) = ((Z + Y)/Z) / ((Z - Y)/Z)
-///                       = (Z + Y) / (Z - Y)       [Z cancels]
-/// ```
-///
-/// This identity is fundamental to the Edwards-Montgomery birational equivalence.
-pub proof fn axiom_birational_edwards_montgomery(y: nat, z: nat)
+/// Used by `to_montgomery` to compute the Edwards-to-Montgomery map u = (1+y)/(1-y)
+/// directly from the projective Y, Z coordinates as (Z+Y)/(Z-Y).
+pub proof fn axiom_edwards_to_montgomery_correspondence(y: nat, z: nat)
     requires
         z % p() != 0,  // Non-identity point (Z ≠ 0)
 
@@ -1777,14 +1769,6 @@ pub proof fn axiom_birational_edwards_montgomery(y: nat, z: nat)
             projective_result == affine_result
         }),
 {
-    // Admitted (trusted) lemma.
-    //
-    // This is a standard algebraic identity for the Edwards↔Montgomery birational map:
-    // rewriting `y_affine = y * inv(z)` and putting `1 ± y_affine` over a common denominator
-    // yields `(1 + y/z)/(1 - y/z) = (z + y)/(z - y)` when `z != 0`.
-    //
-    // A mechanized proof needs inversion-cancellation lemmas (and tends to trigger rlimit),
-    // so we keep this as a small trusted bridge between the affine and projective forms.
     admit();
 }
 

@@ -238,6 +238,10 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
                 &output,
                 52,
             ),
+            fe51_limbs_bounded(self, 52) && fe51_limbs_bounded(_rhs, 52) ==> fe51_limbs_bounded(
+                &output,
+                53,
+            ),
     {
         let mut output = *self;
         /* ORIGINAL CODE
@@ -270,9 +274,10 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
 
             lemma_field51_add(self, _rhs);
 
-            // Prove bound propagation: 51-bit inputs → 52-bit output
-            // If a < 2^51 and b < 2^51, then a + b < 2^52
+            // Prove bound propagation: n-bit inputs → (n+1)-bit output
+            // If a < 2^n and b < 2^n, then a + b < 2^(n+1)
             assert((1u64 << 51) + (1u64 << 51) == (1u64 << 52)) by (bit_vector);
+            assert((1u64 << 52) + (1u64 << 52) == (1u64 << 53)) by (bit_vector);
         }
 
         output

@@ -35,13 +35,13 @@ use crate::Scalar;
 
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)]
-use super::core_specs::bytes_seq_to_nat;
+use super::core_specs::bytes_seq_as_nat;
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)]
 use super::scalar52_specs::group_order;
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)]
-use super::scalar_specs::scalar_to_nat;
+use super::scalar_specs::scalar_as_nat;
 
 use vstd::prelude::*;
 
@@ -49,7 +49,7 @@ verus! {
 
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)]
-use super::core_specs::bytes32_to_nat;
+use super::core_specs::u8_32_as_nat;
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)]
 use vstd::arithmetic::power2::pow2;
@@ -143,7 +143,7 @@ pub proof fn axiom_uniform_bytes_split(bytes: &[u8; 64], first: &[u8; 32], secon
 /// that wrap when used in field arithmetic, but this is cryptographically negligible.
 pub proof fn axiom_from_bytes_uniform(bytes: &[u8; 32], fe: &FieldElement)
     requires
-        spec_field_element_as_nat(fe) == bytes32_to_nat(bytes) % pow2(255),
+        fe51_as_nat(fe) == u8_32_as_nat(bytes) % pow2(255),
     ensures
         is_uniform_bytes(bytes) ==> is_uniform_field_element(fe),
 {
@@ -161,8 +161,8 @@ pub proof fn axiom_from_bytes_independent(
     fe2: &FieldElement,
 )
     requires
-        spec_field_element_as_nat(fe1) == bytes32_to_nat(bytes1) % pow2(255),
-        spec_field_element_as_nat(fe2) == bytes32_to_nat(bytes2) % pow2(255),
+        fe51_as_nat(fe1) == u8_32_as_nat(bytes1) % pow2(255),
+        fe51_as_nat(fe2) == u8_32_as_nat(bytes2) % pow2(255),
         is_independent_uniform_bytes32(bytes1, bytes2),
     ensures
         is_independent_uniform_field_elements(fe1, fe2),
@@ -186,7 +186,9 @@ pub proof fn axiom_from_bytes_independent(
 /// calls and add the results (see `axiom_uniform_elligator_sum`).
 pub proof fn axiom_uniform_elligator(fe: &FieldElement, point: &RistrettoPoint)
     requires
-        edwards_point_as_affine(point.0) == spec_elligator_ristretto_flavor(spec_field_element(fe)),
+        edwards_point_as_affine(point.0) == spec_elligator_ristretto_flavor(
+            fe51_as_canonical_nat(fe),
+        ),
         is_uniform_field_element(fe),
     ensures
         is_uniform_over_elligator_image(point),
@@ -205,8 +207,12 @@ pub proof fn axiom_uniform_elligator_independent(
     p2: &RistrettoPoint,
 )
     requires
-        edwards_point_as_affine(p1.0) == spec_elligator_ristretto_flavor(spec_field_element(fe1)),
-        edwards_point_as_affine(p2.0) == spec_elligator_ristretto_flavor(spec_field_element(fe2)),
+        edwards_point_as_affine(p1.0) == spec_elligator_ristretto_flavor(
+            fe51_as_canonical_nat(fe1),
+        ),
+        edwards_point_as_affine(p2.0) == spec_elligator_ristretto_flavor(
+            fe51_as_canonical_nat(fe2),
+        ),
         is_independent_uniform_field_elements(fe1, fe2),
     ensures
         is_independent_uniform_ristretto_points(p1, p2),
@@ -287,7 +293,7 @@ pub proof fn axiom_uniform_mod_reduction(input: &[u8; 64], result: &Scalar)
     requires
 // result is the reduction of input mod group_order
 
-        scalar_to_nat(result) == bytes_seq_to_nat(input@) % group_order(),
+        scalar_as_nat(result) == bytes_seq_as_nat(input@) % group_order(),
     ensures
         is_uniform_bytes(input) ==> is_uniform_scalar(result),
 {

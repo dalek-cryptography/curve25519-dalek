@@ -50,26 +50,26 @@ pub proof fn lemma_identity_on_curve()
     let modulus = p();
     p_gt_2();
 
-    let d = spec_field_element(&EDWARDS_D);
+    let d = fe51_as_canonical_nat(&EDWARDS_D);
 
     // x² = 0² = 0
-    let x2 = math_field_square(0nat);
+    let x2 = field_square(0nat);
     assert(x2 == 0) by {
         lemma_small_mod(0nat, modulus);
     }
 
     // y² = 1² = 1
-    let y2 = math_field_square(1nat);
+    let y2 = field_square(1nat);
     assert(y2 == 1) by {
         lemma_small_mod(1nat, modulus);
     }
 
-    // LHS = y² - x² = 1 - 0 = 1 (using math_field_sub)
-    // math_field_sub(a, b) = ((a % p) + p - (b % p)) % p
-    let lhs = math_field_sub(y2, x2);
+    // LHS = y² - x² = 1 - 0 = 1 (using field_sub)
+    // field_sub(a, b) = ((a % p) + p - (b % p)) % p
+    let lhs = field_sub(y2, x2);
     assert(lhs == 1) by {
         // y2 = 1, x2 = 0
-        // math_field_sub(1, 0) = ((1 % p) + p - (0 % p)) % p
+        // field_sub(1, 0) = ((1 % p) + p - (0 % p)) % p
         //                      = (1 + p - 0) % p
         //                      = (p + 1) % p = 1
         lemma_small_mod(1nat, modulus);
@@ -79,20 +79,20 @@ pub proof fn lemma_identity_on_curve()
     }
 
     // x²·y² = 0·1 = 0
-    let x2y2 = math_field_mul(x2, y2);
+    let x2y2 = field_mul(x2, y2);
     assert(x2y2 == 0) by {
         lemma_small_mod(0nat, modulus);
     }
 
     // d·x²·y² = d·0 = 0
-    let d_x2y2 = math_field_mul(d, x2y2);
+    let d_x2y2 = field_mul(d, x2y2);
     assert(d_x2y2 == 0) by {
         lemma_mul_by_zero_is_zero(d as int);
         lemma_small_mod(0nat, modulus);
     }
 
     // RHS = 1 + d·x²·y² = 1 + 0 = 1
-    let rhs = math_field_add(1nat, d_x2y2);
+    let rhs = field_add(1nat, d_x2y2);
     assert(rhs == 1) by {
         lemma_small_mod(1nat, modulus);
     }
@@ -112,7 +112,7 @@ pub proof fn lemma_identity_is_valid_extended()
     lemma_identity_on_curve();
 
     // t = x * y = 0 * 1 = 0
-    assert(math_field_mul(0nat, 1nat) == 0) by {
+    assert(field_mul(0nat, 1nat) == 0) by {
         p_gt_2();
         lemma_small_mod(0nat, p());
     }
@@ -132,7 +132,7 @@ pub proof fn lemma_negation_preserves_curve(x: nat, y: nat)
     requires
         math_on_edwards_curve(x, y),
     ensures
-        math_on_edwards_curve(math_field_neg(x), y),
+        math_on_edwards_curve(field_neg(x), y),
 {
     // Goal: on_curve(-x, y)
     // Strategy: The curve equation uses x², and (-x)² = x², so the equation is identical
@@ -141,11 +141,11 @@ pub proof fn lemma_negation_preserves_curve(x: nat, y: nat)
     //   y² - x²    = 1 + d·x²·y²      (same equation!)
     //
     // The precondition says (x, y) satisfies this, so (-x, y) does too.
-    let neg_x = math_field_neg(x);
+    let neg_x = field_neg(x);
 
     assert(math_on_edwards_curve(neg_x, y)) by {
         // Key insight: (-x)² = x²
-        assert(math_field_square(neg_x) == math_field_square(x)) by {
+        assert(field_square(neg_x) == field_square(x)) by {
             lemma_neg_square_eq(x);  // (-x)² = (x % p)²
             lemma_square_mod_noop(x);  // (x % p)² = x²
         };
@@ -164,12 +164,12 @@ pub proof fn lemma_negation_preserves_extended_validity(x: nat, y: nat, z: nat, 
     requires
         math_is_valid_extended_edwards_point(x, y, z, t),
     ensures
-        math_is_valid_extended_edwards_point(math_field_neg(x), y, z, math_field_neg(t)),
+        math_is_valid_extended_edwards_point(field_neg(x), y, z, field_neg(t)),
 {
     let p = p();
     p_gt_2();
-    let neg_x = math_field_neg(x);
-    let neg_t = math_field_neg(t);
+    let neg_x = field_neg(x);
+    let neg_t = field_neg(t);
 
     // From precondition: z != 0, curve equation holds, x*y = z*t
 
@@ -178,7 +178,7 @@ pub proof fn lemma_negation_preserves_extended_validity(x: nat, y: nat, z: nat, 
     // 2) Projective curve equation: uses X², and (-X)² = X²
     assert(math_on_edwards_curve_projective(neg_x, y, z)) by {
         // Key insight: (-x)² = x²
-        assert(math_field_square(neg_x) == math_field_square(x)) by {
+        assert(field_square(neg_x) == field_square(x)) by {
             lemma_neg_square_eq(x);
             lemma_square_mod_noop(x);
         };
@@ -186,27 +186,27 @@ pub proof fn lemma_negation_preserves_extended_validity(x: nat, y: nat, z: nat, 
     };
 
     // 3) Segre relation: (-X)·Y = Z·(-T)
-    // Need to prove: math_field_mul(neg_x, y) == math_field_mul(z, neg_t)
-    assert(math_field_mul(neg_x, y) == math_field_mul(z, neg_t)) by {
+    // Need to prove: field_mul(neg_x, y) == field_mul(z, neg_t)
+    assert(field_mul(neg_x, y) == field_mul(z, neg_t)) by {
         // From precondition: x*y = z*t
-        let xy = math_field_mul(x, y);
-        let zt = math_field_mul(z, t);
+        let xy = field_mul(x, y);
+        let zt = field_mul(z, t);
         assert(xy == zt);
 
         // (-x)*y = -(x*y)
-        assert(math_field_mul(neg_x, y) == math_field_neg(xy)) by {
+        assert(field_mul(neg_x, y) == field_neg(xy)) by {
             lemma_field_mul_neg(y, x);  // y * neg(x) = neg(y * x)
             lemma_field_mul_comm(neg_x, y);
             lemma_field_mul_comm(y, x);
         };
 
         // z*(-t) = -(z*t)
-        assert(math_field_mul(z, neg_t) == math_field_neg(zt)) by {
+        assert(field_mul(z, neg_t) == field_neg(zt)) by {
             lemma_field_mul_neg(z, t);
         };
 
         // neg(x*y) = neg(z*t) since x*y = z*t
-        assert(math_field_neg(xy) == math_field_neg(zt));
+        assert(field_neg(xy) == field_neg(zt));
     };
 }
 
@@ -232,7 +232,7 @@ pub proof fn lemma_negation_preserves_extended_validity(x: nat, y: nat, z: nat, 
 pub proof fn lemma_affine_to_extended_valid(x: nat, y: nat, t: nat)
     requires
         math_on_edwards_curve(x, y),
-        t == math_field_mul(x, y),
+        t == field_mul(x, y),
     ensures
         math_is_valid_extended_edwards_point(x, y, 1, t),
 {
@@ -248,11 +248,11 @@ pub proof fn lemma_affine_to_extended_valid(x: nat, y: nat, t: nat)
 
     // 2) Projective curve equation holds for Z = 1
     assert(math_on_edwards_curve_projective(x, y, 1)) by {
-        let x2 = math_field_square(x);
-        let y2 = math_field_square(y);
-        let z2 = math_field_square(1);
-        let z4 = math_field_square(z2);
-        let d = spec_field_element(&EDWARDS_D);
+        let x2 = field_square(x);
+        let y2 = field_square(y);
+        let z2 = field_square(1);
+        let z4 = field_square(z2);
+        let d = fe51_as_canonical_nat(&EDWARDS_D);
 
         // z2 = 1^2 = 1, z4 = 1^4 = 1
         assert(z2 == 1) by {
@@ -265,27 +265,24 @@ pub proof fn lemma_affine_to_extended_valid(x: nat, y: nat, t: nat)
         };
 
         // LHS: (y2 - x2)·1 = (y2 - x2)
-        let lhs = math_field_mul(math_field_sub(y2, x2), z2);
-        assert(lhs == math_field_sub(y2, x2)) by {
-            lemma_mul_basics((math_field_sub(y2, x2)) as int);
+        let lhs = field_mul(field_sub(y2, x2), z2);
+        assert(lhs == field_sub(y2, x2)) by {
+            lemma_mul_basics((field_sub(y2, x2)) as int);
             lemma_mod_twice((((y2 % p) + p) - (x2 % p)) as int, p as int);
         };
 
         // RHS: 1 + d·x2·y2 (z4 == 1)
-        let rhs = math_field_add(z4, math_field_mul(d, math_field_mul(x2, y2)));
-        assert(rhs == math_field_add(1, math_field_mul(d, math_field_mul(x2, y2))));
+        let rhs = field_add(z4, field_mul(d, field_mul(x2, y2)));
+        assert(rhs == field_add(1, field_mul(d, field_mul(x2, y2))));
 
         // Affine curve equation gives the same equality.
-        assert(math_field_sub(y2, x2) == math_field_add(
-            1,
-            math_field_mul(d, math_field_mul(x2, y2)),
-        ));
+        assert(field_sub(y2, x2) == field_add(1, field_mul(d, field_mul(x2, y2))));
         assert(lhs == rhs);
     };
 
     // 3) Segre relation: X·Y == Z·T (with Z = 1 and T = X·Y)
-    assert(math_field_mul(x, y) == math_field_mul(1, t)) by {
-        assert(t == math_field_mul(x, y));
+    assert(field_mul(x, y) == field_mul(1, t)) by {
+        assert(t == field_mul(x, y));
         // 1·t = t in the field
         assert(t < p) by {
             lemma_mod_bound((x * y) as int, p as int);
@@ -312,18 +309,18 @@ pub proof fn lemma_affine_to_extended_valid(x: nat, y: nat, t: nat)
 pub proof fn lemma_x_zero_implies_y_squared_one(x: nat, y: nat)
     requires
         math_on_edwards_curve(x, y),
-        x % p() == 0,
+        x == 0,
     ensures
-        math_field_square(y) == 1,
+        field_square(y) == 1,
 {
     let modulus = p();
-    let d = spec_field_element(&EDWARDS_D);
-    let x2 = math_field_square(x);
-    let y2 = math_field_square(y);
-    let x2y2 = math_field_mul(x2, y2);
-    let d_x2y2 = math_field_mul(d, x2y2);
-    let lhs = math_field_sub(y2, x2);
-    let rhs = math_field_add(1, d_x2y2);
+    let d = fe51_as_canonical_nat(&EDWARDS_D);
+    let x2 = field_square(x);
+    let y2 = field_square(y);
+    let x2y2 = field_mul(x2, y2);
+    let d_x2y2 = field_mul(d, x2y2);
+    let lhs = field_sub(y2, x2);
+    let rhs = field_add(1, d_x2y2);
 
     // Establish p > 1 for lemma preconditions
     assert(modulus > 1) by {
@@ -334,16 +331,7 @@ pub proof fn lemma_x_zero_implies_y_squared_one(x: nat, y: nat)
     // Strategy: From curve equation y² - x² = 1 + d·x²·y², show all terms simplify
 
     assert(x2 == 0) by {
-        // x % p == 0 means x * x % p == 0
-        // (x * x) % p == ((x % p) * (x % p)) % p == (0 * 0) % p == 0
-        lemma_mul_mod_noop_general(x as int, x as int, modulus as int);
-        assert((x as int * x as int) % (modulus as int) == (((x as int) % (modulus as int)) * ((
-        x as int) % (modulus as int))) % (modulus as int));
-        assert((x as int) % (modulus as int) == 0);
-        assert(0int * 0int == 0int) by {
-            lemma_mul_basics(0int);
-        }
-        lemma_small_mod(0nat, modulus);
+        lemma_mul_basics_2(0);
     };
 
     assert(x2y2 == 0) by {
@@ -370,10 +358,10 @@ pub proof fn lemma_x_zero_implies_y_squared_one(x: nat, y: nat)
     assert(lhs == 1);
 
     assert(lhs == y2) by {
-        // lhs = math_field_sub(y2, 0) = (y2 + p) % p = y2
+        // lhs = field_sub(y2, 0) = (y2 + p) % p = y2
         assert(x2 == 0);
 
-        // y2 < p (math_field_square output is reduced)
+        // y2 < p (field_square output is reduced)
         assert(y2 < modulus) by {
             lemma_mod_bound(y as int * y as int, modulus as int);
         };
@@ -412,63 +400,60 @@ pub proof fn lemma_x_zero_implies_y_squared_one(x: nat, y: nat)
 pub proof fn lemma_affine_curve_implies_projective(x: nat, y: nat, z: nat)
     requires
         z % p() != 0,  // Z must be non-zero in the field (not just non-zero as nat)
-        math_on_edwards_curve(
-            math_field_mul(x, math_field_inv(z)),
-            math_field_mul(y, math_field_inv(z)),
-        ),
+        math_on_edwards_curve(field_mul(x, field_inv(z)), field_mul(y, field_inv(z))),
     ensures
         math_on_edwards_curve_projective(x, y, z),
 {
     let p = p();
     p_gt_2();
 
-    let d = spec_field_element(&EDWARDS_D);
-    let inv_z = math_field_inv(z);
+    let d = fe51_as_canonical_nat(&EDWARDS_D);
+    let inv_z = field_inv(z);
 
     // Define affine coordinates
-    let x_div_z = math_field_mul(x, inv_z);
-    let y_div_z = math_field_mul(y, inv_z);
+    let x_div_z = field_mul(x, inv_z);
+    let y_div_z = field_mul(y, inv_z);
 
     // Squares of affine coordinates
-    let x_div_z_sq = math_field_square(x_div_z);
-    let y_div_z_sq = math_field_square(y_div_z);
+    let x_div_z_sq = field_square(x_div_z);
+    let y_div_z_sq = field_square(y_div_z);
 
     // From precondition: the affine curve equation holds
     // y_div_z² - x_div_z² = 1 + d * x_div_z² * y_div_z²
-    let affine_lhs = math_field_sub(y_div_z_sq, x_div_z_sq);
-    let affine_rhs = math_field_add(1, math_field_mul(d, math_field_mul(x_div_z_sq, y_div_z_sq)));
+    let affine_lhs = field_sub(y_div_z_sq, x_div_z_sq);
+    let affine_rhs = field_add(1, field_mul(d, field_mul(x_div_z_sq, y_div_z_sq)));
     assert(affine_lhs == affine_rhs);
 
     // Projective coordinates
-    let x2 = math_field_square(x);
-    let y2 = math_field_square(y);
-    let z2 = math_field_square(z);
-    let z4 = math_field_square(z2);
+    let x2 = field_square(x);
+    let y2 = field_square(y);
+    let z2 = field_square(z);
+    let z4 = field_square(z2);
 
     // Use lemma_quotient_of_squares: (a/b)² = a²/b²
     // So x_div_z² = x²/z² and y_div_z² = y²/z²
-    let inv_z2 = math_field_inv(z2);
+    let inv_z2 = field_inv(z2);
 
-    assert(x_div_z_sq == math_field_mul(x2, inv_z2)) by {
+    assert(x_div_z_sq == field_mul(x2, inv_z2)) by {
         lemma_quotient_of_squares(x, z);
     };
 
-    assert(y_div_z_sq == math_field_mul(y2, inv_z2)) by {
+    assert(y_div_z_sq == field_mul(y2, inv_z2)) by {
         lemma_quotient_of_squares(y, z);
     };
 
     // The projective curve equation: (y² - x²)·z² = z⁴ + d·x²·y²
-    let proj_lhs = math_field_mul(math_field_sub(y2, x2), z2);
-    let proj_rhs = math_field_add(z4, math_field_mul(d, math_field_mul(x2, y2)));
+    let proj_lhs = field_mul(field_sub(y2, x2), z2);
+    let proj_rhs = field_add(z4, field_mul(d, field_mul(x2, y2)));
 
     // === STEP 1: Rewrite affine_lhs ===
     // affine_lhs = y²·inv(z²) - x²·inv(z²) = (y² - x²)·inv(z²)
     // by factoring out inv(z²)
 
     // First show: y²·inv(z²) - x²·inv(z²) = (y² - x²)·inv(z²)
-    let y2_minus_x2 = math_field_sub(y2, x2);
+    let y2_minus_x2 = field_sub(y2, x2);
 
-    assert(affine_lhs == math_field_mul(y2_minus_x2, inv_z2)) by {
+    assert(affine_lhs == field_mul(y2_minus_x2, inv_z2)) by {
         lemma_field_mul_distributes_over_sub_right(y2, x2, inv_z2);
     };
 
@@ -477,33 +462,33 @@ pub proof fn lemma_affine_curve_implies_projective(x: nat, y: nat, z: nat)
     // Since (x/z)² = x²·inv(z²) and (y/z)² = y²·inv(z²)
     // their product is x²·inv(z²)·y²·inv(z²) = x²·y²·inv(z²)·inv(z²) = x²·y²·inv(z⁴)
 
-    let inv_z4 = math_field_inv(z4);
-    let x2_y2 = math_field_mul(x2, y2);
-    let x2_y2_inv_z4 = math_field_mul(x2_y2, inv_z4);
+    let inv_z4 = field_inv(z4);
+    let x2_y2 = field_mul(x2, y2);
+    let x2_y2_inv_z4 = field_mul(x2_y2, inv_z4);
 
     // inv(z²)·inv(z²) = inv(z⁴)
-    assert(math_field_mul(inv_z2, inv_z2) == inv_z4) by {
+    assert(field_mul(inv_z2, inv_z2) == inv_z4) by {
         // z4 = z² · z², so inv(z4) = inv(z²·z²) = inv(z²)·inv(z²)
         lemma_inv_of_product(z2, z2);
     };
 
     // (x/z)²·(y/z)² = x²·y²·inv(z⁴)
-    assert(math_field_mul(x_div_z_sq, y_div_z_sq) == x2_y2_inv_z4) by {
+    assert(field_mul(x_div_z_sq, y_div_z_sq) == x2_y2_inv_z4) by {
         // (x²·inv(z²))·(y²·inv(z²)) = x²·y²·inv(z²)·inv(z²) = x²·y²·inv(z⁴)
-        lemma_field_mul_assoc(x2, inv_z2, math_field_mul(y2, inv_z2));
-        lemma_field_mul_comm(inv_z2, math_field_mul(y2, inv_z2));
+        lemma_field_mul_assoc(x2, inv_z2, field_mul(y2, inv_z2));
+        lemma_field_mul_comm(inv_z2, field_mul(y2, inv_z2));
         lemma_field_mul_assoc(y2, inv_z2, inv_z2);
-        lemma_field_mul_assoc(x2, y2, math_field_mul(inv_z2, inv_z2));
+        lemma_field_mul_assoc(x2, y2, field_mul(inv_z2, inv_z2));
     };
 
     // So affine_rhs = 1 + d·x²·y²·inv(z⁴)
-    assert(affine_rhs == math_field_add(1, math_field_mul(d, x2_y2_inv_z4)));
+    assert(affine_rhs == field_add(1, field_mul(d, x2_y2_inv_z4)));
 
     // === STEP 3: Multiply both sides by z⁴ ===
     // We need: if A = B in the field, then A·z⁴ = B·z⁴
 
     // First prove z² ≠ 0 and z⁴ ≠ 0 (mod p) since z ≠ 0 and p is prime
-    // z2 = math_field_square(z) = (z * z) % p = math_field_mul(z, z)
+    // z2 = field_square(z) = (z * z) % p = field_mul(z, z)
     lemma_nonzero_product(z, z);
     assert(z2 < p) by {
         lemma_mod_bound((z * z) as int, p as int);
@@ -511,7 +496,7 @@ pub proof fn lemma_affine_curve_implies_projective(x: nat, y: nat, z: nat)
     lemma_field_element_reduced(z2);
     assert(z2 % p != 0);
 
-    // Similarly for z4: z4 = z2 * z2 % p = math_field_mul(z2, z2)
+    // Similarly for z4: z4 = z2 * z2 % p = field_mul(z2, z2)
     lemma_nonzero_product(z2, z2);
     assert(z4 < p) by {
         lemma_mod_bound((z2 * z2) as int, p as int);
@@ -523,7 +508,7 @@ pub proof fn lemma_affine_curve_implies_projective(x: nat, y: nat, z: nat)
     // because inv(z²)·z⁴ = inv(z²)·z²·z² = z² (since inv(z²)·z² = 1)
 
     // Show inv(z²)·z⁴ = z² when z ≠ 0
-    assert(math_field_mul(inv_z2, z4) == z2) by {
+    assert(field_mul(inv_z2, z4) == z2) by {
         // z4 = z2 · z2
         // inv(z2) · z4 = inv(z2) · (z2 · z2) = (inv(z2) · z2) · z2 = 1 · z2 = z2
         lemma_field_mul_assoc(inv_z2, z2, z2);
@@ -532,7 +517,7 @@ pub proof fn lemma_affine_curve_implies_projective(x: nat, y: nat, z: nat)
     };
 
     // So (y² - x²)·inv(z²)·z⁴ = (y² - x²)·z²
-    assert(math_field_mul(math_field_mul(y2_minus_x2, inv_z2), z4) == proj_lhs) by {
+    assert(field_mul(field_mul(y2_minus_x2, inv_z2), z4) == proj_lhs) by {
         lemma_field_mul_assoc(y2_minus_x2, inv_z2, z4);
     };
 
@@ -540,13 +525,13 @@ pub proof fn lemma_affine_curve_implies_projective(x: nat, y: nat, z: nat)
     // because inv(z⁴)·z⁴ = 1
 
     // Show inv(z⁴)·z⁴ = 1 when z ≠ 0
-    assert(math_field_mul(inv_z4, z4) == 1) by {
+    assert(field_mul(inv_z4, z4) == 1) by {
         lemma_inv_mul_cancel(z4);
     };
 
     // d·x²·y²·inv(z⁴)·z⁴ = d·x²·y² (since inv(z⁴)·z⁴ = 1)
     // Chain: (d · x2_y2_inv_z4) · z4 = d · (x2_y2 · (inv_z4 · z4)) = d · (x2_y2 · 1) = d · x2_y2
-    assert(math_field_mul(math_field_mul(d, x2_y2_inv_z4), z4) == math_field_mul(d, x2_y2)) by {
+    assert(field_mul(field_mul(d, x2_y2_inv_z4), z4) == field_mul(d, x2_y2)) by {
         lemma_field_mul_assoc(d, x2_y2_inv_z4, z4);
         lemma_field_mul_assoc(x2_y2, inv_z4, z4);
         lemma_mod_bound((x2 * y2) as int, p as int);
@@ -555,11 +540,11 @@ pub proof fn lemma_affine_curve_implies_projective(x: nat, y: nat, z: nat)
     };
 
     // (1 + d·x²·y²·inv(z⁴))·z⁴ = z⁴ + d·x²·y²·inv(z⁴)·z⁴ = z⁴ + d·x²·y²
-    assert(math_field_mul(affine_rhs, z4) == proj_rhs) by {
-        lemma_field_mul_distributes_over_add(z4, 1, math_field_mul(d, x2_y2_inv_z4));
+    assert(field_mul(affine_rhs, z4) == proj_rhs) by {
+        lemma_field_mul_distributes_over_add(z4, 1, field_mul(d, x2_y2_inv_z4));
         lemma_field_mul_comm(z4, 1);
         lemma_field_mul_one_right(z4);
-        lemma_field_mul_comm(z4, math_field_mul(d, x2_y2_inv_z4));
+        lemma_field_mul_comm(z4, field_mul(d, x2_y2_inv_z4));
     };
 
     // === STEP 4: Connect via the affine equation ===
@@ -569,10 +554,10 @@ pub proof fn lemma_affine_curve_implies_projective(x: nat, y: nat, z: nat)
     // (y² - x²)·z² = z⁴ + d·x²·y²
     // proj_lhs = proj_rhs
 
-    assert(math_field_mul(affine_lhs, z4) == math_field_mul(affine_rhs, z4));
+    assert(field_mul(affine_lhs, z4) == field_mul(affine_rhs, z4));
 
     // affine_lhs · z⁴ = (y² - x²)·inv(z²)·z⁴ = proj_lhs
-    assert(math_field_mul(affine_lhs, z4) == proj_lhs) by {
+    assert(field_mul(affine_lhs, z4) == proj_lhs) by {
         // affine_lhs = (y² - x²)·inv(z²)
         lemma_field_mul_assoc(y2_minus_x2, inv_z2, z4);
     };
@@ -600,18 +585,22 @@ pub proof fn lemma_edwards_double_identity()
     lemma_mod_multiples_vanish(1, 1, p() as int);
 
     // Intermediate values: 0*0=0, 1*1=1, d*0*1=0
-    let x1x2 = math_field_mul(0nat, 0nat);
-    let y1y2 = math_field_mul(1nat, 1nat);
+    let x1x2 = field_mul(0nat, 0nat);
+    let y1y2 = field_mul(1nat, 1nat);
     assert(x1x2 == 0);
     assert(y1y2 == 1);
-    let t = math_field_mul(spec_field_element(&EDWARDS_D), math_field_mul(x1x2, y1y2));
-    assert(t == 0);
+    let t = field_mul(fe51_as_canonical_nat(&EDWARDS_D), field_mul(x1x2, y1y2));
+    assert(t == 0) by {
+        assert(field_mul(fe51_as_canonical_nat(&EDWARDS_D), 0) == 0) by {
+            lemma_mul_basics_2(fe51_as_canonical_nat(&EDWARDS_D) as int);
+        }
+    }
 
     // Denominators: 1+0=1, 1-0=1, inv(1)=1
-    let denom_x = math_field_add(1nat, t);
-    let denom_y = math_field_sub(1nat, t);
+    let denom_x = field_add(1nat, t);
+    let denom_y = field_sub(1nat, t);
     assert(denom_x == 1 && denom_y == 1);
-    assert(math_field_inv(denom_x) == 1 && math_field_inv(denom_y) == 1);
+    assert(field_inv(denom_x) == 1 && field_inv(denom_y) == 1);
 
     // Result follows from edwards_add definition
 }
@@ -641,24 +630,24 @@ pub proof fn lemma_edwards_add_identity_right(x: nat, y: nat)
     lemma_field_mul_one_right(y % p());
 
     // Intermediate values
-    let x1x2 = math_field_mul(x, 0nat);
-    let y1y2 = math_field_mul(y, 1nat);
-    let x1y2 = math_field_mul(x, 1nat);
-    let y1x2 = math_field_mul(y, 0nat);
+    let x1x2 = field_mul(x, 0nat);
+    let y1y2 = field_mul(y, 1nat);
+    let x1y2 = field_mul(x, 1nat);
+    let y1x2 = field_mul(y, 0nat);
     assert(x1x2 == 0 && y1x2 == 0 && y1y2 == y % p() && x1y2 == x % p());
 
     // t = d * 0 = 0
-    let t = math_field_mul(spec_field_element(&EDWARDS_D), math_field_mul(x1x2, y1y2));
+    let t = field_mul(fe51_as_canonical_nat(&EDWARDS_D), field_mul(x1x2, y1y2));
     assert(t == 0) by {
         lemma_field_mul_zero_left(x1x2, y1y2);
-        lemma_field_mul_zero_right(spec_field_element(&EDWARDS_D), 0nat);
+        lemma_field_mul_zero_right(fe51_as_canonical_nat(&EDWARDS_D), 0nat);
     }
 
     // Denominators: 1+0=1, 1-0=1, inv(1)=1
-    let denom_x = math_field_add(1nat, t);
-    let denom_y = math_field_sub(1nat, t);
+    let denom_x = field_add(1nat, t);
+    let denom_y = field_sub(1nat, t);
     assert(denom_x == 1 && denom_y == 1);
-    assert(math_field_inv(denom_x) == 1 && math_field_inv(denom_y) == 1);
+    assert(field_inv(denom_x) == 1 && field_inv(denom_y) == 1);
 
     // Result: x3 = (x%p + 0) * 1 = x%p, y3 = (y%p + 0) * 1 = y%p
 }
@@ -670,7 +659,7 @@ pub proof fn lemma_edwards_add_commutative(x1: nat, y1: nat, x2: nat, y2: nat)
     ensures
         edwards_add(x1, y1, x2, y2) == edwards_add(x2, y2, x1, y1),
 {
-    // Help the solver with the commutativity of the `math_field_mul` terms that appear
+    // Help the solver with the commutativity of the `field_mul` terms that appear
     // in the numerators/denominators.
     lemma_field_mul_comm(x1, x2);
     lemma_field_mul_comm(y1, y2);
@@ -1016,10 +1005,10 @@ pub proof fn lemma_edwards_add_identity_left(x: nat, y: nat)
     p_gt_2();
     lemma_field_inv_one();
 
-    let d = spec_field_element(&EDWARDS_D);
+    let d = fe51_as_canonical_nat(&EDWARDS_D);
 
     // x1x2 = 0*x = 0
-    let x1x2 = math_field_mul(0nat, x);
+    let x1x2 = field_mul(0nat, x);
     assert(x1x2 == 0) by {
         assert(0nat % p() == 0) by {
             lemma_small_mod(0nat, p());
@@ -1028,56 +1017,56 @@ pub proof fn lemma_edwards_add_identity_left(x: nat, y: nat)
     }
 
     // y1y2 = 1*y = y % p
-    let y1y2 = math_field_mul(1nat, y);
+    let y1y2 = field_mul(1nat, y);
     assert(y1y2 == y % p()) by {
         lemma_field_mul_one_left(y);
     }
 
     // x1y2 = 0*y = 0
-    let x1y2 = math_field_mul(0nat, y);
+    let x1y2 = field_mul(0nat, y);
     assert(x1y2 == 0) by {
         lemma_small_mod(0nat, p());
         lemma_field_mul_zero_left(0nat, y);
     }
 
     // y1x2 = 1*x = x % p
-    let y1x2 = math_field_mul(1nat, x);
+    let y1x2 = field_mul(1nat, x);
     assert(y1x2 == x % p()) by {
         lemma_field_mul_one_left(x);
     }
 
     // t = d * (0 * (y%p)) = 0
-    let t = math_field_mul(d, math_field_mul(x1x2, y1y2));
+    let t = field_mul(d, field_mul(x1x2, y1y2));
     assert(t == 0) by {
         lemma_small_mod(0nat, p());
         lemma_field_mul_zero_left(x1x2, y1y2);
         lemma_field_mul_zero_right(d, 0nat);
     }
 
-    let denom_x = math_field_add(1nat, t);
+    let denom_x = field_add(1nat, t);
     assert(denom_x == 1) by {
         lemma_small_mod(1nat, p());
     }
 
-    let denom_y = math_field_sub(1nat, t);
+    let denom_y = field_sub(1nat, t);
     assert(denom_y == 1) by {
         lemma_small_mod(1nat, p());
         lemma_small_mod(0nat, p());
         lemma_mod_multiples_vanish(1, 1, p() as int);
     }
 
-    assert(math_field_inv(denom_x) == 1);
-    assert(math_field_inv(denom_y) == 1);
+    assert(field_inv(denom_x) == 1);
+    assert(field_inv(denom_y) == 1);
 
     // x3 = (0*y + 1*x) / 1 = x % p
-    let x3 = math_field_mul(math_field_add(x1y2, y1x2), math_field_inv(denom_x));
+    let x3 = field_mul(field_add(x1y2, y1x2), field_inv(denom_x));
     assert(x3 == x % p()) by {
         lemma_small_mod(x % p(), p());
         lemma_field_mul_one_right(x % p());
     }
 
     // y3 = (1*y + 0*x) / 1 = y % p
-    let y3 = math_field_mul(math_field_add(y1y2, x1x2), math_field_inv(denom_y));
+    let y3 = field_mul(field_add(y1y2, x1x2), field_inv(denom_y));
     assert(y3 == y % p()) by {
         lemma_small_mod(y % p(), p());
         lemma_field_mul_one_right(y % p());
@@ -1458,7 +1447,7 @@ pub proof fn lemma_edwards_add_identity_right_canonical(P: (nat, nat))
 }
 
 /// Lemma: edwards_scalar_mul always produces reduced coordinates (< p()).
-/// This follows from the fact that edwards_add/edwards_double use math_field_* operations
+/// This follows from the fact that edwards_add/edwards_double use field_* operations
 /// which always return results mod p().
 pub proof fn lemma_edwards_scalar_mul_canonical(point_affine: (nat, nat), n: nat)
     requires
@@ -1480,13 +1469,13 @@ pub proof fn lemma_edwards_scalar_mul_canonical(point_affine: (nat, nat), n: nat
         reveal_with_fuel(edwards_scalar_mul, 1);
         let half = edwards_scalar_mul(point_affine, (n / 2) as nat);
         lemma_edwards_scalar_mul_canonical(point_affine, (n / 2) as nat);
-        // edwards_double returns math_field_mul results which are < p()
+        // edwards_double returns field_mul results which are < p()
         lemma_edwards_add_canonical(half.0, half.1, half.0, half.1);
     } else {
         reveal_with_fuel(edwards_scalar_mul, 1);
         let prev = edwards_scalar_mul(point_affine, (n - 1) as nat);
         lemma_edwards_scalar_mul_canonical(point_affine, (n - 1) as nat);
-        // edwards_add returns math_field_mul results which are < p()
+        // edwards_add returns field_mul results which are < p()
         lemma_edwards_add_canonical(prev.0, prev.1, point_affine.0, point_affine.1);
     }
 }
@@ -1519,28 +1508,28 @@ pub proof fn lemma_edwards_add_canonical(x1: nat, y1: nat, x2: nat, y2: nat)
         edwards_add(x1, y1, x2, y2).0 < p(),
         edwards_add(x1, y1, x2, y2).1 < p(),
 {
-    // edwards_add computes x3 = math_field_mul(...) and y3 = math_field_mul(...)
-    // math_field_mul(a, b) = (a * b) % p(), so result is always < p()
+    // edwards_add computes x3 = field_mul(...) and y3 = field_mul(...)
+    // field_mul(a, b) = (a * b) % p(), so result is always < p()
     p_gt_2();
     lemma_mod_bound(
-        math_field_add(math_field_mul(x1, y2), math_field_mul(y1, x2)) as int * math_field_inv(
-            math_field_add(
+        field_add(field_mul(x1, y2), field_mul(y1, x2)) as int * field_inv(
+            field_add(
                 1,
-                math_field_mul(
-                    spec_field_element(&EDWARDS_D),
-                    math_field_mul(math_field_mul(x1, x2), math_field_mul(y1, y2)),
+                field_mul(
+                    fe51_as_canonical_nat(&EDWARDS_D),
+                    field_mul(field_mul(x1, x2), field_mul(y1, y2)),
                 ),
             ),
         ) as int,
         p() as int,
     );
     lemma_mod_bound(
-        math_field_add(math_field_mul(y1, y2), math_field_mul(x1, x2)) as int * math_field_inv(
-            math_field_sub(
+        field_add(field_mul(y1, y2), field_mul(x1, x2)) as int * field_inv(
+            field_sub(
                 1,
-                math_field_mul(
-                    spec_field_element(&EDWARDS_D),
-                    math_field_mul(math_field_mul(x1, x2), math_field_mul(y1, y2)),
+                field_mul(
+                    fe51_as_canonical_nat(&EDWARDS_D),
+                    field_mul(field_mul(x1, x2), field_mul(y1, y2)),
                 ),
             ),
         ) as int,
@@ -1560,15 +1549,15 @@ pub proof fn lemma_identity_affine_niels_is_identity()
         affine_niels_point_as_affine_edwards(identity_affine_niels()) == math_edwards_identity(),
 {
     // identity_affine_niels has y_plus_x = [1,0,0,0,0], y_minus_x = [1,0,0,0,0]
-    // so spec_field_element gives 1 for both
+    // so fe51_as_canonical_nat gives 1 for both
     let id = identity_affine_niels();
-    let y_plus_x = spec_field_element(&id.y_plus_x);
-    let y_minus_x = spec_field_element(&id.y_minus_x);
+    let y_plus_x = fe51_as_canonical_nat(&id.y_plus_x);
+    let y_minus_x = fe51_as_canonical_nat(&id.y_minus_x);
 
     // Show y_plus_x == 1 and y_minus_x == 1
     // id.y_plus_x.limbs = [1, 0, 0, 0, 0]
     // u64_5_as_nat([1,0,0,0,0]) = 1 + 0 + 0 + 0 + 0 = 1
-    // spec_field_element = u64_5_as_nat % p = 1 % p = 1 (since 1 < p)
+    // fe51_as_canonical_nat = u64_5_as_nat % p = 1 % p = 1 (since 1 < p)
     assert(y_plus_x == 1) by {
         assert(id.y_plus_x.limbs[0] == 1);
         assert(id.y_plus_x.limbs[1] == 0);
@@ -1576,7 +1565,7 @@ pub proof fn lemma_identity_affine_niels_is_identity()
         assert(id.y_plus_x.limbs[3] == 0);
         assert(id.y_plus_x.limbs[4] == 0);
         // u64_5_as_nat gives 1 + 0 + 0 + 0 + 0 = 1
-        assert(spec_field_element_as_nat(&id.y_plus_x) == 1nat) by {
+        assert(fe51_as_nat(&id.y_plus_x) == 1nat) by {
             reveal(pow2);
             assert(pow2(51) * 0 == 0) by (nonlinear_arith);
             assert(pow2(102) * 0 == 0) by (nonlinear_arith);
@@ -1592,7 +1581,7 @@ pub proof fn lemma_identity_affine_niels_is_identity()
         assert(id.y_minus_x.limbs[2] == 0);
         assert(id.y_minus_x.limbs[3] == 0);
         assert(id.y_minus_x.limbs[4] == 0);
-        assert(spec_field_element_as_nat(&id.y_minus_x) == 1nat) by {
+        assert(fe51_as_nat(&id.y_minus_x) == 1nat) by {
             reveal(pow2);
             assert(pow2(51) * 0 == 0) by (nonlinear_arith);
             assert(pow2(102) * 0 == 0) by (nonlinear_arith);
@@ -1604,30 +1593,30 @@ pub proof fn lemma_identity_affine_niels_is_identity()
     }
 
     // x = (y_plus_x - y_minus_x) * inv(2) = (1 - 1) * inv(2) = 0 * inv(2) = 0
-    let diff = math_field_sub(y_plus_x, y_minus_x);
+    let diff = field_sub(y_plus_x, y_minus_x);
     assert(diff == 0) by {
-        // math_field_sub(1, 1) = (((1 % p) + p) - (1 % p)) % p = (1 + p - 1) % p = p % p = 0
+        // field_sub(1, 1) = (((1 % p) + p) - (1 % p)) % p = (1 + p - 1) % p = p % p = 0
         p_gt_2();
         lemma_small_mod(1nat, p());
         lemma_mod_self_0(p() as int);
     }
-    let x = math_field_mul(diff, math_field_inv(2));
+    let x = field_mul(diff, field_inv(2));
     assert(x == 0) by {
         // diff == 0, so diff % p() == 0
         p_gt_2();
         lemma_small_mod(0nat, p());
         assert(diff % p() == 0);
-        lemma_field_mul_zero_left(diff, math_field_inv(2));
+        lemma_field_mul_zero_left(diff, field_inv(2));
     }
 
     // y = (y_plus_x + y_minus_x) * inv(2) = (1 + 1) * inv(2) = 2 * inv(2) = 1
-    let sum = math_field_add(y_plus_x, y_minus_x);
+    let sum = field_add(y_plus_x, y_minus_x);
     assert(sum == 2) by {
-        // math_field_add(1, 1) = (1 + 1) % p = 2 (since 2 < p)
+        // field_add(1, 1) = (1 + 1) % p = 2 (since 2 < p)
         p_gt_2();
         lemma_small_mod(2nat, p());
     }
-    let y = math_field_mul(sum, math_field_inv(2));
+    let y = field_mul(sum, field_inv(2));
     assert(y == 1) by {
         // 2 * inv(2) = 1 by field_inv_property
         p_gt_2();
@@ -1635,7 +1624,7 @@ pub proof fn lemma_identity_affine_niels_is_identity()
             lemma_small_mod(2nat, p());
         }
         field_inv_property(2nat);
-        lemma_field_mul_comm(2nat, math_field_inv(2));
+        lemma_field_mul_comm(2nat, field_inv(2));
     }
 }
 
@@ -1652,17 +1641,17 @@ pub proof fn lemma_negate_affine_niels_is_edwards_neg(pt: AffineNielsPoint)
     // negate_affine_niels swaps y_plus_x and y_minus_x:
     //   neg.y_plus_x = pt.y_minus_x
     //   neg.y_minus_x = pt.y_plus_x
-    let y_plus_x = spec_field_element(&pt.y_plus_x);
-    let y_minus_x = spec_field_element(&pt.y_minus_x);
-    let inv2 = math_field_inv(2);
+    let y_plus_x = fe51_as_canonical_nat(&pt.y_plus_x);
+    let y_minus_x = fe51_as_canonical_nat(&pt.y_minus_x);
+    let inv2 = field_inv(2);
 
     // Original point coords:
-    let x = math_field_mul(math_field_sub(y_plus_x, y_minus_x), inv2);
-    let y = math_field_mul(math_field_add(y_plus_x, y_minus_x), inv2);
+    let x = field_mul(field_sub(y_plus_x, y_minus_x), inv2);
+    let y = field_mul(field_add(y_plus_x, y_minus_x), inv2);
 
     // Negated point coords (after swapping y_plus_x and y_minus_x):
-    let x_neg = math_field_mul(math_field_sub(y_minus_x, y_plus_x), inv2);
-    let y_neg = math_field_mul(math_field_add(y_minus_x, y_plus_x), inv2);
+    let x_neg = field_mul(field_sub(y_minus_x, y_plus_x), inv2);
+    let y_neg = field_mul(field_add(y_minus_x, y_plus_x), inv2);
 
     // y' = y because field addition is commutative: (a + b) % p == (b + a) % p
     assert(y_neg == y) by {
@@ -1672,13 +1661,13 @@ pub proof fn lemma_negate_affine_niels_is_edwards_neg(pt: AffineNielsPoint)
     // x' = -x because:
     // 1. sub(b, a) == neg(sub(a, b)) -- antisymmetry
     // 2. neg(a) * b == neg(a * b) -- negation distributes
-    assert(x_neg == math_field_neg(x)) by {
-        let diff = math_field_sub(y_plus_x, y_minus_x);
-        let neg_diff = math_field_neg(diff);
+    assert(x_neg == field_neg(x)) by {
+        let diff = field_sub(y_plus_x, y_minus_x);
+        let neg_diff = field_neg(diff);
 
         // Step 1: sub(y_minus_x, y_plus_x) == neg(sub(y_plus_x, y_minus_x))
         lemma_field_sub_antisymmetric(y_plus_x, y_minus_x);
-        assert(math_field_sub(y_minus_x, y_plus_x) == neg_diff);
+        assert(field_sub(y_minus_x, y_plus_x) == neg_diff);
 
         // Step 2: x_neg = mul(neg_diff, inv2)
         //               = mul(inv2, neg_diff)   [by commutativity]
@@ -1686,13 +1675,13 @@ pub proof fn lemma_negate_affine_niels_is_edwards_neg(pt: AffineNielsPoint)
         //               = neg(mul(diff, inv2))   [by commutativity]
         //               = neg(x)
         lemma_field_mul_comm(neg_diff, inv2);
-        assert(math_field_mul(neg_diff, inv2) == math_field_mul(inv2, neg_diff));
+        assert(field_mul(neg_diff, inv2) == field_mul(inv2, neg_diff));
 
         lemma_field_mul_neg(inv2, diff);
-        assert(math_field_mul(inv2, neg_diff) == math_field_neg(math_field_mul(inv2, diff)));
+        assert(field_mul(inv2, neg_diff) == field_neg(field_mul(inv2, diff)));
 
         lemma_field_mul_comm(inv2, diff);
-        assert(math_field_mul(inv2, diff) == math_field_mul(diff, inv2));
+        assert(field_mul(inv2, diff) == field_mul(diff, inv2));
     }
 
     // Therefore (x', y') = (-x, y) = edwards_neg((x, y))
@@ -1726,30 +1715,30 @@ pub proof fn lemma_projective_niels_affine_equals_edwards_affine(
         projective_niels_point_as_affine_edwards(niels) == edwards_point_as_affine(point),
 {
     // Extract field values from correspondence
-    let x = spec_field_element(&point.X);
-    let y = spec_field_element(&point.Y);
-    let z = spec_field_element(&point.Z);
+    let x = fe51_as_canonical_nat(&point.X);
+    let y = fe51_as_canonical_nat(&point.Y);
+    let z = fe51_as_canonical_nat(&point.Z);
 
-    let y_plus_x = spec_field_element(&niels.Y_plus_X);
-    let y_minus_x = spec_field_element(&niels.Y_minus_X);
-    let niels_z = spec_field_element(&niels.Z);
+    let y_plus_x = fe51_as_canonical_nat(&niels.Y_plus_X);
+    let y_minus_x = fe51_as_canonical_nat(&niels.Y_minus_X);
+    let niels_z = fe51_as_canonical_nat(&niels.Z);
 
-    assert(y_plus_x == math_field_add(y, x)) by {
+    assert(y_plus_x == field_add(y, x)) by {
         reveal(projective_niels_corresponds_to_edwards);
     }
-    assert(y_minus_x == math_field_sub(y, x)) by {
+    assert(y_minus_x == field_sub(y, x)) by {
         reveal(projective_niels_corresponds_to_edwards);
     }
     assert(niels_z == z) by {
         reveal(projective_niels_corresponds_to_edwards);
     }
 
-    let inv2 = math_field_inv(2);
+    let inv2 = field_inv(2);
 
     // Step 1: Recover X in projective coordinates.
-    let diff = math_field_sub(y_plus_x, y_minus_x);
-    let x_proj = math_field_mul(diff, inv2);
-    assert(diff == math_field_mul(2, x)) by {
+    let diff = field_sub(y_plus_x, y_minus_x);
+    let x_proj = field_mul(diff, inv2);
+    assert(diff == field_mul(2, x)) by {
         lemma_field_add_sub_recover_double(y, x);
     }
     assert(x_proj == x % p()) by {
@@ -1758,9 +1747,9 @@ pub proof fn lemma_projective_niels_affine_equals_edwards_affine(
     }
 
     // Step 2: Recover Y in projective coordinates.
-    let sum = math_field_add(y_plus_x, y_minus_x);
-    let y_proj = math_field_mul(sum, inv2);
-    assert(sum == math_field_mul(2, y)) by {
+    let sum = field_add(y_plus_x, y_minus_x);
+    let y_proj = field_mul(sum, inv2);
+    assert(sum == field_mul(2, y)) by {
         lemma_field_add_add_recover_double(y, x);
     }
     assert(y_proj == y % p()) by {
@@ -1772,14 +1761,14 @@ pub proof fn lemma_projective_niels_affine_equals_edwards_affine(
     // y_affine = y_proj / z = y / z
     // This matches edwards_point_as_affine(point) = (x/z, y/z)
 
-    // spec_field_element returns (val % p) which is always < p
+    // fe51_as_canonical_nat returns (val % p) which is always < p
     assert(x < p()) by {
         p_gt_2();
-        lemma_mod_bound(spec_field_element_as_nat(&point.X) as int, p() as int);
+        lemma_mod_bound(fe51_as_nat(&point.X) as int, p() as int);
     }
     assert(y < p()) by {
         p_gt_2();
-        lemma_mod_bound(spec_field_element_as_nat(&point.Y) as int, p() as int);
+        lemma_mod_bound(fe51_as_nat(&point.Y) as int, p() as int);
     }
 
     assert(x_proj == x) by {

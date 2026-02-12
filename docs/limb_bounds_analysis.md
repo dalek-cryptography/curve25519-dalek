@@ -7,7 +7,7 @@ This document systematically analyzes which functions create and consume `Scalar
 | Type | `*_to_nat` function | Bounds predicate | Canonical predicate |
 |------|---------------------|------------------|---------------------|
 | `Scalar52` | `scalar52_to_nat` | `limbs_bounded` (< 2^52) | `is_canonical_scalar52` |
-| `FieldElement51` | `u64_5_as_nat` / `spec_field_element_as_nat` | `fe51_limbs_bounded(fe, bit_limit)` | - |
+| `FieldElement51` | `u64_5_as_nat` / `fe51_as_nat` | `fe51_limbs_bounded(fe, bit_limit)` | - |
 
 **Key insight:** The `*_to_nat` functions are "raw" polynomial interpretations without built-in bounds guarantees. Bounds are established via preconditions and maintained via postconditions.
 
@@ -19,8 +19,8 @@ This document systematically analyzes which functions create and consume `Scalar
 
 | Function | Postcondition: bounds | Postcondition: value |
 |----------|----------------------|----------------------|
-| `from_bytes` | `limbs_bounded(&s)` | `bytes32_to_nat(bytes) == scalar52_to_nat(&s)` |
-| `from_bytes_wide` | `is_canonical_scalar52(&s)` | `scalar52_to_nat(&s) == bytes_seq_to_nat(bytes@) % group_order()` |
+| `from_bytes` | `limbs_bounded(&s)` | `u8_32_as_nat(bytes) == scalar52_to_nat(&s)` |
+| `from_bytes_wide` | `is_canonical_scalar52(&s)` | `scalar52_to_nat(&s) == bytes_seq_as_nat(bytes@) % group_order()` |
 | `add` | `is_canonical_scalar52(&s)` | `scalar52_to_nat(&s) == (a + b) % group_order()` |
 | `sub` | `is_canonical_scalar52(&s)` | `scalar52_to_nat(&s) == (a - b) % group_order()` |
 | `mul` | `is_canonical_scalar52(&result)` | `scalar52_to_nat(&result) % L == (a * b) % L` |
@@ -58,7 +58,7 @@ pub fn as_bytes(self) -> (s: [u8; 32])
     requires
         limbs_bounded(&self),
     ensures
-        bytes32_to_nat(&s) == scalar52_to_nat(&self) % pow2(256),
+        u8_32_as_nat(&s) == scalar52_to_nat(&self) % pow2(256),
 ```
 
 **Note:** The postcondition includes `% pow2(256)` because `scalar52_to_nat` can produce values up to 2^260 (5 limbs × 52 bits). When serializing to 32 bytes, only the low 256 bits are preserved. For canonical scalars (< group_order < 2^256), this modulus is a no-op.
@@ -90,7 +90,7 @@ from_bytes_wide(bytes) ─ensures──> is_canonical_scalar52(&s)
 ```
 
 **Roundtrip property:**
-- `from_bytes → as_bytes`: `bytes32_to_nat(&as_bytes(from_bytes(b))) == bytes32_to_nat(b) % pow2(256)`
+- `from_bytes → as_bytes`: `u8_32_as_nat(&as_bytes(from_bytes(b))) == u8_32_as_nat(b) % pow2(256)`
 - For 32-byte inputs: value is preserved exactly
 
 **Conclusion:** 
@@ -107,15 +107,15 @@ from_bytes_wide(bytes) ─ensures──> is_canonical_scalar52(&s)
 
 | Function | Postcondition: bounds | Postcondition: value |
 |----------|----------------------|----------------------|
-| `from_bytes` | `fe51_limbs_bounded(&r, 51)` | `spec_field_element_as_nat(&r) == bytes32_to_nat(bytes) % pow2(255)` |
+| `from_bytes` | `fe51_limbs_bounded(&r, 51)` | `fe51_as_nat(&r) == u8_32_as_nat(bytes) % pow2(255)` |
 | `from_limbs` | - (direct construction) | `result.limbs == limbs` |
 | `reduce` | `limbs[i] < 2^52` | Value mod p preserved |
-| `add` | (depends on inputs) | `spec_field_element_as_nat` sum |
-| `sub` | (after reduce) | `spec_field_element` preserved mod p |
-| `neg` | `limbs[i] < 2^52` | `spec_field_element` negated mod p |
+| `add` | (depends on inputs) | `fe51_as_nat` sum |
+| `sub` | (after reduce) | `fe51_as_canonical_nat` preserved mod p |
+| `neg` | `limbs[i] < 2^52` | `fe51_as_canonical_nat` negated mod p |
 | `pow2k` | (depends on inputs) | Repeated squaring mod p |
-| `square` | (depends on inputs) | `spec_field_element` squared mod p |
-| `square2` | (depends on inputs) | `2 * spec_field_element` squared mod p |
+| `square` | (depends on inputs) | `fe51_as_canonical_nat` squared mod p |
+| `square2` | (depends on inputs) | `2 * fe51_as_canonical_nat` squared mod p |
 | `conditional_select` | (from inputs) | Selected value |
 
 ### Consumers (functions that take FieldElement51 as input)
@@ -138,7 +138,7 @@ The `as_bytes` function for FieldElement51:
 // FieldElement51::as_bytes (field.rs:1007)
 pub fn as_bytes(self) -> (r: [u8; 32])
     ensures
-        bytes32_to_nat(&r) == spec_field_element(&self),
+        u8_32_as_nat(&r) == fe51_as_canonical_nat(&self),
 ```
 
 **Note:** Unlike Scalar52, there's no explicit `% pow2(256)` because:
@@ -177,7 +177,7 @@ from_bytes(bytes)     ──ensures──> fe51_limbs_bounded(&r, 51)
 ```
 
 **Roundtrip property:**
-- `from_bytes → as_bytes`: `bytes32_to_nat(&as_bytes(from_bytes(b))) == bytes32_to_nat(b) % p()`
+- `from_bytes → as_bytes`: `u8_32_as_nat(&as_bytes(from_bytes(b))) == u8_32_as_nat(b) % p()`
 - High bit of byte[31] is cleared on input (bit 255 ignored)
 - Output is always canonical (< p)
 
@@ -191,7 +191,7 @@ from_bytes(bytes)     ──ensures──> fe51_limbs_bounded(&r, 51)
 | Total bits | 5 × 52 = 260 | 5 × 51 = 255 |
 | Bounds predicate | `limbs_bounded` (fixed at 52) | `fe51_limbs_bounded(fe, bit_limit)` (parameterized) |
 | Canonical predicate | `is_canonical_scalar52` (< L) | - |
-| Value preservation | `bytes32_to_nat == scalar52_to_nat` | `bytes32_to_nat % 2^255 == u64_5_as_nat` |
+| Value preservation | `u8_32_as_nat == scalar52_to_nat` | `u8_32_as_nat % 2^255 == u64_5_as_nat` |
 
 ### Canonicity Differences
 

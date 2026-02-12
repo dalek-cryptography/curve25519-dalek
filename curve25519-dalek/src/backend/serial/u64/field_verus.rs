@@ -231,7 +231,7 @@ impl FieldElement51 {
         ensures
     // last bit is ignored
 
-            u64_5_as_nat(r.limbs) == bytes32_to_nat(bytes) % pow2(255),
+            u64_5_as_nat(r.limbs) == u8_32_as_nat(bytes) % pow2(255),
     {
         proof {
             assert(mask51 == (1u64 << 51) - 1) by (compute);
@@ -259,8 +259,8 @@ impl FieldElement51 {
                 (l4 as u64 >> 12) & mask51,
             ];
 
-            assert(u64_5_as_nat(rr) == bytes32_to_nat(bytes) % pow2(255)) by {
-                lemma_from_bytes32_to_nat(bytes);
+            assert(u64_5_as_nat(rr) == u8_32_as_nat(bytes) % pow2(255)) by {
+                lemma_from_u8_32_as_nat(bytes);
                 lemma_as_nat_32_mod_255(bytes);
             }
         }
@@ -299,7 +299,7 @@ impl FieldElement51 {
         ensures
     // canonical encoding, i.e. mod p value
 
-            bytes32_to_nat(&r) == u64_5_as_nat(self.limbs) % p(),
+            u8_32_as_nat(&r) == u64_5_as_nat(self.limbs) % p(),
     {
         proof {
             // Step 1: Reduce limbs to ensure h < 2*p
@@ -452,9 +452,9 @@ impl FieldElement51 {
         proof {
             // Step 4: Prove that packing limbs into bytes preserves the value
             lemma_limbs_to_bytes(final_limbs, s);
-            // Now we know: bytes32_to_nat(&s) == u64_5_as_nat(final_limbs)
+            // Now we know: u8_32_as_nat(&s) == u64_5_as_nat(final_limbs)
             // Combined with step 3: u64_5_as_nat(final_limbs) == u64_5_as_nat(self.limbs) % p()
-            // We get: bytes32_to_nat(&s) == u64_5_as_nat(self.limbs) % p()
+            // We get: u8_32_as_nat(&s) == u64_5_as_nat(self.limbs) % p()
         }
 
         // High bit should be zero.

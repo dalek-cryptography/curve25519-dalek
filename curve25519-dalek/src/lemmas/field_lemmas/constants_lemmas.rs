@@ -11,11 +11,11 @@
 //!
 //! ZERO = [0, 0, 0, 0, 0] represents 0:
 //! - `u64_5_as_nat([0, 0, 0, 0, 0]) = 0` (all terms are 0)
-//! - `spec_field_element(ZERO) = 0 % p = 0`
+//! - `fe51_as_canonical_nat(ZERO) = 0 % p = 0`
 //!
 //! ONE = [1, 0, 0, 0, 0] represents 1:
 //! - `u64_5_as_nat([1, 0, 0, 0, 0]) = 1 + 0 + 0 + 0 + 0 = 1` (since n·0 = 0)
-//! - `spec_field_element(ONE) = 1 % p = 1` (since p > 2 > 1)
+//! - `fe51_as_canonical_nat(ONE) = 1 % p = 1` (since p > 2 > 1)
 //!
 //! ## Note
 //!
@@ -44,7 +44,7 @@ pub proof fn lemma_zero_limbs_bounded_51()
     };
 }
 
-/// spec_field_element(ZERO) = 0  ✅ FULLY PROVED
+/// fe51_as_canonical_nat(ZERO) = 0  ✅ FULLY PROVED
 ///
 /// ## Mathematical Proof
 /// ```text
@@ -52,13 +52,13 @@ pub proof fn lemma_zero_limbs_bounded_51()
 ///   = 0 + 2^51·0 + 2^102·0 + 2^153·0 + 2^204·0
 ///   = 0
 ///
-/// spec_field_element(ZERO) = 0 % p = 0  (since 0 < p)
+/// fe51_as_canonical_nat(ZERO) = 0 % p = 0  (since 0 < p)
 /// ```
 pub proof fn lemma_zero_field_element_value()
     ensures
-        spec_field_element(&FieldElement51::ZERO) == 0,
+        fe51_as_canonical_nat(&FieldElement51::ZERO) == 0,
 {
-    assert(spec_field_element(&FieldElement51::ZERO) == 0) by {
+    assert(fe51_as_canonical_nat(&FieldElement51::ZERO) == 0) by {
         // Subgoal 1: ZERO.limbs = [0, 0, 0, 0, 0]
         assert(FieldElement51::ZERO.limbs[0] == 0);
         assert(FieldElement51::ZERO.limbs[1] == 0);
@@ -93,7 +93,7 @@ pub proof fn lemma_one_limbs_bounded_51()
     };
 }
 
-/// spec_field_element(ONE) = 1  ✅ FULLY PROVED
+/// fe51_as_canonical_nat(ONE) = 1  ✅ FULLY PROVED
 ///
 /// ## Mathematical Proof
 /// ```text
@@ -102,13 +102,13 @@ pub proof fn lemma_one_limbs_bounded_51()
 ///   = 1 + 0 + 0 + 0 + 0        (since n·0 = 0 for all n)
 ///   = 1
 ///
-/// spec_field_element(ONE) = 1 % p = 1  (since p > 2 > 1, by lemma_small_mod)
+/// fe51_as_canonical_nat(ONE) = 1 % p = 1  (since p > 2 > 1, by lemma_small_mod)
 /// ```
 pub proof fn lemma_one_field_element_value()
     ensures
-        spec_field_element(&FieldElement51::ONE) == 1,
+        fe51_as_canonical_nat(&FieldElement51::ONE) == 1,
 {
-    // Goal: spec_field_element(ONE) = u64_5_as_nat(ONE.limbs) % p = 1
+    // Goal: fe51_as_canonical_nat(ONE) = u64_5_as_nat(ONE.limbs) % p = 1
     //
     // Mathematical reasoning:
     //   ONE.limbs = [1, 0, 0, 0, 0]
@@ -116,7 +116,7 @@ pub proof fn lemma_one_field_element_value()
     //     = 1 + 2^51·0 + 2^102·0 + 2^153·0 + 2^204·0
     //     = 1    (since n·0 = 0 for all n)
     //   1 % p = 1    (since p > 2 > 1, by lemma_small_mod)
-    assert(spec_field_element(&FieldElement51::ONE) == 1) by {
+    assert(fe51_as_canonical_nat(&FieldElement51::ONE) == 1) by {
         // Subgoal 1: ONE.limbs = [1, 0, 0, 0, 0]
         assert(FieldElement51::ONE.limbs[0] == 1);
         assert(FieldElement51::ONE.limbs[1] == 0);

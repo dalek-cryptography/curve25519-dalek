@@ -34,7 +34,7 @@ Search locations (in priority order):
 3. **Domain-specific lemmas** - Check relevant domain folder (field_lemmas, edwards_lemmas, etc.)
 
 Common patterns to search for:
-- `lemma_bytes32_to_nat_*` - For byte array reasoning
+- `lemma_u8_32_as_nat_*` - For byte array reasoning
 - `lemma_pow2_*` - For power of 2 arithmetic
 - `lemma_mod_*` - For modular arithmetic
 - `lemma_*_bound` - For establishing bounds
@@ -91,7 +91,7 @@ assert((byte_after as nat) * pow2(248) >= 128 * pow2(248)) by (nonlinear_arith)
 #### Technique 3: Decomposition
 For complex structures, decompose into parts:
 - Use `lemma_decomposition_prefix_rec` to split byte arrays
-- Use `lemma_bytes32_to_nat_equals_rec` to connect definitions
+- Use `lemma_u8_32_as_nat_equals_rec` to connect definitions
 - Prove properties about parts, then combine
 
 #### Technique 4: Proof by Contradiction
@@ -656,8 +656,8 @@ proof {
 // Step 1: Establish val < pow2(255)
 assert(p() < pow2(255)) by { pow255_gt_19(); };
 
-// Step 2: Get lower bound on bytes32_to_nat
-lemma_bytes32_to_nat_lower_bound(bytes, 31);
+// Step 2: Get lower bound on u8_32_as_nat
+lemma_u8_32_as_nat_lower_bound(bytes, 31);
 
 // Step 3: Contradiction if high bit set
 assert(bytes[31] < 128) by {
@@ -680,18 +680,18 @@ assert((bytes[31] >> 7) == 0) by (bit_vector)
 
 
 // Step 1: Connect bytes to field value
-lemma_bytes32_to_nat_of_spec_fe51_to_bytes(fe);
+lemma_u8_32_as_nat_of_spec_fe51_to_bytes(fe);
 let bytes = seq_to_array_32(spec_fe51_to_bytes(fe));
-assert(bytes32_to_nat(&bytes) == field_value);
+assert(u8_32_as_nat(&bytes) == field_value);
 
 // Step 2: Extract first byte using modulo
-lemma_bytes32_to_nat_mod_truncates(&bytes, 1);
-assert(bytes32_to_nat(&bytes) % pow2(8) == bytes[0]);
+lemma_u8_32_as_nat_mod_truncates(&bytes, 1);
+assert(u8_32_as_nat(&bytes) % pow2(8) == bytes[0]);
 
 // Step 3: Show even modulus preserves parity
 assert(pow2(8) % 2 == 0) by { lemma_pow2_even(8); };
-assert((bytes32_to_nat(&bytes) % pow2(8)) % 2 == bytes32_to_nat(&bytes) % 2) by {
-    lemma_mod_mod(bytes32_to_nat(&bytes) as int, pow2(8) as int, 2);
+assert((u8_32_as_nat(&bytes) % pow2(8)) % 2 == u8_32_as_nat(&bytes) % 2) by {
+    lemma_mod_mod(u8_32_as_nat(&bytes) as int, pow2(8) as int, 2);
 };
 
 // Step 4: Connect to bit operation
@@ -710,19 +710,19 @@ assert(byte_after == byte_before + sign_bit * 128) by (bit_vector)
 assert(pow2(7) == 128) by { lemma2_to64(); };
 assert(pow2(7) * pow2(248) == pow2(255)) by { lemma_pow2_adds(7, 248); };
 
-// Step 3: Decompose bytes32_to_nat to isolate changed byte
-lemma_bytes32_to_nat_equals_rec(s_before);
-lemma_bytes32_to_nat_equals_rec(s_after);
+// Step 3: Decompose u8_32_as_nat to isolate changed byte
+lemma_u8_32_as_nat_equals_rec(s_before);
+lemma_u8_32_as_nat_equals_rec(s_after);
 lemma_decomposition_prefix_rec(s_before, 31);
 lemma_decomposition_prefix_rec(s_after, 31);
 
 // Step 4: Compute the difference
-assert(bytes32_to_nat(s_after) == bytes32_to_nat(s_before) + sign_bit * pow2(255));
+assert(u8_32_as_nat(s_after) == u8_32_as_nat(s_before) + sign_bit * pow2(255));
 
 // Step 5: Show modulo removes the added term
-assert(bytes32_to_nat(s_after) % pow2(255) == bytes32_to_nat(s_before) % pow2(255)) by {
+assert(u8_32_as_nat(s_after) % pow2(255) == u8_32_as_nat(s_before) % pow2(255)) by {
     if sign_bit == 1 {
-        lemma_mod_add_multiples_vanish(bytes32_to_nat(s_before) as int, pow2(255) as int);
+        lemma_mod_add_multiples_vanish(u8_32_as_nat(s_before) as int, pow2(255) as int);
     }
 };
 ```
@@ -730,9 +730,9 @@ assert(bytes32_to_nat(s_after) % pow2(255) == bytes32_to_nat(s_before) % pow2(25
 ## Common Lemma Reference
 
 ### Byte-to-Nat Lemmas (to_nat_lemmas.rs)
-- `lemma_bytes32_to_nat_lower_bound(bytes, index)` - Get lower bound from specific byte
-- `lemma_bytes32_to_nat_mod_truncates(bytes, n)` - Modulo truncates to first n bytes
-- `lemma_bytes32_to_nat_equals_rec(bytes)` - Connect to recursive definition
+- `lemma_u8_32_as_nat_lower_bound(bytes, index)` - Get lower bound from specific byte
+- `lemma_u8_32_as_nat_mod_truncates(bytes, n)` - Modulo truncates to first n bytes
+- `lemma_u8_32_as_nat_equals_rec(bytes)` - Connect to recursive definition
 - `lemma_decomposition_prefix_rec(bytes, n)` - Split into prefix + suffix
 - `lemma_prefix_equal_when_bytes_match` - Equal prefixes from equal bytes
 

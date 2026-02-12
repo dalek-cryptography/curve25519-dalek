@@ -144,7 +144,7 @@ use crate::lemmas::field_lemmas::field_algebra_lemmas::*;
 use crate::specs::edwards_specs::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::specs::field_specs::*;
-#[allow(unused_imports)] // Used in verus! blocks for p() and spec_field_element_as_nat
+#[allow(unused_imports)] // Used in verus! blocks for p() and fe51_as_nat
 use crate::specs::field_specs_u64::*;
 
 use crate::edwards::EdwardsPoint;
@@ -329,9 +329,9 @@ impl ValidityCheck for ProjectivePoint {
             fe51_limbs_bounded(&self.Z, 54),
         ensures
             result == math_on_edwards_curve_projective(
-                spec_field_element(&self.X),
-                spec_field_element(&self.Y),
-                spec_field_element(&self.Z),
+                fe51_as_canonical_nat(&self.X),
+                fe51_as_canonical_nat(&self.Y),
+                fe51_as_canonical_nat(&self.Z),
             ),
     {
         // Curve equation is    -x^2 + y^2 = 1 + d*x^2*y^2,
@@ -374,9 +374,9 @@ impl ValidityCheck for ProjectivePoint {
         proof {
             // postcondition
             assume(result == math_on_edwards_curve_projective(
-                spec_field_element(&self.X),
-                spec_field_element(&self.Y),
-                spec_field_element(&self.Z),
+                fe51_as_canonical_nat(&self.X),
+                fe51_as_canonical_nat(&self.Y),
+                fe51_as_canonical_nat(&self.Z),
             ));
         }
         result
@@ -560,12 +560,12 @@ impl CompletedPoint {
             // From is_valid_completed_point: z_abs != 0 and t_abs != 0
             assert(z_abs != 0 && t_abs != 0);
 
-            // spec_field_element returns values < p, so z_abs < p and t_abs < p
+            // fe51_as_canonical_nat returns values < p, so z_abs < p and t_abs < p
             // Therefore z_abs % p == z_abs and t_abs % p == t_abs
             assert(z_abs < p() && t_abs < p()) by {
                 p_gt_2();  // Establish p() > 0 for lemma_mod_bound
-                lemma_mod_bound(spec_field_element_as_nat(&self.Z) as int, p() as int);
-                lemma_mod_bound(spec_field_element_as_nat(&self.T) as int, p() as int);
+                lemma_mod_bound(fe51_as_nat(&self.Z) as int, p() as int);
+                lemma_mod_bound(fe51_as_nat(&self.T) as int, p() as int);
             };
 
             // Since z_abs < p and z_abs != 0, we have z_abs % p == z_abs != 0
@@ -577,7 +577,7 @@ impl CompletedPoint {
             };
 
             // Result Z = Z * T, which is non-zero since both Z and T are non-zero
-            let result_z = math_field_mul(z_abs, t_abs);
+            let result_z = field_mul(z_abs, t_abs);
             assert(result_z != 0) by {
                 lemma_nonzero_product(z_abs, t_abs);
             };
@@ -595,22 +595,18 @@ impl CompletedPoint {
             // From is_valid_completed_point: (X/Z, Y/T) is on the curve
 
             // Cancellation for X coordinate: (X*T)/(Z*T) = X/Z
-            assert(math_field_mul(
-                math_field_mul(x_abs, t_abs),
-                math_field_inv(math_field_mul(z_abs, t_abs)),
-            ) == math_field_mul(x_abs, math_field_inv(z_abs))) by {
+            assert(field_mul(field_mul(x_abs, t_abs), field_inv(field_mul(z_abs, t_abs)))
+                == field_mul(x_abs, field_inv(z_abs))) by {
                 lemma_cancel_common_factor(x_abs, z_abs, t_abs);
             };
 
             // Cancellation for Y coordinate: (Y*Z)/(Z*T) = Y/T
             // Rewrite as (Y*Z)/(T*Z) = Y/T using commutativity
-            assert(math_field_mul(z_abs, t_abs) == math_field_mul(t_abs, z_abs)) by {
+            assert(field_mul(z_abs, t_abs) == field_mul(t_abs, z_abs)) by {
                 lemma_field_mul_comm(z_abs, t_abs);
             };
-            assert(math_field_mul(
-                math_field_mul(y_abs, z_abs),
-                math_field_inv(math_field_mul(t_abs, z_abs)),
-            ) == math_field_mul(y_abs, math_field_inv(t_abs))) by {
+            assert(field_mul(field_mul(y_abs, z_abs), field_inv(field_mul(t_abs, z_abs)))
+                == field_mul(y_abs, field_inv(t_abs))) by {
                 lemma_cancel_common_factor(y_abs, t_abs, z_abs);
             };
 
@@ -624,7 +620,7 @@ impl CompletedPoint {
             // Use the lemma to convert from affine curve equation to projective form
             let (result_x, result_y, result_z_spec) = spec_projective_point_edwards(result);
 
-            // result_z_spec = spec_field_element(&result.Z) = math_field_mul(z_abs, t_abs) = result_z
+            // result_z_spec = fe51_as_canonical_nat(&result.Z) = field_mul(z_abs, t_abs) = result_z
             // We showed result_z != 0 above, and result_z < p (since it's a field element)
             // Therefore result_z_spec % p == result_z_spec != 0
             assert(result_z_spec == result_z);  // They're the same value
@@ -636,8 +632,8 @@ impl CompletedPoint {
             };
 
             assert(math_on_edwards_curve(
-                math_field_mul(result_x, math_field_inv(result_z_spec)),
-                math_field_mul(result_y, math_field_inv(result_z_spec)),
+                field_mul(result_x, field_inv(result_z_spec)),
+                field_mul(result_y, field_inv(result_z_spec)),
             ));
             assert(is_valid_projective_point(result)) by {
                 lemma_affine_curve_implies_projective(result_x, result_y, result_z_spec);
@@ -1269,7 +1265,7 @@ impl<'a> Neg for &'a ProjectiveNielsPoint {
             ({
                 let self_affine = projective_niels_point_as_affine_edwards(*self);
                 let result_affine = projective_niels_point_as_affine_edwards(result);
-                result_affine == (math_field_neg(self_affine.0), self_affine.1)
+                result_affine == (field_neg(self_affine.0), self_affine.1)
             }),
     {
         // ORIGINAL CODE: T2d: -(&self.T2d),
@@ -1283,7 +1279,7 @@ impl<'a> Neg for &'a ProjectiveNielsPoint {
         proof {
             let self_affine = projective_niels_point_as_affine_edwards(*self);
             assume(projective_niels_point_as_affine_edwards(result) == (
-                math_field_neg(self_affine.0),
+                field_neg(self_affine.0),
                 self_affine.1,
             ));
         }
@@ -1329,7 +1325,7 @@ impl<'a> Neg for &'a AffineNielsPoint {
             ({
                 let self_affine = affine_niels_point_as_affine_edwards(*self);
                 let result_affine = affine_niels_point_as_affine_edwards(result);
-                result_affine == (math_field_neg(self_affine.0), self_affine.1)
+                result_affine == (field_neg(self_affine.0), self_affine.1)
             }),
     {
         // ORIGINAL CODE: xy2d: -(&self.xy2d),
@@ -1342,7 +1338,7 @@ impl<'a> Neg for &'a AffineNielsPoint {
         proof {
             let self_affine = affine_niels_point_as_affine_edwards(*self);
             assume(affine_niels_point_as_affine_edwards(result) == (
-                math_field_neg(self_affine.0),
+                field_neg(self_affine.0),
                 self_affine.1,
             ));
         }

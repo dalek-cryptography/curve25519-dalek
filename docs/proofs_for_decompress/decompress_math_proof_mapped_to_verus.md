@@ -65,10 +65,10 @@ This table maps each mathematical proof step to its corresponding Verus lemma.
 
 | Proof Step | Mathematical Statement | Verus Lemma | Lemma States |
 |------------|----------------------|-------------|--------------|
-| **Part 1** | Y = bytes_le(repr) mod p | `from_bytes` ensures | `spec_field_element(&Y) == spec_field_element_from_bytes(bytes)` |
-| **Part 2** | x² = (y² - 1)/(d·y² + 1) = u/v | Field op ensures | `is_sqrt_ratio` ⟺ `(x * x * v) % p == u % p` |
-| **Part 3** | sqrt_ratio_i computes √(u/v) | `lemma_is_sqrt_ratio_to_math_field` | `is_sqrt_ratio(u, v, x) ==> math_field_mul(x², v) == u` |
-| **Part 4** | x²·v = u ⟹ on_curve(x, y) | `lemma_sqrt_ratio_implies_on_curve` | `math_field_mul(x², v) == u ==> math_on_edwards_curve(x, y)` |
+| **Part 1** | Y = bytes_le(repr) mod p | `from_bytes` ensures | `fe51_as_canonical_nat(&Y) == field_element_from_bytes(bytes)` |
+| **Part 2** | x² = (y² - 1)/(d·y² + 1) = u/v | Field op ensures | `fe51_is_sqrt_ratio` ⟺ `(x * x * v) % p == u % p` |
+| **Part 3** | sqrt_ratio_i computes √(u/v) | `lemma_is_sqrt_ratio_to_field` | `fe51_is_sqrt_ratio(u, v, x) ==> field_mul(x², v) == u` |
+| **Part 4** | x²·v = u ⟹ on_curve(x, y) | `lemma_sqrt_ratio_implies_on_curve` | `field_mul(x², v) == u ==> math_on_edwards_curve(x, y)` |
 | **Part 5** | on_curve(x, y) ⟹ on_curve(-x, y) | `lemma_negation_preserves_curve` | `math_on_edwards_curve(x, y) ==> math_on_edwards_curve(-x, y)` |
 | **Part 6** | Z = 1 ⟹ valid extended point | `lemma_decompress_produces_valid_point` | `z == 1 && on_curve(x, y) ==> is_valid_edwards_point(...)` |
 | **Part 7** | Sign bit after conditional negate | `lemma_sign_bit_after_conditional_negate` | Correctly sets LSB(X) = sign_bit |
@@ -89,25 +89,25 @@ decompress() ✅                                          [edwards.rs]
 │   ├── lemma_one_limbs_bounded ✅                      [field_lemmas/constants_lemmas.rs]
 │   ├── lemma_edwards_d_limbs_bounded ✅                [edwards_lemmas/constants_lemmas.rs]
 │   ├── lemma_one_field_element_value ✅                [field_lemmas/constants_lemmas.rs]
-│   │   └── Statement: spec_field_element(ONE) == 1
+│   │   └── Statement: fe51_as_canonical_nat(ONE) == 1
 │   │
 │   │   ▼ Field operation correspondence ──────────────────────────────
-│   ├── lemma_square_matches_math_field_square ✅       [step1_lemmas.rs]
-│   │   └── Statement: spec_field_element(Y.square()) == math_field_square(y)
+│   ├── lemma_square_matches_field_square ✅       [step1_lemmas.rs]
+│   │   └── Statement: fe51_as_canonical_nat(Y.square()) == field_square(y)
 │   │
 │   │   ▼ Main case analysis lemma ────────────────────────────────────
 │   └── lemma_step1_case_analysis ✅                    [step1_lemmas.rs]
 │       │   Statement: choice_is_true(is_valid) <==> math_is_valid_y_coordinate(y)
 │       │              AND is_valid ==> math_on_edwards_curve(x, y)
 │       │
-│       ├── lemma_is_sqrt_ratio_to_math_field ✅        [sqrt_ratio_lemmas.rs]
-│       │   └── Statement: is_sqrt_ratio(u, v, x) ==> math_field_mul(x², v) == u
+│       ├── lemma_is_sqrt_ratio_to_field ✅        [sqrt_ratio_lemmas.rs]
+│       │   └── Statement: fe51_is_sqrt_ratio(u, v, x) ==> field_mul(x², v) == u
 │       │
 │       ├── lemma_sqrt_ratio_success_means_valid_y ✅   [step1_lemmas.rs]
-│       │   │   Statement: is_sqrt_ratio success ==> math_is_valid_y_coordinate(y)
+│       │   │   Statement: fe51_is_sqrt_ratio success ==> math_is_valid_y_coordinate(y)
 │       │   │
 │       │   └── lemma_sqrt_ratio_implies_on_curve ✅    [step1_lemmas.rs]
-│       │       │   Statement: math_field_mul(x², v) == u ==> math_on_edwards_curve(x, y)
+│       │       │   Statement: field_mul(x², v) == u ==> math_on_edwards_curve(x, y)
 │       │       │
 │       │       ├── lemma_field_mul_distributes_over_add ✅  [field_algebra_lemmas.rs]
 │       │       │   └── Statement: a·(b+c) == a·b + a·c
@@ -119,7 +119,7 @@ decompress() ✅                                          [edwards.rs]
 │       │   └── Statement: u == 0 ==> x == 0 && (y == 1 || y == -1)
 │       │
 │       └── lemma_sqrt_ratio_failure_means_invalid_y ✅  [step1_lemmas.rs]
-│           │   Statement: !is_sqrt_ratio success ==> !math_is_valid_y_coordinate(y)
+│           │   Statement: !fe51_is_sqrt_ratio success ==> !math_is_valid_y_coordinate(y)
 │           │
 │           └── lemma_no_square_root_when_times_i ✅    [sqrt_ratio_lemmas.rs]
 │               │   Statement: v·r² == i·u && v ≠ 0 ==> ¬∃x: v·x² == u
@@ -148,7 +148,7 @@ decompress() ✅                                          [edwards.rs]
     │   │   Statement: math_on_edwards_curve(x, y) ==> math_on_edwards_curve(-x, y)
     │   │
     │   ├── lemma_neg_square_eq ✅                       [field_algebra_lemmas.rs]
-    │   │   └── Statement: math_field_square(-x) == math_field_square(x)
+    │   │   └── Statement: field_square(-x) == field_square(x)
     │   │
     │   └── lemma_square_mod_noop ✅                     [field_algebra_lemmas.rs]
     │       └── Statement: (x % p)² % p == x² % p
@@ -168,7 +168,7 @@ decompress() ✅                                          [edwards.rs]
     │       └── Statement: x = 0 && on_curve(x, y) ==> y² = 1 (contrapositive)
     │
     └── lemma_decompress_field_element_sign_bit ✅       [decompress_lemmas.rs]
-        │   Statement: spec_field_element_sign_bit(&X) == sign_bit
+        │   Statement: fe51_as_canonical_nat_sign_bit(&X) == sign_bit
         │
         └── lemma_sign_bit_after_conditional_negate ✅   [decompress_lemmas.rs]
             └── Statement: If sign_bit == 0: LSB(X) = 0
@@ -191,7 +191,7 @@ decompress() ✅                                          [edwards.rs]
 
 | Property | Verus Specification |
 |----------|-------------------|
-| **Ensures** | `spec_field_element(&result) == spec_field_element_from_bytes(bytes)` |
+| **Ensures** | `fe51_as_canonical_nat(&result) == field_element_from_bytes(bytes)` |
 | **Location** | `field.rs` |
 
 ---
@@ -210,10 +210,10 @@ where: u = y² - 1, v = d·y² + 1
 
 | Operation | Ensures Clause |
 |-----------|---------------|
-| `square()` | `spec_field_element(&result) == math_field_square(input)` |
-| `Sub` | `spec_field_element(&result) == math_field_sub(a, b)` |
-| `Mul` | `spec_field_element(&result) == math_field_mul(a, b)` |
-| `Add` | `spec_field_element(&result) == math_field_add(a, b)` |
+| `square()` | `fe51_as_canonical_nat(&result) == field_square(input)` |
+| `Sub` | `fe51_as_canonical_nat(&result) == field_sub(a, b)` |
+| `Mul` | `fe51_as_canonical_nat(&result) == field_mul(a, b)` |
+| `Add` | `fe51_as_canonical_nat(&result) == field_add(a, b)` |
 
 ---
 
@@ -230,12 +230,12 @@ sqrt_ratio_i(u, v) returns (is_square, r) where:
 
 | Lemma | Statement |
 |-------|-----------|
-| `lemma_is_sqrt_ratio_to_math_field` | `is_sqrt_ratio(u, v, x) ==> math_field_mul(math_field_square(x), v) == u` |
+| `lemma_is_sqrt_ratio_to_field` | `fe51_is_sqrt_ratio(u, v, x) ==> field_mul(field_square(x), v) == u` |
 
 **Spec definition:**
 ```rust
-pub open spec fn is_sqrt_ratio(u: int, v: int, x: &FieldElement51) -> bool {
-    (spec_field_element(x) * spec_field_element(x) * v) % p() == u % p()
+pub open spec fn fe51_is_sqrt_ratio(u: int, v: int, x: &FieldElement51) -> bool {
+    (fe51_as_canonical_nat(x) * fe51_as_canonical_nat(x) * v) % p() == u % p()
 }
 ```
 
@@ -265,7 +265,7 @@ Step 4: This IS the curve equation:
 
 | Lemma | Statement | Location |
 |-------|-----------|----------|
-| `lemma_sqrt_ratio_implies_on_curve` | `math_field_mul(x², v) == u ==> math_on_edwards_curve(x, y)` | `decompress_lemmas.rs` |
+| `lemma_sqrt_ratio_implies_on_curve` | `field_mul(x², v) == u ==> math_on_edwards_curve(x, y)` | `decompress_lemmas.rs` |
 | └─ `lemma_field_mul_distributes_over_add` | `a·(b+c) == a·b + a·c` | `field_algebra_lemmas.rs` |
 | └─ `lemma_field_add_sub_rearrange` | `a+b+1 == c ==> a+1 == c-b` | `field_algebra_lemmas.rs` |
 
@@ -273,18 +273,18 @@ Step 4: This IS the curve equation:
 ```rust
 pub proof fn lemma_sqrt_ratio_implies_on_curve(x: int, y: int, u: int, v: int)
     requires
-        math_field_mul(math_field_square(x), v) == u,
-        u == math_field_sub(math_field_square(y), 1),
-        v == math_field_add(math_field_mul(MATH_EDWARDS_D, math_field_square(y)), 1),
+        field_mul(field_square(x), v) == u,
+        u == field_sub(field_square(y), 1),
+        v == field_add(field_mul(MATH_EDWARDS_D, field_square(y)), 1),
     ensures
         math_on_edwards_curve(x, y),
 {
-    let x2 = math_field_square(x);
-    let y2 = math_field_square(y);
-    let dy2 = math_field_mul(MATH_EDWARDS_D, y2);
+    let x2 = field_square(x);
+    let y2 = field_square(y);
+    let dy2 = field_mul(MATH_EDWARDS_D, y2);
     
     // Step 1: From precondition x²·v = u
-    assert(math_field_mul(x2, v) == u);
+    assert(field_mul(x2, v) == u);
     
     // Step 2: Distributivity
     lemma_field_mul_distributes_over_add(x2, dy2, 1);
@@ -314,22 +314,22 @@ on_curve(x, y) ⟺ on_curve(-x, y)
 | Lemma | Statement | Location |
 |-------|-----------|----------|
 | `lemma_negation_preserves_curve` | `math_on_edwards_curve(x, y) ==> math_on_edwards_curve(-x, y)` | `decompress_lemmas.rs` |
-| └─ `lemma_neg_square_eq` | `math_field_square(-x) == math_field_square(x)` | `field_algebra_lemmas.rs` |
+| └─ `lemma_neg_square_eq` | `field_square(-x) == field_square(x)` | `field_algebra_lemmas.rs` |
 | └─ `lemma_square_mod_noop` | `(x % p)² % p == x² % p` | `field_algebra_lemmas.rs` |
 
 **Verus proof sketch:**
 ```rust
 pub proof fn lemma_negation_preserves_curve(x: int, y: int)
     requires math_on_edwards_curve(x, y),
-    ensures math_on_edwards_curve(math_field_neg(x), y),
+    ensures math_on_edwards_curve(field_neg(x), y),
 {
-    let neg_x = math_field_neg(x);
+    let neg_x = field_neg(x);
     
     // Key: (-x)² = x²
     lemma_neg_square_eq(x);
     lemma_square_mod_noop(x);
     
-    assert(math_field_square(neg_x) == math_field_square(x));
+    assert(field_square(neg_x) == field_square(x));
     // Therefore curve equation holds for (-x, y)
 }
 ```
@@ -354,7 +354,7 @@ When Z = 1:
 | Lemma | Statement | Location |
 |-------|-----------|----------|
 | `lemma_decompress_produces_valid_point` | `z == 1 && on_curve(x, y) ==> is_valid_edwards_point(...)` | `decompress_lemmas.rs` |
-| └─ `lemma_field_inv_one` | `math_field_inv(1) == 1` | `field_algebra_lemmas.rs` |
+| └─ `lemma_field_inv_one` | `field_inv(1) == 1` | `field_algebra_lemmas.rs` |
 
 **Verus proof sketch:**
 ```rust
@@ -362,7 +362,7 @@ pub proof fn lemma_decompress_produces_valid_point(x: int, y: int, t: int, z: in
     requires
         z == 1,
         math_on_edwards_curve(x, y),
-        t == math_field_mul(x, y),
+        t == field_mul(x, y),
     ensures
         is_valid_edwards_point_math(x, y, z, t),
 {
@@ -402,7 +402,7 @@ If sign_bit = 1:
 | Lemma | Statement | Location |
 |-------|-----------|----------|
 | `lemma_sign_bit_after_conditional_negate` | Sign bit is correctly set after conditional negation | `decompress_lemmas.rs` |
-| `lemma_decompress_field_element_sign_bit` | `spec_field_element_sign_bit(&X) == sign_bit` | `decompress_lemmas.rs` |
+| `lemma_decompress_field_element_sign_bit` | `fe51_as_canonical_nat_sign_bit(&X) == sign_bit` | `decompress_lemmas.rs` |
 | `lemma_sign_bit_one_implies_x_nonzero` | `y² ≠ 1 ==> x ≠ 0` (enables proof when sign_bit = 1) | `decompress_lemmas.rs` |
 
 **Verus proof sketch:**
@@ -504,11 +504,11 @@ pub proof fn lemma_decompress_valid_branch(
         // ... additional preconditions
     ensures
         is_valid_edwards_point(*point),                              // Goal 1
-        spec_field_element(&point.Y) == y,                           // Goal 2
-        spec_field_element_sign_bit(&point.X) == (repr_bytes[31] >> 7), // Goal 3
+        fe51_as_canonical_nat(&point.Y) == y,                           // Goal 2
+        fe51_as_canonical_nat_sign_bit(&point.X) == (repr_bytes[31] >> 7), // Goal 3
 {
     let sign_bit = (repr_bytes[31] >> 7) as int;
-    let x_final = if sign_bit == 1 { math_field_neg(x_orig) } else { x_orig };
+    let x_final = if sign_bit == 1 { field_neg(x_orig) } else { x_orig };
     
     // ═══════════════════════════════════════════════════════════════
     // Goal 1: is_valid_edwards_point
@@ -528,12 +528,12 @@ pub proof fn lemma_decompress_valid_branch(
     // Goal 2: Y preserved
     // ═══════════════════════════════════════════════════════════════
     // Direct from step_2: point.Y == Y from step_1
-    assert(spec_field_element(&point.Y) == y);
+    assert(fe51_as_canonical_nat(&point.Y) == y);
     
     // ═══════════════════════════════════════════════════════════════
     // Goal 3: Sign bit correct
     // ═══════════════════════════════════════════════════════════════
-    assert(spec_field_element_sign_bit(&point.X) == sign_bit) by {
+    assert(fe51_as_canonical_nat_sign_bit(&point.X) == sign_bit) by {
         lemma_sign_bit_one_implies_x_nonzero(repr_bytes, x_orig, y);
         lemma_decompress_field_element_sign_bit(x_orig, x_final, repr_bytes[31]);
     };
@@ -566,7 +566,7 @@ The proof relies on 4 axioms about number-theoretic properties that are expensiv
 | `lemma_negation_preserves_curve` | `math_on_edwards_curve(x, y) ==> math_on_edwards_curve(-x, y)` | ✅ |
 | `lemma_decompress_produces_valid_point` | `z == 1 && on_curve(x, y) ==> is_valid_edwards_point(...)` | ✅ |
 | `lemma_sign_bit_after_conditional_negate` | Sign bit correctly set after negate | ✅ |
-| `lemma_decompress_field_element_sign_bit` | `spec_field_element_sign_bit(&X) == sign_bit` | ✅ |
+| `lemma_decompress_field_element_sign_bit` | `fe51_as_canonical_nat_sign_bit(&X) == sign_bit` | ✅ |
 | `lemma_sign_bit_one_implies_x_nonzero` | `y² ≠ 1 ==> x ≠ 0` | ✅ |
 | `lemma_decompress_valid_branch` | Proves all 3 ensures clauses | ✅ |
 
@@ -574,9 +574,9 @@ The proof relies on 4 axioms about number-theoretic properties that are expensiv
 
 | Lemma | Formal Statement | Status |
 |-------|-----------------|--------|
-| `lemma_sqrt_ratio_implies_on_curve` | `math_field_mul(x², v) == u ==> math_on_edwards_curve(x, y)` | ✅ |
-| `lemma_sqrt_ratio_success_means_valid_y` | `is_sqrt_ratio success ==> math_is_valid_y_coordinate(y)` | ✅ |
-| `lemma_sqrt_ratio_failure_means_invalid_y` | `!is_sqrt_ratio success ==> !math_is_valid_y_coordinate(y)` | ✅ |
+| `lemma_sqrt_ratio_implies_on_curve` | `field_mul(x², v) == u ==> math_on_edwards_curve(x, y)` | ✅ |
+| `lemma_sqrt_ratio_success_means_valid_y` | `fe51_is_sqrt_ratio success ==> math_is_valid_y_coordinate(y)` | ✅ |
+| `lemma_sqrt_ratio_failure_means_invalid_y` | `!fe51_is_sqrt_ratio success ==> !math_is_valid_y_coordinate(y)` | ✅ |
 | `lemma_u_zero_implies_identity_point` | `u == 0 ==> x == 0 && (y == ±1)` | ✅ |
 | `lemma_step1_case_analysis` | `choice_is_true <==> math_is_valid_y_coordinate` | ✅ |
 
@@ -598,7 +598,7 @@ The proof relies on 4 axioms about number-theoretic properties that are expensiv
 | Lemma | Location | Statement | Status |
 |-------|----------|-----------|--------|
 | `lemma_one_limbs_bounded` | `field_lemmas/constants_lemmas.rs` | ONE.limbs < 2^51 | ✅ |
-| `lemma_one_field_element_value` | `field_lemmas/constants_lemmas.rs` | `spec_field_element(ONE) == 1` | ✅ |
+| `lemma_one_field_element_value` | `field_lemmas/constants_lemmas.rs` | `fe51_as_canonical_nat(ONE) == 1` | ✅ |
 | `lemma_edwards_d_limbs_bounded` | `edwards_lemmas/constants_lemmas.rs` | EDWARDS_D.limbs < 2^51 | ✅ |
 
 ### SQRT_M1 Lemmas (`sqrt_ratio_lemmas.rs`)
@@ -612,7 +612,7 @@ The proof relies on 4 axioms about number-theoretic properties that are expensiv
 | `lemma_u_times_inv_iu_is_neg_i` | `u · inv(i·u) = -i` | ✅ |
 | `lemma_neg_u_times_inv_iu_is_i` | `(-u) · inv(i·u) = i` | ✅ |
 | `lemma_flipped_sign_becomes_correct` | `v·r² = -u ==> v·(r·i)² = u` | ✅ |
-| `lemma_is_sqrt_ratio_to_math_field` | `is_sqrt_ratio(u, v, x) ==> math_field_mul(x², v) == u` | ✅ |
+| `lemma_is_sqrt_ratio_to_field` | `fe51_is_sqrt_ratio(u, v, x) ==> field_mul(x², v) == u` | ✅ |
 
 ---
 

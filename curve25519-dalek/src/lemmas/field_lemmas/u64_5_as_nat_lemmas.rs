@@ -67,7 +67,7 @@ pub proof fn lemma_mul_si_vi_and_reorder(
     lemma_mul_quad_prod(si, vi, s4, v4);
 }
 
-// Lemma: Bridges from u64_5_as_nat postcondition to spec_field_element postcondition for power operations
+// Lemma: Bridges from u64_5_as_nat postcondition to fe51_as_canonical_nat postcondition for power operations
 pub proof fn lemma_bridge_pow_as_nat_to_spec(
     result: &FieldElement51,
     base: &FieldElement51,
@@ -77,13 +77,14 @@ pub proof fn lemma_bridge_pow_as_nat_to_spec(
         u64_5_as_nat(result.limbs) % p() == (pow(u64_5_as_nat(base.limbs) as int, exp) as nat)
             % p(),
     ensures
-        spec_field_element(result) == (pow(spec_field_element(base) as int, exp) as nat) % p(),
+        fe51_as_canonical_nat(result) == (pow(fe51_as_canonical_nat(base) as int, exp) as nat)
+            % p(),
 {
     // Prove p() > 0
     pow255_gt_19();
 
-    // By definition: spec_field_element(result) == u64_5_as_nat(result.limbs) % p()
-    //                spec_field_element(base) == u64_5_as_nat(base.limbs) % p()
+    // By definition: fe51_as_canonical_nat(result) == u64_5_as_nat(result.limbs) % p()
+    //                fe51_as_canonical_nat(base) == u64_5_as_nat(base.limbs) % p()
     // The solver should unfold these automatically
 
     // Apply lemma_pow_mod_noop: pow(b, e) % m == pow(b % m, e) % m
@@ -91,7 +92,7 @@ pub proof fn lemma_bridge_pow_as_nat_to_spec(
 
     // Let's use clear names for the key values
     let x = u64_5_as_nat(base.limbs);
-    let y = spec_field_element(base);
+    let y = fe51_as_canonical_nat(base);
 
     // y == x % p() by definition
     assert(y == x % p());

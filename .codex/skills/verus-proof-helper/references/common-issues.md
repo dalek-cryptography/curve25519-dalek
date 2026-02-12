@@ -31,7 +31,7 @@ how specs are structured.
 
 Symptom: verifier crashes (e.g., interpreter panic / internal error) when `by (compute)` tries to
 evaluate expressions that depend on exec variables or exec function calls (common in crypto code:
-`invert()`, `sqrt_ratio_i`, `spec_field_element(&x)` where `x` is exec).
+`invert()`, `sqrt_ratio_i`, `fe51_as_canonical_nat(&x)` where `x` is exec).
 
 Fixes:
 

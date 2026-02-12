@@ -14,8 +14,8 @@ Converting bytes and words to natural numbers (little-endian interpretation) is 
 
 | Representation | Spec Function | Form | Primary Use Case |
 |----------------|---------------|------|------------------|
-| **Prefix sum** | `bytes_to_nat_prefix` | b₀·2⁰ + b₁·2⁸ + ... | Small fixed-size inputs, `From<uXX>` |
-| **Horner form** | `bytes_seq_to_nat` | b₀ + 256·(b₁ + 256·(...)) | Any-length sequences, loop-based processing |
+| **Prefix sum** | `bytes_as_nat_prefix` | b₀·2⁰ + b₁·2⁸ + ... | Small fixed-size inputs, `From<uXX>` |
+| **Horner form** | `bytes_seq_as_nat` | b₀ + 256·(b₁ + 256·(...)) | Any-length sequences, loop-based processing |
 
 **Design rationale:** The prefix form is simpler for small fixed-size inputs where we know the exact length at compile time. The Horner form works with any-length `Seq<u8>` and is preferred for loop-based processing (e.g., `from_bytes_wide` with 64-byte inputs) where the recursive structure aligns naturally with iteration.
 
@@ -26,19 +26,19 @@ All conversion functions follow the `*_to_nat` naming convention:
 | Function | Purpose |
 |----------|---------|
 | **Byte Conversions** | |
-| `bytes32_to_nat` | 32-byte array → nat (explicit form) |
-| `bytes_seq_to_nat` | Seq<u8> (any length) → nat (Horner form) |
-| `bytes_to_nat_prefix` | First n bytes of sequence → nat |
-| `bytes_to_nat_suffix` | bytes[start..N] with positional weights → nat |
-| `bytes32_to_nat_rec` | Recursive helper for 32-byte |
+| `u8_32_as_nat` | 32-byte array → nat (explicit form) |
+| `bytes_seq_as_nat` | Seq<u8> (any length) → nat (Horner form) |
+| `bytes_as_nat_prefix` | First n bytes of sequence → nat |
+| `bytes_as_nat_suffix` | bytes[start..N] with positional weights → nat |
+| `u8_32_as_nat_rec` | Recursive helper for 32-byte |
 | **Word Conversions** | |
-| `words_to_nat_gen` | Generic word array → nat (any radix) |
-| `words_to_nat_u64` | u64 word array → nat (convenience) |
+| `words_as_nat_gen` | Generic word array → nat (any radix) |
+| `words_as_nat_u64` | u64 word array → nat (convenience) |
 | `word64_from_bytes` | Extract 64-bit word from byte sequence |
 | `word64_from_bytes_partial` | Extract partial 64-bit word |
 | `words64_from_bytes_to_nat` | Extract multiple 64-bit words → nat |
 | **Domain-Specific** | *(see domain spec files)* |
-| `spec_field_element_as_nat` | FieldElement51 limbs → nat |
+| `fe51_as_nat` | FieldElement51 limbs → nat |
 | `u64_5_as_nat` | 5 limbs × 51-bit radix → nat |
 | `five_limbs_to_nat_aux` | 5 limbs × 52-bit radix → nat |
 | `seq_to_nat_52` | Seq<nat> × 52-bit radix → nat (Horner) |
@@ -51,7 +51,7 @@ All conversion functions follow the `*_to_nat` naming convention:
 
 ```rust
 /// Direct-sum form for the first n bytes.
-pub open spec fn bytes_to_nat_prefix(bytes: Seq<u8>, n: nat) -> nat
+pub open spec fn bytes_as_nat_prefix(bytes: Seq<u8>, n: nat) -> nat
 ```
 
 - Computes: `b₀·2⁰ + b₁·2⁸ + ... + bₙ₋₁·2^((n-1)·8)`
@@ -62,37 +62,37 @@ pub open spec fn bytes_to_nat_prefix(bytes: Seq<u8>, n: nat) -> nat
 
 ```rust
 /// Horner-form conversion (little-endian) for arbitrary-length sequences.
-pub open spec fn bytes_seq_to_nat(bytes: Seq<u8>) -> nat
+pub open spec fn bytes_seq_as_nat(bytes: Seq<u8>) -> nat
     decreases bytes.len(),
 {
     if bytes.len() == 0 { 0 }
-    else { (bytes[0] as nat) + 256 * bytes_seq_to_nat(bytes.skip(1)) }
+    else { (bytes[0] as nat) + 256 * bytes_seq_as_nat(bytes.skip(1)) }
 }
 ```
 
 - **Primary use:** `from_bytes_wide` (64-byte inputs), `from_bytes_mod_order_wide`
 - Uses Horner form: `bytes[0] + 256 * (bytes[1] + 256 * (...))`
-- Bridge lemma: `lemma_bytes_seq_to_nat_equals_prefix` connects to prefix form
+- Bridge lemma: `lemma_bytes_seq_as_nat_equals_prefix` connects to prefix form
 
 ### For 32-byte Arrays
 
 ```rust
 /// Explicit 32-term expansion for efficient proof unfolding.
-pub open spec fn bytes32_to_nat(bytes: &[u8; 32]) -> nat {
+pub open spec fn u8_32_as_nat(bytes: &[u8; 32]) -> nat {
     bytes[0] as nat * pow2(0*8) + bytes[1] as nat * pow2(1*8) + ... // all 32 terms
 }
 
 /// Recursive version for structural induction proofs.
-pub open spec fn bytes32_to_nat_rec(bytes: &[u8; 32], index: nat) -> nat
+pub open spec fn u8_32_as_nat_rec(bytes: &[u8; 32], index: nat) -> nat
 ```
 
 ### For 64-byte Arrays
 
-Use `bytes_seq_to_nat(bytes@)` directly. For loop invariants, use:
+Use `bytes_seq_as_nat(bytes@)` directly. For loop invariants, use:
 
 ```rust
 /// Generic suffix sum with original positional weights.
-pub open spec fn bytes_to_nat_suffix<const N: usize>(bytes: &[u8; N], start: int) -> nat
+pub open spec fn bytes_as_nat_suffix<const N: usize>(bytes: &[u8; N], start: int) -> nat
 ```
 
 ---
@@ -103,21 +103,21 @@ pub open spec fn bytes_to_nat_suffix<const N: usize>(bytes: &[u8; N], start: int
 
 ```rust
 /// THE fully generic primitive - works with any word type via Seq<nat>
-pub open spec fn words_to_nat_gen(
+pub open spec fn words_as_nat_gen(
     words: Seq<nat>,      // Use arr@.map(|i, x| x as nat) to convert
     num_words: int, 
     bits_per_word: int
 ) -> nat
 
 /// Convenience wrapper for u64 arrays
-pub open spec fn words_to_nat_u64(words: &[u64], num_words: int, bits_per_word: int) -> nat
+pub open spec fn words_as_nat_u64(words: &[u64], num_words: int, bits_per_word: int) -> nat
 ```
 
 **Usage for different word types:**
 ```rust
-words_to_nat_u64(words, 4, 64)                           // u64 arrays
-words_to_nat_gen(words@.map(|i, x| x as nat), 9, 52)     // u128 arrays
-words_to_nat_gen(words@.map(|i, x| x as nat), len, 16)   // u16 arrays
+words_as_nat_u64(words, 4, 64)                           // u64 arrays
+words_as_nat_gen(words@.map(|i, x| x as nat), 9, 52)     // u128 arrays
+words_as_nat_gen(words@.map(|i, x| x as nat), len, 16)   // u16 arrays
 ```
 
 ### Word Extraction from Bytes
@@ -191,17 +191,17 @@ pub open spec fn slice128_to_nat(limbs: &[u128]) -> nat
 │                                                                             │
 │  BYTE-TO-NAT:                                                               │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │ bytes_to_nat_prefix(Seq, n)     ← PRIMARY for small inputs (2-16B)  │   │
-│  │ bytes32_to_nat(&[u8; 32])       ← 32-BYTE (explicit form)           │   │
-│  │ bytes_seq_to_nat(Seq<u8>)       ← ANY-LENGTH sequences (Horner)     │   │
-│  │ bytes_to_nat_suffix<N>          ← LOOP INVARIANTS (any size)        │   │
-│  │ bytes32_to_nat_rec              ← 32-BYTE (recursive helper)        │   │
+│  │ bytes_as_nat_prefix(Seq, n)     ← PRIMARY for small inputs (2-16B)  │   │
+│  │ u8_32_as_nat(&[u8; 32])       ← 32-BYTE (explicit form)           │   │
+│  │ bytes_seq_as_nat(Seq<u8>)       ← ANY-LENGTH sequences (Horner)     │   │
+│  │ bytes_as_nat_suffix<N>          ← LOOP INVARIANTS (any size)        │   │
+│  │ u8_32_as_nat_rec              ← 32-BYTE (recursive helper)        │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │  WORD-TO-NAT:                                                               │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │ words_to_nat_gen(Seq<nat>, n, bits) ← GENERIC (any radix)           │   │
-│  │ words_to_nat_u64(&[u64], ...)       ← u64 convenience               │   │
+│  │ words_as_nat_gen(Seq<nat>, n, bits) ← GENERIC (any radix)           │   │
+│  │ words_as_nat_u64(&[u64], ...)       ← u64 convenience               │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │  WORD EXTRACTION (bytes → 64-bit words):                                    │
@@ -218,7 +218,7 @@ pub open spec fn slice128_to_nat(limbs: &[u128]) -> nat
 ┌─────────────────────────┐ ┌─────────────────────────────────────┐
 │ field_specs             │ │ scalar52_specs                      │
 │                         │ │                                     │
-│ spec_field_element_as_  │ │ seq_to_nat_52 (52-bit, Horner)      │
+│ fe51_as_canonical_nat_as_  │ │ seq_to_nat_52 (52-bit, Horner)      │
 │   nat (uses u64_5_as_   │ │ five_limbs_to_nat_aux               │
 │   nat from u64 specs)   │ │ nine_limbs_to_nat_aux               │
 └─────────────────────────┘ └─────────────────────────────────────┘
@@ -230,12 +230,12 @@ pub open spec fn slice128_to_nat(limbs: &[u128]) -> nat
 │                                                                             │
 │  to_nat_lemmas.rs (common_lemmas/):                                         │
 │  BYTE LEMMAS:                         │  WORD LEMMAS:                       │
-│  • lemma_from_le_bytes (From<uXX>)    │  • lemma_words_to_nat_upper_bound   │
-│  • lemma_bytes32_to_nat_with_trailing │  • lemma_words_to_nat_equals_bytes  │
+│  • lemma_from_le_bytes (From<uXX>)    │  • lemma_words_as_nat_upper_bound   │
+│  • lemma_u8_32_as_nat_with_trailing │  • lemma_words_as_nat_equals_bytes  │
 │  • lemma_prefix_equal_when_bytes_...  │  • lemma_words64_from_bytes_to_nat_ │
-│  • lemma_bytes_seq_to_nat_equals_...  │                                     │
+│  • lemma_bytes_seq_as_nat_equals_...  │                                     │
 │  • lemma_canonical_bytes_equal        │                                     │
-│  • lemma_bytes32_to_nat_equals_rec    │                                     │
+│  • lemma_u8_32_as_nat_equals_rec    │                                     │
 │                                       │                                     │
 │  u64_5_as_nat_lemmas.rs:              │  scalar_lemmas.rs:                  │
 │  • lemma_u64_5_as_nat_add/sub/squared │  • lemma_five_limbs_equals_to_nat   │
@@ -250,14 +250,14 @@ pub open spec fn slice128_to_nat(limbs: &[u128]) -> nat
 
 | Domain | Import | Usage | Form |
 |--------|--------|-------|------|
-| Scalar (32-byte) | `core_specs::*` | `bytes32_to_nat(&bytes)` | Explicit sum |
-| Any-length sequences | `core_specs::*` | `bytes_seq_to_nat(seq)` | Horner |
-| `From<u16/u32/u64/u128>` | `core_specs::*` | `bytes_to_nat_prefix(bytes@, N)` | Prefix sum |
-| Field bytes | `core_specs::*` | `bytes32_to_nat(&bytes)` | Explicit sum |
-| Field element | `field_specs::*` | `spec_field_element_as_nat(&fe)` | Domain-specific |
+| Scalar (32-byte) | `core_specs::*` | `u8_32_as_nat(&bytes)` | Explicit sum |
+| Any-length sequences | `core_specs::*` | `bytes_seq_as_nat(seq)` | Horner |
+| `From<u16/u32/u64/u128>` | `core_specs::*` | `bytes_as_nat_prefix(bytes@, N)` | Prefix sum |
+| Field bytes | `core_specs::*` | `u8_32_as_nat(&bytes)` | Explicit sum |
+| Field element | `field_specs::*` | `fe51_as_nat(&fe)` | Domain-specific |
 | Word extraction | `core_specs::*` | `words64_from_bytes_to_nat(bytes@, count)` | Word-based |
 
-**No aliases for bytes!** One canonical `bytes32_to_nat` in `core_specs.rs`.
+**No aliases for bytes!** One canonical `u8_32_as_nat` in `core_specs.rs`.
 
 ---
 
@@ -267,13 +267,13 @@ pub open spec fn slice128_to_nat(limbs: &[u128]) -> nat
 
 ```rust
 // Bridge lemmas (prefix form)
-lemma_bytes32_to_nat_equals_rec(bytes)          // explicit ↔ recursive (32-byte)
-lemma_bytes32_to_nat_with_trailing_zeros(b, n)  // explicit → prefix when zeros at end
+lemma_u8_32_as_nat_equals_rec(bytes)          // explicit ↔ recursive (32-byte)
+lemma_u8_32_as_nat_with_trailing_zeros(b, n)  // explicit → prefix when zeros at end
 lemma_prefix_equal_when_bytes_match(s1, s2, n)  // prefix equal if bytes match
 
 // Bridge lemmas (Horner form - for 64-byte wide inputs)
-lemma_bytes_seq_to_nat_equals_prefix(seq)       // Horner ↔ prefix (any length)
-lemma_bytes32_to_nat_equals_suffix_64(bytes)    // Horner ↔ suffix (64-byte)
+lemma_bytes_seq_as_nat_equals_prefix(seq)       // Horner ↔ prefix (any length)
+lemma_u8_32_as_nat_equals_suffix_64(bytes)    // Horner ↔ suffix (64-byte)
 
 // Conversion helpers
 lemma_from_le_bytes(le_seq, bytes, n)           // For From<uXX> implementations
@@ -284,19 +284,19 @@ lemma_canonical_bytes_equal(b1, b2)             // same nat → same bytes
 
 **Unused lemmas** (in `unused_to_nat_lemmas.rs`):
 ```rust
-lemma_bytes32_to_nat_equals_horner(bytes)   // No longer needed after simplification
-bytes32_to_nat_le_pow2_256(bytes)           // Upper bound (kept for reference)
-bytes_seq_to_nat_64_le_pow2_512(bytes)      // Upper bound (kept for reference)
+lemma_u8_32_as_nat_equals_horner(bytes)   // No longer needed after simplification
+u8_32_as_nat_le_pow2_256(bytes)           // Upper bound (kept for reference)
+bytes_seq_as_nat_64_le_pow2_512(bytes)      // Upper bound (kept for reference)
 ```
 
 ### Word-to-Nat Lemmas (`common_lemmas/to_nat_lemmas.rs`)
 
 ```rust
 // Bounds
-lemma_words_to_nat_upper_bound(words, count)
+lemma_words_as_nat_upper_bound(words, count)
 
 // Bridge: word array ↔ underlying bytes  
-lemma_words_to_nat_equals_bytes(words, bytes, count)
+lemma_words_as_nat_equals_bytes(words, bytes, count)
 
 // Explicit expansion (for from_bytes_wide)
 lemma_words_from_bytes_to_nat_wide(bytes)
@@ -326,28 +326,28 @@ lemma_bridge_pow_to_nat_to_spec(...)
 
 ## Design Rationale
 
-### Why explicit `bytes32_to_nat` for 32-byte?
+### Why explicit `u8_32_as_nat` for 32-byte?
 
-Many proofs unfold `bytes32_to_nat` to reason about individual bytes. Using `bytes_seq_to_nat` would require `reveal_with_fuel(_, 32)` everywhere. The explicit form:
+Many proofs unfold `u8_32_as_nat` to reason about individual bytes. Using `bytes_seq_as_nat` would require `reveal_with_fuel(_, 32)` everywhere. The explicit form:
 - Provides direct structural visibility for SMT solver
 - Avoids `reveal_with_fuel` in most proofs
 - Better verification performance
 
-### Key Bridge: `lemma_bytes32_to_nat_with_trailing_zeros`
+### Key Bridge: `lemma_u8_32_as_nat_with_trailing_zeros`
 
-This lemma is now the primary bridge for connecting `bytes32_to_nat` to smaller inputs:
+This lemma is now the primary bridge for connecting `u8_32_as_nat` to smaller inputs:
 ```rust
 // When bytes n..31 are zero:
-bytes32_to_nat(bytes) == bytes_to_nat_prefix(bytes@, n)
+u8_32_as_nat(bytes) == bytes_as_nat_prefix(bytes@, n)
 ```
 
 **Used by:** `lemma_from_le_bytes` for `From<u16/u32/u64/u128>` implementations.
 
-For 64-byte inputs, use `lemma_bytes_seq_to_nat_equals_prefix` to bridge Horner ↔ prefix forms.
+For 64-byte inputs, use `lemma_bytes_seq_as_nat_equals_prefix` to bridge Horner ↔ prefix forms.
 
-### Why `Seq<nat>` for `words_to_nat_gen`?
+### Why `Seq<nat>` for `words_as_nat_gen`?
 
-Works with any integer type via `.map(|i, x| x as nat)`. No need for separate `words_to_nat_u128`, etc.
+Works with any integer type via `.map(|i, x| x as nat)`. No need for separate `words_as_nat_u128`, etc.
 
 ### Why `Seq<u8>` for word extraction?
 
@@ -361,7 +361,7 @@ Different radixes (51 vs 52 bits) are fundamental to field vs scalar operations.
 
 ## Naming Convention Discussion: `*_to_nat` vs `*_as_nat`
 
-**Current state:** Mixed naming — `u64_5_as_nat` (678 occurrences) vs `bytes32_to_nat` (983 occurrences).
+**Current state:** Mixed naming — `u64_5_as_nat` (678 occurrences) vs `u8_32_as_nat` (983 occurrences).
 
 ### The Trade-off
 
@@ -384,20 +384,20 @@ Different radixes (51 vs 52 bits) are fundamental to field vs scalar operations.
 
 ## Recommendations for New Code
 
-1. **32-byte arrays:** `bytes32_to_nat(&array)` from `core_specs.rs`
-2. **Small byte sequences (2-16 bytes):** `bytes_to_nat_prefix(bytes@, N)` — simpler, no Horner needed
-3. **64-byte arrays:** `bytes_seq_to_nat(bytes@)` — uses Horner form for `from_bytes_wide`
-4. **Loop invariants:** `bytes_to_nat_suffix(bytes, start)`
-5. **Word arrays:** `words_to_nat_gen` or `words_to_nat_u64`
-6. **Field elements:** `spec_field_element_as_nat(&fe)` from `field_specs.rs`
-7. **`From<uXX>` implementations:** Use `lemma_from_le_bytes` with `bytes_to_nat_prefix`
+1. **32-byte arrays:** `u8_32_as_nat(&array)` from `core_specs.rs`
+2. **Small byte sequences (2-16 bytes):** `bytes_as_nat_prefix(bytes@, N)` — simpler, no Horner needed
+3. **64-byte arrays:** `bytes_seq_as_nat(bytes@)` — uses Horner form for `from_bytes_wide`
+4. **Loop invariants:** `bytes_as_nat_suffix(bytes, start)`
+5. **Word arrays:** `words_as_nat_gen` or `words_as_nat_u64`
+6. **Field elements:** `fe51_as_nat(&fe)` from `field_specs.rs`
+7. **`From<uXX>` implementations:** Use `lemma_from_le_bytes` with `bytes_as_nat_prefix`
 
 ---
 
 ## Related Files
 
 - `curve25519-dalek/src/specs/core_specs.rs` — All core conversion specs
-- `curve25519-dalek/src/specs/field_specs.rs` — Field-specific (`spec_field_element_as_nat`, postconditions)
+- `curve25519-dalek/src/specs/field_specs.rs` — Field-specific (`fe51_as_nat`, postconditions)
 - `curve25519-dalek/src/specs/field_specs_u64.rs` — Field limb functions (51-bit)
 - `curve25519-dalek/src/specs/scalar52_specs.rs` — Scalar limb functions (52-bit)
 - `curve25519-dalek/src/lemmas/common_lemmas/to_nat_lemmas.rs` — Active byte/word-to-nat lemmas

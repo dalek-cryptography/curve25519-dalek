@@ -20,9 +20,9 @@ pub proof fn lemma_field51_add(lhs: &FieldElement51, rhs: &FieldElement51)
         u64_5_as_nat(spec_add_fe51_limbs(lhs, rhs).limbs) == u64_5_as_nat(lhs.limbs) + u64_5_as_nat(
             rhs.limbs,
         ),
-        spec_field_element(&spec_add_fe51_limbs(lhs, rhs)) == math_field_add(
-            spec_field_element(lhs),
-            spec_field_element(rhs),
+        fe51_as_canonical_nat(&spec_add_fe51_limbs(lhs, rhs)) == field_add(
+            fe51_as_canonical_nat(lhs),
+            fe51_as_canonical_nat(rhs),
         ),
 {
     assert(u64_5_as_nat(spec_add_fe51_limbs(lhs, rhs).limbs) == u64_5_as_nat(lhs.limbs)

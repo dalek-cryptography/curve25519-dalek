@@ -174,11 +174,10 @@ impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
             sum_of_limbs_bounded(old(self), _rhs, u64::MAX),
         ensures
             *self == spec_add_fe51_limbs(old(self), _rhs),
-            spec_field_element_as_nat(self) == spec_field_element_as_nat(old(self))
-                + spec_field_element_as_nat(_rhs),
-            spec_field_element(self) == math_field_add(
-                spec_field_element(old(self)),
-                spec_field_element(_rhs),
+            fe51_as_nat(self) == fe51_as_nat(old(self)) + fe51_as_nat(_rhs),
+            fe51_as_canonical_nat(self) == field_add(
+                fe51_as_canonical_nat(old(self)),
+                fe51_as_canonical_nat(_rhs),
             ),
     {
         let ghost original_limbs = self.limbs;
@@ -229,11 +228,10 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
     fn add(self, _rhs: &'a FieldElement51) -> (output: FieldElement51)
         ensures
             output == spec_add_fe51_limbs(self, _rhs),
-            spec_field_element_as_nat(&output) == spec_field_element_as_nat(self)
-                + spec_field_element_as_nat(_rhs),
-            spec_field_element(&output) == math_field_add(
-                spec_field_element(self),
-                spec_field_element(_rhs),
+            fe51_as_nat(&output) == fe51_as_nat(self) + fe51_as_nat(_rhs),
+            fe51_as_canonical_nat(&output) == field_add(
+                fe51_as_canonical_nat(self),
+                fe51_as_canonical_nat(_rhs),
             ),
             // Bound propagation: tighter inputs give tighter output
             fe51_limbs_bounded(self, 51) && fe51_limbs_bounded(_rhs, 51) ==> fe51_limbs_bounded(
@@ -291,11 +289,11 @@ impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
         requires
             fe51_limbs_bounded(old(self), 54) && fe51_limbs_bounded(_rhs, 54),
         ensures
-            forall|i: int| 0 <= i < 5 ==> #[trigger] self.limbs[i] < (1u64 << 52),
+            fe51_limbs_bounded(self, 52),
             *self == spec_sub_limbs(old(self), _rhs),
-            spec_field_element(self) == math_field_sub(
-                spec_field_element(old(self)),
-                spec_field_element(_rhs),
+            fe51_as_canonical_nat(self) == field_sub(
+                fe51_as_canonical_nat(old(self)),
+                fe51_as_canonical_nat(_rhs),
             ),
     {
         /* ORIGINAL CODE
@@ -311,9 +309,9 @@ impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
             // Therefore self.limbs equals spec_sub_limbs(old(self), _rhs).limbs
             assert(self.limbs =~= spec_sub_limbs(old(self), _rhs).limbs);
         }
-        assume(spec_field_element(self) == math_field_sub(
-            spec_field_element(old(self)),
-            spec_field_element(_rhs),
+        assume(fe51_as_canonical_nat(self) == field_sub(
+            fe51_as_canonical_nat(old(self)),
+            fe51_as_canonical_nat(_rhs),
         ));
         assume(forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52))
     }
@@ -346,9 +344,9 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
 
         ensures
             output == spec_sub_limbs(self, _rhs),
-            spec_field_element(&output) == math_field_sub(
-                spec_field_element(self),
-                spec_field_element(_rhs),
+            fe51_as_canonical_nat(&output) == field_sub(
+                fe51_as_canonical_nat(self),
+                fe51_as_canonical_nat(_rhs),
             ),
             fe51_limbs_bounded(&output, 54),
     {
@@ -414,28 +412,28 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
 
             let x_mod = x % modulus;
             let y_mod = y % modulus;
-            assert(spec_field_element(self) == x_mod as nat);
-            assert(spec_field_element(_rhs) == y_mod as nat);
-            assert(spec_field_element(self) % p() == spec_field_element(self)) by {
+            assert(fe51_as_canonical_nat(self) == x_mod as nat);
+            assert(fe51_as_canonical_nat(_rhs) == y_mod as nat);
+            assert(fe51_as_canonical_nat(self) % p() == fe51_as_canonical_nat(self)) by {
                 lemma_mod_twice(x, modulus);
             }
-            assert(spec_field_element(_rhs) % p() == spec_field_element(_rhs)) by {
+            assert(fe51_as_canonical_nat(_rhs) % p() == fe51_as_canonical_nat(_rhs)) by {
                 lemma_mod_twice(y, modulus);
             }
 
-            assert(math_field_sub(spec_field_element(self), spec_field_element(_rhs)) == (((x_mod
+            assert(field_sub(fe51_as_canonical_nat(self), fe51_as_canonical_nat(_rhs)) == (((x_mod
                 + modulus) - y_mod) % modulus) as nat) by {
-                assert(spec_field_element(self) % p() == spec_field_element(self));
-                assert(spec_field_element(_rhs) % p() == spec_field_element(_rhs));
+                assert(fe51_as_canonical_nat(self) % p() == fe51_as_canonical_nat(self));
+                assert(fe51_as_canonical_nat(_rhs) % p() == fe51_as_canonical_nat(_rhs));
             }
 
             lemma_mod_sum_factor(1 as int, x_mod - y_mod, modulus);
             lemma_sub_mod_noop(x, y, modulus);
             assert(((x_mod + modulus) - y_mod) % modulus == (x - y) % modulus);
 
-            assert(spec_field_element(&output) == math_field_sub(
-                spec_field_element(self),
-                spec_field_element(_rhs),
+            assert(fe51_as_canonical_nat(&output) == field_sub(
+                fe51_as_canonical_nat(self),
+                fe51_as_canonical_nat(_rhs),
             ));
         }
 
@@ -449,9 +447,9 @@ impl<'a> MulAssign<&'a FieldElement51> for FieldElement51 {
             fe51_limbs_bounded(old(self), 54),
             fe51_limbs_bounded(_rhs, 54),
         ensures
-            spec_field_element(self) == math_field_mul(
-                spec_field_element(old(self)),
-                spec_field_element(_rhs),
+            fe51_as_canonical_nat(self) == field_mul(
+                fe51_as_canonical_nat(old(self)),
+                fe51_as_canonical_nat(_rhs),
             ),
             fe51_limbs_bounded(self, 54),
     {
@@ -492,9 +490,9 @@ impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
     */
 
         ensures
-            spec_field_element(&output) == math_field_mul(
-                spec_field_element(self),
-                spec_field_element(_rhs),
+            fe51_as_canonical_nat(&output) == field_mul(
+                fe51_as_canonical_nat(self),
+                fe51_as_canonical_nat(_rhs),
             ),
             // Actual bound: 2^51 + 2^13 < 2^52 (from carry propagation)
             fe51_limbs_bounded(&output, 52),
@@ -651,8 +649,8 @@ impl Neg for &FieldElement51 {
 
     fn neg(self) -> (output: FieldElement51)
         ensures
-            spec_field_element(&output) == math_field_neg(spec_field_element(self)),
-            forall|i: int| 0 <= i < 5 ==> output.limbs[i] < (1u64 << 52),
+            fe51_as_canonical_nat(&output) == field_neg(fe51_as_canonical_nat(self)),
+            fe51_limbs_bounded(&output, 52),
     {
         let mut output = *self;
         output.negate();
@@ -671,11 +669,8 @@ impl ConditionallySelectable for FieldElement51 {
         ensures
     // If choice is false, return a
 
-            !choice_is_true(choice) ==> (forall|i: int|
-                0 <= i < 5 ==> #[trigger] result.limbs[i] == a.limbs[i]),
-            // If choice is true, return b
-            choice_is_true(choice) ==> (forall|i: int|
-                0 <= i < 5 ==> #[trigger] result.limbs[i] == b.limbs[i]),
+            !choice_is_true(choice) ==> result.limbs == a.limbs,
+            choice_is_true(choice) ==> result.limbs == b.limbs,
     {
         FieldElement51 {
             limbs: [
@@ -692,13 +687,9 @@ impl ConditionallySelectable for FieldElement51 {
         ensures
     // If choice is false, a and b remain unchanged
 
-            !choice_is_true(choice) ==> (forall|i: int|
-                0 <= i < 5 ==> #[trigger] a.limbs[i] == old(a).limbs[i]) && (forall|i: int|
-                0 <= i < 5 ==> #[trigger] b.limbs[i] == old(b).limbs[i]),
+            !choice_is_true(choice) ==> a.limbs == old(a).limbs && b.limbs == old(b).limbs,
             // If choice is true, a and b are swapped
-            choice_is_true(choice) ==> (forall|i: int|
-                0 <= i < 5 ==> #[trigger] a.limbs[i] == old(b).limbs[i]) && (forall|i: int|
-                0 <= i < 5 ==> #[trigger] b.limbs[i] == old(a).limbs[i]),
+            choice_is_true(choice) ==> a.limbs == old(b).limbs && b.limbs == old(a).limbs,
     {
         // Originally this was
         // u64::conditional_swap(&mut a.limbs[0], &mut b.limbs[0], choice);
@@ -739,14 +730,13 @@ impl ConditionallySelectable for FieldElement51 {
         ensures
     // If choice is false, self remains unchanged
 
-            !choice_is_true(choice) ==> (forall|i: int|
-                0 <= i < 5 ==> #[trigger] self.limbs[i] == old(self).limbs[i]),
-            // If choice is true, self is assigned from other
-            choice_is_true(choice) ==> (forall|i: int|
-                0 <= i < 5 ==> #[trigger] self.limbs[i] == other.limbs[i]),
+            !choice_is_true(choice) ==> self.limbs == old(self).limbs,
+            choice_is_true(choice) ==> self.limbs == other.limbs,
             // Field element value preservation
-            !choice_is_true(choice) ==> spec_field_element(self) == spec_field_element(old(self)),
-            choice_is_true(choice) ==> spec_field_element(self) == spec_field_element(other),
+            !choice_is_true(choice) ==> fe51_as_canonical_nat(self) == fe51_as_canonical_nat(
+                old(self),
+            ),
+            choice_is_true(choice) ==> fe51_as_canonical_nat(self) == fe51_as_canonical_nat(other),
             // Boundedness preservation
             (fe51_limbs_bounded(old(self), 54) && fe51_limbs_bounded(other, 54))
                 ==> fe51_limbs_bounded(self, 54),
@@ -810,9 +800,9 @@ impl FieldElement51 {
     ///
     pub fn negate(&mut self)
         requires
-            forall|i: int| 0 <= i < 5 ==> old(self).limbs[i] < (1u64 << 54),
+            fe51_limbs_bounded(&old(self), 54),
         ensures
-            forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
+            fe51_limbs_bounded(self, 52),
             // Assume we start with l = (l0, l1, l2, l3, l4).
             // Using c0 = 2^51 - 19 and c = 2^51 - 1, we can see that
             // ( 36028797018963664u64 - l0,
@@ -830,7 +820,7 @@ impl FieldElement51 {
             // Note that (16c - l4) >> 51 is either 14 or 15, in either case < 16.
             u64_5_as_nat(self.limbs) == 16 * p() - u64_5_as_nat(old(self).limbs) - p() * ((
             36028797018963952u64 - old(self).limbs[4]) as u64 >> 51),
-            (u64_5_as_nat(self.limbs) + u64_5_as_nat(old(self).limbs)) % p() == 0,
+            field_canonical(u64_5_as_nat(self.limbs) + u64_5_as_nat(old(self).limbs)) == 0,
             self.limbs == spec_negate(old(self).limbs),
     {
         proof {
@@ -867,11 +857,11 @@ impl FieldElement51 {
     fn reduce(mut limbs: [u64; 5]) -> (r: FieldElement51)
         ensures
             r.limbs == spec_reduce(limbs),
-            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < (1u64 << 52),
+            fe51_limbs_bounded(&r, 52),
             (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs),
-            u64_5_as_nat(r.limbs) == u64_5_as_nat(limbs) - p() * (limbs[4] >> 51),
-            u64_5_as_nat(r.limbs) % p() == u64_5_as_nat(limbs) % p(),
-            u64_5_as_nat(r.limbs) < 2 * p(),
+            fe51_as_nat(&r) == u64_5_as_nat(limbs) - p() * (limbs[4] >> 51),
+            fe51_as_canonical_nat(&r) == u64_5_as_field_canonical(limbs),
+            fe51_as_nat(&r) < 2 * p(),
     {
         proof {
             lemma_reduce_boundaries(limbs);
@@ -930,11 +920,11 @@ impl FieldElement51 {
         ensures
     // Decode bytes to limbs (bit 255 is cleared)
 
-            spec_field_element_as_nat(&r) == bytes32_to_nat(bytes) % pow2(255),
+            fe51_as_nat(&r) == u8_32_as_nat(bytes) % pow2(255),
             // Each limb is masked with (2^51 - 1), so bounded by 51 bits
             fe51_limbs_bounded(&r, 51),
             // Uniformity note (if the input bytes are uniform):
-            // - `from_bytes` clears the top bit, so `bytes32_to_nat(bytes) % 2^255` is uniform over [0, 2^255).
+            // - `from_bytes` clears the top bit, so `u8_32_as_nat(bytes) % 2^255` is uniform over [0, 2^255).
             // - Field arithmetic interprets this 255-bit value modulo p = 2^255 - 19.
             //   Exactly 19 inputs (the interval [p, 2^255)) wrap around modulo p, creating a tiny bias
             //   of at most 19/2^255 in statistical distance from uniform over F_p.
@@ -979,8 +969,8 @@ impl FieldElement51 {
                 (l4 as u64 >> 12) & mask51,
             ];
 
-            assert(u64_5_as_nat(rr) == bytes32_to_nat(bytes) % pow2(255)) by {
-                lemma_from_bytes32_to_nat(bytes);
+            assert(u64_5_as_nat(rr) == u8_32_as_nat(bytes) % pow2(255)) by {
+                lemma_from_u8_32_as_nat(bytes);
                 lemma_as_nat_32_mod_255(bytes);
             }
 
@@ -1026,7 +1016,7 @@ impl FieldElement51 {
         ensures
     // Canonical encoding: bytes represent the field element value
 
-            bytes32_to_nat(&r) == spec_field_element(&self),
+            u8_32_as_nat(&r) == fe51_as_canonical_nat(&self),
     {
         proof {
             // No overflows
@@ -1148,19 +1138,17 @@ impl FieldElement51 {
     pub fn pow2k(&self, mut k: u32) -> (r: FieldElement51)
         requires
             k > 0,  // debug_assert!( k > 0 );
-            forall|i: int|
-                0 <= i < 5 ==> self.limbs[i] < 1u64 << 54  // 51 + b for b = 3
-            ,
+            fe51_limbs_bounded(self, 54),  // 51 + b for b = 3
+
         ensures
     // Actual bound: 2^51 + 2^13 < 2^52 (from carry propagation in reduction)
 
-            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 52,
+            fe51_limbs_bounded(&r, 52),
             // 52-bit implies 54-bit (for compatibility with callers)
-            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 54,
-            u64_5_as_nat(r.limbs) % p() == pow(
-                u64_5_as_nat(self.limbs) as int,
-                pow2(k as nat),
-            ) as nat % p(),
+            fe51_limbs_bounded(&r, 54),
+            fe51_as_canonical_nat(&r) == field_canonical(
+                pow(fe51_as_nat(self) as int, pow2(k as nat)) as nat,
+            ),
     {
         #[cfg(not(verus_keep_ghost))]
         debug_assert!( k > 0 );
@@ -1186,19 +1174,17 @@ impl FieldElement51 {
             invariant_except_break
         // Conservative: input could be 54-bit, but after first iteration it's 52-bit
 
-                forall|j: int| 0 <= j < 5 ==> a[j] < 1u64 << 54,
-                u64_5_as_nat(a) % p() == pow(
-                    u64_5_as_nat(self.limbs) as int,
-                    pow2((k0 - k) as nat),
-                ) as nat % p(),
+                u64_5_bounded(a, 54),
+                u64_5_as_field_canonical(a) == field_canonical(
+                    pow(u64_5_as_nat(self.limbs) as int, pow2((k0 - k) as nat)) as nat,
+                ),
                 0 < k <= k0,
             ensures
                 k == 0,
-                forall|j: int| 0 <= j < 5 ==> a[j] < (1u64 << 52),
-                u64_5_as_nat(a) % p() == pow(
-                    u64_5_as_nat(self.limbs) as int,
-                    pow2(k0 as nat),
-                ) as nat % p(),
+                u64_5_bounded(a, 52),
+                u64_5_as_field_canonical(a) == field_canonical(
+                    pow(u64_5_as_nat(self.limbs) as int, pow2(k0 as nat)) as nat,
+                ),
                 (1u64 << 52) < (1u64 << 54),
             decreases k,
         {
@@ -1310,14 +1296,16 @@ impl FieldElement51 {
         requires
     // The precondition in pow2k loop propagates to here
 
-            forall|i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54,
+            fe51_limbs_bounded(self, 54),
         ensures
     // Actual bound: 2^51 + 2^13 < 2^52 (from carry propagation)
 
-            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 52,
+            fe51_limbs_bounded(&r, 52),
             // 52-bit implies 54-bit (for compatibility with callers)
-            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 54,
-            u64_5_as_nat(r.limbs) % p() == pow(u64_5_as_nat(self.limbs) as int, 2) as nat % p(),
+            fe51_limbs_bounded(&r, 54),
+            fe51_as_canonical_nat(&r) == field_canonical(
+                pow(u64_5_as_nat(self.limbs) as int, 2) as nat,
+            ),
     {
         proof {
             // pow2(1) == 2
@@ -1331,12 +1319,13 @@ impl FieldElement51 {
         requires
     // The precondition in pow2k loop propagates to here
 
-            forall|i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54,
+            fe51_limbs_bounded(self, 54),
         ensures
-            u64_5_as_nat(r.limbs) % p() == (2 * pow(u64_5_as_nat(self.limbs) as int, 2)) as nat
-                % p(),
+            fe51_as_canonical_nat(&r) == field_canonical(
+                (2 * pow(u64_5_as_nat(self.limbs) as int, 2)) as nat,
+            ),
             // Bounds: pow2k gives 52-bounded, doubling gives 53-bounded
-            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 53,
+            fe51_limbs_bounded(&r, 53),
             // 53-bounded implies 54-bounded (for compatibility)
             fe51_limbs_bounded(&r, 54),
     {
@@ -1399,7 +1388,7 @@ impl FieldElement51 {
             invariant
         // pow2k now ensures 52-bit output
 
-                forall|j: int| 0 <= j < 5 ==> old_limbs[j] < (1u64 << 52),
+                u64_5_bounded(old_limbs, 52),
                 forall|j: int| 0 <= j < i ==> #[trigger] square.limbs[j] == 2 * old_limbs[j],
                 forall|j: int| i <= j < 5 ==> #[trigger] square.limbs[j] == old_limbs[j],
                 // Bounds invariant: processed limbs are 53-bounded (2 * 52-bit < 2^53)

@@ -31,7 +31,7 @@ assert((byte_after as nat) * pow2(248) >= 128 * pow2(248)) by (nonlinear_arith)
 Use for byte-array / sequence proofs:
 
 - `lemma_decomposition_prefix_rec` to split prefix/suffix
-- `lemma_bytes32_to_nat_equals_rec` to connect definitions
+- `lemma_u8_32_as_nat_equals_rec` to connect definitions
 
 ## 4) Proof by contradiction
 

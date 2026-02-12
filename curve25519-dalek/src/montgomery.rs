@@ -75,9 +75,9 @@ use crate::specs::montgomery_specs::*;
 use crate::specs::scalar52_specs::*;
 #[allow(unused_imports)]
 use crate::specs::scalar_specs::*;
-// Explicit import to disambiguate from core_specs::bits_be_to_nat
+// Explicit import to disambiguate from core_specs::bits_be_as_nat
 #[cfg(verus_keep_ghost)]
-use crate::specs::scalar_specs::bits_be_to_nat;
+use crate::specs::scalar_specs::bits_be_as_nat;
 
 #[allow(unused_imports)]
 use crate::lemmas::common_lemmas::pow_lemmas::*;
@@ -136,8 +136,8 @@ impl ConstantTimeEq for MontgomeryPoint {
         ensures
     // Two MontgomeryPoints are equal if their u-coordinates are equal mod p
 
-            choice_is_true(result) == (spec_field_element_from_bytes(&self.0)
-                == spec_field_element_from_bytes(&other.0)),
+            choice_is_true(result) == (field_element_from_bytes(&self.0)
+                == field_element_from_bytes(&other.0)),
     {
         let self_fe = FieldElement::from_bytes(&self.0);
         let other_fe = FieldElement::from_bytes(&other.0);
@@ -146,8 +146,8 @@ impl ConstantTimeEq for MontgomeryPoint {
 
         proof {
             // The postcondition follows from FieldElement::ct_eq's specification
-            assume(choice_is_true(result) == (spec_field_element_from_bytes(&self.0)
-                == spec_field_element_from_bytes(&other.0)));
+            assume(choice_is_true(result) == (field_element_from_bytes(&self.0)
+                == field_element_from_bytes(&other.0)));
         }
 
         result
@@ -163,7 +163,7 @@ impl vstd::std_specs::cmp::PartialEqSpecImpl for MontgomeryPoint {
 
     open spec fn eq_spec(&self, other: &Self) -> bool {
         // Two MontgomeryPoints are equal if their u-coordinates are equal mod p
-        spec_field_element_from_bytes(&self.0) == spec_field_element_from_bytes(&other.0)
+        field_element_from_bytes(&self.0) == field_element_from_bytes(&other.0)
     }
 }
 
@@ -171,9 +171,7 @@ impl PartialEq for MontgomeryPoint {
     // VERIFICATION NOTE: PartialEqSpecImpl trait provides the external specification
     fn eq(&self, other: &MontgomeryPoint) -> (result: bool)
         ensures
-            result == (spec_field_element_from_bytes(&self.0) == spec_field_element_from_bytes(
-                &other.0,
-            )),
+            result == (field_element_from_bytes(&self.0) == field_element_from_bytes(&other.0)),
     {
         /* <VERIFICATION NOTE>
          Use wrapper function for Choice::into
@@ -185,8 +183,8 @@ impl PartialEq for MontgomeryPoint {
         let result = choice_into(choice);
 
         proof {
-            assert(choice_is_true(choice) == (spec_field_element_from_bytes(&self.0)
-                == spec_field_element_from_bytes(&other.0)));
+            assert(choice_is_true(choice) == (field_element_from_bytes(&self.0)
+                == field_element_from_bytes(&other.0)));
             assert(result == choice_is_true(choice));
         }
 
@@ -240,7 +238,7 @@ impl Identity for MontgomeryPoint {
         let result = MontgomeryPoint([0u8;32]);
         proof {
             // The byte array [0, 0, ..., 0] represents the field element 0
-            assume(spec_field_element_from_bytes(&result.0) == 0);
+            assume(field_element_from_bytes(&result.0) == 0);
         }
         result
     }
@@ -281,10 +279,10 @@ impl MontgomeryPoint {
         ensures
             is_valid_montgomery_point(result),
             // Functional correctness: result.u = [scalar] * basepoint (u-coordinate)
-            // Use scalar_to_nat (not spec_scalar) to match implementation behavior
+            // Use scalar_as_nat (not spec_scalar) to match implementation behavior
             spec_montgomery(result) == montgomery_scalar_mul_u(
                 spec_x25519_basepoint_u(),
-                scalar_to_nat(scalar),
+                scalar_as_nat(scalar),
             ),
     {
         // ORIGINAL CODE: EdwardsPoint::mul_base(scalar).to_montgomery()
@@ -301,7 +299,7 @@ impl MontgomeryPoint {
             assume(is_valid_montgomery_point(result));
             assume(spec_montgomery(result) == montgomery_scalar_mul_u(
                 spec_x25519_basepoint_u(),
-                scalar_to_nat(scalar),
+                scalar_as_nat(scalar),
             ));
         }
         result
@@ -318,7 +316,7 @@ impl MontgomeryPoint {
             ({
                 let P = canonical_montgomery_lift(spec_montgomery(self));
                 let clamped_bytes = spec_clamp_integer(bytes);
-                let n = bytes32_to_nat(&clamped_bytes);
+                let n = u8_32_as_nat(&clamped_bytes);
                 let R = montgomery_scalar_mul(P, n);
                 spec_montgomery(result) == spec_u_coordinate(R)
             }),
@@ -337,7 +335,7 @@ impl MontgomeryPoint {
             assume({
                 let P = canonical_montgomery_lift(spec_montgomery(self));
                 let clamped_bytes = spec_clamp_integer(bytes);
-                let n = bytes32_to_nat(&clamped_bytes);
+                let n = u8_32_as_nat(&clamped_bytes);
                 let R = montgomery_scalar_mul(P, n);
                 spec_montgomery(result) == spec_u_coordinate(R)
             });
@@ -351,11 +349,11 @@ impl MontgomeryPoint {
         ensures
             is_valid_montgomery_point(result),
             // Functional correctness: result.u = [clamp(bytes)] * basepoint (u-coordinate)
-            // Use scalar_to_nat (not spec_scalar) because clamped values are in [2^254, 2^255)
+            // Use scalar_as_nat (not spec_scalar) because clamped values are in [2^254, 2^255)
             // which exceeds group_order ℓ ≈ 2^252, so spec_scalar would incorrectly reduce
             spec_montgomery(result) == montgomery_scalar_mul_u(
                 spec_x25519_basepoint_u(),
-                scalar_to_nat(&Scalar { bytes: spec_clamp_integer(bytes) }),
+                scalar_as_nat(&Scalar { bytes: spec_clamp_integer(bytes) }),
             ),
     {
         // See reasoning in Self::mul_clamped why it is OK to make an unreduced Scalar here. We
@@ -367,7 +365,7 @@ impl MontgomeryPoint {
         proof {
             assume(spec_montgomery(result) == montgomery_scalar_mul_u(
                 spec_x25519_basepoint_u(),
-                scalar_to_nat(&Scalar { bytes: spec_clamp_integer(bytes) }),
+                scalar_as_nat(&Scalar { bytes: spec_clamp_integer(bytes) }),
             ));
         }
         result
@@ -417,6 +415,7 @@ impl MontgomeryPoint {
     /// \\(n\\) as a slice, return \\( u\_0(\[n\]P) \\).
     ///
     // VERIFICATION NOTE: refactored mul_bits_be code
+    #[verifier::rlimit(20)]
     pub fn mul_bits_be(&self, bits: &[bool]) -> (result: MontgomeryPoint)
         requires
             bits.len() <= 255,
@@ -425,7 +424,7 @@ impl MontgomeryPoint {
             ({
                 // Let P be the canonical affine lift of input u-coordinate
                 let P = canonical_montgomery_lift(spec_montgomery(*self));
-                let n = bits_be_to_nat(bits, bits@.len() as int);
+                let n = bits_be_as_nat(bits, bits@.len() as int);
                 let R = montgomery_scalar_mul(P, n);
 
                 // result encodes u([n]P)
@@ -448,11 +447,11 @@ impl MontgomeryPoint {
             assert(is_valid_u_coordinate(u0));
 
             // Connect affine_u to u0 (both are the canonical field element decoded from self.0).
-            assert(spec_field_element(&affine_u) == u0) by {
-                let bytes_nat = bytes32_to_nat(&self.0) % pow2(255);
-                assert(spec_field_element_as_nat(&affine_u) == bytes_nat);
-                assert(spec_field_element(&affine_u) == bytes_nat % p());
-                assert(u0 == spec_field_element_from_bytes(&self.0));
+            assert(fe51_as_canonical_nat(&affine_u) == u0) by {
+                let bytes_nat = u8_32_as_nat(&self.0) % pow2(255);
+                assert(fe51_as_nat(&affine_u) == bytes_nat);
+                assert(fe51_as_canonical_nat(&affine_u) == bytes_nat % p());
+                assert(u0 == field_element_from_bytes(&self.0));
                 assert(u0 == bytes_nat % p());
             }
 
@@ -473,45 +472,42 @@ impl MontgomeryPoint {
             assert(fe51_limbs_bounded(&x1.U, 52));
             assert(fe51_limbs_bounded(&x1.W, 52));
             assert(fe51_limbs_bounded(&affine_u, 51));
-            assert(is_valid_u_coordinate(spec_field_element(&affine_u)));
+            assert(is_valid_u_coordinate(fe51_as_canonical_nat(&affine_u)));
 
             // Scalar invariant at i = 0: k = 0
-            assert(bits_be_to_nat(bits, 0) == 0);
+            assert(bits_be_as_nat(bits, 0) == 0);
             assert(spec_projective_u_coordinate(x0) == 0);
             assert(spec_u_coordinate(montgomery_scalar_mul(P, 0)) == 0);
             assert(spec_projective_u_coordinate(x1) == u0) by {
                 // x1 = (affine_u : 1), so its u-coordinate is affine_u.
                 lemma_one_field_element_value();
                 lemma_field_inv_one();
-                assert(spec_field_element(&x1.W) == 1);
-                assert(spec_projective_u_coordinate(x1) == math_field_mul(
-                    spec_field_element(&x1.U),
-                    math_field_inv(1),
+                assert(fe51_as_canonical_nat(&x1.W) == 1);
+                assert(spec_projective_u_coordinate(x1) == field_mul(
+                    fe51_as_canonical_nat(&x1.U),
+                    field_inv(1),
                 ));
-                assert(math_field_inv(1) == 1);
-                assert(spec_projective_u_coordinate(x1) == math_field_mul(
-                    spec_field_element(&x1.U),
+                assert(field_inv(1) == 1);
+                assert(spec_projective_u_coordinate(x1) == field_mul(
+                    fe51_as_canonical_nat(&x1.U),
                     1,
                 ));
-                lemma_field_mul_one_right(spec_field_element(&x1.U));
-                assert(spec_projective_u_coordinate(x1) == spec_field_element(&x1.U) % p());
-                assert(spec_field_element(&x1.U) % p() == spec_field_element(&x1.U)) by {
-                    let t = spec_field_element_as_nat(&x1.U) % p();
-                    assert(spec_field_element(&x1.U) == t);
-                    assert(spec_field_element(&x1.U) % p() == t % p());
+                lemma_field_mul_one_right(fe51_as_canonical_nat(&x1.U));
+                assert(spec_projective_u_coordinate(x1) == fe51_as_canonical_nat(&x1.U) % p());
+                assert(fe51_as_canonical_nat(&x1.U) % p() == fe51_as_canonical_nat(&x1.U)) by {
+                    let t = fe51_as_nat(&x1.U) % p();
+                    assert(fe51_as_canonical_nat(&x1.U) == t);
+                    assert(fe51_as_canonical_nat(&x1.U) % p() == t % p());
                     p_gt_2();
-                    lemma_mod_division_less_than_divisor(
-                        spec_field_element_as_nat(&x1.U) as int,
-                        p() as int,
-                    );
+                    lemma_mod_division_less_than_divisor(fe51_as_nat(&x1.U) as int, p() as int);
                     assert(t < p());
                     lemma_small_mod(t, p());
                     assert(t % p() == t);
                 }
                 // x1.U was initialized from affine_u
                 assert(x1.U == affine_u);
-                assert(spec_projective_u_coordinate(x1) == spec_field_element(&affine_u));
-                assert(spec_field_element(&affine_u) == u0);
+                assert(spec_projective_u_coordinate(x1) == fe51_as_canonical_nat(&affine_u));
+                assert(fe51_as_canonical_nat(&affine_u) == u0);
             }
             assert(spec_u_coordinate(montgomery_scalar_mul(P, 1)) == u0) by {
                 // montgomery_scalar_mul(P, 1) = P + [0]P = P
@@ -530,8 +526,8 @@ impl MontgomeryPoint {
                 assert(spec_u_coordinate(P) == u0) by {
                     // canonical_montgomery_lift(u0) returns (u0 % p, v), and u0 is already reduced mod p
                     assert(u0 == u0 % p()) by {
-                        assert(u0 == spec_field_element_from_bytes(&self.0));
-                        let t = bytes32_to_nat(&self.0) % pow2(255);
+                        assert(u0 == field_element_from_bytes(&self.0));
+                        let t = u8_32_as_nat(&self.0) % pow2(255);
                         assert(u0 == t % p());
                         assert(u0 % p() == (t % p()) % p());
                         p_gt_2();
@@ -559,18 +555,18 @@ impl MontgomeryPoint {
                 )) by {
                     assert(montgomery_scalar_mul(P, 1) == P);
                     // Finite points require W != 0 and U = u * W.
-                    assert(spec_field_element(&x1.W) == 1) by {
+                    assert(fe51_as_canonical_nat(&x1.W) == 1) by {
                         lemma_one_field_element_value();
                     }
-                    assert(spec_field_element(&x1.W) != 0);
-                    assert(spec_field_element(&x1.U) == u0) by {
+                    assert(fe51_as_canonical_nat(&x1.W) != 0);
+                    assert(fe51_as_canonical_nat(&x1.U) == u0) by {
                         assert(x1.U == affine_u);
-                        assert(spec_field_element(&affine_u) == u0);
+                        assert(fe51_as_canonical_nat(&affine_u) == u0);
                     }
                     assert(spec_u_coordinate(P) == u0);
-                    assert(spec_field_element(&x1.U) == math_field_mul(
+                    assert(fe51_as_canonical_nat(&x1.U) == field_mul(
                         spec_u_coordinate(P),
-                        spec_field_element(&x1.W),
+                        fe51_as_canonical_nat(&x1.W),
                     )) by {
                         lemma_field_mul_one_right(spec_u_coordinate(P));
                     }
@@ -592,9 +588,9 @@ impl MontgomeryPoint {
                 fe51_limbs_bounded(&x1.W, 52),
                 fe51_limbs_bounded(&affine_u, 51),
                 // Basepoint decoding/validity (needed for canonical lift reasoning)
-                spec_field_element(&affine_u) == spec_montgomery(*self),
+                fe51_as_canonical_nat(&affine_u) == spec_montgomery(*self),
                 is_valid_u_coordinate(spec_montgomery(*self)),
-                is_valid_u_coordinate(spec_field_element(&affine_u)),
+                is_valid_u_coordinate(fe51_as_canonical_nat(&affine_u)),
                 // Scalar-multiplication relationship (Montgomery ladder invariant)
                 ({
                     let u0 = spec_montgomery(*self);
@@ -604,7 +600,7 @@ impl MontgomeryPoint {
                         &&& spec_projective_u_coordinate(x1) == 0
                     } else {
                         let P = canonical_montgomery_lift(u0);
-                        let k = bits_be_to_nat(bits, i as int);
+                        let k = bits_be_as_nat(bits, i as int);
                         montgomery_ladder_invariant(x0, x1, P, k, prev_bit)
                     }
                 }),
@@ -623,10 +619,10 @@ impl MontgomeryPoint {
             conditional_swap_montgomery_projective(&mut x0, &mut x1, swap_choice);
             proof {
                 let u0 = spec_montgomery(*self);
-                let k = bits_be_to_nat(bits, i as int);
+                let k = bits_be_as_nat(bits, i as int);
 
                 // Connect affine_u to u0
-                assert(spec_field_element(&affine_u) == u0);
+                assert(fe51_as_canonical_nat(&affine_u) == u0);
 
                 if u0 == 0 {
                     // In the degenerate u0=0 case, the loop invariant only tracks that both
@@ -724,7 +720,7 @@ impl MontgomeryPoint {
                 let u0 = spec_montgomery(*self);
                 if u0 != 0 {
                     let P = canonical_montgomery_lift(u0);
-                    let k = bits_be_to_nat(bits, i as int);
+                    let k = bits_be_as_nat(bits, i as int);
                     // After the conditional swap, (x0, x1) satisfy ladder_invariant with `cur_bit`.
                     assert(montgomery_ladder_invariant(x0, x1, P, k, cur_bit));
                     reveal(montgomery_ladder_invariant);
@@ -759,22 +755,22 @@ impl MontgomeryPoint {
                 // Re-establish the full loop invariant for the next iteration.
                 let u0 = spec_montgomery(*self);
                 let P = canonical_montgomery_lift(u0);
-                let k = bits_be_to_nat(bits, (i - 1) as int);
+                let k = bits_be_as_nat(bits, (i - 1) as int);
 
-                let base = canonical_montgomery_lift(spec_field_element(&affine_u));
+                let base = canonical_montgomery_lift(fe51_as_canonical_nat(&affine_u));
                 assert(base == P);
 
                 if u0 == 0 {
                     // Use the degenerate-case postcondition of `differential_add_and_double`:
                     // if u(P-Q)=0 and both inputs have u=0, both outputs have u=0.
-                    assert(spec_field_element(&affine_u) == 0);
+                    assert(fe51_as_canonical_nat(&affine_u) == 0);
                     assert(spec_projective_u_coordinate(x0_before_dad) == 0);
                     assert(spec_projective_u_coordinate(x1_before_dad) == 0);
                     assert(spec_projective_u_coordinate(x0) == 0);
                     assert(spec_projective_u_coordinate(x1) == 0);
                 } else {
                     // Instantiate the ladder-step postcondition of `differential_add_and_double`.
-                    assert(spec_field_element(&affine_u) != 0);
+                    assert(fe51_as_canonical_nat(&affine_u) != 0);
 
                     if cur_bit {
                         // Case 2: inputs were swapped: ([k+1]P, [k]P) -> ([2k+2]P, [2k+1]P)
@@ -801,16 +797,16 @@ impl MontgomeryPoint {
                     }
                 }
 
-                // bits_be_to_nat update: k_next = 2*k + b
+                // bits_be_as_nat update: k_next = 2*k + b
                 let b = if cur_bit {
                     1nat
                 } else {
                     0nat
                 };
-                assert(bits_be_to_nat(bits, i as int) == b + 2nat * k);
+                assert(bits_be_as_nat(bits, i as int) == b + 2nat * k);
                 // Re-establish ladder_invariant at the updated k (i has been incremented) and prev_bit.
                 if u0 != 0 {
-                    let k_next = bits_be_to_nat(bits, i as int);
+                    let k_next = bits_be_as_nat(bits, i as int);
                     // k_next == 2*k + b
                     assert(k_next == b + 2nat * k);
                     reveal(montgomery_ladder_invariant);
@@ -884,7 +880,7 @@ impl MontgomeryPoint {
             // After the final conditional swap, x0 encodes u([n]P) where n is the full bitstring.
             let u0 = spec_montgomery(*self);
             let P = canonical_montgomery_lift(u0);
-            let n = bits_be_to_nat(bits, bits@.len() as int);
+            let n = bits_be_as_nat(bits, bits@.len() as int);
 
             // Connect saved_prev_bit to final_swap_choice.
             // From Choice::from spec: (u == 1) == choice_is_true(Choice::from(u))
@@ -967,7 +963,7 @@ impl MontgomeryPoint {
             // Discharge the function postcondition.
             let u0 = spec_montgomery(*self);
             let P = canonical_montgomery_lift(u0);
-            let n = bits_be_to_nat(bits, bits@.len() as int);
+            let n = bits_be_as_nat(bits, bits@.len() as int);
             // as_affine returns the affine u-coordinate of x0
             assert(spec_montgomery(result) == spec_projective_u_coordinate(x0));
             // From loop invariant at exit and final conditional swap, x0 encodes u([n]P)
@@ -1086,7 +1082,7 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
     requires
         fe51_limbs_bounded(r_0, 51),
     ensures
-        spec_montgomery(result) == spec_elligator_encode(spec_field_element(r_0)),
+        spec_montgomery(result) == spec_elligator_encode(fe51_as_canonical_nat(r_0)),
         spec_montgomery(result) < p(),
         !is_equal_to_minus_one(spec_montgomery(result)),
 {
@@ -1214,8 +1210,8 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
     let result = MontgomeryPoint(u.as_bytes());
 
     proof {
-        let r = spec_field_element(r_0);
-        let A = spec_field_element(&MONTGOMERY_A);
+        let r = fe51_as_canonical_nat(r_0);
+        let A = fe51_as_canonical_nat(&MONTGOMERY_A);
 
         // ---------------------------------------------------------------------
         // Step 0: Bridge exec variables to spec-level math expressions.
@@ -1223,29 +1219,29 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
         //   inner, eps) equals its counterpart in spec_elligator_encode.
         // ---------------------------------------------------------------------
         // r_0_sq2 matches 2*r^2
-        assert(spec_field_element(&r_0_sq2) == math_field_mul(2, math_field_square(r))) by {
+        assert(fe51_as_canonical_nat(&r_0_sq2) == field_mul(2, field_square(r))) by {
             // square2 postcondition: u64_5_as_nat(r_0_sq2.limbs) % p == 2 * pow(u64_5_as_nat(r0.limbs),2) % p
             let r0_raw = u64_5_as_nat(r_0.limbs);
             let r0_sq_raw = pow(r0_raw as int, 2) as nat;
-            assert(spec_field_element(r_0) == r0_raw % p());
+            assert(fe51_as_canonical_nat(r_0) == r0_raw % p());
 
             // square2 postcondition
             assert(u64_5_as_nat(r_0_sq2.limbs) % p() == (2 * pow(r0_raw as int, 2)) as nat % p());
 
-            // Reduce r0_sq_raw modulo p to math_field_square(r0_raw%p)
-            assert(r0_sq_raw % p() == math_field_square(r0_raw % p())) by {
+            // Reduce r0_sq_raw modulo p to field_square(r0_raw%p)
+            assert(r0_sq_raw % p() == field_square(r0_raw % p())) by {
                 assert(r0_sq_raw % p() == pow(r0_raw as int, 2) as nat % p());
-                lemma_square_matches_math_field_square(r0_raw, r0_sq_raw);
+                lemma_square_matches_field_square(r0_raw, r0_sq_raw);
             }
 
-            // (2 * r0_sq_raw) % p = math_field_mul(2, r0_sq_raw % p)
-            assert((2 * r0_sq_raw) % p() == math_field_mul(2, r0_sq_raw % p())) by {
+            // (2 * r0_sq_raw) % p = field_mul(2, r0_sq_raw % p)
+            assert((2 * r0_sq_raw) % p() == field_mul(2, r0_sq_raw % p())) by {
                 p_gt_2();
                 lemma_mul_mod_noop_general(2, r0_sq_raw as int, p() as int);
                 lemma_small_mod(2nat, p());
             }
 
-            assert(spec_field_element(&r_0_sq2) == u64_5_as_nat(r_0_sq2.limbs) % p());
+            assert(fe51_as_canonical_nat(&r_0_sq2) == u64_5_as_nat(r_0_sq2.limbs) % p());
             // Connect square2's postcondition to our `r0_sq_raw` name.
             assert(u64_5_as_nat(r_0_sq2.limbs) % p() == (2 * r0_sq_raw) % p()) by {
                 // square2 gives: u64_5_as_nat(...) % p == ((2 * pow(r0_raw,2)) as nat) % p
@@ -1261,88 +1257,82 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
         }
 
         // d_1 = 1 + 2*r^2
-        assert(spec_field_element(&d_1) == math_field_add(1, spec_field_element(&r_0_sq2))) by {
+        assert(fe51_as_canonical_nat(&d_1) == field_add(1, fe51_as_canonical_nat(&r_0_sq2))) by {
             lemma_one_field_element_value();
-            assert(spec_field_element(&one) == 1);
-            assert(spec_field_element(&d_1) == math_field_add(
-                spec_field_element(&one),
-                spec_field_element(&r_0_sq2),
+            assert(fe51_as_canonical_nat(&one) == 1);
+            assert(fe51_as_canonical_nat(&d_1) == field_add(
+                fe51_as_canonical_nat(&one),
+                fe51_as_canonical_nat(&r_0_sq2),
             ));
         }
-        assert(spec_field_element(&d_1) == math_field_add(
-            1,
-            math_field_mul(2, math_field_square(r)),
-        ));
+        assert(fe51_as_canonical_nat(&d_1) == field_add(1, field_mul(2, field_square(r))));
 
         // d = (-A) / (1 + 2*r^2)
-        assert(spec_field_element(&d) == math_field_mul(
-            math_field_neg(A),
-            math_field_inv(math_field_add(1, math_field_mul(2, math_field_square(r)))),
+        assert(fe51_as_canonical_nat(&d) == field_mul(
+            field_neg(A),
+            field_inv(field_add(1, field_mul(2, field_square(r)))),
         )) by {
             // From invert:
-            assert(spec_field_element(&d_1_inv) == math_field_inv(spec_field_element(&d_1)));
+            assert(fe51_as_canonical_nat(&d_1_inv) == field_inv(fe51_as_canonical_nat(&d_1)));
             // From mul:
-            assert(spec_field_element(&d) == math_field_mul(
-                spec_field_element(&MONTGOMERY_A_NEG),
-                spec_field_element(&d_1_inv),
+            assert(fe51_as_canonical_nat(&d) == field_mul(
+                fe51_as_canonical_nat(&MONTGOMERY_A_NEG),
+                fe51_as_canonical_nat(&d_1_inv),
             ));
             // MONTGOMERY_A_NEG encodes -A:
-            assert(spec_field_element(&MONTGOMERY_A_NEG) == math_field_neg(A)) by {
+            assert(fe51_as_canonical_nat(&MONTGOMERY_A_NEG) == field_neg(A)) by {
                 axiom_montgomery_a_neg_is_neg_a();
             }
             // Replace d_1 with denom (asserted above).
-            assert(spec_field_element(&d_1) == math_field_add(
-                1,
-                math_field_mul(2, math_field_square(r)),
-            ));
+            assert(fe51_as_canonical_nat(&d_1) == field_add(1, field_mul(2, field_square(r))));
         }
 
         // d_sq = d^2
-        assert(spec_field_element(&d_sq) == math_field_square(spec_field_element(&d))) by {
-            // square postcondition is in terms of u64_5_as_nat; bridge to math_field_square
+        assert(fe51_as_canonical_nat(&d_sq) == field_square(fe51_as_canonical_nat(&d))) by {
+            // square postcondition is in terms of u64_5_as_nat; bridge to field_square
             let d_raw = u64_5_as_nat(d.limbs);
             let d_sq_raw = u64_5_as_nat(d_sq.limbs);
-            assert(spec_field_element(&d) == d_raw % p());
+            assert(fe51_as_canonical_nat(&d) == d_raw % p());
             assert(d_sq_raw % p() == pow(d_raw as int, 2) as nat % p());
-            lemma_square_matches_math_field_square(d_raw, d_sq_raw);
+            lemma_square_matches_field_square(d_raw, d_sq_raw);
         }
 
         // au = A * d
-        assert(spec_field_element(&au) == math_field_mul(A, spec_field_element(&d)));
+        assert(fe51_as_canonical_nat(&au) == field_mul(A, fe51_as_canonical_nat(&d)));
 
         // inner = d^2 + A*d + 1
-        assert(spec_field_element(&inner) == math_field_add(
-            math_field_add(spec_field_element(&d_sq), spec_field_element(&au)),
+        assert(fe51_as_canonical_nat(&inner) == field_add(
+            field_add(fe51_as_canonical_nat(&d_sq), fe51_as_canonical_nat(&au)),
             1,
         )) by {
             lemma_one_field_element_value();
-            assert(spec_field_element(&one) == 1);
-            assert(spec_field_element(&d_sq_plus_au) == math_field_add(
-                spec_field_element(&d_sq),
-                spec_field_element(&au),
+            assert(fe51_as_canonical_nat(&one) == 1);
+            assert(fe51_as_canonical_nat(&d_sq_plus_au) == field_add(
+                fe51_as_canonical_nat(&d_sq),
+                fe51_as_canonical_nat(&au),
             ));
-            assert(spec_field_element(&inner) == math_field_add(
-                spec_field_element(&d_sq_plus_au),
-                spec_field_element(&one),
+            assert(fe51_as_canonical_nat(&inner) == field_add(
+                fe51_as_canonical_nat(&d_sq_plus_au),
+                fe51_as_canonical_nat(&one),
             ));
         }
 
         // eps = d * inner
-        assert(spec_field_element(&eps) == math_field_mul(
-            spec_field_element(&d),
-            spec_field_element(&inner),
+        assert(fe51_as_canonical_nat(&eps) == field_mul(
+            fe51_as_canonical_nat(&d),
+            fe51_as_canonical_nat(&inner),
         ));
 
-        let eps_nat = spec_field_element(&eps);
+        let eps_nat = fe51_as_canonical_nat(&eps);
 
         // ---------------------------------------------------------------------
-        // Step 1: Prove choice_is_true(eps_is_sq) <==> math_is_square(eps).
+        // Step 1: Prove choice_is_true(eps_is_sq) <==> is_square(eps).
         //   The exec code branches on the Choice from sqrt_ratio_i, but
-        //   spec_elligator_encode branches on math_is_square. This equivalence
+        //   spec_elligator_encode branches on is_square. This equivalence
         //   lets Steps 2-3 align the exec branches with the spec branches.
         // ---------------------------------------------------------------------
-        assert(choice_is_true(eps_is_sq) <==> math_is_square(eps_nat)) by {
-            let v_nat = spec_field_element(&one);
+        assert(choice_is_true(eps_is_sq) <==> is_square(eps_nat)) by {
+            let v_nat = fe51_as_canonical_nat(&one);
             p_gt_2();
             assert(v_nat == 1) by {
                 lemma_one_field_element_value();
@@ -1351,16 +1341,19 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
             if choice_is_true(eps_is_sq) {
                 // Success: either eps=0 or is_sqrt_ratio(eps, 1, _eps), giving a square witness.
                 if eps_nat == 0 {
-                    assert(math_is_square(eps_nat)) by {
-                        // witness y = 0
-                        assert((0nat * 0nat) % p() == (eps_nat % p()));
+                    assert(is_square(eps_nat)) by {
+                        assert(exists|y: nat|
+                            (#[trigger] field_mul(y, y)) == field_canonical(eps_nat)) by {
+                            // witness y = 0
+                            assert(field_mul(0, 0) == field_canonical(eps_nat));
+                        }
                     }
                 } else {
-                    assert(is_sqrt_ratio(&eps, &one, &_eps));
-                    let y = spec_field_element(&_eps);
-                    assert((y * y) % p() == (eps_nat % p())) by {
+                    assert(fe51_is_sqrt_ratio(&eps, &one, &_eps));
+                    let y = fe51_as_canonical_nat(&_eps);
+                    assert(field_mul(y, y) == field_canonical(eps_nat)) by {
                         // is_sqrt_ratio with v=1 means y^2 == eps (mod p)
-                        assert((y * y * v_nat) % p() == eps_nat);
+                        assert((y * y * v_nat) % p() == field_canonical(eps_nat));
                         assert(v_nat == 1);
                         assert((y * y * 1nat) % p() == (y * y) % p()) by (compute);
                         // LHS is a mod result, so eps_nat < p() and eps_nat % p() = eps_nat
@@ -1369,47 +1362,48 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
                         assert(eps_nat < p());
                         lemma_small_mod(eps_nat, p());
                     }
-                    assert(math_is_square(eps_nat)) by {
-                        assert(exists|w: nat| (#[trigger] (w * w) % p()) == (eps_nat % p())) by {
+                    assert(is_square(eps_nat)) by {
+                        assert(exists|w: nat|
+                            (#[trigger] field_mul(w, w)) == field_canonical(eps_nat)) by {
                             let w = y;
-                            assert((w * w) % p() == (eps_nat % p()));
+                            assert(field_mul(w, w) == field_canonical(eps_nat));
                         }
                     }
                 }
             } else {
                 // Failure implies eps != 0 (sqrt_ratio_i spec: u==0 => success).
                 assert(eps_nat != 0);
-                assert(is_sqrt_ratio_times_i(&eps, &one, &_eps));
+                assert(fe51_is_sqrt_ratio_times_i(&eps, &one, &_eps));
                 // Show eps is not a quadratic residue: if it had a sqrt, contradiction.
-                assert(!math_is_square(eps_nat)) by {
-                    if math_is_square(eps_nat) {
+                assert(!is_square(eps_nat)) by {
+                    if is_square(eps_nat) {
                         let y0 = choose|y: nat| (#[trigger] (y * y) % p()) == (eps_nat % p());
                         let y = y0 % p();
                         lemma_square_mod_noop(y0);
-                        assert(math_field_square(y) == math_field_square(y0));
+                        assert(field_square(y) == field_square(y0));
                         // Build the "times i" witness x from sqrt_ratio_i failure.
-                        let x = spec_field_element(&_eps);
+                        let x = fe51_as_canonical_nat(&_eps);
                         assert(x < p()) by {
                             lemma_mod_bound(u64_5_as_nat(_eps.limbs) as int, p() as int);
                         }
                         assert(exists|w: nat|
-                            w < p() && #[trigger] math_field_mul(math_field_square(w), 1) == (
-                            spec_sqrt_m1() * eps_nat) % p()) by {
+                            w < p() && #[trigger] field_mul(field_square(w), 1) == (sqrt_m1()
+                                * eps_nat) % p()) by {
                             let w = x;
                             // from is_sqrt_ratio_times_i with v=1
-                            assert((x * x * 1nat) % p() == (spec_sqrt_m1() * eps_nat) % p());
-                            // math_field_mul(math_field_square(w), 1) == math_field_square(w)
+                            assert((x * x * 1nat) % p() == (sqrt_m1() * eps_nat) % p());
+                            // field_mul(field_square(w), 1) == field_square(w)
                             p_gt_2();
-                            let a = math_field_square(w);
+                            let a = field_square(w);
                             // a is already reduced mod p, so a < p
                             lemma_mod_bound((w * w) as int, p() as int);
                             assert(a < p());
-                            assert(math_field_mul(a, 1) == a) by {
+                            assert(field_mul(a, 1) == a) by {
                                 assert(a * 1 == a);
                                 lemma_small_mod(a, p());
                             }
-                            assert(math_field_square(w) == (spec_sqrt_m1() * eps_nat) % p()) by {
-                                assert((w * w) % p() == (spec_sqrt_m1() * eps_nat) % p());
+                            assert(field_square(w) == (sqrt_m1() * eps_nat) % p()) by {
+                                assert((w * w) % p() == (sqrt_m1() * eps_nat) % p());
                             }
                         }
                         // Apply lemma: no y with y^2 = eps_nat (mod p)
@@ -1433,55 +1427,62 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
         //   u = d when eps is square, u = -(d+A) otherwise — matching
         //   the two branches of spec_elligator_encode.
         // ---------------------------------------------------------------------
-        assert(spec_field_element(&u) == if choice_is_true(eps_is_sq) {
-            spec_field_element(&d)
+        assert(fe51_as_canonical_nat(&u) == if choice_is_true(eps_is_sq) {
+            fe51_as_canonical_nat(&d)
         } else {
-            math_field_neg(math_field_add(spec_field_element(&d), A))
+            field_neg(field_add(fe51_as_canonical_nat(&d), A))
         }) by {
             // conditional_select: Atemp = 0 if square, else A
-            assert(spec_field_element(&Atemp) == if choice_is_true(eps_is_sq) {
+            assert(fe51_as_canonical_nat(&Atemp) == if choice_is_true(eps_is_sq) {
                 0
             } else {
                 A
             }) by {
                 if choice_is_true(eps_is_sq) {
                     assert(Atemp == zero);
-                    assert(spec_field_element(&Atemp) == 0) by {
+                    assert(fe51_as_canonical_nat(&Atemp) == 0) by {
                         lemma_zero_field_element_value();
                     }
                 } else {
                     assert(Atemp == MONTGOMERY_A);
-                    // spec_field_element(&MONTGOMERY_A) is A by definition
+                    // fe51_as_canonical_nat(&MONTGOMERY_A) is A by definition
                 }
             }
-            assert(spec_field_element(&u_pre) == if choice_is_true(eps_is_sq) {
-                spec_field_element(&d)
+            assert(fe51_as_canonical_nat(&u_pre) == if choice_is_true(eps_is_sq) {
+                fe51_as_canonical_nat(&d)
             } else {
-                math_field_add(spec_field_element(&d), A)
+                field_add(fe51_as_canonical_nat(&d), A)
             }) by {
                 if choice_is_true(eps_is_sq) {
-                    assert(spec_field_element(&u_pre) == math_field_add(spec_field_element(&d), 0));
-                    // math_field_add(x, 0) = x for any field element x
-                    assert(math_field_add(spec_field_element(&d), 0) == spec_field_element(&d)) by {
-                        let x = spec_field_element(&d);
+                    assert(fe51_as_canonical_nat(&u_pre) == field_add(
+                        fe51_as_canonical_nat(&d),
+                        0,
+                    ));
+                    // field_add(x, 0) = x for any field element x
+                    assert(field_add(fe51_as_canonical_nat(&d), 0) == fe51_as_canonical_nat(&d))
+                        by {
+                        let x = fe51_as_canonical_nat(&d);
                         p_gt_2();
                         // x < p, so (x + 0) % p = x
                         lemma_mod_bound(u64_5_as_nat(d.limbs) as int, p() as int);
                         lemma_small_mod(x, p());
                     }
                 } else {
-                    assert(spec_field_element(&u_pre) == math_field_add(spec_field_element(&d), A));
+                    assert(fe51_as_canonical_nat(&u_pre) == field_add(
+                        fe51_as_canonical_nat(&d),
+                        A,
+                    ));
                 }
             }
             // conditional_negate with choice_not: negates when nonsquare
             if choice_is_true(eps_is_sq) {
                 assert(!choice_is_true(neg_choice));
-                assert(spec_field_element(&u) == spec_field_element(&u_pre));
+                assert(fe51_as_canonical_nat(&u) == fe51_as_canonical_nat(&u_pre));
             } else {
                 assert(choice_is_true(neg_choice));
-                assert(spec_field_element(&u) == math_field_neg(spec_field_element(&u_pre)));
-                assert(spec_field_element(&u) == math_field_neg(
-                    math_field_add(spec_field_element(&d), A),
+                assert(fe51_as_canonical_nat(&u) == field_neg(fe51_as_canonical_nat(&u_pre)));
+                assert(fe51_as_canonical_nat(&u) == field_neg(
+                    field_add(fe51_as_canonical_nat(&d), A),
                 ));
             }
         }
@@ -1492,53 +1493,53 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
         //   result < p(), and result != -1 (for safe to_edwards conversion).
         // ---------------------------------------------------------------------
         let u_bytes = result.0;
-        assert(spec_montgomery(result) == spec_field_element(&u)) by {
+        assert(spec_montgomery(result) == fe51_as_canonical_nat(&u)) by {
             // as_bytes gives canonical bytes whose nat value equals the field element (already < p)
-            assert(bytes32_to_nat(&u_bytes) == spec_field_element(&u));
+            assert(u8_32_as_nat(&u_bytes) == fe51_as_canonical_nat(&u));
             pow255_gt_19();
-            lemma_small_mod(spec_field_element(&u), pow2(255));
-            lemma_small_mod(spec_field_element(&u), p());
+            lemma_small_mod(fe51_as_canonical_nat(&u), pow2(255));
+            lemma_small_mod(fe51_as_canonical_nat(&u), p());
         }
 
         // Now match the spec_elligator_encode definition.
         let spec_u = spec_elligator_encode(r);
         assert(spec_montgomery(result) == spec_u) by {
             // Unfold spec_elligator_encode and rewrite it in terms of our computed `d` and `eps`.
-            let denom = math_field_add(1, math_field_mul(2, math_field_square(r)));
-            let d_spec = math_field_mul(math_field_neg(A), math_field_inv(denom));
-            assert(d_spec == spec_field_element(&d));
+            let denom = field_add(1, field_mul(2, field_square(r)));
+            let d_spec = field_mul(field_neg(A), field_inv(denom));
+            assert(d_spec == fe51_as_canonical_nat(&d));
 
-            let d_sq_spec = math_field_square(d_spec);
-            let eps_spec = math_field_mul(
+            let d_sq_spec = field_square(d_spec);
+            let eps_spec = field_mul(
                 d_spec,
-                math_field_add(math_field_add(d_sq_spec, math_field_mul(A, d_spec)), 1),
+                field_add(field_add(d_sq_spec, field_mul(A, d_spec)), 1),
             );
             assert(eps_spec == eps_nat);
 
             // By definition:
-            //   spec_elligator_encode(r) = if math_is_square(eps_spec) { d_spec } else { -(d_spec + A) }
-            assert(spec_u == if math_is_square(eps_nat) {
-                spec_field_element(&d)
+            //   spec_elligator_encode(r) = if is_square(eps_spec) { d_spec } else { -(d_spec + A) }
+            assert(spec_u == if is_square(eps_nat) {
+                fe51_as_canonical_nat(&d)
             } else {
-                math_field_neg(math_field_add(spec_field_element(&d), A))
+                field_neg(field_add(fe51_as_canonical_nat(&d), A))
             }) by {
                 // Directly unfold the spec function body.
                 // (Avoid `compute` here; the expression involves exec-derived values.)
-                assert(spec_u == if math_is_square(eps_spec) {
+                assert(spec_u == if is_square(eps_spec) {
                     d_spec
                 } else {
-                    math_field_neg(math_field_add(d_spec, A))
+                    field_neg(field_add(d_spec, A))
                 });
             }
 
-            // Finally, use the established case-split for `u` (which matches `math_is_square(eps_nat)`).
-            if math_is_square(eps_nat) {
+            // Finally, use the established case-split for `u` (which matches `is_square(eps_nat)`).
+            if is_square(eps_nat) {
                 assert(choice_is_true(eps_is_sq));
-                assert(spec_montgomery(result) == spec_field_element(&d));
+                assert(spec_montgomery(result) == fe51_as_canonical_nat(&d));
             } else {
                 assert(!choice_is_true(eps_is_sq));
-                assert(spec_montgomery(result) == math_field_neg(
-                    math_field_add(spec_field_element(&d), A),
+                assert(spec_montgomery(result) == field_neg(
+                    field_add(fe51_as_canonical_nat(&d), A),
                 ));
             }
         }
@@ -1570,8 +1571,8 @@ impl Identity for ProjectivePoint {
         ensures
     // The identity point is (1:0) in projective coordinates
 
-            spec_field_element(&result.U) == 1,
-            spec_field_element(&result.W) == 0,
+            fe51_as_canonical_nat(&result.U) == 1,
+            fe51_as_canonical_nat(&result.W) == 0,
             // Actual representation uses field constants ONE/ZERO
             fe51_limbs_bounded(&result.U, 51),
             fe51_limbs_bounded(&result.W, 51),
@@ -1582,10 +1583,10 @@ impl Identity for ProjectivePoint {
         let result = ProjectivePoint { U: FieldElement::ONE, W: FieldElement::ZERO };
         proof {
             // Field element values
-            assert(spec_field_element(&result.U) == 1) by {
+            assert(fe51_as_canonical_nat(&result.U) == 1) by {
                 lemma_one_field_element_value();
             }
-            assert(spec_field_element(&result.W) == 0) by {
+            assert(fe51_as_canonical_nat(&result.W) == 0) by {
                 lemma_zero_field_element_value();
             }
             // Limb bounds: first establish at 51, then weaken to 54
@@ -1611,7 +1612,7 @@ impl Identity for ProjectivePoint {
 impl crate::traits::IsIdentitySpecImpl for ProjectivePoint {
     /// For ProjectivePoint, identity is (1:0) in projective coords, i.e., W == 0
     open spec fn is_identity_spec(&self) -> bool {
-        spec_field_element(&self.W) == 0
+        fe51_as_canonical_nat(&self.W) == 0
     }
 }
 
@@ -1620,8 +1621,8 @@ impl Default for ProjectivePoint {
         ensures
     // Default returns the identity point
 
-            spec_field_element(&result.U) == 1,
-            spec_field_element(&result.W) == 0,
+            fe51_as_canonical_nat(&result.U) == 1,
+            fe51_as_canonical_nat(&result.W) == 0,
     {
         ProjectivePoint::identity()
     }
@@ -1689,12 +1690,12 @@ impl ProjectivePoint {
     // For projective point (U:W), the affine u-coordinate is u = U/W (or 0 if W=0)
 
             spec_montgomery(result) == {
-                let u_proj = spec_field_element(&self.U);
-                let w_proj = spec_field_element(&self.W);
+                let u_proj = fe51_as_canonical_nat(&self.U);
+                let w_proj = fe51_as_canonical_nat(&self.W);
                 if w_proj == 0 {
                     0
                 } else {
-                    math_field_mul(u_proj, math_field_inv(w_proj))
+                    field_mul(u_proj, field_inv(w_proj))
                 }
             },
     {
@@ -1703,12 +1704,12 @@ impl ProjectivePoint {
         proof {
             // postcondition
             // The affine u-coordinate is U * W^(-1) = U / W
-            let u_proj = spec_field_element(&self.U);
-            let w_proj = spec_field_element(&self.W);
+            let u_proj = fe51_as_canonical_nat(&self.U);
+            let w_proj = fe51_as_canonical_nat(&self.W);
             assume(spec_montgomery(result) == if w_proj == 0 {
                 0
             } else {
-                math_field_mul(u_proj, math_field_inv(w_proj))
+                field_mul(u_proj, field_inv(w_proj))
             });
         }
         result
@@ -1744,7 +1745,7 @@ fn differential_add_and_double(
         fe51_limbs_bounded(&old(Q).W, 52),
         // This matches the invariant maintained by the caller (mul_bits_be)
         fe51_limbs_bounded(affine_PmQ, 51),
-        is_valid_u_coordinate(spec_field_element(affine_PmQ)),
+        is_valid_u_coordinate(fe51_as_canonical_nat(affine_PmQ)),
     ensures
 // === Bounds preserved for callers ===
 
@@ -1753,15 +1754,15 @@ fn differential_add_and_double(
         fe51_limbs_bounded(&Q.U, 52),
         fe51_limbs_bounded(&Q.W, 52),
         // Degenerate case: if u(P-Q)=0 and both inputs have u=0, outputs preserve u=0.
-        (spec_field_element(affine_PmQ) == 0 && spec_projective_u_coordinate(*old(P)) == 0
+        (fe51_as_canonical_nat(affine_PmQ) == 0 && spec_projective_u_coordinate(*old(P)) == 0
             && spec_projective_u_coordinate(*old(Q)) == 0) ==> (spec_projective_u_coordinate(*P)
             == 0 && spec_projective_u_coordinate(*Q) == 0),
         // Montgomery ladder step: P' = [2]P (xDBL), Q' = P + Q (xADD).
         // Case 1: P = [k]B, Q = [k+1]B  ==>  P' = [2k]B, Q' = [2k+1]B
         ({
-            let B = canonical_montgomery_lift(spec_field_element(affine_PmQ));
+            let B = canonical_montgomery_lift(fe51_as_canonical_nat(affine_PmQ));
             forall|k: nat|
-                spec_field_element(affine_PmQ) != 0
+                fe51_as_canonical_nat(affine_PmQ) != 0
                     && #[trigger] projective_represents_montgomery_or_infinity(
                     *old(P),
                     montgomery_scalar_mul(B, k),
@@ -1781,9 +1782,9 @@ fn differential_add_and_double(
         }),
         // Case 2 (swapped): P = [k+1]B, Q = [k]B  ==>  P' = [2k+2]B, Q' = [2k+1]B
         ({
-            let B = canonical_montgomery_lift(spec_field_element(affine_PmQ));
+            let B = canonical_montgomery_lift(fe51_as_canonical_nat(affine_PmQ));
             forall|k: nat|
-                spec_field_element(affine_PmQ) != 0
+                fe51_as_canonical_nat(affine_PmQ) != 0
                     && #[trigger] projective_represents_montgomery_or_infinity(
                     *old(P),
                     montgomery_scalar_mul(B, k + 1),
@@ -1963,12 +1964,12 @@ fn differential_add_and_double(
 
         // Connect the field-level xDBL/xADD formulas here to the abstract group law using the
         // step-level axioms in `montgomery_curve_lemmas`.
-        let u_diff = spec_field_element(affine_PmQ);
+        let u_diff = fe51_as_canonical_nat(affine_PmQ);
         let B = canonical_montgomery_lift(u_diff);
 
         // Basepoint u-coordinate: canonical lift stores u mod p, and `u_diff` is already reduced.
         assert(spec_u_coordinate(B) == u_diff) by {
-            let raw = spec_field_element_as_nat(affine_PmQ);
+            let raw = fe51_as_nat(affine_PmQ);
             assert(u_diff == raw % p());
             p_gt_2();
             lemma_mod_division_less_than_divisor(raw as int, p() as int);
@@ -1979,169 +1980,166 @@ fn differential_add_and_double(
         };
 
         // Cache input coordinates as nats (for the x-only axioms).
-        let U_P0 = spec_field_element(&P_in.U);
-        let W_P0 = spec_field_element(&P_in.W);
-        let U_Q0 = spec_field_element(&Q_in.U);
-        let W_Q0 = spec_field_element(&Q_in.W);
+        let U_P0 = fe51_as_canonical_nat(&P_in.U);
+        let W_P0 = fe51_as_canonical_nat(&P_in.W);
+        let U_Q0 = fe51_as_canonical_nat(&Q_in.U);
+        let W_Q0 = fe51_as_canonical_nat(&Q_in.W);
 
-        // Square() produces a pow-based spec; connect it to `math_field_square`.
-        let t0_raw = spec_field_element_as_nat(&t0);
-        let t1_raw = spec_field_element_as_nat(&t1);
-        let t4_raw = spec_field_element_as_nat(&t4);
-        let t5_raw = spec_field_element_as_nat(&t5);
-        let t9_raw = spec_field_element_as_nat(&t9);
-        let t10_raw = spec_field_element_as_nat(&t10);
-        let t11_raw = spec_field_element_as_nat(&t11);
-        let t12_raw = spec_field_element_as_nat(&t12);
+        // Square() produces a pow-based spec; connect it to `field_square`.
+        let t0_raw = fe51_as_nat(&t0);
+        let t1_raw = fe51_as_nat(&t1);
+        let t4_raw = fe51_as_nat(&t4);
+        let t5_raw = fe51_as_nat(&t5);
+        let t9_raw = fe51_as_nat(&t9);
+        let t10_raw = fe51_as_nat(&t10);
+        let t11_raw = fe51_as_nat(&t11);
+        let t12_raw = fe51_as_nat(&t12);
 
         assert(t4_raw % p() == pow(t0_raw as int, 2) as nat % p());
-        lemma_square_matches_math_field_square(t0_raw, t4_raw);
-        assert(spec_field_element(&t4) == math_field_square(spec_field_element(&t0)));
+        lemma_square_matches_field_square(t0_raw, t4_raw);
+        assert(fe51_as_canonical_nat(&t4) == field_square(fe51_as_canonical_nat(&t0)));
 
         assert(t5_raw % p() == pow(t1_raw as int, 2) as nat % p());
-        lemma_square_matches_math_field_square(t1_raw, t5_raw);
-        assert(spec_field_element(&t5) == math_field_square(spec_field_element(&t1)));
+        lemma_square_matches_field_square(t1_raw, t5_raw);
+        assert(fe51_as_canonical_nat(&t5) == field_square(fe51_as_canonical_nat(&t1)));
 
         assert(t11_raw % p() == pow(t9_raw as int, 2) as nat % p());
-        lemma_square_matches_math_field_square(t9_raw, t11_raw);
-        assert(spec_field_element(&t11) == math_field_square(spec_field_element(&t9)));
+        lemma_square_matches_field_square(t9_raw, t11_raw);
+        assert(fe51_as_canonical_nat(&t11) == field_square(fe51_as_canonical_nat(&t9)));
 
         assert(t12_raw % p() == pow(t10_raw as int, 2) as nat % p());
-        lemma_square_matches_math_field_square(t10_raw, t12_raw);
-        assert(spec_field_element(&t12) == math_field_square(spec_field_element(&t10)));
+        lemma_square_matches_field_square(t10_raw, t12_raw);
+        assert(fe51_as_canonical_nat(&t12) == field_square(fe51_as_canonical_nat(&t10)));
 
         // Basic add/sub/mul specs (already provided by FieldElement ops).
-        assert(spec_field_element(&t0) == math_field_add(U_P0, W_P0));
-        assert(spec_field_element(&t1) == math_field_sub(U_P0, W_P0));
-        assert(spec_field_element(&t2) == math_field_add(U_Q0, W_Q0));
-        assert(spec_field_element(&t3) == math_field_sub(U_Q0, W_Q0));
+        assert(fe51_as_canonical_nat(&t0) == field_add(U_P0, W_P0));
+        assert(fe51_as_canonical_nat(&t1) == field_sub(U_P0, W_P0));
+        assert(fe51_as_canonical_nat(&t2) == field_add(U_Q0, W_Q0));
+        assert(fe51_as_canonical_nat(&t3) == field_sub(U_Q0, W_Q0));
 
-        assert(spec_field_element(&t6) == math_field_sub(
-            spec_field_element(&t4),
-            spec_field_element(&t5),
+        assert(fe51_as_canonical_nat(&t6) == field_sub(
+            fe51_as_canonical_nat(&t4),
+            fe51_as_canonical_nat(&t5),
         ));
-        assert(spec_field_element(&t7) == math_field_mul(
-            spec_field_element(&t0),
-            spec_field_element(&t3),
+        assert(fe51_as_canonical_nat(&t7) == field_mul(
+            fe51_as_canonical_nat(&t0),
+            fe51_as_canonical_nat(&t3),
         ));
-        assert(spec_field_element(&t8) == math_field_mul(
-            spec_field_element(&t1),
-            spec_field_element(&t2),
+        assert(fe51_as_canonical_nat(&t8) == field_mul(
+            fe51_as_canonical_nat(&t1),
+            fe51_as_canonical_nat(&t2),
         ));
-        assert(spec_field_element(&t9) == math_field_add(
-            spec_field_element(&t7),
-            spec_field_element(&t8),
+        assert(fe51_as_canonical_nat(&t9) == field_add(
+            fe51_as_canonical_nat(&t7),
+            fe51_as_canonical_nat(&t8),
         ));
-        assert(spec_field_element(&t10) == math_field_sub(
-            spec_field_element(&t7),
-            spec_field_element(&t8),
+        assert(fe51_as_canonical_nat(&t10) == field_sub(
+            fe51_as_canonical_nat(&t7),
+            fe51_as_canonical_nat(&t8),
         ));
-        assert(spec_field_element(&t13) == math_field_mul(
-            spec_field_element(&APLUS2_OVER_FOUR),
-            spec_field_element(&t6),
+        assert(fe51_as_canonical_nat(&t13) == field_mul(
+            fe51_as_canonical_nat(&APLUS2_OVER_FOUR),
+            fe51_as_canonical_nat(&t6),
         ));
-        assert(spec_field_element(&t15) == math_field_add(
-            spec_field_element(&t13),
-            spec_field_element(&t5),
+        assert(fe51_as_canonical_nat(&t15) == field_add(
+            fe51_as_canonical_nat(&t13),
+            fe51_as_canonical_nat(&t5),
         ));
-        assert(spec_field_element(&t14) == math_field_mul(
-            spec_field_element(&t4),
-            spec_field_element(&t5),
+        assert(fe51_as_canonical_nat(&t14) == field_mul(
+            fe51_as_canonical_nat(&t4),
+            fe51_as_canonical_nat(&t5),
         ));
-        assert(spec_field_element(&t16) == math_field_mul(
-            spec_field_element(&t6),
-            spec_field_element(&t15),
+        assert(fe51_as_canonical_nat(&t16) == field_mul(
+            fe51_as_canonical_nat(&t6),
+            fe51_as_canonical_nat(&t15),
         ));
-        assert(spec_field_element(&t17) == math_field_mul(u_diff, spec_field_element(&t12)));
-        assert(spec_field_element(&t18) == spec_field_element(&t11));
+        assert(fe51_as_canonical_nat(&t17) == field_mul(u_diff, fe51_as_canonical_nat(&t12)));
+        assert(fe51_as_canonical_nat(&t18) == fe51_as_canonical_nat(&t11));
 
         // The output coordinates match the nat-level xDBL/xADD specs.
         let (U2, W2) = spec_xdbl_projective(U_P0, W_P0);
         let (U3, W3) = spec_xadd_projective(U_P0, W_P0, U_Q0, W_Q0, u_diff);
-        assert(spec_field_element(&P.U) == U2) by {
+        assert(fe51_as_canonical_nat(&P.U) == U2) by {
             assert(P.U == t14);
             reveal(spec_xdbl_projective);
-            assert(U2 == math_field_mul(
-                math_field_square(math_field_add(U_P0, W_P0)),
-                math_field_square(math_field_sub(U_P0, W_P0)),
+            assert(U2 == field_mul(
+                field_square(field_add(U_P0, W_P0)),
+                field_square(field_sub(U_P0, W_P0)),
             ));
-            assert(spec_field_element(&P.U) == spec_field_element(&t14));
+            assert(fe51_as_canonical_nat(&P.U) == fe51_as_canonical_nat(&t14));
         };
-        assert(spec_field_element(&P.W) == W2) by {
+        assert(fe51_as_canonical_nat(&P.W) == W2) by {
             assert(P.W == t16);
             reveal(spec_xdbl_projective);
-            assert(W2 == math_field_mul(
-                math_field_sub(
-                    math_field_square(math_field_add(U_P0, W_P0)),
-                    math_field_square(math_field_sub(U_P0, W_P0)),
-                ),
-                math_field_add(
-                    math_field_mul(
-                        spec_field_element(&APLUS2_OVER_FOUR),
-                        math_field_sub(
-                            math_field_square(math_field_add(U_P0, W_P0)),
-                            math_field_square(math_field_sub(U_P0, W_P0)),
+            assert(W2 == field_mul(
+                field_sub(field_square(field_add(U_P0, W_P0)), field_square(field_sub(U_P0, W_P0))),
+                field_add(
+                    field_mul(
+                        fe51_as_canonical_nat(&APLUS2_OVER_FOUR),
+                        field_sub(
+                            field_square(field_add(U_P0, W_P0)),
+                            field_square(field_sub(U_P0, W_P0)),
                         ),
                     ),
-                    math_field_square(math_field_sub(U_P0, W_P0)),
+                    field_square(field_sub(U_P0, W_P0)),
                 ),
             ));
-            assert(spec_field_element(&P.W) == spec_field_element(&t16));
+            assert(fe51_as_canonical_nat(&P.W) == fe51_as_canonical_nat(&t16));
         };
-        assert(spec_field_element(&Q.U) == U3) by {
+        assert(fe51_as_canonical_nat(&Q.U) == U3) by {
             assert(Q.U == t18);
             assert(t18 == t11);
             reveal(spec_xadd_projective);
-            assert(U3 == math_field_square(
-                math_field_add(
-                    math_field_mul(math_field_add(U_P0, W_P0), math_field_sub(U_Q0, W_Q0)),
-                    math_field_mul(math_field_sub(U_P0, W_P0), math_field_add(U_Q0, W_Q0)),
+            assert(U3 == field_square(
+                field_add(
+                    field_mul(field_add(U_P0, W_P0), field_sub(U_Q0, W_Q0)),
+                    field_mul(field_sub(U_P0, W_P0), field_add(U_Q0, W_Q0)),
                 ),
             ));
-            assert(spec_field_element(&Q.U) == spec_field_element(&t11));
+            assert(fe51_as_canonical_nat(&Q.U) == fe51_as_canonical_nat(&t11));
         };
-        assert(spec_field_element(&Q.W) == W3) by {
+        assert(fe51_as_canonical_nat(&Q.W) == W3) by {
             assert(Q.W == t17);
             reveal(spec_xadd_projective);
-            assert(W3 == math_field_mul(
+            assert(W3 == field_mul(
                 u_diff,
-                math_field_square(
-                    math_field_sub(
-                        math_field_mul(math_field_add(U_P0, W_P0), math_field_sub(U_Q0, W_Q0)),
-                        math_field_mul(math_field_sub(U_P0, W_P0), math_field_add(U_Q0, W_Q0)),
+                field_square(
+                    field_sub(
+                        field_mul(field_add(U_P0, W_P0), field_sub(U_Q0, W_Q0)),
+                        field_mul(field_sub(U_P0, W_P0), field_add(U_Q0, W_Q0)),
                     ),
                 ),
             ));
-            assert(spec_field_element(&Q.W) == spec_field_element(&t17));
+            assert(fe51_as_canonical_nat(&Q.W) == fe51_as_canonical_nat(&t17));
         };
 
         // Degenerate basepoint: u(P-Q)=0 and both inputs have u=0 => both outputs have u=0.
         if u_diff == 0 && spec_projective_u_coordinate(*old(P)) == 0
             && spec_projective_u_coordinate(*old(Q)) == 0 {
             // Q.W includes a factor of u_diff, so Q is ∞ and u(Q)=0.
-            assert(spec_field_element(&Q.W) == 0) by {
+            assert(fe51_as_canonical_nat(&Q.W) == 0) by {
                 assert(Q.W == t17);
-                assert(spec_field_element(&Q.W) == spec_field_element(&t17));
-                assert(spec_field_element(&t17) == math_field_mul(
+                assert(fe51_as_canonical_nat(&Q.W) == fe51_as_canonical_nat(&t17));
+                assert(fe51_as_canonical_nat(&t17) == field_mul(
                     u_diff,
-                    spec_field_element(&t12),
+                    fe51_as_canonical_nat(&t12),
                 ));
                 // u_diff == 0 implies u_diff % p() == 0
                 p_gt_2();
                 lemma_small_mod(0nat, p());
                 assert(u_diff % p() == 0);
-                lemma_field_mul_zero_left(u_diff, spec_field_element(&t12));
-                assert(math_field_mul(u_diff, spec_field_element(&t12)) == 0);
+                lemma_field_mul_zero_left(u_diff, fe51_as_canonical_nat(&t12));
+                assert(field_mul(u_diff, fe51_as_canonical_nat(&t12)) == 0);
             };
             assert(spec_projective_u_coordinate(*Q) == 0);
 
             // For P, u(old(P))=0 implies either W=0 or U=0, which makes (U+W)^2 == (U-W)^2 and hence P.W=0.
-            let U_old = spec_field_element(&old(P).U);
-            let W_old = spec_field_element(&old(P).W);
+            let U_old = fe51_as_canonical_nat(&old(P).U);
+            let W_old = fe51_as_canonical_nat(&old(P).W);
             if W_old != 0 {
                 // u = U/W = 0 => U = 0
                 assert(W_old % p() != 0) by {
-                    let W_raw = spec_field_element_as_nat(&old(P).W);
+                    let W_raw = fe51_as_nat(&old(P).W);
                     assert(W_old == W_raw % p());
                     p_gt_2();
                     lemma_mod_division_less_than_divisor(W_raw as int, p() as int);
@@ -2149,24 +2147,26 @@ fn differential_add_and_double(
                     lemma_small_mod(W_old, p());
                     assert(W_old % p() == W_old);
                 }
-                assert(math_field_mul(U_old, math_field_inv(W_old)) == 0) by {
-                    assert(spec_projective_u_coordinate(*old(P)) == math_field_mul(
+                assert(field_mul(U_old, field_inv(W_old)) == 0) by {
+                    assert(spec_projective_u_coordinate(*old(P)) == field_mul(
                         U_old,
-                        math_field_inv(W_old),
+                        field_inv(W_old),
                     ));
                 }
                 lemma_inv_mul_cancel(W_old);
-                lemma_field_mul_assoc(U_old, math_field_inv(W_old), W_old);
-                assert(math_field_mul(math_field_mul(U_old, math_field_inv(W_old)), W_old)
-                    == math_field_mul(U_old, math_field_mul(math_field_inv(W_old), W_old)));
-                assert(math_field_mul(math_field_inv(W_old), W_old) == 1);
+                lemma_field_mul_assoc(U_old, field_inv(W_old), W_old);
+                assert(field_mul(field_mul(U_old, field_inv(W_old)), W_old) == field_mul(
+                    U_old,
+                    field_mul(field_inv(W_old), W_old),
+                ));
+                assert(field_mul(field_inv(W_old), W_old) == 1);
                 lemma_field_mul_one_right(U_old);
-                assert(math_field_mul(0, W_old) == 0) by {
+                assert(field_mul(0, W_old) == 0) by {
                     lemma_field_mul_zero_left(0, W_old);
                 }
                 assert(U_old % p() == 0);
                 assert(U_old == 0) by {
-                    let U_raw = spec_field_element_as_nat(&old(P).U);
+                    let U_raw = fe51_as_nat(&old(P).U);
                     assert(U_old == U_raw % p());
                     p_gt_2();
                     lemma_mod_division_less_than_divisor(U_raw as int, p() as int);
@@ -2177,7 +2177,7 @@ fn differential_add_and_double(
             }
             // xDBL produces W2=0 when U=0 or W=0
 
-            assert(spec_field_element(&P.W) == 0) by {
+            assert(fe51_as_canonical_nat(&P.W) == 0) by {
                 lemma_xdbl_degenerate_gives_w_zero(U_old, W_old);
             }
             assert(spec_projective_u_coordinate(*P) == 0);
@@ -2185,7 +2185,7 @@ fn differential_add_and_double(
         // Case 1: P = [k]B, Q = [k+1]B  ==>  P' = [2k]B, Q' = [2k+1]B
 
         assert forall|k: nat|
-            spec_field_element(affine_PmQ) != 0
+            fe51_as_canonical_nat(affine_PmQ) != 0
                 && #[trigger] projective_represents_montgomery_or_infinity(
                 *old(P),
                 montgomery_scalar_mul(B, k),
@@ -2199,7 +2199,8 @@ fn differential_add_and_double(
                 montgomery_scalar_mul(B, 2 * k + 1),
             )
         } by {
-            if spec_field_element(affine_PmQ) != 0 && projective_represents_montgomery_or_infinity(
+            if fe51_as_canonical_nat(affine_PmQ) != 0
+                && projective_represents_montgomery_or_infinity(
                 *old(P),
                 montgomery_scalar_mul(B, k),
             ) && projective_represents_montgomery_or_infinity(
@@ -2218,7 +2219,7 @@ fn differential_add_and_double(
                         },
                         MontgomeryAffine::Finite { u, v: _ } => {
                             assert(W_P0 != 0);
-                            assert(U_P0 == math_field_mul(u, W_P0));
+                            assert(U_P0 == field_mul(u, W_P0));
                         },
                     }
                 }
@@ -2230,7 +2231,7 @@ fn differential_add_and_double(
                         },
                         MontgomeryAffine::Finite { u, v: _ } => {
                             assert(W_Q0 != 0);
-                            assert(U_Q0 == math_field_mul(u, W_Q0));
+                            assert(U_Q0 == field_mul(u, W_Q0));
                         },
                     }
                 }
@@ -2238,11 +2239,11 @@ fn differential_add_and_double(
                 // xDBL: output P represents montgomery_add(P_aff, P_aff) = [2k]B
                 axiom_xdbl_projective_correct(P_aff, U_P0, W_P0);
                 assert(projective_represents_montgomery_or_infinity_nat(
-                    spec_field_element(&P.U),
-                    spec_field_element(&P.W),
+                    fe51_as_canonical_nat(&P.U),
+                    fe51_as_canonical_nat(&P.W),
                     montgomery_add(P_aff, P_aff),
                 )) by {
-                    assert((spec_field_element(&P.U), spec_field_element(&P.W)) == (U2, W2));
+                    assert((fe51_as_canonical_nat(&P.U), fe51_as_canonical_nat(&P.W)) == (U2, W2));
                 }
                 assert(projective_represents_montgomery_or_infinity(
                     *P,
@@ -2250,13 +2251,13 @@ fn differential_add_and_double(
                 )) by {
                     match montgomery_add(P_aff, P_aff) {
                         MontgomeryAffine::Infinity => {
-                            assert(spec_field_element(&P.W) == 0);
+                            assert(fe51_as_canonical_nat(&P.W) == 0);
                         },
                         MontgomeryAffine::Finite { u, v: _ } => {
-                            assert(spec_field_element(&P.W) != 0);
-                            assert(spec_field_element(&P.U) == math_field_mul(
+                            assert(fe51_as_canonical_nat(&P.W) != 0);
+                            assert(fe51_as_canonical_nat(&P.U) == field_mul(
                                 u,
-                                spec_field_element(&P.W),
+                                fe51_as_canonical_nat(&P.W),
                             ));
                         },
                     }
@@ -2294,7 +2295,7 @@ fn differential_add_and_double(
 
         // Case 2: P = [k+1]B, Q = [k]B  ==>  P' = [2k+2]B, Q' = [2k+1]B
         assert forall|k: nat|
-            spec_field_element(affine_PmQ) != 0
+            fe51_as_canonical_nat(affine_PmQ) != 0
                 && #[trigger] projective_represents_montgomery_or_infinity(
                 *old(P),
                 montgomery_scalar_mul(B, k + 1),
@@ -2311,7 +2312,8 @@ fn differential_add_and_double(
                 montgomery_scalar_mul(B, 2 * k + 1),
             )
         } by {
-            if spec_field_element(affine_PmQ) != 0 && projective_represents_montgomery_or_infinity(
+            if fe51_as_canonical_nat(affine_PmQ) != 0
+                && projective_represents_montgomery_or_infinity(
                 *old(P),
                 montgomery_scalar_mul(B, k + 1),
             ) && projective_represents_montgomery_or_infinity(
@@ -2330,7 +2332,7 @@ fn differential_add_and_double(
                         },
                         MontgomeryAffine::Finite { u, v: _ } => {
                             assert(W_P0 != 0);
-                            assert(U_P0 == math_field_mul(u, W_P0));
+                            assert(U_P0 == field_mul(u, W_P0));
                         },
                     }
                 }
@@ -2400,7 +2402,7 @@ impl Mul<&Scalar> for &MontgomeryPoint {
 
             ({
                 let P = canonical_montgomery_lift(spec_montgomery(*self));
-                let n_unreduced = scalar_to_nat(scalar);
+                let n_unreduced = scalar_as_nat(scalar);
                 let R = montgomery_scalar_mul(P, n_unreduced);
                 spec_montgomery(result) == spec_u_coordinate(R)
             }),
@@ -2425,7 +2427,7 @@ impl Mul<&Scalar> for &MontgomeryPoint {
             // postcondition: multiplication by unreduced scalar value using canonical lift
             assume({
                 let P = canonical_montgomery_lift(spec_montgomery(*self));
-                let n_unreduced = scalar_to_nat(scalar);
+                let n_unreduced = scalar_as_nat(scalar);
                 let R = montgomery_scalar_mul(P, n_unreduced);
                 spec_montgomery(result) == spec_u_coordinate(R)
             });
@@ -2444,7 +2446,7 @@ impl MulAssign<&Scalar> for MontgomeryPoint {
 
             ({
                 let P = canonical_montgomery_lift(spec_montgomery(*old(self)));
-                let n_unreduced = scalar_to_nat(scalar);
+                let n_unreduced = scalar_as_nat(scalar);
                 let R = montgomery_scalar_mul(P, n_unreduced);
                 spec_montgomery(*self) == spec_u_coordinate(R)
             }),
@@ -2467,7 +2469,7 @@ impl Mul<&MontgomeryPoint> for &Scalar {
 
             ({
                 let P = canonical_montgomery_lift(spec_montgomery(*point));
-                let n_unreduced = scalar_to_nat(self);
+                let n_unreduced = scalar_as_nat(self);
                 let R = montgomery_scalar_mul(P, n_unreduced);
                 spec_montgomery(result) == spec_u_coordinate(R)
             }),

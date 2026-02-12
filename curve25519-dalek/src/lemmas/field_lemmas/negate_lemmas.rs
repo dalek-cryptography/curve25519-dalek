@@ -134,9 +134,9 @@ pub proof fn lemma_neg(elem: &FieldElement51)
 
         (u64_5_as_nat(spec_negate(elem.limbs)) + u64_5_as_nat(elem.limbs)) % p() == 0,
     ensures
-        u64_5_as_nat(spec_negate(elem.limbs)) % p() == math_field_neg(spec_field_element(elem)),
+        u64_5_as_nat(spec_negate(elem.limbs)) % p() == field_neg(fe51_as_canonical_nat(elem)),
 {
-    let x = spec_field_element(elem);
+    let x = fe51_as_canonical_nat(elem);
     let y = u64_5_as_nat(spec_negate(elem.limbs)) % p();
 
     assert(p() > 0) by {
@@ -162,7 +162,7 @@ pub proof fn lemma_neg(elem: &FieldElement51)
             lemma_mod_bound(x as int, p() as int);
         }
         assert(x % p() == x) by {
-            lemma_mod_twice(spec_field_element_as_nat(elem) as int, p() as int);
+            lemma_mod_twice(fe51_as_nat(elem) as int, p() as int);
         }
         if (x == 0) {
             assert(y % p() == 0);  // follows from (y + x) % p == 0

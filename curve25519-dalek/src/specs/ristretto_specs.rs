@@ -59,22 +59,22 @@ verus! {
 /// Reference: [RISTRETTO], §5.3 "Ristretto255 Encoding";
 ///            [DECAF], Section 6 (encoding formulas), and https://ristretto.group/formulas/encoding.html.
 pub open spec fn spec_ristretto_compress_extended(x: nat, y: nat, z: nat, t: nat) -> [u8; 32] {
-    let u1 = math_field_mul(math_field_add(z, y), math_field_sub(z, y));
-    let u2 = math_field_mul(x, y);
-    let invsqrt = math_invsqrt(math_field_mul(u1, math_field_square(u2)));
-    let i1 = math_field_mul(invsqrt, u1);
-    let i2 = math_field_mul(invsqrt, u2);
-    let z_inv = math_field_mul(i1, math_field_mul(i2, t));
+    let u1 = field_mul(field_add(z, y), field_sub(z, y));
+    let u2 = field_mul(x, y);
+    let invsqrt = nat_invsqrt(field_mul(u1, field_square(u2)));
+    let i1 = field_mul(invsqrt, u1);
+    let i2 = field_mul(invsqrt, u2);
+    let z_inv = field_mul(i1, field_mul(i2, t));
     let den_inv = i2;
 
-    let iX = math_field_mul(x, spec_sqrt_m1());
-    let iY = math_field_mul(y, spec_sqrt_m1());
-    let enchanted_denominator = math_field_mul(
+    let iX = field_mul(x, sqrt_m1());
+    let iY = field_mul(y, sqrt_m1());
+    let enchanted_denominator = field_mul(
         i1,
-        spec_field_element(&u64_constants::INVSQRT_A_MINUS_D),
+        fe51_as_canonical_nat(&u64_constants::INVSQRT_A_MINUS_D),
     );
 
-    let rotate = math_is_negative(math_field_mul(t, z_inv));
+    let rotate = is_negative(field_mul(t, z_inv));
     let x_rot = if rotate {
         iY
     } else {
@@ -91,19 +91,19 @@ pub open spec fn spec_ristretto_compress_extended(x: nat, y: nat, z: nat, t: nat
         den_inv
     };
 
-    let y_final = if math_is_negative(math_field_mul(x_rot, z_inv)) {
-        math_field_neg(y_rot)
+    let y_final = if is_negative(field_mul(x_rot, z_inv)) {
+        field_neg(y_rot)
     } else {
         y_rot
     };
-    let s = math_field_mul(den_inv_rot, math_field_sub(z, y_final));
-    let s_final = if math_is_negative(s) {
-        math_field_neg(s)
+    let s = field_mul(den_inv_rot, field_sub(z, y_final));
+    let s_final = if is_negative(s) {
+        field_neg(s)
     } else {
         s
     };
 
-    spec_bytes32_from_nat(s_final)
+    u8_32_from_nat(s_final)
 }
 
 /// Spec-only model of Ristretto compression from a RistrettoPoint.
@@ -122,45 +122,45 @@ pub open spec fn spec_ristretto_compress(point: RistrettoPoint) -> [u8; 32] {
 ///
 /// Reference: [RISTRETTO], §5.3 "Ristretto255 Encoding"
 pub open spec fn spec_ristretto_compress_affine(x: nat, y: nat) -> [u8; 32] {
-    spec_ristretto_compress_extended(x, y, 1, math_field_mul(x, y))
+    spec_ristretto_compress_extended(x, y, 1, field_mul(x, y))
 }
 
 /// Spec-only model of Ristretto decompression.
 /// Reference: [RISTRETTO], §5.2 "Ristretto255 Decoding";
 ///            [DECAF], Section 6 (decoding formulas), and https://ristretto.group/formulas/decoding.html.
 pub open spec fn spec_ristretto_decompress(bytes: [u8; 32]) -> Option<RistrettoPoint> {
-    let s_bytes_nat = bytes32_to_nat(&bytes);
-    let s = spec_field_element_from_bytes(&bytes);
+    let s_bytes_nat = u8_32_as_nat(&bytes);
+    let s = field_element_from_bytes(&bytes);
     let s_encoding_is_canonical = s_bytes_nat < p();
-    let s_is_negative = math_is_negative(s);
+    let s_is_negative = is_negative(s);
 
     if !s_encoding_is_canonical || s_is_negative {
         None
     } else {
-        let ss = math_field_square(s);
-        let u1 = math_field_sub(1, ss);
-        let u2 = math_field_add(1, ss);
-        let u2_sqr = math_field_square(u2);
-        let neg_d = math_field_neg(spec_field_element(&EDWARDS_D));
-        let u1_sqr = math_field_square(u1);
-        let v = math_field_sub(math_field_mul(neg_d, u1_sqr), u2_sqr);
+        let ss = field_square(s);
+        let u1 = field_sub(1, ss);
+        let u2 = field_add(1, ss);
+        let u2_sqr = field_square(u2);
+        let neg_d = field_neg(fe51_as_canonical_nat(&EDWARDS_D));
+        let u1_sqr = field_square(u1);
+        let v = field_sub(field_mul(neg_d, u1_sqr), u2_sqr);
 
-        let invsqrt_input = math_field_mul(v, u2_sqr);
-        let invsqrt = math_invsqrt(invsqrt_input);
-        let ok = math_is_sqrt_ratio(1, invsqrt_input, invsqrt);
+        let invsqrt_input = field_mul(v, u2_sqr);
+        let invsqrt = nat_invsqrt(invsqrt_input);
+        let ok = is_sqrt_ratio(1, invsqrt_input, invsqrt);
 
-        let dx = math_field_mul(invsqrt, u2);
-        let dy = math_field_mul(invsqrt, math_field_mul(dx, v));
-        let x_tmp = math_field_mul(math_field_add(s, s), dx);
-        let x = if math_is_negative(x_tmp) {
-            math_field_neg(x_tmp)
+        let dx = field_mul(invsqrt, u2);
+        let dy = field_mul(invsqrt, field_mul(dx, v));
+        let x_tmp = field_mul(field_add(s, s), dx);
+        let x = if is_negative(x_tmp) {
+            field_neg(x_tmp)
         } else {
             x_tmp
         };
-        let y = math_field_mul(u1, dy);
-        let t = math_field_mul(x, y);
+        let y = field_mul(u1, dy);
+        let t = field_mul(x, y);
 
-        let t_is_negative = math_is_negative(t);
+        let t_is_negative = is_negative(t);
         let y_is_zero = y == 0;
 
         if !ok || t_is_negative || y_is_zero {
@@ -236,27 +236,27 @@ pub proof fn axiom_ristretto_basepoint_table_valid()
 ///
 /// Returns the affine (x, y) coordinates of the resulting Ristretto point.
 pub open spec fn spec_elligator_ristretto_flavor(r_0: nat) -> (nat, nat) {
-    let i = spec_sqrt_m1();
-    let d = spec_field_element(&EDWARDS_D);
-    let one_minus_d_sq = math_field_mul(math_field_sub(1, d), math_field_add(1, d));  // (1-d)(1+d) = 1 - d²
-    let d_minus_one_sq = math_field_square(math_field_sub(d, 1));  // (d-1)²
-    let c_init: nat = math_field_neg(1);  // -1
+    let i = sqrt_m1();
+    let d = fe51_as_canonical_nat(&EDWARDS_D);
+    let one_minus_d_sq = field_mul(field_sub(1, d), field_add(1, d));  // (1-d)(1+d) = 1 - d²
+    let d_minus_one_sq = field_square(field_sub(d, 1));  // (d-1)²
+    let c_init: nat = field_neg(1);  // -1
 
-    let r = math_field_mul(i, math_field_square(r_0));
-    let n_s = math_field_mul(math_field_add(r, 1), one_minus_d_sq);
-    let d_val = math_field_mul(math_field_sub(c_init, math_field_mul(d, r)), math_field_add(r, d));
+    let r = field_mul(i, field_square(r_0));
+    let n_s = field_mul(field_add(r, 1), one_minus_d_sq);
+    let d_val = field_mul(field_sub(c_init, field_mul(d, r)), field_add(r, d));
 
     // sqrt_ratio_i(N_s, D) returns (was_square, s)
     // invsqrt = 1/sqrt(N_s * D), so s = invsqrt * N_s = sqrt(N_s/D)
-    let invsqrt = math_invsqrt(math_field_mul(n_s, d_val));
-    let s_if_square = math_field_mul(invsqrt, n_s);
+    let invsqrt = nat_invsqrt(field_mul(n_s, d_val));
+    let s_if_square = field_mul(invsqrt, n_s);
     // was_square checks if s² · D = N_s (i.e., N_s/D is a square)
-    let was_square = math_is_sqrt_ratio(n_s, d_val, s_if_square);
+    let was_square = is_sqrt_ratio(n_s, d_val, s_if_square);
 
     // s' = s * r_0, then conditionally negate to make it negative
-    let s_prime_raw = math_field_mul(s_if_square, r_0);
-    let s_prime = if !math_is_negative(s_prime_raw) {
-        math_field_neg(s_prime_raw)
+    let s_prime_raw = field_mul(s_if_square, r_0);
+    let s_prime = if !is_negative(s_prime_raw) {
+        field_neg(s_prime_raw)
     } else {
         s_prime_raw
     };
@@ -274,24 +274,21 @@ pub open spec fn spec_elligator_ristretto_flavor(r_0: nat) -> (nat, nat) {
     };
 
     // N_t = c * (r - 1) * (d - 1)² - D
-    let n_t = math_field_sub(
-        math_field_mul(math_field_mul(c, math_field_sub(r, 1)), d_minus_one_sq),
-        d_val,
-    );
-    let s_sq = math_field_square(s);
+    let n_t = field_sub(field_mul(field_mul(c, field_sub(r, 1)), d_minus_one_sq), d_val);
+    let s_sq = field_square(s);
 
     // Final point in completed coordinates, then converted to affine:
     // X = 2*s*D, Z = N_t * sqrt(a*d - 1), Y = 1 - s², T = 1 + s²
     // Affine: x = X*T / (Z*T) = X/Z, y = Y*Z / (Z*T) = Y/T
     let sqrt_ad_minus_one = spec_sqrt_ad_minus_one();
-    let x_completed = math_field_mul(math_field_mul(2, s), d_val);
-    let z_completed = math_field_mul(n_t, sqrt_ad_minus_one);
-    let y_completed = math_field_sub(1, s_sq);
-    let t_completed = math_field_add(1, s_sq);
+    let x_completed = field_mul(field_mul(2, s), d_val);
+    let z_completed = field_mul(n_t, sqrt_ad_minus_one);
+    let y_completed = field_sub(1, s_sq);
+    let t_completed = field_add(1, s_sq);
 
     // Convert completed point ((X:Z), (Y:T)) to affine (X/Z, Y/T)
-    let x_affine = math_field_mul(x_completed, math_field_inv(z_completed));
-    let y_affine = math_field_mul(y_completed, math_field_inv(t_completed));
+    let x_affine = field_mul(x_completed, field_inv(z_completed));
+    let y_affine = field_mul(y_completed, field_inv(t_completed));
 
     (x_affine, y_affine)
 }
@@ -324,8 +321,8 @@ pub open spec fn spec_uniform_bytes_second(bytes: &[u8; 64]) -> [u8; 32] {
 pub open spec fn spec_ristretto_from_uniform_bytes(bytes: &[u8; 64]) -> (nat, nat) {
     let b1 = spec_uniform_bytes_first(bytes);
     let b2 = spec_uniform_bytes_second(bytes);
-    let r1 = spec_field_element_from_bytes(&b1);
-    let r2 = spec_field_element_from_bytes(&b2);
+    let r1 = field_element_from_bytes(&b1);
+    let r2 = field_element_from_bytes(&b2);
     let p1 = spec_elligator_ristretto_flavor(r1);
     let p2 = spec_elligator_ristretto_flavor(r2);
     edwards_add(p1.0, p1.1, p2.0, p2.1)
@@ -336,7 +333,7 @@ pub open spec fn spec_ristretto_from_uniform_bytes(bytes: &[u8; 64]) -> (nat, na
 pub open spec fn spec_sqrt_ad_minus_one() -> nat {
     // sqrt(-1 * d - 1) = sqrt(-d - 1)
     // This is a constant defined in the codebase
-    spec_field_element(&u64_constants::SQRT_AD_MINUS_ONE)
+    fe51_as_canonical_nat(&u64_constants::SQRT_AD_MINUS_ONE)
 }
 
 // =============================================================================

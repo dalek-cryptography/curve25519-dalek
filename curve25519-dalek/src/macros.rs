@@ -278,7 +278,7 @@ macro_rules! define_edwards_scalar_mul_variants_verus {
                     $crate::specs::edwards_specs::edwards_point_as_affine(result)
                         == $crate::specs::edwards_specs::edwards_scalar_mul(
                         $crate::specs::edwards_specs::edwards_point_as_affine(self),
-                        $crate::specs::scalar_specs::scalar_to_nat(scalar),
+                        $crate::specs::scalar_specs::scalar_as_nat(scalar),
                     ),
             {
                 // Calls &EdwardsPoint * &Scalar (the verified implementation)
@@ -295,7 +295,7 @@ macro_rules! define_edwards_scalar_mul_variants_verus {
                     $crate::specs::edwards_specs::edwards_point_as_affine(result)
                         == $crate::specs::edwards_specs::edwards_scalar_mul(
                         $crate::specs::edwards_specs::edwards_point_as_affine(*self),
-                        $crate::specs::scalar_specs::scalar_to_nat(&scalar),
+                        $crate::specs::scalar_specs::scalar_as_nat(&scalar),
                     ),
             {
                 // Calls &EdwardsPoint * &Scalar (the verified implementation)
@@ -312,7 +312,7 @@ macro_rules! define_edwards_scalar_mul_variants_verus {
                     $crate::specs::edwards_specs::edwards_point_as_affine(result)
                         == $crate::specs::edwards_specs::edwards_scalar_mul(
                         $crate::specs::edwards_specs::edwards_point_as_affine(self),
-                        $crate::specs::scalar_specs::scalar_to_nat(&scalar),
+                        $crate::specs::scalar_specs::scalar_as_nat(&scalar),
                     ),
             {
                 // Calls &EdwardsPoint * &Scalar (the verified implementation)
@@ -332,7 +332,7 @@ macro_rules! define_edwards_scalar_mul_variants_verus {
                     $crate::specs::edwards_specs::edwards_point_as_affine(result)
                         == $crate::specs::edwards_specs::edwards_scalar_mul(
                         $crate::specs::edwards_specs::edwards_point_as_affine(*point),
-                        $crate::specs::scalar_specs::scalar_to_nat(&self),
+                        $crate::specs::scalar_specs::scalar_as_nat(&self),
                     ),
             {
                 // Calls &Scalar * &EdwardsPoint (the verified implementation)
@@ -349,7 +349,7 @@ macro_rules! define_edwards_scalar_mul_variants_verus {
                     $crate::specs::edwards_specs::edwards_point_as_affine(result)
                         == $crate::specs::edwards_specs::edwards_scalar_mul(
                         $crate::specs::edwards_specs::edwards_point_as_affine(point),
-                        $crate::specs::scalar_specs::scalar_to_nat(self),
+                        $crate::specs::scalar_specs::scalar_as_nat(self),
                     ),
             {
                 // Calls &Scalar * &EdwardsPoint (the verified implementation)
@@ -366,7 +366,7 @@ macro_rules! define_edwards_scalar_mul_variants_verus {
                     $crate::specs::edwards_specs::edwards_point_as_affine(result)
                         == $crate::specs::edwards_specs::edwards_scalar_mul(
                         $crate::specs::edwards_specs::edwards_point_as_affine(point),
-                        $crate::specs::scalar_specs::scalar_to_nat(&self),
+                        $crate::specs::scalar_specs::scalar_as_nat(&self),
                     ),
             {
                 // Calls &Scalar * &EdwardsPoint (the verified implementation)

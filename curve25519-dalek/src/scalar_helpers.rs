@@ -23,10 +23,10 @@ verus! {
 // ============================================================================
 // Core lemmas for Scalar::ZERO and Scalar::ONE
 // ============================================================================
-/// Lemma: bytes32_to_nat of all-zero bytes equals 0
-pub proof fn lemma_bytes32_to_nat_zero()
+/// Lemma: u8_32_as_nat of all-zero bytes equals 0
+pub proof fn lemma_u8_32_as_nat_zero()
     ensures
-        bytes32_to_nat(&Scalar::ZERO.bytes) == 0,
+        u8_32_as_nat(&Scalar::ZERO.bytes) == 0,
 {
     // 0 * x == 0 for all terms
     assert forall|i: nat| i < 32 implies (0nat) * #[trigger] pow2(i * 8) == 0 by {
@@ -34,10 +34,10 @@ pub proof fn lemma_bytes32_to_nat_zero()
     }
 }
 
-/// Lemma: bytes32_to_nat of ONE's bytes equals 1
-pub proof fn lemma_bytes32_to_nat_one()
+/// Lemma: u8_32_as_nat of ONE's bytes equals 1
+pub proof fn lemma_u8_32_as_nat_one()
     ensures
-        bytes32_to_nat(&Scalar::ONE.bytes) == 1,
+        u8_32_as_nat(&Scalar::ONE.bytes) == 1,
 {
     let bytes = Scalar::ONE.bytes;
     assert(bytes[0] == 1);
@@ -52,12 +52,12 @@ pub proof fn lemma_bytes32_to_nat_one()
 /// Combined lemma for ZERO: value is 0, less than L, canonical, and congruent to 0
 pub proof fn lemma_scalar_zero_properties()
     ensures
-        scalar_to_nat(&Scalar::ZERO) == 0,
-        scalar_to_nat(&Scalar::ZERO) < group_order(),
+        scalar_as_nat(&Scalar::ZERO) == 0,
+        scalar_as_nat(&Scalar::ZERO) < group_order(),
         is_canonical_scalar(&Scalar::ZERO),
         scalar_congruent_nat(&Scalar::ZERO, 0),
 {
-    lemma_bytes32_to_nat_zero();
+    lemma_u8_32_as_nat_zero();
     lemma_small_mod(0nat, group_order());
     // bytes[31] == 0 <= 127 for all-zero bytes
     assert(Scalar::ZERO.bytes[31] <= 127);
@@ -66,12 +66,12 @@ pub proof fn lemma_scalar_zero_properties()
 /// Combined lemma for ONE: value is 1, less than L, and congruent to 1
 pub proof fn lemma_scalar_one_properties()
     ensures
-        scalar_to_nat(&Scalar::ONE) == 1,
-        scalar_to_nat(&Scalar::ONE) < group_order(),
+        scalar_as_nat(&Scalar::ONE) == 1,
+        scalar_as_nat(&Scalar::ONE) < group_order(),
         scalar_congruent_nat(&Scalar::ONE, 1),
         is_canonical_scalar(&Scalar::ONE),
 {
-    lemma_bytes32_to_nat_one();
+    lemma_u8_32_as_nat_one();
     lemma_small_mod(1nat, group_order());
 }
 
@@ -103,7 +103,7 @@ impl Scalar {
         requires
             forall|i: int| #![auto] 0 <= i < scalars@.len() ==> is_canonical_scalar(&scalars@[i]),
         ensures
-            scalar_to_nat(&result) < group_order(),
+            scalar_as_nat(&result) < group_order(),
             is_canonical_scalar(&result),
             scalar_congruent_nat(&result, product_of_scalars(scalars@)),
     {
@@ -121,7 +121,7 @@ impl Scalar {
                 forall|j: int|
                     #![auto]
                     0 <= j < scalars@.len() ==> is_canonical_scalar(&scalars@[j]),
-                scalar_to_nat(&acc) < group_order(),
+                scalar_as_nat(&acc) < group_order(),
                 is_canonical_scalar(&acc),
                 scalar_congruent_nat(&acc, product_of_scalars(scalars@.subrange(0, i as int))),
         {
@@ -137,9 +137,9 @@ impl Scalar {
 
             proof {
                 let L = group_order();
-                let acc_val = bytes32_to_nat(&acc.bytes);
-                let old_acc_val = bytes32_to_nat(&_old_acc.bytes);
-                let scalar_val = bytes32_to_nat(&scalars[i as int].bytes);
+                let acc_val = u8_32_as_nat(&acc.bytes);
+                let old_acc_val = u8_32_as_nat(&_old_acc.bytes);
+                let scalar_val = u8_32_as_nat(&scalars[i as int].bytes);
                 let prod_prev = product_of_scalars(scalars@.subrange(0, i as int));
 
                 lemma_mul_mod_noop_general(old_acc_val as int, scalar_val as int, L as int);
@@ -179,7 +179,7 @@ impl Scalar {
         requires
             forall|i: int| #![auto] 0 <= i < scalars@.len() ==> is_canonical_scalar(&scalars@[i]),
         ensures
-            scalar_to_nat(&result) < group_order(),
+            scalar_as_nat(&result) < group_order(),
             is_canonical_scalar(&result),
             scalar_congruent_nat(&result, sum_of_scalars(scalars@)),
     {
@@ -197,7 +197,7 @@ impl Scalar {
                 forall|j: int|
                     #![auto]
                     0 <= j < scalars@.len() ==> is_canonical_scalar(&scalars@[j]),
-                scalar_to_nat(&acc) < group_order(),
+                scalar_as_nat(&acc) < group_order(),
                 is_canonical_scalar(&acc),
                 scalar_congruent_nat(&acc, sum_of_scalars(scalars@.subrange(0, i as int))),
         {
@@ -213,9 +213,9 @@ impl Scalar {
 
             proof {
                 let L = group_order();
-                let acc_val = bytes32_to_nat(&acc.bytes);
-                let old_acc_val = bytes32_to_nat(&_old_acc.bytes);
-                let scalar_val = bytes32_to_nat(&scalars[i as int].bytes);
+                let acc_val = u8_32_as_nat(&acc.bytes);
+                let old_acc_val = u8_32_as_nat(&_old_acc.bytes);
+                let scalar_val = u8_32_as_nat(&scalars[i as int].bytes);
                 let sum_prev = sum_of_scalars(scalars@.subrange(0, i as int));
 
                 lemma_mod_bound(old_acc_val as int + scalar_val as int, L as int);

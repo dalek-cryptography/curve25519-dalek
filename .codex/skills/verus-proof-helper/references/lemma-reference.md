@@ -14,7 +14,7 @@
 
 Common patterns to search for:
 
-- `lemma_bytes32_to_nat_*` (byte array reasoning)
+- `lemma_u8_32_as_nat_*` (byte array reasoning)
 - `lemma_pow2_*` (powers of 2)
 - `lemma_mod_*` (modular arithmetic)
 - `lemma_*_bound` (bounds)
@@ -22,12 +22,12 @@ Common patterns to search for:
 Command snippets (prefer `rg` if available; fall back to `grep -R`):
 
 ```bash
-rg "lemma_bytes32_to_nat" curve25519-dalek -g"*.rs"
+rg "lemma_u8_32_as_nat" curve25519-dalek -g"*.rs"
 rg "opaque" curve25519-dalek -g"*.rs"
 ```
 
 ```bash
-grep -R --line-number "lemma_bytes32_to_nat" curve25519-dalek --include="*.rs"
+grep -R --line-number "lemma_u8_32_as_nat" curve25519-dalek --include="*.rs"
 grep -R --line-number "opaque" curve25519-dalek --include="*.rs"
 ```
 
@@ -35,9 +35,9 @@ grep -R --line-number "opaque" curve25519-dalek --include="*.rs"
 
 ### Byte-to-nat (`to_nat_lemmas.rs`)
 
-- `lemma_bytes32_to_nat_lower_bound(bytes, index)`: lower bound contribution from a specific byte
-- `lemma_bytes32_to_nat_mod_truncates(bytes, n)`: modulo truncates to the first `n` bytes
-- `lemma_bytes32_to_nat_equals_rec(bytes)`: connect to recursive definition
+- `lemma_u8_32_as_nat_lower_bound(bytes, index)`: lower bound contribution from a specific byte
+- `lemma_u8_32_as_nat_mod_truncates(bytes, n)`: modulo truncates to the first `n` bytes
+- `lemma_u8_32_as_nat_equals_rec(bytes)`: connect to recursive definition
 - `lemma_decomposition_prefix_rec(bytes, n)`: split into prefix + suffix
 - `lemma_prefix_equal_when_bytes_match`: equal prefixes from equal bytes
 

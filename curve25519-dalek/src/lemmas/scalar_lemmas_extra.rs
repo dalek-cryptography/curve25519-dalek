@@ -179,14 +179,14 @@ pub proof fn lemma_limb_from_adjacent_words(
 }
 
 /// Lemma: suffix sum at word boundary equals word contribution + remaining suffix.
-/// Shows how bytes_to_nat_suffix decomposes at word (8-byte) boundaries.
+/// Shows how bytes_as_nat_suffix decomposes at word (8-byte) boundaries.
 pub proof fn lemma_bytes_suffix_matches_word_partial(bytes: &[u8; 64], word_idx: int, upto: int)
     requires
         0 <= word_idx < 8,
         0 <= upto <= 8,
     ensures
-        bytes_to_nat_suffix(bytes, word_idx * 8) == pow2(((word_idx * 8) * 8) as nat)
-            * word64_from_bytes_partial(bytes@, word_idx, upto) + bytes_to_nat_suffix(
+        bytes_as_nat_suffix(bytes, word_idx * 8) == pow2(((word_idx * 8) * 8) as nat)
+            * word64_from_bytes_partial(bytes@, word_idx, upto) + bytes_as_nat_suffix(
             bytes,
             word_idx * 8 + upto,
         ),
@@ -195,8 +195,8 @@ pub proof fn lemma_bytes_suffix_matches_word_partial(bytes: &[u8; 64], word_idx:
     let base = word_idx * 8;
     let pow_base = pow2((base * 8) as nat);
     if upto == 0 {
-        assert(pow_base * 0 + bytes_to_nat_suffix(bytes, base + 0) == pow_base
-            * word64_from_bytes_partial(bytes@, word_idx, 0) + bytes_to_nat_suffix(
+        assert(pow_base * 0 + bytes_as_nat_suffix(bytes, base + 0) == pow_base
+            * word64_from_bytes_partial(bytes@, word_idx, 0) + bytes_as_nat_suffix(
             bytes,
             base + 0,
         ));

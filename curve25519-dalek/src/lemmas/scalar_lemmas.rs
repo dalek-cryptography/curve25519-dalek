@@ -2133,7 +2133,7 @@ pub proof fn lemma_add_sum_simplify(a: &Scalar52, b: &Scalar52, sum: &Scalar52, 
     assert(scalar52_to_nat(&sum) < 2 * group_order());
 }
 
-// NOTE: lemma_bytes32_to_nat_lower_bound has been moved to common_lemmas/to_nat_lemmas.rs
+// NOTE: lemma_u8_32_as_nat_lower_bound has been moved to common_lemmas/to_nat_lemmas.rs
 /// Proof that the group order is less than 2^255
 pub proof fn lemma_group_order_bound()
     ensures
@@ -2434,36 +2434,36 @@ pub proof fn lemma_is_canonical_correctness(self_bytes: &[u8; 32], reduced_bytes
     requires
 // reduced is canonical
 
-        bytes32_to_nat(reduced_bytes) < group_order(),
+        u8_32_as_nat(reduced_bytes) < group_order(),
         // reduced has the same value mod group_order as self
-        bytes32_to_nat(reduced_bytes) % group_order() == bytes32_to_nat(self_bytes) % group_order(),
+        u8_32_as_nat(reduced_bytes) % group_order() == u8_32_as_nat(self_bytes) % group_order(),
     ensures
 // Bytes are equal iff self is canonical
 
-        (self_bytes == reduced_bytes) == (bytes32_to_nat(self_bytes) < group_order()),
+        (self_bytes == reduced_bytes) == (u8_32_as_nat(self_bytes) < group_order()),
 {
     if self_bytes == reduced_bytes {
         // Case 1: Bytes are equal
         // Then nat values are equal and self is canonical
-        assert(bytes32_to_nat(self_bytes) == bytes32_to_nat(reduced_bytes));
-        assert(bytes32_to_nat(self_bytes) < group_order());
+        assert(u8_32_as_nat(self_bytes) == u8_32_as_nat(reduced_bytes));
+        assert(u8_32_as_nat(self_bytes) < group_order());
     } else {
         // Case 2: Bytes differ
         // Step 1: Different bytes imply different nat values (by injectivity)
-        assert(bytes32_to_nat(reduced_bytes) != bytes32_to_nat(self_bytes)) by {
-            if bytes32_to_nat(reduced_bytes) == bytes32_to_nat(self_bytes) {
+        assert(u8_32_as_nat(reduced_bytes) != u8_32_as_nat(self_bytes)) by {
+            if u8_32_as_nat(reduced_bytes) == u8_32_as_nat(self_bytes) {
                 lemma_canonical_bytes_equal(reduced_bytes, self_bytes);
                 assert(reduced_bytes =~= self_bytes);  // contradiction
             }
         }
 
         // Step 2: Canonical value equals itself mod group_order
-        assert(bytes32_to_nat(reduced_bytes) == bytes32_to_nat(reduced_bytes) % group_order()) by {
+        assert(u8_32_as_nat(reduced_bytes) == u8_32_as_nat(reduced_bytes) % group_order()) by {
             lemma_fundamental_div_mod_converse_mod(
-                bytes32_to_nat(reduced_bytes) as int,
+                u8_32_as_nat(reduced_bytes) as int,
                 group_order() as int,
                 0int,
-                bytes32_to_nat(reduced_bytes) as int,
+                u8_32_as_nat(reduced_bytes) as int,
             );
         }
 
@@ -2471,14 +2471,13 @@ pub proof fn lemma_is_canonical_correctness(self_bytes: &[u8; 32], reduced_bytes
         // reduced == reduced % L (Step 2) and reduced % L == self % L (requires)
         // implies reduced == self % L, but reduced != self (Step 1)
         // therefore self % L != self
-        assert(bytes32_to_nat(self_bytes) % group_order() != bytes32_to_nat(self_bytes));
+        assert(u8_32_as_nat(self_bytes) % group_order() != u8_32_as_nat(self_bytes));
 
         // Step 4: By contradiction - if self_bytes < group_order, it would equal itself mod group_order
-        assert(!(bytes32_to_nat(self_bytes) < group_order())) by {
-            if bytes32_to_nat(self_bytes) < group_order() {
-                assert(bytes32_to_nat(self_bytes) % group_order() == bytes32_to_nat(self_bytes))
-                    by {
-                    lemma_small_mod(bytes32_to_nat(self_bytes), group_order());
+        assert(!(u8_32_as_nat(self_bytes) < group_order())) by {
+            if u8_32_as_nat(self_bytes) < group_order() {
+                assert(u8_32_as_nat(self_bytes) % group_order() == u8_32_as_nat(self_bytes)) by {
+                    lemma_small_mod(u8_32_as_nat(self_bytes), group_order());
                 }
             }
         }
@@ -2564,22 +2563,22 @@ pub proof fn lemma_square_multiply_step(new_y: nat, y_before: nat, y0: nat, R: n
     }
 }
 
-/// If bytes32_to_nat(bytes) < group_order(), then bytes[31] <= 127 (high bit is clear)
+/// If u8_32_as_nat(bytes) < group_order(), then bytes[31] <= 127 (high bit is clear)
 pub proof fn lemma_canonical_bytes_high_bit_clear(bytes: &[u8; 32])
     requires
-        bytes32_to_nat(bytes) < group_order(),
+        u8_32_as_nat(bytes) < group_order(),
     ensures
         bytes[31] <= 127,
 {
     lemma_group_order_bound();
-    // bytes32_to_nat < group_order < 2^255
+    // u8_32_as_nat < group_order < 2^255
     if bytes[31] >= 128 {
-        // bytes32_to_nat >= bytes[31] * 2^248 >= 128 * 2^248 = 2^255
-        lemma_bytes32_to_nat_lower_bound(bytes, 31);
+        // u8_32_as_nat >= bytes[31] * 2^248 >= 128 * 2^248 = 2^255
+        lemma_u8_32_as_nat_lower_bound(bytes, 31);
         lemma_pow2_adds(7, 248);
         lemma2_to64();
         lemma_mul_inequality(128, bytes[31] as int, pow2(248) as int);
-        // contradiction: bytes32_to_nat >= 2^255 > group_order
+        // contradiction: u8_32_as_nat >= 2^255 > group_order
     }
 }
 

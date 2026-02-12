@@ -68,21 +68,21 @@ use vstd::calc;
 use vstd::prelude::*;
 
 #[cfg(verus_keep_ghost)]
-use crate::lemmas::common_lemmas::to_nat_lemmas::lemma_bytes32_to_nat_equals_suffix_64;
+use crate::lemmas::common_lemmas::to_nat_lemmas::lemma_u8_32_as_nat_equals_suffix_64;
 #[allow(unused_imports)]
 use crate::lemmas::scalar_lemmas_extra::*;
 #[cfg(verus_keep_ghost)]
 use crate::lemmas::scalar_montgomery_lemmas::*;
 #[cfg(verus_keep_ghost)]
-use crate::specs::core_specs::bytes32_to_nat;
+use crate::specs::core_specs::bytes_as_nat_prefix;
 #[cfg(verus_keep_ghost)]
-use crate::specs::core_specs::bytes_seq_to_nat;
+use crate::specs::core_specs::bytes_as_nat_suffix;
 #[cfg(verus_keep_ghost)]
-use crate::specs::core_specs::bytes_to_nat_prefix;
-#[cfg(verus_keep_ghost)]
-use crate::specs::core_specs::bytes_to_nat_suffix;
+use crate::specs::core_specs::bytes_seq_as_nat;
 #[cfg(verus_keep_ghost)]
 use crate::specs::core_specs::spec_load8_at;
+#[cfg(verus_keep_ghost)]
+use crate::specs::core_specs::u8_32_as_nat;
 #[cfg(verus_keep_ghost)]
 use crate::specs::core_specs::word64_from_bytes;
 #[cfg(verus_keep_ghost)]
@@ -163,7 +163,7 @@ impl Scalar52 {
     #[rustfmt::skip]  // keep alignment of s[*] calculations
     pub fn from_bytes(bytes: &[u8; 32]) -> (s: Scalar52)
         ensures
-            bytes32_to_nat(bytes) == scalar52_to_nat(&s),
+            u8_32_as_nat(bytes) == scalar52_to_nat(&s),
             limbs_bounded(&s),
             limb_prod_bounded_u128(s.limbs, s.limbs, 5),
     {
@@ -173,7 +173,7 @@ impl Scalar52 {
                 0 <= i <= 4,
                 forall|i2: int| i <= i2 < 4 ==> words[i2] == 0,
                 forall|i2: int|
-                    0 <= i2 < i ==> (words[i2] == bytes_to_nat_prefix(
+                    0 <= i2 < i ==> (words[i2] == bytes_as_nat_prefix(
                         Seq::new(8, |j: int| bytes[i2 * 8 + j]),
                         8,
                     )),
@@ -188,12 +188,12 @@ impl Scalar52 {
                     0 <= j <= 8 && 0 <= i < 4,
                     words[i as int] < pow2(j as nat * 8),
                     forall|i2: int| i + 1 <= i2 < 4 ==> words[i2] == 0,
-                    words[i as int] == bytes_to_nat_prefix(
+                    words[i as int] == bytes_as_nat_prefix(
                         Seq::new(8, |j2: int| bytes[i as int * 8 + j2]),
                         j as nat,
                     ),
                     forall|i2: int|
-                        0 <= i2 < i ==> ((words[i2] as nat) == bytes_to_nat_prefix(
+                        0 <= i2 < i ==> ((words[i2] as nat) == bytes_as_nat_prefix(
                             Seq::new(8, |j: int| bytes[i2 * 8 + j]),
                             8,
                         )),
@@ -223,7 +223,7 @@ impl Scalar52 {
 
         proof {
             lemma_words_to_scalar(words, s, mask, top_mask);
-            assert(bytes32_to_nat(bytes) == scalar52_to_nat(&s));
+            assert(u8_32_as_nat(bytes) == scalar52_to_nat(&s));
             lemma_limbs_bounded_implies_prod_bounded(&s, &s);
         }
 
@@ -237,13 +237,13 @@ impl Scalar52 {
     // VERIFICATION NOTE: Result is canonical
 
             is_canonical_scalar52(&s),
-            scalar52_to_nat(&s) == bytes_seq_to_nat(bytes@) % group_order(),
+            scalar52_to_nat(&s) == bytes_seq_as_nat(bytes@) % group_order(),
     {
-        let ghost wide_input = bytes_seq_to_nat(bytes@);
+        let ghost wide_input = bytes_seq_as_nat(bytes@);
 
         proof {
-            // Bridge bytes_seq_to_nat with the suffix sum for loop invariant
-            lemma_bytes32_to_nat_equals_suffix_64(bytes);
+            // Bridge bytes_seq_as_nat with the suffix sum for loop invariant
+            lemma_u8_32_as_nat_equals_suffix_64(bytes);
         }
 
         // Stage 1 assumption: the byte-to-word packing yields the expected little-endian value.
@@ -253,10 +253,10 @@ impl Scalar52 {
                 forall|k: int|
                     #![auto]
                     0 <= k < i ==> words@[k] as nat == word64_from_bytes(bytes@, k),
-                words64_from_bytes_to_nat(bytes@, i as int) + bytes_to_nat_suffix(
+                words64_from_bytes_to_nat(bytes@, i as int) + bytes_as_nat_suffix(
                     bytes,
                     (i as int) * 8,
-                ) == bytes_seq_to_nat(bytes@),
+                ) == bytes_seq_as_nat(bytes@),
                 forall|k: int| i <= k < 8 ==> words@[k] == 0,
         {
             let offset = i * 8;
@@ -282,8 +282,8 @@ impl Scalar52 {
                     assert(words@[#[trigger] k] == 0);
                 };
                 reveal_with_fuel(words64_from_bytes_to_nat, 9);
-                assert(bytes_to_nat_suffix(bytes, i_int * 8) == word64_from_bytes(bytes@, i_int)
-                    * pow2((i_int * 64) as nat) + bytes_to_nat_suffix(bytes, (i_int + 1) * 8)) by {
+                assert(bytes_as_nat_suffix(bytes, i_int * 8) == word64_from_bytes(bytes@, i_int)
+                    * pow2((i_int * 64) as nat) + bytes_as_nat_suffix(bytes, (i_int + 1) * 8)) by {
                     lemma_bytes_suffix_matches_word_partial(bytes, i_int, 8);
                     broadcast use lemma_mul_is_commutative;
 
@@ -292,7 +292,7 @@ impl Scalar52 {
         }
 
         proof {
-            lemma_words_to_nat_equals_bytes(&words, bytes, 8);
+            lemma_words_as_nat_equals_bytes(&words, bytes, 8);
         }
 
         // Stage 2 word bounds: every assembled chunk fits in 64 bits.
@@ -412,7 +412,7 @@ impl Scalar52 {
         };
         // Recombining quotient and remainder at the 2^260 radix recreates the original wide input.
         assert(high_expr < pow2(252)) by {
-            lemma_words_to_nat_upper_bound(&words, 8);
+            lemma_words_as_nat_upper_bound(&words, 8);
             lemma_pow2_adds(260, 252);
             assert(pow2_260 * pow2(252) == pow2(512));
             lemma_multiply_divide_lt(wide_input as int, pow2_260 as int, pow2(252) as int);
@@ -506,7 +506,7 @@ impl Scalar52 {
         requires
             limbs_bounded(&self),
         ensures
-            bytes32_to_nat(&s) == scalar52_to_nat(&self) % pow2(256),
+            u8_32_as_nat(&s) == scalar52_to_nat(&self) % pow2(256),
     {
         let mut s = [0u8;32];
 
@@ -2093,8 +2093,8 @@ pub mod test {
     }
 
     /// Convert a 32-byte array to a BigUint
-    /// Matches the spec: bytes32_to_nat(&[u8; 32])
-    pub fn bytes32_to_nat_exec(bytes: &[u8; 32]) -> BigUint {
+    /// Matches the spec: u8_32_as_nat(&[u8; 32])
+    pub fn u8_32_as_nat_exec(bytes: &[u8; 32]) -> BigUint {
         let mut result = BigUint::zero();
         let radix = BigUint::from(256u32);
         for i in (0..32).rev() {
@@ -2133,7 +2133,7 @@ pub mod test {
         #![proptest_config(proptest::test_runner::Config::with_cases(1000000))]
 
         /// Test from_bytes spec: for any 32-byte array, verify both postconditions
-        /// 1. bytes32_to_nat(bytes) == scalar52_to_nat(&s)
+        /// 1. u8_32_as_nat(bytes) == scalar52_to_nat(&s)
         /// 2. limbs_bounded(&s)
         #[test]
         fn prop_from_bytes(bytes in prop::array::uniform32(any::<u8>())) {
@@ -2141,12 +2141,12 @@ pub mod test {
             let s = Scalar52::from_bytes(&bytes);
 
             // Convert to BigUint using executable spec functions
-            let bytes_nat = bytes32_to_nat_exec(&bytes);
+            let bytes_nat = u8_32_as_nat_exec(&bytes);
             let result_nat = to_nat_exec(&s.limbs);
 
-            // Postcondition 1: bytes32_to_nat(bytes) == scalar52_to_nat(&s)
+            // Postcondition 1: u8_32_as_nat(bytes) == scalar52_to_nat(&s)
             prop_assert_eq!(bytes_nat, result_nat,
-                "from_bytes spec violated: bytes32_to_nat(bytes) != scalar52_to_nat(&s)");
+                "from_bytes spec violated: u8_32_as_nat(bytes) != scalar52_to_nat(&s)");
 
             // Postcondition 2: limbs_bounded(&s)
             prop_assert!(limbs_bounded_exec(&s),

@@ -28,7 +28,7 @@ use crate::specs::field_specs_u64::*;
 #[cfg(verus_keep_ghost)]
 use crate::specs::scalar52_specs::group_order;
 #[cfg(verus_keep_ghost)]
-use crate::specs::scalar_specs::scalar_to_nat;
+use crate::specs::scalar_specs::scalar_as_nat;
 #[cfg(verus_keep_ghost)]
 use vstd::arithmetic::power2::{lemma2_to64, lemma2_to64_rest, lemma_pow2_adds, pow2};
 use vstd::prelude::*;
@@ -121,13 +121,13 @@ pub(crate) proof fn lemma_edwards_d2_limbs_bounded_54()
 /// EDWARDS_D2 is precomputed as 2*d mod p in the curve25519-dalek library.
 /// This is a well-established relationship for the curve25519 constants.
 ///
-/// The postcondition states that spec_field_element(&EDWARDS_D2) equals
-/// math_field_mul(2, spec_field_element(&EDWARDS_D)), i.e., 2*d mod p.
+/// The postcondition states that fe51_as_canonical_nat(&EDWARDS_D2) equals
+/// field_mul(2, fe51_as_canonical_nat(&EDWARDS_D)), i.e., 2*d mod p.
 pub(crate) proof fn axiom_edwards_d2_is_2d()
     ensures
-        spec_field_element(&constants::EDWARDS_D2) == math_field_mul(
+        fe51_as_canonical_nat(&constants::EDWARDS_D2) == field_mul(
             2,
-            spec_field_element(&EDWARDS_D),
+            fe51_as_canonical_nat(&EDWARDS_D),
         ),
 {
     // Trusted assumption.
@@ -147,9 +147,9 @@ pub(crate) proof fn axiom_edwards_d2_is_2d()
 ///
 /// This lemma bridges the byte-level constant to the `group_order()` nat used in specs.
 /// The group order is: ℓ = 2^252 + 27742317777372353535851937790883648493
-pub(crate) proof fn lemma_scalar_to_nat_basepoint_order_private_equals_group_order()
+pub(crate) proof fn lemma_scalar_as_nat_basepoint_order_private_equals_group_order()
     ensures
-        scalar_to_nat(&constants::BASEPOINT_ORDER_PRIVATE) == group_order(),
+        scalar_as_nat(&constants::BASEPOINT_ORDER_PRIVATE) == group_order(),
 {
     // Expand the (little-endian) 32-byte constant into its nat value.
     //
@@ -196,7 +196,7 @@ pub(crate) proof fn lemma_scalar_to_nat_basepoint_order_private_equals_group_ord
     assert(constants::BASEPOINT_ORDER_PRIVATE.bytes[31] == 0x10_u8) by (compute_only);
 
     // Now the spec-level conversion agrees with our concrete expansion.
-    assert(scalar_to_nat(&constants::BASEPOINT_ORDER_PRIVATE) == expanded);
+    assert(scalar_as_nat(&constants::BASEPOINT_ORDER_PRIVATE) == expanded);
 
     // Basic pow2 facts for the 64-bit word computations.
     // Call lemmas once at the top for all pow2 values needed below.
@@ -270,7 +270,7 @@ pub(crate) proof fn lemma_scalar_to_nat_basepoint_order_private_equals_group_ord
     assert(expanded == word0 + shifted_word1 + 16nat * pow2(248));
     assert(expanded == pow2(252) + 27742317777372353535851937790883648493nat);
     assert(group_order() == pow2(252) + 27742317777372353535851937790883648493nat);
-    assert(scalar_to_nat(&constants::BASEPOINT_ORDER_PRIVATE) == group_order());
+    assert(scalar_as_nat(&constants::BASEPOINT_ORDER_PRIVATE) == group_order());
 }
 
 } // verus!

@@ -79,11 +79,19 @@ pub open spec fn five_u64_limbs_to_nat(n0: u64, n1: u64, n2: u64, n3: u64, n4: u
     (n4 as nat) * pow2(208)
 }
 
-// bytes32_to_nat, bytes_seq_to_nat, and bytes_to_nat_suffix (all generic)
+// u8_32_as_nat, bytes_seq_as_nat, and bytes_as_nat_suffix (all generic)
 // are now in core_specs.rs. They are imported via `use super::core_specs::*`
 // Group order: the value of L as a natural number
 pub open spec fn group_order() -> nat {
     pow2(252) + 27742317777372353535851937790883648493nat
+}
+
+pub open spec fn group_canonical(n: nat) -> nat {
+    n % group_order()
+}
+
+pub open spec fn u64_5_as_group_canonical(limbs: [u64; 5]) -> nat {
+    group_canonical(five_limbs_to_nat_aux(limbs))
 }
 
 // Montgomery radix R = 2^260

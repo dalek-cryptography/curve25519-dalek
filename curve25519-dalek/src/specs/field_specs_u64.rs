@@ -12,6 +12,14 @@ pub open spec fn p() -> nat {
     (pow2(255) - 19) as nat
 }
 
+pub open spec fn field_canonical(n: nat) -> nat {
+    n % p()
+}
+
+pub open spec fn u64_5_as_field_canonical(limbs: [u64; 5]) -> nat {
+    field_canonical(u64_5_as_nat(limbs))
+}
+
 // Proof that 2^255 > 19
 pub proof fn pow255_gt_19()
     ensures
@@ -57,7 +65,7 @@ pub open spec fn u64_5_as_nat(limbs: [u64; 5]) -> nat {
     pow2(204) * (limbs[4] as nat)
 }
 
-// Note: bytes32_to_nat, bytes32_to_nat_rec, and spec_load8_at have been moved to core_specs
+// Note: u8_32_as_nat, u8_32_as_nat_rec, and spec_load8_at have been moved to core_specs
 // They are now shared between field and scalar implementations
 pub open spec fn spec_reduce(limbs: [u64; 5]) -> (r: [u64; 5]) {
     let r = [

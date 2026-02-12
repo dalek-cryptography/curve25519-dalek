@@ -321,7 +321,7 @@ pub proof fn lemma_edwards_scalar_mul_signed_of_scalar_mul(P: (nat, nat), k: nat
 
         assert(edwards_scalar_mul_signed(edwards_scalar_mul(P, k), a) == {
             let (x, y) = edwards_scalar_mul(edwards_scalar_mul(P, k), ap);
-            (math_field_neg(x), y)
+            (field_neg(x), y)
         });
 
         // Rewrite the inner scalar multiplication using nat composition.
@@ -344,7 +344,7 @@ pub proof fn lemma_edwards_scalar_mul_signed_of_scalar_mul(P: (nat, nat), k: nat
         // Expand RHS definition for negative scalar.
         assert(edwards_scalar_mul_signed(P, a * (k as int)) == {
             let (x, y) = edwards_scalar_mul(P, (-(a * (k as int))) as nat);
-            (math_field_neg(x), y)
+            (field_neg(x), y)
         });
 
         // Show that -(a*k) as nat equals k * (-a) as nat.

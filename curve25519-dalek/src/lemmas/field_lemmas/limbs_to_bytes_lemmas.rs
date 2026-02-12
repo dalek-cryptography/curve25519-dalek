@@ -51,7 +51,7 @@ pub proof fn lemma_limbs_to_bytes(limbs: [u64; 5], bytes: [u8; 32])
         forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51),
         bytes_match_limbs_packing(limbs, bytes),
     ensures
-        bytes32_to_nat(&bytes) == u64_5_as_nat(limbs),
+        u8_32_as_nat(&bytes) == u64_5_as_nat(limbs),
 {
     // Connect the bit shift in the requires clause to pow2
     lemma_u64_shift_is_pow2(51);
@@ -68,11 +68,11 @@ proof fn lemma_byte_sum_equals_limb_sum(limbs: [u64; 5], bytes: [u8; 32])
         forall|i: int| 0 <= i < 5 ==> limbs[i] < pow2(51),
         bytes_match_limbs_packing(limbs, bytes),
     ensures
-        bytes32_to_nat(&bytes) == u64_5_as_nat(limbs),
+        u8_32_as_nat(&bytes) == u64_5_as_nat(limbs),
 {
     // This lemma performs the complete algebraic expansion:
     //
-    // LHS: bytes32_to_nat(bytes)
+    // LHS: u8_32_as_nat(bytes)
     //    = bytes[0] + bytes[1]*256 + bytes[2]*256^2 + ... + bytes[31]*256^31
     //
     // Substitute each byte[i] from bytes_match_limbs_packing:
@@ -95,8 +95,8 @@ proof fn lemma_byte_sum_equals_limb_sum(limbs: [u64; 5], bytes: [u8; 32])
     // The proof strategy is:
     // 1. Define each limb's byte contribution as a spec function
     // 2. Prove each contribution equals limbs[i] * pow2(i*51) using helper lemmas
-    // 3. Prove the sum of contributions equals bytes32_to_nat(bytes)
-    // 4. Therefore bytes32_to_nat(bytes) == u64_5_as_nat(limbs)
+    // 3. Prove the sum of contributions equals u8_32_as_nat(bytes)
+    // 4. Therefore u8_32_as_nat(bytes) == u64_5_as_nat(limbs)
     //
     // Key insight: pow2(48) * 8 = pow2(51) (the radix change point)
     lemma2_to64();
@@ -121,9 +121,9 @@ proof fn lemma_byte_sum_equals_limb_sum(limbs: [u64; 5], bytes: [u8; 32])
 
     lemma_limb4_contribution_correctness(limbs, bytes);
 
-    // Prove the sum of contributions equals bytes32_to_nat(&bytes)
+    // Prove the sum of contributions equals u8_32_as_nat(&bytes)
     lemma_sum_equals_byte_nat(limbs, bytes);
-    assert(bytes32_to_nat(&bytes) == limb0_contribution + limb1_contribution + limb2_contribution
+    assert(u8_32_as_nat(&bytes) == limb0_contribution + limb1_contribution + limb2_contribution
         + limb3_contribution + limb4_contribution);
 
     // Therefore, the sum equals u64_5_as_nat(limbs)
@@ -2065,13 +2065,13 @@ proof fn lemma_boundary_byte_combines(
 
 }
 
-/// Proves that the sum of all limb contributions equals bytes32_to_nat(&bytes)
+/// Proves that the sum of all limb contributions equals u8_32_as_nat(&bytes)
 proof fn lemma_sum_equals_byte_nat(limbs: [u64; 5], bytes: [u8; 32])
     requires
         forall|i: int| 0 <= i < 5 ==> limbs[i] < pow2(51),
         bytes_match_limbs_packing(limbs, bytes),
     ensures
-        bytes32_to_nat(&bytes) == limb0_byte_contribution(limbs, bytes) + limb1_byte_contribution(
+        u8_32_as_nat(&bytes) == limb0_byte_contribution(limbs, bytes) + limb1_byte_contribution(
             limbs,
             bytes,
         ) + limb2_byte_contribution(limbs, bytes) + limb3_byte_contribution(limbs, bytes)
@@ -2079,7 +2079,7 @@ proof fn lemma_sum_equals_byte_nat(limbs: [u64; 5], bytes: [u8; 32])
 {
     lemma2_to64();
 
-    // Strategy: Show that the sum of contributions equals bytes32_to_nat(bytes)
+    // Strategy: Show that the sum of contributions equals u8_32_as_nat(bytes)
     // by proving that for boundary bytes, the split parts reconstruct the full byte.
     //
     // Boundary bytes:
@@ -2197,7 +2197,7 @@ proof fn lemma_sum_equals_byte_nat(limbs: [u64; 5], bytes: [u8; 32])
         * pow2(28 * 8) + (bytes[29] as nat) * pow2(29 * 8) + (bytes[30] as nat) * pow2(30 * 8) + (
     bytes[31] as nat) * pow2(31 * 8);
 
-    assert(after_split_25_pow2_first == bytes32_to_nat(&bytes));
+    assert(after_split_25_pow2_first == u8_32_as_nat(&bytes));
 
     assert(bytes[0] as nat * pow2(0 * 8) == bytes[0] as nat * 1);
     // The mathematical fact: after splitting boundary bytes, this equals the sum of limb contributions

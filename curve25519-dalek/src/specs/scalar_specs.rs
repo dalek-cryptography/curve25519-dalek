@@ -14,14 +14,18 @@ use super::scalar52_specs::*;
 
 verus! {
 
-pub open spec fn scalar_to_nat(s: &Scalar) -> nat {
-    bytes32_to_nat(&s.bytes)
+pub open spec fn scalar_as_nat(s: &Scalar) -> nat {
+    u8_32_as_nat(&s.bytes)
+}
+
+pub open spec fn u8_32_as_group_canonical(bytes: [u8; 32]) -> nat {
+    group_canonical(u8_32_as_nat(&bytes))
 }
 
 /// Returns the scalar value reduced modulo group order.
 /// This is the value used in scalar multiplication: [n]P where n = scalar_as_canonical(s).
 pub open spec fn scalar_as_canonical(s: &Scalar) -> nat {
-    bytes32_to_nat(&s.bytes) % group_order()
+    u8_32_as_group_canonical(s.bytes)
 }
 
 /// Checks if a Scalar satisfies the canonical representation invariants:
@@ -29,7 +33,7 @@ pub open spec fn scalar_as_canonical(s: &Scalar) -> nat {
 /// - Invariant #2: Scalar is reduced modulo group order, i.e., s < ℓ
 pub open spec fn is_canonical_scalar(s: &Scalar) -> bool {
     // Invariant #2: Scalar is reduced (< group order)
-    bytes32_to_nat(&s.bytes)
+    u8_32_as_nat(&s.bytes)
         < group_order()
     // Invariant #1: High bit is clear (< 2^255)
      && s.bytes[31] <= 127
@@ -38,7 +42,7 @@ pub open spec fn is_canonical_scalar(s: &Scalar) -> bool {
 /// Returns true iff a and b are multiplicative inverses modulo group_order
 /// i.e., a * b ≡ 1 (mod group_order)
 pub open spec fn is_inverse(a: &Scalar, b: &Scalar) -> bool {
-    (bytes32_to_nat(&a.bytes) * bytes32_to_nat(&b.bytes)) % group_order() == 1
+    group_canonical(scalar_as_nat(a) * scalar_as_nat(b)) == 1
 }
 
 /// Spec function to compute product of all scalars in a sequence (mod group_order)
@@ -51,8 +55,9 @@ pub open spec fn product_of_scalars(scalars: Seq<Scalar>) -> nat
         1
     } else {
         let last = (scalars.len() - 1) as int;
-        (product_of_scalars(scalars.subrange(0, last)) * bytes32_to_nat(&scalars[last].bytes))
-            % group_order()
+        group_canonical(
+            (product_of_scalars(scalars.subrange(0, last)) * scalar_as_nat(&scalars[last])),
+        )
     }
 }
 
@@ -66,19 +71,18 @@ pub open spec fn sum_of_scalars(scalars: Seq<Scalar>) -> nat
         0
     } else {
         let last = (scalars.len() - 1) as int;
-        (sum_of_scalars(scalars.subrange(0, last)) + bytes32_to_nat(&scalars[last].bytes))
-            % group_order()
+        group_canonical((sum_of_scalars(scalars.subrange(0, last)) + scalar_as_nat(&scalars[last])))
     }
 }
 
 /// Returns true iff a scalar's byte representation equals the given natural number (mod group_order)
 pub open spec fn scalar_congruent_nat(s: &Scalar, n: nat) -> bool {
-    bytes32_to_nat(&s.bytes) % group_order() == n % group_order()
+    scalar_as_canonical(s) == group_canonical(n)
 }
 
 /// Returns true iff a scalar is the inverse of a natural number (mod group_order)
 pub open spec fn is_inverse_of_nat(s: &Scalar, n: nat) -> bool {
-    (bytes32_to_nat(&s.bytes) * n) % group_order() == 1
+    group_canonical(scalar_as_nat(s) * n) == 1
 }
 
 /// Returns true iff a byte array represents a clamped integer for X25519.
@@ -230,7 +234,7 @@ pub open spec fn radix_16_all_bounded(digits: &[i8; 64]) -> bool {
 /// Convert a boolean slice (bits in big-endian order) to a natural number
 /// This interprets bits[0] as the most significant bit
 /// Used for scalar multiplication where bits are processed MSB first
-pub open spec fn bits_be_to_nat(bits: &[bool], len: int) -> nat
+pub open spec fn bits_be_as_nat(bits: &[bool], len: int) -> nat
     recommends
         0 <= len <= bits.len(),
     decreases len,
@@ -243,7 +247,7 @@ pub open spec fn bits_be_to_nat(bits: &[bool], len: int) -> nat
         } else {
             0nat
         };
-        bit_value + 2 * bits_be_to_nat(bits, len - 1)
+        bit_value + 2 * bits_be_as_nat(bits, len - 1)
     }
 }
 

@@ -1,6 +1,6 @@
 //! Lemmas about i = sqrt(-1) in GF(p) where p = 2^255 - 19
 //!
-//! This module contains lemmas about the specific field element `spec_sqrt_m1()`,
+//! This module contains lemmas about the specific field element `sqrt_m1()`,
 //! which is the square root of -1 in the curve25519 prime field.
 //!
 //! ## Axioms
@@ -51,7 +51,7 @@ verus! {
 ///          lemma_multiply_by_i_flips_sign, lemma_no_square_root_when_times_i
 pub proof fn axiom_sqrt_m1_squared()
     ensures
-        (spec_sqrt_m1() * spec_sqrt_m1()) % p() == (p() - 1),
+        (sqrt_m1() * sqrt_m1()) % p() == (p() - 1),
 {
     admit();
 }
@@ -69,7 +69,7 @@ pub proof fn axiom_sqrt_m1_squared()
 /// Used in: lemma_no_square_root_when_times_i
 pub proof fn axiom_sqrt_m1_not_square()
     ensures
-        !is_square_mod_p(spec_sqrt_m1()),
+        !is_square(sqrt_m1()),
 {
     admit();
 }
@@ -86,7 +86,7 @@ pub proof fn axiom_sqrt_m1_not_square()
 /// Used in: lemma_no_square_root_when_times_i
 pub proof fn axiom_neg_sqrt_m1_not_square()
     ensures
-        !is_square_mod_p((p() - spec_sqrt_m1()) as nat),
+        !is_square((p() - sqrt_m1()) as nat),
 {
     admit();
 }
@@ -105,21 +105,19 @@ pub proof fn axiom_neg_sqrt_m1_not_square()
 /// Used in: lemma_flipped_sign_becomes_correct
 pub proof fn lemma_multiply_by_i_flips_sign(r: nat)
     ensures
-        math_field_square(math_field_mul(r, spec_sqrt_m1())) == math_field_neg(
-            math_field_square(r),
-        ),
+        field_square(field_mul(r, sqrt_m1())) == field_neg(field_square(r)),
         // Expanded form for callers that need explicit modular arithmetic
-        ((r * spec_sqrt_m1()) % p() * (r * spec_sqrt_m1()) % p()) % p() == ((p() as int - ((r * r)
+        ((r * sqrt_m1()) % p() * (r * sqrt_m1()) % p()) % p() == ((p() as int - ((r * r)
             % p()) as int) % p() as int) as nat,
 {
     pow255_gt_19();  // Needed: establishes p() > 0 for modular arithmetic
 
-    let i = spec_sqrt_m1();
+    let i = sqrt_m1();
     let pn = p();
     let ri = r * i;
-    let ri_mod = math_field_mul(r, i);  // = (r * i) % p
+    let ri_mod = field_mul(r, i);  // = (r * i) % p
     let r2 = r * r;
-    let r2_mod = math_field_square(r);  // = (r * r) % p
+    let r2_mod = field_square(r);  // = (r * r) % p
     let i2 = i * i;
     let pn_minus_1: nat = (pn - 1) as nat;
 
@@ -149,17 +147,17 @@ pub proof fn lemma_multiply_by_i_flips_sign(r: nat)
     };
 
     // Step 3: Connect to math_field functions
-    // LHS: math_field_square(ri_mod) = (ri_mod * ri_mod) % p
+    // LHS: field_square(ri_mod) = (ri_mod * ri_mod) % p
     //    = ((ri % p) * (ri % p)) % p = (ri * ri) % p  [by mod absorption]
-    assert(math_field_square(ri_mod) == (ri * ri) % pn) by {
+    assert(field_square(ri_mod) == (ri * ri) % pn) by {
         // ri_mod = ri % p
         // (ri_mod * ri_mod) % p = ((ri%p) * (ri%p)) % p = (ri * ri) % p
         lemma_mul_mod_noop_left(ri as int, ri as int, pn as int);
         lemma_mul_mod_noop_right((ri % pn) as int, ri as int, pn as int);
     };
 
-    // RHS: math_field_neg(r2_mod) = (p - r2_mod % p) % p
-    assert(math_field_neg(r2_mod) == neg_r2) by {
+    // RHS: field_neg(r2_mod) = (p - r2_mod % p) % p
+    assert(field_neg(r2_mod) == neg_r2) by {
         lemma_small_mod(r2_mod, pn);
     };
 
@@ -186,20 +184,20 @@ pub proof fn lemma_multiply_by_i_flips_sign(r: nat)
 ///
 pub proof fn lemma_i_inverse_is_neg_i()
     ensures
-        math_field_mul(spec_sqrt_m1(), math_field_neg(spec_sqrt_m1())) == 1,
-        math_field_inv(spec_sqrt_m1()) == math_field_neg(spec_sqrt_m1()),
+        field_mul(sqrt_m1(), field_neg(sqrt_m1())) == 1,
+        field_inv(sqrt_m1()) == field_neg(sqrt_m1()),
 {
-    let i = spec_sqrt_m1();
+    let i = sqrt_m1();
     let p = p();
     p_gt_2();
 
-    // Step 1: Show i < p (since spec_sqrt_m1() = spec_field_element(...) % p)
+    // Step 1: Show i < p (since sqrt_m1() = fe51_as_canonical_nat(...) % p)
     assert(i < p) by {
-        lemma_mod_bound(spec_field_element_as_nat(&constants::SQRT_M1) as int, p as int);
+        lemma_mod_bound(fe51_as_nat(&constants::SQRT_M1) as int, p as int);
     };
 
     // Step 2: Define -i = (p - i) % p = p - i (since i < p and i > 0)
-    let neg_i = math_field_neg(i);
+    let neg_i = field_neg(i);
 
     // Show i ≠ 0: If i = 0, then i² = 0, but i² ≡ -1 (mod p), contradiction
     assert(i != 0) by {
@@ -220,7 +218,7 @@ pub proof fn lemma_i_inverse_is_neg_i()
 
     // Step 3: neg_i = p - i (since i < p and i ≠ 0, we have 0 < p - i < p)
     assert(neg_i == (p - i) as nat) by {
-        // math_field_neg(i) = (p - i % p) % p = (p - i) % p
+        // field_neg(i) = (p - i % p) % p = (p - i) % p
         lemma_small_mod(i, p);  // i % p = i
         // (p - i) < p since i > 0
         assert(0 < p - i && p - i < p);
@@ -293,9 +291,9 @@ pub proof fn lemma_i_inverse_is_neg_i()
         };
     };
 
-    // Step 5: math_field_mul(i, neg_i) = (i * neg_i) % p = 1
-    assert(math_field_mul(i, neg_i) == 1) by {
-        // math_field_mul(i, neg_i) = (i * neg_i) % p
+    // Step 5: field_mul(i, neg_i) = (i * neg_i) % p = 1
+    assert(field_mul(i, neg_i) == 1) by {
+        // field_mul(i, neg_i) = (i * neg_i) % p
         // We showed (i % p * neg_i) % p = 1
         // Since i % p = i, we have (i * neg_i) % p = 1
         lemma_small_mod(i, p);
@@ -303,7 +301,7 @@ pub proof fn lemma_i_inverse_is_neg_i()
     };
 
     // Step 6: By uniqueness of inverse, inv(i) = neg_i
-    assert(math_field_inv(i) == neg_i) by {
+    assert(field_inv(i) == neg_i) by {
         // We have: i % p ≠ 0, neg_i < p, and (i % p) * neg_i % p = 1
         // By field_inv_unique, neg_i = inv(i)
         assert(i % p != 0) by {
@@ -323,22 +321,22 @@ pub proof fn lemma_i_inverse_is_neg_i()
 pub proof fn lemma_u_times_inv_iu_is_neg_i(u: nat, i: nat)
     requires
         u % p() != 0,
-        i == spec_sqrt_m1(),
+        i == sqrt_m1(),
         i % p() != 0,
     ensures
         ({
-            let iu = math_field_mul(i, u);
-            let inv_iu = math_field_inv(iu);
-            math_field_mul(u, inv_iu) == math_field_neg(i)
+            let iu = field_mul(i, u);
+            let inv_iu = field_inv(iu);
+            field_mul(u, inv_iu) == field_neg(i)
         }),
 {
     p_gt_2();  // Needed for field operations
 
-    let iu = math_field_mul(i, u);
-    let ui = math_field_mul(u, i);
-    let inv_iu = math_field_inv(iu);
-    let inv_ui = math_field_inv(ui);
-    let inv_i = math_field_inv(i);
+    let iu = field_mul(i, u);
+    let ui = field_mul(u, i);
+    let inv_iu = field_inv(iu);
+    let inv_ui = field_inv(ui);
+    let inv_i = field_inv(i);
 
     // Step 1: i·u = u·i (commutativity)
     assert(iu == ui && inv_iu == inv_ui) by {
@@ -346,12 +344,12 @@ pub proof fn lemma_u_times_inv_iu_is_neg_i(u: nat, i: nat)
     };
 
     // Step 2: u · inv(u·i) = inv(i)
-    assert(math_field_mul(u, inv_ui) == inv_i) by {
+    assert(field_mul(u, inv_ui) == inv_i) by {
         lemma_a_times_inv_ab_is_inv_b(u, i);
     };
 
     // Step 3: inv(i) = -i
-    assert(inv_i == math_field_neg(i)) by {
+    assert(inv_i == field_neg(i)) by {
         lemma_i_inverse_is_neg_i();
     };
 }
@@ -366,27 +364,27 @@ pub proof fn lemma_u_times_inv_iu_is_neg_i(u: nat, i: nat)
 pub proof fn lemma_neg_u_times_inv_iu_is_i(u: nat, i: nat)
     requires
         u % p() != 0,
-        i == spec_sqrt_m1(),
+        i == sqrt_m1(),
         i % p() != 0,
     ensures
         ({
-            let neg_u = math_field_neg(u);
-            let iu = math_field_mul(i, u);
-            let inv_iu = math_field_inv(iu);
-            math_field_mul(neg_u, inv_iu) == i % p()
+            let neg_u = field_neg(u);
+            let iu = field_mul(i, u);
+            let inv_iu = field_inv(iu);
+            field_mul(neg_u, inv_iu) == i % p()
         }),
 {
     let p = p();
     p_gt_2();  // Needed for field operations
 
-    let neg_u = math_field_neg(u);
-    let iu = math_field_mul(i, u);
-    let ui = math_field_mul(u, i);
-    let inv_iu = math_field_inv(iu);
-    let inv_ui = math_field_inv(ui);
-    let inv_i = math_field_inv(i);
-    let neg_one = math_field_neg(1);
-    let neg_i = math_field_neg(i);
+    let neg_u = field_neg(u);
+    let iu = field_mul(i, u);
+    let ui = field_mul(u, i);
+    let inv_iu = field_inv(iu);
+    let inv_ui = field_inv(ui);
+    let inv_i = field_inv(i);
+    let neg_one = field_neg(1);
+    let neg_i = field_neg(i);
 
     // Step 1: i·u = u·i (commutativity)
     assert(iu == ui && inv_iu == inv_ui) by {
@@ -394,7 +392,7 @@ pub proof fn lemma_neg_u_times_inv_iu_is_i(u: nat, i: nat)
     };
 
     // Step 2: (-u) · inv(u·i) = (-1) · inv(i)
-    assert(math_field_mul(neg_u, inv_ui) == math_field_mul(neg_one, inv_i)) by {
+    assert(field_mul(neg_u, inv_ui) == field_mul(neg_one, inv_i)) by {
         lemma_neg_a_times_inv_ab(u, i);
     };
 
@@ -405,18 +403,18 @@ pub proof fn lemma_neg_u_times_inv_iu_is_i(u: nat, i: nat)
 
     // Step 4: (-1) · (-i) = i by double negation
     assert(i < p) by {
-        lemma_mod_bound(spec_field_element_as_nat(&constants::SQRT_M1) as int, p as int);
+        lemma_mod_bound(fe51_as_nat(&constants::SQRT_M1) as int, p as int);
     };
     assert(i != 0) by {
         if i == 0 {
             axiom_sqrt_m1_squared();
             lemma_small_mod(0nat, p);
             assert((0nat * 0nat) % p == 0);
-            assert(math_field_neg(1nat) != 0);  // -1 ≠ 0
+            assert(field_neg(1nat) != 0);  // -1 ≠ 0
             assert(false);
         }
     };
-    assert(math_field_mul(neg_one, neg_i) == i) by {
+    assert(field_mul(neg_one, neg_i) == i) by {
         lemma_double_negation(i);
     };
 

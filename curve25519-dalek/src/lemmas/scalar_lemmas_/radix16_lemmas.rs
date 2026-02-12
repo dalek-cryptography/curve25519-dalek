@@ -182,7 +182,7 @@ pub proof fn lemma_carry_preserves_reconstruction(
 // Lemma: Bytes to nibbles reconstruction
 // =============================================================================
 /// After extracting nibbles from each byte, reconstruct_radix_16 of the
-/// nibble array equals bytes32_to_nat of the original bytes.
+/// nibble array equals u8_32_as_nat of the original bytes.
 ///
 /// Uses the algebraic identity: output[2*i] + 16 * output[2*i+1] == bytes[i]
 /// which holds because bot_half gives byte % 16 and top_half gives byte / 16.
@@ -194,7 +194,7 @@ pub proof fn lemma_bytes32_to_radix16_nibbles(output: [i8; 64], bytes: [u8; 32])
                 == bytes[i] as int,
         forall|i: int| 0 <= i < 64 ==> output[i] >= 0,
     ensures
-        reconstruct_radix_16(output@) == bytes32_to_nat(&bytes) as int,
+        reconstruct_radix_16(output@) == u8_32_as_nat(&bytes) as int,
 {
     let out_seq = output@;
     let byte_seq = bytes@;
@@ -212,16 +212,16 @@ pub proof fn lemma_bytes32_to_radix16_nibbles(output: [i8; 64], bytes: [u8; 32])
         assert(out_seq[i] == output[i]);
     }
 
-    // Subgoal 1: nibbles reconstruct to bytes_to_nat_prefix
+    // Subgoal 1: nibbles reconstruct to bytes_as_nat_prefix
     lemma_nibbles_equal_bytes_prefix(out_seq, byte_seq, 32);
     assert(out_seq.take(64) =~= out_seq);
 
-    // Subgoal 2: bytes_to_nat_prefix(bytes@, 32) == bytes32_to_nat(&bytes)
+    // Subgoal 2: bytes_as_nat_prefix(bytes@, 32) == u8_32_as_nat(&bytes)
     lemma_decomposition_prefix_rec(&bytes, 32);
-    lemma_bytes32_to_nat_equals_rec(&bytes);
+    lemma_u8_32_as_nat_equals_rec(&bytes);
 }
 
-/// Helper: reconstruct_radix_2w of first 2*k nibbles equals bytes_to_nat_prefix of first k bytes
+/// Helper: reconstruct_radix_2w of first 2*k nibbles equals bytes_as_nat_prefix of first k bytes
 proof fn lemma_nibbles_equal_bytes_prefix(output: Seq<i8>, bytes: Seq<u8>, k: nat)
     requires
         output.len() == 64,
@@ -233,7 +233,7 @@ proof fn lemma_nibbles_equal_bytes_prefix(output: Seq<i8>, bytes: Seq<u8>, k: na
                 == bytes[i] as int,
         forall|i: int| 0 <= i < 64 ==> output[i] >= 0,
     ensures
-        reconstruct_radix_2w(output.take((2 * k) as int), 4) == bytes_to_nat_prefix(
+        reconstruct_radix_2w(output.take((2 * k) as int), 4) == bytes_as_nat_prefix(
             bytes,
             k,
         ) as int,

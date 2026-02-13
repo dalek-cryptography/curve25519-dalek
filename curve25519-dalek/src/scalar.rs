@@ -3759,10 +3759,7 @@ verus! {
 ///
 /// ## Panics
 /// Panics if `src.len() != 8 * dst.len()`.
-fn read_le_u64_into(src: &[u8], dst: &mut [u64])/* VERIFICATION NOTE:
-PROOF BYPASS
-*/
-
+fn read_le_u64_into(src: &[u8], dst: &mut [u64])
     requires
         src.len() == 8 * old(dst).len(),
     ensures
@@ -3797,25 +3794,33 @@ PROOF BYPASS
         invariant
             src.len() == 8 * dst_len,
             dst.len() == dst_len,
+            forall|k: int|
+                0 <= k < i ==> {
+                    let byte_seq = Seq::new(8, |j: int| src[k * 8 + j] as u8);
+                    #[trigger] dst[k] as nat == bytes_seq_as_nat(byte_seq)
+                },
     {
         let byte_start = (i * 8);
         let mut byte_array = [0u8;8];
-        for j in 0..8
+        for j in 0..8usize
             invariant
-                src.len() == 8 * dst_len,
-                dst.len() == dst_len,
                 i < dst_len,
                 byte_start == i * 8,
                 byte_start + 8 <= src.len(),
+                forall|k: int| 0 <= k < j ==> byte_array@[k] == src[(i * 8 + k) as int],
         {
             byte_array[j] = src[byte_start + j];
         }
         dst[i] = u64_from_le_bytes(byte_array);
+        proof {
+            let byte_seq = Seq::new(8, |j: int| src[i as int * 8 + j] as u8);
+            assert(byte_array@ =~= byte_seq);
+            assert(bytes_seq_as_nat(byte_array@) == bytes_as_nat_prefix(byte_array@, 8)) by {
+                lemma_bytes_seq_as_nat_equals_prefix(byte_array@);
+            }
+        }
     }
     /* </MODIFIED CODE> */
-    proof {
-        assume(false);
-    }
 }
 
 /// _Clamps_ the given little-endian representation of a 32-byte integer. Clamping the value puts

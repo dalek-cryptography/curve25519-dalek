@@ -54,9 +54,7 @@ use core::{
     ops::{Mul, MulAssign},
 };
 
-use crate::constants::APLUS2_OVER_FOUR;
-#[cfg(feature = "digest")]
-use crate::constants::{MONTGOMERY_A, MONTGOMERY_A_NEG, SQRT_M1};
+use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG, SQRT_M1};
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
 use crate::scalar::{Scalar, clamp_integer};
@@ -71,11 +69,11 @@ use subtle::ConstantTimeEq;
 use zeroize::Zeroize;
 
 // We need the const 2^((p+3)/8) for elligator_encode. These defs are checked in tests::consts()
-#[cfg(all(curve25519_dalek_bits = "32", feature = "digest"))]
+#[cfg(curve25519_dalek_bits = "32")]
 const FE_C2: FieldElement = FieldElement::from_limbs([
     34513073, 25610706, 9377949, 3500415, 12389472, 33281959, 41962654, 31548777, 326685, 11406482,
 ]);
-#[cfg(all(curve25519_dalek_bits = "64", feature = "digest"))]
+#[cfg(curve25519_dalek_bits = "64")]
 const FE_C2: FieldElement = FieldElement::from_limbs([
     1718705420411057,
     234908883556509,
@@ -268,7 +266,6 @@ impl MontgomeryPoint {
     }
 }
 
-#[cfg(feature = "digest")]
 /// Perform the Elligator2 mapping to a tuple `(xn, xd, yn, yd)` such that
 /// `(xn / xd, yn / yd)` is a point on curve25519.
 ///

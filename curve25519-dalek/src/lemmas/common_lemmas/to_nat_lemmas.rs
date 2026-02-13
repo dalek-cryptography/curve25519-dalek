@@ -861,4 +861,163 @@ pub proof fn lemma_words64_from_bytes_to_nat_wide(bytes: &[u8; 64])
     };
 }
 
+// ============================================================================
+// Prefix chunk decomposition: splitting bytes_as_nat_prefix at 8-byte boundaries
+// ============================================================================
+/// bytes_as_nat_prefix of (k*8 + remaining) bytes equals bytes_as_nat_prefix of k*8 bytes
+/// plus the chunk's prefix value scaled by pow2(k*64).
+///
+/// Recursive on `remaining` (call with remaining=8 for the full 8-byte chunk):
+///   bytes_as_nat_prefix(bytes, k*8 + remaining) ==
+///     bytes_as_nat_prefix(bytes, k*8) + bytes_as_nat_prefix(chunk, remaining) * pow2(k*64)
+/// where chunk = bytes[k*8..(k+1)*8].
+///
+/// This is the "prefix additivity at 8-byte boundaries" property.
+pub proof fn lemma_bytes_as_nat_prefix_chunk(bytes: Seq<u8>, chunk: Seq<u8>, k: nat, remaining: nat)
+    requires
+        remaining <= 8,
+        bytes.len() >= k * 8 + 8,
+        chunk.len() == 8,
+        forall|j: int| 0 <= j < 8 ==> chunk[j] == bytes[k * 8 + j],
+    ensures
+        bytes_as_nat_prefix(bytes, (k * 8 + remaining) as nat) == bytes_as_nat_prefix(
+            bytes,
+            (k * 8) as nat,
+        ) + bytes_as_nat_prefix(chunk, remaining) * pow2((k * 64) as nat),
+    decreases remaining,
+{
+    if remaining == 0 {
+        assert(bytes_as_nat_prefix(chunk, 0) == 0);
+        assert(0 * pow2((k * 64) as nat) == 0) by {
+            lemma_mul_basics(pow2((k * 64) as nat) as int);
+        }
+    } else {
+        let rm1 = (remaining - 1) as nat;
+        // IH: prefix(bytes, k*8+rm1) == prefix(bytes, k*8) + prefix(chunk, rm1) * pow2(k*64)
+        // Kept bare: wrapping in assert-by disrupts downstream solver context
+        lemma_bytes_as_nat_prefix_chunk(bytes, chunk, k, rm1);
+
+        // Unfold bytes_as_nat_prefix at (k*8 + remaining)
+        let idx = (k * 8 + rm1) as nat;
+        assert(bytes_as_nat_prefix(bytes, (k * 8 + remaining) as nat) == bytes_as_nat_prefix(
+            bytes,
+            idx,
+        ) + pow2((idx * 8) as nat) * bytes[idx as int] as nat);
+
+        // Unfold bytes_as_nat_prefix(chunk, remaining)
+        assert(bytes_as_nat_prefix(chunk, remaining) == bytes_as_nat_prefix(chunk, rm1) + pow2(
+            (rm1 * 8) as nat,
+        ) * chunk[rm1 as int] as nat);
+
+        // chunk[remaining-1] == bytes[k*8 + remaining - 1]
+        assert(chunk[rm1 as int] == bytes[(k * 8 + rm1) as int]);
+
+        // Key: pow2(idx * 8) == pow2(rm1 * 8) * pow2(k * 64)
+        // since idx * 8 = (k*8 + rm1) * 8 = k*64 + rm1*8
+        assert((k * 8 + rm1) * 8 == k * 64 + rm1 * 8) by {
+            lemma_mul_is_distributive_add(8, (k * 8) as int, rm1 as int);
+            lemma_mul_is_associative(8, k as int, 8);
+        }
+        assert(pow2(((k * 8 + rm1) * 8) as nat) == pow2((rm1 * 8) as nat) * pow2((k * 64) as nat))
+            by {
+            lemma_pow2_adds((rm1 * 8) as nat, (k * 64) as nat);
+        }
+
+        // Distribute: (prefix + byte_val * pow2(rm1*8)) * pow2(k*64)
+        let p = bytes_as_nat_prefix(chunk, rm1) as int;
+        let bv = chunk[rm1 as int] as nat as int;
+        let pw_rm1 = pow2((rm1 * 8) as nat) as int;
+        let pw_k = pow2((k * 64) as nat) as int;
+
+        assert((p + pw_rm1 * bv) * pw_k == p * pw_k + pw_rm1 * bv * pw_k) by {
+            lemma_mul_is_distributive_add(pw_k, p, pw_rm1 * bv);
+        }
+        assert(pw_rm1 * bv * pw_k == pw_rm1 * pw_k * bv) by {
+            lemma_mul_is_associative(pw_rm1, bv, pw_k);
+            lemma_mul_is_commutative(bv, pw_k);
+            lemma_mul_is_associative(pw_rm1, pw_k, bv);
+        }
+    }
+}
+
+// ============================================================================
+// Lemma: 4 little-endian u64 chunks reconstruct u8_32_as_nat
+// ============================================================================
+/// When a 32-byte array is split into four 8-byte chunks, the weighted sum
+/// of their prefix values equals u8_32_as_nat.
+pub proof fn lemma_u64x4_from_le_bytes(
+    bytes: [u8; 32],
+    chunk0: [u8; 8],
+    chunk1: [u8; 8],
+    chunk2: [u8; 8],
+    chunk3: [u8; 8],
+)
+    requires
+        forall|j: int| 0 <= j < 8 ==> chunk0[j] == bytes[j],
+        forall|j: int| 0 <= j < 8 ==> chunk1[j] == bytes[8 + j],
+        forall|j: int| 0 <= j < 8 ==> chunk2[j] == bytes[16 + j],
+        forall|j: int| 0 <= j < 8 ==> chunk3[j] == bytes[24 + j],
+    ensures
+        bytes_as_nat_prefix(chunk0@, 8) + bytes_as_nat_prefix(chunk1@, 8) * pow2(64)
+            + bytes_as_nat_prefix(chunk2@, 8) * pow2(128) + bytes_as_nat_prefix(chunk3@, 8) * pow2(
+            192,
+        ) == u8_32_as_nat(&bytes),
+{
+    // Step 1: chunk0's prefix value equals the first 8 bytes' prefix value
+    assert(bytes_as_nat_prefix(chunk0@, 8) == bytes_as_nat_prefix(bytes@, 8)) by {
+        lemma_prefix_equal_when_bytes_match(chunk0@, bytes@, 8);
+    }
+
+    // Step 2: Telescoping — each chunk adds its value * pow2(k*64) to the prefix
+    assert(bytes_as_nat_prefix(bytes@, 8) == bytes_as_nat_prefix(bytes@, 0) + bytes_as_nat_prefix(
+        chunk0@,
+        8,
+    ) * pow2(0)) by {
+        lemma_bytes_as_nat_prefix_chunk(bytes@, chunk0@, 0, 8);
+    }
+    assert(bytes_as_nat_prefix(bytes@, 0) == 0);
+    assert(pow2(0) == 1) by {
+        lemma2_to64();
+    }
+
+    assert forall|j: int| 0 <= j < 8 implies chunk1@[j] == bytes@[1 * 8 + j] by {
+        assert(chunk1@[j] == chunk1[j]);
+        assert(bytes@[8 + j] == bytes[8 + j]);
+    }
+    assert(bytes_as_nat_prefix(bytes@, 16) == bytes_as_nat_prefix(bytes@, 8) + bytes_as_nat_prefix(
+        chunk1@,
+        8,
+    ) * pow2(64)) by {
+        lemma_bytes_as_nat_prefix_chunk(bytes@, chunk1@, 1, 8);
+    }
+
+    assert forall|j: int| 0 <= j < 8 implies chunk2@[j] == bytes@[2 * 8 + j] by {
+        assert(chunk2@[j] == chunk2[j]);
+        assert(bytes@[16 + j] == bytes[16 + j]);
+    }
+    assert(bytes_as_nat_prefix(bytes@, 24) == bytes_as_nat_prefix(bytes@, 16) + bytes_as_nat_prefix(
+        chunk2@,
+        8,
+    ) * pow2(128)) by {
+        lemma_bytes_as_nat_prefix_chunk(bytes@, chunk2@, 2, 8);
+    }
+
+    assert forall|j: int| 0 <= j < 8 implies chunk3@[j] == bytes@[3 * 8 + j] by {
+        assert(chunk3@[j] == chunk3[j]);
+        assert(bytes@[24 + j] == bytes[24 + j]);
+    }
+    assert(bytes_as_nat_prefix(bytes@, 32) == bytes_as_nat_prefix(bytes@, 24) + bytes_as_nat_prefix(
+        chunk3@,
+        8,
+    ) * pow2(192)) by {
+        lemma_bytes_as_nat_prefix_chunk(bytes@, chunk3@, 3, 8);
+    }
+
+    // Step 3: u8_32_as_nat equals the full 32-byte prefix
+    assert(u8_32_as_nat(&bytes) == bytes_as_nat_prefix(bytes@, 32)) by {
+        lemma_u8_32_as_nat_equals_rec(&bytes);
+        lemma_decomposition_prefix_rec(&bytes, 32);
+    }
+}
+
 } // verus!

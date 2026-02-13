@@ -110,6 +110,7 @@
 //! reduces a \\(512\\)-bit integer, if the optional `digest` feature
 //! has been enabled.
 
+use crate::lemmas::common_lemmas::div_mod_lemmas::*;
 use crate::lemmas::common_lemmas::mask_lemmas::*;
 use crate::lemmas::common_lemmas::pow_lemmas::*;
 use crate::lemmas::common_lemmas::shift_lemmas::*;
@@ -181,6 +182,8 @@ use crate::lemmas::scalar_lemmas_::montgomery_reduce_lemmas::*;
 
 #[allow(unused_imports)]
 use crate::lemmas::scalar_lemmas_::radix16_lemmas::*;
+#[allow(unused_imports)]
+use crate::lemmas::scalar_lemmas_::radix_2w_lemmas::*;
 
 #[allow(unused_imports)]
 use crate::backend::serial::u64::subtle_assumes::*;
@@ -2012,7 +2015,9 @@ impl Scalar {
                     original_inputs,
                     i as int,
                 );
-                assert((scalar_i * result) % L == (result * scalar_i) % L) by (nonlinear_arith);
+                assert((scalar_i * result) % L == (result * scalar_i) % L) by {
+                    lemma_mul_is_commutative(scalar_i as int, result as int);
+                };
 
                 // Prove acc invariant is maintained
                 let input_val = scalar52_to_nat(&input_unpacked);
@@ -2504,11 +2509,13 @@ impl Scalar {
             assert(output[2 * j] as int + 16 * (output[2 * j + 1] as int) == self.bytes[j] as int);
             assert(output[2 * j] >= 0);
             assert(self.bytes[31] <= 127);
-            assert(output[63] <= 7) by (nonlinear_arith)
-                requires
-                    output[62] >= 0i8,
-                    output[62] as int + 16 * (output[63] as int) <= 127,
-            ;
+            assert(output[63] <= 7) by {
+                if output[63] >= 8i8 {
+                    lemma_mul_left_inequality(8, output[63] as int, 16);
+                    // 128 <= 16 * output[63], plus output[62] >= 0, contradicts sum <= 127
+                    assert(false);
+                }
+            };
 
             // Establish the reconstruction property
             lemma_bytes32_to_radix16_nibbles(output, self.bytes);
@@ -2696,10 +2703,8 @@ impl Scalar {
     /// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
     ///
     #[cfg(any(feature = "alloc", feature = "precomputed-tables"))]
-    pub(crate) fn as_radix_2w(&self, w: usize) -> (result:
-        [i8; 64])
-    // VERIFICATION NOTE: PROOF BYPASS
-
+    #[verifier::loop_isolation(false)]
+    pub(crate) fn as_radix_2w(&self, w: usize) -> (result: [i8; 64])
         requires
             4 <= w <= 8,
             // For w=4 (radix 16), top bit must be clear
@@ -2729,8 +2734,11 @@ impl Scalar {
             let result = self.as_radix_16();
             // VERIFICATION NOTE: Prove that as_radix_16 postcondition implies as_radix_2w postcondition for w=4
             proof {
+                assert(w == 4);
+                assert(w as int == 4);
                 // For w=4: digits_count = (256 + 4 - 1) / 4 = 259 / 4 = 64
-                assert(((256 + (w as int) - 1) / (w as int)) == 64);
+                assert(((256 + (w as int) - 1) / (w as int)) == ((256 + 4 - 1) / 4));
+                assert(((256 + 4 - 1) / 4) == 64) by (compute);
                 // is_valid_radix_16 is defined as is_valid_radix_2w(digits, 4, 64)
                 assert(is_valid_radix_16(&result) == is_valid_radix_2w(&result, 4, 64));
                 // reconstruct_radix_16 is defined as reconstruct_radix_2w(digits, 4)
@@ -2746,88 +2754,162 @@ impl Scalar {
         let mut scalar64x4 = [0u64; 4];
         read_le_u64_into(&self.bytes, &mut scalar64x4[0..4]);
         </ORIGINAL CODE> */
-        // Read 4 u64s from the 32-byte array (self.bytes)
+        // Read 4 u64s from the 32-byte array (self.bytes).
+        // Named arrays serve double duty: exec (u64_from_le_bytes) and proof (lemma_u64x4_from_le_bytes).
+
+        let chunk0: [u8; 8] = [
+            self.bytes[0],
+            self.bytes[1],
+            self.bytes[2],
+            self.bytes[3],
+            self.bytes[4],
+            self.bytes[5],
+            self.bytes[6],
+            self.bytes[7],
+        ];
+        let chunk1: [u8; 8] = [
+            self.bytes[8],
+            self.bytes[9],
+            self.bytes[10],
+            self.bytes[11],
+            self.bytes[12],
+            self.bytes[13],
+            self.bytes[14],
+            self.bytes[15],
+        ];
+        let chunk2: [u8; 8] = [
+            self.bytes[16],
+            self.bytes[17],
+            self.bytes[18],
+            self.bytes[19],
+            self.bytes[20],
+            self.bytes[21],
+            self.bytes[22],
+            self.bytes[23],
+        ];
+        let chunk3: [u8; 8] = [
+            self.bytes[24],
+            self.bytes[25],
+            self.bytes[26],
+            self.bytes[27],
+            self.bytes[28],
+            self.bytes[29],
+            self.bytes[30],
+            self.bytes[31],
+        ];
 
         let mut scalar64x4 = [0u64;4];
-        scalar64x4[0] = u64_from_le_bytes(
-            [
-                self.bytes[0],
-                self.bytes[1],
-                self.bytes[2],
-                self.bytes[3],
-                self.bytes[4],
-                self.bytes[5],
-                self.bytes[6],
-                self.bytes[7],
-            ],
-        );
-        scalar64x4[1] = u64_from_le_bytes(
-            [
-                self.bytes[8],
-                self.bytes[9],
-                self.bytes[10],
-                self.bytes[11],
-                self.bytes[12],
-                self.bytes[13],
-                self.bytes[14],
-                self.bytes[15],
-            ],
-        );
-        scalar64x4[2] = u64_from_le_bytes(
-            [
-                self.bytes[16],
-                self.bytes[17],
-                self.bytes[18],
-                self.bytes[19],
-                self.bytes[20],
-                self.bytes[21],
-                self.bytes[22],
-                self.bytes[23],
-            ],
-        );
-        scalar64x4[3] = u64_from_le_bytes(
-            [
-                self.bytes[24],
-                self.bytes[25],
-                self.bytes[26],
-                self.bytes[27],
-                self.bytes[28],
-                self.bytes[29],
-                self.bytes[30],
-                self.bytes[31],
-            ],
-        );
+        scalar64x4[0] = u64_from_le_bytes(chunk0);
+        scalar64x4[1] = u64_from_le_bytes(chunk1);
+        scalar64x4[2] = u64_from_le_bytes(chunk2);
+        scalar64x4[3] = u64_from_le_bytes(chunk3);
 
-        let radix: u64 = 1 << w;
-        // VERIFICATION NOTE: Assert that radix > 0 to prove radix - 1 won't underflow
+        // Subgoal: u64x4 words reconstruct scalar_val (paper Section 3)
+        let ghost scalar_val: nat = scalar_as_nat(self);
         proof {
-            assume(false);
+            assert(bytes_as_nat_prefix(chunk0@, 8) + bytes_as_nat_prefix(chunk1@, 8) * pow2(64)
+                + bytes_as_nat_prefix(chunk2@, 8) * pow2(128) + bytes_as_nat_prefix(chunk3@, 8)
+                * pow2(192) == u8_32_as_nat(&self.bytes)) by {
+                lemma_u64x4_from_le_bytes(self.bytes, chunk0, chunk1, chunk2, chunk3);
+            }
+            // Bridge: u64_4_as_nat matches scalar_val (used by bit extraction lemmas)
+            assert(u64_4_as_nat(&scalar64x4) == scalar_val);
+        }
+
+        // Subgoal: Radix and window mask properties
+        let radix: u64 = 1 << w;
+        proof {
+            assert(radix >= 1u64) by (bit_vector)
+                requires
+                    radix == 1u64 << (w as u64),
+                    4u64 <= (w as u64) <= 8u64,
+            ;
         }
         let window_mask: u64 = radix - 1;
 
         let mut carry = 0u64;
         let mut digits = [0i8;64];
         let digits_count = (256 + w - 1) / w;
+        proof {
+            assert(digits_count <= 52 && digits_count > 0 && digits_count * w >= 256 && digits_count
+                * w <= 256 + w - 1 && radix <= 256u64 && radix as nat == pow2(w as nat)) by {
+                lemma_digits_count_radix_bounds(w, digits_count);
+            }
+            assert(pow2(w as nat) >= 1) by {
+                lemma_pow2_pos(w as nat);
+            }
+            assert(radix as nat == pow2(w as nat));
+            // Subgoal: scalar_val < pow2(256)
+            assert(scalar_val < pow2(256)) by {
+                lemma_u8_32_as_nat_with_trailing_zeros(&self.bytes, 32);
+                lemma_bytes_as_nat_prefix_bounded(self.bytes@, 32);
+            }
+            // Subgoal: Loop invariant base case (i=0)
+            lemma2_to64();
+            assert(reconstruct_radix_2w(digits@.take(0int), w as nat) == 0int) by {
+                assert(digits@.take(0int).len() == 0);
+            }
+            assert((scalar_val as int) % (pow2(0nat) as int) == 0) by {
+                lemma_small_mod(0 as nat, 1 as nat);
+            }
+            assert(w * 0 == 0) by {
+                lemma_mul_basics(w as int);
+            }
+        }
         #[allow(clippy::needless_range_loop)]
         for i in 0..digits_count
             invariant
-                w >= 4,
-                w <= 8,
-                digits_count <= 64,
-                radix == (1u64 << w),
+        // Core invariant: reconstruction + carry == scalar mod pow2(w*i)
+
+                carry <= 1,
+                reconstruct_radix_2w(digits@.take(i as int), w as nat) + (carry as int) * (pow2(
+                    (w * i) as nat,
+                ) as int) == (scalar_val as int) % (pow2((w * i) as nat) as int),
+                // Digit bounds: processed digits are in [-2^(w-1), 2^(w-1))
+                forall|j: int|
+                    0 <= j < i ==> {
+                        let bound = pow2((w - 1) as nat) as int;
+                        -bound <= (#[trigger] digits[j]) && digits[j] < bound
+                    },
+                // Unassigned digits are zero
+                forall|j: int| #![auto] i <= j < 64 ==> digits[j] == 0i8,
+                // Final carry is 0 for w < 8 (needed for postcondition)
+                (w < 8 && i == digits_count) ==> carry == 0,
         {
-            // Construct a buffer of bits of the scalar, starting at `bit_offset`.
-            assume(false);
+            proof {
+                assert(w != 4);
+                assert(5 <= w);
+                // i*w < digits_count*w (overflow check on the exec multiplication i * w)
+                assert(i * w < digits_count * w) by {
+                    lemma_mul_strict_inequality(i as int, digits_count as int, w as int);
+                }
+                // Strengthen bound explicitly so `bit_offset <= 255` is available later.
+                // (i+1)*w <= digits_count*w <= 256+w-1, so i*w+w <= 256+w-1, hence i*w <= 255
+                assert((i * w) as int <= 255) by {
+                    lemma_mul_inequality(i as int + 1, digits_count as int, w as int);
+                    lemma_mul_is_distributive_add_other_way(w as int, i as int, 1int);
+                };
+            }
             let bit_offset = i * w;
             let u64_idx = bit_offset / 64;
             let bit_idx = bit_offset % 64;
 
-            // Read the bits from the scalar
-            // VERIFICATION NOTE: Assert 64 - w won't underflow
             proof {
-                assert(w <= 8);
-                assert(64 - w >= 56);
+                // bit_offset + w == (i+1)*w <= digits_count*w <= 256+w-1 <= 263
+                // so bit_offset <= 255, hence u64_idx = bit_offset/64 <= 255/64 = 3
+                assert(bit_offset <= 255) by {
+                    assert(bit_offset == i * w);
+                    assert((i * w) as int <= 255);
+                }
+                assert(bit_offset <= 255 && u64_idx <= 3) by {
+                    lemma_mul_is_distributive_add(w as int, i as int, 1);
+                    lemma_mul_basics(w as int);
+                    lemma_mul_inequality((i + 1) as int, digits_count as int, w as int);
+                    lemma_div_is_ordered(bit_offset as int, 255, 64);
+                }
             }
+
+            // Read the bits from the scalar
             let bit_buf: u64 = if bit_idx < 64 - w || u64_idx == 3 {
                 // This window's bits are contained in a single u64,
                 // or it's the last u64 anyway.
@@ -2837,14 +2919,182 @@ impl Scalar {
                 (scalar64x4[u64_idx] >> bit_idx) | (scalar64x4[1 + u64_idx] << (64 - bit_idx))
             };
 
-            // Read the actual coefficient value from the window
-            let coef = carry + (bit_buf & window_mask);  // coef = [0, 2^r)
+            // Prove extracted < radix BEFORE the coef computation (needed for overflow check)
+            assert((bit_buf & window_mask) < radix) by (bit_vector)
+                requires
+                    window_mask == radix - 1u64,
+                    radix > 0u64,
+            ;
 
-            // Recenter coefficients from [0,2^w) to [-2^w/2, 2^w/2)
+            // Read the actual coefficient value from the window
+            // carry <= 1 (invariant), extracted < radix <= 256, so coef <= radix. No overflow.
+            let coef = carry + (bit_buf & window_mask);
+
+            proof {
+                assert(coef <= radix);
+                // Bit extraction: (bit_buf & window_mask) == (scalar_val / pow2(w*i)) % pow2(w)
+                assert((bit_buf & window_mask) as nat == (u64_4_as_nat(&scalar64x4) / pow2(
+                    bit_offset as nat,
+                )) % pow2(w as nat)) by {
+                    lemma_u64x4_bit_extraction(
+                        scalar64x4,
+                        bit_buf,
+                        window_mask,
+                        w,
+                        bit_offset,
+                        u64_idx,
+                        bit_idx,
+                    );
+                }
+                // bit_offset == i*w == w*i (commutativity for pow2 argument)
+                assert(bit_offset == w * i) by {
+                    lemma_mul_is_commutative(i as int, w as int);
+                }
+            }
+
+            let ghost extracted: nat = (bit_buf & window_mask) as nat;
+            let ghost old_carry = carry;
+            let ghost old_digits = digits;
+
+            // Recenter coefficients from [0,2^w) to [-2^w/2, 2^w/2).
+            /* <ORIGINAL CODE>
             carry = (coef + (radix / 2)) >> w;
             let coef_i64 = coef as i64;
             let carry_shifted = (carry << w) as i64;
             digits[i] = (coef_i64 - carry_shifted) as i8;
+            </ORIGINAL CODE> */
+            let half_radix: u64 = radix / 2;
+            carry = (coef + half_radix) >> w;
+            let new_carry: u64 = carry;
+
+            // Prove carry bound BEFORE carry_times_radix computation
+            assert(new_carry <= 1u64) by (bit_vector)
+                requires
+                    new_carry == ((coef + half_radix) as u64) >> w,
+                    coef <= radix,
+                    half_radix == radix / 2u64,
+                    radix == 1u64 << (w as u64),
+                    5u64 <= (w as u64) <= 8u64,
+            ;
+
+            let coef_i64: i64 = coef as i64;
+            let carry_shifted_u64: u64 = carry << w;
+            let carry_shifted: i64 = carry_shifted_u64 as i64;
+            proof {
+                // Re-establish the algebraic bridge from the original shift to `new_carry * radix`.
+                assert(new_carry * pow2(w as nat) <= u64::MAX) by {
+                    assert(new_carry <= 1);
+                    assert(pow2(w as nat) <= 256) by {
+                        assert(radix as nat == pow2(w as nat));
+                        assert(radix <= 256u64);
+                    }
+                    lemma_mul_upper_bound(new_carry as int, pow2(w as nat) as int, 1, 256);
+                }
+                assert(carry_shifted_u64 == new_carry * pow2(w as nat)) by {
+                    lemma_u64_shl_is_mul(new_carry, w as u64);
+                }
+                assert(pow2(w as nat) == radix as nat);
+                assert(carry_shifted_u64 == new_carry * radix);
+                assert(carry_shifted_u64 <= 256u64);
+                assert(carry_shifted_u64 <= i64::MAX as u64);
+            }
+
+            // Prove i8 cast bounds BEFORE the cast
+            assert(coef_i64 - carry_shifted >= -128i64 && coef_i64 - carry_shifted <= 127i64)
+                by (bit_vector)
+                requires
+                    coef_i64 == coef as i64,
+                    carry_shifted == carry_shifted_u64 as i64,
+                    carry_shifted_u64 == new_carry * radix,
+                    new_carry == ((coef + half_radix) as u64) >> w,
+                    coef <= radix,
+                    half_radix == radix / 2u64,
+                    radix == 1u64 << (w as u64),
+                    5u64 <= (w as u64) <= 8u64,
+            ;
+
+            /* <ORIGINAL CODE>
+            digits[i] = (coef_i64 - carry_shifted) as i8;
+            </ORIGINAL CODE> */
+            let digit_i8: i8 = (coef_i64 - carry_shifted) as i8;
+
+            // Cast preservation: i8 roundtrip preserves value when in [-128, 127]
+            assert(digit_i8 as i64 == coef_i64 - carry_shifted) by (bit_vector)
+                requires
+                    digit_i8 == (coef_i64 - carry_shifted) as i8,
+                    coef_i64 - carry_shifted >= -128i64,
+                    coef_i64 - carry_shifted <= 127i64,
+            ;
+
+            digits[i] = digit_i8;
+
+            // Cast bridges: u64->i64 preserves value for small non-negative values
+            assert(coef_i64 as int == coef as int);
+            assert(carry_shifted as int == carry_shifted_u64 as int);
+
+            proof {
+                // ---- Loop invariant preservation (paper Section 6) ----
+                // Ghost bindings for pow2 values used across subgoals
+                // (also required for solver context stability)
+                let digit_val = digits[i as int] as int;
+                let pw = pow2(w as nat) as int;
+
+                // Subgoal 1: digit = coef - new_carry * 2^w
+                assert(digit_val == coef as int - new_carry as int * pw) by {
+                    // digit_i8 as int == coef as int - carry_times_radix as int
+                    // (from bit_vector via i64 bridge)
+                }
+
+                // Subgoal 2: coef = old_carry + extracted
+                assert(coef as int == old_carry as int + extracted as int);
+
+                // Subgoal 3: Digit bounds via recentering (paper Section 7)
+                assert(-pow2((w - 1) as nat) as int <= digit_val && digit_val < pow2(
+                    (w - 1) as nat,
+                ) as int) by {
+                    lemma_radix_2w_digit_bounds(coef, w, new_carry);
+                }
+
+                // Subgoal 4: Invariant preservation (paper Section 6)
+                // recon(i+1) + carry * 2^(w*(i+1)) == scalar_val mod 2^(w*(i+1))
+                assert(digits@.take((i + 1) as int) =~= old_digits@.take(i as int).push(
+                    digits[i as int],
+                ));
+                assert(digits@.take((i + 1) as int).take(i as int) =~= digits@.take(i as int));
+                assert(digits@.take(i as int) =~= old_digits@.take(i as int));
+
+                assert(reconstruct_radix_2w(digits@.take((i + 1) as int), w as nat) + (carry as int)
+                    * pow2((w * (i + 1)) as nat) as int == (scalar_val as int) % pow2(
+                    (w * (i + 1)) as nat,
+                ) as int) by {
+                    lemma_radix_2w_loop_reconstruction_step(
+                        digits@.take((i + 1) as int),
+                        i,
+                        w,
+                        scalar_val,
+                        old_carry,
+                        new_carry,
+                        extracted,
+                    );
+                }
+
+                // Subgoal 5: Final carry = 0 at last iteration for w < 8 (paper Section 8)
+                if w < 8 && i + 1 == digits_count {
+                    let extracted_u64: u64 = (bit_buf & window_mask) as u64;
+                    assert(coef < half_radix) by {
+                        lemma_last_iter_carry_zero(scalar_val, old_carry, extracted_u64, w, i);
+                    }
+
+                    assert(carry == 0u64) by (bit_vector)
+                        requires
+                            carry == (((coef + half_radix) as u64) >> (w as u64)),
+                            (coef as u64) < (half_radix as u64),
+                            half_radix == radix / 2u64,
+                            radix == 1u64 << (w as u64),
+                            5u64 <= (w as u64) <= 8u64,
+                    ;
+                }
+            }
         }
 
         // When 4 < w < 8, we can fold the final carry onto the last digit d,
@@ -2862,35 +3112,55 @@ impl Scalar {
             _ => digits[digits_count - 1] += (carry << w) as i8,
         }
         </ORIGINAL CODE> */
+        let ghost digits_after_loop = digits;
+
         match w {
             8 => {
                 let idx = digits_count;
                 let carry_i8 = carry as i8;
-                assume(false);
                 digits[idx] += carry_i8;
             },
             _ => {
                 let idx = digits_count - 1;
-                proof {
-                    assert(w >= 4 && w < 8);
-                    assume(carry << w < 256);  // This is a simplification; actual bounds are tighter
-                }
-                let carry_shifted_i8 = (carry << w) as i8;
-                assume(false);
-                digits[idx] += carry_shifted_i8;
+                assert(0u64 << (w as u64) == 0u64) by (bit_vector);
+                let carry_shifted: u64 = carry << w;
+                let carry_shifted_i8 = carry_shifted as i8;
+                digits[idx] = digits[idx] + carry_shifted_i8;
             },
         }
 
-        // VERIFICATION NOTE: PROOF BYPASS - assume postconditions
         proof {
-            let final_digits_count = if w < 8 {
-                (256 + (w as int) - 1) / (w as int)
+            // Prove the reconstruction invariant still holds after carry adjustment
+            if w == 8 {
+                // w=8: only index digits_count (=32) was modified
+                // take(32) is unchanged, so the loop invariant for the first 32 digits holds
+                assert(digits@.take(digits_count as int) =~= digits_after_loop@.take(
+                    digits_count as int,
+                ));
+                assert(digits[digits_count as int] as int == carry as int);
             } else {
-                (256 + (w as int) - 1) / (w as int) + 1
-            };
-            assume(is_valid_radix_2w(&digits, w as nat, final_digits_count as nat));
-            assume(reconstruct_radix_2w(digits@.take(final_digits_count), w as nat)
-                == scalar_as_nat(self) as int);
+                // w<8: carry=0, carry_shifted_i8=0, so digits[idx] + 0 = digits[idx]
+                // The array take(digits_count) is effectively unchanged
+                assert(carry == 0);
+                assert(digits@.take(digits_count as int) =~= digits_after_loop@.take(
+                    digits_count as int,
+                ));
+            }
+
+            // Subgoal: Final postconditions — valid radix-2^w representation
+            // that reconstructs to scalar_val
+            assert({
+                let final_digits_count = if w < 8 {
+                    (256 + (w as int) - 1) / (w as int)
+                } else {
+                    (256 + (w as int) - 1) / (w as int) + 1
+                };
+                is_valid_radix_2w(&digits, w as nat, final_digits_count as nat)
+                    && reconstruct_radix_2w(digits@.take(final_digits_count), w as nat)
+                    == scalar_val as int
+            }) by {
+                lemma_as_radix_2w_postconditions(digits, w, digits_count, carry, scalar_val);
+            }
         }
 
         digits
@@ -3105,11 +3375,11 @@ fn square_multiply(
         lemma_pow_nonnegative(R as int, exp_final);
         lemma_pow_nonnegative(y0 as int, pow2(n));
 
-        assert((y_after as int * xv as int) * R_exp == (y_after as int * R_exp) * xv as int)
-            by (nonlinear_arith)
-            requires
-                R_exp >= 0,
-        ;
+        assert((y_after as int * xv as int) * R_exp == (y_after as int * R_exp) * xv as int) by {
+            lemma_mul_is_associative(y_after as int, xv as int, R_exp);
+            lemma_mul_is_commutative(xv as int, R_exp);
+            lemma_mul_is_associative(y_after as int, R_exp, xv as int);
+        };
 
         calc! {
             (==)

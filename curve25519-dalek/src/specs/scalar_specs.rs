@@ -179,6 +179,13 @@ pub open spec fn is_valid_naf(naf: Seq<i8>, w: nat) -> bool {
         }
 }
 
+/// Interprets four u64 words as a 256-bit little-endian number:
+///   words[0] + words[1]*2^64 + words[2]*2^128 + words[3]*2^192
+pub open spec fn u64_4_as_nat(words: &[u64; 4]) -> nat {
+    words[0] as nat + words[1] as nat * pow2(64) + words[2] as nat * pow2(128) + words[3] as nat
+        * pow2(192)
+}
+
 // Spec functions for radix-2^w representation (generic)
 /// Reconstructs an integer from a radix-2^w digit representation
 /// The scalar is represented as: a_0 + a_1*2^w + a_2*2^(2w) + ...
@@ -192,9 +199,14 @@ pub open spec fn reconstruct_radix_2w(digits: Seq<i8>, w: nat) -> int
     }
 }
 
-/// Predicate describing a valid radix-2^w representation with signed digits
-/// For window size w, coefficients are in [-2^(w-1), 2^(w-1)) for most indices,
-/// and [-2^(w-1), 2^(w-1)] for the last non-zero index
+/// Predicate describing a valid radix-2^w representation with signed digits.
+/// For window size w, coefficients are in [-2^(w-1), 2^(w-1)) for all indices except the last,
+/// and [-2^(w-1), 2^(w-1)] for the last index.
+///
+/// The inclusive bound `<=` for the last digit comes from `as_radix_16` (w=4): its nibble-based
+/// algorithm can produce a last digit equal to 8 (= 2^(w-1)). For `as_radix_2w` with w >= 5, the
+/// last digit is strictly less than the bound, but the spec stays general so both representations
+/// are valid.
 pub open spec fn is_valid_radix_2w(digits: &[i8; 64], w: nat, digits_count: nat) -> bool {
     4 <= w <= 8 && digits_count <= 64 && forall|i: int|
         0 <= i < digits_count ==> {

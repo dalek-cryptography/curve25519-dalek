@@ -1,92 +1,27 @@
 //! Lemmas for proving correctness of `as_radix_16` in scalar.rs.
 //!
 //! Key lemmas:
-//! - `lemma_reconstruct_radix_2w_split`: Split reconstruction at arbitrary position k
 //! - `lemma_carry_preserves_reconstruction`: Carry operation preserves radix-16 sum
 //! - `lemma_bytes32_to_radix16_nibbles`: Nibble extraction reconstructs the scalar value
+//! - `lemma_valid_radix_16_implies_all_bounded`: is_valid_radix_16 implies radix_16_all_bounded
 #![allow(unused_imports)]
 
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power2::*;
+use vstd::bits::*;
 use vstd::prelude::*;
 
 #[allow(unused_imports)]
 use crate::lemmas::common_lemmas::to_nat_lemmas::*;
+#[allow(unused_imports)]
+use crate::lemmas::scalar_lemmas_::radix_2w_lemmas::*;
 #[allow(unused_imports)]
 use crate::specs::core_specs::*;
 #[allow(unused_imports)]
 use crate::specs::scalar_specs::*;
 
 verus! {
-
-// =============================================================================
-// Lemma: Split reconstruct_radix_2w at position k
-// =============================================================================
-/// Split a radix-2^w reconstruction at an arbitrary position k.
-///
-/// Proves: reconstruct_radix_2w(digits, w) ==
-///     reconstruct_radix_2w(digits.take(k), w) + pow2(w * k) * reconstruct_radix_2w(digits.skip(k), w)
-pub proof fn lemma_reconstruct_radix_2w_split(digits: Seq<i8>, k: nat, w: nat)
-    requires
-        k <= digits.len(),
-        w > 0,
-    ensures
-        reconstruct_radix_2w(digits, w) == reconstruct_radix_2w(digits.take(k as int), w) + pow2(
-            w * k,
-        ) * reconstruct_radix_2w(digits.skip(k as int), w),
-    decreases k,
-{
-    if k == 0 {
-        assert(digits.take(0).len() == 0);
-        assert(reconstruct_radix_2w(digits.take(0), w) == 0);
-        assert(digits.skip(0) =~= digits);
-        assert(pow2(0) == 1) by {
-            lemma2_to64();
-        }
-        lemma_mul_basics(reconstruct_radix_2w(digits, w));
-    } else {
-        assert(digits.len() > 0);
-
-        let km1 = (k - 1) as nat;
-        let tail = digits.skip(1);
-        assert(km1 <= tail.len());
-
-        // IH: tail splits at km1
-        lemma_reconstruct_radix_2w_split(tail, km1, w);
-
-        // Key sequence equalities
-        assert(digits.take(k as int).skip(1) =~= tail.take(km1 as int));
-        assert(digits.skip(k as int) =~= tail.skip(km1 as int));
-
-        let prefix = digits.take(k as int);
-        assert(prefix.len() == k);
-        assert(prefix[0] == digits[0]);
-
-        let r_prefix_tail = reconstruct_radix_2w(tail.take(km1 as int), w);
-        let r_suffix = reconstruct_radix_2w(tail.skip(km1 as int), w);
-        let pw = pow2(w) as int;
-
-        // Subgoal 1: pow2(w * km1 + w) == pow2(w * k)
-        assert(w * km1 + w == w * k) by {
-            lemma_mul_is_distributive_add(w as int, km1 as int, 1);
-        }
-        assert(pow2(w) * pow2(w * km1) == pow2(w * k)) by {
-            lemma_pow2_adds(w, w * km1);
-        }
-
-        // Subgoal 2: distribute pow2(w) over the IH sum
-        assert(pw * (r_prefix_tail + (pow2(w * km1) as int) * r_suffix) == pw * r_prefix_tail + pw
-            * ((pow2(w * km1) as int) * r_suffix)) by {
-            lemma_mul_is_distributive_add(pw, r_prefix_tail, (pow2(w * km1) as int) * r_suffix);
-        }
-
-        // Subgoal 3: reassociate to get pow2(w*k) * r_suffix
-        assert(pw * ((pow2(w * km1) as int) * r_suffix) == (pow2(w * k) as int) * r_suffix) by {
-            lemma_mul_is_associative(pw, pow2(w * km1) as int, r_suffix);
-        }
-    }
-}
 
 // =============================================================================
 // Lemma: Carry operation preserves reconstruction

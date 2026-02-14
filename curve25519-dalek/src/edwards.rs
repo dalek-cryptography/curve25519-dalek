@@ -1510,6 +1510,17 @@ impl GroupEncoding for EdwardsPoint {
     }
 }
 
+#[cfg(all(feature = "group", feature = "alloc"))]
+impl group::WnafGroup for EdwardsPoint {
+    /// A hint for how large the window should be to do multiplication with a given number of
+    /// scalars
+    fn recommended_wnaf_for_num_scalars(_num_scalars: usize) -> usize {
+        // Just return 5 for now. This is a hint function, and the hint isn't very good. We don't
+        // have empirical benchmarks to pick anything more intelligently
+        5
+    }
+}
+
 /// A `SubgroupPoint` represents a point on the Edwards form of Curve25519, that is
 /// guaranteed to be in the prime-order subgroup.
 #[cfg(feature = "group")]

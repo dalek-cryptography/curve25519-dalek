@@ -2282,6 +2282,41 @@ mod test {
         assert!(P1.compress().to_bytes() == P2.compress().to_bytes());
     }
 
+    /// Test that the group WNAF implementation works for random scalars.
+    #[cfg(all(feature = "group", feature = "alloc"))]
+    #[test]
+    fn wnaf_group() {
+        let mut rng = UnwrapErr(SysRng);
+        let num_scalars = 100;
+
+        // Run our tests on a random basepoint and the canonical basepoint
+        let basepoints = {
+            let s = Scalar::random(&mut rng);
+            [
+                constants::ED25519_BASEPOINT_POINT,
+                s * constants::ED25519_BASEPOINT_POINT,
+            ]
+        };
+
+        for basepoint in basepoints {
+            // Make some random scalars and the expected result of multiplying them by the basepoint
+            let scalars: Vec<Scalar> = core::iter::repeat_with(|| Scalar::random(&mut rng))
+                .take(num_scalars)
+                .collect();
+            let expected_scalar_mults = scalars.iter().map(|s| basepoint * s).collect::<Vec<_>>();
+
+            // Make a WNAF structure for efficient scalar multiplication
+            let mut wnaf_backing = group::Wnaf::new();
+            let mut wnaf = wnaf_backing.base(basepoint, num_scalars);
+
+            // Use the WNAF structure to compute the scalar multiplications
+            let computed_scalar_mults = scalars.iter().map(|s| wnaf.scalar(s)).collect::<Vec<_>>();
+
+            // Make sure both methods produce the same results
+            assert_eq!(expected_scalar_mults, computed_scalar_mults);
+        }
+    }
+
     // A single iteration of a consistency check for MSM.
     #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn multiscalar_consistency_iter(n: usize) {

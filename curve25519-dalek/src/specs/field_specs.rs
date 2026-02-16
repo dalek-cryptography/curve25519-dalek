@@ -449,21 +449,23 @@ pub open spec fn product_of_field_elems(fields: Seq<FieldElement51>) -> nat
     }
 }
 
-/// Spec function: product of non-zero field elements in a sequence (mod p)
-/// Skips zero elements in constant-time fashion by multiplying by 1 instead
-pub open spec fn product_of_nonzeros(fields: Seq<FieldElement51>) -> nat
-    decreases fields.len(),
+/// Partial product of non-zero field elements from index 0..k (exclusive)
+/// Skips elements whose canonical value is 0, treating them as multiplicative identity.
+/// Used in the batch_invert proof to track prefix products.
+pub open spec fn partial_product_nonzeros(fields: Seq<FieldElement51>, k: int) -> nat
+    recommends
+        0 <= k <= fields.len(),
+    decreases k,
 {
-    if fields.len() == 0 {
-        1
+    if k <= 0 {
+        1nat
     } else {
-        let first_val = fe51_as_canonical_nat(&fields[0]);
-        let rest_product = product_of_nonzeros(fields.subrange(1, fields.len() as int));
-        // Skip zeros: if first_val is 0, treat it as 1 (multiply by identity)
-        if first_val == 0 {
-            rest_product
+        let a_k = fe51_as_canonical_nat(&fields[k - 1]);
+        let rest = partial_product_nonzeros(fields, k - 1);
+        if a_k == 0 {
+            rest
         } else {
-            field_mul(rest_product, first_val)
+            field_mul(rest, a_k)
         }
     }
 }

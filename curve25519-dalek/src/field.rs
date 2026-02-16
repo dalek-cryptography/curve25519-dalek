@@ -62,6 +62,10 @@ use crate::lemmas::common_lemmas::pow_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::as_bytes_lemmas::*;
 #[allow(unused_imports)]
+use crate::lemmas::field_lemmas::batch_invert_lemmas::*;
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::field_algebra_lemmas::*;
+#[allow(unused_imports)]
 use crate::lemmas::field_lemmas::invert_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::pow22501_t19_lemma::*;
@@ -524,7 +528,6 @@ impl FieldElement {
     )/* <VERIFICATION NOTE>
      - Refactored for Verus: Index loops instead of iterators, manual Vec construction
      - Choice type operations handled by wrappers in subtle_assumes.rs
-     - PROOF BYPASSES because of trait issues and proof obligations.
     </VERIFICATION NOTE> */
 
         requires
@@ -564,6 +567,18 @@ impl FieldElement {
                 assert(one.limbs[4] == 0);
                 assert(1u64 < (1u64 << 54)) by (compute);
                 assert(0u64 < (1u64 << 54)) by (compute);
+            };
+            // ONE has canonical nat value 1
+            assert(fe51_as_canonical_nat(&one) == 1) by {
+                assert(u64_5_as_nat(one.limbs) == 1) by {
+                    assert(one.limbs[0] == 1);
+                    assert(one.limbs[1] == 0);
+                    assert(one.limbs[2] == 0);
+                    assert(one.limbs[3] == 0);
+                    assert(one.limbs[4] == 0);
+                };
+                p_gt_2();
+                lemma_small_mod(1nat, p());
             };
         }
 
@@ -606,28 +621,53 @@ impl FieldElement {
             invariant
                 n == inputs.len(),
                 n == scratch.len(),
+                original_inputs.len() == n,
                 fe51_limbs_bounded(&acc, 54),
                 forall|j: int| #![auto] 0 <= j < i ==> fe51_limbs_bounded(&scratch[j], 54),
                 forall|j: int|
                     #![auto]
                     0 <= j < inputs.len() ==> fe51_limbs_bounded(&inputs[j], 54),
+                // Inputs are NOT modified by forward loop
+                inputs@ === original_inputs,
+                // scratch[j] holds the partial product of nonzeros for 0..j
+                forall|j: int|
+                    #![auto]
+                    0 <= j < i ==> fe51_as_canonical_nat(&scratch[j]) == partial_product_nonzeros(
+                        original_inputs,
+                        j,
+                    ),
+                // acc holds the partial product of nonzeros for 0..i
+                fe51_as_canonical_nat(&acc) == partial_product_nonzeros(original_inputs, i as int),
         {
             scratch[i] = acc;
 
-            proof {
-                // After assignment, scratch[i] is bounded because acc is bounded
-                assert(fe51_limbs_bounded(&scratch[i as int], 54));
-            }
-
             // acc <- acc * input, but skipping zeros (constant-time)
+            /* <ORIGINAL CODE>
+             acc.conditional_assign(&new_acc, choice_not(inputs[i].is_zero()));
+            </ORIGINAL CODE> */
             let new_acc = &acc * &inputs[i];
-            acc.conditional_assign(&new_acc, choice_not(inputs[i].is_zero()));
+
+            // Ghost: snapshot acc value before conditional_assign
+            let ghost old_acc_val = fe51_as_canonical_nat(&acc);
+            let ghost a_i = fe51_as_canonical_nat(&inputs[i as int]);
+
+            let is_zero_choice = inputs[i].is_zero();
+            let nz_choice = choice_not(is_zero_choice);
+            acc.conditional_assign(&new_acc, nz_choice);
 
             proof {
-                // After conditional_assign, acc remains bounded:
-                // - If choice is false, acc unchanged (still bounded by invariant)
-                // - If choice is true, acc = new_acc which is bounded by mul postcondition
-                assert(fe51_limbs_bounded(&acc, 54));
+                // acc == PP(i+1): by bridge lemma + step relation + case split on a_i
+                assert(fe51_as_canonical_nat(&acc) == partial_product_nonzeros(
+                    original_inputs,
+                    (i + 1) as int,
+                )) by {
+                    lemma_is_zero_iff_canonical_nat_zero(inputs[i as int]);
+                    if a_i != 0 {
+                        assert(choice_is_true(nz_choice));
+                    } else {
+                        assert(!choice_is_true(nz_choice));
+                    }
+                };
             }
         }
 
@@ -638,6 +678,20 @@ impl FieldElement {
 
         // Compute the inverse of all products
         acc = acc.invert();
+
+        proof {
+            // After inversion: field_mul(acc, PP(n)) == 1
+            assert(field_mul(
+                fe51_as_canonical_nat(&acc),
+                partial_product_nonzeros(original_inputs, n as int),
+            ) == 1) by {
+                let pp_n = partial_product_nonzeros(original_inputs, n as int);
+                assert(pp_n % p() != 0) by {
+                    lemma_partial_product_nonzeros_is_nonzero(original_inputs, n as int);
+                };
+                lemma_inv_mul_cancel(pp_n);
+            };
+        }
 
         // Pass through the vector backwards to compute the inverses
         // in place
@@ -662,6 +716,7 @@ impl FieldElement {
             invariant
                 n == inputs.len(),
                 n == scratch.len(),
+                original_inputs.len() == n,
                 i <= n,
                 fe51_limbs_bounded(&acc, 54),
                 forall|j: int|
@@ -672,8 +727,20 @@ impl FieldElement {
                     0 <= j < inputs.len() ==> fe51_limbs_bounded(&inputs[j], 54),
                 // Elements below i haven't been modified yet in backward loop
                 forall|j: int| #![auto] 0 <= j < i ==> inputs[j] === original_inputs[j],
+                // scratch holds the partial products (unchanged from forward loop)
+                forall|j: int|
+                    #![auto]
+                    0 <= j < n ==> fe51_as_canonical_nat(&scratch[j]) == partial_product_nonzeros(
+                        original_inputs,
+                        j,
+                    ),
+                // KEY INVARIANT: acc is the "remaining inverse"
+                // field_mul(acc, PP(i)) == 1
+                field_mul(
+                    fe51_as_canonical_nat(&acc),
+                    partial_product_nonzeros(original_inputs, i as int),
+                ) == 1,
                 // Postcondition for already processed elements (i..n)
-                // Each element at index j >= i has been replaced with its inverse (or remains 0)
                 forall|j: int|
                     #![auto]
                     i <= j < n ==> (((fe51_as_canonical_nat(&original_inputs[j]) != 0)
@@ -684,43 +751,53 @@ impl FieldElement {
             decreases i,
         {
             i -= 1;
+
+            // Ghost: snapshot values before the loop body modifies them
+            let ghost old_acc_val = fe51_as_canonical_nat(&acc);
+            let ghost a_i = fe51_as_canonical_nat(&inputs[i as int]);
+
             let tmp = &acc * &inputs[i];
             // input <- acc * scratch, then acc <- tmp
             // Again, we skip zeros in a constant-time way
             let nz = choice_not(inputs[i].is_zero());
             // Verus doesn't support index for &mut, so we extract-modify-reassign
+            /* <ORIGINAL CODE>
+             input_i.conditional_assign(&(&acc * &scratch[i]), nz);
+            </ORIGINAL CODE> */
             let mut input_i = inputs[i];
-            input_i.conditional_assign(&(&acc * &scratch[i]), nz);
+            let acc_times_scratch = &acc * &scratch[i];
+            input_i.conditional_assign(&acc_times_scratch, nz);
             inputs[i] = input_i;
             acc.conditional_assign(&tmp, nz);
 
             proof {
-                // PROOF BYPASS: Both zero and non-zero cases require complex reasoning:
-                // - Zero case: With strengthened conditional_assign spec, could prove that
-                //   when original_inputs[i] == 0, the element remains 0 through the operation
-                // - Non-zero case: Requires extensive lemmas about Montgomery's batch inversion:
-                //   * scratch[i] contains product of original_inputs[0..i] (skipping zeros)
-                //   * acc contains inverse of original_inputs[i..n] product
-                //   * Therefore acc * scratch[i] = 1 / original_inputs[i]
-                assume(((fe51_as_canonical_nat(&original_inputs[i as int]) != 0)
-                    ==> is_inverse_field(&original_inputs[i as int], &inputs[i as int])) && ((
-                fe51_as_canonical_nat(&original_inputs[i as int]) == 0) ==> fe51_as_canonical_nat(
-                    &inputs[i as int],
-                ) == 0));
+                // Bridge: a_i == 0 iff is_zero bytes are all zero
+                assert((spec_fe51_as_bytes(&original_inputs[i as int]) == seq![0u8; 32]) <==> (
+                fe51_as_canonical_nat(&original_inputs[i as int]) == 0)) by {
+                    lemma_is_zero_iff_canonical_nat_zero(original_inputs[i as int]);
+                };
+
+                if a_i != 0 {
+                    assert(choice_is_true(nz));
+                    // inputs[i] is the inverse of original_inputs[i],
+                    // and the acc invariant field_mul(acc, PP(i)) == 1 is maintained
+                    assert(is_inverse_field(&original_inputs[i as int], &inputs[i as int])
+                        && field_mul(
+                        fe51_as_canonical_nat(&acc),
+                        partial_product_nonzeros(original_inputs, i as int),
+                    ) == 1) by {
+                        lemma_backward_step(old_acc_val, a_i, original_inputs, i as int);
+                        lemma_field_mul_comm(fe51_as_canonical_nat(&inputs[i as int]), a_i);
+                    };
+                } else {
+                    assert(!choice_is_true(nz));
+                    // PP(i) == PP(i+1) since a_i == 0, so acc invariant holds
+                    assert(partial_product_nonzeros(original_inputs, (i + 1) as int)
+                        == partial_product_nonzeros(original_inputs, i as int));
+                }
             }
         }
 
-        proof {
-            // After the loop completes (i == 0), all elements have been processed
-            // The loop invariant already establishes the postcondition for all indices
-            assert(forall|j: int|
-                #![auto]
-                0 <= j < n ==> (((fe51_as_canonical_nat(&original_inputs[j]) != 0)
-                    ==> is_inverse_field(&original_inputs[j], &inputs[j])) && ((
-                fe51_as_canonical_nat(&original_inputs[j]) == 0) ==> fe51_as_canonical_nat(
-                    &inputs[j],
-                ) == 0)));
-        }
     }
 
     /// Given a nonzero field element, compute its inverse.

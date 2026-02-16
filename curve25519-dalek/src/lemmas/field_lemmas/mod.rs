@@ -37,3 +37,5 @@ pub mod field_algebra_lemmas;
 pub mod sqrt_m1_lemmas;
 
 pub mod sqrt_ratio_lemmas;
+
+pub mod batch_invert_lemmas;

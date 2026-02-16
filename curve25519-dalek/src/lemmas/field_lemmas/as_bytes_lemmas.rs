@@ -609,7 +609,7 @@ pub proof fn lemma_field_element_equal_implies_fe51_to_bytes_equal(
 /// 4. Use reduction lemmas to show `u64_5_as_nat(canonical_limbs) == fe51_as_canonical_nat(fe)`
 /// 5. Show `seq_to_array_32(spec_fe51_as_bytes(fe)) == spec_bytes` by element-wise comparison
 /// 6. Conclude `u8_32_as_nat(seq_to_array_32(spec_fe51_as_bytes(fe))) == fe51_as_canonical_nat(fe)`
-proof fn lemma_u8_32_as_nat_of_spec_fe51_to_bytes(fe: &FieldElement51)
+pub proof fn lemma_u8_32_as_nat_of_spec_fe51_to_bytes(fe: &FieldElement51)
     ensures
         u8_32_as_nat(&seq_to_array_32(spec_fe51_as_bytes(fe))) == fe51_as_canonical_nat(fe),
 {

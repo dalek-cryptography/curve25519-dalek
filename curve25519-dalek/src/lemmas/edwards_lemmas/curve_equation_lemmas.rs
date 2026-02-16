@@ -1353,12 +1353,8 @@ pub proof fn lemma_edwards_scalar_mul_composition(point_affine: (nat, nat), a: n
         assert(a * b != 0) by {
             lemma_mul_nonzero(a as int, b as int);
         }
-        // a * b is even and non-zero, so a * b >= 2 > 1
-        assert(a * b != 1) by (nonlinear_arith)
-            requires
-                (a * b) % 2 == 0nat,
-                a * b != 0nat,
-        ;
+        // a * b is even (since b is even), so a * b != 1
+        assert(a * b != 1);
 
         assert(edwards_scalar_mul(point_affine, a * b) == {
             let half = edwards_scalar_mul(point_affine, ((a * b) / 2) as nat);

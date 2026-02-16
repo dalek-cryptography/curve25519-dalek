@@ -2780,6 +2780,8 @@ impl EdwardsPoint {
         EdwardsPoint)
         requires
             is_well_formed_edwards_point(*A),
+            scalar_as_nat(a) < pow2(255),
+            scalar_as_nat(b) < pow2(255),
         ensures
             is_well_formed_edwards_point(result),
             // Functional correctness: result = a*A + b*B where B is the Ed25519 basepoint

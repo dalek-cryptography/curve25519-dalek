@@ -50,6 +50,7 @@ use crate::specs::scalar_specs::*;
 
 pub mod serial;
 
+use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
 // #[cfg(curve25519_dalek_backend = "simd")]
@@ -283,6 +284,8 @@ pub fn variable_base_mul(point: &EdwardsPoint, scalar: &Scalar) -> (result: Edwa
 pub fn vartime_double_base_mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> (result: EdwardsPoint)
     requires
         is_well_formed_edwards_point(*A),
+        scalar_as_nat(a) < pow2(255),
+        scalar_as_nat(b) < pow2(255),
     ensures
         is_well_formed_edwards_point(result),
         // Functional correctness: result = a*A + b*B where B is the Ed25519 basepoint

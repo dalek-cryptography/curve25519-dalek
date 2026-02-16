@@ -32,6 +32,7 @@ use crate::specs::scalar_specs::*;
 #[allow(unused_imports)]
 use crate::specs::window_specs::*;
 
+use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
 verus! {
@@ -44,6 +45,9 @@ pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> (out: EdwardsPoint)
 // Input point must be well-formed
 
         is_well_formed_edwards_point(*A),
+        // Scalars must be canonical (< 2^255) for NAF computation
+        scalar_as_nat(a) < pow2(255),
+        scalar_as_nat(b) < pow2(255),
     ensures
 // Result is a well-formed Edwards point
 

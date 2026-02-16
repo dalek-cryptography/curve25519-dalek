@@ -181,8 +181,9 @@ use crate::lemmas::scalar_batch_invert_lemmas::*;
 use crate::lemmas::scalar_lemmas_::montgomery_reduce_lemmas::*;
 
 #[allow(unused_imports)]
-use crate::lemmas::scalar_lemmas_::radix16_lemmas::*;
+use crate::lemmas::scalar_lemmas_::naf_lemmas::*;
 #[allow(unused_imports)]
+use crate::lemmas::scalar_lemmas_::radix16_lemmas::*;
 use crate::lemmas::scalar_lemmas_::radix_2w_lemmas::*;
 
 #[allow(unused_imports)]
@@ -1054,13 +1055,14 @@ impl<T> Sum<T> for Scalar where T: Borrow<Scalar> {
 }
 
 impl Default for Scalar {
-    // VERIFICATION NOTE: PROOF BYPASS
     fn default() -> (result: Scalar)
         ensures
             scalar_as_nat(&result) == 0 as nat,
     {
         let result = Scalar::ZERO;
-        assume(scalar_as_nat(&result) == 0 as nat);
+        proof {
+            lemma_scalar_zero_properties();
+        }
         result
     }
 }
@@ -1568,7 +1570,6 @@ impl Scalar {
             is_canonical_scalar(&result),
     {
         let result = Scalar::from_bytes_mod_order_wide(&hash_bytes);
-        assume(false);
         result
     }
 
@@ -2305,12 +2306,14 @@ impl Scalar {
     /// If \\( k \mod 2^w\\) is even, we emit \\(0\\), advance 1 bit
     /// and reindex.  In fact, by setting all digits to \\(0\\)
     /// initially, we don't need to emit anything.
-    pub(crate) fn non_adjacent_form(&self, w: usize) -> (result:
-        [i8; 256])
-    // VERIFICATION NOTE: PROOF BYPASS
-
+    #[verifier::loop_isolation(false)]
+    pub(crate) fn non_adjacent_form(&self, w: usize) -> (result: [i8; 256])
         requires
             2 <= w <= 8,
+            // Scalar must fit in 255 bits (satisfied by canonical scalars since l < 2^253).
+            // Note: we use this weaker bound rather than is_canonical_scalar(self) because
+            // the proof only needs the 255-bit bound, not full reduction mod l.
+            scalar_as_nat(self) < pow2(255),
         ensures
     // result encodes the same integer
 
@@ -2328,77 +2331,172 @@ impl Scalar {
 
         let mut naf = [0i8;256];
 
-        // VERIFICATION NOTE: Inline the read_le_u64_into logic to avoid Verus unsupported features - IN PROGRESS
+        // VERIFICATION NOTE: Inline the read_le_u64_into logic to avoid Verus unsupported features
         /* <ORIGINAL CODE>
             let mut x_u64 = [0u64; 5];
             read_le_u64_into(&self.bytes, &mut x_u64[0..4]);
              <ORIGINAL CODE> */
         // Read 4 u64s from the 32-byte array (self.bytes)
-        assume(false);
+        let ghost scalar_val: nat = scalar_as_nat(self);
         let mut x_u64 = [0u64;5];
-        x_u64[0] = u64_from_le_bytes(
-            [
-                self.bytes[0],
-                self.bytes[1],
-                self.bytes[2],
-                self.bytes[3],
-                self.bytes[4],
-                self.bytes[5],
-                self.bytes[6],
-                self.bytes[7],
-            ],
-        );
-        x_u64[1] = u64_from_le_bytes(
-            [
-                self.bytes[8],
-                self.bytes[9],
-                self.bytes[10],
-                self.bytes[11],
-                self.bytes[12],
-                self.bytes[13],
-                self.bytes[14],
-                self.bytes[15],
-            ],
-        );
-        x_u64[2] = u64_from_le_bytes(
-            [
-                self.bytes[16],
-                self.bytes[17],
-                self.bytes[18],
-                self.bytes[19],
-                self.bytes[20],
-                self.bytes[21],
-                self.bytes[22],
-                self.bytes[23],
-            ],
-        );
-        x_u64[3] = u64_from_le_bytes(
-            [
-                self.bytes[24],
-                self.bytes[25],
-                self.bytes[26],
-                self.bytes[27],
-                self.bytes[28],
-                self.bytes[29],
-                self.bytes[30],
-                self.bytes[31],
-            ],
-        );
+        // Named byte chunks for lemma_u64x4_from_le_bytes (same pattern as as_radix_2w)
+        let chunk0: [u8; 8] = [
+            self.bytes[0],
+            self.bytes[1],
+            self.bytes[2],
+            self.bytes[3],
+            self.bytes[4],
+            self.bytes[5],
+            self.bytes[6],
+            self.bytes[7],
+        ];
+        let chunk1: [u8; 8] = [
+            self.bytes[8],
+            self.bytes[9],
+            self.bytes[10],
+            self.bytes[11],
+            self.bytes[12],
+            self.bytes[13],
+            self.bytes[14],
+            self.bytes[15],
+        ];
+        let chunk2: [u8; 8] = [
+            self.bytes[16],
+            self.bytes[17],
+            self.bytes[18],
+            self.bytes[19],
+            self.bytes[20],
+            self.bytes[21],
+            self.bytes[22],
+            self.bytes[23],
+        ];
+        let chunk3: [u8; 8] = [
+            self.bytes[24],
+            self.bytes[25],
+            self.bytes[26],
+            self.bytes[27],
+            self.bytes[28],
+            self.bytes[29],
+            self.bytes[30],
+            self.bytes[31],
+        ];
+        x_u64[0] = u64_from_le_bytes(chunk0);
+        x_u64[1] = u64_from_le_bytes(chunk1);
+        x_u64[2] = u64_from_le_bytes(chunk2);
+        x_u64[3] = u64_from_le_bytes(chunk3);
         // x_u64[4] remains 0
 
+        // Setup proof: bridge scalar_as_nat(self) to u64_4_as_nat
+        proof {
+            assert(bytes_as_nat_prefix(chunk0@, 8) + bytes_as_nat_prefix(chunk1@, 8) * pow2(64)
+                + bytes_as_nat_prefix(chunk2@, 8) * pow2(128) + bytes_as_nat_prefix(chunk3@, 8)
+                * pow2(192) == u8_32_as_nat(&self.bytes)) by {
+                lemma_u64x4_from_le_bytes(self.bytes, chunk0, chunk1, chunk2, chunk3);
+            }
+            let words4: [u64; 4] = [x_u64[0], x_u64[1], x_u64[2], x_u64[3]];
+            assert(u64_4_as_nat(&words4) == scalar_val);
+        }
+
+        /* ORIGINAL CODE
         let width = 1 << w;
         let window_mask = width - 1;
+         */
+        let width: u64 = 1u64 << (w as u64);
+        proof {
+            assert(width as nat == pow2(w as nat) && width >= 4u64) by {
+                lemma_naf_width_properties(w);
+            };
+        }
+        let window_mask: u64 = width - 1;
 
-        let mut pos = 0;
-        let mut carry = 0;
+        // Establish base case for loop invariant:
+        // reconstruct(naf.take(0)) + 0 * pow2(0) == scalar_val % pow2(0)
+        proof {
+            assert(reconstruct(naf@.take(0)) == 0) by {
+                assert(naf@.take(0).len() == 0);
+            };
+            assert(pow2(0nat) == 1nat) by {
+                lemma2_to64();
+            };
+            assert((scalar_val as int) % pow2(0nat) as int == 0int) by {
+                lemma_small_mod(0nat, 1nat);
+            };
+        }
+
+        let mut pos: usize = 0;
+        let mut carry: u64 = 0;
         while pos < 256
-            decreases 256 - pos,
-        {
-            assume(false);
+            invariant
+        // --- Mutable state bounds ---
 
+                carry <= 1,
+                pos <= 256 + w - 1,
+                // --- Core invariant: reconstruction matches scalar mod pow2(pos) ---
+                // (cap take length at 256 since naf has 256 elements)
+                ({
+                    let p: int = if pos <= 256 {
+                        pos as int
+                    } else {
+                        256int
+                    };
+                    reconstruct(naf@.take(p)) + (carry as int) * pow2(pos as nat) as int == (
+                    scalar_val as int) % pow2(pos as nat) as int
+                }),
+                // Unassigned digits are zero
+                forall|j: int| pos <= j < 256 ==> naf@[j] == 0i8,
+                // Terminal carry: once pos >= 256, carry must be 0
+                pos >= 256 ==> carry == 0,
+                // NAF digit validity: finalized digits satisfy bounds
+                ({
+                    let p: int = if pos <= 256 {
+                        pos as int
+                    } else {
+                        256int
+                    };
+                    forall|i: int|
+                        #![trigger naf@[i]]
+                        0 <= i < p ==> {
+                            let d = naf@[i] as int;
+                            d == 0 || (d % 2 != 0 && -pow2((w - 1) as nat) < d && d < pow2(
+                                (w - 1) as nat,
+                            ))
+                        }
+                }),
+                // NAF spacing: nonzero digits at least w behind pos
+                ({
+                    let p: int = if pos <= 256 {
+                        pos as int
+                    } else {
+                        256int
+                    };
+                    forall|i: int|
+                        #![trigger naf@[i]]
+                        0 <= i < p && naf@[i] as int != 0 ==> i + (w as int) <= pos as int
+                }),
+                // NAF non-adjacency: nonzero digit implies next w-1 are zero
+                ({
+                    let p: int = if pos <= 256 {
+                        pos as int
+                    } else {
+                        256int
+                    };
+                    forall|i: int|
+                        #![trigger naf@[i]]
+                        0 <= i < p && naf@[i] as int != 0 ==> (forall|j: int|
+                            1 <= j < (w as int) && i + j < 256 ==> (#[trigger] naf@[i + j]) == 0i8)
+                }),
+            decreases 264 - pos,
+        {
             // Construct a buffer of bits of the scalar, starting at bit `pos`
             let u64_idx = pos / 64;
             let bit_idx = pos % 64;
+
+            proof {
+                assert(u64_idx <= 3 && bit_idx < 64) by {
+                    lemma_fundamental_div_mod(pos as int, 64);
+                };
+            }
+
             let bit_buf: u64 = if bit_idx < 64 - w {
                 // This window's bits are contained in a single u64
                 x_u64[u64_idx] >> bit_idx
@@ -2407,27 +2505,348 @@ impl Scalar {
                 (x_u64[u64_idx] >> bit_idx) | (x_u64[1 + u64_idx] << (64 - bit_idx))
             };
 
-            // Add the carry into the current window
-            assume(false);
-            let window = carry + (bit_buf & window_mask);
+            // Prove bit extraction correctness: (bit_buf & window_mask) extracts
+            // the w-bit window of scalar_val starting at bit position pos
+            proof {
+                let words4: [u64; 4] = [x_u64[0], x_u64[1], x_u64[2], x_u64[3]];
+                // Fold OR with x_u64[4]=0 for the u64_idx==3 cross-word case
+                if u64_idx == 3 && !(bit_idx < 64 - w) {
+                    let w3 = words4[3];
+                    assert(bit_buf == w3 >> (bit_idx as u64)) by {
+                        assert((w3 >> (bit_idx as u64)) | (0u64 << ((64 - bit_idx) as u64)) == w3
+                            >> (bit_idx as u64)) by (bit_vector)
+                            requires
+                                (bit_idx as u64) < 64u64,
+                        ;
+                    };
+                }
+                assert((bit_buf & window_mask) as nat == (u64_4_as_nat(&words4) / pow2(pos as nat))
+                    % pow2(w as nat)) by {
+                    lemma_u64x4_bit_extraction(
+                        words4,
+                        bit_buf,
+                        window_mask,
+                        w,
+                        pos,
+                        u64_idx,
+                        bit_idx,
+                    );
+                };
+            }
+
+            // carry + (bit_buf & window_mask) won't overflow u64
+            proof {
+                assert(carry + (bit_buf & window_mask) <= (1u64 << (w as u64))) by {
+                    lemma_naf_window_no_overflow(carry, bit_buf, window_mask, w);
+                };
+            }
+
+            // Ghost: extracted value and connection to window
+            let ghost extracted: nat = (scalar_val / pow2(pos as nat)) % pow2(w as nat);
+            proof {
+                // bit_buf & window_mask == extracted (via u64_4_as_nat == scalar_val)
+                assert((bit_buf & window_mask) as nat == extracted) by {
+                    let words4: [u64; 4] = [x_u64[0], x_u64[1], x_u64[2], x_u64[3]];
+                    assert(u64_4_as_nat(&words4) == scalar_val);
+                };
+                // Since pos < 256 (loop guard), the capped invariant simplifies
+                assert(reconstruct(naf@.take(pos as int)) + (carry as int) * pow2(pos as nat) as int
+                    == (scalar_val as int) % pow2(pos as nat) as int);
+            }
+
+            // Save old carry before potential modification
+            let ghost old_carry: u64 = carry;
+            let window: u64 = carry + (bit_buf & window_mask);
+
+            // Ghost: save the prefix before naf is modified (for odd branch proof)
+            let ghost old_naf_prefix = naf@.take(pos as int);
 
             if window & 1 == 0 {
-                // If the window value is even, preserve the carry and continue.
-                // Why is the carry preserved?
-                // If carry == 0 and window & 1 == 0, then the next carry should be 0
-                // If carry == 1 and window & 1 == 0, then bit_buf & 1 == 1 so the next carry should be 1
+                // Even window: emit 0, advance by 1
+                proof {
+                    assert(window % 2 == 0) by (bit_vector)
+                        requires
+                            window & 1u64 == 0u64,
+                    ;
+                    assert((carry as nat + extracted) % 2 == 0) by {
+                        assert(window as nat == carry as nat + extracted);
+                    };
+                    // Reconstruction invariant advances from pos to pos+1
+                    assert(reconstruct(naf@.take((pos + 1) as int)) + (carry as int) * pow2(
+                        (pos + 1) as nat,
+                    ) as int == (scalar_val as int) % pow2((pos + 1) as nat) as int) by {
+                        lemma_naf_even_step(
+                            naf@,
+                            pos as nat,
+                            carry as nat,
+                            scalar_val,
+                            w as nat,
+                            extracted,
+                        );
+                    };
+                    // Terminal carry: pos=255, carry=1 leads to contradiction
+                    // (extracted=0, window=1, but window&1==0)
+                    if pos >= 255 && carry == 1 {
+                        assert(extracted == 0nat) by {
+                            assert(scalar_val / pow2(pos as nat) == 0nat) by {
+                                lemma_naf_high_bits_zero(scalar_val, pos as nat);
+                            };
+                            assert(0nat % pow2(w as nat) == 0nat) by {
+                                lemma_pow2_pos(w as nat);
+                                lemma_small_mod(0nat, pow2(w as nat));
+                            };
+                        };
+                        assert(false) by {
+                            assert(window == 1u64);
+                            assert(window & 1u64 == 1u64) by (bit_vector)
+                                requires
+                                    window == 1u64,
+                            ;
+                        };
+                    }
+                    assert(naf@[pos as int] == 0i8);
+                }
                 pos += 1;
                 continue ;
             }
+            // Truncate casts are safe: window < width = 2^w with w <= 8, so both fit in i8.
+
             if window < width / 2 {
                 carry = 0;
+                /* ORIGINAL CODE:
                 naf[pos] = window as i8;
+                 */
+                #[cfg(verus_keep_ghost)]
+                {
+                    naf[pos] = #[verifier::truncate]
+                    (window as i8);
+                }
+                #[cfg(not(verus_keep_ghost))]
+                {
+                    naf[pos] = window as i8;
+                }
             } else {
                 carry = 1;
+                /* ORIGINAL CODE:
                 naf[pos] = (window as i8).wrapping_sub(width as i8);
+                 */
+                #[cfg(verus_keep_ghost)]
+                {
+                    naf[pos] = (#[verifier::truncate]
+                    (window as i8)).wrapping_sub(
+                        #[verifier::truncate]
+                        (width as i8),
+                    );
+                }
+                #[cfg(not(verus_keep_ghost))]
+                {
+                    naf[pos] = (window as i8).wrapping_sub(width as i8);
+                }
             }
-            assume(false);
+
+            // Odd window: prove invariant preservation at pos + w
+            proof {
+                let new_pos_int: int = pos + w;
+
+                // The prefix naf@.take(pos) is unchanged after writing to naf[pos]
+                // (take(pos) only includes indices 0..pos-1)
+                assert(naf@.take(pos as int) =~= old_naf_prefix);
+
+                // Recover the old invariant with old_carry (before carry was modified)
+                assert(reconstruct(naf@.take(pos as int)) + (old_carry as int) * pow2(
+                    pos as nat,
+                ) as int == (scalar_val as int) % pow2(pos as nat) as int);
+
+                assert(extracted < pow2(w as nat)) by {
+                    lemma_pow2_pos(w as nat);
+                };
+                assert(window as nat == old_carry as nat + extracted);
+
+                // Digit relationship: naf[pos] = window - carry * 2^w
+                if window < width / 2 {
+                    // Positive case: naf[pos] = window, carry = 0
+                    assert((window as i8) as int == window as int) by {
+                        assert(width / 2 <= 128u64) by (bit_vector)
+                            requires
+                                width == 1u64 << (w as u64),
+                                2u64 <= (w as u64) && (w as u64) <= 8u64,
+                        ;
+                        assert(window <= 127u64);
+                    };
+                    assert(carry == 0u64);
+                } else {
+                    // Negative case: naf[pos] = window - width, carry = 1
+                    assert(carry == 1u64);
+                    assert(window % 2 == 1) by (bit_vector)
+                        requires
+                            window & 1u64 != 0u64,
+                    ;
+                    assert(window <= width) by {
+                        assert((bit_buf & window_mask) <= window_mask) by (bit_vector);
+                    };
+                    assert(naf@[pos as int] as int == window as int - width as int) by {
+                        lemma_naf_wrapping_sub_correct(window, width, w);
+                    };
+                    assert(width as nat == pow2(w as nat)) by {
+                        lemma_u64_shift_is_pow2(w as nat);
+                    };
+                }
+                assert(naf@[pos as int] as int == (old_carry as int + extracted as int) - (
+                carry as int) * pow2(w as nat) as int);
+
+                // NAF digit validity: digit is odd and in (-2^(w-1), 2^(w-1))
+                assert({
+                    let d = naf@[pos as int] as int;
+                    d % 2 != 0 && -pow2((w - 1) as nat) < d && d < pow2((w - 1) as nat)
+                }) by {
+                    assert(window % 2 == 1) by (bit_vector)
+                        requires
+                            window & 1u64 != 0u64,
+                    ;
+                    assert(window >= 1u64) by (bit_vector)
+                        requires
+                            window & 1u64 != 0u64,
+                    ;
+                    assert(window <= width) by {
+                        assert((bit_buf & window_mask) <= window_mask) by (bit_vector);
+                    };
+                    lemma_naf_digit_bounds(window, w, width);
+                };
+
+                assert(forall|j: int| pos < j < pos + w && j < 256 ==> naf@[j] == 0i8);
+
+                // Reconstruction invariant advances from pos to pos+w
+                assert({
+                    let end_pos = if pos + w <= 256 {
+                        (pos + w) as nat
+                    } else {
+                        256nat
+                    };
+                    reconstruct(naf@.take(end_pos as int)) + (carry as int) * pow2(
+                        (pos + w) as nat,
+                    ) as int == (scalar_val as int) % pow2((pos + w) as nat) as int
+                }) by {
+                    lemma_naf_odd_step(
+                        naf@,
+                        pos as nat,
+                        w as nat,
+                        scalar_val,
+                        old_carry as nat,
+                        carry as nat,
+                        extracted,
+                    );
+                };
+
+                // The zeros invariant: positions >= pos+w are still 0
+                // (we only wrote to position pos, and positions pos+1.. were 0 from invariant)
+                assert(forall|j: int| new_pos_int <= j < 256 ==> naf@[j] == 0i8);
+
+                // Terminal carry: if pos + w >= 256, carry == 0
+                // (extracted is small enough that the positive branch was taken)
+                if pos + w >= 256 {
+                    if pos >= 255 {
+                        assert(window < width / 2) by {
+                            assert(extracted == 0nat) by {
+                                assert(scalar_val / pow2(pos as nat) == 0nat) by {
+                                    lemma_naf_high_bits_zero(scalar_val, pos as nat);
+                                };
+                                assert(0nat % pow2(w as nat) == 0nat) by {
+                                    lemma_pow2_pos(w as nat);
+                                    lemma_small_mod(0nat, pow2(w as nat));
+                                };
+                            };
+                            assert(window <= 1u64);
+                            assert(width >= 4u64) by (bit_vector)
+                                requires
+                                    width == 1u64 << (w as u64),
+                                    2u64 <= (w as u64) && (w as u64) <= 8u64,
+                            ;
+                        };
+                    } else {
+                        // pos < 255, pos + w >= 256, so gap = 255 - pos < w
+                        let gap = (255 - pos) as nat;
+                        assert(window < width / 2) by {
+                            assert(scalar_val / pow2(pos as nat) < pow2(gap)) by {
+                                lemma_pow2_pos(pos as nat);
+                                lemma_pow2_strictly_increases(pos as nat, 255);
+                                lemma_pow2_adds(pos as nat, gap);
+                                lemma_div_strictly_bounded(
+                                    scalar_val as int,
+                                    pow2(pos as nat) as int,
+                                    pow2(gap) as int,
+                                );
+                            };
+                            // gap < w, so small_mod gives extracted == scalar_val / pow2(pos)
+                            assert(extracted == scalar_val / pow2(pos as nat) && extracted < pow2(
+                                gap,
+                            )) by {
+                                lemma_pow2_strictly_increases(gap, w as nat);
+                                lemma_small_mod(scalar_val / pow2(pos as nat), pow2(w as nat));
+                            };
+                            assert(pow2(gap) <= pow2((w - 1) as nat)) by {
+                                if gap < (w - 1) as nat {
+                                    lemma_pow2_strictly_increases(gap, (w - 1) as nat);
+                                }
+                            };
+                            assert(pow2((w - 1) as nat) == width / 2) by {
+                                lemma_pow2_adds((w - 1) as nat, 1);
+                                assert(pow2(1) == 2) by {
+                                    lemma2_to64();
+                                };
+                                lemma_u64_shift_is_pow2(w as nat);
+                            };
+                            // window <= pow2(gap) but window is odd and pow2(gap) is even,
+                            // so window < pow2(gap) <= width/2
+                            assert(window as nat <= pow2(gap));
+                            assert(pow2(gap) % 2 == 0) by {
+                                assert(gap >= 1nat);
+                                lemma_pow2_adds(1, (gap - 1) as nat);
+                                assert(pow2(1) == 2) by {
+                                    lemma2_to64();
+                                };
+                            };
+                            assert(window % 2 == 1) by (bit_vector)
+                                requires
+                                    window & 1u64 != 0u64,
+                            ;
+                            assert(window as nat != pow2(gap));
+                            assert(!(window as nat >= pow2(gap)));
+                            assert(!((window as nat) >= (width / 2) as nat));
+                        };
+                    }
+                    assert(carry == 0u64);
+                }
+            }
             pos += w;
+        }
+
+        // Post-loop: carry = 0 and reconstruction equals scalar_val
+        proof {
+            assert(carry == 0);
+            let p: int = if pos <= 256 {
+                pos as int
+            } else {
+                256int
+            };
+
+            // scalar_val % pow2(pos) == scalar_val (since scalar < 2^255 < 2^pos)
+            assert((scalar_val as int) % pow2(pos as nat) as int == scalar_val as int) by {
+                lemma_pow2_strictly_increases(255, pos as nat);
+                lemma_small_mod(scalar_val, pow2(pos as nat));
+            };
+
+            assert(reconstruct(naf@) == scalar_val as int) by {
+                // From invariant with carry == 0:
+                assert(reconstruct(naf@.take(p)) == (scalar_val as int) % pow2(pos as nat) as int);
+                // naf@.take(p) =~= naf@ since p >= 256 and naf has 256 elements
+                assert(naf@.take(p) =~= naf@) by {
+                    assert(p >= 256);
+                    assert(naf@.take(p) =~= naf@.take(256));
+                    assert(naf@.take(256) =~= naf@);
+                };
+            };
+
+            assert(is_valid_naf(naf@, w as nat));
         }
 
         naf

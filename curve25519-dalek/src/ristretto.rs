@@ -208,6 +208,7 @@ use crate::specs::proba_specs::*;
 use crate::specs::ristretto_specs::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::specs::scalar_specs::*;
+use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
 #[cfg(feature = "group")]
@@ -1090,9 +1091,7 @@ impl RistrettoPoint {
             is_well_formed_edwards_point(result[3]),
             is_ristretto_coset(result, self.0),
     {
-        proof {
-            axiom_eight_torsion_well_formed();
-        }
+        /* <ORIGINAL CODE>
         let coset = [
             self.0,
             &self.0 + &constants::EIGHT_TORSION[2],
@@ -1100,6 +1099,55 @@ impl RistrettoPoint {
             &self.0 + &constants::EIGHT_TORSION[6],
         ];
         coset
+        </ORIGINAL CODE> */
+        proof {
+            axiom_eight_torsion_well_formed();
+        }
+        // Break additions into separate let bindings to reduce Z3 reasoning burden.
+        // Explicit assertions after each addition prevent rlimit blowup in larger
+        // verification contexts (e.g. libsignal) where the solver has more axioms in scope.
+        let p0 = self.0;
+        proof {
+            assert(is_well_formed_edwards_point(p0));
+            assert(edwards_point_as_affine(p0) == edwards_point_as_affine(self.0));
+        }
+        let p1 = &self.0 + &constants::EIGHT_TORSION[2];
+        proof {
+            assert(is_well_formed_edwards_point(p1));
+            let base_affine = edwards_point_as_affine(self.0);
+            let t2 = edwards_point_as_affine(constants::EIGHT_TORSION[2]);
+            assert(edwards_point_as_affine(p1) == edwards_add(
+                base_affine.0,
+                base_affine.1,
+                t2.0,
+                t2.1,
+            ));
+        }
+        let p2 = &self.0 + &constants::EIGHT_TORSION[4];
+        proof {
+            assert(is_well_formed_edwards_point(p2));
+            let base_affine = edwards_point_as_affine(self.0);
+            let t4 = edwards_point_as_affine(constants::EIGHT_TORSION[4]);
+            assert(edwards_point_as_affine(p2) == edwards_add(
+                base_affine.0,
+                base_affine.1,
+                t4.0,
+                t4.1,
+            ));
+        }
+        let p3 = &self.0 + &constants::EIGHT_TORSION[6];
+        proof {
+            assert(is_well_formed_edwards_point(p3));
+            let base_affine = edwards_point_as_affine(self.0);
+            let t6 = edwards_point_as_affine(constants::EIGHT_TORSION[6]);
+            assert(edwards_point_as_affine(p3) == edwards_add(
+                base_affine.0,
+                base_affine.1,
+                t6.0,
+                t6.1,
+            ));
+        }
+        [p0, p1, p2, p3]
     }
 
     /// Computes the Ristretto Elligator map. This is the
@@ -2137,6 +2185,8 @@ impl RistrettoPoint {
     ) -> (result: RistrettoPoint)
         requires
             is_well_formed_edwards_point(A.0),
+            scalar_as_nat(a) < pow2(255),
+            scalar_as_nat(b) < pow2(255),
         ensures
             is_well_formed_edwards_point(result.0),
             // Functional correctness: result = a*A + b*B where B is the Ristretto basepoint

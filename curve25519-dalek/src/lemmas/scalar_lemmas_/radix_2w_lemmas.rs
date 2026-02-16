@@ -43,7 +43,7 @@ verus! {
 /// For a boundary b in (0, 256], the words whose 64-bit base offset >= b do not
 /// affect `u64_4_as_nat(&words) % pow2(b)`.  This lemma factors them out,
 /// leaving only the partial sum of words below the boundary.
-proof fn lemma_u64x4_mod_strip_above(words: [u64; 4], boundary: nat)
+pub proof fn lemma_u64x4_mod_strip_above(words: [u64; 4], boundary: nat)
     requires
         0 < boundary <= 256,
     ensures
@@ -132,7 +132,7 @@ proof fn lemma_u64x4_mod_strip_above(words: [u64; 4], boundary: nat)
 /// Proves the sum of the first `base_idx` words is strictly less than pow2(base_idx * 64).
 /// This is the bound needed for `lemma_fundamental_div_mod_converse_div` when
 /// extracting word `base_idx` from a partial sum by dividing by pow2(base_idx * 64).
-proof fn lemma_u64x4_lower_words_bounded(words: [u64; 4], base_idx: usize)
+pub proof fn lemma_u64x4_lower_words_bounded(words: [u64; 4], base_idx: usize)
     requires
         1 <= base_idx <= 3,
     ensures
@@ -266,7 +266,7 @@ pub proof fn lemma_u64x4_bit_extraction(
     bit_idx: usize,
 )
     requires
-        w >= 5 && w <= 8,
+        w >= 2 && w <= 8,
         bit_offset <= 255,
         u64_idx == bit_offset / 64,
         bit_idx == bit_offset % 64,
@@ -333,7 +333,7 @@ proof fn lemma_u64x4_single_word_decompose_generic(
         u64_idx == bit_off_nat / 64,
         bit_idx_nat == bit_off_nat % 64,
         bit_idx_nat + w_nat <= 64 || u64_idx == 3,
-        w_nat >= 5 && w_nat <= 8,
+        w_nat >= 2 && w_nat <= 8,
         bit_off_nat <= 255,
     ensures
         (u64_4_as_nat(&words) % pow2(bit_off_nat + w_nat)) / pow2(bit_off_nat) == ((
@@ -419,7 +419,7 @@ proof fn lemma_u64x4_single_word_decompose_generic(
 /// Helper: the low `w` bits of `(b << k)` equal `(b % pow2(w-k)) << k`.
 /// Since w <= 8, all masks fit trivially in u64; the proof needs only a
 /// single bit-vector step plus the mask-to-mod connection.
-proof fn lemma_u64_shl_low_bits(b: u64, k: u64, w: u64)
+pub proof fn lemma_u64_shl_low_bits(b: u64, k: u64, w: u64)
     requires
         k > 0,
         k < 64,
@@ -485,7 +485,7 @@ proof fn lemma_u64x4_cross_word_reduce_to_two(
         bit_idx_nat == ((u64_idx as nat) * 64 + bit_idx_nat) % 64,  // bit_idx < 64
         bit_idx_nat + w_nat > 64,
         u64_idx < 3,
-        w_nat >= 5 && w_nat <= 8,
+        w_nat >= 2 && w_nat <= 8,
         (u64_idx as nat) * 64 + bit_idx_nat <= 255,
         bit_idx_nat < 64,
     ensures
@@ -605,7 +605,7 @@ proof fn lemma_u64x4_cross_word_decompose(
         bit_idx_nat == bit_off_nat % 64,
         bit_idx_nat + w_nat > 64,
         u64_idx < 3,
-        w_nat >= 5 && w_nat <= 8,
+        w_nat >= 2 && w_nat <= 8,
         bit_off_nat <= 255,
         bit_buf == (words[u64_idx as int] >> (bit_idx_nat as u64)) | (words[(1 + u64_idx) as int]
             << ((64 - bit_idx_nat) as u64)),
@@ -790,7 +790,7 @@ proof fn lemma_u64x4_cross_word_extraction(
     bit_idx: usize,
 )
     requires
-        w >= 5 && w <= 8,
+        w >= 2 && w <= 8,
         bit_offset <= 255,
         u64_idx == bit_offset / 64,
         bit_idx == bit_offset % 64,
@@ -846,7 +846,7 @@ proof fn lemma_u64x4_cross_word_extraction(
                 bit_buf == low_w | (b << w_u64),
                 mask_u64 == ((1u64 << w_u64) - 1) as u64,
                 low_w < (1u64 << w_u64),
-                w_u64 >= 5u64,
+                w_u64 >= 2u64,
                 w_u64 <= 8u64,
         ;
     } else {

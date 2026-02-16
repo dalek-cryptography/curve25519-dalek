@@ -259,12 +259,12 @@ pub open spec fn words64_from_bytes_to_nat(bytes: Seq<u8>, count: int) -> nat
 /// Convert a boolean array (bits in little-endian order) to a natural number.
 /// bits[0] is the least significant bit.
 /// Computes: sum_{i=0}^{255} bits[i] * 2^i
-pub open spec fn bits_as_nat(bits: &[bool; 256]) -> nat {
+pub open spec fn bits_as_nat(bits: [bool; 256]) -> nat {
     bits_as_nat_rec(bits, 0)
 }
 
 /// Recursive helper for bits_as_nat.
-pub open spec fn bits_as_nat_rec(bits: &[bool; 256], index: int) -> nat
+pub open spec fn bits_as_nat_rec(bits: [bool; 256], index: int) -> nat
     decreases 256 - index,
 {
     if index >= 256 {
@@ -306,7 +306,7 @@ pub open spec fn bits_be_as_nat(bits: &[bool], len: int) -> nat
 ///
 /// Concretely, this computes:
 /// `sum_{i=0..len-1} (bits[start + i] ? 1 : 0) * 2^i`.
-pub open spec fn bits_from_index_to_nat(bits: &[bool; 256], start: nat, len: nat) -> nat
+pub open spec fn bits_from_index_to_nat(bits: [bool; 256], start: nat, len: nat) -> nat
     recommends
         start + len <= 256,
     decreases len,
@@ -320,6 +320,25 @@ pub open spec fn bits_from_index_to_nat(bits: &[bool; 256], start: nat, len: nat
             0nat
         };
         bit_value + 2 * bits_from_index_to_nat(bits, (start + 1) as nat, (len - 1) as nat)
+    }
+}
+
+/// Recursive specification: the value of `len` bits starting from bit position `bit_start`
+/// within a byte, using the same little-endian Horner structure as `bits_from_index_to_nat`.
+pub open spec fn byte_bits_value(byte: u8, bit_start: nat, len: nat) -> nat
+    recommends
+        bit_start + len <= 8,
+    decreases len,
+{
+    if len == 0 {
+        0
+    } else {
+        let bit_val: nat = if ((byte >> (bit_start as u8)) & 1u8) == 1u8 {
+            1
+        } else {
+            0
+        };
+        bit_val + 2 * byte_bits_value(byte, (bit_start + 1) as nat, (len - 1) as nat)
     }
 }
 

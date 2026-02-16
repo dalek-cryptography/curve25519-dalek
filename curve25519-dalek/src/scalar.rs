@@ -110,6 +110,7 @@
 //! reduces a \\(512\\)-bit integer, if the optional `digest` feature
 //! has been enabled.
 
+use crate::lemmas::common_lemmas::bits_as_nat_lemmas::*;
 use crate::lemmas::common_lemmas::div_mod_lemmas::*;
 use crate::lemmas::common_lemmas::mask_lemmas::*;
 use crate::lemmas::common_lemmas::pow_lemmas::*;
@@ -2188,7 +2189,7 @@ impl Scalar {
     #[allow(dead_code)]
     pub(crate) fn bits_le(&self) -> (result: [bool; 256])
         ensures
-            bits_as_nat(&result) == u8_32_as_nat(&self.bytes),
+            bits_as_nat(result) == u8_32_as_nat(&self.bytes),
     {
         let mut bits = [false;256];
         let mut i: usize = 0;
@@ -2198,6 +2199,9 @@ impl Scalar {
                 i <= 256,
                 bits.len() == 256,
                 self.bytes.len() == 32,
+                forall|j: int|
+                    0 <= j < i as int ==> bits[j] == (((self.bytes[(j / 8) as int] >> ((j
+                        % 8) as u8)) & 1u8) == 1u8),
             decreases 256 - i,
         {
             // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
@@ -2206,7 +2210,7 @@ impl Scalar {
             let byte_idx = i >> 3;  // Divide by 8 to get byte index
             let bit_idx = (i & 7) as u8;  // Modulo 8 to get bit position within byte
 
-            // Prove bounds using shift and mask lemmas
+            // Prove bounds and index equalities using shift and mask lemmas
             proof {
                 assert(i < 256);
 
@@ -2215,12 +2219,14 @@ impl Scalar {
                 // pow2(3) = 8
                 lemma2_to64();
                 assert(byte_idx < 32);
+                assert(byte_idx == i / 8);
 
                 // Prove i & 7 = i % 8 using mask lemma
                 lemma_u64_low_bits_mask_is_mod(i as u64, 3);
                 // low_bits_mask(3) = 7 and pow2(3) = 8
                 lemma2_to64();
                 assert(bit_idx < 8);
+                assert(bit_idx == (i % 8) as u8);
             }
 
             bits[i] = ((self.bytes[byte_idx] >> bit_idx) & 1u8) == 1;
@@ -2228,7 +2234,7 @@ impl Scalar {
         }
 
         proof {
-            assume(bits_as_nat(&bits) == u8_32_as_nat(&self.bytes));
+            lemma_bits_from_bytes_eq_u8_32_as_nat(bits, self.bytes);
         }
 
         bits

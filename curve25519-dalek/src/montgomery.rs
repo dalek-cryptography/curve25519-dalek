@@ -2613,13 +2613,13 @@ impl Mul<&Scalar> for &MontgomeryPoint {
             assert(scalar.bytes[31] <= 127);
 
             let scalar_bytes = &scalar.bytes;
-            assert(bits_as_nat(&bits_le) == u8_32_as_nat(scalar_bytes));
-            assert(bits_as_nat(&bits_le) < pow2(255)) by {
+            assert(bits_as_nat(bits_le) == u8_32_as_nat(scalar_bytes));
+            assert(bits_as_nat(bits_le) < pow2(255)) by {
                 lemma_u8_32_as_nat_lt_pow2_255(scalar_bytes);
             }
 
             assert(!bits_le[255]) by {
-                lemma_bits_as_nat_lt_pow2_255_implies_msb_false(&bits_le);
+                lemma_bits_as_nat_lt_pow2_255_implies_msb_false(bits_le);
             }
 
             assert(bits_be_slice.len() == 255);
@@ -2632,31 +2632,26 @@ impl Mul<&Scalar> for &MontgomeryPoint {
 
             // Interpret the big-endian bits as a nat.
             let n = bits_be_as_nat(bits_be_slice, 255);
-            assert(n == bits_from_index_to_nat(&bits_le, 0, 255)) by {
-                lemma_bits_be_as_nat_eq_bits_from_index(&bits_le, bits_be_slice, 255);
+            assert(n == bits_from_index_to_nat(bits_le, 0, 255)) by {
+                lemma_bits_be_as_nat_eq_bits_from_index(bits_le, bits_be_slice, 255);
                 assert((255 - 255) as nat == 0);
             }
 
             // Since the MSB is 0, the 255-bit view equals the full 256-bit value.
-            assert(n == bits_as_nat(&bits_le)) by {
-                lemma_bits_as_nat_eq_bits_from_index(&bits_le);
-                lemma_bits_from_index_to_nat_split_last(&bits_le, 0, 255);
-                assert((if bits_le[255] {
-                    1nat
-                } else {
-                    0nat
-                }) == 0nat);
-                assert(bits_from_index_to_nat(&bits_le, 0, 256) == bits_from_index_to_nat(
-                    &bits_le,
-                    0,
-                    255,
-                ));
+            assert(bits_from_index_to_nat(bits_le, 255, 1) == 0nat) by {
+                assert(bits_from_index_to_nat(bits_le, 256, 0) == 0nat);
+                assert(!bits_le[255]);
+            }
+            assert(n == bits_as_nat(bits_le)) by {
+                lemma_bits_as_nat_eq_bits_from_index(bits_le);
+                lemma_bits_from_index_split(bits_le, 0, 255, 1);
+                assert(bits_from_index_to_nat(bits_le, 255, 1) == 0nat);
             }
 
             // Conclude the scalar value matches the bits interpreted by mul_bits_be.
             assert(n == scalar_as_nat(scalar)) by {
                 assert(scalar_as_nat(scalar) == u8_32_as_nat(scalar_bytes));
-                assert(n == bits_as_nat(&bits_le));
+                assert(n == bits_as_nat(bits_le));
             }
         }
         result

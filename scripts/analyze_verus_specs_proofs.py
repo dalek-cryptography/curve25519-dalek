@@ -296,8 +296,22 @@ def parse_function_in_file(
         found_opening_paren = False
 
         # Find the end of the function signature (including specs)
+        # Skip characters inside comments to avoid counting parens/braces in comments
+        # (e.g., "// values are in [2^254, 2^255)" has a ) that would break paren tracking)
         while pos < len(content):
             char = content[pos]
+
+            # Skip line comments (// ... \n)
+            if char == "/" and pos + 1 < len(content) and content[pos + 1] == "/":
+                newline = content.find("\n", pos)
+                pos = newline + 1 if newline != -1 else len(content)
+                continue
+
+            # Skip block comments (/* ... */)
+            if char == "/" and pos + 1 < len(content) and content[pos + 1] == "*":
+                end = content.find("*/", pos + 2)
+                pos = end + 2 if end != -1 else len(content)
+                continue
 
             if char == "(":
                 paren_depth += 1

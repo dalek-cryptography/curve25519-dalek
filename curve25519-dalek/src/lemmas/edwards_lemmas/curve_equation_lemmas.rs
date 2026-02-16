@@ -21,6 +21,8 @@ use crate::lemmas::field_lemmas::field_algebra_lemmas::*;
 use crate::specs::edwards_specs::*;
 use crate::specs::field_specs::*;
 use crate::specs::field_specs_u64::*;
+#[cfg(verus_keep_ghost)]
+use crate::specs::montgomery_specs::edwards_y_from_montgomery_u;
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
 #[cfg(verus_keep_ghost)]
@@ -541,9 +543,14 @@ pub proof fn lemma_affine_curve_implies_projective(x: nat, y: nat, z: nat)
 
     // (1 + d·x²·y²·inv(z⁴))·z⁴ = z⁴ + d·x²·y²·inv(z⁴)·z⁴ = z⁴ + d·x²·y²
     assert(field_mul(affine_rhs, z4) == proj_rhs) by {
+        // Commutativity: field_mul(affine_rhs, z4) == field_mul(z4, affine_rhs)
+        lemma_field_mul_comm(affine_rhs, z4);
+        // Distribution: field_mul(z4, 1 + D) == field_mul(z4, 1) + field_mul(z4, D)
         lemma_field_mul_distributes_over_add(z4, 1, field_mul(d, x2_y2_inv_z4));
-        lemma_field_mul_comm(z4, 1);
+        // field_mul(z4, 1) == z4
         lemma_field_mul_one_right(z4);
+        lemma_small_mod(z4, p);
+        // field_mul(z4, D) == field_mul(D, z4) == field_mul(d, x2_y2)
         lemma_field_mul_comm(z4, field_mul(d, x2_y2_inv_z4));
     };
 
@@ -781,7 +788,7 @@ pub proof fn lemma_edwards_scalar_mul_succ(point_affine: (nat, nat), n: nat)
     if n == 1 {
         // 2P = double(P) = P + P
         reveal_with_fuel(edwards_scalar_mul, 1);
-        assert((2nat / 2nat) as nat == 1nat) by (compute);
+        assert((2nat / 2nat) as nat == 1nat);
         assert(edwards_scalar_mul(point_affine, 1) == point_affine);
         // double(P) = add(P, P) by definition of edwards_double
     } else {
@@ -838,7 +845,10 @@ pub proof fn lemma_edwards_scalar_mul_succ(point_affine: (nat, nat), n: nat)
                 assert(nm1 + 2 == np1);
                 assert(nm1 + 2 == m * 2);
                 assert(nm1 == m * 2 - 2);
-                assert(m * 2 - 2 == (m - 1) * 2) by (compute);
+                assert(m * 2 - 2 == (m - 1) * 2) by {
+                    lemma_mul_is_distributive_sub_other_way(2, m as int, 1);
+                }
+
             }
             // nm1 == mm1 * 2, so nm1 % 2 == 0
             assert(nm1 % 2 == 0) by {
@@ -1329,7 +1339,7 @@ pub proof fn lemma_edwards_scalar_mul_composition(point_affine: (nat, nat), a: n
             assert(a * (b % 2) == 0) by {
                 lemma_mul_by_zero_is_zero(a as int);
             }
-            assert(0nat % 2 == 0) by (compute);
+            assert(0nat % 2 == 0);
         }
 
         // Compute (a*b)/2 = a*(b/2) (valid since b is even).
@@ -1343,8 +1353,12 @@ pub proof fn lemma_edwards_scalar_mul_composition(point_affine: (nat, nat), a: n
         assert(a * b != 0) by {
             lemma_mul_nonzero(a as int, b as int);
         }
-        // a * b is even (since b is even), so a * b != 1
-        assert(a * b != 1) by (compute);
+        // a * b is even and non-zero, so a * b >= 2 > 1
+        assert(a * b != 1) by (nonlinear_arith)
+            requires
+                (a * b) % 2 == 0nat,
+                a * b != 0nat,
+        ;
 
         assert(edwards_scalar_mul(point_affine, a * b) == {
             let half = edwards_scalar_mul(point_affine, ((a * b) / 2) as nat);
@@ -1567,10 +1581,10 @@ pub proof fn lemma_identity_affine_niels_is_identity()
         // u64_5_as_nat gives 1 + 0 + 0 + 0 + 0 = 1
         assert(fe51_as_nat(&id.y_plus_x) == 1nat) by {
             reveal(pow2);
-            assert(pow2(51) * 0 == 0) by (nonlinear_arith);
-            assert(pow2(102) * 0 == 0) by (nonlinear_arith);
-            assert(pow2(153) * 0 == 0) by (nonlinear_arith);
-            assert(pow2(204) * 0 == 0) by (nonlinear_arith);
+            lemma_mul_by_zero_is_zero(pow2(51) as int);
+            lemma_mul_by_zero_is_zero(pow2(102) as int);
+            lemma_mul_by_zero_is_zero(pow2(153) as int);
+            lemma_mul_by_zero_is_zero(pow2(204) as int);
         }
         p_gt_2();
         lemma_small_mod(1nat, p());
@@ -1583,10 +1597,10 @@ pub proof fn lemma_identity_affine_niels_is_identity()
         assert(id.y_minus_x.limbs[4] == 0);
         assert(fe51_as_nat(&id.y_minus_x) == 1nat) by {
             reveal(pow2);
-            assert(pow2(51) * 0 == 0) by (nonlinear_arith);
-            assert(pow2(102) * 0 == 0) by (nonlinear_arith);
-            assert(pow2(153) * 0 == 0) by (nonlinear_arith);
-            assert(pow2(204) * 0 == 0) by (nonlinear_arith);
+            lemma_mul_by_zero_is_zero(pow2(51) as int);
+            lemma_mul_by_zero_is_zero(pow2(102) as int);
+            lemma_mul_by_zero_is_zero(pow2(153) as int);
+            lemma_mul_by_zero_is_zero(pow2(204) as int);
         }
         p_gt_2();
         lemma_small_mod(1nat, p());
@@ -1777,6 +1791,54 @@ pub proof fn lemma_projective_niels_affine_equals_edwards_affine(
     assert(y_proj == y) by {
         lemma_small_mod(y, p());
     }
+}
+
+// =============================================================================
+// Axioms and lemmas for decompression and cofactor clearing
+// =============================================================================
+/// Axiom: A point on the curve witnesses that the y-coordinate is valid.
+///
+/// If (x, y) lies on the Ed25519 curve with x, y ∈ [0, p), then y is a valid
+/// y-coordinate, i.e. the equation x² = (y²−1)/(d·y²+1) has a solution mod p.
+pub proof fn axiom_curve_point_implies_valid_y(x: nat, y: nat)
+    requires
+        math_on_edwards_curve(x, y),
+        x < p(),
+        y < p(),
+    ensures
+        math_is_valid_y_coordinate(y),
+{
+    admit();
+}
+
+/// Axiom: On Ed25519, the x-coordinate is uniquely determined by y and parity.
+///
+/// The curve equation determines x² uniquely from y. Over F_p with p odd,
+/// a nonzero square has exactly two roots with opposite parities, so the
+/// parity constraint selects at most one. When x² = 0, x = 0 is unique.
+pub proof fn axiom_unique_x_with_parity(x1: nat, x2: nat, y: nat)
+    requires
+        math_on_edwards_curve(x1, y),
+        math_on_edwards_curve(x2, y),
+        x1 < p(),
+        x2 < p(),
+        y < p(),
+        x1 % 2 == x2 % 2,
+    ensures
+        x1 == x2,
+{
+    admit();
+}
+
+/// Axiom: The Ed25519 curve parameter d satisfies d + 1 ≢ 0 (mod p).
+///
+/// Equivalent to d ≠ −1, a standard requirement for twisted Edwards curves.
+/// For Ed25519, d = −121665/121666.
+proof fn axiom_d_plus_one_nonzero()
+    ensures
+        field_add(fe51_as_canonical_nat(&EDWARDS_D), 1) % p() != 0,
+{
+    admit();
 }
 
 } // verus!

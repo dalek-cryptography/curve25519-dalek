@@ -295,8 +295,11 @@ impl CompressedEdwardsY {
             fe51_as_canonical_nat(&result.unwrap().Y) == field_element_from_bytes(
                 &self.0,
             )
+            // Z is 1 in the decompressed representation
+             && fe51_as_canonical_nat(&result.unwrap().Z)
+                == 1
             // The point is valid on the Edwards curve
-             && is_valid_edwards_point(
+             && is_well_formed_edwards_point(
                 result.unwrap(),
             )
             // The X coordinate sign bit matches the sign bit from the compressed representation
@@ -335,6 +338,17 @@ impl CompressedEdwardsY {
 
                 // Use the unified lemma to prove all postconditions
                 lemma_decompress_valid_branch(&self.0, x_orig, &point);
+
+                // Strengthen to well-formedness: bounds + sum bounds.
+                assert(fe51_limbs_bounded(&point.Y, 51));
+                assert(fe51_limbs_bounded(&point.Z, 51));
+                assert((1u64 << 51) < (1u64 << 52)) by (bit_vector);
+                lemma_fe51_limbs_bounded_weaken(&point.Y, 51, 52);
+                lemma_fe51_limbs_bounded_weaken(&point.Z, 51, 52);
+
+                assert(edwards_point_limbs_bounded(point));
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&point.Y, &point.X, 52);
+                assert(is_well_formed_edwards_point(point));
             }
             result
         } else {
@@ -527,6 +541,9 @@ mod decompress {
                 fe51_as_canonical_nat(&result.X),
                 fe51_as_canonical_nat(&result.Y),
             ),
+            // Limb bounds needed for well-formedness in callers
+            fe51_limbs_bounded(&result.X, 52),
+            fe51_limbs_bounded(&result.T, 52),
     {
         // FieldElement::sqrt_ratio_i always returns the nonnegative square root,
         // so we negate according to the supplied sign bit.
@@ -583,6 +600,10 @@ mod decompress {
                 fe51_as_canonical_nat(&result.X),
                 fe51_as_canonical_nat(&result.Y),
             ));
+            // Limb bounds: X remains 52-bounded (from conditional_negate_field_element),
+            // and T is 52-bounded as a product.
+            assert(fe51_limbs_bounded(&result.X, 52));
+            assert(fe51_limbs_bounded(&result.T, 52));
         }
 
         result
@@ -1041,8 +1062,8 @@ impl ValidityCheck for EdwardsPoint {
             assert(point_on_curve == math_on_edwards_curve_projective(x, y, z));
 
             // on_segre_image checks XY == ZT via PartialEq (compares canonical bytes)
-            // PartialEq ensures: (a == b) <==> spec_fe51_to_bytes(a) == spec_fe51_to_bytes(b)
-            assert(on_segre_image == (spec_fe51_to_bytes(&xy) == spec_fe51_to_bytes(&zt)));
+            // PartialEq ensures: (a == b) <==> spec_fe51_as_bytes(a) == spec_fe51_as_bytes(b)
+            assert(on_segre_image == (spec_fe51_as_bytes(&xy) == spec_fe51_as_bytes(&zt)));
 
             // Multiplication postcondition: fe51_as_canonical_nat of product = field_mul
             assert(fe51_as_canonical_nat(&xy) == field_mul(x, y));
@@ -1052,7 +1073,7 @@ impl ValidityCheck for EdwardsPoint {
             assert(on_segre_image == (field_mul(x, y) == field_mul(z, t))) by {
                 // Forward: bytes_equal ==> values_equal
                 if on_segre_image {
-                    assert(spec_fe51_to_bytes(&xy) == spec_fe51_to_bytes(&zt));
+                    assert(spec_fe51_as_bytes(&xy) == spec_fe51_as_bytes(&zt));
                     lemma_fe51_to_bytes_equal_implies_field_element_equal(&xy, &zt);
                     assert(fe51_as_canonical_nat(&xy) == fe51_as_canonical_nat(&zt));
                     assert(field_mul(x, y) == field_mul(z, t));
@@ -1062,7 +1083,7 @@ impl ValidityCheck for EdwardsPoint {
                 if field_mul(x, y) == field_mul(z, t) {
                     assert(fe51_as_canonical_nat(&xy) == fe51_as_canonical_nat(&zt));
                     lemma_field_element_equal_implies_fe51_to_bytes_equal(&xy, &zt);
-                    assert(spec_fe51_to_bytes(&xy) == spec_fe51_to_bytes(&zt));
+                    assert(spec_fe51_as_bytes(&xy) == spec_fe51_as_bytes(&zt));
                     assert(on_segre_image);
                 }
             };
@@ -1775,7 +1796,9 @@ impl EdwardsPoint {
         /* REFACTOR END*/
 
         // Extract sign bit from high bit of last byte
-        let sign_bit: u8 = (res[31] & 0x80u8) >> 7u8;
+        /* ORIGINAL CODE: let sign_bit: u8 = (res[31] & 0x80u8) >> 7u8; */
+        let byte31 = res[31];  // extract for proof blocks (avoids Verus array_view issue)
+        let sign_bit: u8 = (byte31 & 0x80u8) >> 7u8;
 
         // Convert to field element
         let fe = FieldElement::from_bytes(&res);
@@ -1804,18 +1827,53 @@ impl EdwardsPoint {
         let result = E1.mul_by_cofactor();
 
         proof {
-            // Chain: from_bytes → elligator_encode → to_edwards → mul_by_cofactor = spec
+            // Step 1: res@ matches the spec hash input
             assert(res@ == spec_sha512(bytes@).subrange(0, 32));
+
+            // Step 2: sign_bit ∈ {0,1} and normalisation is identity
+            assert(sign_bit == 0 || sign_bit == 1) by (bit_vector)
+                requires
+                    sign_bit == (byte31 & 0x80u8) >> 7u8,
+            ;
+            assert(sign_bit == spec_normalize_sign(sign_bit)) by (bit_vector)
+                requires
+                    sign_bit == 0u8 || sign_bit == 1u8,
+            ;
+
+            // Step 3: bridge u8_32_as_nat ↔ bytes_seq_as_nat
             lemma_u8_32_as_nat_eq_bytes_seq_as_nat(&res);
 
+            // Step 4: field element value matches spec
             let fe_nat_spec = (bytes_seq_as_nat(res@) % pow2(255)) % p();
-            assert(fe51_as_canonical_nat(&fe) == fe_nat_spec);
+            assert(fe51_as_canonical_nat(&fe) == fe_nat_spec) by {
+                // from_bytes: u64_5_as_nat(fe.limbs) == u8_32_as_nat(&res) % pow2(255)
+                // fe51_as_canonical_nat = u64_5_as_nat(fe.limbs) % p()
+                // With lemma: u8_32_as_nat(&res) == bytes_seq_as_nat(res@)
+            }
+
+            // Step 5: elligator result matches spec
             let u = spec_elligator_encode(fe_nat_spec);
             assert(spec_montgomery(M1) == u);
 
-            let P = spec_montgomery_to_edwards_affine_with_sign(u, sign_bit);
-            assert(edwards_point_as_affine(E1) == P);
+            // Step 6: to_edwards gives exact equality with spec
+            let P = spec_montgomery_to_edwards_affine(u, sign_bit);
+            assert(edwards_point_as_affine(E1) == P) by {
+                assert(is_valid_montgomery_point(M1));
+                assert(!is_equal_to_minus_one(spec_montgomery(M1)));
+                // to_edwards postcondition with sign normalisation
+                assert(spec_montgomery_to_edwards_affine(
+                    spec_montgomery(M1),
+                    spec_normalize_sign(sign_bit),
+                ) == P);
+            }
 
+            // Step 7: mul_by_cofactor links result to E1
+            assert(edwards_point_as_affine(result) == edwards_scalar_mul(
+                edwards_point_as_affine(E1),
+                8,
+            ));
+
+            // Step 8: combine — the result equals the spec
             assert(edwards_point_as_affine(result) == edwards_scalar_mul(P, 8));
             assert(edwards_point_as_affine(result) == spec_nonspec_map_to_curve(res@));
         }

@@ -76,6 +76,56 @@ pub proof fn lemma_bytes_as_nat_prefix_bounded(bytes: Seq<u8>, n: nat)
     }
 }
 
+/// Bound a 32-byte little-endian nat by `2^255` when the top byte fits in 7 bits.
+///
+/// This is the standard Curve25519 "scalar invariant #1" style bound: if the most
+/// significant bit is clear (`bytes[31] <= 127`), then the represented integer is
+/// strictly less than `2^255`.
+pub proof fn lemma_u8_32_as_nat_lt_pow2_255(bytes: &[u8; 32])
+    requires
+        bytes[31] <= 127,
+    ensures
+        u8_32_as_nat(bytes) < pow2(255),
+{
+    let prefix31 = bytes_as_nat_prefix(bytes@, 31);
+
+    // u8_32_as_nat(bytes) == prefix31 + bytes[31] * 2^248
+    lemma_u8_32_as_nat_equals_rec(bytes);
+    lemma_decomposition_prefix_rec(bytes, 31);
+    assert(u8_32_as_nat(bytes) == u8_32_as_nat_rec(bytes, 0));
+    assert(u8_32_as_nat_rec(bytes, 0) == prefix31 + u8_32_as_nat_rec(bytes, 31));
+    assert(u8_32_as_nat_rec(bytes, 31) == bytes[31] as nat * pow2(248) + u8_32_as_nat_rec(
+        bytes,
+        32,
+    ));
+    assert(u8_32_as_nat_rec(bytes, 32) == 0);
+    assert(u8_32_as_nat_rec(bytes, 31) == bytes[31] as nat * pow2(248));
+    assert(u8_32_as_nat(bytes) == prefix31 + bytes[31] as nat * pow2(248));
+
+    // prefix31 < 2^248
+    lemma_bytes_as_nat_prefix_bounded(bytes@, 31);
+
+    // 2^255 == 2^248 * 128
+    assert(pow2(7) == 128) by {
+        lemma2_to64();
+    }
+    assert(pow2(255) == pow2(248) * 128nat) by {
+        assert(pow2(255) == pow2(248) * pow2(7)) by {
+            assert(248 + 7 == 255);
+            lemma_pow2_adds(248, 7);
+        }
+        assert(pow2(7) == 128);
+    }
+
+    assert(u8_32_as_nat(bytes) < pow2(255)) by (nonlinear_arith)
+        requires
+            prefix31 < pow2(248),
+            bytes[31] <= 127,
+            u8_32_as_nat(bytes) == prefix31 + bytes[31] as nat * pow2(248),
+            pow2(255) == pow2(248) * 128nat,
+    {}
+}
+
 // ============================================================================
 // Bridge Lemmas: Connecting bytes_seq_as_nat to bytes_as_nat_prefix
 //

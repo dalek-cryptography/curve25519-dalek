@@ -60,6 +60,12 @@ use crate::core_assumes::zeroize_bool;
 use crate::core_assumes::*;
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use crate::lemmas::common_lemmas::bits_as_nat_lemmas::*;
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use crate::lemmas::common_lemmas::to_nat_lemmas::*;
 use crate::scalar::{clamp_integer, Scalar};
 #[allow(unused_imports)]
 use crate::specs::core_specs::*;
@@ -75,18 +81,21 @@ use crate::specs::montgomery_specs::*;
 use crate::specs::scalar52_specs::*;
 #[allow(unused_imports)]
 use crate::specs::scalar_specs::*;
-// Explicit import to disambiguate from core_specs::bits_be_as_nat
-#[cfg(verus_keep_ghost)]
-use crate::specs::scalar_specs::bits_be_as_nat;
 
 #[allow(unused_imports)]
 use crate::lemmas::common_lemmas::pow_lemmas::*;
 #[allow(unused_imports)]
+use crate::lemmas::edwards_lemmas::curve_equation_lemmas::*;
+#[allow(unused_imports)]
 use crate::lemmas::field_lemmas::add_lemmas::*;
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::as_bytes_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::constants_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::field_algebra_lemmas::*;
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::from_bytes_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::sqrt_ratio_lemmas::*;
 #[allow(unused_imports)]
@@ -96,9 +105,13 @@ use crate::specs::scalar_specs::spec_clamp_integer;
 #[allow(unused_imports)]
 use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
+use vstd::arithmetic::mul::*;
+#[allow(unused_imports)]
 use vstd::arithmetic::power::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
+#[allow(unused_imports)]
+use vstd::calc;
 #[allow(unused_imports)]
 use vstd::prelude::*;
 
@@ -113,7 +126,7 @@ use crate::traits::Identity;
 use crate::backend::serial::u64::subtle_assumes::choice_is_true;
 use crate::backend::serial::u64::subtle_assumes::{
     choice_into, choice_not, conditional_negate_field_element, conditional_select_field_element,
-    conditional_swap_montgomery_projective,
+    conditional_swap_montgomery_projective, ct_eq_bytes32, select_u8,
 };
 
 use subtle::Choice;
@@ -126,9 +139,29 @@ verus! {
 
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MontgomeryPoint(pub [u8; 32]);
+
+/* ORIGINAL CODE: #[derive(Default)] on MontgomeryPoint — expanded to add Verus
+   postconditions proving all bytes are zero and spec_montgomery(result) == 0. */
+
+impl Default for MontgomeryPoint {
+    fn default() -> (result: MontgomeryPoint)
+        ensures
+            forall|i: int| 0 <= i < 32 ==> #[trigger] result.0[i] == 0u8,
+            spec_montgomery(result) == 0,
+    {
+        let result = MontgomeryPoint([0u8;32]);
+        proof {
+            assert forall|i: int| 0 <= i < 32 implies #[trigger] result.0[i] == 0u8 by {}
+            assert(spec_montgomery(result) == 0) by {
+                lemma_zero_limbs_is_zero(result);
+            }
+        }
+        result
+    }
+}
 
 /// Equality of `MontgomeryPoint`s is defined mod p.
 impl ConstantTimeEq for MontgomeryPoint {
@@ -145,9 +178,32 @@ impl ConstantTimeEq for MontgomeryPoint {
         let result = self_fe.ct_eq(&other_fe);
 
         proof {
-            // The postcondition follows from FieldElement::ct_eq's specification
-            assume(choice_is_true(result) == (field_element_from_bytes(&self.0)
-                == field_element_from_bytes(&other.0)));
+            // FieldElement::ct_eq compares canonical encodings, so it agrees with equality
+            // of the corresponding field elements (mod p).
+            let bytes_eq = spec_fe51_as_bytes(&self_fe) == spec_fe51_as_bytes(&other_fe);
+            let field_eq = field_element_from_bytes(&self.0) == field_element_from_bytes(&other.0);
+
+            assert(choice_is_true(result) == bytes_eq);
+
+            // from_bytes ensures: u64_5_as_nat(fe.limbs) == u8_32_as_nat(bytes) % pow2(255)
+            // Unfolding open spec fns gives: fe51_as_canonical_nat == field_element_from_bytes
+            assert(fe51_as_canonical_nat(&self_fe) == field_element_from_bytes(&self.0));
+            assert(fe51_as_canonical_nat(&other_fe) == field_element_from_bytes(&other.0));
+
+            // Canonical bytes are injective for canonical field values.
+            assert(bytes_eq ==> field_eq) by {
+                if bytes_eq {
+                    lemma_fe51_to_bytes_equal_implies_field_element_equal(&self_fe, &other_fe);
+                }
+            }
+            assert(field_eq ==> bytes_eq) by {
+                if field_eq {
+                    lemma_field_element_equal_implies_fe51_to_bytes_equal(&self_fe, &other_fe);
+                }
+            }
+
+            assert(bytes_eq == field_eq);
+            assert(choice_is_true(result) == field_eq);
         }
 
         result
@@ -201,17 +257,19 @@ impl Eq for MontgomeryPoint {
 impl Hash for MontgomeryPoint {
     fn hash<H: Hasher>(&self, state: &mut H)
         ensures/*  VERIFICATION NOTE:
-             (1) The actual postcondition is: *state == spec_state_after_hash_montgomery(initial_state, self)
-                 where initial_state is the value of *state before this call.
-                 However, Verus doesn't support old() on &mut types in ensures clauses.
-                 The property is for now established via assumes in the function body (lines 192-194).
-            (2) The spec is completed by axiom_hash_is_canonical: equal field elements hash identically. */
+             (1) The postcondition is expressed using the abstract `spec_state_after_hash*` model for
+                 `core::hash::Hash::hash` on fixed-size arrays (see `core_assumes.rs`).
+            (2) `spec_state_after_hash_montgomery` hashes the canonical encoding
+                 `spec_fe51_as_bytes(spec_fe51_from_bytes(point.0))`. */
 
-            true,
+            *state == spec_state_after_hash_montgomery(*old(state), self),
     {
         // Do a round trip through a `FieldElement`. `as_bytes` is guaranteed to give a canonical
         // 32-byte encoding
-        let canonical_bytes = FieldElement::from_bytes(&self.0).as_bytes();
+        /* ORIGINAL CODE: let canonical_bytes = FieldElement::from_bytes(&self.0).as_bytes();
+           Split to keep `fe` available for proof blocks. */
+        let fe = FieldElement::from_bytes(&self.0);
+        let canonical_bytes = fe.as_bytes();
 
         /* GHOST: track the initial state for reasoning about state transformation */
         let ghost initial_state = *state;
@@ -220,9 +278,44 @@ impl Hash for MontgomeryPoint {
         canonical_bytes.hash(state);
 
         proof {
-            assume(canonical_bytes@ == spec_fe51_to_bytes(&spec_fe51_from_bytes(&self.0)));
-            assume(*state == spec_state_after_hash(initial_state, &canonical_bytes));
-            assume(*state == spec_state_after_hash_montgomery(initial_state, self));
+            // Relate the spec-side canonical bytes to the exec-side `canonical_bytes`.
+            let canonical_seq = spec_fe51_as_bytes(&spec_fe51_from_bytes(&self.0));
+            let canonical_arr = seq_to_array_32(canonical_seq);
+
+            assert(initial_state == *old(state));
+
+            // Step 1: `canonical_bytes` agrees with `spec_fe51_as_bytes(&fe)`.
+            assert(seq_from32(&canonical_bytes) == spec_fe51_as_bytes(&fe)) by {
+                lemma_as_bytes_equals_spec_fe51_to_bytes(&fe, &canonical_bytes);
+            }
+
+            // Step 2: `spec_fe51_from_bytes` has the same canonical value as `fe`.
+            let fe_spec = spec_fe51_from_bytes(&self.0);
+            lemma_from_u8_32_as_nat(&self.0);
+            lemma_as_nat_32_mod_255(&self.0);
+            // Both fe and fe_spec have the same limb value from the same bytes,
+            // so unfolding open spec fns gives equal canonical nats.
+            assert(fe51_as_canonical_nat(&fe) == fe51_as_canonical_nat(&fe_spec));
+            assert(spec_fe51_as_bytes(&fe) == spec_fe51_as_bytes(&fe_spec)) by {
+                lemma_field_element_equal_implies_fe51_to_bytes_equal(&fe, &fe_spec);
+            }
+
+            // Step 3: Therefore, the canonical sequence equals the exec-view sequence.
+            assert(spec_fe51_as_bytes(&fe) == canonical_seq);
+            assert(seq_from32(&canonical_bytes) == canonical_seq);
+
+            // Step 4: Convert the spec canonical sequence back to an array and match arrays.
+            assert(canonical_seq.len() == 32);
+            assert(canonical_seq =~= seq_from32(&canonical_arr));
+            assert(seq_from32(&canonical_bytes) == seq_from32(&canonical_arr));
+            assert(canonical_bytes == canonical_arr) by {
+                lemma_seq_eq_implies_array_eq(&canonical_bytes, &canonical_arr);
+            }
+
+            // Step 5: Use the abstract hash model.
+            assert(*state == spec_state_after_hash(initial_state, &canonical_bytes));
+            assert(*state == spec_state_after_hash(initial_state, &canonical_arr));
+            assert(*state == spec_state_after_hash_montgomery(initial_state, self));
         }
     }
 }
@@ -237,8 +330,10 @@ impl Identity for MontgomeryPoint {
     {
         let result = MontgomeryPoint([0u8;32]);
         proof {
-            // The byte array [0, 0, ..., 0] represents the field element 0
-            assume(field_element_from_bytes(&result.0) == 0);
+            assert forall|i: int| 0 <= i < 32 implies #[trigger] result.0[i] == 0u8 by {}
+            assert(spec_montgomery(result) == 0) by {
+                lemma_zero_limbs_is_zero(result);
+            }
         }
         result
     }
@@ -348,11 +443,18 @@ impl MontgomeryPoint {
         // Further, we don't do any reduction or arithmetic with this clamped value, so there's no
         // issues arising from the fact that the curve point is not necessarily in the prime-order
         // subgroup.
-        let s = Scalar { bytes: clamp_integer(bytes) };
-        let result = s * self;
+        /* ORIGINAL CODE: let s = Scalar { bytes: clamp_integer(bytes) }; s * self
+           Split to keep `clamped` for proof blocks; uses &self * &s for Verus postcondition. */
+        let clamped = clamp_integer(bytes);
+        let s = Scalar { bytes: clamped };
+        let result = &self * &s;
         proof {
-            // postcondition
-            assume({
+            // Prove the postcondition using:
+            // - `clamp_integer` ensures `clamped == spec_clamp_integer(bytes)`
+            // - `&MontgomeryPoint * &Scalar` ensures multiplication by `scalar_as_nat(&s)`
+            assert(clamped == spec_clamp_integer(bytes));
+            assert(scalar_as_nat(&s) == u8_32_as_nat(&spec_clamp_integer(bytes)));
+            assert({
                 let P = canonical_montgomery_lift(spec_montgomery(self));
                 let clamped_bytes = spec_clamp_integer(bytes);
                 let n = u8_32_as_nat(&clamped_bytes);
@@ -439,7 +541,7 @@ impl MontgomeryPoint {
             ({
                 // Let P be the canonical affine lift of input u-coordinate
                 let P = canonical_montgomery_lift(spec_montgomery(*self));
-                let n = bits_be_as_nat(bits, bits@.len() as int);
+                let n = bits_be_as_nat(bits, bits.len() as int);
                 let R = montgomery_scalar_mul(P, n);
 
                 // result encodes u([n]P)
@@ -895,7 +997,7 @@ impl MontgomeryPoint {
             // After the final conditional swap, x0 encodes u([n]P) where n is the full bitstring.
             let u0 = spec_montgomery(*self);
             let P = canonical_montgomery_lift(u0);
-            let n = bits_be_as_nat(bits, bits@.len() as int);
+            let n = bits_be_as_nat(bits, bits.len() as int);
 
             // Connect saved_prev_bit to final_swap_choice.
             // From Choice::from spec: (u == 1) == choice_is_true(Choice::from(u))
@@ -978,7 +1080,7 @@ impl MontgomeryPoint {
             // Discharge the function postcondition.
             let u0 = spec_montgomery(*self);
             let P = canonical_montgomery_lift(u0);
-            let n = bits_be_as_nat(bits, bits@.len() as int);
+            let n = bits_be_as_nat(bits, bits.len() as int);
             // as_affine returns the affine u-coordinate of x0
             assert(spec_montgomery(result) == spec_projective_u_coordinate(x0));
             // From loop invariant at exit and final conditional swap, x0 encodes u([n]P)
@@ -1026,7 +1128,7 @@ impl MontgomeryPoint {
             match result {
                 Some(edwards) => montgomery_corresponds_to_edwards(*self, edwards)
                     && is_well_formed_edwards_point(edwards) && edwards_point_as_affine(edwards)
-                    == spec_montgomery_to_edwards_affine_with_sign(spec_montgomery(*self), sign),
+                    == spec_montgomery_to_edwards_affine(spec_montgomery(*self), sign),
                 None => is_equal_to_minus_one(spec_montgomery(*self)),
             },
     {
@@ -1069,8 +1171,7 @@ impl MontgomeryPoint {
                 Some(edwards) => {
                     assume(montgomery_corresponds_to_edwards(*self, edwards));
                     assume(is_well_formed_edwards_point(edwards));
-                    assume(edwards_point_as_affine(edwards)
-                        == spec_montgomery_to_edwards_affine_with_sign(
+                    assume(edwards_point_as_affine(edwards) == spec_montgomery_to_edwards_affine(
                         spec_montgomery(*self),
                         sign,
                     ));
@@ -1100,6 +1201,7 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
         spec_montgomery(result) == spec_elligator_encode(fe51_as_canonical_nat(r_0)),
         spec_montgomery(result) < p(),
         !is_equal_to_minus_one(spec_montgomery(result)),
+        is_valid_montgomery_point(result),
 {
     let one = FieldElement::ONE;
     let zero = FieldElement::ZERO;  // moved from after sqrt_ratio_i for proof block access
@@ -1264,8 +1366,7 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
                 assert(pow(r0_raw as int, 2) >= 0) by {
                     lemma_pow_nonnegative(r0_raw as int, 2);
                 }
-                assert((2 * pow(r0_raw as int, 2)) as nat == 2 * (pow(r0_raw as int, 2) as nat))
-                    by (compute);
+                assert((2 * pow(r0_raw as int, 2)) as nat == 2 * (pow(r0_raw as int, 2) as nat));
                 assert(r0_sq_raw == pow(r0_raw as int, 2) as nat);
             }
             assert(r0_raw % p() == r);
@@ -1370,7 +1471,8 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
                         // is_sqrt_ratio with v=1 means y^2 == eps (mod p)
                         assert((y * y * v_nat) % p() == field_canonical(eps_nat));
                         assert(v_nat == 1);
-                        assert((y * y * 1nat) % p() == (y * y) % p()) by (compute);
+                        lemma_mul_basics((y * y) as int);
+                        assert((y * y * 1nat) % p() == (y * y) % p());
                         // LHS is a mod result, so eps_nat < p() and eps_nat % p() = eps_nat
                         p_gt_2();
                         lemma_mod_bound((y * y) as int, p() as int);
@@ -1567,6 +1669,11 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
         assert(!is_equal_to_minus_one(spec_montgomery(result))) by {
             lemma_elligator_never_minus_one(r);
         }
+
+        assert(is_valid_montgomery_point(result)) by {
+            axiom_elligator_encode_outputs_valid_u(r);
+            assert(is_valid_u_coordinate(spec_montgomery(result)));
+        }
     }
 
     result
@@ -1665,22 +1772,24 @@ impl ConditionallySelectable for ProjectivePoint {
         };
 
         proof {
-            // What we can derive from FieldElement::conditional_select:
-            assert(!choice_is_true(choice) ==> (forall|i: int|
-                0 <= i < 5 ==> result.U.limbs[i] == a.U.limbs[i]));
-            assert(choice_is_true(choice) ==> (forall|i: int|
-                0 <= i < 5 ==> result.U.limbs[i] == b.U.limbs[i]));
+            // FieldElement::conditional_select postconditions are stated in terms of limb equality.
+            assert(!choice_is_true(choice) ==> result.U.limbs == a.U.limbs);
+            assert(choice_is_true(choice) ==> result.U.limbs == b.U.limbs);
+            assert(!choice_is_true(choice) ==> result.W.limbs == a.W.limbs);
+            assert(choice_is_true(choice) ==> result.W.limbs == b.W.limbs);
 
-            // For result.W = FieldElement::conditional_select(&a.W, &b.W, choice):
-            assert(!choice_is_true(choice) ==> (forall|i: int|
-                0 <= i < 5 ==> result.W.limbs[i] == a.W.limbs[i]));
-            assert(choice_is_true(choice) ==> (forall|i: int|
-                0 <= i < 5 ==> result.W.limbs[i] == b.W.limbs[i]));
-
-            // We need to lift limbs equality to struct equality:
-            // (forall i. fe1.limbs[i] == fe2.limbs[i]) ==> fe1 == fe2
-            assume(!choice_is_true(choice) ==> (result.U == a.U && result.W == a.W));
-            assume(choice_is_true(choice) ==> (result.U == b.U && result.W == b.W));
+            if !choice_is_true(choice) {
+                assert(result.U.limbs == a.U.limbs);
+                assert(result.W.limbs == a.W.limbs);
+                assert(result.U == a.U);
+                assert(result.W == a.W);
+            }
+            if choice_is_true(choice) {
+                assert(result.U.limbs == b.U.limbs);
+                assert(result.W.limbs == b.W.limbs);
+                assert(result.U == b.U);
+                assert(result.W == b.W);
+            }
         }
 
         result
@@ -1714,18 +1823,71 @@ impl ProjectivePoint {
                 }
             },
     {
-        let u = &self.U * &self.W.invert();
-        let result = MontgomeryPoint(u.as_bytes());
+        let w_inv = self.W.invert();
+        let u = &self.U * &w_inv;
+        let u_bytes = u.as_bytes();
+        /* ORIGINAL CODE: let result = MontgomeryPoint(u.as_bytes()); */
+        let result = MontgomeryPoint(u_bytes);
         proof {
-            // postcondition
-            // The affine u-coordinate is U * W^(-1) = U / W
+            // The affine u-coordinate is u = U * W^{-1}.
             let u_proj = fe51_as_canonical_nat(&self.U);
             let w_proj = fe51_as_canonical_nat(&self.W);
-            assume(spec_montgomery(result) == if w_proj == 0 {
-                0
+
+            // First, connect the computed field element `u` to the spec-level expression.
+            assert(fe51_as_canonical_nat(&w_inv) == field_inv(w_proj));
+            assert(fe51_as_canonical_nat(&u) == field_mul(u_proj, field_inv(w_proj)));
+
+            // Next, show that the MontgomeryPoint encoding of `u` decodes back to `u`.
+            assert(u8_32_as_nat(&u_bytes) == fe51_as_canonical_nat(&u));
+
+            // fe51_as_canonical_nat(&u) is reduced mod p, hence < p.
+            assert(fe51_as_canonical_nat(&u) < p()) by {
+                assert(p() > 0) by {
+                    pow255_gt_19();
+                }
+                lemma_mod_bound(u64_5_as_nat(u.limbs) as int, p() as int);
+            }
+            assert(p() < pow2(255)) by {
+                pow255_gt_19();
+            }
+            assert(fe51_as_canonical_nat(&u) < pow2(255));
+
+            assert(field_element_from_bytes(&u_bytes) == fe51_as_canonical_nat(&u)) by {
+                // field_element_from_bytes(bytes) == field_canonical(u8_32_as_nat(bytes) % 2^255)
+                // and the canonical value fits into 255 bits, so the % 2^255 is a no-op.
+                assert(u8_32_as_nat(&u_bytes) < pow2(255)) by {
+                    assert(u8_32_as_nat(&u_bytes) == fe51_as_canonical_nat(&u));
+                }
+                assert(u8_32_as_nat(&u_bytes) % pow2(255) == u8_32_as_nat(&u_bytes)) by {
+                    lemma_small_mod(u8_32_as_nat(&u_bytes), pow2(255));
+                }
+                assert(field_element_from_bytes(&u_bytes) == field_canonical(
+                    u8_32_as_nat(&u_bytes),
+                ));
+                assert(field_element_from_bytes(&u_bytes) == field_canonical(
+                    fe51_as_canonical_nat(&u),
+                ));
+                assert(field_canonical(fe51_as_canonical_nat(&u)) == fe51_as_canonical_nat(&u)) by {
+                    lemma_small_mod(fe51_as_canonical_nat(&u), p());
+                }
+            }
+
+            assert(result.0 == u_bytes);
+            assert(spec_montgomery(result) == field_element_from_bytes(&u_bytes));
+            assert(spec_montgomery(result) == field_mul(u_proj, field_inv(w_proj)));
+
+            if w_proj == 0 {
+                assert(field_inv(w_proj) == 0) by {
+                    reveal(field_inv);
+                }
+                assert(field_mul(u_proj, field_inv(w_proj)) == 0) by {
+                    reveal(field_mul);
+                    lemma_mul_by_zero_is_zero(u_proj as int);
+                }
+                assert(spec_montgomery(result) == 0);
             } else {
-                field_mul(u_proj, field_inv(w_proj))
-            });
+                assert(spec_montgomery(result) == field_mul(u_proj, field_inv(w_proj)));
+            }
         }
         result
     }
@@ -2432,20 +2594,70 @@ impl Mul<&Scalar> for &MontgomeryPoint {
         let mut bits_be = [false;255];
         let mut i = 0;
         while i < 255
+            invariant
+                i <= 255,
+                forall|j: int| 0 <= j < i as int ==> bits_be[j] == bits_le[254 - j],
             decreases 255 - i,
         {
             bits_be[i] = bits_le[254 - i];
             i += 1;
         }
+        let bits_be_slice: &[bool] = &bits_be;
+        /* ORIGINAL CODE:
         let result = self.mul_bits_be(&bits_be);
+        */
+        let result = self.mul_bits_be(bits_be_slice);
         proof {
-            // postcondition: multiplication by unreduced scalar value using canonical lift
-            assume({
-                let P = canonical_montgomery_lift(spec_montgomery(*self));
-                let n_unreduced = scalar_as_nat(scalar);
-                let R = montgomery_scalar_mul(P, n_unreduced);
-                spec_montgomery(result) == spec_u_coordinate(R)
-            });
+            // Show that the 255-bit slice `bits_be` represents the same integer as `scalar`.
+            // We rely on scalar invariant #1 (MSB is clear), i.e. scalar.bytes[31] <= 127.
+            assert(scalar.bytes[31] <= 127);
+
+            let scalar_bytes = &scalar.bytes;
+            assert(bits_as_nat(&bits_le) == u8_32_as_nat(scalar_bytes));
+            assert(bits_as_nat(&bits_le) < pow2(255)) by {
+                lemma_u8_32_as_nat_lt_pow2_255(scalar_bytes);
+            }
+
+            assert(!bits_le[255]) by {
+                lemma_bits_as_nat_lt_pow2_255_implies_msb_false(&bits_le);
+            }
+
+            assert(bits_be_slice.len() == 255);
+            assert(bits_be_slice.len() as int == 255);
+            assert(i == 255);
+            assert(forall|j: int| 0 <= j < 255 ==> #[trigger] bits_be_slice[j] == bits_le[254 - j])
+                by {
+                assert(forall|j: int| 0 <= j < i as int ==> bits_be[j] == bits_le[254 - j]);
+            }
+
+            // Interpret the big-endian bits as a nat.
+            let n = bits_be_as_nat(bits_be_slice, 255);
+            assert(n == bits_from_index_to_nat(&bits_le, 0, 255)) by {
+                lemma_bits_be_as_nat_eq_bits_from_index(&bits_le, bits_be_slice, 255);
+                assert((255 - 255) as nat == 0);
+            }
+
+            // Since the MSB is 0, the 255-bit view equals the full 256-bit value.
+            assert(n == bits_as_nat(&bits_le)) by {
+                lemma_bits_as_nat_eq_bits_from_index(&bits_le);
+                lemma_bits_from_index_to_nat_split_last(&bits_le, 0, 255);
+                assert((if bits_le[255] {
+                    1nat
+                } else {
+                    0nat
+                }) == 0nat);
+                assert(bits_from_index_to_nat(&bits_le, 0, 256) == bits_from_index_to_nat(
+                    &bits_le,
+                    0,
+                    255,
+                ));
+            }
+
+            // Conclude the scalar value matches the bits interpreted by mul_bits_be.
+            assert(n == scalar_as_nat(scalar)) by {
+                assert(scalar_as_nat(scalar) == u8_32_as_nat(scalar_bytes));
+                assert(n == bits_as_nat(&bits_le));
+            }
         }
         result
     }
@@ -2455,6 +2667,7 @@ impl MulAssign<&Scalar> for MontgomeryPoint {
     fn mul_assign(&mut self, scalar: &Scalar)
         requires
             is_valid_montgomery_point(*old(self)),
+            scalar.bytes[31] <= 127,
         ensures
     // Result represents [n]old(self) where n is the UNREDUCED scalar value
     // Uses canonical Montgomery lift

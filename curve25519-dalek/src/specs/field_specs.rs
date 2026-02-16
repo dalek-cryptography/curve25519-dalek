@@ -361,7 +361,7 @@ pub open spec fn spec_fe51_from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
     }
 }
 
-pub open spec fn spec_fe51_to_bytes(fe: &FieldElement51) -> Seq<u8> {
+pub open spec fn spec_fe51_as_bytes(fe: &FieldElement51) -> Seq<u8> {
     // Step 1: Basic reduction to ensure h < 2*p
     let limbs = spec_reduce(fe.limbs);
 

@@ -444,6 +444,64 @@ pub proof fn lemma_radix16_sum_correct(...) { ... }
 - Multiple lemmas are named around the wrapper concept
 - Wrapper is part of the public API
 
+#### Technique 15: Field Algebra — Proving x = 0 from a Product Equation
+When a curve equation reduces to `(c)·x² ≡ 0 (mod p)` with `c ≠ 0`:
+
+```rust
+proof fn lemma_y_sq_one_implies_x_zero(x: nat, y: nat)
+    requires x < p(), y < p(), math_on_edwards_curve(x, y), field_square(y) == 1,
+    ensures x == 0,
+{
+    // 1. Substitute y²=1 into curve equation: -x² + 1 = 1 + d·x²
+    //    Rearranges to: (d+1)·x² = 0
+    lemma_field_mul_one_right(d);  // d·1 = d
+    lemma_field_mul_distributes_over_add(d, 1, x_sq);  // expand
+    // ...field algebra chain...
+
+    // 2. Since d+1 ≠ 0 (mod p) and p is prime, x² must be 0
+    axiom_d_plus_one_nonzero();
+    lemma_nonzero_product(d_plus_1, x_sq);  // contrapositive: product=0 ∧ a≠0 → b=0
+
+    // 3. x² = 0 implies x = 0 (since x < p and p is prime)
+    lemma_small_mod(x_sq, p());
+}
+```
+
+**Key field lemmas for algebraic manipulation:**
+- `lemma_field_mul_distributes_over_add(a, b, c)` — a·(b+c) = a·b + a·c
+- `lemma_field_mul_comm(a, b)` — a·b = b·a
+- `lemma_field_mul_one_right(a)` — a·1 = a
+- `lemma_field_sub_eq_add_neg(a, b)` — a-b = a+(-b)
+- `lemma_field_add_comm(a, b)` — a+b = b+a
+- `lemma_field_sub_add_cancel(a, b)` — (a-b)+b = a
+- `lemma_field_sub_self(a)` — a-a = 0
+- `lemma_nonzero_product(a, b)` — if a·b=0 and a≠0, then b=0
+
+#### Technique 16: Cofactor Clearing via Doubling Chain
+To prove `[8]·P = identity` for low-order points:
+
+```rust
+proof fn lemma_cofactor_clears_low_order_y_sq_1(y: nat)
+    requires y < p(), field_square(y) == 1,
+    ensures edwards_scalar_mul((0nat, y), 8) == math_edwards_identity(),
+{
+    // Step 1: Show double(0,y) = (0,1) when y²=1
+    //   (all cross-terms in Edwards addition vanish when x=0)
+    lemma_edwards_double_x_zero_y_sq_one(y);
+
+    // Step 2: Chain doublings: [2]→[4]→[8] using pow2 lemmas
+    //   [2]·P = (0,1) = identity
+    //   [4]·P = [2]·(identity) = identity  (via scalar_mul_pow2_succ + double_identity)
+    //   [8]·P = [2]·(identity) = identity
+    lemma_edwards_scalar_mul_pow2_succ((0nat, y), 1);  // [4]
+    lemma_edwards_double_identity();
+    lemma_edwards_scalar_mul_pow2_succ((0nat, y), 2);  // [8]
+    lemma_edwards_double_identity();
+}
+```
+
+**Key insight:** `pow2(1)=2, pow2(2)=4, pow2(3)=8`. Use `lemma_edwards_scalar_mul_pow2_succ` to express `[2^(k+1)]·P = double([2^k]·P)`, then apply `lemma_edwards_double_identity` when the intermediate result is the identity.
+
 ### Phase 5: Handle Common Issues
 
 #### Issue: "Expected Interp(Array), got Interp(FreeVar)"
@@ -504,6 +562,17 @@ use vstd::arithmetic::power2::{lemma2_to64, lemma_pow2_adds, pow2};
 ```
 This applies to any imports from `vstd::` or ghost-only modules that aren't available during regular Rust compilation.
 
+**Also applies to internal modules whose content lives inside `verus!` blocks:**
+```rust
+// Bad: montgomery_specs content is inside verus! macro, empty in non-Verus builds
+use crate::specs::montgomery_specs::edwards_y_from_montgomery_u;
+
+// Good: guarded for Verus-only builds
+#[cfg(verus_keep_ghost)]
+use crate::specs::montgomery_specs::edwards_y_from_montgomery_u;
+```
+Check whether the target module wraps its items in `verus! { ... }` — if so, named imports will fail in `cargo test`/`cargo clippy` builds and need `#[cfg(verus_keep_ghost)]`.
+
 #### Issue: "unresolved import" for specific common_lemmas items (cargo test/clippy)
 **Cause:** Many `common_lemmas::*` items live inside `verus!` blocks and are not present in non-Verus builds.
 **Solution:** Prefer wildcard imports from the module, which compile even when the module is empty.
@@ -549,16 +618,37 @@ proof {
    ```bash
    cargo verus verify -- --verify-only-module module_name --verify-function function_name
    ```
+   Note: only one `--verify-function` flag is supported per invocation. To verify multiple functions, use `--verify-only-module` to verify the entire module.
 
 2. **Verify integration:**
    ```bash
    cargo verus verify -- --verify-module module_name
    ```
 
-3. **Clean up:**
+3. **Check non-Verus builds:** After Verus verification passes, run `cargo test` and `cargo clippy` to catch import issues, cfg guards, etc.
+
+4. **Run verusfmt:** Run `verusfmt <file>` on all changed `.rs` files before committing.
+
+5. **Clean up:**
    - Remove redundant assertions (test by removing one at a time)
    - Add comments explaining non-obvious steps
    - Ensure proof follows codebase style
+
+6. **Preserve `/* ORIGINAL CODE ... */` comments:** When refactoring code for Verus verification, keep the original (pre-Verus) implementation as a comment so reviewers can see what changed. Use the convention:
+   ```rust
+   /* ORIGINAL CODE:
+   self.as_bytes().ct_eq(other.as_bytes())
+   */
+   ct_eq_bytes32(self.as_bytes(), other.as_bytes())
+   ```
+   or the XML-style variant for multi-line blocks:
+   ```rust
+   /* <ORIGINAL CODE>
+   let u = &U * &W.invert();
+   ...
+   </ORIGINAL CODE> */
+   ```
+   Never delete these comments — they document what the code looked like before verification changes.
 
 4. **Simplify assert..by blocks:**
    `assert .. by` blocks should only be used when the `by` part contains **actual lemma calls**.
@@ -773,6 +863,31 @@ assert(u8_32_as_nat(s_after) % pow2(255) == u8_32_as_nat(s_before) % pow2(255)) 
     - **When to use opaque:** Recursive specs, specs with many `&&&` conjuncts, specs with quantifiers, or any spec causing rlimit timeouts.
     - **When NOT to use opaque:** Simple predicates (e.g., `x < bound`, single field access, trivial arithmetic) where Z3 benefits from seeing the definition inline. Adding opaque to simple specs just creates unnecessary reveal boilerplate.
 14. **When quantifiers don't instantiate:** If a callee ensures `forall|k| ...`, add small, explicit `assert(...)` facts (often with the right trigger shape) right before the call to help Verus/Z3 pick the intended instantiation.
+15. **Naming convention — `axiom_` vs `lemma_`:** Functions with `admit()` bodies must use the `axiom_` prefix; fully proved functions use the `lemma_` prefix. This makes it easy to track the trusted computing base (`grep axiom_`). When you prove an axiom, rename it from `axiom_` to `lemma_` (and update all call sites with `replace_all`).
+16. **Reduce rlimit by extracting helper lemmas:** When a function hits CI rlimit failures, prefer extracting spec-level proof reasoning into a separate `proof fn` rather than bumping `#[verifier::rlimit(N)]`. The extracted lemma takes the key spec-level values as parameters and proves the postcondition. The original function then just bridges exec-level facts to spec-level preconditions and calls the helper. This keeps solver pressure low without raising limits.
+17. **Always run `verusfmt`:** Run `verusfmt` on all changed `.rs` files before committing. Verus-specific formatting (e.g., `ensures`, `requires`, proof blocks) won't be handled by `rustfmt`.
+18. **Always check cargo test/clippy alongside Verus:** After Verus verification passes, also run `cargo test` and `cargo clippy` to catch non-Verus build issues (missing imports, cfg guards, etc.).
+19. **Replace `calc!` with assert chains when rlimit fails:** `calc!` blocks create heavier SMT encodings than plain assert chains. When a function hits rlimit, try replacing:
+    ```rust
+    // BEFORE (heavy for solver):
+    assert(a == e) by {
+        calc! { (==) a; {} b; {} c; {} d; {} e; }
+    }
+    // AFTER (lighter):
+    assert(a == b);
+    assert(b == c);
+    assert(c == d);
+    assert(d == e);
+    ```
+    Each assert gives Z3 a smaller fact to process. This is especially effective when the proof has multiple `calc!` blocks in the same function.
+20. **Replace `by (compute)` with plain assertions for simple arithmetic:** `by (compute)` asks Verus to evaluate the expression concretely, which can be expensive for expressions involving variables. For simple arithmetic like `u2 == (2 * nm1) as int` or `8 * nm1 == 8 * nm2 + 8`, Z3 can infer these directly — just drop the `by (compute)`:
+    ```rust
+    // BEFORE (can cause rlimit):
+    assert(u2 == (2 * nm1) as int) by (compute);
+    // AFTER (Z3 handles directly):
+    assert(u2 == (2 * nm1) as int);
+    ```
+    Reserve `by (compute)` for truly concrete evaluations where all operands are literal constants.
 
 ## Example Invocation
 
@@ -787,8 +902,11 @@ When you encounter a proof with `admit()` or `assume(...)`:
 
 ## Success Criteria
 
-- All `admit()` and `assume(...)` replaced with actual proofs
+- All `admit()` and `assume(...)` replaced with actual proofs (or documented as `axiom_` with justification)
+- Naming convention: `axiom_` prefix for admitted functions, `lemma_` for fully proved
 - Verification passes: `cargo verus verify`
+- Non-Verus builds pass: `cargo test` and `cargo clippy`
+- `verusfmt` run on all changed files
 - Proofs follow codebase style (comments, structure)
 - Existing lemmas reused wherever possible
 - No exec/ghost mode errors
@@ -800,9 +918,10 @@ At the end of a proof session, provide a summary that includes:
 
 1. **Functions proven:** List each function and its status (fully proven, partially proven with remaining assumes)
 2. **Lemmas added:** List new lemmas created and their purpose
-3. **Specification changes:** Report any preconditions or postconditions that were strengthened, including:
+3. **Axioms remaining:** List all `axiom_` functions still using `admit()`, with a brief note on why they remain axioms
+4. **Specification changes:** Report any preconditions or postconditions that were strengthened, including:
    - Which function's spec was changed
    - What the old spec was (briefly)
    - What the new spec is
    - Why the change was necessary
-4. **Remaining work:** If assumes remain, explain what would be needed to complete the proofs
+5. **Remaining work:** If assumes remain, explain what would be needed to complete the proofs

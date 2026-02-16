@@ -1044,7 +1044,7 @@ pub proof fn lemma_identity_affine_coords(point: EdwardsPoint)
 //
 // Spec functions (in pipeline order):
 //   1. spec_nonspec_map_to_curve           -- top-level: bytes -> [8]P
-//   2. spec_montgomery_to_edwards_affine   -- Montgomery u -> Edwards (x,y)
+//   2. spec_montgomery_to_edwards_affine    -- Montgomery u + sign -> Edwards (x,y)
 //   3. spec_edwards_decompress_from_y      -- Edwards y + sign -> (x,y)
 //
 // Helper functions (defined elsewhere):
@@ -1077,9 +1077,18 @@ pub open spec fn spec_nonspec_map_to_curve(hash_bytes: Seq<u8>) -> (nat, nat)
     // Elligator2 encoding: field element -> Montgomery u-coordinate
     let u = spec_elligator_encode(fe_nat);
     // Convert Montgomery to Edwards with sign bit selecting x
-    let P = spec_montgomery_to_edwards_affine_with_sign(u, sign_bit);
+    let P = spec_montgomery_to_edwards_affine(u, sign_bit);
     // Cofactor clearing: multiply by 8 to ensure prime-order subgroup
     edwards_scalar_mul(P, 8)
+}
+
+/// Normalize a sign byte to 0 or 1 (the low bit).
+pub open spec fn spec_normalize_sign(sign: u8) -> u8 {
+    if (sign & 1u8) == 0u8 {
+        0u8
+    } else {
+        1u8
+    }
 }
 
 /// Spec for Montgomery-to-Edwards conversion with sign bit selection.
@@ -1088,14 +1097,25 @@ pub open spec fn spec_nonspec_map_to_curve(hash_bytes: Seq<u8>) -> (nat, nat)
 /// 1. Birational map: y = (u-1)/(u+1)
 /// 2. Decompression: recover x from y with given sign_bit
 ///
+/// **Sign normalisation when y² = 1:** In this case x = 0, so x is even and
+/// the only valid sign is 0. The exec code (`to_edwards` in montgomery.rs)
+/// naturally produces sign 0 because negating 0 is a no-op. We mirror that
+/// here by forcing `effective_sign = 0`.
+///
 /// Returns identity (0, 1) on failure (u = -1 or invalid y).
-pub open spec fn spec_montgomery_to_edwards_affine_with_sign(u: nat, sign_bit: u8) -> (nat, nat) {
+pub open spec fn spec_montgomery_to_edwards_affine(u: nat, sign_bit: u8) -> (nat, nat) {
     if u == field_sub(0, 1) {
         // u = -1: birational map has zero denominator
         math_edwards_identity()
     } else {
         let y = edwards_y_from_montgomery_u(u);
-        match spec_edwards_decompress_from_y_and_sign(y, sign_bit) {
+        // y² = 1 ⟹ x = 0 ⟹ sign must be 0 (see doc comment above).
+        let effective_sign = if field_square(y) == 1 {
+            0u8
+        } else {
+            sign_bit
+        };
+        match spec_edwards_decompress_from_y_and_sign(y, effective_sign) {
             Some(P) => P,
             None => math_edwards_identity(),
         }
@@ -1106,7 +1126,7 @@ pub open spec fn spec_montgomery_to_edwards_affine_with_sign(u: nat, sign_bit: u
 ///
 /// Mathematical definition:
 /// - Returns None if y is not a valid y-coordinate (no x exists on curve)
-/// - Returns None if x = 0 but sign_bit = 1 (invalid sign for zero)
+/// - Returns None if x = 0 but sign_bit = 1 (invalid sign for zero, since 0 % 2 == 0)
 /// - Otherwise returns the unique (x, y) on the curve with x % 2 == sign_bit
 pub open spec fn spec_edwards_decompress_from_y_and_sign(y: nat, sign_bit: u8) -> Option<
     (nat, nat),

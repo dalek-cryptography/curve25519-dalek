@@ -134,19 +134,19 @@ pub proof fn lemma_as_bytes_boundaries2(raw_limbs: [u64; 5])
     }
 }
 
-/// Lemma: as_bytes produces the same result as spec_fe51_to_bytes when converted to sequence
+/// Lemma: as_bytes produces the same result as spec_fe51_as_bytes when converted to sequence
 ///
 /// This is the key lemma for eliminating the assume in ct_eq.
 /// It states that for any byte array that is produced by as_bytes() (i.e., satisfies
-/// the as_bytes postcondition), when converted to a sequence, it equals spec_fe51_to_bytes().
+/// the as_bytes postcondition), when converted to a sequence, it equals spec_fe51_as_bytes().
 ///
 /// The lemma relates:
 /// - bytes: a byte array satisfying as_bytes postcondition (u8_32_as_nat(&bytes) == u64_5_as_nat(fe.limbs) % p())
 /// - seq_from32(&bytes): the sequence representation of those bytes
-/// - spec_fe51_to_bytes(fe): the spec-level byte sequence
+/// - spec_fe51_as_bytes(fe): the spec-level byte sequence
 ///
 /// Proof strategy:
-/// - Both as_bytes() and spec_fe51_to_bytes() produce canonical representations
+/// - Both as_bytes() and spec_fe51_as_bytes() produce canonical representations
 /// - Both preserve the value modulo p (u64_5_as_nat(fe.limbs) % p())
 /// - The canonical representation modulo p is unique
 /// - Therefore, they produce the same byte sequence
@@ -154,7 +154,7 @@ pub proof fn lemma_as_bytes_equals_spec_fe51_to_bytes(fe: &FieldElement51, bytes
     requires
         u8_32_as_nat(bytes) == u64_5_as_nat(fe.limbs) % p(),
     ensures
-        seq_from32(bytes) == spec_fe51_to_bytes(fe),
+        seq_from32(bytes) == spec_fe51_as_bytes(fe),
 {
     // Step 1: Derive that bytes is canonical (< p)
     // This follows from x % p < p for any x
@@ -167,35 +167,35 @@ pub proof fn lemma_as_bytes_equals_spec_fe51_to_bytes(fe: &FieldElement51, bytes
     lemma_spec_fe51_to_bytes_matches_array(fe, bytes);
 
     // Step 3: Conclude sequence equality
-    assert(spec_fe51_to_bytes(fe).len() == 32);
+    assert(spec_fe51_as_bytes(fe).len() == 32);
     assert(seq_from32(bytes).len() == 32);
 
-    assert forall|i: int| 0 <= i < 32 implies seq_from32(bytes)[i] == spec_fe51_to_bytes(fe)[i] by {
+    assert forall|i: int| 0 <= i < 32 implies seq_from32(bytes)[i] == spec_fe51_as_bytes(fe)[i] by {
         assert(seq_from32(bytes)[i] == bytes[i]);
-        assert(spec_fe51_to_bytes(fe)[i] == bytes[i]);
+        assert(spec_fe51_as_bytes(fe)[i] == bytes[i]);
     }
 
-    assert(seq_from32(bytes) =~= spec_fe51_to_bytes(fe));
+    assert(seq_from32(bytes) =~= spec_fe51_as_bytes(fe));
 }
 
-/// Lemma: spec_fe51_to_bytes produces the same bytes as as_bytes, element by element
+/// Lemma: spec_fe51_as_bytes produces the same bytes as as_bytes, element by element
 proof fn lemma_spec_fe51_to_bytes_matches_array(fe: &FieldElement51, bytes: &[u8; 32])
     requires
         u8_32_as_nat(bytes) == u64_5_as_nat(fe.limbs) % p(),
     ensures
-        forall|i: int| 0 <= i < 32 ==> spec_fe51_to_bytes(fe)[i] == bytes[i],
+        forall|i: int| 0 <= i < 32 ==> spec_fe51_as_bytes(fe)[i] == bytes[i],
 {
-    // Strategy: Both as_bytes() and spec_fe51_to_bytes() use the identical algorithm.
+    // Strategy: Both as_bytes() and spec_fe51_as_bytes() use the identical algorithm.
     // We'll compute the canonical limbs and show that the byte packing formulas
-    // in spec_fe51_to_bytes (which are explicit in the seq![...]) match what as_bytes produces.
-    // Step 1: Compute the canonical limbs (same as in spec_fe51_to_bytes)
+    // in spec_fe51_as_bytes (which are explicit in the seq![...]) match what as_bytes produces.
+    // Step 1: Compute the canonical limbs (same as in spec_fe51_as_bytes)
     proof_reduce(fe.limbs);  // Ensures limbs are bounded by 2^52 and value is preserved mod p()
     let limbs = spec_reduce(fe.limbs);
 
     // Step 2: Prove preconditions for lemma_to_bytes_reduction
     lemma_reduce_bound_2p(fe.limbs);  // Ensures u64_5_as_nat(limbs) < 2 * p()
 
-    // Compute q using compute_q_spec (matches spec_fe51_to_bytes)
+    // Compute q using compute_q_spec (matches spec_fe51_as_bytes)
     let q = compute_q_spec(limbs);
     lemma_compute_q(limbs, q);  // Establishes: q == 0 || q == 1, and u64_5_as_nat(limbs) >= p() <==> q == 1
 
@@ -209,46 +209,46 @@ proof fn lemma_spec_fe51_to_bytes_matches_array(fe: &FieldElement51, bytes: &[u8
     let limbs3_canon = canonical_limbs[3];
     let limbs4_canon = canonical_limbs[4];
 
-    // Now assert that each byte formula in spec_fe51_to_bytes matches
-    // The spec_fe51_to_bytes function defines its output as seq![...] with these exact formulas.
-    // By the definition of seq![...], spec_fe51_to_bytes(fe)[i] equals the i-th element.
+    // Now assert that each byte formula in spec_fe51_as_bytes matches
+    // The spec_fe51_as_bytes function defines its output as seq![...] with these exact formulas.
+    // By the definition of seq![...], spec_fe51_as_bytes(fe)[i] equals the i-th element.
 
-    assert(spec_fe51_to_bytes(fe)[0] == limbs0_canon as u8);
-    assert(spec_fe51_to_bytes(fe)[1] == (limbs0_canon >> 8) as u8);
-    assert(spec_fe51_to_bytes(fe)[2] == (limbs0_canon >> 16) as u8);
-    assert(spec_fe51_to_bytes(fe)[3] == (limbs0_canon >> 24) as u8);
-    assert(spec_fe51_to_bytes(fe)[4] == (limbs0_canon >> 32) as u8);
-    assert(spec_fe51_to_bytes(fe)[5] == (limbs0_canon >> 40) as u8);
-    assert(spec_fe51_to_bytes(fe)[6] == ((limbs0_canon >> 48) | (limbs1_canon << 3)) as u8);
-    assert(spec_fe51_to_bytes(fe)[7] == (limbs1_canon >> 5) as u8);
-    assert(spec_fe51_to_bytes(fe)[8] == (limbs1_canon >> 13) as u8);
-    assert(spec_fe51_to_bytes(fe)[9] == (limbs1_canon >> 21) as u8);
-    assert(spec_fe51_to_bytes(fe)[10] == (limbs1_canon >> 29) as u8);
-    assert(spec_fe51_to_bytes(fe)[11] == (limbs1_canon >> 37) as u8);
-    assert(spec_fe51_to_bytes(fe)[12] == ((limbs1_canon >> 45) | (limbs2_canon << 6)) as u8);
-    assert(spec_fe51_to_bytes(fe)[13] == (limbs2_canon >> 2) as u8);
-    assert(spec_fe51_to_bytes(fe)[14] == (limbs2_canon >> 10) as u8);
-    assert(spec_fe51_to_bytes(fe)[15] == (limbs2_canon >> 18) as u8);
-    assert(spec_fe51_to_bytes(fe)[16] == (limbs2_canon >> 26) as u8);
-    assert(spec_fe51_to_bytes(fe)[17] == (limbs2_canon >> 34) as u8);
-    assert(spec_fe51_to_bytes(fe)[18] == (limbs2_canon >> 42) as u8);
-    assert(spec_fe51_to_bytes(fe)[19] == ((limbs2_canon >> 50) | (limbs3_canon << 1)) as u8);
-    assert(spec_fe51_to_bytes(fe)[20] == (limbs3_canon >> 7) as u8);
-    assert(spec_fe51_to_bytes(fe)[21] == (limbs3_canon >> 15) as u8);
-    assert(spec_fe51_to_bytes(fe)[22] == (limbs3_canon >> 23) as u8);
-    assert(spec_fe51_to_bytes(fe)[23] == (limbs3_canon >> 31) as u8);
-    assert(spec_fe51_to_bytes(fe)[24] == (limbs3_canon >> 39) as u8);
-    assert(spec_fe51_to_bytes(fe)[25] == ((limbs3_canon >> 47) | (limbs4_canon << 4)) as u8);
-    assert(spec_fe51_to_bytes(fe)[26] == (limbs4_canon >> 4) as u8);
-    assert(spec_fe51_to_bytes(fe)[27] == (limbs4_canon >> 12) as u8);
-    assert(spec_fe51_to_bytes(fe)[28] == (limbs4_canon >> 20) as u8);
-    assert(spec_fe51_to_bytes(fe)[29] == (limbs4_canon >> 28) as u8);
-    assert(spec_fe51_to_bytes(fe)[30] == (limbs4_canon >> 36) as u8);
-    assert(spec_fe51_to_bytes(fe)[31] == (limbs4_canon >> 44) as u8);
+    assert(spec_fe51_as_bytes(fe)[0] == limbs0_canon as u8);
+    assert(spec_fe51_as_bytes(fe)[1] == (limbs0_canon >> 8) as u8);
+    assert(spec_fe51_as_bytes(fe)[2] == (limbs0_canon >> 16) as u8);
+    assert(spec_fe51_as_bytes(fe)[3] == (limbs0_canon >> 24) as u8);
+    assert(spec_fe51_as_bytes(fe)[4] == (limbs0_canon >> 32) as u8);
+    assert(spec_fe51_as_bytes(fe)[5] == (limbs0_canon >> 40) as u8);
+    assert(spec_fe51_as_bytes(fe)[6] == ((limbs0_canon >> 48) | (limbs1_canon << 3)) as u8);
+    assert(spec_fe51_as_bytes(fe)[7] == (limbs1_canon >> 5) as u8);
+    assert(spec_fe51_as_bytes(fe)[8] == (limbs1_canon >> 13) as u8);
+    assert(spec_fe51_as_bytes(fe)[9] == (limbs1_canon >> 21) as u8);
+    assert(spec_fe51_as_bytes(fe)[10] == (limbs1_canon >> 29) as u8);
+    assert(spec_fe51_as_bytes(fe)[11] == (limbs1_canon >> 37) as u8);
+    assert(spec_fe51_as_bytes(fe)[12] == ((limbs1_canon >> 45) | (limbs2_canon << 6)) as u8);
+    assert(spec_fe51_as_bytes(fe)[13] == (limbs2_canon >> 2) as u8);
+    assert(spec_fe51_as_bytes(fe)[14] == (limbs2_canon >> 10) as u8);
+    assert(spec_fe51_as_bytes(fe)[15] == (limbs2_canon >> 18) as u8);
+    assert(spec_fe51_as_bytes(fe)[16] == (limbs2_canon >> 26) as u8);
+    assert(spec_fe51_as_bytes(fe)[17] == (limbs2_canon >> 34) as u8);
+    assert(spec_fe51_as_bytes(fe)[18] == (limbs2_canon >> 42) as u8);
+    assert(spec_fe51_as_bytes(fe)[19] == ((limbs2_canon >> 50) | (limbs3_canon << 1)) as u8);
+    assert(spec_fe51_as_bytes(fe)[20] == (limbs3_canon >> 7) as u8);
+    assert(spec_fe51_as_bytes(fe)[21] == (limbs3_canon >> 15) as u8);
+    assert(spec_fe51_as_bytes(fe)[22] == (limbs3_canon >> 23) as u8);
+    assert(spec_fe51_as_bytes(fe)[23] == (limbs3_canon >> 31) as u8);
+    assert(spec_fe51_as_bytes(fe)[24] == (limbs3_canon >> 39) as u8);
+    assert(spec_fe51_as_bytes(fe)[25] == ((limbs3_canon >> 47) | (limbs4_canon << 4)) as u8);
+    assert(spec_fe51_as_bytes(fe)[26] == (limbs4_canon >> 4) as u8);
+    assert(spec_fe51_as_bytes(fe)[27] == (limbs4_canon >> 12) as u8);
+    assert(spec_fe51_as_bytes(fe)[28] == (limbs4_canon >> 20) as u8);
+    assert(spec_fe51_as_bytes(fe)[29] == (limbs4_canon >> 28) as u8);
+    assert(spec_fe51_as_bytes(fe)[30] == (limbs4_canon >> 36) as u8);
+    assert(spec_fe51_as_bytes(fe)[31] == (limbs4_canon >> 44) as u8);
 
     // Step 5: Now show that bytes[i] equals each canonical byte formula
     //
-    // Key insight: Both as_bytes() and spec_fe51_to_bytes() implement the SAME algorithm.
+    // Key insight: Both as_bytes() and spec_fe51_as_bytes() implement the SAME algorithm.
     // Since they start with the same fe.limbs and apply identical operations, they must
     // produce the same canonical limbs and therefore the same packed bytes.
     //
@@ -264,7 +264,7 @@ proof fn lemma_spec_fe51_to_bytes_matches_array(fe: &FieldElement51, bytes: &[u8
     // The canonical limbs are already bounded by 2^51 (from reduce_with_q_spec)
     // This is guaranteed by lemma_to_bytes_reduction's postcondition
 
-    // Create an array matching the spec_fe51_to_bytes byte packing
+    // Create an array matching the spec_fe51_as_bytes byte packing
     let spec_bytes: [u8; 32] = [
         limbs0_canon as u8,
         (limbs0_canon >> 8) as u8,
@@ -488,20 +488,20 @@ pub proof fn lemma_as_bytes_from_bytes_roundtrip(
 
 /// Lemma: Equal canonical byte sequences imply equal field element values
 ///
-/// If two field elements have the same canonical byte representation (via spec_fe51_to_bytes),
+/// If two field elements have the same canonical byte representation (via spec_fe51_as_bytes),
 /// then they represent the same mathematical value in the field.
 ///
 /// ## Mathematical reasoning:
-/// - `spec_fe51_to_bytes(fe)` encodes `fe51_as_canonical_nat(fe)` as a canonical little-endian sequence
+/// - `spec_fe51_as_bytes(fe)` encodes `fe51_as_canonical_nat(fe)` as a canonical little-endian sequence
 /// - Little-endian encoding is injective: different values produce different byte sequences
 /// - Therefore: equal bytes => equal values
 ///
 /// ## Usage in proofs:
 /// ```
-/// let result = fe1 == fe2;  // Uses PartialEq which compares spec_fe51_to_bytes
+/// let result = fe1 == fe2;  // Uses PartialEq which compares spec_fe51_as_bytes
 /// proof {
 ///     lemma_fe51_to_bytes_equal_implies_field_element_equal(&fe1, &fe2);
-///     // Now: (spec_fe51_to_bytes(&fe1) == spec_fe51_to_bytes(&fe2)) ==> (fe51_as_canonical_nat(&fe1) == fe51_as_canonical_nat(&fe2))
+///     // Now: (spec_fe51_as_bytes(&fe1) == spec_fe51_as_bytes(&fe2)) ==> (fe51_as_canonical_nat(&fe1) == fe51_as_canonical_nat(&fe2))
 /// }
 /// ```
 pub proof fn lemma_fe51_to_bytes_equal_implies_field_element_equal(
@@ -509,12 +509,12 @@ pub proof fn lemma_fe51_to_bytes_equal_implies_field_element_equal(
     fe2: &FieldElement51,
 )
     ensures
-        (spec_fe51_to_bytes(fe1) == spec_fe51_to_bytes(fe2)) ==> (fe51_as_canonical_nat(fe1)
+        (spec_fe51_as_bytes(fe1) == spec_fe51_as_bytes(fe2)) ==> (fe51_as_canonical_nat(fe1)
             == fe51_as_canonical_nat(fe2)),
 {
-    if spec_fe51_to_bytes(fe1) == spec_fe51_to_bytes(fe2) {
-        let bytes1 = seq_to_array_32(spec_fe51_to_bytes(fe1));
-        let bytes2 = seq_to_array_32(spec_fe51_to_bytes(fe2));
+    if spec_fe51_as_bytes(fe1) == spec_fe51_as_bytes(fe2) {
+        let bytes1 = seq_to_array_32(spec_fe51_as_bytes(fe1));
+        let bytes2 = seq_to_array_32(spec_fe51_as_bytes(fe2));
 
         assert(u8_32_as_nat(&bytes1) == fe51_as_canonical_nat(fe1)) by {
             lemma_u8_32_as_nat_of_spec_fe51_to_bytes(fe1);
@@ -533,7 +533,7 @@ pub proof fn lemma_fe51_to_bytes_equal_implies_field_element_equal(
 /// This is the converse of `lemma_fe51_to_bytes_equal_implies_field_element_equal`.
 ///
 /// ## Mathematical reasoning:
-/// - `spec_fe51_to_bytes(fe)` is a deterministic function of `fe51_as_canonical_nat(fe)`
+/// - `spec_fe51_as_bytes(fe)` is a deterministic function of `fe51_as_canonical_nat(fe)`
 /// - The canonical encoding produces a unique 32-byte representation for each value in [0, p)
 /// - Therefore: equal values => equal bytes
 ///
@@ -541,18 +541,18 @@ pub proof fn lemma_fe51_to_bytes_equal_implies_field_element_equal(
 /// 1. Convert both byte sequences to arrays: `bytes1`, `bytes2`
 /// 2. Show `u8_32_as_nat(&bytes1) == u8_32_as_nat(&bytes2)` (both equal the shared field value)
 /// 3. Use `lemma_canonical_bytes_equal`: equal nat values => equal byte arrays
-/// 4. Convert back to sequences to conclude `spec_fe51_to_bytes(fe1) == spec_fe51_to_bytes(fe2)`
+/// 4. Convert back to sequences to conclude `spec_fe51_as_bytes(fe1) == spec_fe51_as_bytes(fe2)`
 pub proof fn lemma_field_element_equal_implies_fe51_to_bytes_equal(
     fe1: &FieldElement51,
     fe2: &FieldElement51,
 )
     ensures
-        (fe51_as_canonical_nat(fe1) == fe51_as_canonical_nat(fe2)) ==> (spec_fe51_to_bytes(fe1)
-            == spec_fe51_to_bytes(fe2)),
+        (fe51_as_canonical_nat(fe1) == fe51_as_canonical_nat(fe2)) ==> (spec_fe51_as_bytes(fe1)
+            == spec_fe51_as_bytes(fe2)),
 {
     if fe51_as_canonical_nat(fe1) == fe51_as_canonical_nat(fe2) {
-        let bytes1 = seq_to_array_32(spec_fe51_to_bytes(fe1));
-        let bytes2 = seq_to_array_32(spec_fe51_to_bytes(fe2));
+        let bytes1 = seq_to_array_32(spec_fe51_as_bytes(fe1));
+        let bytes2 = seq_to_array_32(spec_fe51_as_bytes(fe2));
 
         assert(u8_32_as_nat(&bytes1) == fe51_as_canonical_nat(fe1)) by {
             lemma_u8_32_as_nat_of_spec_fe51_to_bytes(fe1);
@@ -579,44 +579,44 @@ pub proof fn lemma_field_element_equal_implies_fe51_to_bytes_equal(
             }
         };
 
-        // Roundtrip: spec_fe51_to_bytes(fe) == seq_from32(seq_to_array_32(spec_fe51_to_bytes(fe))).
-        assert(spec_fe51_to_bytes(fe1) == seq_from32(&bytes1)) by {
-            assert(spec_fe51_to_bytes(fe1).len() == 32);
-            lemma_seq_to_array_32_roundtrip(spec_fe51_to_bytes(fe1));
+        // Roundtrip: spec_fe51_as_bytes(fe) == seq_from32(seq_to_array_32(spec_fe51_as_bytes(fe))).
+        assert(spec_fe51_as_bytes(fe1) == seq_from32(&bytes1)) by {
+            assert(spec_fe51_as_bytes(fe1).len() == 32);
+            lemma_seq_to_array_32_roundtrip(spec_fe51_as_bytes(fe1));
         };
-        assert(spec_fe51_to_bytes(fe2) == seq_from32(&bytes2)) by {
-            assert(spec_fe51_to_bytes(fe2).len() == 32);
-            lemma_seq_to_array_32_roundtrip(spec_fe51_to_bytes(fe2));
+        assert(spec_fe51_as_bytes(fe2) == seq_from32(&bytes2)) by {
+            assert(spec_fe51_as_bytes(fe2).len() == 32);
+            lemma_seq_to_array_32_roundtrip(spec_fe51_as_bytes(fe2));
         };
 
-        assert(spec_fe51_to_bytes(fe1) == spec_fe51_to_bytes(fe2));
+        assert(spec_fe51_as_bytes(fe1) == spec_fe51_as_bytes(fe2));
     }
 }
 
 // ============================================================================
-// Helper for the above two lemmas: connecting spec_fe51_to_bytes to fe51_as_canonical_nat
+// Helper for the above two lemmas: connecting spec_fe51_as_bytes to fe51_as_canonical_nat
 // ============================================================================
 /// Core lemma: The canonical byte encoding of a field element decodes back to its value.
 ///
 /// This establishes the fundamental property:
-///   `u8_32_as_nat(spec_fe51_to_bytes(fe)) == fe51_as_canonical_nat(fe)`
+///   `u8_32_as_nat(spec_fe51_as_bytes(fe)) == fe51_as_canonical_nat(fe)`
 ///
 ///
 /// ## Proof outline:
 /// 1. Apply reduction lemmas to get canonical limbs from fe.limbs
-/// 2. Build an explicit byte array `spec_bytes` from canonical limbs (using the same packing as spec_fe51_to_bytes)
+/// 2. Build an explicit byte array `spec_bytes` from canonical limbs (using the same packing as spec_fe51_as_bytes)
 /// 3. Use `lemma_limbs_to_bytes` to show `u8_32_as_nat(&spec_bytes) == u64_5_as_nat(canonical_limbs)`
 /// 4. Use reduction lemmas to show `u64_5_as_nat(canonical_limbs) == fe51_as_canonical_nat(fe)`
-/// 5. Show `seq_to_array_32(spec_fe51_to_bytes(fe)) == spec_bytes` by element-wise comparison
-/// 6. Conclude `u8_32_as_nat(seq_to_array_32(spec_fe51_to_bytes(fe))) == fe51_as_canonical_nat(fe)`
+/// 5. Show `seq_to_array_32(spec_fe51_as_bytes(fe)) == spec_bytes` by element-wise comparison
+/// 6. Conclude `u8_32_as_nat(seq_to_array_32(spec_fe51_as_bytes(fe))) == fe51_as_canonical_nat(fe)`
 proof fn lemma_u8_32_as_nat_of_spec_fe51_to_bytes(fe: &FieldElement51)
     ensures
-        u8_32_as_nat(&seq_to_array_32(spec_fe51_to_bytes(fe))) == fe51_as_canonical_nat(fe),
+        u8_32_as_nat(&seq_to_array_32(spec_fe51_as_bytes(fe))) == fe51_as_canonical_nat(fe),
 {
     // -------------------------------------------------------------------------
-    // STEP 1: Establish that spec_fe51_to_bytes produces 32 bytes
+    // STEP 1: Establish that spec_fe51_as_bytes produces 32 bytes
     // -------------------------------------------------------------------------
-    assert(spec_fe51_to_bytes(fe).len() == 32);
+    assert(spec_fe51_as_bytes(fe).len() == 32);
 
     // -------------------------------------------------------------------------
     // STEP 2: Reduce limbs and establish bounds
@@ -709,26 +709,26 @@ proof fn lemma_u8_32_as_nat_of_spec_fe51_to_bytes(fe: &FieldElement51)
     // -------------------------------------------------------------------------
     // STEP 6: Bridge between Seq<u8> and [u8; 32]
     // -------------------------------------------------------------------------
-    // We need to show: u8_32_as_nat(seq_to_array_32(spec_fe51_to_bytes(fe))) == fe51_as_canonical_nat(fe)
+    // We need to show: u8_32_as_nat(seq_to_array_32(spec_fe51_as_bytes(fe))) == fe51_as_canonical_nat(fe)
     //
-    // The challenge is that spec_fe51_to_bytes returns a Seq<u8> (via seq![...]),
+    // The challenge is that spec_fe51_as_bytes returns a Seq<u8> (via seq![...]),
     // but u8_32_as_nat takes a [u8; 32]. We must prove that converting the
     // sequence to an array preserves the byte values.
     //
     // Strategy:
-    //   1. Let `bytes = seq_to_array_32(spec_fe51_to_bytes(fe))`
+    //   1. Let `bytes = seq_to_array_32(spec_fe51_as_bytes(fe))`
     //   2. Show `bytes[i] == spec_bytes[i]` for all i ∈ [0, 32)
     //   3. Conclude `bytes == spec_bytes`
     //   4. Use transitivity: u8_32_as_nat(&bytes) == u8_32_as_nat(&spec_bytes) == fe51_as_canonical_nat(fe)
     // -------------------------------------------------------------------------
 
-    let bytes = seq_to_array_32(spec_fe51_to_bytes(fe));
+    let bytes = seq_to_array_32(spec_fe51_as_bytes(fe));
 
     // For each index i, we need to show:
-    //   bytes[i] == spec_fe51_to_bytes(fe)[i]  (by seq_to_array_32 definition)
-    //            == spec_bytes[i]              (by spec_fe51_to_bytes definition)
+    //   bytes[i] == spec_fe51_as_bytes(fe)[i]  (by seq_to_array_32 definition)
+    //            == spec_bytes[i]              (by spec_fe51_as_bytes definition)
     //
-    // This requires Verus to unfold spec_fe51_to_bytes and see that its seq![...]
+    // This requires Verus to unfold spec_fe51_as_bytes and see that its seq![...]
     // produces the same values as our spec_bytes array literal.
 
     // Byte 0: limbs0_canon as u8
@@ -896,20 +896,20 @@ pub proof fn lemma_canonical_bytes_bit255_zero(bytes: &[u8; 32], val: nat)
 
 /// The low bit of the byte encoding equals the parity of the field element.
 ///
-/// (spec_fe51_to_bytes(fe)[0] & 1 == 1) <==> (fe51_as_canonical_nat(fe) % 2 == 1)
+/// (spec_fe51_as_bytes(fe)[0] & 1 == 1) <==> (fe51_as_canonical_nat(fe) % 2 == 1)
 pub proof fn lemma_is_negative_equals_parity(fe: &FieldElement51)
     ensures
-        (spec_fe51_to_bytes(fe)[0] & 1 == 1) == (fe51_as_canonical_nat(fe) % 2 == 1),
+        (spec_fe51_as_bytes(fe)[0] & 1 == 1) == (fe51_as_canonical_nat(fe) % 2 == 1),
 {
     // The canonical byte encoding has u8_32_as_nat(bytes) == fe51_as_canonical_nat(fe)
     // In little-endian: bytes[0] & 1 = value % 2
-    // Step 1: Connect spec_fe51_to_bytes to fe51_as_canonical_nat
+    // Step 1: Connect spec_fe51_as_bytes to fe51_as_canonical_nat
     lemma_u8_32_as_nat_of_spec_fe51_to_bytes(fe);
-    let bytes = seq_to_array_32(spec_fe51_to_bytes(fe));
+    let bytes = seq_to_array_32(spec_fe51_as_bytes(fe));
     assert(u8_32_as_nat(&bytes) == fe51_as_canonical_nat(fe));
 
     let byte0 = bytes[0];
-    assert(byte0 == spec_fe51_to_bytes(fe)[0]);
+    assert(byte0 == spec_fe51_as_bytes(fe)[0]);
 
     // Step 2: Use modulo truncation to show u8_32_as_nat % 2 == byte0 % 2
     lemma_u8_32_as_nat_mod_truncates(&bytes, 1);

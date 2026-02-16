@@ -299,4 +299,30 @@ pub open spec fn bits_be_as_nat(bits: &[bool], len: int) -> nat
     }
 }
 
+// ========================================================================
+// Bit-slice / index-range conversion helpers
+// ========================================================================
+/// Interpret a range of bits as a natural number in little-endian order.
+///
+/// Concretely, this computes:
+/// `sum_{i=0..len-1} (bits[start + i] ? 1 : 0) * 2^i`.
+pub open spec fn bits_from_index_to_nat(bits: &[bool; 256], start: nat, len: nat) -> nat
+    recommends
+        start + len <= 256,
+    decreases len,
+{
+    if len == 0 {
+        0
+    } else {
+        let bit_value = if bits[start as int] {
+            1nat
+        } else {
+            0nat
+        };
+        bit_value + 2 * bits_from_index_to_nat(bits, (start + 1) as nat, (len - 1) as nat)
+    }
+}
+
+// Proof lemmas about these bit-to-nat conversions live in
+// `curve25519-dalek/src/lemmas/common_lemmas/bits_as_nat_lemmas.rs`.
 } // verus!

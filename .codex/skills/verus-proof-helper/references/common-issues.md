@@ -11,6 +11,28 @@ proof {
 }
 ```
 
+## Array equality not supported / brittle
+
+If Verus rejects direct equality on arrays in your context (e.g., `[u8; 32] == [u8; 32]`), use one of:
+
+- Derive **elementwise equality** from a fact you already have
+
+
+- If you have a **sequence equality** fact (e.g., `seq_from32(&a) == seq_from32(&b)`), use the repo’s helper lemma
+  to lift it to array equality first (e.g., `lemma_seq_eq_implies_array_eq(&a, &b)`), then apply the snippet above.
+
+- Use a constant-time byte equality helper already present in the codebase (`ct_eq_*`), then branch on
+  `choice_into(...)` and use `choice_is_true(...)` in the proof.
+
+## Avoid redundant `ct_eq_*` calls
+
+If a type’s `PartialEq::eq` is already specified/implemented via a constant-time equality (common in
+crypto code), don’t call `ct_eq_*` again just to make the proof go through. Prefer:
+
+1) compute the exec boolean once: `let b = x == y;`
+2) in `proof {}` blocks, use the *postcondition* of `eq` (or `PartialEqSpecImpl::eq_spec`) to bridge
+   `b` to the spec-level equality you actually want.
+
 ## “Cannot call function with mode exec”
 
 Call exec functions outside `proof` blocks, bind the result, and reason about the value in `proof`.
@@ -104,6 +126,13 @@ Common mitigations:
 Sometimes the vstd spec for `expect`/`unwrap` forces a precondition like `opt.is_some()`, which
 turns into an `assume(...)` in application code.
 
-Workaround: avoid calling `expect` in verified code; do an explicit `match` and preserve exec
-behavior (panic) with `#[cfg(not(verus_keep_ghost))]`, while using a well-formed placeholder value
-under `#[cfg(verus_keep_ghost)]`. Keep the original code in a `/* ORIGINAL CODE: ... */` comment.
+Preferred workaround: keep the exec behavior unchanged and *prove* the precondition.
+
+1) Strengthen or reuse a callee contract/lemma so success is guaranteed under your preconditions.
+2) Add a small `proof { assert(opt.is_some()); }` block.
+3) Keep the original `opt.expect("...")` / `opt.unwrap()` in exec code.
+
+Fallback (when the success fact is genuinely out-of-scope): avoid calling `expect` in verified code;
+do an explicit `match`, preserving exec behavior (panic) with `#[cfg(not(verus_keep_ghost))]`, while
+using a well-formed placeholder value under `#[cfg(verus_keep_ghost)]`. Keep the original code in a
+`/* ORIGINAL CODE: ... */` comment.

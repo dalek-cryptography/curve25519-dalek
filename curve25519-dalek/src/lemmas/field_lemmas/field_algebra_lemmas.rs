@@ -161,6 +161,123 @@ pub proof fn lemma_field_mul_distributes_over_add(a: nat, b: nat, c: nat)
     };
 }
 
+/// Lemma: a + b = b + a in field arithmetic.
+pub proof fn lemma_field_add_comm(a: nat, b: nat)
+    ensures
+        field_add(a, b) == field_add(b, a),
+{
+    let p = p();
+    p_gt_2();
+    assert(field_add(a, b) == (a + b) % p);
+    assert(field_add(b, a) == (b + a) % p);
+    assert((a + b) as int == (b + a) as int);
+}
+
+/// Lemma: (a-b)(a+b) = a² - b² in field arithmetic.
+pub proof fn lemma_field_diff_of_squares(a: nat, b: nat)
+    ensures
+        field_mul(field_sub(a, b), field_add(a, b)) == field_sub(field_square(a), field_square(b)),
+{
+    let p = p();
+    p_gt_2();
+
+    let sa = field_square(a);
+    let sb = field_square(b);
+    let ab = field_mul(a, b);
+
+    lemma_field_mul_distributes_over_sub_right(a, b, field_add(a, b));
+    assert(field_mul(field_sub(a, b), field_add(a, b)) == field_sub(
+        field_mul(a, field_add(a, b)),
+        field_mul(b, field_add(a, b)),
+    ));
+
+    lemma_field_mul_distributes_over_add(a, a, b);
+    lemma_field_mul_distributes_over_add(b, a, b);
+    assert(field_mul(a, field_add(a, b)) == field_add(sa, ab));
+    assert(field_mul(b, field_add(a, b)) == field_add(field_mul(b, a), sb));
+    lemma_field_mul_comm(b, a);
+    assert(field_mul(b, a) == ab);
+    assert(field_add(field_mul(b, a), sb) == field_add(ab, sb));
+    lemma_field_add_comm(ab, sb);
+    assert(field_add(ab, sb) == field_add(sb, ab));
+
+    assert(field_mul(field_sub(a, b), field_add(a, b)) == field_sub(
+        field_add(sa, ab),
+        field_add(sb, ab),
+    ));
+
+    assert(sa < p) by {
+        lemma_mod_bound((a * a) as int, p as int);
+    };
+    assert(sb < p) by {
+        lemma_mod_bound((b * b) as int, p as int);
+    };
+    assert(ab < p) by {
+        lemma_mod_bound((a * b) as int, p as int);
+    };
+    lemma_field_sub_add_common_right(sa, sb, ab);
+}
+
+/// Lemma: sub(add(x, y), add(z, y)) = sub(x, z) for reduced values.
+pub proof fn lemma_field_sub_add_common_right(x: nat, z: nat, y: nat)
+    requires
+        x < p(),
+        z < p(),
+        y < p(),
+    ensures
+        field_sub(field_add(x, y), field_add(z, y)) == field_sub(x, z),
+{
+    let p = p();
+    let p_i = p as int;
+    p_gt_2();
+
+    let x1 = field_add(x, y);
+    let z1 = field_add(z, y);
+
+    assert(x1 == (x + y) % p);
+    assert(z1 == (z + y) % p);
+    assert(x1 < p) by {
+        lemma_mod_bound((x + y) as int, p_i);
+    }
+    assert(z1 < p) by {
+        lemma_mod_bound((z + y) as int, p_i);
+    }
+
+    assert(field_sub(x1, z1) == (((x1 + p) - z1) as nat) % p) by {
+        lemma_small_mod(x1, p);
+        lemma_small_mod(z1, p);
+    }
+
+    assert((x1 as int) % p_i == ((x + y) as int) % p_i) by {
+        lemma_small_mod(x1, p);
+        lemma_int_nat_mod_equiv((x + y) as int, p);
+    }
+    assert((z1 as int) % p_i == ((z + y) as int) % p_i) by {
+        lemma_small_mod(z1, p);
+        lemma_int_nat_mod_equiv((z + y) as int, p);
+    }
+
+    assert(((x1 + p) as int) % p_i == ((x + y + p) as int) % p_i) by {
+        lemma_mod_add_multiples_vanish(x1 as int, p_i);
+        lemma_mod_add_multiples_vanish((x + y) as int, p_i);
+    }
+
+    assert((((x1 + p) as int - z1 as int) % p_i) == ((((x + y + p) as int) - (z + y) as int) % p_i))
+        by {
+        lemma_sub_mod_noop((x1 + p) as int, z1 as int, p_i);
+        lemma_sub_mod_noop((x + y + p) as int, (z + y) as int, p_i);
+    }
+
+    assert((((x + y + p) as int) - (z + y) as int) == ((x + p) as int - z as int));
+    assert((((x1 + p) as int - z1 as int) % p_i) == (((x + p) as int - z as int) % p_i));
+    assert((((x1 + p) - z1) as nat) % p == (((x + p) - z) as nat) % p);
+
+    assert(field_sub(x, z) == (((x + p) - z) as nat) % p) by {
+        lemma_small_mod(x, p);
+        lemma_small_mod(z, p);
+    }
+}
+
 /// Lemma: (x % p)² = x² (mod p)
 pub proof fn lemma_square_mod_noop(x: nat)
     ensures
@@ -513,6 +630,80 @@ pub proof fn lemma_inv_mul_cancel(a: nat)
     // By mod absorption: (inv(a) * a) % p = ((inv(a) % p) * a) % p = (inv(a) * (a % p)) % p
     lemma_mul_mod_noop_left(a as int, inv_a as int, p as int);
     lemma_mul_mod_noop_right(inv_a as int, a as int, p as int);
+}
+
+// =============================================================================
+// Add/Sub Cancellation Lemmas
+// =============================================================================
+/// Lemma: (a + b) - b = a (mod p)
+pub proof fn lemma_field_sub_add_cancel(a: nat, b: nat)
+    requires
+        a < p(),
+        b < p(),
+    ensures
+        field_sub(field_add(a, b), b) == a,
+{
+    let p = p();
+    p_gt_2();
+
+    let s = field_add(a, b);
+    assert(s == (a + b) % p);
+    assert(s < p) by {
+        lemma_mod_bound((a + b) as int, p as int);
+    }
+
+    assert(field_sub(s, b) == (((s + p) - b) as nat) % p) by {
+        lemma_small_mod(s, p);
+        lemma_small_mod(b, p);
+    }
+    assert((s + p) % p == ((a + b) + p) % p) by {
+        assert((s as int) % (p as int) == ((a + b) as int) % (p as int)) by {
+            lemma_small_mod(s, p);
+            lemma_int_nat_mod_equiv((a + b) as int, p);
+        }
+        lemma_mod_add_eq(s as int, (a + b) as int, p as int, p as int);
+    }
+    assert(((s + p) as int - b as int) % (p as int) == (((a + b + p) as int) - b as int) % (
+    p as int)) by {
+        lemma_sub_mod_noop((s + p) as int, b as int, p as int);
+        lemma_sub_mod_noop((a + b + p) as int, b as int, p as int);
+    }
+    assert((((s + p) - b) as nat) % p == (((a + b + p) - b) as nat) % p);
+    assert(((a + b + p) - b) as nat == a + p);
+    lemma_mod_add_multiples_vanish(a as int, p as int);
+    lemma_small_mod(a, p);
+}
+
+/// Lemma: (a - b) + b = a (mod p)
+pub proof fn lemma_field_add_sub_cancel(a: nat, b: nat)
+    requires
+        a < p(),
+        b < p(),
+    ensures
+        field_add(field_sub(a, b), b) == a,
+{
+    let p = p();
+    p_gt_2();
+
+    let d = field_sub(a, b);
+    assert(d < p) by {
+        lemma_mod_bound(((a + p) - b) as int, p as int);
+    }
+    assert(field_add(d, b) == (d + b) % p);
+    assert(field_sub(a, b) == (((a + p) - b) as nat) % p) by {
+        lemma_small_mod(a, p);
+        lemma_small_mod(b, p);
+    }
+    assert((d + b) % p == ((((a + p) - b) + b) as nat) % p) by {
+        assert((d as int) % (p as int) == (((a + p) - b) as int) % (p as int)) by {
+            lemma_small_mod(d, p);
+            lemma_int_nat_mod_equiv(((a + p) - b) as int, p);
+        }
+        lemma_mod_add_eq(d as int, (((a + p) - b) as int), b as int, p as int);
+    }
+    assert((((a + p) - b) + b) as nat == a + p);
+    lemma_mod_add_multiples_vanish(a as int, p as int);
+    lemma_small_mod(a, p);
 }
 
 // =============================================================================

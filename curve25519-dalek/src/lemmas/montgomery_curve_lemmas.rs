@@ -976,6 +976,28 @@ pub proof fn axiom_edwards_to_montgomery_preserves_validity(x: nat, y: nat)
     admit();
 }
 
+/// Axiom: Elligator2 always outputs a valid Montgomery u-coordinate (on the curve, not the twist).
+pub proof fn axiom_elligator_encode_outputs_valid_u(r: nat)
+    ensures
+        is_valid_u_coordinate(spec_elligator_encode(r)),
+{
+    admit();
+}
+
+/// Axiom: For a valid Montgomery u-coordinate (and u != -1), the birational map
+/// y = (u-1)/(u+1) yields a valid Edwards y-coordinate.
+///
+/// This is one direction of the Montgomery↔Edwards birational equivalence.
+pub proof fn axiom_montgomery_valid_u_implies_edwards_y_valid(u: nat)
+    requires
+        is_valid_u_coordinate(u),
+        u != field_sub(0, 1),
+    ensures
+        math_is_valid_y_coordinate(edwards_y_from_montgomery_u(u)),
+{
+    admit();
+}
+
 /// Elligator2 encoding never produces u = -1 (mod p).
 ///
 /// Proof by contradiction in each branch of `spec_elligator_encode`:

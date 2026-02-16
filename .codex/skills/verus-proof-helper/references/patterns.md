@@ -81,3 +81,99 @@ assert(u8_32_as_nat(s_after) % pow2(255) == u8_32_as_nat(s_before) % pow2(255)) 
     }
 };
 ```
+
+## Pattern 4: “Precondition plumbing” for arithmetic traits (bounds + sum bounds)
+
+In this repo, many exec ops (`+`, `-`, `*`, `invert`, `square`, etc.) have *proof-visible*
+preconditions like `fe51_limbs_bounded(_, 54)` or `sum_of_limbs_bounded(_, _, u64::MAX)`.
+When verification fails, it’s often because those preconditions weren’t established in the
+right place.
+
+Minimal pattern:
+
+```rust
+proof {
+    lemma_fe51_limbs_bounded_weaken(&a, 51, 54);
+    lemma_fe51_limbs_bounded_weaken(&b, 51, 54);
+    lemma_sum_of_limbs_bounded_from_fe51_bounded(&a, &b, 51);
+}
+let c = &a + &b;
+
+proof {
+    // If you need 54-boundedness for later ops, weaken the postcondition.
+    assert(fe51_limbs_bounded(&c, 52));
+    lemma_fe51_limbs_bounded_weaken(&c, 52, 54);
+}
+```
+
+Rule of thumb: establish these right before the exec op that needs them, not “somewhere earlier”.
+
+## Pattern 5: Lift representation-level ensures to struct equality (CT selection / assignment)
+
+When a primitive only ensures limb equality, explicitly lift:
+`limbs equality → FieldElement equality → struct equality`.
+
+```rust
+let out = MyStruct {
+    x: FieldElement::conditional_select(&a.x, &b.x, choice),
+    y: FieldElement::conditional_select(&a.y, &b.y, choice),
+};
+
+proof {
+    assert(!choice_is_true(choice) ==> out.x.limbs == a.x.limbs);
+    assert(choice_is_true(choice) ==> out.x.limbs == b.x.limbs);
+
+    if !choice_is_true(choice) {
+        lemma_field_element51_eq_from_limbs_eq(out.x, a.x);
+        lemma_field_element51_eq_from_limbs_eq(out.y, a.y);
+        assert(out == *a);
+    } else {
+        lemma_field_element51_eq_from_limbs_eq(out.x, b.x);
+        lemma_field_element51_eq_from_limbs_eq(out.y, b.y);
+        assert(out == *b);
+    }
+}
+```
+
+## Pattern 6: Keep `expect`/`unwrap` in exec code by proving `is_some()`
+
+If production code uses `opt.expect("...")`, prefer *proving* `opt.is_some()` (often by
+strengthening the callee’s contract or reusing an existing lemma), rather than refactoring to
+a `match` with a “dummy” fallback value.
+
+```rust
+let opt = f(...);
+proof { assert(opt.is_some()); }
+let x = opt.expect("..."); // unchanged exec behavior
+```
+
+If the missing fact is truly out-of-scope, isolate it behind a narrow `axiom_...` lemma instead
+of sprinkling `assume(...)` at call sites.
+
+## Pattern 7: Bridge `==` branches to spec facts (don’t re-compare bytes)
+
+When you write exec code like:
+
+```rust
+let b = x == y;
+if b { ... }
+```
+
+the proof obligation is usually not “prove `b`”, but “use `b` to derive a spec-level equality”.
+If `PartialEq` has an `ensures` relating `b` to a spec predicate (e.g., canonical bytes equality),
+use that directly rather than adding an extra explicit `ct_eq_*` call.
+
+Typical structure:
+
+```rust
+let b = x == y;
+if b {
+    proof {
+        // From `PartialEq::eq` postcondition:
+        //   b == (eq_spec(x, y))   or   b == (spec_bytes(x) == spec_bytes(y))
+        assert(b == eq_spec(&x, &y));
+        assert(eq_spec(&x, &y));
+        // Then lift eq_spec(...) to the semantic equality you need using existing lemmas.
+    }
+}
+```

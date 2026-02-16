@@ -394,9 +394,9 @@ pub proof fn lemma_even_sum_up_to_correct(digits: Seq<i8>, B: (nat, nat), n: nat
         let u1 = upper - 1;  // 2n-1 (odd)
         let u2 = upper - 2;  // 2n-2 (even)
 
-        assert(u1 % 2 == 1) by (compute);
-        assert(u2 % 2 == 0) by (compute);
-        assert((u2 / 2) as nat == nm1) by (compute);
+        assert(u1 % 2 == 1);
+        assert(u2 % 2 == 0);
+        assert((u2 / 2) as nat == nm1);
 
         reveal(even_sum_up_to);
         assert(even_sum_up_to(digits, upper, B) == even_sum_up_to(digits, u1, B));
@@ -408,7 +408,7 @@ pub proof fn lemma_even_sum_up_to_correct(digits: Seq<i8>, B: (nat, nat), n: nat
         assert(even_sum_up_to(digits, u1, B) == edwards_add(prev.0, prev.1, term.0, term.1));
 
         // Rewrite prev using the IH (note u2 == 2*(n-1)).
-        assert(u2 == (2 * nm1) as int) by (compute);
+        assert(u2 == (2 * nm1) as int);
         assert(prev == even_sum_up_to(digits, (2 * nm1) as int, B));
         assert(prev == edwards_scalar_mul_signed(B, radix16_even_scalar(digits, nm1)));
 
@@ -469,8 +469,8 @@ pub proof fn lemma_odd_sum_up_to_correct(digits: Seq<i8>, B: (nat, nat), n: nat)
         let idx = upper - 1;  // 2n-1 (odd)
         let prev_u = upper - 2;  // 2n-2
 
-        assert(idx % 2 == 1) by (compute);
-        assert((idx / 2) as nat == nm1) by (compute);
+        assert(idx % 2 == 1);
+        assert((idx / 2) as nat == nm1);
 
         reveal(odd_sum_up_to);
         let prev_full = odd_sum_up_to(digits, idx, B);
@@ -488,7 +488,7 @@ pub proof fn lemma_odd_sum_up_to_correct(digits: Seq<i8>, B: (nat, nat), n: nat)
         assert(prev_full == odd_sum_up_to(digits, prev_u, B));
 
         // Now rewrite prev_u to the n-1 prefix (2*(n-1)).
-        assert(prev_u == (2 * nm1) as int) by (compute);
+        assert(prev_u == (2 * nm1) as int);
         let prev = odd_sum_up_to(digits, (2 * nm1) as int, B);
         assert(prev_full == prev);
         assert(prev == edwards_scalar_mul_signed(B, radix16_odd_scalar(digits, nm1)));
@@ -566,13 +566,13 @@ pub proof fn lemma_radix16_even_scalar_step(digits: Seq<i8>, n: nat)
         let suf_idx = (2 * nm2) as int;
         assert(suf_idx + 2 < digits.len());
         assert(suf[suf_idx] == digits[suf_idx + 2]);
-        assert(suf_idx + 2 == (2 * nm1) as int) by (compute);
+        assert(suf_idx + 2 == (2 * nm1) as int);
         assert(suf[suf_idx] == digits[(2 * nm1) as int]);
 
         // pow256(nm1) = pow256(1) * pow256(nm2)
         assert((pow256(1) as int) * (pow256(nm2) as int) == (pow256(nm1) as int)) by {
             reveal(pow256);
-            assert(8 * nm1 == 8 * nm2 + 8) by (compute);
+            assert(8 * nm1 == 8 * nm2 + 8);
             vstd::arithmetic::power2::lemma_pow2_adds(8 * nm2, 8);
             // pow2(8*nm2 + 8) = pow2(8*nm2) * pow2(8)
             lemma_mul_is_commutative(pow2(8 * nm2) as int, pow2(8) as int);
@@ -666,12 +666,12 @@ pub proof fn lemma_radix16_odd_scalar_step(digits: Seq<i8>, n: nat)
         let suf_idx = (2 * nm2 + 1) as int;
         assert(suf_idx + 2 < digits.len());
         assert(suf[suf_idx] == digits[suf_idx + 2]);
-        assert(suf_idx + 2 == (2 * nm1 + 1) as int) by (compute);
+        assert(suf_idx + 2 == (2 * nm1 + 1) as int);
         assert(suf[suf_idx] == digits[(2 * nm1 + 1) as int]);
 
         assert((pow256(1) as int) * (pow256(nm2) as int) == (pow256(nm1) as int)) by {
             reveal(pow256);
-            assert(8 * nm1 == 8 * nm2 + 8) by (compute);
+            assert(8 * nm1 == 8 * nm2 + 8);
             vstd::arithmetic::power2::lemma_pow2_adds(8 * nm2, 8);
             lemma_mul_is_commutative(pow2(8 * nm2) as int, pow2(8) as int);
         }

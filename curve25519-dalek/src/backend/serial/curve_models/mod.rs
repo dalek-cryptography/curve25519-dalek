@@ -402,11 +402,29 @@ impl ConditionallySelectable for ProjectiveNielsPoint {
             T2d: FieldElement::conditional_select(&a.T2d, &b.T2d, choice),
         };
         proof {
-            // Postconditions follow from FieldElement51::conditional_select specs
-            // Each field select returns a's or b's field based on choice, so struct equals a or b
-            // Verus can't automatically derive struct equality from limb-level specs
-            assume(!choice_is_true(choice) ==> result == *a);
-            assume(choice_is_true(choice) ==> result == *b);
+            // FieldElement::conditional_select postconditions are stated in terms of limb equality.
+            assert(!choice_is_true(choice) ==> result.Y_plus_X.limbs == a.Y_plus_X.limbs);
+            assert(choice_is_true(choice) ==> result.Y_plus_X.limbs == b.Y_plus_X.limbs);
+            assert(!choice_is_true(choice) ==> result.Y_minus_X.limbs == a.Y_minus_X.limbs);
+            assert(choice_is_true(choice) ==> result.Y_minus_X.limbs == b.Y_minus_X.limbs);
+            assert(!choice_is_true(choice) ==> result.Z.limbs == a.Z.limbs);
+            assert(choice_is_true(choice) ==> result.Z.limbs == b.Z.limbs);
+            assert(!choice_is_true(choice) ==> result.T2d.limbs == a.T2d.limbs);
+            assert(choice_is_true(choice) ==> result.T2d.limbs == b.T2d.limbs);
+
+            if !choice_is_true(choice) {
+                lemma_field_element51_eq_from_limbs_eq(result.Y_plus_X, a.Y_plus_X);
+                lemma_field_element51_eq_from_limbs_eq(result.Y_minus_X, a.Y_minus_X);
+                lemma_field_element51_eq_from_limbs_eq(result.Z, a.Z);
+                lemma_field_element51_eq_from_limbs_eq(result.T2d, a.T2d);
+                assert(result == *a);
+            } else {
+                lemma_field_element51_eq_from_limbs_eq(result.Y_plus_X, b.Y_plus_X);
+                lemma_field_element51_eq_from_limbs_eq(result.Y_minus_X, b.Y_minus_X);
+                lemma_field_element51_eq_from_limbs_eq(result.Z, b.Z);
+                lemma_field_element51_eq_from_limbs_eq(result.T2d, b.T2d);
+                assert(result == *b);
+            }
         }
         result
     }
@@ -424,11 +442,29 @@ impl ConditionallySelectable for ProjectiveNielsPoint {
         self.Z.conditional_assign(&other.Z, choice);
         self.T2d.conditional_assign(&other.T2d, choice);
         proof {
-            // Postconditions follow from FieldElement51::conditional_assign specs
-            // Each field assign keeps old or assigns other based on choice
-            // Verus can't automatically derive struct equality from limb-level specs
-            assume(!choice_is_true(choice) ==> *self == *old(self));
-            assume(choice_is_true(choice) ==> *self == *other);
+            // FieldElement::conditional_assign postconditions are stated in terms of limb equality.
+            assert(!choice_is_true(choice) ==> self.Y_plus_X.limbs == old(self).Y_plus_X.limbs);
+            assert(choice_is_true(choice) ==> self.Y_plus_X.limbs == other.Y_plus_X.limbs);
+            assert(!choice_is_true(choice) ==> self.Y_minus_X.limbs == old(self).Y_minus_X.limbs);
+            assert(choice_is_true(choice) ==> self.Y_minus_X.limbs == other.Y_minus_X.limbs);
+            assert(!choice_is_true(choice) ==> self.Z.limbs == old(self).Z.limbs);
+            assert(choice_is_true(choice) ==> self.Z.limbs == other.Z.limbs);
+            assert(!choice_is_true(choice) ==> self.T2d.limbs == old(self).T2d.limbs);
+            assert(choice_is_true(choice) ==> self.T2d.limbs == other.T2d.limbs);
+
+            if !choice_is_true(choice) {
+                lemma_field_element51_eq_from_limbs_eq(self.Y_plus_X, old(self).Y_plus_X);
+                lemma_field_element51_eq_from_limbs_eq(self.Y_minus_X, old(self).Y_minus_X);
+                lemma_field_element51_eq_from_limbs_eq(self.Z, old(self).Z);
+                lemma_field_element51_eq_from_limbs_eq(self.T2d, old(self).T2d);
+                assert(*self == *old(self));
+            } else {
+                lemma_field_element51_eq_from_limbs_eq(self.Y_plus_X, other.Y_plus_X);
+                lemma_field_element51_eq_from_limbs_eq(self.Y_minus_X, other.Y_minus_X);
+                lemma_field_element51_eq_from_limbs_eq(self.Z, other.Z);
+                lemma_field_element51_eq_from_limbs_eq(self.T2d, other.T2d);
+                assert(*self == *other);
+            }
         }
     }
 }
@@ -448,11 +484,25 @@ impl ConditionallySelectable for AffineNielsPoint {
             xy2d: FieldElement::conditional_select(&a.xy2d, &b.xy2d, choice),
         };
         proof {
-            // Postconditions follow from FieldElement51::conditional_select specs
-            // Each field select returns a's or b's field based on choice, so struct equals a or b
-            // Verus can't automatically derive struct equality from limb-level specs
-            assume(!choice_is_true(choice) ==> result == *a);
-            assume(choice_is_true(choice) ==> result == *b);
+            // FieldElement::conditional_select postconditions are stated in terms of limb equality.
+            assert(!choice_is_true(choice) ==> result.y_plus_x.limbs == a.y_plus_x.limbs);
+            assert(choice_is_true(choice) ==> result.y_plus_x.limbs == b.y_plus_x.limbs);
+            assert(!choice_is_true(choice) ==> result.y_minus_x.limbs == a.y_minus_x.limbs);
+            assert(choice_is_true(choice) ==> result.y_minus_x.limbs == b.y_minus_x.limbs);
+            assert(!choice_is_true(choice) ==> result.xy2d.limbs == a.xy2d.limbs);
+            assert(choice_is_true(choice) ==> result.xy2d.limbs == b.xy2d.limbs);
+
+            if !choice_is_true(choice) {
+                lemma_field_element51_eq_from_limbs_eq(result.y_plus_x, a.y_plus_x);
+                lemma_field_element51_eq_from_limbs_eq(result.y_minus_x, a.y_minus_x);
+                lemma_field_element51_eq_from_limbs_eq(result.xy2d, a.xy2d);
+                assert(result == *a);
+            } else {
+                lemma_field_element51_eq_from_limbs_eq(result.y_plus_x, b.y_plus_x);
+                lemma_field_element51_eq_from_limbs_eq(result.y_minus_x, b.y_minus_x);
+                lemma_field_element51_eq_from_limbs_eq(result.xy2d, b.xy2d);
+                assert(result == *b);
+            }
         }
         result
     }
@@ -469,11 +519,25 @@ impl ConditionallySelectable for AffineNielsPoint {
         self.y_minus_x.conditional_assign(&other.y_minus_x, choice);
         self.xy2d.conditional_assign(&other.xy2d, choice);
         proof {
-            // Postconditions follow from FieldElement51::conditional_assign specs
-            // Each field assign keeps old or assigns other based on choice
-            // Verus can't automatically derive struct equality from limb-level specs
-            assume(!choice_is_true(choice) ==> *self == *old(self));
-            assume(choice_is_true(choice) ==> *self == *other);
+            // FieldElement::conditional_assign postconditions are stated in terms of limb equality.
+            assert(!choice_is_true(choice) ==> self.y_plus_x.limbs == old(self).y_plus_x.limbs);
+            assert(choice_is_true(choice) ==> self.y_plus_x.limbs == other.y_plus_x.limbs);
+            assert(!choice_is_true(choice) ==> self.y_minus_x.limbs == old(self).y_minus_x.limbs);
+            assert(choice_is_true(choice) ==> self.y_minus_x.limbs == other.y_minus_x.limbs);
+            assert(!choice_is_true(choice) ==> self.xy2d.limbs == old(self).xy2d.limbs);
+            assert(choice_is_true(choice) ==> self.xy2d.limbs == other.xy2d.limbs);
+
+            if !choice_is_true(choice) {
+                lemma_field_element51_eq_from_limbs_eq(self.y_plus_x, old(self).y_plus_x);
+                lemma_field_element51_eq_from_limbs_eq(self.y_minus_x, old(self).y_minus_x);
+                lemma_field_element51_eq_from_limbs_eq(self.xy2d, old(self).xy2d);
+                assert(*self == *old(self));
+            } else {
+                lemma_field_element51_eq_from_limbs_eq(self.y_plus_x, other.y_plus_x);
+                lemma_field_element51_eq_from_limbs_eq(self.y_minus_x, other.y_minus_x);
+                lemma_field_element51_eq_from_limbs_eq(self.xy2d, other.xy2d);
+                assert(*self == *other);
+            }
         }
     }
 }

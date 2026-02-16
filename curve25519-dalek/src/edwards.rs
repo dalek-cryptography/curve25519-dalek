@@ -1516,7 +1516,7 @@ impl group::WnafGroup for EdwardsPoint {
     /// scalars
     fn recommended_wnaf_for_num_scalars(_num_scalars: usize) -> usize {
         // Just return 5 for now. This is a hint function, and the hint isn't very good. We don't
-        // have empirical benchmarks to pick anything more intelligently
+        // have benchmarks to pick anything more empirically.
         5
     }
 }

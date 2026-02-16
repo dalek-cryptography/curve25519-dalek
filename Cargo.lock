@@ -298,7 +298,7 @@ dependencies = [
 
 [[package]]
 name = "curve25519-dalek"
-version = "5.0.0-pre.5"
+version = "5.0.0-pre.6"
 dependencies = [
  "bincode",
  "cfg-if",
@@ -365,7 +365,7 @@ dependencies = [
 
 [[package]]
 name = "ed25519-dalek"
-version = "3.0.0-pre.5"
+version = "3.0.0-pre.6"
 dependencies = [
  "bincode",
  "blake2",
@@ -1456,7 +1456,7 @@ dependencies = [
 
 [[package]]
 name = "x25519-dalek"
-version = "3.0.0-pre.5"
+version = "3.0.0-pre.6"
 dependencies = [
  "bincode",
  "criterion",

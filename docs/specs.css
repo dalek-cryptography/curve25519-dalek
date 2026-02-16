@@ -587,6 +587,13 @@
     text-decoration: none;
 }
 
+.spec-graph {
+    margin-left: 0.3rem;
+}
+.spec-graph:hover {
+    color: var(--accent-color, #6366f1);
+}
+
 /* Card body (expandable) */
 .spec-body {
     display: none;

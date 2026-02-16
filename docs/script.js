@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error loading CSV:', error);
             document.getElementById('csvTableBody').innerHTML = 
-                '<tr><td colspan="4" class="loading">Error loading data</td></tr>';
+                '<tr><td colspan="5" class="loading">Error loading data</td></tr>';
         }
     }
 
@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (filteredFunctions.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="loading">No functions match your filters</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="loading">No functions match your filters</td></tr>';
             return;
         }
         
@@ -275,6 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td class="function-module">${displayModule}</td>
                     <td><span class="status-badge status-${status.class}">${status.text}</span></td>
                     <td><a href="${func.link}" target="_blank" class="function-link">View Source →</a></td>
+                    <td><a href="https://beneficial-ai-foundation.github.io/dalek-lite/callgraph/?source=${encodeURIComponent(func.function.replace(/\(.*$/, ''))}&sink=${encodeURIComponent(func.function.replace(/\(.*$/, ''))}" target="_blank" class="function-link">Graph →</a></td>
                 </tr>
             `;
         }).join('');

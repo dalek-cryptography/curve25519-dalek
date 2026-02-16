@@ -37,6 +37,9 @@ const FIREBASE_CONFIG = {
 
 const FIREBASE_ENABLED = FIREBASE_CONFIG.apiKey !== "";
 
+// ── Call-graph viewer base URL ──────────────────────────────
+const CALLGRAPH_BASE_URL = "https://beneficial-ai-foundation.github.io/dalek-lite/callgraph/";
+
 // ── State ────────────────────────────────────────────────────
 let verifiedFunctions = [];
 let specFunctions = [];
@@ -362,6 +365,10 @@ function renderVerifiedCard(fn) {
             <a class="spec-github" href="${escapeAttr(fn.github_link)}" target="_blank" rel="noopener"
                title="View source on GitHub" onclick="event.stopPropagation()">
                 Source &nearr;
+            </a>
+            <a class="spec-github spec-graph" href="${CALLGRAPH_BASE_URL}?source=${encodeURIComponent(fn.display_name)}&sink=${encodeURIComponent(fn.display_name)}" target="_blank" rel="noopener"
+               title="View call graph" onclick="event.stopPropagation()">
+                Graph &nearr;
             </a>
         </div>
         <div class="spec-body"></div>
@@ -691,6 +698,10 @@ function renderSpecCard(spec) {
             <a class="spec-github" href="${escapeAttr(spec.github_link)}" target="_blank" rel="noopener"
                title="View source on GitHub" onclick="event.stopPropagation()">
                 Source &nearr;
+            </a>
+            <a class="spec-github spec-graph" href="${CALLGRAPH_BASE_URL}?source=${encodeURIComponent(spec.name)}&sink=${encodeURIComponent(spec.name)}&spec=1" target="_blank" rel="noopener"
+               title="View call graph" onclick="event.stopPropagation()">
+                Graph &nearr;
             </a>
         </div>
         <div class="spec-body"></div>

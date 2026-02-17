@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Public interface of curve25519-dalek</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<style>
+  :root {
+    --bg: var(--light-bg);
+    --surface: var(--card-bg);
+    --border: var(--border-color);
+    --text: var(--text-primary);
+    --muted: var(--text-secondary);
+    --accent: var(--primary-color);
+    --accent2: #bc4c00;
+    --accent3: #1e40af;
+    --green: #1a7f37;
+    --purple: var(--accent-color);
+    --pink: #bf3989;
+    --yellow: #9a6700;
+    --code-bg: #f8fafc;
+    --code-border: var(--border-color);
+  }
+  .interface-section {
+    padding: 2.5rem 0 4rem;
+    background: linear-gradient(135deg, var(--dark-bg) 0%, #1e3a8a 100%);
+  }
+  .interface-page {
+    max-width: 1200px;
+  }
+  .interface-hero {
+    padding: 0;
+    margin-bottom: 2rem;
+  }
+  .interface-page h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 0.7rem;
+    color: #ffffff;
+    line-height: 1.25;
+  }
+  .interface-page h1 code { color: var(--accent3); font-size: 1.9rem; }
+  .intro {
+    color: var(--text-primary);
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(191, 219, 254, 0.9);
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 12px;
+    padding: 1.2rem 1.35rem;
+  }
+  .intro p { margin-bottom: 0.7rem; }
+  .intro ul { margin: 0 0 0.9rem 1.25rem; padding: 0; }
+  .intro li { color: inherit; margin-bottom: 0.35rem; }
+  .interface-page h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-top: 2.8rem;
+    margin-bottom: 1rem;
+    color: var(--accent2);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .interface-page h2 .num {
+    background: var(--accent2);
+    color: #ffffff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .interface-page p { margin-bottom: 1rem; color: var(--text); }
+  .math-block { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: 6px; padding: 1.2rem 1.5rem; margin: 1rem 0; overflow-x: auto; text-align: center; }
+  .math-block .katex { font-size: 1.15em; }
+  .code-block { background: var(--code-bg); border: 1px solid var(--code-border); border-left: 3px solid var(--green); border-radius: 6px; padding: 1rem 1.2rem; margin: 1rem 0; overflow-x: auto; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.88rem; line-height: 1.6; }
+  .code-block .label { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 1px 8px; border-radius: 3px; margin-bottom: 0.6rem; font-family: -apple-system, sans-serif; text-transform: uppercase; letter-spacing: 0.5px; }
+  .code-block .label.signal { background: var(--accent); color: var(--bg); }
+  .code-block .label.indirect-label { background: var(--yellow); color: var(--bg); }
+  .code-block pre { white-space: pre; }
+  .kw { color: var(--pink); } .ty { color: var(--accent); } .cm { color: var(--muted); font-style: italic; } .fn { color: var(--accent3); } .st { color: var(--green); }
+  .dual { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+  .dual .math-block, .dual .code-block { margin: 0; }
+  @media (max-width: 750px) { .dual { grid-template-columns: 1fr; } }
+  .diagram-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; text-align: center; overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .diagram-container svg { max-width: 100%; height: auto; }
+  .note { background: rgba(130,80,223,0.06); border: 1px solid rgba(130,80,223,0.2); border-radius: 6px; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; color: var(--purple); }
+  .signal-note { background: rgba(9,105,218,0.06); border: 1px solid rgba(9,105,218,0.2); border-radius: 6px; padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.9rem; color: var(--accent); }
+  .tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 1px 7px; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; letter-spacing: 0.3px; }
+  .tag.x25519 { background: var(--pink); color: var(--bg); }
+  .tag.ed25519 { background: var(--accent); color: var(--bg); }
+  .tag.zkgroup { background: var(--green); color: var(--bg); }
+  .tag.xeddsa { background: var(--yellow); color: var(--bg); }
+  .tag.vrf { background: var(--purple); color: var(--bg); }
+  .map-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.88rem; }
+  .map-table th { background: var(--surface); color: var(--accent2); text-align: left; padding: 0.6rem 0.8rem; border-bottom: 2px solid var(--border); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.3px; }
+  .map-table td { padding: 0.45rem 0.8rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .map-table tr:hover { background: rgba(9,105,218,0.04); }
+  .map-table code { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--accent); }
+  .map-table .callsite { font-size: 0.78rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  .badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 10px; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+  .badge-d { background: rgba(26,127,55,0.12); color: var(--green); }
+  .badge-i { background: rgba(154,103,0,0.15); color: var(--yellow); }
+  .file-row td { background: rgba(188,76,0,0.06); font-weight: 600; font-size: 0.82rem; color: var(--accent2); padding: 0.4rem 0.8rem; }
+  /* Type overview cards */
+  .type-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin: 1.5rem 0; }
+  .type-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.2rem; text-align: left; min-width: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .type-card .tc-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.3rem; }
+  .type-card p { font-size: 0.88rem; line-height: 1.5; margin-bottom: 0.2rem; font-weight: 500; }
+  .type-card ul { margin: 0.2rem 0 0; padding-left: 1.2rem; }
+  .type-card li { font-size: 0.8rem; line-height: 1.5; color: var(--text); }
+  .type-card.tc-scalar { border-top: 3px solid var(--accent2); }
+  .type-card.tc-edwards { border-top: 3px solid var(--accent); }
+  .type-card.tc-montgomery { border-top: 3px solid var(--pink); }
+  .type-card.tc-ristretto { border-top: 3px solid var(--green); }
+  @media (max-width: 750px) { .type-row { grid-template-columns: 1fr; } }
+
+  /* Spec cards (2-column grid) */
+  .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin: 1.5rem 0; }
+  @media (max-width: 750px) { .spec-grid { grid-template-columns: 1fr; } }
+  .spec-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .spec-card .sc-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.3rem; }
+  .spec-card .sc-sub { font-weight: 700; color: var(--muted); font-size: 0.88rem; }
+  .spec-card p { font-size: 0.88rem; line-height: 1.5; margin-bottom: 0.2rem; font-weight: 500; }
+  .spec-card ul { margin: 0.2rem 0 0; padding-left: 1.2rem; }
+  .spec-card li { font-size: 0.8rem; line-height: 1.5; color: var(--text); }
+  .spec-card .sc-ref { margin-top: 0.45rem; font-size: 0.78rem; color: var(--muted); }
+  .spec-card .sc-ref + .sc-ref { margin-top: 0.2rem; }
+  .spec-card .sc-ref a { color: var(--accent3); text-decoration: none; }
+  .spec-card .sc-ref a:hover { text-decoration: underline; }
+
+  /* Protocol cards (3-column grid) */
+  h3.section-sub { font-size: 0.85rem; font-weight: 600; color: var(--muted); margin-top: 2rem; margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.3px; }
+  .protocol-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem; margin: 0.8rem 0 1.5rem; }
+  @media (max-width: 750px) { .protocol-grid { grid-template-columns: 1fr; } }
+  .protocol-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .protocol-card .pc-name { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.3rem; }
+  .protocol-card .pc-desc { font-size: 0.8rem; color: var(--text); line-height: 1.45; margin-bottom: 0; }
+  .protocol-card .pc-impl { font-size: 0.78rem; color: var(--muted); line-height: 1.4; margin-top: 0.25rem; margin-bottom: 0; }
+  .protocol-card code { font-size: 0.76rem; }
+
+  /* Structure blocks */
+  .structure-block { margin: 2rem 0; padding-top: 1.8rem; border-top: 1px solid var(--border); }
+  .structure-block:first-child { border-top: none; padding-top: 0; }
+  .structure-name { font-size: 1.12rem; font-weight: 700; color: var(--text); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.3rem; }
+  .structure-name .sn-type { color: var(--accent2); }
+
+  /* Operation accordions */
+  .ops-list { margin: 0.8rem 0 1rem; display: flex; flex-direction: column; gap: 0.2rem; }
+  .op-accordion { border-left: 3px solid var(--border); border-radius: 0 5px 5px 0; background: var(--surface); }
+  .op-accordion.mul { border-left-color: var(--pink); }
+  .op-accordion.map { border-left-color: var(--accent); }
+  .op-accordion.enc { border-left-color: var(--green); }
+  .op-accordion.cof { border-left-color: var(--purple); }
+  .op-accordion.arith { border-left-color: var(--accent2); }
+  .op-accordion.hash { border-left-color: var(--yellow); }
+  .type-card.tc-scalar .op-accordion { border-left-color: var(--accent2); }
+  .type-card.tc-edwards .op-accordion { border-left-color: var(--accent); }
+  .type-card.tc-montgomery .op-accordion { border-left-color: var(--pink); }
+  .type-card.tc-ristretto .op-accordion { border-left-color: var(--green); }
+  .op-accordion summary { cursor: pointer; padding: 0.45rem 0.85rem; font-weight: 600; font-size: 0.88rem; color: var(--text); list-style: none; display: flex; align-items: center; gap: 0.4rem; user-select: none; }
+  .op-accordion summary::-webkit-details-marker { display: none; }
+  .op-accordion summary::before { content: '\25B8'; font-size: 0.7rem; transition: transform 0.15s ease; display: inline-block; color: var(--muted); }
+  .op-accordion[open] summary::before { transform: rotate(90deg); }
+  .op-accordion summary:hover { background: rgba(37,99,235,0.08); }
+  .op-accordion .op-body { padding: 0.3rem 0.85rem 0.65rem; }
+  .op-accordion .op-body .op-math { font-size: 0.84rem; color: var(--purple); margin-bottom: 0.25rem; }
+  .op-accordion .op-body p { font-size: 0.82rem; color: var(--muted); margin-bottom: 0; line-height: 1.45; }
+
+  /* Function accordion */
+  .fn-accordion { margin: 1rem 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .fn-accordion summary { cursor: pointer; background: var(--surface); padding: 0.65rem 1rem; font-weight: 600; font-size: 0.88rem; color: var(--accent); list-style: none; display: flex; align-items: center; gap: 0.5rem; user-select: none; }
+  .fn-accordion summary::-webkit-details-marker { display: none; }
+  .fn-accordion summary::before { content: '\25B8'; font-size: 0.8rem; transition: transform 0.15s ease; display: inline-block; }
+  .fn-accordion[open] summary::before { transform: rotate(90deg); }
+  .fn-accordion summary:hover { background: rgba(37,99,235,0.08); }
+  .fn-accordion .accordion-body { padding: 1rem 1.1rem; }
+  .fn-accordion .accordion-body .map-table { margin-top: 0; }
+  .fn-count { font-weight: 400; color: var(--muted); font-size: 0.82rem; margin-left: auto; }
+  @media (max-width: 750px) {
+    .interface-page h1 { font-size: 1.75rem; }
+  }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <div class="nav-brand">
+      <img src="https://cdn.jsdelivr.net/gh/dalek-cryptography/curve25519-dalek/docs/assets/dalek-logo-clear.png" alt="Dalek Logo" class="logo">
+      <span>Dalek-Lite Verification</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="index.html#progress">Progress</a></li>
+      <li><a href="index.html#project">Project</a></li>
+      <li><a href="index.html#trust">Trust Model</a></li>
+      <li><a href="index.html#certifications">Certifications</a></li>
+      <li class="nav-sep"></li>
+      <li><a href="specs.html">Specs</a></li>
+      <li><a href="about.html" class="active">About</a></li>
+      <li><a href="https://github.com/Beneficial-AI-Foundation/dalek-lite" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<section class="section interface-section">
+<div class="container interface-page">
+
+<div class="interface-hero">
+<h1>Public interface of curve25519-dalek</h1>
+<div class="intro">
+  <p><strong>Summary</strong></p>
+  <p>This library provides implementations for a field of <strong>scalars</strong>, a group of <strong>elliptic curve points</strong>, and <strong>scalar multiplication</strong> operations over these mathematical structures. The set of scalars and the group are <strong>large</strong> enough to offer <strong>cryptographic security</strong>, and therefore require specialized efficient implementations.</p>
+  <p>In addition, the library allows <strong>bitstring conversions</strong> to and from these mathematical structures, as well as conversions between equivalent forms of the elliptic curve group. Each form (<strong>Edwards, Montgomery, Ristretto</strong>) offers specific computational advantages for cryptographic operations.</p>
+  <p><strong>Applications</strong></p>
+  <ul>
+    <li>Scalars can be used in protocols to store private keys and cryptographically secure random numbers.</li>
+    <li>Elliptic curve points can be used to represent public keys or encode private data in a secure way.</li>
+    <li>Scalar multiplication is used for multiple cryptographic operations, such as encoding, decoding, shared key generation, zero-knowledge proofs, private-key signing and verification.</li>
+  </ul>
+</div>
+</div>
+</div>
+</section>
+
+<section class="section">
+<div class="container interface-page">
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 1. SPECIFICATIONS                                     -->
+<!-- ═══════════════════════════════════════════════════ -->
+<h2><span class="num">1</span> Specifications</h2>
+
+
+<div class="spec-grid">
+  <div class="spec-card" style="border-top: 3px solid var(--accent2)">
+    <div class="sc-name" style="color:var(--accent2)">Scalar: <span class="sc-sub">Integers modulo a large prime number</span></div>
+    <ul>
+      <li>Modular arithmetic: addition, subtraction, multiplication, negation</li>
+      <li>Inversion for nonzero values</li>
+    </ul>
+    <div class="sc-ref">References: <a href="https://en.wikipedia.org/wiki/Modular_arithmetic" target="_blank" rel="noopener noreferrer">Modular arithmetic</a> · <a href="https://www.rfc-editor.org/rfc/rfc8032" target="_blank" rel="noopener noreferrer">RFC 8032</a></div>
+  </div>
+  <div class="spec-card" style="border-top: 3px solid var(--accent)">
+    <div class="sc-name" style="color:var(--accent)">Edwards: <span class="sc-sub">Elements of Edwards curve25519</span></div>
+    <ul>
+      <li>Group operations: addition, subtraction, negation</li>
+      <li>Scalar multiplication</li>
+    </ul>
+    <div class="sc-ref">References: <a href="https://en.wikipedia.org/wiki/Edwards_curve" target="_blank" rel="noopener noreferrer">Edwards curve</a> · <a href="https://www.rfc-editor.org/rfc/rfc8032" target="_blank" rel="noopener noreferrer">RFC 8032</a> · <a href="https://eprint.iacr.org/2008/013" target="_blank" rel="noopener noreferrer">ePrint 2008/013</a></div>
+  </div>
+  <div class="spec-card" style="border-top: 3px solid var(--pink)">
+    <div class="sc-name" style="color:var(--pink)">Montgomery: <span class="sc-sub">Montgomery form of Edwards curve25519</span></div>
+    <ul>
+      <li>Allows constant-time scalar multiplication (Montgomery ladder)</li>
+      <li>Convertible to/from Edwards form via standard maps</li>
+    </ul>
+    <div class="sc-ref">References: <a href="https://en.wikipedia.org/wiki/Montgomery_curve" target="_blank" rel="noopener noreferrer">Montgomery</a> · <a href="https://en.wikipedia.org/wiki/Elliptic_curve_point_multiplication#Montgomery_ladder" target="_blank" rel="noopener noreferrer">Ladder</a> · <a href="https://www.rfc-editor.org/rfc/rfc7748" target="_blank" rel="noopener noreferrer">RFC 7748</a> · <a href="https://eprint.iacr.org/2017/212" target="_blank" rel="noopener noreferrer">ePrint 2017/212</a></div>
+  </div>
+  <div class="spec-card" style="border-top: 3px solid var(--green)">
+    <div class="sc-name" style="color:var(--green)">Ristretto: <span class="sc-sub">Prime-order subgroup of Edwards curve25519</span></div>
+    <ul>
+      <li>Group operations: addition, subtraction, negation</li>
+      <li>Scalar multiplication</li>
+    </ul>
+    <div class="sc-ref">References: <a href="https://ristretto.group/" target="_blank" rel="noopener noreferrer">Ristretto Group</a> · <a href="https://www.rfc-editor.org/rfc/rfc9496" target="_blank" rel="noopener noreferrer">RFC 9496</a> · <a href="https://eprint.iacr.org/2015/673" target="_blank" rel="noopener noreferrer">ePrint 2015/673</a></div>
+  </div>
+</div>
+
+<div class="diagram-container">
+<svg viewBox="0 0 720 150" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, sans-serif">
+  <defs>
+    <marker id="ma" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#1f2328"/></marker>
+    <marker id="ma2" viewBox="0 0 10 7" refX="0" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="10 0,0 3.5,10 7" fill="#1f2328"/></marker>
+  </defs>
+  <rect x="10" y="5" width="155" height="135" rx="8" fill="#f6f8fa" stroke="#0969da" stroke-width="2"/>
+  <text x="87" y="22" text-anchor="middle" fill="#0969da" font-size="15" font-weight="700">Edwards</text>
+  <text x="87" y="40" text-anchor="middle" fill="#1f2328" font-size="10" font-weight="600">Group Arithmetic</text>
+  <rect x="30" y="100" width="115" height="28" rx="5" fill="#ffffff" stroke="#1a7f37" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="87" y="119" text-anchor="middle" fill="#1a7f37" font-size="12" font-weight="600">Ristretto</text>
+  <rect x="555" y="5" width="155" height="135" rx="8" fill="#f6f8fa" stroke="#bf3989" stroke-width="2"/>
+  <text x="632" y="22" text-anchor="middle" fill="#bf3989" font-size="15" font-weight="700">Montgomery</text>
+  <text x="632" y="40" text-anchor="middle" fill="#1f2328" font-size="10" font-weight="600">Group Arithmetic</text>
+  <rect x="295" y="72" width="130" height="65" rx="8" fill="#f6f8fa" stroke="#bc4c00" stroke-width="2"/>
+  <text x="360" y="93" text-anchor="middle" fill="#bc4c00" font-size="15" font-weight="700">Scalar</text>
+  <text x="360" y="113" text-anchor="middle" fill="#1f2328" font-size="10" font-weight="600">Modular Arithmetic</text>
+  <line x1="167" y1="35" x2="553" y2="35" stroke="#1f2328" stroke-width="1.5" marker-end="url(#ma)" marker-start="url(#ma2)"/>
+  <text x="360" y="28" text-anchor="middle" fill="#1f2328" font-size="10" font-weight="600">Equivalence Mapping</text>
+  <line x1="293" y1="104" x2="167" y2="104" stroke="#1f2328" stroke-width="1.5" marker-end="url(#ma)"/>
+  <text x="230" y="97" text-anchor="middle" fill="#1f2328" font-size="10" font-weight="600">Scalar Multiplication</text>
+  <line x1="427" y1="104" x2="553" y2="104" stroke="#1f2328" stroke-width="1.5" marker-end="url(#ma)"/>
+  <text x="490" y="97" text-anchor="middle" fill="#1f2328" font-size="10" font-weight="600">Scalar Multiplication</text>
+</svg>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 2. IMPLEMENTATION                                     -->
+<!-- ═══════════════════════════════════════════════════ -->
+<h2><span class="num">2</span> Implementations</h2>
+
+
+  <div class="type-row">
+  <div class="type-card tc-scalar">
+    <div class="tc-name"><span style="color:var(--accent2)">Scalar</span> <strong>implements:</strong></div>
+    <div class="ops-list">
+      <details class="op-accordion arith">
+        <summary>Scalar specification <span class="fn-count">5 functions</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>add(s₁, s₂)</code></td></tr>
+              <tr><td><code>sub(s₁, s₂)</code></td></tr>
+              <tr><td><code>mul(s₁, s₂)</code></td></tr>
+              <tr><td><code>neg(s)</code></td></tr>
+              <tr><td><code>invert(s)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="op-accordion enc">
+        <summary>Parsing and serialization <span class="fn-count">3 functions</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>from_canonical_bytes(b)</code></td></tr>
+              <tr><td><code>from_bits(b)</code></td></tr>
+              <tr><td><code>to_bytes / as_bytes</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="op-accordion enc">
+        <summary>Input conversions and reduction <span class="fn-count">3 functions</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>from(x: u64)</code></td></tr>
+              <tr><td><code>from_bytes_mod_order(b)</code></td></tr>
+              <tr><td><code>from_bytes_mod_order_wide(b)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="op-accordion hash">
+        <summary>Hashing and key-byte preparation helpers <span class="fn-count">3 functions</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>from_hash(h)</code></td></tr>
+              <tr><td><code>random</code></td></tr>
+              <tr><td><code>clamp_integer(b)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  </div>
+  <div class="type-card tc-edwards">
+    <div class="tc-name"><span style="color:var(--accent)">EdwardsPoint</span> <strong>implements:</strong></div>
+    <div class="ops-list">
+      <details class="op-accordion arith">
+        <summary>Edwards specification <span class="fn-count">6 functions</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>add(P, Q)</code></td></tr>
+              <tr><td><code>sub(P, Q)</code></td></tr>
+              <tr><td><code>neg(P)</code></td></tr>
+              <tr><td><code>mul_by_cofactor(P)</code></td></tr>
+              <tr><td><code>is_small_order(P)</code></td></tr>
+              <tr><td><code>is_identity(P)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="op-accordion mul">
+        <summary>Scalar-multiplication variants <span class="fn-count">4 functions</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>mul_base(s)</code></td></tr>
+              <tr><td><code>vartime_double_scalar_mul_basepoint(a, A, b)</code></td></tr>
+              <tr><td><code>random</code></td></tr>
+              <tr><td><code>mul_base_clamped(b)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="op-accordion enc">
+        <summary>Parsing and serialization <span class="fn-count">5 functions</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>compress(P)</code></td></tr>
+              <tr><td><code>AffinePoint::compress(P)</code></td></tr>
+              <tr><td><code>decompress(b)</code></td></tr>
+              <tr><td><code>to_bytes / as_bytes</code></td></tr>
+              <tr><td><code>from_slice(b)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="op-accordion enc">
+        <summary>Conversions Edwards $\leftrightarrow$ Montgomery <span class="fn-count">2 functions</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>to_montgomery(P)</code></td></tr>
+              <tr><td><code>AffinePoint::to_edwards(P)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  </div>
+  <div class="type-card tc-montgomery">
+    <div class="tc-name"><span style="color:var(--pink)">MontgomeryPoint</span> <strong>implements:</strong></div>
+    <div class="ops-list">
+      <details class="op-accordion mul">
+        <summary>Montgomery ladder multiplication <span class="fn-count">1 function</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>mul_clamped(P, b)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="op-accordion enc">
+        <summary>Conversion to Edwards form <span class="fn-count">1 function</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>to_edwards(P, sign)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="op-accordion enc">
+        <summary>Parsing and serialization <span class="fn-count">1 function</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>to_bytes / as_bytes</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  </div>
+  <div class="type-card tc-ristretto">
+    <div class="tc-name"><span style="color:var(--green)">RistrettoPoint</span> <strong>implements:</strong></div>
+    <div class="ops-list">
+      <details class="op-accordion arith">
+        <summary>Ristretto specification <span class="fn-count">12 functions</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>add(P, Q)</code></td></tr>
+              <tr><td><code>sub(P, Q)</code></td></tr>
+              <tr><td><code>neg(P)</code></td></tr>
+              <tr><td><code>mul(P, s)</code></td></tr>
+              <tr><td><code>conditional_select(a, b, c)</code></td></tr>
+              <tr><td><code>basepoint_mul(T, s)</code></td></tr>
+              <tr><td><code>mul_base(s)</code></td></tr>
+              <tr><td><code>vartime_double_scalar_mul_basepoint(a, A, b)</code></td></tr>
+              <tr><td><code>double_and_compress_batch(Ps)</code></td></tr>
+              <tr><td><code>RistrettoBasepointTable::create(P)</code></td></tr>
+              <tr><td><code>RistrettoBasepointTable::basepoint</code></td></tr>
+              <tr><td><code>vartime_multiscalar_mul(ss, Ps)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="op-accordion enc">
+        <summary>Parsing and serialization <span class="fn-count">4 functions</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>compress(P)</code></td></tr>
+              <tr><td><code>decompress(b)</code></td></tr>
+              <tr><td><code>to_bytes / as_bytes</code></td></tr>
+              <tr><td><code>from_slice(b)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="op-accordion enc">
+        <summary>Equality checks and identity <span class="fn-count">2 functions</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>ct_eq(c₁, c₂)</code></td></tr>
+              <tr><td><code>identity()</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="op-accordion hash">
+        <summary>Maps into the prime-order subgroup <span class="fn-count">3 functions</span></summary>
+        <div class="op-body">
+          <table class="map-table">
+            <thead><tr><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td><code>from_hash(h)</code></td></tr>
+              <tr><td><code>from_uniform_bytes(b)</code></td></tr>
+              <tr><td><code>random</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<div class="diagram-container">
+<svg viewBox="0 0 750 235" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, sans-serif">
+  <defs>
+    <marker id="ia" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#1f2328"/></marker>
+    <marker id="ia2" viewBox="0 0 10 7" refX="0" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="10 0,0 3.5,10 7" fill="#1f2328"/></marker>
+    <marker id="ig" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#656d76"/></marker>
+    <marker id="ig2" viewBox="0 0 10 7" refX="0" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="10 0,0 3.5,10 7" fill="#656d76"/></marker>
+  </defs>
+
+  <!-- EdwardsPoint + RistrettoPoint (left, tall) -->
+  <rect x="5" y="5" width="170" height="130" rx="8" fill="#f6f8fa" stroke="#0969da" stroke-width="2"/>
+  <text x="90" y="20" text-anchor="middle" fill="#0969da" font-size="14" font-weight="700">EdwardsPoint</text>
+  <text x="90" y="34" text-anchor="middle" fill="#1f2328" font-size="9" font-family="'JetBrains Mono', monospace">X, Y, Z, T: FieldElement</text>
+  <text x="90" y="54" text-anchor="middle" fill="#1f2328" font-size="10" font-weight="600">Group Arithmetic</text>
+  <rect x="23" y="90" width="134" height="38" rx="5" fill="#ffffff" stroke="#1a7f37" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="90" y="108" text-anchor="middle" fill="#1a7f37" font-size="10" font-weight="700">RistrettoPoint</text>
+  <text x="90" y="122" text-anchor="middle" fill="#1f2328" font-size="8" font-family="'JetBrains Mono', monospace">point: EdwardsPoint</text>
+
+  <!-- MontgomeryPoint (right, same height) -->
+  <rect x="565" y="5" width="170" height="130" rx="8" fill="#f6f8fa" stroke="#bf3989" stroke-width="2"/>
+  <text x="650" y="20" text-anchor="middle" fill="#bf3989" font-size="13" font-weight="700">MontgomeryPoint</text>
+  <text x="650" y="34" text-anchor="middle" fill="#1f2328" font-size="10" font-family="'JetBrains Mono', monospace">bytes: [u8; 32]</text>
+  <text x="650" y="54" text-anchor="middle" fill="#1f2328" font-size="10" font-weight="600">Montgomery Ladder</text>
+
+  <!-- Scalar (center, between the tall boxes) -->
+  <rect x="300" y="65" width="150" height="72" rx="8" fill="#f6f8fa" stroke="#bc4c00" stroke-width="2"/>
+  <text x="375" y="82" text-anchor="middle" fill="#bc4c00" font-size="14" font-weight="700">Scalar</text>
+  <text x="375" y="96" text-anchor="middle" fill="#1f2328" font-size="10" font-family="'JetBrains Mono', monospace">bytes: [u8; 32]</text>
+  <text x="375" y="114" text-anchor="middle" fill="#1f2328" font-size="10" font-weight="600">Modular Arithmetic</text>
+
+  <!-- Bytes (wide box at bottom) -->
+  <rect x="165" y="185" width="420" height="42" rx="8" fill="#f6f8fa" stroke="#656d76" stroke-width="1.5"/>
+  <text x="375" y="202" text-anchor="middle" fill="#424a53" font-size="14" font-weight="700">Bytes</text>
+  <text x="375" y="218" text-anchor="middle" fill="#1f2328" font-size="10" font-family="'JetBrains Mono', monospace">compress · to_bytes · as_bytes · from_slice</text>
+
+  <!-- EdwardsPoint ↔ MontgomeryPoint: conversion functions (horizontal, near top) -->
+  <line x1="177" y1="35" x2="563" y2="35" stroke="#1f2328" stroke-width="1.5" marker-end="url(#ia)" marker-start="url(#ia2)"/>
+  <text x="370" y="27" text-anchor="middle" fill="#1f2328" font-size="10" font-weight="600">Conversion Functions</text>
+
+  <!-- Scalar → EdwardsPoint: Scalar Multiplication (horizontal) -->
+  <line x1="298" y1="101" x2="177" y2="101" stroke="#1f2328" stroke-width="1.5" marker-end="url(#ia)"/>
+  <text x="237" y="94" text-anchor="middle" fill="#1f2328" font-size="10" font-weight="600">Scalar Multiplication</text>
+
+  <!-- Scalar → MontgomeryPoint: Scalar Multiplication (horizontal) -->
+  <line x1="452" y1="101" x2="563" y2="101" stroke="#1f2328" stroke-width="1.5" marker-end="url(#ia)"/>
+  <text x="507" y="94" text-anchor="middle" fill="#1f2328" font-size="10" font-weight="600">Scalar Multiplication</text>
+
+  <!-- Scalar ↔ Bytes -->
+  <line x1="375" y1="139" x2="375" y2="183" stroke="#656d76" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#ig)" marker-start="url(#ig2)"/>
+  <!-- EdwardsPoint ↔ Bytes -->
+  <line x1="90" y1="137" x2="230" y2="183" stroke="#656d76" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#ig)" marker-start="url(#ig2)"/>
+  <!-- MontgomeryPoint ↔ Bytes -->
+  <line x1="650" y1="137" x2="520" y2="183" stroke="#656d76" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#ig)" marker-start="url(#ig2)"/>
+  <text x="393" y="155" text-anchor="start" fill="#1f2328" font-size="9" font-weight="600">Conversion</text>
+  <text x="393" y="167" text-anchor="start" fill="#1f2328" font-size="9" font-weight="600">Functions</text>
+</svg>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- 3. CALL PATHS & LIBSIGNAL PROTOCOL INTEGRATION       -->
+<!-- ═══════════════════════════════════════════════════ -->
+<h2><span class="num">3</span> Call Paths &amp; Libsignal Protocol Integration</h2>
+
+<p>The Libsignal protocol stack reaches curve25519-dalek via three paths. 51 (TBD) functions are called <strong>directly</strong>; 7 (TBD) more are reached <strong>indirectly</strong> through the x25519-dalek and ed25519-dalek wrapper crates. Each protocol module consumes a distinct subset of operations.</p>
+
+<div class="diagram-container">
+<svg viewBox="0 0 920 560" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, sans-serif">
+  <defs>
+    <marker id="arr-g" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#1a7f37"/></marker>
+    <marker id="arr-y" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#9a6700"/></marker>
+  </defs>
+  <rect x="30" y="20" width="860" height="120" rx="14" fill="none" stroke="#0969da" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.5"/>
+  <text x="50" y="42" fill="#0969da" font-size="11" font-weight="700" opacity="0.7">PROTOCOL STACK</text>
+  <rect x="55" y="55" width="150" height="50" rx="8" fill="#f6f8fa" stroke="#0969da" stroke-width="1.5"/>
+  <text x="130" y="76" fill="#0969da" font-size="11" text-anchor="middle" font-weight="600">core / protocol</text>
+  <text x="130" y="93" fill="#656d76" font-size="9" text-anchor="middle">XEdDSA, Ed25519</text>
+  <rect x="235" y="55" width="130" height="50" rx="8" fill="#f6f8fa" stroke="#8250df" stroke-width="1.5"/>
+  <text x="300" y="76" fill="#8250df" font-size="11" text-anchor="middle" font-weight="600">keytrans</text>
+  <text x="300" y="93" fill="#656d76" font-size="9" text-anchor="middle">VRF proofs</text>
+  <rect x="395" y="55" width="130" height="50" rx="8" fill="#f6f8fa" stroke="#1a7f37" stroke-width="1.5"/>
+  <text x="460" y="76" fill="#1a7f37" font-size="11" text-anchor="middle" font-weight="600">zkgroup</text>
+  <text x="460" y="93" fill="#656d76" font-size="9" text-anchor="middle">credentials</text>
+  <rect x="555" y="55" width="120" height="50" rx="8" fill="#f6f8fa" stroke="#1a7f37" stroke-width="1.5"/>
+  <text x="615" y="76" fill="#1a7f37" font-size="11" text-anchor="middle" font-weight="600">poksho</text>
+  <text x="615" y="93" fill="#656d76" font-size="9" text-anchor="middle">proof system</text>
+  <rect x="705" y="55" width="140" height="50" rx="8" fill="#f6f8fa" stroke="#1a7f37" stroke-width="1.5"/>
+  <text x="775" y="76" fill="#1a7f37" font-size="11" text-anchor="middle" font-weight="600">zkcredential</text>
+  <text x="775" y="93" fill="#656d76" font-size="9" text-anchor="middle">endorsements</text>
+  <rect x="100" y="195" width="210" height="55" rx="8" fill="#f6f8fa" stroke="#9a6700" stroke-width="2"/>
+  <text x="205" y="218" fill="#9a6700" font-size="13" text-anchor="middle" font-weight="700">x25519-dalek</text>
+  <text x="205" y="236" fill="#656d76" font-size="9" text-anchor="middle">PublicKey, StaticSecret, diffie_hellman()</text>
+  <rect x="600" y="195" width="210" height="55" rx="8" fill="#f6f8fa" stroke="#9a6700" stroke-width="2"/>
+  <text x="705" y="218" fill="#9a6700" font-size="13" text-anchor="middle" font-weight="700">ed25519-dalek</text>
+  <text x="705" y="236" fill="#656d76" font-size="9" text-anchor="middle">VerifyingKey, Signature</text>
+  <rect x="30" y="310" width="860" height="230" rx="14" fill="none" stroke="#bc4c00" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.5"/>
+  <text x="50" y="332" fill="#bc4c00" font-size="11" font-weight="700" opacity="0.7">CURVE25519-DALEK</text>
+  <rect x="55" y="345" width="155" height="60" rx="8" fill="#f6f8fa" stroke="#bf3989" stroke-width="2"/>
+  <text x="132" y="369" fill="#bf3989" font-size="12" text-anchor="middle" font-weight="700">montgomery.rs</text>
+  <text x="132" y="389" fill="#656d76" font-size="10" text-anchor="middle">4 fns (1D + 3I)</text>
+  <rect x="230" y="345" width="155" height="60" rx="8" fill="#f6f8fa" stroke="#0969da" stroke-width="2"/>
+  <text x="307" y="369" fill="#0969da" font-size="12" text-anchor="middle" font-weight="700">edwards.rs</text>
+  <text x="307" y="389" fill="#656d76" font-size="10" text-anchor="middle">14 fns (12D + 2I)</text>
+  <rect x="405" y="345" width="155" height="60" rx="8" fill="#f6f8fa" stroke="#1a7f37" stroke-width="2"/>
+  <text x="482" y="369" fill="#1a7f37" font-size="12" text-anchor="middle" font-weight="700">ristretto.rs</text>
+  <text x="482" y="389" fill="#656d76" font-size="10" text-anchor="middle">21 fns (20D + 1I)</text>
+  <rect x="580" y="345" width="130" height="60" rx="8" fill="#f6f8fa" stroke="#bc4c00" stroke-width="2"/>
+  <text x="645" y="369" fill="#bc4c00" font-size="12" text-anchor="middle" font-weight="700">scalar.rs</text>
+  <text x="645" y="389" fill="#656d76" font-size="10" text-anchor="middle">15 fns (14D + 1I)</text>
+  <rect x="730" y="345" width="145" height="60" rx="8" fill="#f6f8fa" stroke="#8250df" stroke-width="1.5"/>
+  <text x="802" y="366" fill="#8250df" font-size="11" text-anchor="middle" font-weight="600">lizard.rs</text>
+  <text x="802" y="382" fill="#656d76" font-size="9" text-anchor="middle">2 fns</text>
+  <text x="802" y="396" fill="#656d76" font-size="9" text-anchor="middle">traits.rs: 2 fns</text>
+  <rect x="180" y="440" width="560" height="55" rx="8" fill="#f6f8fa" stroke="#8250df" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
+  <text x="460" y="462" fill="#8250df" font-size="10" text-anchor="middle" opacity="0.7">Curve25519 / edwards25519: $-x^2 + y^2 = 1 + dx^2y^2$ over $\mathbb{F}_p$</text>
+  <text x="460" y="480" fill="#8c959f" font-size="9" text-anchor="middle">p = 2^255 - 19 &middot; cofactor h = 8 &middot; group order L = 2^252 + 277423...</text>
+  <path d="M 130 105 L 130 175 Q 130 185 140 185 L 300 185 Q 310 185 310 195 L 310 340" fill="none" stroke="#1a7f37" stroke-width="2" marker-end="url(#arr-g)"/>
+  <text x="180" y="175" fill="#1a7f37" font-size="8" font-weight="600">DIRECT (51 fns)</text>
+  <path d="M 300 105 L 300 170 Q 300 180 310 180 L 480 180 Q 490 180 490 190 L 490 340" fill="none" stroke="#1a7f37" stroke-width="1.5" marker-end="url(#arr-g)" opacity="0.5"/>
+  <path d="M 460 105 L 460 170 Q 460 180 470 180 L 640 180 Q 650 180 650 190 L 650 340" fill="none" stroke="#1a7f37" stroke-width="1.5" marker-end="url(#arr-g)" opacity="0.5"/>
+  <path d="M 775 105 L 775 170 Q 775 180 780 180 L 800 180 Q 810 180 810 190 L 810 340" fill="none" stroke="#1a7f37" stroke-width="1.5" marker-end="url(#arr-g)" opacity="0.5"/>
+  <line x1="130" y1="105" x2="170" y2="195" stroke="#9a6700" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-y)"/>
+  <path d="M 205 250 L 132 340" fill="none" stroke="#9a6700" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arr-y)"/>
+  <text x="140" y="300" fill="#9a6700" font-size="8" font-weight="600">3 fns</text>
+  <path d="M 205 250 L 290 340" fill="none" stroke="#9a6700" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arr-y)"/>
+  <text x="265" y="300" fill="#9a6700" font-size="8" font-weight="600">2 fns</text>
+  <line x1="775" y1="105" x2="730" y2="195" stroke="#9a6700" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-y)"/>
+  <path d="M 700 250 L 500 340" fill="none" stroke="#9a6700" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arr-y)"/>
+  <text x="580" y="298" fill="#9a6700" font-size="8" font-weight="600">1 fn</text>
+  <path d="M 710 250 L 650 340" fill="none" stroke="#9a6700" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arr-y)"/>
+  <text x="680" y="298" fill="#9a6700" font-size="8" font-weight="600">1 fn</text>
+  <rect x="55" y="510" width="10" height="3" fill="#1a7f37"/>
+  <text x="72" y="514" fill="#1a7f37" font-size="9">Direct (51)</text>
+  <line x1="170" y1="512" x2="180" y2="512" stroke="#9a6700" stroke-width="2" stroke-dasharray="3,2"/>
+  <text x="188" y="514" fill="#9a6700" font-size="9">Indirect via wrapper (7)</text>
+</svg>
+</div>
+
+<table class="map-table">
+  <thead>
+    <tr><th>Source File</th><th>Direct</th><th>Indirect</th><th>Total</th><th>Primary Protocol</th><th>Dominant Consumer</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>montgomery.rs</code></td><td>1</td><td>3</td><td><strong>4</strong></td>
+      <td><span class="tag x25519">X25519</span> <span class="tag xeddsa">XEdDSA</span></td>
+      <td>x25519-dalek (DH), core (XEdDSA verify)</td>
+    </tr>
+    <tr>
+      <td><code>edwards.rs</code></td><td>12</td><td>2</td><td><strong>14</strong></td>
+      <td><span class="tag ed25519">Ed25519</span> <span class="tag vrf">VRF</span></td>
+      <td>keytrans/vrf.rs, core/curve25519.rs</td>
+    </tr>
+    <tr>
+      <td><code>ristretto.rs</code></td><td>20</td><td>1</td><td><strong>21</strong></td>
+      <td><span class="tag zkgroup">zkgroup</span></td>
+      <td>zkgroup, zkcredential, poksho, svrb</td>
+    </tr>
+    <tr>
+      <td><code>scalar.rs</code></td><td>14</td><td>1</td><td><strong>15</strong></td>
+      <td><span class="tag ed25519">Ed25519</span> <span class="tag zkgroup">zkgroup</span></td>
+      <td>universal (all crates)</td>
+    </tr>
+    <tr>
+      <td><code>lizard_ristretto.rs</code></td><td>2</td><td>0</td><td><strong>2</strong></td>
+      <td><span class="tag zkgroup">zkgroup</span></td>
+      <td>uid_struct.rs, uid_encryption.rs</td>
+    </tr>
+    <tr>
+      <td><code>traits.rs</code></td><td>2</td><td>0</td><td><strong>2</strong></td>
+      <td><span class="tag vrf">VRF</span> <span class="tag zkgroup">zkgroup</span></td>
+      <td>keytrans/vrf.rs, endorsements.rs</td>
+    </tr>
+    <tr style="font-weight:700; border-top: 2px solid var(--border);">
+      <td>Total</td><td>51</td><td style="color:var(--yellow)">7</td><td style="color:var(--accent)">58</td>
+      <td colspan="2"></td>
+    </tr>
+  </tbody>
+</table>
+
+<details class="fn-accordion">
+  <summary><span class="tag ed25519" style="margin:0">Ed25519</span> &ensp; Signatures &amp; Identity Keys <span class="fn-count">core / protocol</span></summary>
+  <div class="accordion-body">
+    <p>Ed25519 signatures are the foundation of Signal&rsquo;s identity and message authentication. The signing key is a <strong>Scalar</strong> (clamped); the verification key is a compressed <strong>Edwards</strong> point.</p>
+    <table class="map-table">
+      <thead><tr><th>Operation</th><th>Type</th><th>Key Call Sites</th></tr></thead>
+      <tbody>
+        <tr><td>Sign (scalar mul)</td><td>Scalar &times; Edwards</td><td class="callsite">ed25519-dalek &rarr; mul_base_clamped, from_bits</td></tr>
+        <tr><td>Verify ($[a]A + [b]B$)</td><td>Edwards</td><td class="callsite">vartime_double_scalar_mul_basepoint</td></tr>
+        <tr><td>Hash-to-scalar</td><td>Scalar</td><td class="callsite">from_bytes_mod_order_wide, from_hash</td></tr>
+        <tr><td>Key encoding</td><td>Edwards</td><td class="callsite">compress, decompress, as_bytes, from_slice</td></tr>
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<details class="fn-accordion">
+  <summary><span class="tag x25519" style="margin:0">X25519</span> &ensp; Diffie-Hellman Key Agreement <span class="fn-count">x25519-dalek</span></summary>
+  <div class="accordion-body">
+    <p>X25519 performs Diffie-Hellman on the <strong>Montgomery</strong> curve via the constant-time ladder. Private keys are clamped scalars; public keys are $u$-coordinates.</p>
+    <table class="map-table">
+      <thead><tr><th>Operation</th><th>Type</th><th>Key Call Sites</th></tr></thead>
+      <tbody>
+        <tr><td>DH ($[s]P$)</td><td>Montgomery</td><td class="callsite">x25519-dalek &rarr; mul_clamped</td></tr>
+        <tr><td>Clamping</td><td>Scalar</td><td class="callsite">clamp_integer</td></tr>
+        <tr><td>Public key extract</td><td>Montgomery</td><td class="callsite">as_bytes, to_bytes</td></tr>
+      </tbody>
+    </table>
+    <div class="code-block" style="margin-top: 0.8rem;">
+      <div class="label indirect-label">x25519-dalek wrapper</div>
+      <pre><span class="kw">pub fn</span> <span class="fn">diffie_hellman</span>(secret: &amp;StaticSecret, public: &amp;PublicKey) -&gt; SharedSecret {
+    <span class="cm">// clamp_integer → MontgomeryPoint::mul_clamped → as_bytes</span>
+}</pre>
+    </div>
+  </div>
+</details>
+
+<details class="fn-accordion">
+  <summary><span class="tag xeddsa" style="margin:0">XEdDSA</span> &ensp; Signatures from X25519 Keys <span class="fn-count">core/curve25519.rs</span></summary>
+  <div class="accordion-body">
+    <p>XEdDSA allows signing with an X25519 private key by converting the <strong>Montgomery</strong> public key back to <strong>Edwards</strong> form. Used in Signal&rsquo;s sealed sender and key verification.</p>
+    <table class="map-table">
+      <thead><tr><th>Operation</th><th>Type</th><th>Key Call Sites</th></tr></thead>
+      <tbody>
+        <tr><td>Curve conversion</td><td>Montgomery &rarr; Edwards</td><td class="callsite">to_edwards(sign)</td></tr>
+        <tr><td>Signature verify</td><td>Edwards</td><td class="callsite">vartime_double_scalar_mul_basepoint</td></tr>
+        <tr><td>Cofactor check</td><td>Edwards</td><td class="callsite">mul_by_cofactor, is_small_order, is_identity</td></tr>
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<details class="fn-accordion">
+  <summary><span class="tag zkgroup" style="margin:0">zkgroup</span> &ensp; Anonymous Credentials <span class="fn-count">zkgroup / zkcredential / poksho / svrb</span></summary>
+  <div class="accordion-body">
+    <p>zkgroup uses the <strong>Ristretto</strong> group for anonymous credential issuance, presentation, and verification. Prime order eliminates cofactor issues in zero-knowledge proofs.</p>
+    <table class="map-table">
+      <thead><tr><th>Operation</th><th>Type</th><th>Key Call Sites</th></tr></thead>
+      <tbody>
+        <tr><td>Pedersen commit</td><td>Ristretto</td><td class="callsite">mul, add, sub, mul_base</td></tr>
+        <tr><td>Credential MAC</td><td>Ristretto</td><td class="callsite">basepoint_mul, from_hash</td></tr>
+        <tr><td>Batch verify</td><td>Ristretto</td><td class="callsite">vartime_multiscalar_mul, double_and_compress_batch</td></tr>
+        <tr><td>UID encoding</td><td>Ristretto</td><td class="callsite">lizard_encode, lizard_decode</td></tr>
+        <tr><td>Wire format</td><td>Ristretto</td><td class="callsite">compress, decompress, as_bytes, from_slice, ct_eq</td></tr>
+        <tr><td>Point construction</td><td>Ristretto</td><td class="callsite">from_uniform_bytes, random, RistrettoBasepointTable::create</td></tr>
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<details class="fn-accordion">
+  <summary><span class="tag vrf" style="margin:0">VRF</span> &ensp; Verifiable Random Functions <span class="fn-count">keytrans/vrf.rs</span></summary>
+  <div class="accordion-body">
+    <p>Key Transparency uses VRF proofs over both <strong>Edwards</strong> and <strong>Ristretto</strong> points for verifiable pseudorandom evaluation.</p>
+    <table class="map-table">
+      <thead><tr><th>Operation</th><th>Type</th><th>Key Call Sites</th></tr></thead>
+      <tbody>
+        <tr><td>VRF evaluate</td><td>Edwards &amp; Ristretto</td><td class="callsite">mul_base, vartime_double_scalar_mul_basepoint</td></tr>
+        <tr><td>Multi-scalar</td><td>Ristretto</td><td class="callsite">vartime_multiscalar_mul</td></tr>
+        <tr><td>Scalar ops</td><td>Scalar</td><td class="callsite">invert, mul, from_bytes_mod_order_wide</td></tr>
+      </tbody>
+    </table>
+  </div>
+</details>
+
+
+ </div>
+</section>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false}
+      ],
+      throwOnError: false
+    });
+  });
+</script>
+
+</body>
+</html>

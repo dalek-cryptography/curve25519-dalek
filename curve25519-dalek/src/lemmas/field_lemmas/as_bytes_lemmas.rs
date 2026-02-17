@@ -894,6 +894,33 @@ pub proof fn lemma_canonical_bytes_bit255_zero(bytes: &[u8; 32], val: nat)
     ;
 }
 
+/// Helper: For any 32-byte array, (bytes[0] & 1 == 1) iff (u8_32_as_nat(bytes) % 2 == 1).
+/// Extracted to reduce solver pressure on the main lemma.
+proof fn lemma_byte0_parity_equals_nat_parity(bytes: &[u8; 32])
+    ensures
+        (bytes[0] & 1 == 1) == (u8_32_as_nat(bytes) % 2 == 1),
+{
+    let byte0 = bytes[0];
+
+    // u8_32_as_nat % pow2(8) == bytes_as_nat_prefix(bytes@, 1)
+    lemma_u8_32_as_nat_mod_truncates(bytes, 1);
+
+    // bytes_as_nat_prefix(bytes@, 1) = byte0
+    assert(bytes_as_nat_prefix(bytes@, 1) == (byte0 as nat)) by {
+        reveal_with_fuel(bytes_as_nat_prefix, 2);
+        lemma2_to64();
+        assert(bytes@[0] == byte0);
+        assert(bytes_as_nat_prefix(bytes@, 0) == 0);
+        assert(pow2(0) == 1);
+    };
+
+    // pow2(8) == 128 * 2, so (x % pow2(8)) % 2 == x % 2
+    lemma2_to64();
+    lemma_mod_mod(u8_32_as_nat(bytes) as int, 2, 128);
+
+    assert((byte0 & 1 == 1) == ((byte0 as nat) % 2 == 1)) by (bit_vector);
+}
+
 /// The low bit of the byte encoding equals the parity of the field element.
 ///
 /// (spec_fe51_as_bytes(fe)[0] & 1 == 1) <==> (fe51_as_canonical_nat(fe) % 2 == 1)
@@ -901,56 +928,11 @@ pub proof fn lemma_is_negative_equals_parity(fe: &FieldElement51)
     ensures
         (spec_fe51_as_bytes(fe)[0] & 1 == 1) == (fe51_as_canonical_nat(fe) % 2 == 1),
 {
-    // The canonical byte encoding has u8_32_as_nat(bytes) == fe51_as_canonical_nat(fe)
-    // In little-endian: bytes[0] & 1 = value % 2
-    // Step 1: Connect spec_fe51_as_bytes to fe51_as_canonical_nat
     lemma_u8_32_as_nat_of_spec_fe51_to_bytes(fe);
     let bytes = seq_to_array_32(spec_fe51_as_bytes(fe));
     assert(u8_32_as_nat(&bytes) == fe51_as_canonical_nat(fe));
-
-    let byte0 = bytes[0];
-    assert(byte0 == spec_fe51_as_bytes(fe)[0]);
-
-    // Step 2: Use modulo truncation to show u8_32_as_nat % 2 == byte0 % 2
-    lemma_u8_32_as_nat_mod_truncates(&bytes, 1);
-    assert(u8_32_as_nat(&bytes) % pow2(8) == bytes_as_nat_prefix(bytes@, 1));
-
-    // bytes_as_nat_prefix(bytes@, 1) = byte0 * pow2(0) = byte0
-    assert(bytes_as_nat_prefix(bytes@, 1) == (byte0 as nat)) by {
-        reveal_with_fuel(bytes_as_nat_prefix, 2);
-        lemma2_to64();
-        assert(bytes@[0] == byte0);
-        assert(bytes_as_nat_prefix(bytes@, 0) == 0);
-        assert(bytes_as_nat_prefix(bytes@, 1) == bytes_as_nat_prefix(bytes@, 0) + pow2(0)
-            * bytes@[0] as nat);
-        assert(pow2(0) == 1);
-        assert(bytes_as_nat_prefix(bytes@, 1) == 0 + 1 * (byte0 as nat));
-    };
-
-    // Therefore: u8_32_as_nat(&bytes) % pow2(8) == byte0
-    assert(u8_32_as_nat(&bytes) % pow2(8) == (byte0 as nat));
-
-    // Step 3: Show pow2(8) is even, so (x % pow2(8)) % 2 == x % 2
-    assert(pow2(8) == 256) by {
-        lemma2_to64();
-    };
-    assert(pow2(8) % 2 == 0) by {
-        lemma_pow2_even(8);
-    };
-
-    // (u8_32_as_nat % 256) % 2 == u8_32_as_nat % 2
-    assert((u8_32_as_nat(&bytes) % pow2(8)) % 2 == u8_32_as_nat(&bytes) % 2) by {
-        lemma_mod_mod(u8_32_as_nat(&bytes) as int, pow2(8) as int, 2);
-    };
-
-    // byte0 % 2 == u8_32_as_nat % 2
-    assert((byte0 as nat) % 2 == u8_32_as_nat(&bytes) % 2);
-
-    // Therefore: byte0 % 2 == fe51_as_canonical_nat(fe) % 2
-    assert((byte0 as nat) % 2 == fe51_as_canonical_nat(fe) % 2);
-
-    // Step 4: Use bit_vector to connect byte0 & 1 with byte0 % 2
-    assert((byte0 & 1 == 1) == ((byte0 as nat) % 2 == 1)) by (bit_vector);
+    assert(bytes[0] == spec_fe51_as_bytes(fe)[0]);
+    lemma_byte0_parity_equals_nat_parity(&bytes);
 }
 
 /// Point compression stores the sign of x in bit 255 of the y-encoding.

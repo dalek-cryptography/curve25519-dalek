@@ -62,9 +62,13 @@ use crate::lemmas::common_lemmas::number_theory_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::common_lemmas::pow_lemmas::*;
 #[allow(unused_imports)]
+use crate::lemmas::field_lemmas::add_lemmas::*;
+#[allow(unused_imports)]
 use crate::lemmas::field_lemmas::as_bytes_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::batch_invert_lemmas::*;
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::constants_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::field_algebra_lemmas::*;
 #[allow(unused_imports)]
@@ -1292,12 +1296,9 @@ impl FieldElement {
     /// - `(Choice(0), zero)           ` if `self` is zero;
     /// - `(Choice(0), +sqrt(i/self))  ` if `self` is a nonzero nonsquare;
     ///
-    pub(crate) fn invsqrt(&self) -> (result: (
-        Choice,
-        FieldElement,
-    ))
-    // VERIFICATION NOTE: PROOF BYPASS
-
+    pub(crate) fn invsqrt(&self) -> (result: (Choice, FieldElement))
+        requires
+            fe51_limbs_bounded(self, 54),
         ensures
     // When self = 0: return (false, 0)
 
@@ -1309,7 +1310,17 @@ impl FieldElement {
             (!choice_is_true(result.0) && fe51_as_canonical_nat(self) != 0)
                 ==> fe51_is_sqrt_ratio_times_i(&FieldElement::ONE, self, &result.1),
     {
-        assume(false);
+        proof {
+            // sqrt_ratio_i requires fe51_limbs_bounded(u, 54)
+            assert(fe51_limbs_bounded(&FieldElement::ONE, 54)) by {
+                lemma_one_limbs_bounded_51();
+                lemma_fe51_limbs_bounded_weaken(&FieldElement::ONE, 51, 54);
+            };
+            // ONE != 0 lets Z3 transfer all sqrt_ratio_i postconditions to invsqrt
+            assert(fe51_as_canonical_nat(&FieldElement::ONE) == 1) by {
+                lemma_one_field_element_value();
+            };
+        }
         FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)
     }
 }

@@ -904,7 +904,9 @@ pub proof fn lemma_is_negative_equals_parity(fe: &FieldElement51)
     // The canonical byte encoding has u8_32_as_nat(bytes) == fe51_as_canonical_nat(fe)
     // In little-endian: bytes[0] & 1 = value % 2
     // Step 1: Connect spec_fe51_as_bytes to fe51_as_canonical_nat
-    lemma_u8_32_as_nat_of_spec_fe51_to_bytes(fe);
+    assert(u8_32_as_nat(&seq_to_array_32(spec_fe51_as_bytes(fe))) == fe51_as_canonical_nat(fe)) by {
+        lemma_u8_32_as_nat_of_spec_fe51_to_bytes(fe);
+    }
     let bytes = seq_to_array_32(spec_fe51_as_bytes(fe));
     assert(u8_32_as_nat(&bytes) == fe51_as_canonical_nat(fe));
 
@@ -912,8 +914,9 @@ pub proof fn lemma_is_negative_equals_parity(fe: &FieldElement51)
     assert(byte0 == spec_fe51_as_bytes(fe)[0]);
 
     // Step 2: Use modulo truncation to show u8_32_as_nat % 2 == byte0 % 2
-    lemma_u8_32_as_nat_mod_truncates(&bytes, 1);
-    assert(u8_32_as_nat(&bytes) % pow2(8) == bytes_as_nat_prefix(bytes@, 1));
+    assert(u8_32_as_nat(&bytes) % pow2(8) == bytes_as_nat_prefix(bytes@, 1)) by {
+        lemma_u8_32_as_nat_mod_truncates(&bytes, 1);
+    }
 
     // bytes_as_nat_prefix(bytes@, 1) = byte0 * pow2(0) = byte0
     assert(bytes_as_nat_prefix(bytes@, 1) == (byte0 as nat)) by {

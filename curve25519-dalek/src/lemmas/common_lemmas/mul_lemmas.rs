@@ -241,4 +241,26 @@ pub proof fn lemma_mul_commutative_8_terms(
     lemma_mul_is_commutative(a7, b7);
 }
 
+/// Product-square factorization: (a*b)*(a*b) == (a*a)*(b*b)
+///
+/// This avoids the 15-line manual associativity/commutativity chain that
+/// otherwise appears wherever this identity is needed.
+pub proof fn lemma_product_square_factorize(a: int, b: int)
+    ensures
+        (a * b) * (a * b) == (a * a) * (b * b),
+{
+    // (a*b)*(a*b) = a*(b*(a*b))        [assoc]
+    lemma_mul_is_associative(a, b, a * b);
+    // b*(a*b) = (b*a)*b                [assoc]
+    lemma_mul_is_associative(b, a, b);
+    // b*a = a*b                        [comm]
+    lemma_mul_is_commutative(b, a);
+    // a*((a*b)*b) = (a*(a*b))*b        [assoc]
+    lemma_mul_is_associative(a, a * b, b);
+    // a*(a*b) = (a*a)*b                [assoc]
+    lemma_mul_is_associative(a, a, b);
+    // ((a*a)*b)*b = (a*a)*(b*b)        [assoc]
+    lemma_mul_is_associative(a * a, b, b);
+}
+
 } // verus!

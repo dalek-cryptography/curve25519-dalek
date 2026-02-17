@@ -58,6 +58,8 @@ use crate::specs::field_specs::*;
 use crate::specs::field_specs_u64::*;
 
 #[allow(unused_imports)]
+use crate::lemmas::common_lemmas::number_theory_lemmas::*;
+#[allow(unused_imports)]
 use crate::lemmas::common_lemmas::pow_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::as_bytes_lemmas::*;
@@ -73,7 +75,8 @@ use crate::lemmas::field_lemmas::pow22501_t19_lemma::*;
 use crate::lemmas::field_lemmas::pow22501_t3_lemma::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::pow_p58_lemma::*;
-#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::sqrt_m1_lemmas::*;
+use crate::lemmas::field_lemmas::sqrt_ratio_lemmas::*;
 use crate::lemmas::field_lemmas::u64_5_as_nat_lemmas::*;
 
 verus! {
@@ -955,17 +958,12 @@ impl FieldElement {
             // When unsuccessful and v ≠ 0: r² * v ≡ i*u (mod p) [nonsquare case]
             (!choice_is_true(result.0) && fe51_as_canonical_nat(v) != 0 && fe51_as_canonical_nat(u)
                 != 0) ==> fe51_is_sqrt_ratio_times_i(u, v, &result.1),
-            // NEW: The result is always the "non-negative" square root (LSB = 0)
+            // The result is always the "non-negative" square root (LSB = 0)
             // This is a fundamental property of sqrt_ratio_i that the original code
             // relies on for decompression sign bit handling
             fe51_as_canonical_nat(&result.1) % 2 == 0,
             // Limb bounds: result is 52-bit bounded (from conditional_negate)
-            fe51_limbs_bounded(
-                &result.1,
-                52,
-            ),
-    // VERIFICATION NOTE: PROOF BYPASS
-
+            fe51_limbs_bounded(&result.1, 52),
     {
         // Using the same trick as in ed25519 decoding, we merge the
         // inversion, the square root, and the square test as follows.
@@ -990,13 +988,53 @@ impl FieldElement {
         // If vr^2 = -u, then sqrt(u/v) = r*sqrt(-1).
         //
         // If v is zero, r is also zero.
-        proof {
-            assume(false);  // PROOF BYPASS
-        }
+        /* ORIGINAL_CODE
         let v3 = &v.square() * v;
         let v7 = &v3.square() * v;
         let mut r = &(u * &v3) * &(u * &v7).pow_p58();
         let check = v * &r.square();
+        */
+        // MODIFIED: Split expressions for bounds proof assertions
+        let v_sq = v.square();
+        proof {
+            assert(fe51_limbs_bounded(&v_sq, 52));
+        }
+        let v3 = &v_sq * v;
+        proof {
+            assert(fe51_limbs_bounded(&v3, 52));
+        }
+        let v3_sq = v3.square();
+        proof {
+            assert(fe51_limbs_bounded(&v3_sq, 52));
+        }
+        let v7 = &v3_sq * v;
+        proof {
+            assert(fe51_limbs_bounded(&v7, 52));
+        }
+        let uv3 = u * &v3;
+        proof {
+            assert(fe51_limbs_bounded(&uv3, 52));
+        }
+        let uv7 = u * &v7;
+        proof {
+            assert(fe51_limbs_bounded(&uv7, 52));
+        }
+        let pow_result = uv7.pow_p58();
+        proof {
+            assert(fe51_limbs_bounded(&pow_result, 54));
+        }
+        let mut r = &uv3 * &pow_result;
+        proof {
+            assert(fe51_limbs_bounded(&r, 52));
+        }
+        let r_sq = r.square();
+        proof {
+            assert(fe51_limbs_bounded(&r_sq, 52));
+        }
+        let check = v * &r_sq;
+        proof {
+            assert(fe51_limbs_bounded(&check, 52));
+        }
 
         let i = &constants::SQRT_M1;
 
@@ -1006,32 +1044,238 @@ impl FieldElement {
         // let flipped_sign_sqrt = check.ct_eq(&(-u));
         // let flipped_sign_sqrt_i = check.ct_eq(&(&(-u) * i));
         // REFACTORED: Use wrapper to avoid Verus internal error with negation
-        let u_neg = negate_field(u);
+        let u_neg = negate_field_element(u);
+        proof {
+            assert(fe51_limbs_bounded(&u_neg, 52));
+            axiom_sqrt_m1_limbs_bounded();
+        }
         let flipped_sign_sqrt = check.ct_eq(&u_neg);
-        let flipped_sign_sqrt_i = check.ct_eq(&(&u_neg * i));
+        let u_neg_i = &u_neg * i;
+        proof {
+            assert(fe51_limbs_bounded(&u_neg_i, 52));
+        }
+        let flipped_sign_sqrt_i = check.ct_eq(&u_neg_i);
 
         let r_prime = &constants::SQRT_M1 * &r;
+        proof {
+            assert(fe51_limbs_bounded(&r_prime, 52));
+            assert(fe51_limbs_bounded(&r, 52));
+        }
         // ORIGINAL CODE:
         // r.conditional_assign(&r_prime, flipped_sign_sqrt | flipped_sign_sqrt_i);
         // REFACTORED: Use wrapper for Choice bitwise OR
+        let ghost r_before_assign = r;
         r.conditional_assign(&r_prime, choice_or(flipped_sign_sqrt, flipped_sign_sqrt_i));
+
+        proof {
+            // After conditional_assign: r.limbs are either r_before_assign.limbs or r_prime.limbs
+            // Both are 52-bit bounded, so r is 52-bit bounded
+            assert(fe51_limbs_bounded(&r_before_assign, 52));
+            assert(fe51_limbs_bounded(&r_prime, 52));
+            // The ensures says r.limbs == r_prime.limbs OR r.limbs == old(r).limbs
+            assert(r.limbs == r_prime.limbs || r.limbs == r_before_assign.limbs);
+            assert(fe51_limbs_bounded(&r, 52));
+        }
 
         // Choose the nonnegative square root.
         let r_is_negative = r.is_negative();
+        let ghost r_before_negate = r;
         // ORIGINAL CODE:
         // r.conditional_negate(r_is_negative);
         // REFACTORED: Use specialized wrapper with specs
-        proof {
-            // r is bounded after conditional_assign (result of multiplications and pow_p58)
-            // This will need to be proven when we remove the assume(false) bypass
-            assume(fe51_limbs_bounded(&r, 51));
-        }
         conditional_negate_field_element(&mut r, r_is_negative);
+
+        proof {
+            // Parity (even) and 52-bit bound after conditional_negate
+            lemma_negate_makes_nonnegative(&r_before_negate, &r, r_is_negative);
+        }
 
         // ORIGINAL CODE:
         // let was_nonzero_square = correct_sign_sqrt | flipped_sign_sqrt;
         // REFACTORED: Use wrapper for Choice bitwise OR
         let was_nonzero_square = choice_or(correct_sign_sqrt, flipped_sign_sqrt);
+
+        proof {
+            // =================================================================
+            // Block 1: Bridging — connect FE51 intermediates to nat-level spec
+            // =================================================================
+            let pn = p();
+            p_gt_2();
+            let u_nat = fe51_as_canonical_nat(u);
+            let v_nat = fe51_as_canonical_nat(v);
+            let r_orig_nat = fe51_as_canonical_nat(&r_before_assign);
+
+            // Connect square outputs to field_square at nat level
+            assert(fe51_as_canonical_nat(&r_sq) == field_square(r_orig_nat)) by {
+                let limbs_nat = u64_5_as_nat(r_before_assign.limbs);
+                lemma_pow_2_is_mul(limbs_nat as int);
+                lemma_mul_mod_noop_general(limbs_nat as int, limbs_nat as int, pn as int);
+            };
+            assert(fe51_as_canonical_nat(&check) == field_mul(v_nat, field_square(r_orig_nat)));
+
+            assert(fe51_as_canonical_nat(&v_sq) == field_square(v_nat)) by {
+                let v_limbs = u64_5_as_nat(v.limbs);
+                lemma_pow_2_is_mul(v_limbs as int);
+                lemma_mul_mod_noop_general(v_limbs as int, v_limbs as int, pn as int);
+            };
+
+            let v3_nat = field_mul(field_square(v_nat), v_nat);
+            assert(fe51_as_canonical_nat(&v3) == v3_nat);
+
+            assert(fe51_as_canonical_nat(&v3_sq) == field_square(v3_nat)) by {
+                let v3_limbs = u64_5_as_nat(v3.limbs);
+                lemma_pow_2_is_mul(v3_limbs as int);
+                lemma_mul_mod_noop_general(v3_limbs as int, v3_limbs as int, pn as int);
+            };
+
+            let v7_nat = field_mul(field_square(v3_nat), v_nat);
+            assert(fe51_as_canonical_nat(&v7) == v7_nat);
+
+            let w_nat = field_mul(u_nat, v7_nat);
+            assert(fe51_as_canonical_nat(&uv7) == w_nat);
+
+            let uv3_nat = field_mul(u_nat, v3_nat);
+            assert(fe51_as_canonical_nat(&uv3) == uv3_nat);
+
+            let k_nat = ((pn - 5) / 8) as nat;
+            lemma_p_divisibility_facts();
+            assert(k_nat == (pow2(252) - 3) as nat);
+
+            let pow_result_nat = fe51_as_canonical_nat(&pow_result);
+            assert(pow_result_nat == (pow(w_nat as int, k_nat) as nat) % pn);
+
+            assert(pow(w_nat as int, k_nat) >= 0) by {
+                lemma_pow_nonnegative(w_nat as int, k_nat);
+            };
+
+            assert(r_orig_nat == field_mul(uv3_nat, pow_result_nat));
+
+            // =================================================================
+            // Block 2: Setup — canonical nats, ct_eq conversion, conditional_assign
+            // =================================================================
+            let check_nat = fe51_as_canonical_nat(&check);
+            let r_assigned_nat = fe51_as_canonical_nat(&r_before_negate);
+            let r_final_nat = fe51_as_canonical_nat(&r);
+
+            assert(u_nat < pn && v_nat < pn && check_nat < pn && r_orig_nat < pn && r_assigned_nat
+                < pn && r_final_nat < pn) by {
+                lemma_mod_bound(u_nat as int, pn as int);
+                lemma_mod_bound(v_nat as int, pn as int);
+                lemma_mod_bound(check_nat as int, pn as int);
+                lemma_mod_bound(r_orig_nat as int, pn as int);
+                lemma_mod_bound(r_assigned_nat as int, pn as int);
+                lemma_mod_bound(r_final_nat as int, pn as int);
+            };
+
+            // Convert ct_eq byte-level results to canonical nat equality
+            assert(choice_is_true(correct_sign_sqrt) == (check_nat == u_nat)) by {
+                lemma_ct_eq_iff_canonical_nat(&check, u);
+            };
+            assert(choice_is_true(flipped_sign_sqrt) == (check_nat == fe51_as_canonical_nat(
+                &u_neg,
+            ))) by {
+                lemma_ct_eq_iff_canonical_nat(&check, &u_neg);
+            };
+            assert(choice_is_true(flipped_sign_sqrt_i) == (check_nat == fe51_as_canonical_nat(
+                &u_neg_i,
+            ))) by {
+                lemma_ct_eq_iff_canonical_nat(&check, &u_neg_i);
+            };
+
+            let correct_sign = choice_is_true(correct_sign_sqrt);
+            let flipped_sign = choice_is_true(flipped_sign_sqrt);
+            let flipped_sign_i = choice_is_true(flipped_sign_sqrt_i);
+            let was_sq = choice_is_true(was_nonzero_square);
+
+            assert(correct_sign == (check_nat == u_nat));
+            assert(flipped_sign == (check_nat == fe51_as_canonical_nat(&u_neg)));
+            assert(flipped_sign == (check_nat == field_neg(u_nat)));
+            assert(flipped_sign_i == (check_nat == fe51_as_canonical_nat(&u_neg_i)));
+            assert(flipped_sign_i == (check_nat == field_mul(field_neg(u_nat), sqrt_m1())));
+
+            // Establish r_assigned_nat from conditional_assign
+            assert((flipped_sign || flipped_sign_i) ==> r_assigned_nat == field_mul(
+                sqrt_m1(),
+                r_orig_nat,
+            ));
+            assert(!(flipped_sign || flipped_sign_i) ==> r_assigned_nat == r_orig_nat);
+
+            // =================================================================
+            // Block 3: Fourth root of unity pattern (when u != 0 && v != 0)
+            // =================================================================
+            if v_nat != 0 && u_nat != 0 {
+                lemma_check_fourth_root_pattern(u_nat, v_nat, check_nat, r_orig_nat);
+            }
+            // =================================================================
+            // Block 4: Zero propagation
+            // =================================================================
+
+            lemma_sqrt_ratio_zero_propagation(u_nat, v_nat, r_orig_nat, check_nat);
+
+            // =================================================================
+            // Block 5: Correctness + negation transfer
+            // =================================================================
+            lemma_sqrt_ratio_correctness(
+                u_nat,
+                v_nat,
+                check_nat,
+                r_orig_nat,
+                r_assigned_nat,
+                correct_sign,
+                flipped_sign,
+                flipped_sign_i,
+                was_sq,
+            );
+
+            // Transfer postcondition 1: u == 0 ==> was_sq && r_final == 0
+            if u_nat == 0 {
+                assert(was_sq);
+                assert(r_assigned_nat == 0);
+                assert(r_final_nat == 0) by {
+                    lemma_small_mod(0nat, pn);
+                    lemma_mod_self_0(pn as int);
+                };
+            }
+            // Transfer postcondition 2: v == 0 && u != 0 ==> !was_sq && r_final == 0
+
+            if v_nat == 0 && u_nat != 0 {
+                assert(!was_sq);
+                assert(r_assigned_nat == 0);
+                assert(r_final_nat == 0) by {
+                    lemma_small_mod(0nat, pn);
+                    lemma_mod_self_0(pn as int);
+                };
+            }
+            // Transfer through negation: field_square(field_neg(r)) == field_square(r)
+
+            if r_final_nat != r_assigned_nat {
+                assert(r_final_nat == field_neg(r_assigned_nat));
+                assert(field_canonical(r_final_nat * r_final_nat * v_nat) == field_canonical(
+                    r_assigned_nat * r_assigned_nat * v_nat,
+                )) by {
+                    lemma_small_mod(r_assigned_nat, pn);
+                    lemma_neg_square_eq(r_assigned_nat);
+                    lemma_field_mul_square_canonical(r_final_nat, v_nat);
+                    lemma_field_mul_square_canonical(r_assigned_nat, v_nat);
+                };
+                if r_assigned_nat == 0 {
+                    assert(r_final_nat == 0) by {
+                        lemma_small_mod(0nat, pn);
+                        lemma_mod_self_0(pn as int);
+                    };
+                }
+            }
+            // Transfer postcondition 3: was_sq && v != 0 ==> is_sqrt_ratio(u, v, r_final)
+
+            if was_sq && v_nat != 0 {
+                assert(is_sqrt_ratio(u_nat, v_nat, r_assigned_nat));
+            }
+            // Transfer postcondition 4: !was_sq && v != 0 && u != 0 ==> is_sqrt_ratio_times_i
+
+            if !was_sq && v_nat != 0 && u_nat != 0 {
+                assert(is_sqrt_ratio_times_i(u_nat, v_nat, r_assigned_nat));
+            }
+        }
 
         (was_nonzero_square, r)
     }

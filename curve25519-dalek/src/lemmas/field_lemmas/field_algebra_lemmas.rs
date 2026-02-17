@@ -17,9 +17,11 @@
 //! - `lemma_inv_of_product`: inv(a·b) = inv(a)·inv(b)
 //! - `lemma_quotient_of_squares`: a²/b² = (a/b)²
 //! - `lemma_product_of_squares_eq_square_of_product`: x²·y² = (x·y)²
+//! - `lemma_field_square_of_pow_mod`: field_square(x^k % p) = x^(2k) % p
 #![allow(unused_imports)]
 use crate::lemmas::common_lemmas::div_mod_lemmas::*;
 use crate::lemmas::common_lemmas::number_theory_lemmas::*;
+use crate::lemmas::common_lemmas::pow_lemmas::*;
 use crate::specs::field_specs::*;
 use crate::specs::field_specs_u64::*;
 use crate::specs::primality_specs::*;
@@ -1665,6 +1667,26 @@ pub proof fn lemma_neg_a_times_inv_ab(a: nat, b: nat)
     assert(field_mul(neg_a, inv_ab) == field_mul(neg_one, inv_b));
 }
 
+/// Lemma: (-1) · (-a) = a  (double negation in field)
+///
+/// Proof: (-1) · (-a) = field_neg(-a) = --a = a % p = a (since a < p).
+/// Uses lemma_neg_one_times_is_neg and lemma_field_neg_neg.
+pub proof fn lemma_double_negation(a: nat)
+    requires
+        a < p(),
+        a != 0,
+    ensures
+        field_mul(field_neg(1), field_neg(a)) == a,
+{
+    p_gt_2();
+    // (-1) * (-a) = field_neg(-a) = --a
+    lemma_neg_one_times_is_neg(field_neg(a));
+    // --a = a % p
+    lemma_field_neg_neg(a);
+    // a % p = a (since a < p)
+    lemma_small_mod(a, p());
+}
+
 /// Lemma: (a·c) / (b·c) = a / b  (common factor cancellation)
 ///
 /// ## Mathematical Proof
@@ -2356,6 +2378,209 @@ pub proof fn lemma_pm_plus_mp(a: nat, b: nat, c: nat, d: nat)
     // add(ac, neg(bd)) = sub(ac, bd)
     assert(field_add(ac, field_neg(bd)) == field_sub(ac, bd)) by {
         lemma_field_sub_eq_add_neg(ac, bd);
+    };
+}
+
+// =============================================================================
+// Field negation helpers
+// =============================================================================
+/// Double negation: field_neg(field_neg(a)) == a % p()
+///
+/// Unlike `lemma_double_negation` (which proves (-1)·(-a) = a for a < p, a ≠ 0),
+/// this proves the iterated-negation identity --a = a % p for arbitrary nat a,
+/// including a = 0 and a >= p.
+pub proof fn lemma_field_neg_neg(a: nat)
+    ensures
+        field_neg(field_neg(a)) == a % p(),
+{
+    let pn = p();
+    p_gt_2();
+    let a_mod = a % pn;
+    lemma_mod_bound(a as int, pn as int);
+    // field_neg(a) = (p - a%p) % p
+    if a_mod == 0 {
+        // field_neg(0) = (p - 0) % p = 0
+        lemma_mod_self_0(pn as int);
+        assert(field_neg(a) == 0) by {
+            lemma_small_mod(0, pn);
+        };
+        // field_neg(0) = 0, field_neg(field_neg(0)) = 0 = a % p
+        assert(field_neg(0nat) == 0) by {
+            lemma_mod_self_0(pn as int);
+            lemma_small_mod(0, pn);
+        };
+    } else {
+        // a_mod > 0, so neg_a = p - a_mod < p
+        let neg_a: nat = (pn - a_mod) as nat;
+        assert(neg_a < pn);
+        assert(neg_a > 0) by {
+            // a_mod < p, so p - a_mod > 0
+        };
+        lemma_small_mod(neg_a, pn);
+        assert(field_neg(a) == neg_a);
+        // field_neg(neg_a) = (p - neg_a) % p = (p - (p - a_mod)) % p = a_mod % p = a_mod
+        assert((pn - neg_a) as nat == a_mod) by (nonlinear_arith)
+            requires
+                neg_a == (pn - a_mod) as nat,
+                a_mod < pn,
+                a_mod > 0,
+        ;
+        lemma_small_mod(neg_a, pn);
+        lemma_small_mod(a_mod, pn);
+    }
+}
+
+/// Negation preserves nonzero: a % p != 0 ==> field_neg(a) != 0
+pub proof fn lemma_field_neg_nonzero(a: nat)
+    requires
+        a % p() != 0,
+    ensures
+        field_neg(a) != 0,
+{
+    let pn = p();
+    p_gt_2();
+    let a_mod = a % pn;
+    lemma_mod_bound(a as int, pn as int);
+    // field_neg(a) = (p - a_mod) % p
+    // Since 0 < a_mod < p: 0 < p - a_mod < p
+    assert(a_mod > 0);
+    assert(a_mod < pn);
+    let neg_a: nat = (pn - a_mod) as nat;
+    assert(neg_a > 0);
+    assert(neg_a < pn);
+    lemma_small_mod(neg_a, pn);
+    assert(field_neg(a) == neg_a);
+}
+
+/// Negation distributes over left factor: field_mul(field_neg(a), b) == field_neg(field_mul(a, b))
+///
+/// This is the left-factor variant of `lemma_field_mul_neg` (which handles the right factor).
+pub proof fn lemma_field_neg_mul_left(a: nat, b: nat)
+    ensures
+        field_mul(field_neg(a), b) == field_neg(field_mul(a, b)),
+{
+    // field_mul(field_neg(a), b) = field_mul(b, field_neg(a))  [comm]
+    //                            = field_neg(field_mul(b, a))  [mul_neg]
+    //                            = field_neg(field_mul(a, b))  [comm]
+    lemma_field_mul_comm(field_neg(a), b);
+    lemma_field_mul_neg(b, a);
+    lemma_field_mul_comm(b, a);
+}
+
+/// field_square(pow(x, k) % p) == pow(x, 2*k) % p
+///
+/// Proof: field_square(y) = y^2 % p for y = x^k % p.
+/// (x^k % p)^2 % p = x^(2k) % p by mod absorption and pow_multiplies.
+pub proof fn lemma_field_square_of_pow_mod(x: int, k: nat)
+    requires
+        x >= 0,
+    ensures
+        pow(x, k) >= 0,
+        pow(x, 2 * k) >= 0,
+        field_square((pow(x, k) as nat) % p()) == (pow(x, 2 * k) as nat) % p(),
+{
+    let pn = p();
+    p_gt_2();
+    let xk = pow(x, k);
+    lemma_pow_nonnegative(x, k);
+    let y = (xk as nat) % pn;
+
+    // field_square(y) = (y * y) % p
+    // y = xk % p
+    // (y * y) % p = (xk * xk) % p  [mod absorption]
+    assert(field_square(y) == (xk * xk) as nat % pn) by {
+        lemma_mul_mod_noop((xk as nat) as int, (xk as nat) as int, pn as int);
+    };
+
+    // xk * xk = xk^2 = x^(2k)
+    assert(pow(xk, 2) == pow(x, 2 * k)) by {
+        lemma_pow_multiplies(x, k, 2);
+    };
+
+    // pow(xk, 2) == xk * xk
+    lemma_pow_2_is_mul(xk);
+}
+
+// =============================================================================
+// Helper: v * field_square(u*v3) = u * (u*v7) when v7 = v3^2 * v
+// =============================================================================
+/// Key cancellation: field_mul(v, field_square(field_mul(u, v3))) = field_mul(u, w)
+/// where v3 = field_mul(field_square(v), v) and w = field_mul(u, field_mul(field_square(v3), v))
+///
+/// Math: v * (u*v^3)^2 = v * u^2 * v^6 = u * u * v^7 = u * (u*v^7) = u * w
+pub proof fn lemma_v_times_sq_uv3_eq_u_times_w(u_val: nat, v_val: nat)
+    ensures
+        ({
+            let v3 = field_mul(field_square(v_val), v_val);
+            let v7 = field_mul(field_square(v3), v_val);
+            let w = field_mul(u_val, v7);
+            let uv3 = field_mul(u_val, v3);
+            field_mul(v_val, field_square(uv3)) == field_mul(u_val, w)
+        }),
+{
+    let pn = p();
+    p_gt_2();
+    let v3 = field_mul(field_square(v_val), v_val);
+    let v7 = field_mul(field_square(v3), v_val);
+    let w = field_mul(u_val, v7);
+    let uv3 = field_mul(u_val, v3);
+
+    // Step 1: field_square(uv3) = field_mul(field_square(u_val), field_square(v3))
+    lemma_product_of_squares_eq_square_of_product(u_val, v3);
+    let u2 = field_square(u_val);
+    let v3_sq = field_square(v3);
+    assert(field_square(uv3) == field_mul(u2, v3_sq));
+
+    // Step 2: v_val * field_mul(u2, v3_sq) = field_mul(field_mul(v_val, v3_sq), u2) by rearrangement
+    assert(field_mul(v_val, field_mul(u2, v3_sq)) == field_mul(field_mul(v_val, v3_sq), u2)) by {
+        // v * (u2 * v3_sq) = v * (v3_sq * u2) by comm
+        lemma_field_mul_comm(u2, v3_sq);
+        // = (v * v3_sq) * u2 by assoc
+        lemma_field_mul_assoc(v_val, v3_sq, u2);
+    };
+
+    // Step 3: field_mul(v_val, v3_sq) = v7
+    // v7 = field_mul(field_square(v3), v_val) = field_mul(v3_sq, v_val)
+    // field_mul(v_val, v3_sq) = field_mul(v3_sq, v_val) = v7  by comm
+    assert(field_mul(v_val, v3_sq) == v7) by {
+        lemma_field_mul_comm(v_val, v3_sq);
+    };
+
+    // Step 4: field_mul(v7, u2) = field_mul(v7, field_mul(u_val, u_val))
+    // u2 = field_square(u_val) = field_mul(u_val, u_val)
+    // So field_mul(v7, u2) = field_mul(v7, field_mul(u_val, u_val))
+    //    = field_mul(field_mul(v7, u_val), u_val) by assoc
+    //    = field_mul(field_mul(u_val, v7), u_val) by comm on inner
+    //    = field_mul(w, u_val) = field_mul(u_val, w) by comm
+    assert(field_mul(v7, u2) == field_mul(u_val, w)) by {
+        lemma_field_mul_assoc(v7, u_val, u_val);
+        lemma_field_mul_comm(v7, u_val);
+        lemma_field_mul_comm(field_mul(u_val, v7), u_val);
+    };
+
+    // Chain: v * sq(uv3) = v * mul(u2, v3_sq) = mul(mul(v, v3_sq), u2) = mul(v7, u2) = mul(u, w)
+}
+
+/// Connect field_mul(v, field_square(r)) to field_canonical(r * r * v) and vice versa.
+/// This is needed because is_sqrt_ratio uses field_canonical(r*r*v) directly.
+pub proof fn lemma_field_mul_square_canonical(r: nat, v: nat)
+    ensures
+        field_mul(v, field_square(r)) == field_canonical(r * r * v),
+        field_mul(field_square(r), v) == field_canonical(r * r * v),
+{
+    let pn = p();
+    p_gt_2();
+    // field_square(r) = (r * r) % p
+    // field_mul(v, field_square(r)) = (v * field_square(r)) % p = (v * ((r*r)%p)) % p
+    // By lemma_mul_mod_noop_right: = (v * (r * r)) % p
+    lemma_mul_mod_noop_right(v as int, (r * r) as int, pn as int);
+    assert(v * (r * r) == r * r * v) by {
+        lemma_mul_is_commutative(v as int, (r * r) as int);
+    };
+    // field_mul(field_square(r), v) = (field_square(r) * v) % p = (((r*r)%p) * v) % p
+    lemma_mul_mod_noop_left((r * r) as int, v as int, pn as int);
+    assert((r * r) * v == r * r * v) by {
+        lemma_mul_is_associative(r as int, r as int, v as int);
     };
 }
 

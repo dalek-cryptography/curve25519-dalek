@@ -818,7 +818,7 @@ proof fn lemma_fermat_cancellation(a: nat, n: nat, p: nat)
 }
 
 /// If x % m == y % m then (x - y) % m == 0
-proof fn lemma_mod_sub_eq_implies_zero(x: int, y: int, m: int)
+pub proof fn lemma_mod_sub_eq_implies_zero(x: int, y: int, m: int)
     requires
         m > 0,
         x % m == y % m,
@@ -1829,6 +1829,284 @@ pub proof fn lemma_p_is_odd()
     assert(pow2(255) > 19) by {
         pow255_gt_19();
     }
+}
+
+// =============================================================================
+// PART 8: Divisibility facts for p = 2^255 - 19
+// =============================================================================
+/// Key divisibility facts about p = 2^255 - 19 needed for sqrt_ratio_i.
+///
+/// Proves:
+///   - (p - 5) % 8 == 0      (so k = (p-5)/8 is an integer)
+///   - (p - 1) % 4 == 0      (so quarter = (p-1)/4 is an integer)
+///   - 8 * k == p - 5
+///   - 4 * quarter == p - 1
+///   - quarter == 2 * k + 1   (the critical exponent relation)
+///   - k == pow2(252) - 3     (concrete value)
+pub proof fn lemma_p_divisibility_facts()
+    ensures
+        ({
+            let pn = p();
+            let k = ((pn - 5) / 8) as nat;
+            let quarter = ((pn - 1) / 4) as nat;
+            let half = ((pn - 1) / 2) as nat;
+            &&& (pn - 5) % 8 == 0
+            &&& (pn - 1) % 4 == 0
+            &&& (pn - 1) % 2 == 0
+            &&& 8 * k == pn - 5
+            &&& 4 * quarter == pn - 1
+            &&& 2 * half == pn - 1
+            &&& quarter == 2 * k + 1
+            &&& half == 2 * quarter
+            &&& k == (pow2(252) - 3) as nat
+        }),
+{
+    let pn = p();
+    p_gt_2();
+    pow255_gt_19();
+    assert(pn == pow2(255) - 19);
+
+    // pow2(255) = 8 * pow2(252)
+    lemma_pow2_adds(3, 252);
+    assert(pow2(255) == pow2(3) * pow2(252));
+    lemma2_to64();
+    assert(pow2(3) == 8);
+
+    // (p - 5) % 8 == 0
+    // p - 5 = 8*pow2(252) - 24 = 8*(pow2(252) - 3)
+    assert((pn - 5) % 8 == 0) by {
+        lemma_mod_multiples_basic(pow2(252) as int, 8int);
+        assert(24nat == 3 * 8);
+        lemma_mod_multiples_basic(3int, 8int);
+        lemma_small_mod(0nat, 8);
+        lemma_sub_mod_noop(pow2(255) as int, 24int, 8int);
+    };
+
+    let k = ((pn - 5) / 8) as nat;
+    lemma_fundamental_div_mod((pn - 5) as int, 8int);
+    assert((pn - 5) == 8 * k);
+
+    // k == pow2(252) - 3
+    assert(k == (pow2(252) - 3) as nat) by {
+        assert(pn - 5 == 8 * (pow2(252) - 3)) by {
+            lemma_mul_is_distributive_sub(8int, pow2(252) as int, 3int);
+        };
+        lemma_pow2_strictly_increases(3, 252);
+        assert(pow2(252) > 8);
+        lemma_div_multiples_vanish((pow2(252) - 3) as int, 8int);
+    };
+
+    // p - 1 = 8k + 4, so (p-1) % 4 == 0
+    assert(pn - 1 == 8 * k + 4);
+    assert((pn - 1) % 4 == 0) by {
+        assert(8 * k + 4 == 4 * (2 * k + 1)) by {
+            lemma_mul_is_distributive_add(4int, (2 * k) as int, 1int);
+            lemma_mul_is_associative(4int, 2int, k as int);
+        };
+    };
+
+    let quarter = ((pn - 1) / 4) as nat;
+    lemma_fundamental_div_mod((pn - 1) as int, 4int);
+    assert((pn - 1) == 4 * quarter);
+
+    // quarter == 2*k + 1
+    assert(quarter == 2 * k + 1) by {
+        lemma_mul_equality_converse(4int, quarter as int, (2 * k + 1) as int);
+    };
+
+    // (p-1) % 2 == 0 and half facts
+    assert((pn - 1) % 2 == 0) by {
+        assert(4 * quarter == 2 * (2 * quarter)) by {
+            lemma_mul_is_associative(2int, 2int, quarter as int);
+        };
+    };
+    let half = ((pn - 1) / 2) as nat;
+    lemma_fundamental_div_mod((pn - 1) as int, 2int);
+    assert(2 * half == pn - 1);
+    assert(half == 2 * quarter) by {
+        assert(2 * half == 4 * quarter);
+    };
+}
+
+// =============================================================================
+// PART 9: Square roots of unity and Euler's criterion
+// =============================================================================
+/// Any prime p > 2 is odd.
+///
+/// Proof: The only even prime is 2. If p is even and prime, then p = 2,
+/// contradicting p > 2.
+pub proof fn lemma_prime_gt_2_is_odd(p: nat)
+    requires
+        is_prime(p),
+        p > 2,
+    ensures
+        p % 2 == 1,
+{
+    if p % 2 == 0 {
+        lemma_small_mod(2nat, p);
+        if p != 2 {
+            assert(false);
+        }
+    }
+}
+
+/// pow(x, 2) == x * x — avoids repeated reveal(pow) + manual expansion.
+pub proof fn lemma_pow_2_is_mul(x: int)
+    ensures
+        pow(x, 2) == x * x,
+{
+    reveal(pow);
+    assert(pow(x, 2) == x * pow(x, 1));
+    assert(pow(x, 1) == x * pow(x, 0));
+    assert(pow(x, 0) == 1);
+    lemma_mul_basics(x);
+}
+
+/// Lemma: If y^2 ≡ 1 (mod p) for prime p, then y ≡ 1 or y ≡ -1 (mod p)
+///
+/// Proof: y^2 - 1 = (y-1)(y+1) ≡ 0 (mod p). By Euclid's lemma (p prime),
+/// p | (y-1) or p | (y+1), i.e., y ≡ 1 or y ≡ -1 (mod p).
+pub proof fn lemma_square_root_of_unity(y: nat, p: nat)
+    requires
+        is_prime(p),
+        (y * y) % p == 1,
+    ensures
+        y % p == 1 || y % p == (p - 1) as nat,
+{
+    // Handle y % p == 0 case first: then y*y % p == 0 != 1, contradiction
+    if y % p == 0 {
+        assert((y * y) % p == 0) by {
+            lemma_mul_mod_noop(y as int, y as int, p as int);
+            lemma_small_mod(0nat, p);
+        };
+        assert(false);  // contradiction with y*y % p == 1
+    }
+    // Now y % p != 0, so y % p >= 1
+
+    let yr = y % p;
+    assert(yr >= 1 && yr < p) by {
+        lemma_mod_bound(y as int, p as int);
+    };
+
+    // yr^2 % p == 1 (from y^2 % p == 1 via mod absorption)
+    assert((yr * yr) % p == 1) by {
+        lemma_mul_mod_noop(y as int, y as int, p as int);
+    };
+
+    // yr >= 1, so yr * yr >= 1
+    assert(yr * yr >= 1) by {
+        lemma_mul_increases(yr as int, yr as int);
+    };
+
+    // (yr^2 - 1) % p == 0
+    assert(((yr * yr - 1) as nat) % p == 0) by {
+        // yr*yr % p == 1, and 1 % p == 1 (since p > 1)
+        assert(1nat % p == 1) by {
+            lemma_small_mod(1nat, p);
+        };
+        lemma_mod_sub_eq(yr * yr, 1, p);
+    };
+
+    // Factor: yr^2 - 1 = (yr - 1)(yr + 1)
+    assert(yr * yr - 1 == (yr - 1) * (yr + 1)) by {
+        // (yr-1)*(yr+1) = (yr-1)*yr + (yr-1) = yr^2 - yr + yr - 1 = yr^2 - 1
+        assert(((yr - 1) as int) * ((yr + 1) as int) == ((yr - 1) as int) * (yr as int) + ((yr
+            - 1) as int) * 1) by {
+            lemma_mul_is_distributive_add((yr - 1) as int, yr as int, 1int);
+        };
+        assert(((yr - 1) as int) * 1 == (yr - 1) as int) by {
+            lemma_mul_basics((yr - 1) as int);
+        };
+        assert(((yr - 1) as int) * (yr as int) == (yr as int) * ((yr - 1) as int)) by {
+            lemma_mul_is_commutative((yr - 1) as int, yr as int);
+        };
+        assert((yr as int) * ((yr - 1) as int) == (yr as int) * (yr as int) - (yr as int) * 1) by {
+            lemma_mul_is_distributive_sub(yr as int, yr as int, 1int);
+        };
+        assert((yr as int) * 1 == yr as int) by {
+            lemma_mul_basics(yr as int);
+        };
+    };
+
+    assert((((yr - 1) as nat) * ((yr + 1) as nat)) % p == 0);
+
+    // By Euclid's lemma: (yr - 1) % p == 0 or (yr + 1) % p == 0
+    lemma_euclid_prime((yr - 1) as nat, (yr + 1) as nat, p);
+
+    if (yr - 1) as nat % p == 0 {
+        // yr - 1 is in range [0, p-1), so yr - 1 == 0, i.e., yr == 1
+        assert(yr - 1 < p);
+        if yr - 1 > 0 {
+            lemma_small_mod((yr - 1) as nat, p);
+            assert(false);  // (yr-1) % p == yr-1 > 0, contradicts (yr-1) % p == 0
+        }
+        assert(yr == 1);
+        assert(y % p == 1);
+    } else {
+        // (yr + 1) % p == 0
+        assert(((yr + 1) as nat) % p == 0);
+        // yr + 1 is in range [2, p+1)
+        // yr < p so yr + 1 <= p
+        assert(yr + 1 <= p);
+        if yr + 1 < p {
+            lemma_small_mod((yr + 1) as nat, p);
+            assert(false);  // (yr+1) % p == yr+1 > 0, contradicts (yr+1) % p == 0
+        }
+        assert(yr + 1 == p);
+        assert(yr == (p - 1) as nat);
+        assert(y % p == (p - 1) as nat);
+    }
+}
+
+/// Euler's criterion: For prime p and x not divisible by p,
+/// x^((p-1)/2) ≡ 1 or ≡ -1 (mod p)
+///
+/// Proof: By Fermat's Little Theorem, x^(p-1) ≡ 1 (mod p).
+/// Let y = x^((p-1)/2). Then y^2 = x^(p-1) ≡ 1 (mod p).
+/// By lemma_square_root_of_unity, y ≡ ±1 (mod p).
+pub proof fn lemma_euler_criterion(x: nat, p: nat)
+    requires
+        is_prime(p),
+        p > 2,
+        x % p != 0,
+    ensures
+        (pow(x as int, ((p - 1) / 2) as nat) as nat) % p == 1 || (pow(
+            x as int,
+            ((p - 1) / 2) as nat,
+        ) as nat) % p == (p - 1) as nat,
+{
+    let half = ((p - 1) / 2) as nat;
+
+    // Fermat: x^(p-1) % p == 1
+    lemma_fermat_little_theorem(x, p);
+
+    // p-1 is even (p is odd since it's a prime > 2)
+    lemma_prime_gt_2_is_odd(p);
+    assert((p - 1) % 2 == 0);
+
+    // half * 2 == p - 1
+    assert(half * 2 == (p - 1) as nat) by {
+        lemma_fundamental_div_mod((p - 1) as int, 2int);
+    };
+
+    // y = x^half, y >= 0
+    let y = pow(x as int, half);
+    assert(y >= 0) by {
+        lemma_pow_nonnegative(x as int, half);
+    };
+
+    // y^2 = x^(half * 2) = x^(p-1)
+    assert(pow(y, 2) == pow(x as int, (p - 1) as nat)) by {
+        lemma_pow_multiplies(x as int, half, 2);
+    };
+
+    // (y * y) % p == 1 (connect pow(y, 2) to y * y, then use Fermat)
+    assert((y * y) % p as int == 1) by {
+        lemma_pow_2_is_mul(y);
+    };
+
+    // Apply lemma_square_root_of_unity
+    lemma_square_root_of_unity(y as nat, p);
 }
 
 } // verus!

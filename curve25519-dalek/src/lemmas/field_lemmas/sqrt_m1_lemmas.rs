@@ -22,6 +22,7 @@ use crate::constants;
 use crate::lemmas::common_lemmas::div_mod_lemmas::*;
 use crate::lemmas::common_lemmas::mul_lemmas::*;
 use crate::lemmas::common_lemmas::number_theory_lemmas::*;
+use crate::lemmas::common_lemmas::pow_lemmas::*;
 use crate::lemmas::field_lemmas::field_algebra_lemmas::*;
 use crate::specs::field_specs::*;
 use crate::specs::field_specs_u64::*;
@@ -40,6 +41,22 @@ verus! {
 // These are concrete numerical facts that are mathematically proven but
 // complex to formalize in Verus. Each axiom includes its justification.
 // =============================================================================
+/// AXIOM: SQRT_M1 has 51-bit bounded limbs (it is a canonical field element constant)
+///
+/// Each limb of SQRT_M1 is less than 2^51 = 2251799813685248:
+///   limbs = [1718705420411056, 234908883556509, 2233514472574048, 2117202627021982, 765476049583133]
+///   max limb = 2233514472574048 < 2251799813685248
+pub proof fn axiom_sqrt_m1_limbs_bounded()
+    ensures
+        fe51_limbs_bounded(&constants::SQRT_M1, 51),
+        fe51_limbs_bounded(&constants::SQRT_M1, 54),
+{
+    // SQRT_M1 limbs = [1718705420411056, 234908883556509, 2233514472574048, 2117202627021982, 765476049583133]
+    // 2^51 = 2251799813685248, 2^54 = 18014398509481984
+    // All limbs < 2^51 < 2^54, so both bounds hold.
+    admit();
+}
+
 /// AXIOM: i² = -1 (mod p) — Definition of SQRT_M1
 ///
 /// Mathematical justification:
@@ -91,6 +108,36 @@ pub proof fn axiom_neg_sqrt_m1_not_square()
     admit();
 }
 
+// =============================================================================
+// Basic properties of sqrt_m1
+// =============================================================================
+/// sqrt_m1() is nonzero (both as a value and mod p).
+///
+/// Proof: If i = 0, then i^2 = 0, but axiom says i^2 = p-1 > 0.
+pub proof fn lemma_sqrt_m1_nonzero()
+    ensures
+        sqrt_m1() != 0,
+        sqrt_m1() % p() != 0,
+        sqrt_m1() < p(),
+{
+    let i = sqrt_m1();
+    let pn = p();
+    p_gt_2();
+    assert(i < pn) by {
+        lemma_mod_bound(fe51_as_nat(&constants::SQRT_M1) as int, pn as int);
+    };
+    if i == 0 {
+        axiom_sqrt_m1_squared();
+        assert((0nat * 0nat) % pn == 0) by {
+            lemma_small_mod(0nat, pn);
+        };
+        assert(false);
+    }
+    assert(i % pn != 0) by {
+        lemma_small_mod(i, pn);
+    };
+}
+
 //=============================================================================
 // Derived lemmas: multiplication by i
 //=============================================================================
@@ -102,7 +149,7 @@ pub proof fn axiom_neg_sqrt_m1_not_square()
 ///         ≡ -r²              [multiplication by -1]
 ///         ≡ p - r² mod p     [representation of negation]
 ///
-/// Used in: lemma_flipped_sign_becomes_correct
+/// Used in: lemma_sqrt_ratio_correctness
 pub proof fn lemma_multiply_by_i_flips_sign(r: nat)
     ensures
         field_square(field_mul(r, sqrt_m1())) == field_neg(field_square(r)),
@@ -125,7 +172,7 @@ pub proof fn lemma_multiply_by_i_flips_sign(r: nat)
     assert((ri * ri) % pn == (r2 * pn_minus_1) % pn) by {
         // (ri)² = r²·i²  [product square factorization]
         assert(ri * ri == r2 * i2) by {
-            assert((r * i) * (r * i) == (r * r) * (i * i)) by (nonlinear_arith);
+            lemma_product_square_factorize(r as int, i as int);
         };
 
         // i² % p = p - 1 (from axiom)
@@ -199,21 +246,9 @@ pub proof fn lemma_i_inverse_is_neg_i()
     // Step 2: Define -i = (p - i) % p = p - i (since i < p and i > 0)
     let neg_i = field_neg(i);
 
-    // Show i ≠ 0: If i = 0, then i² = 0, but i² ≡ -1 (mod p), contradiction
+    // i ≠ 0
     assert(i != 0) by {
-        if i == 0 {
-            // 0 * 0 = 0, so (0 * 0) % p = 0
-            assert(0 * 0 == 0nat);
-            assert(0nat % p == 0) by {
-                lemma_small_mod(0nat, p);
-            };
-            // But axiom says i² % p = p - 1
-            assert((i * i) % p == (p - 1) as nat) by {
-                axiom_sqrt_m1_squared();
-            };
-            // Since i = 0, we have 0 = p - 1, but p > 2
-            assert(false);
-        }
+        lemma_sqrt_m1_nonzero();
     };
 
     // Step 3: neg_i = p - i (since i < p and i ≠ 0, we have 0 < p - i < p)
@@ -406,13 +441,7 @@ pub proof fn lemma_neg_u_times_inv_iu_is_i(u: nat, i: nat)
         lemma_mod_bound(fe51_as_nat(&constants::SQRT_M1) as int, p as int);
     };
     assert(i != 0) by {
-        if i == 0 {
-            axiom_sqrt_m1_squared();
-            lemma_small_mod(0nat, p);
-            assert((0nat * 0nat) % p == 0);
-            assert(field_neg(1nat) != 0);  // -1 ≠ 0
-            assert(false);
-        }
+        lemma_sqrt_m1_nonzero();
     };
     assert(field_mul(neg_one, neg_i) == i) by {
         // (-1)·(-i) = -(-(i)) = i % p = i
@@ -423,6 +452,272 @@ pub proof fn lemma_neg_u_times_inv_iu_is_i(u: nat, i: nat)
 
     // Postcondition: i % p = i (since i < p)
     lemma_small_mod(i, p);
+}
+
+// =============================================================================
+// 4th root of unity lemma
+// =============================================================================
+/// Helper: if q = (y * inv_i) % p and inv_i is the inverse of i,
+/// then (q * i) % p == y % p.
+///
+/// Used in both branches of lemma_square_root_of_neg_one to avoid code duplication.
+proof fn lemma_q_times_i_eq_y(y: nat, i: nat, inv_i: nat, q: nat, pn: nat)
+    requires
+        pn == p(),
+        pn > 2,
+        inv_i < pn,
+        q == field_mul(y, inv_i),
+        (i % pn * inv_i) % pn == 1,
+        i < pn,
+    ensures
+        (q * i) % pn == y % pn,
+{
+    // q = (y * inv_i) % p
+    // (q * i) % p = ((y * inv_i) % p * i) % p = (y * inv_i * i) % p
+    lemma_mul_mod_noop_left((y * inv_i) as int, i as int, pn as int);
+    // = (y * (inv_i * i)) % p
+    lemma_mul_is_associative(y as int, inv_i as int, i as int);
+    // (inv_i * i) % p == 1
+    assert((inv_i * i) % pn == 1) by {
+        lemma_mul_is_commutative(inv_i as int, i as int);
+        lemma_small_mod(i, pn);
+    };
+    // (y * (inv_i * i)) % p == (y * 1) % p = y % p
+    lemma_mul_mod_noop_right(y as int, (inv_i * i) as int, pn as int);
+    lemma_mul_basics(y as int);
+}
+
+/// Lemma: If y^2 ≡ -1 (mod p), then y ≡ i or y ≡ -i (mod p)
+///
+/// Mathematical proof:
+///   y^2 ≡ -1 ≡ i^2 (mod p)           [since i^2 = -1]
+///   (y/i)^2 = y^2 / i^2 = (-1)/(-1) = 1
+///   By lemma_square_root_of_unity: y/i ∈ {1, -1}
+///   If y/i = 1: y = i
+///   If y/i = -1: y = -i
+pub proof fn lemma_square_root_of_neg_one(y: nat, i: nat)
+    requires
+        i == sqrt_m1(),
+        i < p(),
+        i % p() != 0,
+        (y * y) % p() == (p() - 1) as nat,  // y^2 ≡ -1 (mod p)
+
+    ensures
+        y % p() == i || y % p() == (p() - i) as nat,
+{
+    let pn = p();
+    p_gt_2();
+    axiom_p_is_prime();
+
+    // i^2 ≡ -1 (mod p)
+    axiom_sqrt_m1_squared();
+    let neg_one = (pn - 1) as nat;
+
+    // y^2 ≡ i^2 (mod p) [both are -1]
+    assert((y * y) % pn == (i * i) % pn);
+
+    // Compute inv(i)
+    let inv_i = field_inv(i);
+    field_inv_property(i);
+    // inv_i < p and (i % p) * inv_i % p == 1
+    assert(inv_i < pn);
+
+    // Compute q = y * inv_i (in the field)
+    let q = field_mul(y, inv_i);
+    assert(q < pn) by {
+        lemma_mod_bound((y * inv_i) as int, pn as int);
+    };
+
+    // Show q^2 = y^2 * inv_i^2 = (-1) * (-1)^{-1} = 1
+    // First: inv_i^2 = inv(i^2) by lemma_inv_of_square
+    // i^2 (as field element) = neg_one
+    let i_sq = field_square(i);
+    assert(i_sq == neg_one) by {
+        lemma_small_mod(neg_one, pn);
+    };
+
+    // q^2 = field_mul(q, q) = field_mul(y * inv_i, y * inv_i)
+    //      = (y * inv_i * y * inv_i) % p = (y * y * inv_i * inv_i) % p
+    //      = field_mul(field_square(y), field_square(inv_i))
+    // But we need to show this step by step
+
+    // field_square(q) = (q * q) % p
+    // q = (y * inv_i) % p
+    // So q * q % p = (y * inv_i)^2 % p = y^2 * inv_i^2 % p
+    assert((q * q) % pn == ((y * inv_i) * (y * inv_i)) % pn) by {
+        lemma_mul_mod_noop((y * inv_i) as int, (y * inv_i) as int, pn as int);
+    };
+
+    // (y * inv_i) * (y * inv_i) = (y * y) * (inv_i * inv_i)
+    assert(((y * inv_i) * (y * inv_i)) == (y * y) * (inv_i * inv_i)) by {
+        lemma_product_square_factorize(y as int, inv_i as int);
+    };
+
+    // (y * y) * (inv_i * inv_i) % p = field_mul(y*y, inv_i*inv_i)
+    // = field_mul(neg_one_field, inv_neg_one)
+    // where neg_one_field = (y*y) % p = p-1
+    // and inv_neg_one = (inv_i * inv_i) % p
+
+    // y*y % p == i*i % p == neg_one
+    let y_sq_mod = (y * y) % pn;
+    assert(y_sq_mod == neg_one);
+
+    // (inv_i * inv_i) % p: this is field_inv(i^2) = field_inv(neg_one)
+    let inv_i_sq = (inv_i * inv_i) % pn;
+
+    // We know (i % p) * inv_i % p == 1
+    // So ((i%p) * inv_i)^2 % p == 1
+    // Which is (i^2 * inv_i^2) % p == 1
+    assert(((i * inv_i) * (i * inv_i)) % pn == 1) by {
+        // (i % p) * inv_i % p == 1
+        let product = field_mul(i % pn, inv_i);
+        assert(product == 1);
+        // product = ((i%p) * inv_i) % p = (i * inv_i) % p (since i < p)
+        lemma_small_mod(i, pn);
+        assert(product == (i * inv_i) % pn);
+        // product^2 % p == 1
+        assert((product * product) % pn == 1) by {
+            lemma_small_mod(1nat, pn);
+        };
+        // ((i*inv_i) % p * (i*inv_i) % p) % p == 1
+        // ((i*inv_i) * (i*inv_i)) % p == 1
+        lemma_mul_mod_noop((i * inv_i) as int, (i * inv_i) as int, pn as int);
+    };
+
+    // (i*inv_i)*(i*inv_i) == i*i * inv_i*inv_i
+    assert((i * inv_i) * (i * inv_i) == (i * i) * (inv_i * inv_i)) by {
+        lemma_product_square_factorize(i as int, inv_i as int);
+    };
+
+    // So (i*i * inv_i*inv_i) % p == 1
+    // Which means (neg_one * inv_i_sq_raw) % p == 1
+    // where inv_i_sq_raw = inv_i * inv_i
+    assert(((i * i) * (inv_i * inv_i)) % pn == 1);
+
+    // Now compute (y*y * inv_i*inv_i) % p
+    // = ((y*y % p) * (inv_i*inv_i % p)) % p    [by mod absorption]
+    // = (neg_one * inv_i_sq) % p
+    // = ((i*i % p) * (inv_i*inv_i % p)) % p    [since y*y % p == i*i % p]
+    // = (i*i * inv_i*inv_i) % p                 [by mod absorption backwards]
+    // = 1
+    assert(((y * y) * (inv_i * inv_i)) % pn == 1) by {
+        // ((y*y) * (inv_i*inv_i)) % p == ((y*y % p) * (inv_i*inv_i)) % p
+        lemma_mul_mod_noop_left((y * y) as int, (inv_i * inv_i) as int, pn as int);
+        // = ((i*i % p) * (inv_i*inv_i)) % p since y*y % p == i*i % p
+        // = ((i*i) * (inv_i*inv_i)) % p
+        lemma_mul_mod_noop_left((i * i) as int, (inv_i * inv_i) as int, pn as int);
+    };
+
+    // Chain: q*q % p == (y*inv_i)^2 % p == (y*y)*(inv_i*inv_i) % p == 1
+    assert((q * q) % pn == 1);
+
+    // Apply lemma_square_root_of_unity
+    lemma_square_root_of_unity(q, pn);
+    // q % p ∈ {1, p-1}
+
+    // Since q < p: q % p == q
+    lemma_small_mod(q, pn);
+
+    // Shared fact for both branches: (q * i) % p == y % p
+    lemma_q_times_i_eq_y(y, i, inv_i, q, pn);
+
+    if q == 1 {
+        // q == 1, so (1 * i) % p == y % p, hence y ≡ i (mod p)
+        assert(i == y % pn) by {
+            lemma_mul_basics(i as int);
+            lemma_small_mod(i, pn);
+        };
+    } else {
+        assert(q == neg_one);
+        // q == p - 1, so ((p-1) * i) % p == y % p
+        // (p-1)*i ≡ -i (mod p)
+        assert((i * ((pn - 1) as nat)) % pn == (pn - i) as nat) by {
+            lemma_mul_by_minus_one_is_negation(i, pn);
+            lemma_small_mod(i, pn);
+            lemma_small_mod((pn - i) as nat, pn);
+        };
+        assert(((pn - 1) as nat) * i == i * ((pn - 1) as nat)) by {
+            lemma_mul_is_commutative(((pn - 1) as nat) as int, i as int);
+        };
+        assert(y % pn == (pn - i) as nat);
+    }
+}
+
+/// Lemma: x^((p-1)/4) is a 4th root of unity in F_p
+///
+/// For nonzero x in F_p where p = 2^255 - 19:
+///   x^((p-1)/4) ∈ {1, p-1, i, p-i}
+///
+/// Proof:
+///   Let y = x^((p-1)/4). Then y^2 = x^((p-1)/2).
+///   By Euler's criterion, y^2 ∈ {1, -1}.
+///   If y^2 = 1: by lemma_square_root_of_unity, y ∈ {1, -1}
+///   If y^2 = -1: by lemma_square_root_of_neg_one, y ∈ {i, -i}
+pub proof fn lemma_fourth_root_of_unity(x: nat)
+    requires
+        x % p() != 0,
+    ensures
+        ({
+            let y = (pow(x as int, ((p() - 1) / 4) as nat) as nat) % p();
+            let i = sqrt_m1();
+            y == 1 || y == (p() - 1) as nat || y == i || y == (p() - i) as nat
+        }),
+{
+    let pn = p();
+    p_gt_2();
+    axiom_p_is_prime();
+
+    let quarter = ((pn - 1) / 4) as nat;
+    let half = ((pn - 1) / 2) as nat;
+
+    // quarter * 2 == half (from lemma_p_divisibility_facts)
+    assert(quarter * 2 == half) by {
+        lemma_p_divisibility_facts();
+    };
+
+    // y_raw = x^quarter (as int, before mod)
+    let y_pow = pow(x as int, quarter);
+    assert(y_pow >= 0) by {
+        lemma_pow_nonnegative(x as int, quarter);
+    };
+    let y = (y_pow as nat) % pn;
+
+    // y_pow^2 = x^(quarter*2) = x^half
+    assert(pow(y_pow, 2) == pow(x as int, half)) by {
+        lemma_pow_multiplies(x as int, quarter, 2);
+    };
+
+    // (y * y) % p == x^half % p
+    assert((y * y) % pn == (pow(x as int, half) as nat) % pn) by {
+        lemma_mul_mod_noop(y_pow as int, y_pow as int, pn as int);
+        lemma_pow_2_is_mul(y_pow);
+    };
+
+    // By Euler's criterion: x^half % p ∈ {1, p-1}
+    lemma_euler_criterion(x, pn);
+    let x_half_mod = (pow(x as int, half) as nat) % pn;
+    assert(x_half_mod == 1 || x_half_mod == (pn - 1) as nat);
+
+    // Therefore (y * y) % p ∈ {1, p-1}
+
+    if x_half_mod == 1 {
+        // y^2 ≡ 1 (mod p)
+        assert((y * y) % pn == 1);
+        lemma_square_root_of_unity(y, pn);
+        // y % p ∈ {1, p-1}
+        assert(y % pn == 1 || y % pn == (pn - 1) as nat);
+        // Since y < p, y % p == y
+        lemma_small_mod(y, pn);
+    } else {
+        // y^2 ≡ -1 (mod p)
+        assert((y * y) % pn == (pn - 1) as nat);
+        let i = sqrt_m1();
+        lemma_sqrt_m1_nonzero();
+        lemma_square_root_of_neg_one(y, i);
+        // y % p ∈ {i, p-i}
+        // Since y < p, y % p == y
+        lemma_small_mod(y, pn);
+    }
 }
 
 } // verus!

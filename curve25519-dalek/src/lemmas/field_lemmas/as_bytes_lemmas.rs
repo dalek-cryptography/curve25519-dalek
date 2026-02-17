@@ -1141,4 +1141,18 @@ pub proof fn lemma_xor_sign_bit_preserves_y(
     ;
 }
 
+/// Lemma: spec_fe51_as_bytes equality is equivalent to fe51_as_canonical_nat equality.
+///
+/// Both directions are proven by existing lemmas in this file:
+/// - Forward (bytes equal -> nat equal): `lemma_fe51_to_bytes_equal_implies_field_element_equal`
+/// - Backward (nat equal -> bytes equal): `lemma_field_element_equal_implies_fe51_to_bytes_equal`
+pub proof fn lemma_ct_eq_iff_canonical_nat(a: &FieldElement51, b: &FieldElement51)
+    ensures
+        (spec_fe51_as_bytes(a) == spec_fe51_as_bytes(b)) <==> (fe51_as_canonical_nat(a)
+            == fe51_as_canonical_nat(b)),
+{
+    lemma_fe51_to_bytes_equal_implies_field_element_equal(a, b);
+    lemma_field_element_equal_implies_fe51_to_bytes_equal(a, b);
+}
+
 } // verus!

@@ -300,6 +300,27 @@ pub fn conditional_negate_field_element(a: &mut FieldElement51, choice: Choice)
     a.conditional_negate(choice);
 }
 
+/// Specialized wrapper for FieldElement51 negation with proper specs.
+///
+/// The generic `negate_field` in core_assumes.rs has no ensures clause because
+/// it's generic over all Neg types. This wrapper attaches the precise contract
+/// from the `Neg for &FieldElement51` implementation.
+#[verifier::external_body]
+pub fn negate_field_element(a: &FieldElement51) -> (result: FieldElement51)
+    requires
+        fe51_limbs_bounded(a, 54),
+    ensures
+        fe51_as_canonical_nat(&result) == field_neg(fe51_as_canonical_nat(a)),
+        fe51_limbs_bounded(&result, 52),
+        fe51_limbs_bounded(&result, 54),
+{
+    /* ORIGINAL CODE
+    -a
+    */
+    use core::ops::Neg;
+    a.neg()
+}
+
 /// Generic wrapper for ConditionallySelectable::conditional_assign()
 #[verifier::external_body]
 pub fn conditional_assign_generic<T>(a: &mut T, b: &T, choice: Choice) where

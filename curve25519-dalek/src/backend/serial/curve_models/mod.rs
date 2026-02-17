@@ -136,6 +136,8 @@ use crate::constants;
 use crate::core_assumes::negate_field;
 #[allow(unused_imports)] // Used in verus! blocks for affine↔projective curve equation
 use crate::lemmas::edwards_lemmas::curve_equation_lemmas::*;
+#[allow(unused_imports)] // Used in verus! blocks for Niels addition correctness lemmas
+use crate::lemmas::edwards_lemmas::niels_addition_correctness::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::lemmas::field_lemmas::add_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks for as_projective proof
@@ -340,8 +342,9 @@ impl ValidityCheck for ProjectivePoint {
         let YY = self.Y.square();
         let ZZ = self.Z.square();
         proof {
+            // TODO(verify): prove from square() postcondition (output is 52-bounded ⊂ 54-bounded)
             assume(fe51_limbs_bounded(&ZZ, 54));  // for ZZZZ = ZZ.square()
-            assume(fe51_limbs_bounded(&YY, 54) && fe51_limbs_bounded(&XX, 54));  // for yy_minus_xx = &YY - &XX and
+            assume(fe51_limbs_bounded(&YY, 54) && fe51_limbs_bounded(&XX, 54));  // for yy_minus_xx = &YY - &XX
         }
         let ZZZZ = ZZ.square();
 
@@ -353,12 +356,14 @@ impl ValidityCheck for ProjectivePoint {
 
         let yy_minus_xx = &YY - &XX;
         proof {
+            // TODO(verify): prove from sub()/square() postconditions
             assume(fe51_limbs_bounded(&yy_minus_xx, 54) && fe51_limbs_bounded(&ZZ, 54));  // for lhs = &yy_minus_xx * &ZZ
         }
         let lhs = &yy_minus_xx * &ZZ;
 
         let xx_times_yy = &XX * &YY;
         proof {
+            // TODO(verify): prove EDWARDS_D is 54-bounded (it's a constant), and mul() output is 52-bounded ⊂ 54-bounded
             assume(fe51_limbs_bounded(&constants::EDWARDS_D, 54) && fe51_limbs_bounded(
                 &xx_times_yy,
                 54,
@@ -366,13 +371,14 @@ impl ValidityCheck for ProjectivePoint {
         }
         let d_times_xxyy = &constants::EDWARDS_D * &xx_times_yy;
         proof {
+            // TODO(verify): prove from limb bounds of ZZZZ and d_times_xxyy
             assume(sum_of_limbs_bounded(&ZZZZ, &d_times_xxyy, u64::MAX));  // for rhs = &ZZZZ + &d_times_xxyy
         }
         let rhs = &ZZZZ + &d_times_xxyy;
 
         let result = lhs == rhs;
         proof {
-            // postcondition
+            // TODO(verify): prove by connecting lhs == rhs to the spec definition
             assume(result == math_on_edwards_curve_projective(
                 fe51_as_canonical_nat(&self.X),
                 fe51_as_canonical_nat(&self.Y),
@@ -569,7 +575,7 @@ impl ProjectivePoint {
             T: &self.X * &self.Y,
         };
         proof {
-            // postconditions
+            // TODO(verify): prove validity and affine equivalence from X*Z, Y*Z, Z², X*Y formulas
             assume(is_valid_edwards_point(result));
             assume(spec_edwards_point(result) == spec_projective_to_extended(*self));
             assume(edwards_point_as_affine(result) == projective_point_as_affine_edwards(*self));
@@ -751,7 +757,7 @@ impl CompletedPoint {
             };
 
             // Therefore is_well_formed_edwards_point holds (pending is_valid_edwards_point)
-            // Semantic postconditions still need assumes
+            // TODO(verify): prove validity and affine equivalence from X*T, Y*Z, Z*T, X*Y formulas
             assume(is_valid_edwards_point(result));
             assume(spec_edwards_point(result) == spec_completed_to_extended(*self));
             assume(edwards_point_as_affine(result) == completed_point_as_affine_edwards(*self));
@@ -866,7 +872,7 @@ impl ProjectivePoint {
             // result.T: from subtraction → 54-bounded (directly from sub postcondition)
             assert(fe51_limbs_bounded(&result.T, 54));  // subtraction postcondition
 
-            // Semantic postconditions
+            // TODO(verify): prove doubling correctness from XX, YY, ZZ2 formulas
             assume(is_valid_completed_point(result));
             assume(completed_point_as_affine_edwards(result) == edwards_double(
                 projective_point_as_affine_edwards(*self).0,
@@ -896,7 +902,12 @@ impl vstd::std_specs::ops::AddSpecImpl<&ProjectiveNielsPoint> for &EdwardsPoint 
         // Preconditions needed for field operations
         is_well_formed_edwards_point(*self) && fe51_limbs_bounded(&rhs.Y_plus_X, 54)
             && fe51_limbs_bounded(&rhs.Y_minus_X, 54) && fe51_limbs_bounded(&rhs.Z, 54)
-            && fe51_limbs_bounded(&rhs.T2d, 54)
+            && fe51_limbs_bounded(
+            &rhs.T2d,
+            54,
+        )
+        // Mathematical validity (for algebraic correctness proof)
+         && is_valid_projective_niels_point(*rhs)
     }
 
     open spec fn add_spec(self, rhs: &ProjectiveNielsPoint) -> CompletedPoint {
@@ -925,10 +936,11 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     // The result represents the Edwards addition of the affine forms of self and other
 
             is_valid_completed_point(result),
-            completed_point_as_affine_edwards(result) == spec_edwards_add_projective_niels(
-                *self,
-                *other,
-            ),
+            completed_point_as_affine_edwards(result) == {
+                let self_affine = edwards_point_as_affine(*self);
+                let other_affine = projective_niels_point_as_affine_edwards(*other);
+                edwards_add(self_affine.0, self_affine.1, other_affine.0, other_affine.1)
+            },
             // Limb bounds for result (from mul's 52-bit output → sub/add produce ≤54-bit)
             fe51_limbs_bounded(&result.X, 54),
             fe51_limbs_bounded(&result.Y, 54),
@@ -942,24 +954,63 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         proof {
-            assume(sum_of_limbs_bounded(&Y_plus_X, &Y_minus_X, u64::MAX));  // for PP = &Y_plus_X * &other.Y_plus_X and MM = &Y_minus_X * &other.Y_minus_X
-            assume(fe51_limbs_bounded(&Y_plus_X, 54) && fe51_limbs_bounded(&Y_minus_X, 54));  // for PP = &Y_plus_X * &other.Y_plus_X and MM = &Y_minus_X * &other.Y_minus_X
+            // Y_plus_X = Y + X: 52+52 → 53-bounded
+            assert(fe51_limbs_bounded(&Y_plus_X, 53)) by {
+                lemma_add_bounds_propagate(&self.Y, &self.X, 52);
+            }
+            // Y_minus_X = Y - X: sub postcondition → 54-bounded
+            assert(fe51_limbs_bounded(&Y_minus_X, 54));
+
+            // Weaken Y_plus_X from 53 to 54 for mul precondition
+            assert(fe51_limbs_bounded(&Y_plus_X, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&Y_plus_X, 53, 54);
+            }
+
+            // sum_of_limbs_bounded for mul doesn't need this, but later operations do
+            assert(sum_of_limbs_bounded(&Y_plus_X, &Y_minus_X, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&Y_plus_X, &Y_minus_X, 54);
+            }
         }
         let PP = &Y_plus_X * &other.Y_plus_X;
         let MM = &Y_minus_X * &other.Y_minus_X;
         let TT2d = &self.T * &other.T2d;
         let ZZ = &self.Z * &other.Z;
         proof {
-            assume(sum_of_limbs_bounded(&ZZ, &ZZ, u64::MAX));  // for ZZ2 = &ZZ + &ZZ
+            // ZZ is 52-bounded from mul postcondition
+            assert(fe51_limbs_bounded(&ZZ, 52));
+            assert(sum_of_limbs_bounded(&ZZ, &ZZ, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&ZZ, &ZZ, 52);
+            }
         }
         let ZZ2 = &ZZ + &ZZ;
         proof {
-            assume(fe51_limbs_bounded(&ZZ2, 54));  // for ZZ2 = &ZZ + &ZZ
-            assume(sum_of_limbs_bounded(&ZZ2, &TT2d, u64::MAX));  // for Z and T operations
-            assume(sum_of_limbs_bounded(&PP, &MM, u64::MAX));  // for Y = &PP + &MM
-            // Preconditions for subtractions
-            assume(fe51_limbs_bounded(&PP, 54) && fe51_limbs_bounded(&MM, 54));  // for X = &PP - &MM
-            assume(fe51_limbs_bounded(&TT2d, 54));  // for T = &ZZ2 - &TT2d (ZZ2 already bounded above)
+            // ZZ2 = ZZ + ZZ: 52+52 → 53-bounded, weaken to 54
+            assert(fe51_limbs_bounded(&ZZ2, 53)) by {
+                lemma_add_bounds_propagate(&ZZ, &ZZ, 52);
+            }
+            assert(fe51_limbs_bounded(&ZZ2, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&ZZ2, 53, 54);
+            }
+            // TT2d is 52-bounded from mul postcondition
+            assert(fe51_limbs_bounded(&TT2d, 52));
+            assert(fe51_limbs_bounded(&TT2d, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&TT2d, 52, 54);
+            }
+            assert(sum_of_limbs_bounded(&ZZ2, &TT2d, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&ZZ2, &TT2d, 54);
+            }
+            // PP, MM are 52-bounded from mul postcondition
+            assert(fe51_limbs_bounded(&PP, 52));
+            assert(fe51_limbs_bounded(&MM, 52));
+            assert(sum_of_limbs_bounded(&PP, &MM, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&PP, &MM, 52);
+            }
+            assert(fe51_limbs_bounded(&PP, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&PP, 52, 54);
+            }
+            assert(fe51_limbs_bounded(&MM, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&MM, 52, 54);
+            }
         }
         let result = CompletedPoint {
             X: &PP - &MM,
@@ -968,21 +1019,78 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
             T: &ZZ2 - &TT2d,
         };
         proof {
-            // postconditions
-            assume(is_valid_completed_point(result));
-            assume(completed_point_as_affine_edwards(result) == spec_edwards_add_projective_niels(
-                *self,
-                *other,
+            // Establish fe51_as_canonical_nat values of intermediate variables
+            // from the postconditions of the field operations.
+            // These follow from the add/sub/mul ensures clauses.
+            let pp_val = fe51_as_canonical_nat(&PP);
+            let mm_val = fe51_as_canonical_nat(&MM);
+            let tt2d_val = fe51_as_canonical_nat(&TT2d);
+            let zz_val = fe51_as_canonical_nat(&ZZ);
+
+            // Assert the fe51_as_canonical_nat relationships that the lemma needs.
+            // The field operation postconditions guarantee these.
+            assert(pp_val == field_mul(
+                field_add(fe51_as_canonical_nat(&self.Y), fe51_as_canonical_nat(&self.X)),
+                fe51_as_canonical_nat(&other.Y_plus_X),
             ));
-            // Limb bounds: mul outputs 52-bit, sub/add preserve or slightly increase bounds
-            // X = PP - MM: sub of 52-bit values → 52-bit output (sub postcondition)
-            // Y = PP + MM: add of 52-bit values → 53-bit output
-            // Z = ZZ2 + TT2d: 53-bit + 52-bit → 54-bit
-            // T = ZZ2 - TT2d: sub of 53-bit and 52-bit → 54-bit
-            assume(fe51_limbs_bounded(&result.X, 54));
-            assume(fe51_limbs_bounded(&result.Y, 54));
-            assume(fe51_limbs_bounded(&result.Z, 54));
-            assume(fe51_limbs_bounded(&result.T, 54));
+            assert(mm_val == field_mul(
+                field_sub(fe51_as_canonical_nat(&self.Y), fe51_as_canonical_nat(&self.X)),
+                fe51_as_canonical_nat(&other.Y_minus_X),
+            ));
+            assert(tt2d_val == field_mul(
+                fe51_as_canonical_nat(&self.T),
+                fe51_as_canonical_nat(&other.T2d),
+            ));
+            assert(zz_val == field_mul(
+                fe51_as_canonical_nat(&self.Z),
+                fe51_as_canonical_nat(&other.Z),
+            ));
+            // Result component spec values follow from sub/add postconditions
+            assert(fe51_as_canonical_nat(&result.X) == field_sub(pp_val, mm_val));
+            assert(fe51_as_canonical_nat(&result.Y) == field_add(pp_val, mm_val));
+            assert(fe51_as_canonical_nat(&result.Z) == field_add(
+                field_add(zz_val, zz_val),
+                tt2d_val,
+            ));
+            assert(fe51_as_canonical_nat(&result.T) == field_sub(
+                field_add(zz_val, zz_val),
+                tt2d_val,
+            ));
+
+            // Apply the algebraic correctness lemma
+            assert(is_valid_completed_point(result) && completed_point_as_affine_edwards(result)
+                == {
+                let self_affine = edwards_point_as_affine(*self);
+                let other_affine = projective_niels_point_as_affine_edwards(*other);
+                edwards_add(self_affine.0, self_affine.1, other_affine.0, other_affine.1)
+            }) by {
+                lemma_add_projective_niels_completed_valid(
+                    *self,
+                    *other,
+                    result,
+                    pp_val,
+                    mm_val,
+                    tt2d_val,
+                    zz_val,
+                );
+            }
+
+            // Limb bounds from sub/add postconditions:
+            // X = PP - MM: sub postcondition → 54-bounded
+            assert(fe51_limbs_bounded(&result.X, 54));
+            // Y = PP + MM: 52+52 → 53-bounded → weaken to 54
+            assert(fe51_limbs_bounded(&result.Y, 54)) by {
+                lemma_add_bounds_propagate(&PP, &MM, 52);
+                lemma_fe51_limbs_bounded_weaken(&result.Y, 53, 54);
+            }
+            // Z = ZZ2 + TT2d: sum of 54-bounded values → add postcondition
+            // ZZ2 is 53-bounded, TT2d is 52-bounded; use propagate with n=53 after weakening
+            assert(fe51_limbs_bounded(&result.Z, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&TT2d, 52, 53);
+                lemma_add_bounds_propagate(&ZZ2, &TT2d, 53);
+            }
+            // T = ZZ2 - TT2d: sub postcondition → 54-bounded
+            assert(fe51_limbs_bounded(&result.T, 54));
         }
         result
     }
@@ -999,7 +1107,12 @@ impl vstd::std_specs::ops::SubSpecImpl<&ProjectiveNielsPoint> for &EdwardsPoint 
         // Preconditions needed for field operations
         is_well_formed_edwards_point(*self) && fe51_limbs_bounded(&rhs.Y_plus_X, 54)
             && fe51_limbs_bounded(&rhs.Y_minus_X, 54) && fe51_limbs_bounded(&rhs.Z, 54)
-            && fe51_limbs_bounded(&rhs.T2d, 54)
+            && fe51_limbs_bounded(
+            &rhs.T2d,
+            54,
+        )
+        // Mathematical validity (for algebraic correctness proof)
+         && is_valid_projective_niels_point(*rhs)
     }
 
     open spec fn sub_spec(self, rhs: &ProjectiveNielsPoint) -> CompletedPoint {
@@ -1025,16 +1138,11 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     // The result represents the Edwards subtraction of the affine forms of self and other
 
             is_valid_completed_point(result),
-            ({
+            completed_point_as_affine_edwards(result) == {
                 let self_affine = edwards_point_as_affine(*self);
                 let other_affine = projective_niels_point_as_affine_edwards(*other);
-                completed_point_as_affine_edwards(result) == edwards_sub(
-                    self_affine.0,
-                    self_affine.1,
-                    other_affine.0,
-                    other_affine.1,
-                )
-            }),
+                edwards_sub(self_affine.0, self_affine.1, other_affine.0, other_affine.1)
+            },
             // Limb bounds for result (from mul's 52-bit output → sub/add produce ≤54-bit)
             fe51_limbs_bounded(&result.X, 54),
             fe51_limbs_bounded(&result.Y, 54),
@@ -1048,22 +1156,53 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         proof {
-            assume(fe51_limbs_bounded(&Y_plus_X, 54) && fe51_limbs_bounded(&Y_minus_X, 54));
+            // Y_plus_X: 52+52 → 53-bounded, weaken to 54
+            assert(fe51_limbs_bounded(&Y_plus_X, 54)) by {
+                lemma_add_bounds_propagate(&self.Y, &self.X, 52);
+                lemma_fe51_limbs_bounded_weaken(&Y_plus_X, 53, 54);
+            }
+            // Y_minus_X: sub postcondition → 54-bounded
+            assert(fe51_limbs_bounded(&Y_minus_X, 54));
         }
         let PM = &Y_plus_X * &other.Y_minus_X;
         let MP = &Y_minus_X * &other.Y_plus_X;
         let TT2d = &self.T * &other.T2d;
         let ZZ = &self.Z * &other.Z;
         proof {
-            assume(sum_of_limbs_bounded(&ZZ, &ZZ, u64::MAX));  // for ZZ2 = &ZZ + &ZZ
+            assert(fe51_limbs_bounded(&ZZ, 52));
+            assert(sum_of_limbs_bounded(&ZZ, &ZZ, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&ZZ, &ZZ, 52);
+            }
         }
         let ZZ2 = &ZZ + &ZZ;
         proof {
-            assume(sum_of_limbs_bounded(&PM, &MP, u64::MAX));  // for Y = &PM + &MP
-            assume(sum_of_limbs_bounded(&ZZ2, &TT2d, u64::MAX));  // for Z and T operations
-            // Preconditions for subtractions
-            assume(fe51_limbs_bounded(&PM, 54) && fe51_limbs_bounded(&MP, 54));  // for X = &PM - &MP
-            assume(fe51_limbs_bounded(&ZZ2, 54) && fe51_limbs_bounded(&TT2d, 54));  // for Z = &ZZ2 - &TT2d
+            // PM, MP are 52-bounded from mul postcondition
+            assert(fe51_limbs_bounded(&PM, 52));
+            assert(fe51_limbs_bounded(&MP, 52));
+            assert(sum_of_limbs_bounded(&PM, &MP, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&PM, &MP, 52);
+            }
+            // ZZ2: 52+52 → 53-bounded, weaken to 54
+            assert(fe51_limbs_bounded(&ZZ2, 53)) by {
+                lemma_add_bounds_propagate(&ZZ, &ZZ, 52);
+            }
+            assert(fe51_limbs_bounded(&ZZ2, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&ZZ2, 53, 54);
+            }
+            // TT2d: 52-bounded from mul, weaken to 54
+            assert(fe51_limbs_bounded(&TT2d, 52));
+            assert(fe51_limbs_bounded(&TT2d, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&TT2d, 52, 54);
+            }
+            assert(sum_of_limbs_bounded(&ZZ2, &TT2d, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&ZZ2, &TT2d, 54);
+            }
+            assert(fe51_limbs_bounded(&PM, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&PM, 52, 54);
+            }
+            assert(fe51_limbs_bounded(&MP, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&MP, 52, 54);
+            }
         }
 
         let result = CompletedPoint {
@@ -1073,25 +1212,67 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
             T: &ZZ2 + &TT2d,
         };
         proof {
-            // postconditions
-            assume(is_valid_completed_point(result));
-            let self_affine = edwards_point_as_affine(*self);
-            let other_affine = projective_niels_point_as_affine_edwards(*other);
-            assume(completed_point_as_affine_edwards(result) == edwards_sub(
-                self_affine.0,
-                self_affine.1,
-                other_affine.0,
-                other_affine.1,
+            // Establish fe51_as_canonical_nat values of intermediate variables
+            let pm_val = fe51_as_canonical_nat(&PM);
+            let mp_val = fe51_as_canonical_nat(&MP);
+            let tt2d_val = fe51_as_canonical_nat(&TT2d);
+            let zz_val = fe51_as_canonical_nat(&ZZ);
+
+            assert(pm_val == field_mul(
+                field_add(fe51_as_canonical_nat(&self.Y), fe51_as_canonical_nat(&self.X)),
+                fe51_as_canonical_nat(&other.Y_minus_X),
             ));
-            // Limb bounds: mul outputs 52-bit, sub/add preserve or slightly increase bounds
-            // X = PM - MP: sub of 52-bit values → 52-bit output (sub postcondition)
-            // Y = PM + MP: add of 52-bit values → 53-bit output
-            // Z = ZZ2 - TT2d: sub of 53-bit and 52-bit → 54-bit
-            // T = ZZ2 + TT2d: 53-bit + 52-bit → 54-bit
-            assume(fe51_limbs_bounded(&result.X, 54));
-            assume(fe51_limbs_bounded(&result.Y, 54));
-            assume(fe51_limbs_bounded(&result.Z, 54));
-            assume(fe51_limbs_bounded(&result.T, 54));
+            assert(mp_val == field_mul(
+                field_sub(fe51_as_canonical_nat(&self.Y), fe51_as_canonical_nat(&self.X)),
+                fe51_as_canonical_nat(&other.Y_plus_X),
+            ));
+            assert(tt2d_val == field_mul(
+                fe51_as_canonical_nat(&self.T),
+                fe51_as_canonical_nat(&other.T2d),
+            ));
+            assert(zz_val == field_mul(
+                fe51_as_canonical_nat(&self.Z),
+                fe51_as_canonical_nat(&other.Z),
+            ));
+            assert(fe51_as_canonical_nat(&result.X) == field_sub(pm_val, mp_val));
+            assert(fe51_as_canonical_nat(&result.Y) == field_add(pm_val, mp_val));
+            assert(fe51_as_canonical_nat(&result.Z) == field_sub(
+                field_add(zz_val, zz_val),
+                tt2d_val,
+            ));
+            assert(fe51_as_canonical_nat(&result.T) == field_add(
+                field_add(zz_val, zz_val),
+                tt2d_val,
+            ));
+
+            assert(is_valid_completed_point(result) && completed_point_as_affine_edwards(result)
+                == {
+                let self_affine = edwards_point_as_affine(*self);
+                let other_affine = projective_niels_point_as_affine_edwards(*other);
+                edwards_sub(self_affine.0, self_affine.1, other_affine.0, other_affine.1)
+            }) by {
+                lemma_sub_projective_niels_completed_valid(
+                    *self,
+                    *other,
+                    result,
+                    pm_val,
+                    mp_val,
+                    tt2d_val,
+                    zz_val,
+                );
+            }
+
+            // Limb bounds from sub/add postconditions:
+            assert(fe51_limbs_bounded(&result.X, 54));  // sub postcondition
+            assert(fe51_limbs_bounded(&result.Y, 54)) by {
+                lemma_add_bounds_propagate(&PM, &MP, 52);
+                lemma_fe51_limbs_bounded_weaken(&result.Y, 53, 54);
+            }
+            assert(fe51_limbs_bounded(&result.Z, 54));  // sub postcondition
+            assert(fe51_limbs_bounded(&result.T, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&TT2d, 52, 53);
+                lemma_add_bounds_propagate(&ZZ2, &TT2d, 53);
+            }
         }
         result
     }
@@ -1112,7 +1293,12 @@ impl vstd::std_specs::ops::AddSpecImpl<&AffineNielsPoint> for &EdwardsPoint {
             u64::MAX,
         )  // for Z2 = &self.Z + &self.Z
          && fe51_limbs_bounded(&rhs.y_plus_x, 54) && fe51_limbs_bounded(&rhs.y_minus_x, 54)
-            && fe51_limbs_bounded(&rhs.xy2d, 54)
+            && fe51_limbs_bounded(
+            &rhs.xy2d,
+            54,
+        )
+        // Mathematical validity (for algebraic correctness proof)
+         && is_valid_affine_niels_point(*rhs)
     }
 
     open spec fn add_spec(self, rhs: &AffineNielsPoint) -> CompletedPoint {
@@ -1139,10 +1325,11 @@ impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
     // The result represents the Edwards addition of the affine forms of self and other
 
             is_valid_completed_point(result),
-            completed_point_as_affine_edwards(result) == spec_edwards_add_affine_niels(
-                *self,
-                *other,
-            ),
+            completed_point_as_affine_edwards(result) == {
+                let self_affine = edwards_point_as_affine(*self);
+                let other_affine = affine_niels_point_as_affine_edwards(*other);
+                edwards_add(self_affine.0, self_affine.1, other_affine.0, other_affine.1)
+            },
             // Limb bounds for result (from mul's 52-bit output → sub/add produce ≤54-bit)
             fe51_limbs_bounded(&result.X, 54),
             fe51_limbs_bounded(&result.Y, 54),
@@ -1156,18 +1343,45 @@ impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         proof {
-            assume(sum_of_limbs_bounded(&Y_plus_X, &Y_minus_X, u64::MAX));
-            assume(fe51_limbs_bounded(&Y_plus_X, 54) && fe51_limbs_bounded(&Y_minus_X, 54));
+            assert(fe51_limbs_bounded(&Y_plus_X, 54)) by {
+                lemma_add_bounds_propagate(&self.Y, &self.X, 52);
+                lemma_fe51_limbs_bounded_weaken(&Y_plus_X, 53, 54);
+            }
+            assert(fe51_limbs_bounded(&Y_minus_X, 54));
+            assert(sum_of_limbs_bounded(&Y_plus_X, &Y_minus_X, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&Y_plus_X, &Y_minus_X, 54);
+            }
         }
         let PP = &Y_plus_X * &other.y_plus_x;
         let MM = &Y_minus_X * &other.y_minus_x;
         let Txy2d = &self.T * &other.xy2d;
         let Z2 = &self.Z + &self.Z;
         proof {
-            assume(sum_of_limbs_bounded(&Z2, &Txy2d, u64::MAX));
-            assume(sum_of_limbs_bounded(&PP, &MM, u64::MAX));
-            assume(fe51_limbs_bounded(&PP, 54) && fe51_limbs_bounded(&MM, 54));
-            assume(fe51_limbs_bounded(&Z2, 54) && fe51_limbs_bounded(&Txy2d, 54));
+            assert(fe51_limbs_bounded(&PP, 52));
+            assert(fe51_limbs_bounded(&MM, 52));
+            assert(fe51_limbs_bounded(&Txy2d, 52));
+            // Z2: 52+52 → 53-bounded
+            assert(fe51_limbs_bounded(&Z2, 53)) by {
+                lemma_add_bounds_propagate(&self.Z, &self.Z, 52);
+            }
+            assert(fe51_limbs_bounded(&Z2, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&Z2, 53, 54);
+            }
+            assert(fe51_limbs_bounded(&Txy2d, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&Txy2d, 52, 54);
+            }
+            assert(sum_of_limbs_bounded(&Z2, &Txy2d, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&Z2, &Txy2d, 54);
+            }
+            assert(sum_of_limbs_bounded(&PP, &MM, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&PP, &MM, 52);
+            }
+            assert(fe51_limbs_bounded(&PP, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&PP, 52, 54);
+            }
+            assert(fe51_limbs_bounded(&MM, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&MM, 52, 54);
+            }
         }
         let result = CompletedPoint {
             X: &PP - &MM,
@@ -1176,17 +1390,61 @@ impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
             T: &Z2 - &Txy2d,
         };
         proof {
-            // postconditions
-            assume(is_valid_completed_point(result));
-            assume(completed_point_as_affine_edwards(result) == spec_edwards_add_affine_niels(
-                *self,
-                *other,
+            // Establish fe51_as_canonical_nat values of intermediate variables
+            let pp_val = fe51_as_canonical_nat(&PP);
+            let mm_val = fe51_as_canonical_nat(&MM);
+            let txy2d_val = fe51_as_canonical_nat(&Txy2d);
+            let z2_val = fe51_as_canonical_nat(&Z2);
+
+            assert(pp_val == field_mul(
+                field_add(fe51_as_canonical_nat(&self.Y), fe51_as_canonical_nat(&self.X)),
+                fe51_as_canonical_nat(&other.y_plus_x),
             ));
-            // Limb bounds: mul outputs 52-bit, sub/add preserve or slightly increase bounds
-            assume(fe51_limbs_bounded(&result.X, 54));
-            assume(fe51_limbs_bounded(&result.Y, 54));
-            assume(fe51_limbs_bounded(&result.Z, 54));
-            assume(fe51_limbs_bounded(&result.T, 54));
+            assert(mm_val == field_mul(
+                field_sub(fe51_as_canonical_nat(&self.Y), fe51_as_canonical_nat(&self.X)),
+                fe51_as_canonical_nat(&other.y_minus_x),
+            ));
+            assert(txy2d_val == field_mul(
+                fe51_as_canonical_nat(&self.T),
+                fe51_as_canonical_nat(&other.xy2d),
+            ));
+            assert(z2_val == field_add(
+                fe51_as_canonical_nat(&self.Z),
+                fe51_as_canonical_nat(&self.Z),
+            ));
+            assert(fe51_as_canonical_nat(&result.X) == field_sub(pp_val, mm_val));
+            assert(fe51_as_canonical_nat(&result.Y) == field_add(pp_val, mm_val));
+            assert(fe51_as_canonical_nat(&result.Z) == field_add(z2_val, txy2d_val));
+            assert(fe51_as_canonical_nat(&result.T) == field_sub(z2_val, txy2d_val));
+
+            assert(is_valid_completed_point(result) && completed_point_as_affine_edwards(result)
+                == {
+                let self_affine = edwards_point_as_affine(*self);
+                let other_affine = affine_niels_point_as_affine_edwards(*other);
+                edwards_add(self_affine.0, self_affine.1, other_affine.0, other_affine.1)
+            }) by {
+                lemma_add_affine_niels_completed_valid(
+                    *self,
+                    *other,
+                    result,
+                    pp_val,
+                    mm_val,
+                    txy2d_val,
+                    z2_val,
+                );
+            }
+
+            // Limb bounds from sub/add postconditions:
+            assert(fe51_limbs_bounded(&result.X, 54));  // sub postcondition
+            assert(fe51_limbs_bounded(&result.Y, 54)) by {
+                lemma_add_bounds_propagate(&PP, &MM, 52);
+                lemma_fe51_limbs_bounded_weaken(&result.Y, 53, 54);
+            }
+            assert(fe51_limbs_bounded(&result.Z, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&Txy2d, 52, 53);
+                lemma_add_bounds_propagate(&Z2, &Txy2d, 53);
+            }
+            assert(fe51_limbs_bounded(&result.T, 54));  // sub postcondition
         }
         result
     }
@@ -1207,7 +1465,12 @@ impl vstd::std_specs::ops::SubSpecImpl<&AffineNielsPoint> for &EdwardsPoint {
             u64::MAX,
         )  // for Z2 = &self.Z + &self.Z
          && fe51_limbs_bounded(&rhs.y_plus_x, 54) && fe51_limbs_bounded(&rhs.y_minus_x, 54)
-            && fe51_limbs_bounded(&rhs.xy2d, 54)
+            && fe51_limbs_bounded(
+            &rhs.xy2d,
+            54,
+        )
+        // Mathematical validity (for algebraic correctness proof)
+         && is_valid_affine_niels_point(*rhs)
     }
 
     open spec fn sub_spec(self, rhs: &AffineNielsPoint) -> CompletedPoint {
@@ -1234,16 +1497,11 @@ impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a EdwardsPoint {
     // The result represents the Edwards subtraction of the affine forms of self and other
 
             is_valid_completed_point(result),
-            ({
+            completed_point_as_affine_edwards(result) == {
                 let self_affine = edwards_point_as_affine(*self);
                 let other_affine = affine_niels_point_as_affine_edwards(*other);
-                completed_point_as_affine_edwards(result) == edwards_sub(
-                    self_affine.0,
-                    self_affine.1,
-                    other_affine.0,
-                    other_affine.1,
-                )
-            }),
+                edwards_sub(self_affine.0, self_affine.1, other_affine.0, other_affine.1)
+            },
     {
         proof {
             // EdwardsPoint invariant is 52-bounded, weaken to 54-bounded for sub/mul preconditions
@@ -1252,18 +1510,44 @@ impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a EdwardsPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         proof {
-            assume(sum_of_limbs_bounded(&Y_plus_X, &Y_minus_X, u64::MAX));
-            assume(fe51_limbs_bounded(&Y_plus_X, 54) && fe51_limbs_bounded(&Y_minus_X, 54));
+            assert(fe51_limbs_bounded(&Y_plus_X, 54)) by {
+                lemma_add_bounds_propagate(&self.Y, &self.X, 52);
+                lemma_fe51_limbs_bounded_weaken(&Y_plus_X, 53, 54);
+            }
+            assert(fe51_limbs_bounded(&Y_minus_X, 54));
+            assert(sum_of_limbs_bounded(&Y_plus_X, &Y_minus_X, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&Y_plus_X, &Y_minus_X, 54);
+            }
         }
         let PM = &Y_plus_X * &other.y_minus_x;
         let MP = &Y_minus_X * &other.y_plus_x;
         let Txy2d = &self.T * &other.xy2d;
         let Z2 = &self.Z + &self.Z;
         proof {
-            assume(sum_of_limbs_bounded(&Z2, &Txy2d, u64::MAX));
-            assume(sum_of_limbs_bounded(&PM, &MP, u64::MAX));
-            assume(fe51_limbs_bounded(&PM, 54) && fe51_limbs_bounded(&MP, 54));
-            assume(fe51_limbs_bounded(&Z2, 54) && fe51_limbs_bounded(&Txy2d, 54));
+            assert(fe51_limbs_bounded(&PM, 52));
+            assert(fe51_limbs_bounded(&MP, 52));
+            assert(fe51_limbs_bounded(&Txy2d, 52));
+            assert(fe51_limbs_bounded(&Z2, 53)) by {
+                lemma_add_bounds_propagate(&self.Z, &self.Z, 52);
+            }
+            assert(fe51_limbs_bounded(&Z2, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&Z2, 53, 54);
+            }
+            assert(fe51_limbs_bounded(&Txy2d, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&Txy2d, 52, 54);
+            }
+            assert(sum_of_limbs_bounded(&Z2, &Txy2d, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&Z2, &Txy2d, 54);
+            }
+            assert(sum_of_limbs_bounded(&PM, &MP, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&PM, &MP, 52);
+            }
+            assert(fe51_limbs_bounded(&PM, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&PM, 52, 54);
+            }
+            assert(fe51_limbs_bounded(&MP, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&MP, 52, 54);
+            }
         }
         let result = CompletedPoint {
             X: &PM - &MP,
@@ -1272,16 +1556,61 @@ impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a EdwardsPoint {
             T: &Z2 + &Txy2d,
         };
         proof {
-            // postconditions
-            assume(is_valid_completed_point(result));
-            let self_affine = edwards_point_as_affine(*self);
-            let other_affine = affine_niels_point_as_affine_edwards(*other);
-            assume(completed_point_as_affine_edwards(result) == edwards_sub(
-                self_affine.0,
-                self_affine.1,
-                other_affine.0,
-                other_affine.1,
+            // Establish fe51_as_canonical_nat values of intermediate variables
+            let pm_val = fe51_as_canonical_nat(&PM);
+            let mp_val = fe51_as_canonical_nat(&MP);
+            let txy2d_val = fe51_as_canonical_nat(&Txy2d);
+            let z2_val = fe51_as_canonical_nat(&Z2);
+
+            assert(pm_val == field_mul(
+                field_add(fe51_as_canonical_nat(&self.Y), fe51_as_canonical_nat(&self.X)),
+                fe51_as_canonical_nat(&other.y_minus_x),
             ));
+            assert(mp_val == field_mul(
+                field_sub(fe51_as_canonical_nat(&self.Y), fe51_as_canonical_nat(&self.X)),
+                fe51_as_canonical_nat(&other.y_plus_x),
+            ));
+            assert(txy2d_val == field_mul(
+                fe51_as_canonical_nat(&self.T),
+                fe51_as_canonical_nat(&other.xy2d),
+            ));
+            assert(z2_val == field_add(
+                fe51_as_canonical_nat(&self.Z),
+                fe51_as_canonical_nat(&self.Z),
+            ));
+            assert(fe51_as_canonical_nat(&result.X) == field_sub(pm_val, mp_val));
+            assert(fe51_as_canonical_nat(&result.Y) == field_add(pm_val, mp_val));
+            assert(fe51_as_canonical_nat(&result.Z) == field_sub(z2_val, txy2d_val));
+            assert(fe51_as_canonical_nat(&result.T) == field_add(z2_val, txy2d_val));
+
+            assert(is_valid_completed_point(result) && completed_point_as_affine_edwards(result)
+                == {
+                let self_affine = edwards_point_as_affine(*self);
+                let other_affine = affine_niels_point_as_affine_edwards(*other);
+                edwards_sub(self_affine.0, self_affine.1, other_affine.0, other_affine.1)
+            }) by {
+                lemma_sub_affine_niels_completed_valid(
+                    *self,
+                    *other,
+                    result,
+                    pm_val,
+                    mp_val,
+                    txy2d_val,
+                    z2_val,
+                );
+            }
+
+            // Limb bounds from sub/add postconditions:
+            assert(fe51_limbs_bounded(&result.X, 54));  // sub postcondition
+            assert(fe51_limbs_bounded(&result.Y, 54)) by {
+                lemma_add_bounds_propagate(&PM, &MP, 52);
+                lemma_fe51_limbs_bounded_weaken(&result.Y, 53, 54);
+            }
+            assert(fe51_limbs_bounded(&result.Z, 54));  // sub postcondition
+            assert(fe51_limbs_bounded(&result.T, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&Txy2d, 52, 53);
+                lemma_add_bounds_propagate(&Z2, &Txy2d, 53);
+            }
         }
         result
     }
@@ -1341,6 +1670,7 @@ impl<'a> Neg for &'a ProjectiveNielsPoint {
             T2d: negate_field(&self.T2d),
         };
         proof {
+            // TODO(verify): prove from Y+X ↔ Y-X swap and T2d negation
             let self_affine = projective_niels_point_as_affine_edwards(*self);
             assume(projective_niels_point_as_affine_edwards(result) == (
                 field_neg(self_affine.0),
@@ -1400,6 +1730,7 @@ impl<'a> Neg for &'a AffineNielsPoint {
             xy2d: negate_field(&self.xy2d),
         };
         proof {
+            // TODO(verify): prove from y+x ↔ y-x swap and xy2d negation
             let self_affine = affine_niels_point_as_affine_edwards(*self);
             assume(affine_niels_point_as_affine_edwards(result) == (
                 field_neg(self_affine.0),

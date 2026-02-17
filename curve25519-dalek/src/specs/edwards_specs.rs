@@ -411,11 +411,11 @@ pub open spec fn is_identity_edwards_point(point: crate::edwards::EdwardsPoint) 
 /// mathematical values `(x, y, z, t)` (all reduced mod p via `field_*`).
 ///
 /// An (X:Y:Z:T) tuple is valid iff:
-/// 1. Z ≠ 0
+/// 1. Z ≠ 0 (mod p)
 /// 2. The projective curve equation holds: (Y² - X²)·Z² = Z⁴ + d·X²·Y²
 /// 3. The Segre relation holds: X·Y = Z·T
 pub open spec fn math_is_valid_extended_edwards_point(x: nat, y: nat, z: nat, t: nat) -> bool {
-    z != 0 && math_on_edwards_curve_projective(x, y, z) && field_mul(x, y) == field_mul(z, t)
+    z % p() != 0 && math_on_edwards_curve_projective(x, y, z) && field_mul(x, y) == field_mul(z, t)
 }
 
 /// Check if an EdwardsPoint in extended coordinates is valid
@@ -793,28 +793,6 @@ pub open spec fn edwards_add(x1: nat, y1: nat, x2: nat, y2: nat) -> (nat, nat) {
 /// Affine Edwards doubling defined as addition with itself.
 pub open spec fn edwards_double(x: nat, y: nat) -> (nat, nat) {
     edwards_add(x, y, x, y)
-}
-
-/// Helper spec function: Edwards addition of EdwardsPoint and ProjectiveNielsPoint
-/// Combines the affine conversion and addition into a single convenient spec function.
-pub open spec fn spec_edwards_add_projective_niels(p: EdwardsPoint, q: ProjectiveNielsPoint) -> (
-    nat,
-    nat,
-) {
-    let self_affine = edwards_point_as_affine(p);
-    let other_affine = projective_niels_point_as_affine_edwards(q);
-    edwards_add(self_affine.0, self_affine.1, other_affine.0, other_affine.1)
-}
-
-/// Helper spec function: Edwards addition of EdwardsPoint and AffineNielsPoint
-/// Combines the affine conversion and addition into a single convenient spec function.
-pub open spec fn spec_edwards_add_affine_niels(
-    p: crate::edwards::EdwardsPoint,
-    q: crate::backend::serial::curve_models::AffineNielsPoint,
-) -> (nat, nat) {
-    let self_affine = edwards_point_as_affine(p);
-    let other_affine = affine_niels_point_as_affine_edwards(q);
-    edwards_add(self_affine.0, self_affine.1, other_affine.0, other_affine.1)
 }
 
 /// Affine Edwards negation for twisted Edwards curves with a=-1.

@@ -242,11 +242,14 @@ pub proof fn lemma_affine_to_extended_valid(x: nat, y: nat, t: nat)
     p_gt_2();
 
     // New validity definition uses:
-    // - Z != 0
+    // - Z % p != 0 (field-nonzero)
     // - projective curve equation
     // - Segre relation X·Y == Z·T
 
-    // 1) Z != 0 (Z = 1)
+    // 1) Z = 1, so 1 % p != 0 (since p > 2)
+    assert(1nat % p != 0) by {
+        lemma_small_mod(1nat, p);
+    }
 
     // 2) Projective curve equation holds for Z = 1
     assert(math_on_edwards_curve_projective(x, y, 1)) by {
@@ -1833,6 +1836,440 @@ pub proof fn axiom_unique_x_with_parity(x1: nat, x2: nat, y: nat)
 proof fn axiom_d_plus_one_nonzero()
     ensures
         field_add(fe51_as_canonical_nat(&EDWARDS_D), 1) % p() != 0,
+{
+    admit();
+}
+
+/// Lemma: A valid extended Edwards point lies on the affine curve.
+///
+/// If (X, Y, Z, T) is a valid extended Edwards point (Z ≠ 0 mod p, projective curve
+/// equation holds, Segre relation X·Y = Z·T), then the affine coordinates (X/Z, Y/Z)
+/// satisfy the Edwards curve equation -x² + y² = 1 + d·x²·y².
+///
+/// This is the converse of `lemma_affine_curve_implies_projective`.
+///
+/// Proof strategy: multiply the projective equation (y²-x²)·z² = z⁴ + d·x²·y² by
+/// inv(z⁴) and simplify both sides to recover the affine equation.
+pub proof fn lemma_valid_extended_point_affine_on_curve(x: nat, y: nat, z: nat, t: nat)
+    requires
+        math_is_valid_extended_edwards_point(x, y, z, t),
+    ensures
+        math_on_edwards_curve(field_mul(x, field_inv(z)), field_mul(y, field_inv(z))),
+{
+    let p = p();
+    assert(p > 2) by {
+        p_gt_2();
+    };
+
+    let d = fe51_as_canonical_nat(&EDWARDS_D);
+    let inv_z = field_inv(z);
+
+    // Define affine coordinates: x/z, y/z
+    let x_div_z = field_mul(x, inv_z);
+    let y_div_z = field_mul(y, inv_z);
+
+    // Squares of affine coordinates
+    let x_div_z_sq = field_square(x_div_z);
+    let y_div_z_sq = field_square(y_div_z);
+
+    // Projective values
+    let x2 = field_square(x);
+    let y2 = field_square(y);
+    let z2 = field_square(z);
+    let z4 = field_square(z2);
+    let inv_z2 = field_inv(z2);
+    let inv_z4 = field_inv(z4);
+
+    // From precondition: projective curve equation
+    // proj_lhs = (y² - x²)·z²
+    // proj_rhs = z⁴ + d·x²·y²
+    let y2_minus_x2 = field_sub(y2, x2);
+    let x2_y2 = field_mul(x2, y2);
+    let proj_lhs = field_mul(y2_minus_x2, z2);
+    let proj_rhs = field_add(z4, field_mul(d, x2_y2));
+    assert(proj_lhs == proj_rhs);  // from math_on_edwards_curve_projective
+
+    // === Establish z², z⁴ are nonzero in the field ===
+    assert(z2 != 0 && z2 % p != 0) by {
+        lemma_nonzero_product(z, z);
+        assert(z2 < p) by {
+            lemma_mod_bound((z * z) as int, p as int);
+        };
+        lemma_field_element_reduced(z2);
+    };
+
+    assert(z4 != 0 && z4 % p != 0) by {
+        lemma_nonzero_product(z2, z2);
+        assert(z4 < p) by {
+            lemma_mod_bound((z2 * z2) as int, p as int);
+        };
+        lemma_field_element_reduced(z4);
+    };
+
+    // === STEP 1: Quotient of squares ===
+    // (x/z)² = x²/z² = x²·inv(z²)
+    assert(x_div_z_sq == field_mul(x2, inv_z2)) by {
+        lemma_quotient_of_squares(x, z);
+    };
+    // (y/z)² = y²/z² = y²·inv(z²)
+    assert(y_div_z_sq == field_mul(y2, inv_z2)) by {
+        lemma_quotient_of_squares(y, z);
+    };
+
+    // === STEP 2: Affine LHS = (y/z)² - (x/z)² = (y²-x²)·inv(z²) ===
+    let affine_lhs = field_sub(y_div_z_sq, x_div_z_sq);
+    assert(affine_lhs == field_mul(y2_minus_x2, inv_z2)) by {
+        lemma_field_mul_distributes_over_sub_right(y2, x2, inv_z2);
+    };
+
+    // === STEP 3: Affine RHS = 1 + d·(x/z)²·(y/z)² ===
+    // First: inv(z²)·inv(z²) = inv(z⁴)
+    assert(field_mul(inv_z2, inv_z2) == inv_z4) by {
+        lemma_inv_of_product(z2, z2);
+    };
+
+    // (x/z)²·(y/z)² = x²·inv(z²)·y²·inv(z²) = x²·y²·inv(z⁴)
+    let x2_y2_inv_z4 = field_mul(x2_y2, inv_z4);
+    assert(field_mul(x_div_z_sq, y_div_z_sq) == x2_y2_inv_z4) by {
+        lemma_field_mul_assoc(x2, inv_z2, field_mul(y2, inv_z2));
+        lemma_field_mul_comm(inv_z2, field_mul(y2, inv_z2));
+        lemma_field_mul_assoc(y2, inv_z2, inv_z2);
+        lemma_field_mul_assoc(x2, y2, field_mul(inv_z2, inv_z2));
+    };
+
+    let affine_rhs = field_add(1, field_mul(d, field_mul(x_div_z_sq, y_div_z_sq)));
+    assert(affine_rhs == field_add(1, field_mul(d, x2_y2_inv_z4)));
+
+    // === STEP 4: Multiply projective equation by inv(z⁴) ===
+    // proj_lhs == proj_rhs, so proj_lhs · inv(z⁴) == proj_rhs · inv(z⁴)
+
+    // --- LHS: proj_lhs · inv(z⁴) = (y²-x²)·z²·inv(z⁴) = (y²-x²)·inv(z²) = affine_lhs ---
+    // z²·inv(z⁴) = z²·inv(z²)·inv(z²) = inv(z²)
+    // z2 · inv_z4 = inv_z2 (cancel one factor of z²)
+    assert(field_mul(z2, inv_z4) == inv_z2) by {
+        // inv_z4 = inv_z2 · inv_z2
+        assert(inv_z4 == field_mul(inv_z2, inv_z2)) by {
+            lemma_inv_of_product(z2, z2);
+        };
+        // z2 · (inv_z2 · inv_z2) = (z2 · inv_z2) · inv_z2
+        lemma_field_mul_assoc(z2, inv_z2, inv_z2);
+        // z2 · inv_z2 = 1
+        assert(field_mul(z2, inv_z2) == 1) by {
+            lemma_field_mul_comm(z2, inv_z2);
+            lemma_inv_mul_cancel(z2);
+        };
+        // 1 · inv_z2 = inv_z2
+        assert(field_mul(1, inv_z2) == inv_z2 % p) by {
+            lemma_field_mul_one_left(inv_z2);
+        };
+        assert(inv_z2 < p) by {
+            field_inv_property(z2);
+        };
+        assert(inv_z2 == inv_z2 % p) by {
+            lemma_field_element_reduced(inv_z2);
+        };
+    };
+    assert(field_mul(proj_lhs, inv_z4) == affine_lhs) by {
+        lemma_field_mul_assoc(y2_minus_x2, z2, inv_z4);
+    };
+
+    // --- RHS: proj_rhs · inv(z⁴) = (z⁴ + d·x²y²)·inv(z⁴) = 1 + d·x²y²·inv(z⁴) = affine_rhs ---
+    // inv(z⁴)·z⁴ = 1
+    assert(field_mul(inv_z4, z4) == 1) by {
+        lemma_inv_mul_cancel(z4);
+    };
+    // inv(z⁴)·(d·x²y²) = d·(x²y²·inv(z⁴)) = d·x2_y2_inv_z4
+    assert(field_mul(inv_z4, field_mul(d, x2_y2)) == field_mul(d, x2_y2_inv_z4)) by {
+        lemma_field_mul_assoc(inv_z4, d, x2_y2);
+        lemma_field_mul_comm(inv_z4, d);
+        lemma_field_mul_assoc(d, inv_z4, x2_y2);
+        lemma_field_mul_comm(inv_z4, x2_y2);
+    };
+    // Distribute: (z⁴ + d·x²y²)·inv(z⁴) = z⁴·inv(z⁴) + d·x²y²·inv(z⁴) = 1 + d·x2_y2_inv_z4
+    assert(field_mul(proj_rhs, inv_z4) == affine_rhs) by {
+        lemma_field_mul_comm(proj_rhs, inv_z4);
+        lemma_field_mul_distributes_over_add(inv_z4, z4, field_mul(d, x2_y2));
+        lemma_small_mod(1nat, p);
+    };
+
+    // === STEP 5: Conclude affine_lhs == affine_rhs ===
+    assert(affine_lhs == affine_rhs);
+}
+
+/// Lemma: When an AffineNielsPoint corresponds to an EdwardsPoint,
+/// their affine representations are equal.
+///
+/// ## Mathematical Proof
+///
+/// Given `affine_niels_corresponds_to_edwards(niels, point)` with affine x = X/Z, y = Y/Z:
+/// - y_plus_x == y + x
+/// - y_minus_x == y - x
+///
+/// From `affine_niels_point_as_affine_edwards`:
+/// - x_niels = (y_plus_x - y_minus_x) / 2 = ((y+x) - (y-x)) / 2 = 2x / 2 = x
+/// - y_niels = (y_plus_x + y_minus_x) / 2 = ((y+x) + (y-x)) / 2 = 2y / 2 = y
+///
+/// This equals `edwards_point_as_affine(point) = (X/Z, Y/Z) = (x, y)`.
+///
+/// Note: Unlike the ProjectiveNiels case, AffineNiels stores affine sums (y+x, y-x)
+/// rather than projective sums (Y+X, Y-X), so no division by Z is needed here.
+pub proof fn lemma_affine_niels_affine_equals_edwards_affine(
+    niels: crate::backend::serial::curve_models::AffineNielsPoint,
+    point: crate::edwards::EdwardsPoint,
+)
+    requires
+        affine_niels_corresponds_to_edwards(niels, point),
+        is_valid_edwards_point(point),
+    ensures
+        affine_niels_point_as_affine_edwards(niels) == edwards_point_as_affine(point),
+{
+    let x_proj = fe51_as_canonical_nat(&point.X);
+    let y_proj = fe51_as_canonical_nat(&point.Y);
+    let z_proj = fe51_as_canonical_nat(&point.Z);
+
+    let z_inv = field_inv(z_proj);
+    let x = field_mul(x_proj, z_inv);
+    let y = field_mul(y_proj, z_inv);
+
+    let y_plus_x = fe51_as_canonical_nat(&niels.y_plus_x);
+    let y_minus_x = fe51_as_canonical_nat(&niels.y_minus_x);
+
+    assert(y_plus_x == field_add(y, x)) by {
+        reveal(affine_niels_corresponds_to_edwards);
+    };
+    assert(y_minus_x == field_sub(y, x)) by {
+        reveal(affine_niels_corresponds_to_edwards);
+    };
+
+    let inv2 = field_inv(2);
+
+    // Step 1: Recover x from (y+x) - (y-x) = 2x
+    let diff = field_sub(y_plus_x, y_minus_x);
+    let x_niels = field_mul(diff, inv2);
+    assert(diff == field_mul(2, x)) by {
+        lemma_field_add_sub_recover_double(y, x);
+    };
+    assert(x_niels == x % p()) by {
+        lemma_field_halve_double(x);
+    };
+
+    // Step 2: Recover y from (y+x) + (y-x) = 2y
+    let sum = field_add(y_plus_x, y_minus_x);
+    let y_niels = field_mul(sum, inv2);
+    assert(sum == field_mul(2, y)) by {
+        lemma_field_add_add_recover_double(y, x);
+    };
+    assert(y_niels == y % p()) by {
+        lemma_field_halve_double(y);
+    };
+
+    // Step 3: x < p and y < p (field elements), so x%p = x and y%p = y
+    assert(x < p()) by {
+        p_gt_2();
+        lemma_mod_bound(fe51_as_nat(&point.X) as int, p() as int);
+        lemma_mod_bound((x_proj * z_inv) as int, p() as int);
+    };
+    assert(y < p()) by {
+        p_gt_2();
+        lemma_mod_bound(fe51_as_nat(&point.Y) as int, p() as int);
+        lemma_mod_bound((y_proj * z_inv) as int, p() as int);
+    };
+
+    assert(x_niels == x) by {
+        lemma_small_mod(x, p());
+    };
+    assert(y_niels == y) by {
+        lemma_small_mod(y, p());
+    };
+}
+
+/// Axiom: addition on the twisted Edwards curve is complete (always defined) and closed
+/// (the result stays on the curve).
+///
+/// Given two affine points (x₁, y₁) and (x₂, y₂) on -x² + y² = 1 + d·x²y²,
+/// let t = d·x₁x₂·y₁y₂. Then:
+/// 1. **Completeness**: 1 + t ≠ 0 and 1 − t ≠ 0, so the addition denominators
+///    in `edwards_add` are invertible.
+/// 2. **Closure**: the resulting point `edwards_add(x₁, y₁, x₂, y₂)` satisfies the
+///    curve equation.
+///
+/// This holds because d is non-square in GF(p) for Ed25519.
+///
+/// Reference: Bernstein, Birkner, Joye, Lange, Peters,
+/// "Twisted Edwards Curves", AFRICACRYPT 2008, Theorem 3.3.
+/// <https://eprint.iacr.org/2008/013>
+pub proof fn axiom_edwards_add_complete(x1: nat, y1: nat, x2: nat, y2: nat)
+    requires
+        math_on_edwards_curve(x1, y1),
+        math_on_edwards_curve(x2, y2),
+    ensures
+        ({
+            let d = fe51_as_canonical_nat(&EDWARDS_D);
+            let t = field_mul(d, field_mul(field_mul(x1, x2), field_mul(y1, y2)));
+            field_add(1, t) != 0 && field_sub(1, t) != 0
+        }),
+        math_on_edwards_curve(edwards_add(x1, y1, x2, y2).0, edwards_add(x1, y1, x2, y2).1),
+{
+    admit();
+}
+
+/// The concrete addition formulas and `edwards_add` compute the same point.
+///
+/// There are two representations of Edwards addition:
+/// - **`edwards_add`** (abstract): affine formula x₃ = (x₁y₂+y₁x₂)/(1+d·x₁x₂y₁y₂),
+///   y₃ = (y₁y₂+x₁x₂)/(1−d·x₁x₂y₁y₂)
+/// - **P¹×P¹ formulas** (concrete): produce (X:Y:Z:T) where each coordinate is
+///   scaled by 2, e.g. X = 2·(x₁y₂+y₁x₂), Z = 2·(1+d·x₁x₂y₁y₂)
+///
+/// This lemma shows the two agree: the common factor of 2 cancels in the
+/// projective ratios X/Z and Y/T, recovering exactly `edwards_add`. It also
+/// ensures Z ≠ 0, T ≠ 0, and the result lies on the curve (via
+/// `axiom_edwards_add_complete`).
+pub proof fn lemma_completed_point_ratios(
+    x1: nat,
+    y1: nat,
+    x2: nat,
+    y2: nat,
+    result_x: nat,
+    result_y: nat,
+    result_z: nat,
+    result_t: nat,
+)
+    requires
+// (x₁, y₁) on curve
+
+        math_on_edwards_curve(x1, y1),
+        // (x₂, y₂) on curve
+        math_on_edwards_curve(x2, y2),
+        // X = 2·(x₁y₂ + y₁x₂)
+        result_x == field_mul(2, field_add(field_mul(x1, y2), field_mul(y1, x2))),
+        // Y = 2·(y₁y₂ + x₁x₂)
+        result_y == field_mul(2, field_add(field_mul(y1, y2), field_mul(x1, x2))),
+        // Z = 2·(1 + d·x₁x₂·y₁y₂)
+        result_z == field_mul(
+            2,
+            field_add(
+                1,
+                field_mul(
+                    fe51_as_canonical_nat(&EDWARDS_D),
+                    field_mul(field_mul(x1, x2), field_mul(y1, y2)),
+                ),
+            ),
+        ),
+        // T = 2·(1 − d·x₁x₂·y₁y₂)
+        result_t == field_mul(
+            2,
+            field_sub(
+                1,
+                field_mul(
+                    fe51_as_canonical_nat(&EDWARDS_D),
+                    field_mul(field_mul(x1, x2), field_mul(y1, y2)),
+                ),
+            ),
+        ),
+    ensures
+// Z ≠ 0
+
+        result_z != 0,
+        // T ≠ 0
+        result_t != 0,
+        // X/Z = edwards_add(x₁, y₁, x₂, y₂).x
+        field_mul(result_x, field_inv(result_z)) == edwards_add(x1, y1, x2, y2).0,
+        // Y/T = edwards_add(x₁, y₁, x₂, y₂).y
+        field_mul(result_y, field_inv(result_t)) == edwards_add(x1, y1, x2, y2).1,
+        // (X/Z, Y/T) on curve
+        math_on_edwards_curve(
+            field_mul(result_x, field_inv(result_z)),
+            field_mul(result_y, field_inv(result_t)),
+        ),
+{
+    let d = fe51_as_canonical_nat(&EDWARDS_D);
+    let x1y2 = field_mul(x1, y2);
+    let y1x2 = field_mul(y1, x2);
+    let y1y2 = field_mul(y1, y2);
+    let x1x2 = field_mul(x1, x2);
+    let t = field_mul(d, field_mul(x1x2, y1y2));
+    let denom_x = field_add(1, t);
+    let denom_y = field_sub(1, t);
+    let num_x = field_add(x1y2, y1x2);
+    let num_y = field_add(y1y2, x1x2);
+    let two: nat = 2;
+
+    // Denominators non-zero and result on curve
+    assert(denom_x != 0 && denom_y != 0 && math_on_edwards_curve(
+        field_mul(num_x, field_inv(denom_x)),
+        field_mul(num_y, field_inv(denom_y)),
+    )) by {
+        axiom_edwards_add_complete(x1, y1, x2, y2);
+    };
+    assert(p() > 2) by {
+        p_gt_2();
+    };
+
+    assert(two % p() != 0) by {
+        lemma_small_mod(two, p());
+    };
+    assert(denom_x % p() != 0) by {
+        lemma_small_mod(denom_x, p());
+    };
+    assert(denom_y % p() != 0) by {
+        lemma_small_mod(denom_y, p());
+    };
+
+    // result_z = mul(2, denom_x) ≠ 0, result_t = mul(2, denom_y) ≠ 0
+    assert(field_mul(two, denom_x) == field_mul(denom_x, two)) by {
+        lemma_field_mul_comm(two, denom_x);
+    }
+    assert(field_mul(denom_x, two) != 0) by {
+        lemma_nonzero_product(denom_x, two);
+    }
+    assert(field_mul(two, denom_y) == field_mul(denom_y, two)) by {
+        lemma_field_mul_comm(two, denom_y);
+    }
+    assert(field_mul(denom_y, two) != 0) by {
+        lemma_nonzero_product(denom_y, two);
+    }
+
+    // Cancel common factor of 2: mul(2,num)/mul(2,denom) = num/denom
+    assert(field_mul(two, num_x) == field_mul(num_x, two)) by {
+        lemma_field_mul_comm(two, num_x);
+    }
+    assert(field_mul(field_mul(num_x, two), field_inv(field_mul(denom_x, two))) == field_mul(
+        num_x,
+        field_inv(denom_x),
+    )) by {
+        lemma_cancel_common_factor(num_x, denom_x, two);
+    }
+    assert(field_mul(two, num_y) == field_mul(num_y, two)) by {
+        lemma_field_mul_comm(two, num_y);
+    }
+    assert(field_mul(field_mul(num_y, two), field_inv(field_mul(denom_y, two))) == field_mul(
+        num_y,
+        field_inv(denom_y),
+    )) by {
+        lemma_cancel_common_factor(num_y, denom_y, two);
+    }
+}
+
+/// Axiom: For field elements Y, Z with Z ≠ 0: (Z+Y)/(Z-Y) == (1+y)/(1-y) where y = Y/Z.
+///
+/// Used by `to_montgomery` to compute the Edwards-to-Montgomery map u = (1+y)/(1-y)
+/// directly from the projective Y, Z coordinates as (Z+Y)/(Z-Y).
+///
+/// TODO: prove this from field algebra (cross-multiply and simplify).
+pub proof fn axiom_edwards_to_montgomery_correspondence(y: nat, z: nat)
+    requires
+        z % p() != 0,  // Non-identity point (Z ≠ 0)
+
+    ensures
+        ({
+            let y_affine = field_mul(y, field_inv(z));
+            let one_plus_y = field_add(1, y_affine);
+            let one_minus_y = field_sub(1, y_affine);
+            let projective_result = field_mul(field_add(z, y), field_inv(field_sub(z, y)));
+            let affine_result = field_mul(one_plus_y, field_inv(one_minus_y));
+            projective_result == affine_result
+        }),
 {
     admit();
 }

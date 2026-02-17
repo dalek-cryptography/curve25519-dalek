@@ -100,6 +100,10 @@ impl LookupTable<AffineNielsPoint> {
     ///
     /// Where P is the base point that was used to create this lookup table.
     /// This table stores [P, 2P, 3P, ..., 8P] (for radix-16).
+    // VERIFICATION NOTE: proof bypass — select logic depends on constant-time
+    // conditional_assign and conditional_negate, which are not yet verified.
+    // TODO: prove select correctness once ct primitives are verified.
+    #[verifier::external_body]
     pub fn select(&self, x: i8) -> (result: AffineNielsPoint)
         requires
             -8 <= x,
@@ -115,6 +119,8 @@ impl LookupTable<AffineNielsPoint> {
             fe51_limbs_bounded(&result.y_plus_x, 54),
             fe51_limbs_bounded(&result.y_minus_x, 54),
             fe51_limbs_bounded(&result.xy2d, 54),
+            // The result is a valid AffineNielsPoint
+            is_valid_affine_niels_point(result),
     {
         // Debug assertions from original macro - ignored by Verus
         #[cfg(not(verus_keep_ghost))]
@@ -122,8 +128,6 @@ impl LookupTable<AffineNielsPoint> {
             debug_assert!(x >= -8);
             debug_assert!(x <= 8);
         }
-
-        assume(false);
 
         // Compute xabs = |x|
         let xmask = x as i16 >> 7;
@@ -155,6 +159,10 @@ impl LookupTable<ProjectiveNielsPoint> {
     ///
     /// Where P is the base point that was used to create this lookup table.
     /// This table stores [P, 2P, 3P, ..., 8P] (for radix-16).
+    // VERIFICATION NOTE: proof bypass — select logic depends on constant-time
+    // conditional_assign and conditional_negate, which are not yet verified.
+    // TODO: prove select correctness once ct primitives are verified.
+    #[verifier::external_body]
     pub fn select(&self, x: i8) -> (result: ProjectiveNielsPoint)
         requires
             -8 <= x,
@@ -172,6 +180,8 @@ impl LookupTable<ProjectiveNielsPoint> {
             fe51_limbs_bounded(&result.Y_minus_X, 54),
             fe51_limbs_bounded(&result.Z, 54),
             fe51_limbs_bounded(&result.T2d, 54),
+            // The result is a valid ProjectiveNielsPoint
+            is_valid_projective_niels_point(result),
     {
         /* ORIGINAL CODE: for generic type T, $name, $size, $neg, $range, and $conv_range.
 
@@ -203,8 +213,6 @@ impl LookupTable<ProjectiveNielsPoint> {
             debug_assert!(x >= -8);
             debug_assert!(x <= 8);
         }
-
-        assume(false);
 
         // Compute xabs = |x|
         let xmask = x as i16 >> 7;
@@ -313,6 +321,7 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
         proof {
             assume(edwards_point_limbs_bounded(*P));
             assume(sum_of_limbs_bounded(&P.Y, &P.X, u64::MAX));
+            assume(is_valid_edwards_point(*P));
         }
 
         let mut points = [P.as_projective_niels();8];
@@ -328,6 +337,7 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
                 assume(fe51_limbs_bounded(&&points[j as int].Y_minus_X, 54));
                 assume(fe51_limbs_bounded(&&points[j as int].Z, 54));
                 assume(fe51_limbs_bounded(&&points[j as int].T2d, 54));
+                assume(is_valid_projective_niels_point(points[j as int]));
             }
             let sum = P + &points[j];
             proof {
@@ -342,6 +352,7 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
                 // Preconditions for extended.as_projective_niels()
                 assume(edwards_point_limbs_bounded(extended));
                 assume(sum_of_limbs_bounded(&extended.Y, &extended.X, u64::MAX));
+                assume(is_valid_edwards_point(extended));
             }
             points[j + 1] = extended.as_projective_niels();
         }
@@ -381,6 +392,7 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
         // Preconditions assumed here since Verus does not support from_req
         proof {
             assume(edwards_point_limbs_bounded(*P));
+            assume(is_valid_edwards_point(*P));
         }
 
         let mut points = [P.as_affine_niels();8];
@@ -397,6 +409,7 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
                 assume(fe51_limbs_bounded(&&points[j as int].y_plus_x, 54));
                 assume(fe51_limbs_bounded(&&points[j as int].y_minus_x, 54));
                 assume(fe51_limbs_bounded(&&points[j as int].xy2d, 54));
+                assume(is_valid_affine_niels_point(points[j as int]));
             }
             let sum = P + &points[j];
             proof {
@@ -410,6 +423,7 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
             proof {
                 // Preconditions for extended.as_affine_niels()
                 assume(edwards_point_limbs_bounded(extended));
+                assume(is_valid_edwards_point(extended));
             }
             points[j + 1] = extended.as_affine_niels()
         }
@@ -566,6 +580,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<ProjectiveNielsPoint> {
                 assume(fe51_limbs_bounded(&&Ai[i as int].Y_minus_X, 54));
                 assume(fe51_limbs_bounded(&&Ai[i as int].Z, 54));
                 assume(fe51_limbs_bounded(&&Ai[i as int].T2d, 54));
+                assume(is_valid_projective_niels_point(Ai[i as int]));
             }
             // ORIGINAL CODE: Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_projective_niels();
             let sum = &A2 + &Ai[i];
@@ -579,6 +594,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<ProjectiveNielsPoint> {
             proof {
                 assume(edwards_point_limbs_bounded(extended));
                 assume(sum_of_limbs_bounded(&extended.Y, &extended.X, u64::MAX));
+                assume(is_valid_edwards_point(extended));
             }
             Ai[i + 1] = extended.as_projective_niels();
         }
@@ -625,6 +641,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<AffineNielsPoint> {
                 assume(fe51_limbs_bounded(&&Ai[i as int].y_plus_x, 54));
                 assume(fe51_limbs_bounded(&&Ai[i as int].y_minus_x, 54));
                 assume(fe51_limbs_bounded(&&Ai[i as int].xy2d, 54));
+                assume(is_valid_affine_niels_point(Ai[i as int]));
             }
             // ORIGINAL CODE: Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_affine_niels();
             let sum = &A2 + &Ai[i];
@@ -638,6 +655,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<AffineNielsPoint> {
             proof {
                 assume(edwards_point_limbs_bounded(extended));
                 assume(sum_of_limbs_bounded(&extended.Y, &extended.X, u64::MAX));
+                assume(is_valid_edwards_point(extended));
             }
             Ai[i + 1] = extended.as_affine_niels();
         }
@@ -790,6 +808,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint> {
                 assume(fe51_limbs_bounded(&&Ai[i as int].Y_minus_X, 54));
                 assume(fe51_limbs_bounded(&&Ai[i as int].Z, 54));
                 assume(fe51_limbs_bounded(&&Ai[i as int].T2d, 54));
+                assume(is_valid_projective_niels_point(Ai[i as int]));
             }
             // ORIGINAL CODE: Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_projective_niels();
             let sum = &A2 + &Ai[i];
@@ -803,6 +822,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint> {
             proof {
                 assume(edwards_point_limbs_bounded(extended));
                 assume(sum_of_limbs_bounded(&extended.Y, &extended.X, u64::MAX));
+                assume(is_valid_edwards_point(extended));
             }
             Ai[i + 1] = extended.as_projective_niels();
         }
@@ -850,6 +870,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<AffineNielsPoint> {
                 assume(fe51_limbs_bounded(&&Ai[i as int].y_plus_x, 54));
                 assume(fe51_limbs_bounded(&&Ai[i as int].y_minus_x, 54));
                 assume(fe51_limbs_bounded(&&Ai[i as int].xy2d, 54));
+                assume(is_valid_affine_niels_point(Ai[i as int]));
             }
             // ORIGINAL CODE: Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_affine_niels();
             let sum = &A2 + &Ai[i];
@@ -863,6 +884,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<AffineNielsPoint> {
             proof {
                 assume(edwards_point_limbs_bounded(extended));
                 assume(sum_of_limbs_bounded(&extended.Y, &extended.X, u64::MAX));
+                assume(is_valid_edwards_point(extended));
             }
             Ai[i + 1] = extended.as_affine_niels();
         }

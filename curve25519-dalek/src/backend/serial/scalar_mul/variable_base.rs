@@ -9,7 +9,7 @@ use crate::window::LookupTable;
 #[cfg(verus_keep_ghost)]
 use crate::specs::edwards_specs::{
     edwards_point_as_affine, edwards_scalar_mul, is_valid_completed_point,
-    is_well_formed_edwards_point,
+    is_valid_projective_niels_point, is_well_formed_edwards_point,
 };
 #[cfg(verus_keep_ghost)]
 use crate::specs::field_specs::{fe51_limbs_bounded, sum_of_limbs_bounded};
@@ -70,7 +70,16 @@ pub(crate) fn mul(point: &EdwardsPoint, scalar: &Scalar) -> (result: EdwardsPoin
         assert(radix_16_all_bounded(&scalar_digits));
         assert(radix_16_digit_bounded(scalar_digits[63]));  // instantiate for index 63
     }
+    /* ORIGINAL CODE:
     let mut tmp1 = &tmp3 + &lookup_table.select(scalar_digits[63]);
+    */
+    // REFACTORED: Extract select to bind result for proof block
+    let selected = lookup_table.select(scalar_digits[63]);
+    proof {
+        // Validity: select returns a valid ProjectiveNielsPoint (from select postcondition)
+        assert(is_valid_projective_niels_point(selected));
+    }
+    let mut tmp1 = &tmp3 + &selected;
 
     // Now tmp1 = s_63*P in P1xP1 coords
     /* ORIGINAL CODE:
@@ -102,7 +111,16 @@ pub(crate) fn mul(point: &EdwardsPoint, scalar: &Scalar) -> (result: EdwardsPoin
         tmp2 = tmp1.as_projective();  // tmp2 =  8*(prev) in P2 coords
         tmp1 = tmp2.double();  // tmp1 = 16*(prev) in P1xP1 coords
         tmp3 = tmp1.as_extended();  // tmp3 = 16*(prev) in P3 coords
+        /* ORIGINAL CODE:
         tmp1 = &tmp3 + &lookup_table.select(scalar_digits[i]);
+        */
+        // REFACTORED: Extract select to bind result for proof block
+        let selected = lookup_table.select(scalar_digits[i]);
+        proof {
+            // Validity: select returns a valid ProjectiveNielsPoint (from select postcondition)
+            assert(is_valid_projective_niels_point(selected));
+        }
+        tmp1 = &tmp3 + &selected;
         // Now tmp1 = s_i*P + 16*(prev) in P1xP1 coords
     }
     proof {

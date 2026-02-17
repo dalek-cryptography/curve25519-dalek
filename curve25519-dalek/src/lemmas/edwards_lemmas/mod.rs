@@ -4,6 +4,7 @@
 //!
 //! ## Submodules
 //!
+//! - `niels_addition_correctness`: Correctness of Niels-based addition formulas (P³ × Niels → P¹×P¹)
 //! - `constants_lemmas`: Lemmas about Edwards curve constants (EDWARDS_D, BASEPOINT_ORDER_PRIVATE)
 //! - `curve_equation_lemmas`: Lemmas about the curve equation and scalar multiplication
 //! - `mul_base_lemmas`: Specs and lemmas for mul_base (Pippenger scalar multiplication)
@@ -14,4 +15,5 @@ pub mod constants_lemmas;
 pub mod curve_equation_lemmas;
 pub mod decompress_lemmas;
 pub mod mul_base_lemmas;
+pub mod niels_addition_correctness;
 pub mod step1_lemmas;

@@ -360,7 +360,7 @@ pub proof fn lemma_u_times_inv_iu_is_neg_i(u: nat, i: nat)
 ///   (-u) · inv(i·u) = (-u) · inv(u·i)     [commutativity]
 ///                   = (-1) · inv(i)        [by lemma_neg_a_times_inv_ab]
 ///                   = (-1) · (-i)          [by lemma_i_inverse_is_neg_i]
-///                   = i                    [by lemma_double_negation]
+///                   = i                    [by neg_one_times + neg_neg]
 pub proof fn lemma_neg_u_times_inv_iu_is_i(u: nat, i: nat)
     requires
         u % p() != 0,
@@ -415,7 +415,10 @@ pub proof fn lemma_neg_u_times_inv_iu_is_i(u: nat, i: nat)
         }
     };
     assert(field_mul(neg_one, neg_i) == i) by {
-        lemma_double_negation(i);
+        // (-1)·(-i) = -(-(i)) = i % p = i
+        lemma_neg_one_times_is_neg(field_neg(i));
+        lemma_neg_neg(i);
+        lemma_small_mod(i, p);
     };
 
     // Postcondition: i % p = i (since i < p)

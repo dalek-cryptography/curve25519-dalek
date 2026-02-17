@@ -782,7 +782,7 @@ pub proof fn lemma_inv_preserves_non_qr(a: nat)
 
         // inv(y²) = inv(y)²
         assert(field_inv(y2) == field_square(field_inv(y))) by {
-            lemma_inv_of_square(y);
+            lemma_inv_of_product(y, y);
         }
 
         // So inv(y)² = a_mod, meaning a is QR — contradiction

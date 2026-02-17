@@ -502,6 +502,100 @@ proof fn lemma_cofactor_clears_low_order_y_sq_1(y: nat)
 
 **Key insight:** `pow2(1)=2, pow2(2)=4, pow2(3)=8`. Use `lemma_edwards_scalar_mul_pow2_succ` to express `[2^(k+1)]·P = double([2^k]·P)`, then apply `lemma_edwards_double_identity` when the intermediate result is the identity.
 
+#### Technique 17: Three-Layer Bridge Axiom Architecture
+For proving algebraic correctness of point operations (connecting exec-level FieldElement51 operations to spec-level Edwards curve formulas):
+
+**Layer 1: Pure math axiom** (curve_equation_lemmas.rs)
+```rust
+pub proof fn axiom_edwards_add_complete(x1: nat, y1: nat, x2: nat, y2: nat)
+    requires math_on_edwards_curve(x1, y1), math_on_edwards_curve(x2, y2),
+    ensures
+        math_on_edwards_curve(edwards_add(x1, y1, x2, y2).0, edwards_add(x1, y1, x2, y2).1),
+        // denominators 1+d*x1*x2*y1*y2 ≠ 0 and 1-d*x1*x2*y1*y2 ≠ 0
+{ admit(); }  // Standard result for complete Edwards curves (d non-square)
+```
+
+**Layer 2: Proven algebraic helper lemmas** (add_completed_lemmas.rs)
+- FOIL expansions (lemma_pp_minus_mm, lemma_pm_minus_mp, etc.)
+- Factor cancellation (lemma_cancel_common_factor)
+- Completed point ratio lemma connecting X/Z, Y/T to edwards_add
+- Negation distribution lemmas for subtraction proofs
+
+**Layer 3: Exec bridge axioms** (add_completed_lemmas.rs)
+```rust
+pub proof fn lemma_add_projective_niels_completed_valid(
+    self_point: EdwardsPoint, other: ProjectiveNielsPoint,
+    result: CompletedPoint, pp_val: nat, mm_val: nat, ...
+)
+    requires
+        is_well_formed_edwards_point(self_point),
+        is_valid_projective_niels_point(other),
+        // spec_field_element relationships for intermediate values
+    ensures
+        is_valid_completed_point(result),
+        completed_point_as_affine_edwards(result) == {
+            let self_affine = edwards_point_as_affine(self_point);
+            let other_affine = projective_niels_point_as_affine_edwards(other);
+            edwards_add(self_affine.0, self_affine.1, other_affine.0, other_affine.1)
+        }
+```
+
+**Proof pattern for bridge axioms:**
+1. Extract existential witness from `is_valid_projective_niels_point` using `choose`
+2. Expand Niels point correspondence to get affine coordinates
+3. Factor projective coordinates: Y1·X2 = (y1·Z1)·(x2·Z2) = y1·x2·Z1·Z2
+4. Apply FOIL to get PP-MM = 2·(y1·x2 + x1·y2)·Z1·Z2, etc.
+5. Apply `lemma_cancel_common_factor` to cancel 2·Z1·Z2 from numerator/denominator
+6. Call `axiom_edwards_add_complete` for on-curve guarantee
+7. Call `lemma_completed_point_ratios` to connect ratios to edwards_add
+
+**For subtraction:** Use negation substitution: sub(x1,y1,x2,y2) = add(x1,y1,neg(x2),y2).
+Substitute neg(d) into FOIL lemmas, then apply `lemma_field_mul_neg` and `lemma_field_sub_eq_add_neg`.
+
+**For AffineNiels (vs ProjectiveNiels):** Single Z factor instead of Z1·Z2.
+Factor sZ = y·Z (from Segre invariant T·Z = X·Y) instead of Z1·Z2.
+
+#### Technique 18: Existential Witness Pattern for Validity Propagation
+When proving `is_valid_X(result)` which is defined as `exists |ep| is_valid(ep) && corresponds(result, ep)`:
+
+```rust
+// Producer function
+fn as_projective_niels(&self) -> (result: ProjectiveNielsPoint)
+    requires is_valid_edwards_point(*self),
+    ensures
+        projective_niels_corresponds_to_edwards(result, *self),
+        is_valid_projective_niels_point(result),  // NEW postcondition
+{
+    // ... computation ...
+    proof {
+        assert(projective_niels_corresponds_to_edwards(result, *self));
+        // Validity: the existential witness is *self
+        assert(is_valid_projective_niels_point(result));
+    }
+    result
+}
+```
+
+Verus resolves the existential automatically when both parts (witness validity + correspondence) are in scope.
+
+**Propagation chain:** Producer (as_*_niels) → Precondition (add_req/sub_req) → Consumer (add/sub bridge axiom)
+- Add `is_valid_*_point(result)` as postcondition to producer functions
+- Add `is_valid_*_point(*rhs)` as requirement in add_req/sub_req specs
+- Remove assumes from consumer function bodies — derived from preconditions
+
+#### Technique 19: Four-Factor Rearrangement in Projective Coordinates
+When rearranging products like `x1x2y1y2 · (sZ · (2·d))` to `sZ · (x1x2y1y2 · (2·d))`:
+
+```rust
+// Use assoc → comm → assoc chain (NOT comm → assoc)
+// x*(s*(2d)) = (x*s)*(2d) [assoc] = (s*x)*(2d) [comm] = s*(x*(2d)) [assoc]
+lemma_field_mul_assoc(x1x2y1y2, sZ, math_field_mul(2, d));
+lemma_field_mul_comm(x1x2y1y2, sZ);
+lemma_field_mul_assoc(sZ, x1x2y1y2, math_field_mul(2, d));
+```
+
+**Why this order matters:** `comm(a, b*c)` produces `b*c*a` which doesn't simplify further. You need `assoc` first to separate the factors, then `comm` on the pair, then `assoc` to regroup.
+
 ### Phase 5: Handle Common Issues
 
 #### Issue: "Expected Interp(Array), got Interp(FreeVar)"
@@ -842,6 +936,65 @@ assert(u8_32_as_nat(s_after) % pow2(255) == u8_32_as_nat(s_before) % pow2(255)) 
 - `pow255_gt_19()` - Proves pow2(255) > 19, thus p() < pow2(255)
 - `p_gt_2()` - Proves p() > 2
 
+### Field Algebra Lemmas (field_lemmas/field_algebra_lemmas.rs)
+Core algebraic identities over GF(p) used in Edwards curve proofs:
+
+**Distributivity & FOIL:**
+- `lemma_field_mul_distributes_over_add(a, b, c)` - a*(b+c) = a*b + a*c (line ~144)
+- `lemma_field_mul_distributes_over_sub_right(a, b, c)` - (a-b)*c = a*c - b*c (line ~721)
+
+**Recover/cancel patterns:**
+- `lemma_field_add_sub_recover_double(a, b)` - (a+b) - (a-b) = 2*b (line ~228)
+- `lemma_field_add_add_recover_double(a, b)` - (a+b) + (a-b) = 2*a (line ~329)
+- `lemma_cancel_common_factor(a, b, c)` - (a*c)/(b*c) = a/b when c≠0 (line ~1612)
+- `lemma_field_halve_double(a)` - field_halve(2*a) = a%p (line ~?)
+- `lemma_field_div_mul_cancel(a, b)` - (a/b)*b = a when b≠0 (line ~?)
+
+**Commutativity & Associativity:**
+- `lemma_field_mul_comm(a, b)` - a*b = b*a (line ~1218)
+- `lemma_field_mul_assoc(a, b, c)` - a*(b*c) = (a*b)*c (line ~1194)
+- `lemma_field_add_comm(a, b)` - a+b = b+a (line ~?)
+
+**Negation:**
+- `lemma_field_mul_neg(a, b)` - mul(a, neg(b)) = neg(mul(a, b))
+- `lemma_field_sub_eq_add_neg(a, b)` - sub(a, b) = add(a, neg(b))
+- `lemma_field_add_neg_eq_sub(a, b)` - add(a, neg(b)) = sub(a, b)
+
+**Non-zero:**
+- `lemma_nonzero_product(a, b)` - a≠0 ∧ b≠0 ⇒ a*b ≠ 0 (line ~1723)
+
+### Field Limb Bound Lemmas (field_lemmas/add_lemmas.rs)
+Lemmas for tracking FieldElement51 limb bounds through operations:
+
+- `lemma_edwards_point_weaken_to_54(point)` - Weaken 52-bounded EdwardsPoint fields to 54-bounded (line ~142)
+- `lemma_add_bounds_propagate(a, b, n)` - n-bounded + n-bounded → (n+1)-bounded (line ~159)
+- `lemma_fe51_limbs_bounded_weaken(fe, a, b)` - a-bounded → b-bounded when a ≤ b (line ~122)
+- `lemma_sum_of_limbs_bounded_from_fe51_bounded(a, b, n)` - n-bounded implies sum fits u64 (line ~183)
+- `lemma_edwards_d2_limbs_bounded_54()` - EDWARDS_D2 constant is 54-bounded
+
+### Edwards Curve FOIL Lemmas (edwards_lemmas/add_completed_lemmas.rs)
+Algebraic expansion lemmas for Edwards point addition/subtraction:
+
+**Standard FOIL (for addition):**
+- `lemma_pp_minus_mm(a, b, c, d)` - (a+b)(c+d) - (a-b)(c-d) = 2*(a*d + b*c)
+- `lemma_pp_plus_mm(a, b, c, d)` - (a+b)(c+d) + (a-b)(c-d) = 2*(a*c + b*d)
+
+**Mixed FOIL (for subtraction via neg substitution):**
+- `lemma_pm_minus_mp(a, b, c, d)` - (a+b)(c-d) - (a-b)(c+d) = 2*(b*c - a*d)
+- `lemma_pm_plus_mp(a, b, c, d)` - (a+b)(c-d) + (a-b)(c+d) = 2*(a*c - b*d)
+
+**Negation helpers:**
+- `lemma_neg_neg(a)` - neg(neg(a)) = a % p
+- `lemma_neg_preserves_curve(x, y)` - on_curve(x,y) ⇒ on_curve(neg(x), y)
+
+**Completed point ratios:**
+- `lemma_completed_point_ratios(x1, y1, x2, y2, ...)` - Connects CompletedPoint X/Z and Y/T to edwards_add result
+
+### Edwards Curve Equation Lemmas (edwards_lemmas/curve_equation_lemmas.rs)
+- `axiom_edwards_add_complete(x1, y1, x2, y2)` - Pure math: add on curve stays on curve + denominators non-zero
+- `axiom_edwards_d2_is_2d()` - EDWARDS_D2 field element equals 2*d
+- `lemma_affine_niels_affine_equals_edwards_affine(niels, point)` - AffineNiels affine == EdwardsPoint affine when they correspond
+
 ## Tips
 
 1. **Start simple:** Prove the easiest lemma first to build momentum
@@ -888,6 +1041,14 @@ assert(u8_32_as_nat(s_after) % pow2(255) == u8_32_as_nat(s_before) % pow2(255)) 
     assert(u2 == (2 * nm1) as int);
     ```
     Reserve `by (compute)` for truly concrete evaluations where all operands are literal constants.
+21. **When proofs require new `assume(...)`, suggest spec revisions instead:** Distinguish between two kinds of assumes:
+    - **Original assumes** (pre-existing in the code): These represent known proof obligations. The goal is to replace them with actual proofs.
+    - **New assumes introduced during proof work:** When completing a proof requires assuming something about an input or intermediate value that the current specs don't guarantee, this signals a spec gap. **Do not silently add assumes — instead, propose spec revisions:**
+      - If the proof needs a property of a function's return value: propose adding it as a **postcondition** to that function.
+      - If the proof needs a property of an input: propose adding it as a **precondition** (in the `_req` spec).
+      - Propagate changes through the call chain: producer postcondition → consumer precondition → proof uses it.
+      - Example: A bridge axiom proof needed `is_valid_projective_niels_point(other)` → added to `add_req` as a precondition, and as a postcondition to `as_projective_niels()`.
+    - **When new assumes are acceptable (last resort):** In `From` impls where Verus doesn't support `from_req`, in code protected by `assume(false)` proof bypass, or for properties requiring deep spec work beyond current scope (e.g., lookup table `select()` validity propagation).
 
 ## Example Invocation
 

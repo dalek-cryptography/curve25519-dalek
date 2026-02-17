@@ -466,7 +466,7 @@ pub proof fn lemma_no_square_root_when_times_i(u: nat, v: nat, r: nat)
 ///
 /// The proof uses:
 /// 1. axiom_sqrt_m1_squared: i² = -1 (mod p)
-/// 2. lemma_double_negation: (-1)·(-a) = a
+/// 2. lemma_neg_one_times_is_neg + lemma_neg_neg: (-1)·(-a) = a
 ///
 /// NOTE: For the case v·r² = -u·i, simply call:
 ///   lemma_flipped_sign_becomes_correct(u * sqrt_m1(), v, r)
@@ -523,8 +523,8 @@ pub proof fn lemma_flipped_sign_becomes_correct(u: nat, v: nat, r: nat)
         lemma_mul_is_associative(v as int, r as int, r as int);
     };
 
-    // === Right side: (-u)·(-1) = u via lemma_double_negation ===
-    // We need u_mod < p and u_mod != 0 for lemma_double_negation
+    // === Right side: (-u)·(-1) = u via double negation ===
+    // We need u_mod < p and u_mod != 0 for the non-trivial case
     // Handle u_mod = 0 case separately (trivial: -0 = 0)
     if u_mod == 0 {
         // When u ≡ 0 (mod p), both -u ≡ 0 and the result is 0
@@ -565,11 +565,13 @@ pub proof fn lemma_flipped_sign_becomes_correct(u: nat, v: nat, r: nat)
             lemma_small_mod(0nat, pn);
         };
     } else {
-        // u_mod > 0: use lemma_double_negation
+        // u_mod > 0: use neg_one_times + neg_neg
         assert(u_mod != 0 && u_mod < pn);
 
-        // (-1)·(-u_mod) = u_mod
-        lemma_double_negation(u_mod);
+        // (-1)·(-u_mod) = -(-(u_mod)) = u_mod
+        lemma_neg_one_times_is_neg(field_neg(u_mod));
+        lemma_neg_neg(u_mod);
+        lemma_small_mod(u_mod, pn);
         assert(field_mul(neg_one, field_neg(u_mod)) == u_mod);
 
         // neg_u = field_neg(u) = field_neg(u_mod) since u % p = u_mod

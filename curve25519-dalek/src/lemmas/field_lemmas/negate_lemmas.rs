@@ -125,6 +125,8 @@ pub proof fn proof_negate(limbs: [u64; 5])
             assert(((16 * 0x8000000000000) as u64 >> 51) == 16) by (compute);
         }
         lemma_mod_multiples_basic((16 - k) as int, p() as int);
+        // Help the solver with mul commutativity: (16-k)*p == p*(16-k)
+        lemma_mul_is_commutative((16 - k) as int, p() as int);
     }
 }
 

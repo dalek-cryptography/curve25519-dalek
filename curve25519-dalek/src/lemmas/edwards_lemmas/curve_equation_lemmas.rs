@@ -1015,77 +1015,8 @@ pub proof fn lemma_edwards_add_identity_left(x: nat, y: nat)
     ensures
         edwards_add(0, 1, x, y) == (x % p(), y % p()),
 {
-    p_gt_2();
-    lemma_field_inv_one();
-
-    let d = fe51_as_canonical_nat(&EDWARDS_D);
-
-    // x1x2 = 0*x = 0
-    let x1x2 = field_mul(0nat, x);
-    assert(x1x2 == 0) by {
-        assert(0nat % p() == 0) by {
-            lemma_small_mod(0nat, p());
-        }
-        lemma_field_mul_zero_left(0nat, x);
-    }
-
-    // y1y2 = 1*y = y % p
-    let y1y2 = field_mul(1nat, y);
-    assert(y1y2 == y % p()) by {
-        lemma_field_mul_one_left(y);
-    }
-
-    // x1y2 = 0*y = 0
-    let x1y2 = field_mul(0nat, y);
-    assert(x1y2 == 0) by {
-        lemma_small_mod(0nat, p());
-        lemma_field_mul_zero_left(0nat, y);
-    }
-
-    // y1x2 = 1*x = x % p
-    let y1x2 = field_mul(1nat, x);
-    assert(y1x2 == x % p()) by {
-        lemma_field_mul_one_left(x);
-    }
-
-    // t = d * (0 * (y%p)) = 0
-    let t = field_mul(d, field_mul(x1x2, y1y2));
-    assert(t == 0) by {
-        lemma_small_mod(0nat, p());
-        lemma_field_mul_zero_left(x1x2, y1y2);
-        lemma_field_mul_zero_right(d, 0nat);
-    }
-
-    let denom_x = field_add(1nat, t);
-    assert(denom_x == 1) by {
-        lemma_small_mod(1nat, p());
-    }
-
-    let denom_y = field_sub(1nat, t);
-    assert(denom_y == 1) by {
-        lemma_small_mod(1nat, p());
-        lemma_small_mod(0nat, p());
-        lemma_mod_multiples_vanish(1, 1, p() as int);
-    }
-
-    assert(field_inv(denom_x) == 1);
-    assert(field_inv(denom_y) == 1);
-
-    // x3 = (0*y + 1*x) / 1 = x % p
-    let x3 = field_mul(field_add(x1y2, y1x2), field_inv(denom_x));
-    assert(x3 == x % p()) by {
-        lemma_small_mod(x % p(), p());
-        lemma_field_mul_one_right(x % p());
-    }
-
-    // y3 = (1*y + 0*x) / 1 = y % p
-    let y3 = field_mul(field_add(y1y2, x1x2), field_inv(denom_y));
-    assert(y3 == y % p()) by {
-        lemma_small_mod(y % p(), p());
-        lemma_field_mul_one_right(y % p());
-    }
-
-    assert(edwards_add(0, 1, x, y) == (x % p(), y % p()));
+    lemma_edwards_add_commutative(0, 1, x, y);
+    lemma_edwards_add_identity_right(x, y);
 }
 
 // =============================================================================
@@ -1700,6 +1631,38 @@ pub proof fn lemma_negate_affine_niels_is_edwards_neg(pt: AffineNielsPoint)
     // Therefore (x', y') = (-x, y) = edwards_neg((x, y))
 }
 
+/// Helper: Recover x and y from the Niels encoding (y+x, y-x) via halving.
+///
+/// Given y_plus_x == field_add(y, x) and y_minus_x == field_sub(y, x):
+///   - (y_plus_x - y_minus_x) / 2 == x % p()
+///   - (y_plus_x + y_minus_x) / 2 == y % p()
+proof fn lemma_recover_xy_from_niels_encoding(y_plus_x: nat, y_minus_x: nat, x: nat, y: nat)
+    requires
+        y_plus_x == field_add(y, x),
+        y_minus_x == field_sub(y, x),
+    ensures
+        field_mul(field_sub(y_plus_x, y_minus_x), field_inv(2)) == x % p(),
+        field_mul(field_add(y_plus_x, y_minus_x), field_inv(2)) == y % p(),
+{
+    // (y+x) - (y-x) = 2x
+    assert(field_sub(y_plus_x, y_minus_x) == field_mul(2, x)) by {
+        lemma_field_add_sub_recover_double(y, x);
+    };
+    // (2x) * inv(2) = x (mod p)
+    assert(field_mul(field_sub(y_plus_x, y_minus_x), field_inv(2)) == x % p()) by {
+        lemma_field_halve_double(x);
+    };
+
+    // (y+x) + (y-x) = 2y
+    assert(field_add(y_plus_x, y_minus_x) == field_mul(2, y)) by {
+        lemma_field_add_add_recover_double(y, x);
+    };
+    // (2y) * inv(2) = y (mod p)
+    assert(field_mul(field_add(y_plus_x, y_minus_x), field_inv(2)) == y % p()) by {
+        lemma_field_halve_double(y);
+    };
+}
+
 /// Lemma: When a ProjectiveNielsPoint corresponds to an EdwardsPoint,
 /// their affine representations are equal.
 ///
@@ -1747,34 +1710,12 @@ pub proof fn lemma_projective_niels_affine_equals_edwards_affine(
     }
 
     let inv2 = field_inv(2);
+    let x_proj = field_mul(field_sub(y_plus_x, y_minus_x), inv2);
+    let y_proj = field_mul(field_add(y_plus_x, y_minus_x), inv2);
 
-    // Step 1: Recover X in projective coordinates.
-    let diff = field_sub(y_plus_x, y_minus_x);
-    let x_proj = field_mul(diff, inv2);
-    assert(diff == field_mul(2, x)) by {
-        lemma_field_add_sub_recover_double(y, x);
-    }
-    assert(x_proj == x % p()) by {
-        // (2x) * inv(2) = x (mod p)
-        lemma_field_halve_double(x);
-    }
+    lemma_recover_xy_from_niels_encoding(y_plus_x, y_minus_x, x, y);
 
-    // Step 2: Recover Y in projective coordinates.
-    let sum = field_add(y_plus_x, y_minus_x);
-    let y_proj = field_mul(sum, inv2);
-    assert(sum == field_mul(2, y)) by {
-        lemma_field_add_add_recover_double(y, x);
-    }
-    assert(y_proj == y % p()) by {
-        // (2y) * inv(2) = y (mod p)
-        lemma_field_halve_double(y);
-    }
-
-    // Step 3: x_affine = x_proj / z = x / z (since x_proj == x % p and x < p)
-    // y_affine = y_proj / z = y / z
-    // This matches edwards_point_as_affine(point) = (x/z, y/z)
-
-    // fe51_as_canonical_nat returns (val % p) which is always < p
+    // x < p and y < p since fe51_as_canonical_nat returns val % p
     assert(x < p()) by {
         p_gt_2();
         lemma_mod_bound(fe51_as_nat(&point.X) as int, p() as int);
@@ -2042,28 +1983,12 @@ pub proof fn lemma_affine_niels_affine_equals_edwards_affine(
     };
 
     let inv2 = field_inv(2);
+    let x_niels = field_mul(field_sub(y_plus_x, y_minus_x), inv2);
+    let y_niels = field_mul(field_add(y_plus_x, y_minus_x), inv2);
 
-    // Step 1: Recover x from (y+x) - (y-x) = 2x
-    let diff = field_sub(y_plus_x, y_minus_x);
-    let x_niels = field_mul(diff, inv2);
-    assert(diff == field_mul(2, x)) by {
-        lemma_field_add_sub_recover_double(y, x);
-    };
-    assert(x_niels == x % p()) by {
-        lemma_field_halve_double(x);
-    };
+    lemma_recover_xy_from_niels_encoding(y_plus_x, y_minus_x, x, y);
 
-    // Step 2: Recover y from (y+x) + (y-x) = 2y
-    let sum = field_add(y_plus_x, y_minus_x);
-    let y_niels = field_mul(sum, inv2);
-    assert(sum == field_mul(2, y)) by {
-        lemma_field_add_add_recover_double(y, x);
-    };
-    assert(y_niels == y % p()) by {
-        lemma_field_halve_double(y);
-    };
-
-    // Step 3: x < p and y < p (field elements), so x%p = x and y%p = y
+    // x < p and y < p (field elements), so x%p = x and y%p = y
     assert(x < p()) by {
         p_gt_2();
         lemma_mod_bound(fe51_as_nat(&point.X) as int, p() as int);

@@ -290,12 +290,15 @@ function getFilteredVerified() {
             return h.includes(searchLeft);
         });
     }
-    // Sort by module (backend last), then by display name
+    // Sort by module (backend last), then by sub_module, then by display name
     list.sort((a, b) => {
         const ma = a.module === "backend" ? 1 : 0;
         const mb = b.module === "backend" ? 1 : 0;
         if (ma !== mb) return ma - mb;
-        return a.module.localeCompare(b.module) || a.display_name.localeCompare(b.display_name);
+        if (a.module !== b.module) return a.module.localeCompare(b.module);
+        const sa = a.sub_module || a.module;
+        const sb = b.sub_module || b.module;
+        return sa.localeCompare(sb) || a.display_name.localeCompare(b.display_name);
     });
     return list;
 }
@@ -317,11 +320,12 @@ function renderLeftPanel() {
     countEl.textContent = filtered.length;
 
     let html = "";
-    let currentMod = null;
+    let currentGroup = null;
     for (const fn of filtered) {
-        if (fn.module !== currentMod) {
-            currentMod = fn.module;
-            html += `<div class="module-group-header">${escapeHtml(currentMod)}</div>`;
+        const group = fn.sub_module || fn.module;
+        if (group !== currentGroup) {
+            currentGroup = group;
+            html += `<div class="module-group-header">${escapeHtml(currentGroup)}</div>`;
         }
         html += renderVerifiedCard(fn);
     }
@@ -358,7 +362,7 @@ function renderVerifiedCard(fn) {
             <div class="spec-info">
                 <div class="spec-name">${escapeHtml(fn.display_name)} ${badges.join("")}</div>
                 <div class="spec-meta">
-                    <span class="spec-module">${escapeHtml(fn.module)}</span>
+                    <span class="spec-module">${escapeHtml(fn.sub_module || fn.module)}</span>
                     ${hasMath ? `<span class="spec-math">${escapeHtml(fn.math_interpretation)}</span>` : ""}
                 </div>
             </div>

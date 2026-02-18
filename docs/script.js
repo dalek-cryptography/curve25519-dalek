@@ -332,11 +332,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const stats = await response.json();
             
             // Update hero stats
-            document.getElementById('totalFunctions').textContent = stats.total_functions;
             document.getElementById('withSpecs').textContent = stats.with_specs;
-            document.getElementById('withSpecsPct').textContent = `${stats.with_specs_pct}%`;
             document.getElementById('fullyVerified').textContent = stats.fully_verified;
-            document.getElementById('fullyVerifiedPct').textContent = `${stats.fully_verified_pct}%`;
+            document.getElementById('fullyVerifiedPct').textContent = `${stats.proof_completion_rate}%`;
             
             // Update metrics section
             document.getElementById('specCompletionRate').textContent = `${stats.with_specs_pct}%`;

@@ -5,21 +5,20 @@ This directory contains Python scripts that support the automated generation of 
 ## Scripts Overview
 
 
-### analyze_verus_specs_proofs.py
+### probe-verus (external tool)
 
-Usage:
+The `probe-verus` CLI tool replaces the former `analyze_verus_specs_proofs.py` and `extract_specs.py` scripts.
+Install via `cargo install --git https://github.com/Beneficial-AI-Foundation/probe-verus.git`.
 
-``` bash
-./scripts/analyze_verus_specs_proofs.py
+```bash
+# Generate tracked functions CSV (replaces analyze_verus_specs_proofs.py + functions_to_track.csv)
+probe-verus tracked-csv curve25519-dalek/src --output outputs/curve25519_functions.csv \
+  --github-base-url "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/"
+
+# Generate specs data JSON (replaces extract_specs.py)
+probe-verus specs-data curve25519-dalek/src --output docs/specs_data.json \
+  --github-base-url "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/"
 ```
-
-This script looks at outputs/curve25519_functions.csv. 
-For each row in the CSV, it finds the corresponding function in the codebase
-(maybe not accurately if a file has two functions with the same name).
-It finds out whether the function is specified (heuristic: does it have the string "ensures" or "requires"?),
-and whether it has a proof (heuristic: is it specified and does not have the string "assume")?
-It updates the `has_spec_verus` and `has_proof_verus` columns in the CSV.
-Note this script does not know if a function calls a lemma that uses assume.
 
 ### csv_to_markdown.py 
 Usage:

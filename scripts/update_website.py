@@ -24,10 +24,18 @@ def main():
     print("UPDATING WEBSITE")
     print("=" * 70)
 
-    # Step 1: Run the analysis script to update CSV
-    print("\n1. Analyzing Verus specs and proofs...")
+    # Step 1: Generate tracked functions CSV via probe-verus
+    print("\n1. Generating tracked functions CSV...")
     result = subprocess.run(
-        [str(script_dir / "analyze_verus_specs_proofs.py")],
+        [
+            "probe-verus",
+            "tracked-csv",
+            "curve25519-dalek/src",
+            "--output",
+            "outputs/curve25519_functions.csv",
+            "--github-base-url",
+            "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/",
+        ],
         cwd=repo_root,
         capture_output=True,
         text=True,
@@ -35,7 +43,7 @@ def main():
     if result.returncode != 0:
         print(f"Error: {result.stderr}")
         return 1
-    print("✓ Analysis complete")
+    print("✓ CSV generation complete")
 
     # Step 2: Generate static snapshot plots
     print("\n2. Generating snapshot plots...")

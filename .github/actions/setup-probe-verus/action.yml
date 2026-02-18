@@ -1,0 +1,33 @@
+name: Setup probe-verus
+description: Install Rust toolchain and probe-verus CLI with binary caching
+
+runs:
+  using: composite
+  steps:
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Get probe-verus latest commit hash
+      id: probe-verus-version
+      shell: bash
+      run: |
+        set -e
+        SHA=$(git ls-remote https://github.com/Beneficial-AI-Foundation/probe-verus.git HEAD | cut -f1)
+        if [ -z "$SHA" ]; then
+          echo "Error: Failed to fetch probe-verus commit SHA" >&2
+          exit 1
+        fi
+        echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+    - name: Cache probe-verus binary
+      id: cache-probe-verus
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/bin/probe-verus
+        key: probe-verus-${{ runner.os }}-${{ steps.probe-verus-version.outputs.sha }}
+
+    - name: Install probe-verus
+      if: steps.cache-probe-verus.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        cargo install --git https://github.com/Beneficial-AI-Foundation/probe-verus.git

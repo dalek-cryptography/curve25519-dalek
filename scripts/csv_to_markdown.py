@@ -14,6 +14,19 @@ def main():
     with open(csv_path, "r", encoding="utf-8") as csvfile:
         reader = csv.DictReader(csvfile)
 
+        # Validate expected columns (probe-verus tracked-csv output)
+        expected_cols = {"function", "module", "link", "has_spec", "has_proof"}
+        if not reader.fieldnames:
+            raise SystemExit(f"Error: {csv_path} is empty or has no header row")
+        actual_cols = set(reader.fieldnames)
+        missing = expected_cols - actual_cols
+        if missing:
+            raise SystemExit(
+                f"Error: {csv_path} is missing columns: {sorted(missing)}\n"
+                f"  Expected: {sorted(expected_cols)}\n"
+                f"  Got:      {sorted(actual_cols)}"
+            )
+
         # Prepare markdown content
         lines = []
         lines.append("# Curve25519 Functions\n")

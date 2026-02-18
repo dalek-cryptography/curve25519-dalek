@@ -14,6 +14,8 @@ pub mod montgomery_curve_lemmas;
 
 pub mod scalar_lemmas_extra;
 
+pub mod montgomery_pow_chain_lemmas;
+
 pub mod scalar_byte_lemmas;
 
 // See: https://github.com/Beneficial-AI-Foundation/dalek-lite/issues/386

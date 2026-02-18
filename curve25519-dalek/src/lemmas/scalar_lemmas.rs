@@ -967,6 +967,24 @@ pub proof fn lemma_montgomery_inverse()
 
 }
 
+/// Montgomery radix is nonzero modulo group_order.
+/// Follows from R * R^{-1} ≡ 1 (mod L) by contradiction.
+pub proof fn lemma_montgomery_radix_nonzero_mod_group_order()
+    ensures
+        montgomery_radix() % group_order() != 0,
+{
+    lemma_montgomery_inverse();
+    if montgomery_radix() % group_order() == 0 {
+        assert((montgomery_radix() * inv_montgomery_radix()) % group_order() == 0) by {
+            lemma_mul_mod_noop(
+                montgomery_radix() as int,
+                inv_montgomery_radix() as int,
+                group_order() as int,
+            );
+        }
+    }
+}
+
 pub(crate) proof fn lemma_r_equals_spec(r: Scalar52)
     requires
         r == (Scalar52 {

@@ -61,6 +61,8 @@ use crate::lemmas::field_lemmas::limbs_to_bytes_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::load8_lemmas::*;
 #[allow(unused_imports)]
+use crate::lemmas::field_lemmas::mul_lemmas::*;
+#[allow(unused_imports)]
 use crate::lemmas::field_lemmas::negate_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::pow2_51_lemmas::*;
@@ -285,12 +287,7 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
 }
 
 impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
-    fn sub_assign(
-        &mut self,
-        _rhs: &'a FieldElement51,
-    )
-    // VERIFICATION NOTE: PROOF BYPASS
-
+    fn sub_assign(&mut self, _rhs: &'a FieldElement51)
         requires
             fe51_limbs_bounded(old(self), 54) && fe51_limbs_bounded(_rhs, 54),
         ensures
@@ -309,16 +306,8 @@ impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
         let result = &*self - _rhs;
         self.limbs = result.limbs;
         proof {
-            // result satisfies sub_spec by the postcondition of sub
-            assert(result == spec_sub_limbs(old(self), _rhs));
-            // Therefore self.limbs equals spec_sub_limbs(old(self), _rhs).limbs
-            assert(self.limbs =~= spec_sub_limbs(old(self), _rhs).limbs);
+            assert(*self =~= result);
         }
-        assume(fe51_as_canonical_nat(self) == field_sub(
-            fe51_as_canonical_nat(old(self)),
-            fe51_as_canonical_nat(_rhs),
-        ));
-        assume(forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52))
     }
 }
 
@@ -344,8 +333,9 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
     fn sub(self, _rhs: &'a FieldElement51) -> (output:
-        FieldElement51)
-    // VERIFICATION NOTE: PROOF BYPASS
+        FieldElement51)/* Precondition specified in sub_req from SubSpecImpl:
+        requires fe51_limbs_bounded(self, 54) && fe51_limbs_bounded(_rhs, 54)
+        */
 
         ensures
             output == spec_sub_limbs(self, _rhs),
@@ -353,6 +343,7 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
                 fe51_as_canonical_nat(self),
                 fe51_as_canonical_nat(_rhs),
             ),
+            fe51_limbs_bounded(&output, 52),
             fe51_limbs_bounded(&output, 54),
     {
         assert(fe51_limbs_bounded(self, 54) && fe51_limbs_bounded(_rhs, 54));
@@ -398,7 +389,8 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
         );
 
         proof {
-            assert(1u64 << 52 < 1u64 << 54) by (compute);
+            assert(fe51_limbs_bounded(&output, 52));
+            assert(1u64 << 52 <= 1u64 << 54) by (bit_vector);
             assert(fe51_limbs_bounded(&output, 54));
 
             // Glue the raw subtraction back to the spec subtraction using reduction lemmas.
@@ -489,19 +481,16 @@ impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
 
     #[rustfmt::skip]  // keep alignment of c* calculations
     fn mul(self, _rhs: &'a FieldElement51) -> (output:
-        FieldElement51)/*  VERIFICATION NOTE:
-    - PROOF BYPASS
-    - REVIEW SPEC WHILE DOING THE PROOF
-    */
+        FieldElement51)/* Precondition specified in mul_req from MulSpecImpl:
+        requires fe51_limbs_bounded(self, 54) && fe51_limbs_bounded(rhs, 54)
+        */
 
         ensures
             fe51_as_canonical_nat(&output) == field_mul(
                 fe51_as_canonical_nat(self),
                 fe51_as_canonical_nat(_rhs),
             ),
-            // Actual bound: 2^51 + 2^13 < 2^52 (from carry propagation)
             fe51_limbs_bounded(&output, 52),
-            // 52-bit implies 54-bit (for compatibility with callers)
             fe51_limbs_bounded(&output, 54),
     {
         /// Helper function to multiply two 64-bit integers with 128
@@ -513,26 +502,16 @@ impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
         let a: &[u64; 5] = &self.limbs;
         let b: &[u64; 5] = &_rhs.limbs;
 
-        // Precondition: assume input limbs a[i], b[i] are bounded as
-        //
-        // a[i], b[i] < 2^(51 + b)
-        //
-        // where b is a real parameter measuring the "bit excess" of the limbs.
+        proof {
+            lemma_mul_boundary(*a, *b);
+        }
 
         // 64-bit precomputations to avoid 128-bit multiplications.
-        //
-        // This fits into a u64 whenever 51 + b + lg(19) < 64.
-        //
-        // Since 51 + b + lg(19) < 51 + 4.25 + b
-        //                       = 55.25 + b,
-        // this fits if b < 8.75.
-        assume(false);  // PROOF BYPASS for arithmetic overflow
         let b1_19 = b[1] * 19;
         let b2_19 = b[2] * 19;
         let b3_19 = b[3] * 19;
         let b4_19 = b[4] * 19;
 
-        assume(false);  // PROOF BYPASS for arithmetic overflow
         // Multiply to get 128-bit coefficients of output
         let c0: u128 = m(a[0], b[0]) + m(a[4], b1_19) + m(a[3], b2_19) + m(a[2], b3_19) + m(
             a[1],
@@ -623,6 +602,28 @@ impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
         // Now out[1] < 2^51 + 2^(64 -51) = 2^51 + 2^13 < 2^(51 + epsilon).
         out[1] += out[0] >> 51;
         out[0] &= LOW_51_BIT_MASK;
+
+        proof {
+            lemma_mul_value(*a, *b);
+            assert(out =~= mul_return(*a, *b));
+            assert(u64_5_as_nat(out) % p() == (u64_5_as_nat(*a) * u64_5_as_nat(*b)) % p());
+
+            assert(fe51_as_canonical_nat(&FieldElement51 { limbs: out }) == field_mul(
+                fe51_as_canonical_nat(self),
+                fe51_as_canonical_nat(_rhs),
+            )) by {
+                pow255_gt_19();
+                lemma_mul_mod_noop_general(
+                    u64_5_as_nat(*a) as int,
+                    u64_5_as_nat(*b) as int,
+                    p() as int,
+                );
+            }
+
+            assert(1u64 << 52 <= 1u64 << 54) by (bit_vector);
+            assert(fe51_limbs_bounded(&FieldElement51 { limbs: out }, 52));
+            assert(fe51_limbs_bounded(&FieldElement51 { limbs: out }, 54));
+        }
 
         // Now out[i] < 2^(51 + epsilon) for all i.
         FieldElement51 { limbs: out }

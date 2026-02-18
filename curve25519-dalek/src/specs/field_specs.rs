@@ -340,7 +340,7 @@ pub open spec fn field_sqrt(a: nat) -> nat
 /// Takes a 32-byte array and produces a FieldElement51
 /// The high bit of byte[31] is ignored, giving a 255-bit value
 pub open spec fn spec_fe51_from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
-    // Mimic the implementation in field_verus.rs:from_bytes
+    // Mimic the implementation in field.rs:from_bytes
     // Load 8-byte chunks at specified offsets and mask to 51-bit limbs
     let low_51_bit_mask = mask51;
 

@@ -137,7 +137,6 @@ pub open spec fn limb4_byte_contribution_52(limbs: [u64; 5], bytes: [u8; 32]) ->
 // Main lemma and helper lemmas (proofs to be implemented)
 // ============================================================================
 /// Core lemma: proves that packing 52-bit limbs into bytes preserves the value
-/// Now using non-recursive specification functions (like field_verus.rs does)
 ///
 /// This follows the same proof strategy as lemma_limbs_to_bytes from field_lemmas,
 /// but adapted for 52-bit limbs instead of 51-bit limbs.

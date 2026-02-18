@@ -14,59 +14,6 @@ use crate::specs::field_specs_u64::*;
 
 verus! {
 
-pub proof fn lemma_mul_v0_and_reorder(
-    v0: int,
-    s1: int,
-    v1: int,
-    s2: int,
-    v2: int,
-    s3: int,
-    v3: int,
-    s4: int,
-    v4: int,
-)
-    ensures
-        v0 * (v0 + s1 * v1 + s2 * v2 + s3 * v3 + s4 * v4) == s4 * (v0 * v4) + s3 * (v0 * v3) + s2
-            * (v0 * v2) + s1 * (v0 * v1) + (v0 * v0),
-{
-    lemma_mul_distributive_5_terms(v0, v0, s1 * v1, s2 * v2, s3 * v3, s4 * v4);
-
-    lemma_mul_is_associative(v0, v1, s1);
-    lemma_mul_is_associative(v0, v2, s2);
-    lemma_mul_is_associative(v0, v3, s3);
-    lemma_mul_is_associative(v0, v4, s4);
-}
-
-pub proof fn lemma_mul_si_vi_and_reorder(
-    si: int,
-    vi: int,
-    v0: int,
-    s1: int,
-    v1: int,
-    s2: int,
-    v2: int,
-    s3: int,
-    v3: int,
-    s4: int,
-    v4: int,
-)
-    ensures
-        (si * vi) * (v0 + s1 * v1 + s2 * v2 + s3 * v3 + s4 * v4) == (si) * (vi * v0) + (si * s1) * (
-        vi * v1) + (si * s2) * (vi * v2) + (si * s3) * (vi * v3) + (si * s4) * (vi * v4),
-{
-    // n * (x1 + x2 + x3 + x4 + x5) == n * x1 + n * x2 + n * x3 + n * x4 + n * x5
-    lemma_mul_distributive_5_terms(si * vi, v0, s1 * v1, s2 * v2, s3 * v3, s4 * v4);
-
-    assert((si * vi) * (v0 + s1 * v1 + s2 * v2 + s3 * v3 + s4 * v4) == (si * vi) * v0 + (si * vi)
-        * (s1 * v1) + (si * vi) * (s2 * v2) + (si * vi) * (s3 * v3) + (si * vi) * (s4 * v4));
-
-    lemma_mul_is_associative(si, vi, v0);
-    lemma_mul_quad_prod(si, vi, s1, v1);
-    lemma_mul_quad_prod(si, vi, s2, v2);
-    lemma_mul_quad_prod(si, vi, s3, v3);
-    lemma_mul_quad_prod(si, vi, s4, v4);
-}
-
 // Lemma: Bridges from u64_5_as_nat postcondition to fe51_as_canonical_nat postcondition for power operations
 pub proof fn lemma_bridge_pow_as_nat_to_spec(
     result: &FieldElement51,
@@ -182,338 +129,6 @@ pub proof fn lemma_u64_5_as_nat_sub(a: [u64; 5], b: [u64; 5])
     }
 }
 
-// Explicit and mod-p identities for squaring u64_5_as_nat conversion
-#[verusfmt::skip]
-pub proof fn lemma_u64_5_as_nat_squared(v: [u64; 5])
-    ensures
-        u64_5_as_nat(v) * u64_5_as_nat(v) ==
-            pow2(8 * 51) * (v[4] * v[4]) +
-            pow2(7 * 51) * (2 * (v[3] * v[4])) +
-            pow2(6 * 51) * (v[3] * v[3] + 2 * (v[2] * v[4])) +
-            pow2(5 * 51) * (2 * (v[2] * v[3]) + 2 * (v[1] * v[4])) +
-            pow2(4 * 51) * (v[2] * v[2] + 2 * (v[1] * v[3]) + 2 * (v[0] * v[4])) +
-            pow2(3 * 51) * (2 * (v[1] * v[2]) + 2 * (v[0] * v[3])) +
-            pow2(2 * 51) * (v[1] * v[1] + 2 * (v[0] * v[2])) +
-            pow2(1 * 51) * (2 * (v[0] * v[1])) +
-                           (v[0] * v[0]),
-        // and the mod equality
-        (u64_5_as_nat(v) * u64_5_as_nat(v)) % p() ==
-            (
-                pow2(4 * 51) * (v[2] * v[2] + 2 * (v[1] * v[3]) + 2 * (v[0] * v[4])) +
-                pow2(3 * 51) * (2 * (v[1] * v[2]) + 2 * (v[0] * v[3]) + 19 * (v[4] * v[4])) +
-                pow2(2 * 51) * (v[1] * v[1] + 2 * (v[0] * v[2]) + 19 * (2 * (v[3] * v[4]))) +
-                pow2(1 * 51) * (2 * (v[0] * v[1]) + 19 * (v[3] * v[3] + 2 * (v[2] * v[4]))) +
-                               (v[0] * v[0] + 19 * (2 * (v[2] * v[3]) + 2 * (v[1] * v[4])))
-            ) as nat % p(),
-{
-    let v0 = v[0];
-    let v1 = v[1];
-    let v2 = v[2];
-    let v3 = v[3];
-    let v4 = v[4];
-
-    let s1 = pow2(1 * 51);
-    let s2 = pow2(2 * 51);
-    let s3 = pow2(3 * 51);
-    let s4 = pow2(4 * 51);
-    let s5 = pow2(5 * 51);
-    let s6 = pow2(6 * 51);
-    let s7 = pow2(7 * 51);
-    let s8 = pow2(8 * 51);
-
-    assert(s1 * s1 == s2) by { lemma_pow2_adds(51, 51) }
-    assert(s1 * s2 == s2 * s1 == s3) by { lemma_pow2_adds(51, 102) }
-    assert(s1 * s3 == s3 * s1 == s4) by { lemma_pow2_adds(51, 153) }
-    assert(s1 * s4 == s4 * s1 == s5) by { lemma_pow2_adds(51, 204) }
-    assert(s2 * s2 == s4) by { lemma_pow2_adds(102, 102) }
-    assert(s2 * s3 == s3 * s2 == s5) by { lemma_pow2_adds(102, 153) }
-    assert(s2 * s4 == s4 * s2 == s6) by { lemma_pow2_adds(102, 204) }
-    assert(s3 * s3 == s6) by { lemma_pow2_adds(153, 153) }
-    assert(s3 * s4 == s4 * s3 == s7) by { lemma_pow2_adds(153, 204) }
-    assert(s4 * s4 == s8) by { lemma_pow2_adds(204, 204) }
-
-    assert(u64_5_as_nat(v) * u64_5_as_nat(v) == v0 * u64_5_as_nat(v) + (s1 * v1) * u64_5_as_nat(v) + (s2 * v2) * u64_5_as_nat(v)
-        + (s3 * v3) * u64_5_as_nat(v) + (s4 * v4) * u64_5_as_nat(v)) by {
-        // (x1 + x2 + x3 + x4 + x5) * n == x1 * n + x2 * n + x3 * n + x4 * n + x5 * n
-        lemma_mul_distributive_5_terms(u64_5_as_nat(v) as int, v0 as int, s1 * v1, s2 * v2, s3 * v3, s4 * v4);
-    }
-
-    // because of the sheer number of possible associativity/distributivity groupings we have
-    // to help the solver along by intermittently asserting chunks
-    assert(v0 * u64_5_as_nat(v) == s4 * (v0 * v4) + s3 * (v0 * v3) + s2 * (v0 * v2) + s1 * (v0 * v1) + v0
-        * v0) by {
-        lemma_mul_v0_and_reorder(
-            v0 as int,
-            s1 as int,
-            v1 as int,
-            s2 as int,
-            v2 as int,
-            s3 as int,
-            v3 as int,
-            s4 as int,
-            v4 as int,
-        );
-    }
-
-    assert((s1 * v1) * u64_5_as_nat(v) == s5 * (v1 * v4) + s4 * (v1 * v3) + s3 * (v1 * v2) + s2 * (v1
-        * v1) + s1 * (v0 * v1)) by {
-        lemma_mul_si_vi_and_reorder(
-            s1 as int,
-            v1 as int,
-            v0 as int,
-            s1 as int,
-            v1 as int,
-            s2 as int,
-            v2 as int,
-            s3 as int,
-            v3 as int,
-            s4 as int,
-            v4 as int,
-        )
-    }
-
-    assert((s2 * v2) * u64_5_as_nat(v) == s6 * (v2 * v4) + s5 * (v2 * v3) + s4 * (v2 * v2) + s3 * (v1
-        * v2) + s2 * (v0 * v2)) by {
-        lemma_mul_si_vi_and_reorder(
-            s2 as int,
-            v2 as int,
-            v0 as int,
-            s1 as int,
-            v1 as int,
-            s2 as int,
-            v2 as int,
-            s3 as int,
-            v3 as int,
-            s4 as int,
-            v4 as int,
-        )
-    }
-
-    assert((s3 * v3) * u64_5_as_nat(v) == s7 * (v3 * v4) + s6 * (v3 * v3) + s5 * (v2 * v3) + s4 * (v1
-        * v3) + s3 * (v0 * v3)) by {
-        lemma_mul_si_vi_and_reorder(
-            s3 as int,
-            v3 as int,
-            v0 as int,
-            s1 as int,
-            v1 as int,
-            s2 as int,
-            v2 as int,
-            s3 as int,
-            v3 as int,
-            s4 as int,
-            v4 as int,
-        )
-    }
-
-    assert((s4 * v4) * u64_5_as_nat(v) == s8 * (v4 * v4) + s7 * (v3 * v4) + s6 * (v2 * v4) + s5 * (v1
-        * v4) + s4 * (v0 * v4)) by {
-        lemma_mul_si_vi_and_reorder(
-            s4 as int,
-            v4 as int,
-            v0 as int,
-            s1 as int,
-            v1 as int,
-            s2 as int,
-            v2 as int,
-            s3 as int,
-            v3 as int,
-            s4 as int,
-            v4 as int,
-        )
-    }
-
-    // we now mash them all together
-    assert(u64_5_as_nat(v) * u64_5_as_nat(v) == s8 * (v4 * v4) + s7 * (2 * (v3 * v4)) + s6 * (v3 * v3 + 2 * (v2
-        * v4)) + s5 * (2 * (v2 * v3) + 2 * (v1 * v4)) + s4 * (v2 * v2 + 2 * (v1 * v3) + 2 * (v0
-        * v4)) + s3 * (2 * (v1 * v2) + 2 * (v0 * v3)) + s2 * (v1 * v1 + 2 * (v0 * v2)) + s1 * (2 * (
-    v0 * v1)) + (v0 * v0)) by {
-        // These assert(a + a = 2a) statements aren't strictly necessary, but they improve the solve time
-        // s1 terms
-        assert(s1 * (v0 * v1) + s1 * (v0 * v1) == s1 * (2 * (v0 * v1))) by {
-            assert(v0 * v1 + v0 * v1 == 2 * (v0 * v1));
-            lemma_mul_is_distributive_add(s1 as int, v0 * v1, v0 * v1);
-        }
-
-        // s2 terms
-        assert(s2 * (v0 * v2) + s2 * (v1 * v1) + s2 * (v0 * v2) == s2 * (v1 * v1 + 2 * (v0 * v2)))
-            by {
-            assert(v0 * v2 + v0 * v2 == 2 * (v0 * v2));
-            lemma_mul_is_distributive_add(s2 as int, v0 * v2, v0 * v2);
-            lemma_mul_is_distributive_add(s2 as int, 2 * (v0 * v2), v1 * v1);
-        }
-
-        // s3 terms
-        assert(s3 * (v0 * v3) + s3 * (v1 * v2) + s3 * (v1 * v2) + s3 * (v0 * v3) == s3 * (2 * (v1
-            * v2) + 2 * (v0 * v3))) by {
-            assert(v1 * v2 + v1 * v2 == 2 * (v1 * v2));
-            assert(v0 * v3 + v0 * v3 == 2 * (v0 * v3));
-            lemma_mul_is_distributive_add(s3 as int, v1 * v2, v1 * v2);
-            lemma_mul_is_distributive_add(s3 as int, v0 * v3, v0 * v3);
-            lemma_mul_is_distributive_add(s3 as int, 2 * (v1 * v2), 2 * (v0 * v3));
-        }
-
-        // s4 terms
-        assert(s4 * (v0 * v4) + s4 * (v1 * v3) + s4 * (v2 * v2) + s4 * (v1 * v3) + s4 * (v0 * v4)
-            == s4 * (v2 * v2 + 2 * (v1 * v3) + 2 * (v0 * v4))) by {
-            assert(v0 * v4 + v0 * v4 == 2 * (v0 * v4));
-            assert(v1 * v3 + v1 * v3 == 2 * (v1 * v3));
-            lemma_mul_is_distributive_add(s4 as int, v0 * v4, v0 * v4);
-            lemma_mul_is_distributive_add(s4 as int, v1 * v3, v1 * v3);
-            lemma_mul_is_distributive_add(s4 as int, v2 * v2, 2 * (v1 * v3));
-            lemma_mul_is_distributive_add(s4 as int, v2 * v2 + 2 * (v1 * v3), 2 * (v0 * v4));
-        }
-
-        // s5 terms
-        assert(s5 * (v1 * v4) + s5 * (v2 * v3) + s5 * (v2 * v3) + s5 * (v1 * v4) == s5 * (2 * (v2
-            * v3) + 2 * (v1 * v4))) by {
-            assert(v1 * v4 + v1 * v4 == 2 * (v1 * v4));
-            assert(v2 * v3 + v2 * v3 == 2 * (v2 * v3));
-            lemma_mul_is_distributive_add(s5 as int, v1 * v4, v1 * v4);
-            lemma_mul_is_distributive_add(s5 as int, v2 * v3, v2 * v3);
-            lemma_mul_is_distributive_add(s5 as int, 2 * (v1 * v4), 2 * (v2 * v3));
-        }
-
-        // s6 terms
-        assert(s6 * (v2 * v4) + s6 * (v3 * v3) + s6 * (v2 * v4) == s6 * (v3 * v3 + 2 * (v2 * v4)))
-            by {
-            assert(v2 * v4 + v2 * v4 == 2 * (v2 * v4));
-            lemma_mul_is_distributive_add(s6 as int, v2 * v4, v2 * v4);
-            lemma_mul_is_distributive_add(s6 as int, 2 * (v2 * v4), v3 * v3);
-        }
-
-        // s7 terms
-        assert(s7 * (v3 * v4) + s7 * (v3 * v4) == s7 * (2 * (v3 * v4))) by {
-            assert(v3 * v4 + v3 * v4 == 2 * (v3 * v4));
-            lemma_mul_is_distributive_add(s7 as int, v3 * v4, v3 * v4);
-        }
-    }
-
-    // This is the explicit version, now we can take everything mod p
-
-    // p well defined
-    pow255_gt_19();
-
-    // By definition, p = s^5 - 19
-    // equivalently,
-    // s^5 = (p + 19)
-    // s^6 = s * (p + 19)
-    // s^7 = s^2 * (p + 19)
-    // s^8 = s^3 * (p + 19)
-    assert(s5 == (p() + 19));
-
-    // we pack together terms to slim down expressions;
-
-    let c0_base = v0 * v0;
-    let c0_x19 = 2 * (v2 * v3) + 2 * (v1 * v4);
-    let c0 = c0_base + 19 * c0_x19;
-
-    let c1_base = 2 * (v0 * v1);
-    let c1_x19 = v3 * v3 + 2 * (v2 * v4);
-    let c1 = c1_base + 19 * c1_x19;
-
-    let c2_base = v1 * v1 + 2 * (v0 * v2);
-    let c2_x19 = 2 * (v3 * v4);
-    let c2 = c2_base + 19 * c2_x19;
-
-    let c3_base = 2 * (v1 * v2) + 2 * (v0 * v3);
-    let c3_x19 = v4 * v4;
-    let c3 = c3_base + 19 * c3_x19;
-
-    let c4 = v2 * v2 + 2 * (v1 * v3) + 2 * (v0 * v4);
-
-    // group in preparation for the substitution
-    assert(u64_5_as_nat(v) * u64_5_as_nat(v) == s4 * c4 + s3 * (s5 * c3_x19 + c3_base) + s2 * (s5 * c2_x19
-        + c2_base) + s1 * (s5 * c1_x19 + c1_base) + (s5 * c0_x19 + c0_base)) by {
-        // s3 terms
-        assert(s8 * c3_x19 + s3 * c3_base == s3 * (s5 * c3_x19 + c3_base)) by {
-            assert(s8 == (s3 * s5)) by {
-                lemma_pow2_adds(3 * 51, 5 * 51);
-            }
-            lemma_mul_is_associative(s3 as int, s5 as int, c3_x19);
-            lemma_mul_is_distributive_add(s3 as int, s5 * c3_x19, c3_base)
-        }
-
-        // s2 terms
-        assert(s7 * c2_x19 + s2 * c2_base == s2 * (s5 * c2_x19 + c2_base)) by {
-            assert(s7 == (s2 * s5)) by {
-                lemma_pow2_adds(2 * 51, 5 * 51);
-            }
-            lemma_mul_is_associative(s2 as int, s5 as int, c2_x19);
-            lemma_mul_is_distributive_add(s2 as int, s5 * c2_x19, c2_base)
-        }
-
-        // s1 terms
-        assert(s6 * c1_x19 + s1 * c1_base == s1 * (s5 * c1_x19 + c1_base)) by {
-            assert(s6 == (s1 * s5)) by {
-                lemma_pow2_adds(1 * 51, 5 * 51);
-            }
-            lemma_mul_is_associative(s1 as int, s5 as int, c1_x19);
-            lemma_mul_is_distributive_add(s1 as int, s5 * c1_x19, c1_base)
-        }
-    }
-
-    // Next we use the identity s5 = p + 19
-    assert(s5 * c3_x19 + c3_base == p() * c3_x19 + c3) by {
-        lemma_mul_is_distributive_add(c3_x19 as int, p() as int, 19);
-    }
-
-    assert(s5 * c2_x19 + c2_base == p() * c2_x19 + c2) by {
-        lemma_mul_is_distributive_add(c2_x19 as int, p() as int, 19);
-    }
-
-    assert(s5 * c1_x19 + c1_base == p() * c1_x19 + c1) by {
-        lemma_mul_is_distributive_add(c1_x19 as int, p() as int, 19);
-    }
-
-    assert(s5 * c0_x19 + c0_base == p() * c0_x19 + c0) by {
-        lemma_mul_is_distributive_add(c0_x19 as int, p() as int, 19);
-    }
-
-    // in summary, we can reorder and regroup terms to get X * p() + Y
-    assert(u64_5_as_nat(v) * u64_5_as_nat(v) == p() * (s3 * c3_x19 + s2 * c2_x19 + s1 * c1_x19 + c0_x19) + (s4
-        * c4 + s3 * c3 + s2 * c2 + s1 * c1 + c0)) by {
-        lemma_mul_is_distributive_add(s3 as int, p() * c3_x19, c3 as int);
-        lemma_mul_is_distributive_add(s2 as int, p() * c2_x19, c2 as int);
-        lemma_mul_is_distributive_add(s1 as int, p() * c1_x19, c1 as int);
-
-        assert(s3 * (p() * c3_x19) + s2 * (p() * c2_x19) + s1 * (p() * c1_x19) + p() * c0_x19 == p()
-            * (s3 * c3_x19 + s2 * c2_x19 + s1 * c1_x19 + c0_x19)) by {
-            lemma_mul_is_associative(s3 as int, c3_x19 as int, p() as int);
-            lemma_mul_is_associative(s2 as int, c2_x19 as int, p() as int);
-            lemma_mul_is_associative(s1 as int, c1_x19 as int, p() as int);
-
-            lemma_mul_is_distributive_add(p() as int, s3 * c3_x19, s2 * c2_x19);
-            lemma_mul_is_distributive_add(p() as int, s3 * c3_x19 + s2 * c2_x19, s1 * c1_x19);
-            lemma_mul_is_distributive_add(
-                p() as int,
-                s3 * c3_x19 + s2 * c2_x19 + s1 * c1_x19,
-                c0_x19 as int,
-            );
-        }
-    }
-
-    let k = (s3 * c3_x19 + s2 * c2_x19 + s1 * c1_x19 + c0_x19);
-    let sum = (s4 * c4 + s3 * c3 + s2 * c2 + s1 * c1 + c0);
-
-    assert(u64_5_as_nat(v) * u64_5_as_nat(v) == k * p() + sum);
-    assert(k * p() + sum == (k as nat) * p() + (sum as nat));
-
-    // Now, we simply move to mod p
-
-    assert((u64_5_as_nat(v) * u64_5_as_nat(v)) % p() == ((k as nat) * p() + (sum as nat)) % p());
-    assert(((k as nat) * p() + (sum as nat)) % p() == (sum as nat) % p()) by {
-        lemma_mod_sum_factor(k as int, sum as int, p() as int);
-    }
-
-    // sanity check
-    assert(s4 * c4 == pow2(4 * 51) * (v[2] * v[2] + 2 * (v[1] * v[3]) + 2 * (v[0] * v[4])));
-    assert(s3 * c3 == pow2(3 * 51) * (2 * (v[1] * v[2]) + 2 * (v[0] * v[3]) + 19 * (v[4] * v[4])));
-    assert(s2 * c2 == pow2(2 * 51) * (v[1] * v[1] + 2 * (v[0] * v[2]) + 19 * (2 * (v[3] * v[4]))));
-    assert(s1 * c1 == pow2(1 * 51) * (2 * (v[0] * v[1]) + 19 * (v[3] * v[3] + 2 * (v[2] * v[4]))));
-    assert(c0 == (v[0] * v[0] + 19 * (2 * (v[2] * v[3]) + 2 * (v[1] * v[4]))));
-}
-
 pub proof fn lemma_u64_5_as_nat_k(a: [u64; 5], k: u64)
     requires
         forall|i: int| 0 <= i < 5 ==> (k * a[i]) <= u64::MAX,
@@ -559,6 +174,294 @@ pub proof fn lemma_u64_5_as_nat_k(a: [u64; 5], k: u64)
             a[0] + pow2(51) * a[1] + pow2(102) * a[2] + pow2(153) * a[3],
             (pow2(204) * a[4]),
         );
+    }
+}
+
+#[verusfmt::skip]
+pub proof fn lemma_u64_5_as_nat_product(a: [u64; 5], b: [u64; 5])
+    ensures
+        // Full polynomial expansion
+        u64_5_as_nat(a) * u64_5_as_nat(b) ==
+            pow2(8 * 51) * (a[4] * b[4]) +
+            pow2(7 * 51) * (a[3] * b[4] + a[4] * b[3]) +
+            pow2(6 * 51) * (a[2] * b[4] + a[3] * b[3] + a[4] * b[2]) +
+            pow2(5 * 51) * (a[1] * b[4] + a[2] * b[3] + a[3] * b[2] + a[4] * b[1]) +
+            pow2(4 * 51) * (a[0] * b[4] + a[1] * b[3] + a[2] * b[2] + a[3] * b[1] + a[4] * b[0]) +
+            pow2(3 * 51) * (a[0] * b[3] + a[1] * b[2] + a[2] * b[1] + a[3] * b[0]) +
+            pow2(2 * 51) * (a[0] * b[2] + a[1] * b[1] + a[2] * b[0]) +
+            pow2(1 * 51) * (a[0] * b[1] + a[1] * b[0]) +
+                           (a[0] * b[0]),
+        // Mod-p reduction (using pow2(5*51) = p + 19)
+        (u64_5_as_nat(a) * u64_5_as_nat(b)) % p() ==
+            (
+                pow2(4 * 51) * (a[0] * b[4] + a[1] * b[3] + a[2] * b[2] + a[3] * b[1] + a[4] * b[0]) +
+                pow2(3 * 51) * (a[0] * b[3] + a[1] * b[2] + a[2] * b[1] + a[3] * b[0] + 19 * (a[4] * b[4])) +
+                pow2(2 * 51) * (a[0] * b[2] + a[1] * b[1] + a[2] * b[0] + 19 * (a[3] * b[4] + a[4] * b[3])) +
+                pow2(1 * 51) * (a[0] * b[1] + a[1] * b[0] + 19 * (a[2] * b[4] + a[3] * b[3] + a[4] * b[2])) +
+                               (a[0] * b[0] + 19 * (a[1] * b[4] + a[2] * b[3] + a[3] * b[2] + a[4] * b[1]))
+            ) as nat % p(),
+{
+    let a0 = a[0]; let a1 = a[1]; let a2 = a[2]; let a3 = a[3]; let a4 = a[4];
+    let b0 = b[0]; let b1 = b[1]; let b2 = b[2]; let b3 = b[3]; let b4 = b[4];
+
+    let s1 = pow2(1 * 51);
+    let s2 = pow2(2 * 51);
+    let s3 = pow2(3 * 51);
+    let s4 = pow2(4 * 51);
+    let s5 = pow2(5 * 51);
+    let s6 = pow2(6 * 51);
+    let s7 = pow2(7 * 51);
+    let s8 = pow2(8 * 51);
+
+    assert(s1 * s1 == s2) by { lemma_pow2_adds(51, 51) }
+    assert(s1 * s2 == s2 * s1 == s3) by { lemma_pow2_adds(51, 102) }
+    assert(s1 * s3 == s3 * s1 == s4) by { lemma_pow2_adds(51, 153) }
+    assert(s1 * s4 == s4 * s1 == s5) by { lemma_pow2_adds(51, 204) }
+    assert(s2 * s2 == s4) by { lemma_pow2_adds(102, 102) }
+    assert(s2 * s3 == s3 * s2 == s5) by { lemma_pow2_adds(102, 153) }
+    assert(s2 * s4 == s4 * s2 == s6) by { lemma_pow2_adds(102, 204) }
+    assert(s3 * s3 == s6) by { lemma_pow2_adds(153, 153) }
+    assert(s3 * s4 == s4 * s3 == s7) by { lemma_pow2_adds(153, 204) }
+    assert(s4 * s4 == s8) by { lemma_pow2_adds(204, 204) }
+
+    // Step 1: Distribute u64_5_as_nat(a) * u64_5_as_nat(b) into 5 rows
+    assert(u64_5_as_nat(a) * u64_5_as_nat(b) == a0 * u64_5_as_nat(b) + (s1 * a1)
+        * u64_5_as_nat(b) + (s2 * a2) * u64_5_as_nat(b) + (s3 * a3) * u64_5_as_nat(b) + (s4
+        * a4) * u64_5_as_nat(b)) by {
+        lemma_mul_distributive_5_terms(
+            u64_5_as_nat(b) as int,
+            a0 as int,
+            s1 * a1,
+            s2 * a2,
+            s3 * a3,
+            s4 * a4,
+        );
+    }
+
+    // Step 2: Expand each row
+    assert(a0 * u64_5_as_nat(b) == s4 * (a0 * b4) + s3 * (a0 * b3) + s2 * (a0 * b2) + s1 * (a0
+        * b1) + a0 * b0) by {
+        lemma_mul_w0_and_reorder(
+            a0 as int,
+            b0 as int,
+            s1 as int,
+            b1 as int,
+            s2 as int,
+            b2 as int,
+            s3 as int,
+            b3 as int,
+            s4 as int,
+            b4 as int,
+        );
+    }
+
+    assert((s1 * a1) * u64_5_as_nat(b) == s5 * (a1 * b4) + s4 * (a1 * b3) + s3 * (a1 * b2) + s2
+        * (a1 * b1) + s1 * (a1 * b0)) by {
+        lemma_mul_si_vi_and_reorder(
+            s1 as int,
+            a1 as int,
+            b0 as int,
+            s1 as int,
+            b1 as int,
+            s2 as int,
+            b2 as int,
+            s3 as int,
+            b3 as int,
+            s4 as int,
+            b4 as int,
+        );
+    }
+
+    assert((s2 * a2) * u64_5_as_nat(b) == s6 * (a2 * b4) + s5 * (a2 * b3) + s4 * (a2 * b2) + s3
+        * (a2 * b1) + s2 * (a2 * b0)) by {
+        lemma_mul_si_vi_and_reorder(
+            s2 as int,
+            a2 as int,
+            b0 as int,
+            s1 as int,
+            b1 as int,
+            s2 as int,
+            b2 as int,
+            s3 as int,
+            b3 as int,
+            s4 as int,
+            b4 as int,
+        );
+    }
+
+    assert((s3 * a3) * u64_5_as_nat(b) == s7 * (a3 * b4) + s6 * (a3 * b3) + s5 * (a3 * b2) + s4
+        * (a3 * b1) + s3 * (a3 * b0)) by {
+        lemma_mul_si_vi_and_reorder(
+            s3 as int,
+            a3 as int,
+            b0 as int,
+            s1 as int,
+            b1 as int,
+            s2 as int,
+            b2 as int,
+            s3 as int,
+            b3 as int,
+            s4 as int,
+            b4 as int,
+        );
+    }
+
+    assert((s4 * a4) * u64_5_as_nat(b) == s8 * (a4 * b4) + s7 * (a4 * b3) + s6 * (a4 * b2) + s5
+        * (a4 * b1) + s4 * (a4 * b0)) by {
+        lemma_mul_si_vi_and_reorder(
+            s4 as int,
+            a4 as int,
+            b0 as int,
+            s1 as int,
+            b1 as int,
+            s2 as int,
+            b2 as int,
+            s3 as int,
+            b3 as int,
+            s4 as int,
+            b4 as int,
+        );
+    }
+
+    // Step 3: Group by power
+    assert(u64_5_as_nat(a) * u64_5_as_nat(b) == s8 * (a4 * b4) + s7 * (a3 * b4 + a4 * b3) + s6
+        * (a2 * b4 + a3 * b3 + a4 * b2) + s5 * (a1 * b4 + a2 * b3 + a3 * b2 + a4 * b1) + s4
+        * (a0 * b4 + a1 * b3 + a2 * b2 + a3 * b1 + a4 * b0) + s3 * (a0 * b3 + a1 * b2 + a2 * b1
+        + a3 * b0) + s2 * (a0 * b2 + a1 * b1 + a2 * b0) + s1 * (a0 * b1 + a1 * b0) + (a0 * b0))
+        by {
+        // s1 terms
+        assert(s1 * (a0 * b1) + s1 * (a1 * b0) == s1 * (a0 * b1 + a1 * b0)) by {
+            lemma_mul_is_distributive_add(s1 as int, a0 * b1, a1 * b0);
+        }
+        // s2 terms
+        assert(s2 * (a0 * b2) + s2 * (a1 * b1) + s2 * (a2 * b0) == s2 * (a0 * b2 + a1 * b1 + a2
+            * b0)) by {
+            lemma_mul_distributive_3_terms(s2 as int, a0 * b2, a1 * b1, a2 * b0);
+        }
+        // s3 terms
+        assert(s3 * (a0 * b3) + s3 * (a1 * b2) + s3 * (a2 * b1) + s3 * (a3 * b0) == s3 * (a0
+            * b3 + a1 * b2 + a2 * b1 + a3 * b0)) by {
+            lemma_mul_distributive_4_terms(s3 as int, a0 * b3, a1 * b2, a2 * b1, a3 * b0);
+        }
+        // s4 terms
+        assert(s4 * (a0 * b4) + s4 * (a1 * b3) + s4 * (a2 * b2) + s4 * (a3 * b1) + s4 * (a4
+            * b0) == s4 * (a0 * b4 + a1 * b3 + a2 * b2 + a3 * b1 + a4 * b0)) by {
+            lemma_mul_distributive_5_terms(s4 as int, a0 * b4, a1 * b3, a2 * b2, a3 * b1, a4 * b0);
+        }
+        // s5 terms
+        assert(s5 * (a1 * b4) + s5 * (a2 * b3) + s5 * (a3 * b2) + s5 * (a4 * b1) == s5 * (a1
+            * b4 + a2 * b3 + a3 * b2 + a4 * b1)) by {
+            lemma_mul_distributive_4_terms(s5 as int, a1 * b4, a2 * b3, a3 * b2, a4 * b1);
+        }
+        // s6 terms
+        assert(s6 * (a2 * b4) + s6 * (a3 * b3) + s6 * (a4 * b2) == s6 * (a2 * b4 + a3 * b3 + a4
+            * b2)) by {
+            lemma_mul_distributive_3_terms(s6 as int, a2 * b4, a3 * b3, a4 * b2);
+        }
+        // s7 terms
+        assert(s7 * (a3 * b4) + s7 * (a4 * b3) == s7 * (a3 * b4 + a4 * b3)) by {
+            lemma_mul_is_distributive_add(s7 as int, a3 * b4, a4 * b3);
+        }
+    }
+
+    // Step 4: Factor out s5 = p + 19 for high-order terms
+    pow255_gt_19();
+    assert(s5 == (p() + 19));
+
+    let c0_x19 = a[1] * b[4] + a[2] * b[3] + a[3] * b[2] + a[4] * b[1];
+    let c1_x19 = a[2] * b[4] + a[3] * b[3] + a[4] * b[2];
+    let c2_x19 = a[3] * b[4] + a[4] * b[3];
+    let c3_x19 = a[4] * b[4];
+
+    let c0_base = a[0] * b[0];
+    let c1_base = a[0] * b[1] + a[1] * b[0];
+    let c2_base = a[0] * b[2] + a[1] * b[1] + a[2] * b[0];
+    let c3_base = a[0] * b[3] + a[1] * b[2] + a[2] * b[1] + a[3] * b[0];
+    let c4 = a[0] * b[4] + a[1] * b[3] + a[2] * b[2] + a[3] * b[1] + a[4] * b[0];
+
+    let c0 = c0_base + 19 * c0_x19;
+    let c1 = c1_base + 19 * c1_x19;
+    let c2 = c2_base + 19 * c2_x19;
+    let c3 = c3_base + 19 * c3_x19;
+
+    // Group in preparation for the s5 = p+19 substitution
+    assert(u64_5_as_nat(a) * u64_5_as_nat(b) == s4 * c4 + s3 * (s5 * c3_x19 + c3_base) + s2
+        * (s5 * c2_x19 + c2_base) + s1 * (s5 * c1_x19 + c1_base) + (s5 * c0_x19 + c0_base)) by {
+        assert(s8 * c3_x19 + s3 * c3_base == s3 * (s5 * c3_x19 + c3_base)) by {
+            assert(s8 == (s3 * s5)) by {
+                lemma_pow2_adds(3 * 51, 5 * 51);
+            }
+            lemma_mul_is_associative(s3 as int, s5 as int, c3_x19);
+            lemma_mul_is_distributive_add(s3 as int, s5 * c3_x19, c3_base);
+        }
+
+        assert(s7 * c2_x19 + s2 * c2_base == s2 * (s5 * c2_x19 + c2_base)) by {
+            assert(s7 == (s2 * s5)) by {
+                lemma_pow2_adds(2 * 51, 5 * 51);
+            }
+            lemma_mul_is_associative(s2 as int, s5 as int, c2_x19);
+            lemma_mul_is_distributive_add(s2 as int, s5 * c2_x19, c2_base);
+        }
+
+        assert(s6 * c1_x19 + s1 * c1_base == s1 * (s5 * c1_x19 + c1_base)) by {
+            assert(s6 == (s1 * s5)) by {
+                lemma_pow2_adds(1 * 51, 5 * 51);
+            }
+            lemma_mul_is_associative(s1 as int, s5 as int, c1_x19);
+            lemma_mul_is_distributive_add(s1 as int, s5 * c1_x19, c1_base);
+        }
+    }
+
+    // Step 5: Substitute s5 = p + 19
+    assert(s5 * c3_x19 + c3_base == p() * c3_x19 + c3) by {
+        lemma_mul_is_distributive_add(c3_x19 as int, p() as int, 19);
+    }
+
+    assert(s5 * c2_x19 + c2_base == p() * c2_x19 + c2) by {
+        lemma_mul_is_distributive_add(c2_x19 as int, p() as int, 19);
+    }
+
+    assert(s5 * c1_x19 + c1_base == p() * c1_x19 + c1) by {
+        lemma_mul_is_distributive_add(c1_x19 as int, p() as int, 19);
+    }
+
+    assert(s5 * c0_x19 + c0_base == p() * c0_x19 + c0) by {
+        lemma_mul_is_distributive_add(c0_x19 as int, p() as int, 19);
+    }
+
+    // Regroup: X * p() + Y
+    assert(u64_5_as_nat(a) * u64_5_as_nat(b) == p() * (s3 * c3_x19 + s2 * c2_x19 + s1 * c1_x19
+        + c0_x19) + (s4 * c4 + s3 * c3 + s2 * c2 + s1 * c1 + c0)) by {
+        lemma_mul_is_distributive_add(s3 as int, p() * c3_x19, c3 as int);
+        lemma_mul_is_distributive_add(s2 as int, p() * c2_x19, c2 as int);
+        lemma_mul_is_distributive_add(s1 as int, p() * c1_x19, c1 as int);
+
+        assert(s3 * (p() * c3_x19) + s2 * (p() * c2_x19) + s1 * (p() * c1_x19) + p() * c0_x19
+            == p() * (s3 * c3_x19 + s2 * c2_x19 + s1 * c1_x19 + c0_x19)) by {
+            lemma_mul_is_associative(s3 as int, c3_x19 as int, p() as int);
+            lemma_mul_is_associative(s2 as int, c2_x19 as int, p() as int);
+            lemma_mul_is_associative(s1 as int, c1_x19 as int, p() as int);
+
+            lemma_mul_is_distributive_add(p() as int, s3 * c3_x19, s2 * c2_x19);
+            lemma_mul_is_distributive_add(p() as int, s3 * c3_x19 + s2 * c2_x19, s1 * c1_x19);
+            lemma_mul_is_distributive_add(
+                p() as int,
+                s3 * c3_x19 + s2 * c2_x19 + s1 * c1_x19,
+                c0_x19 as int,
+            );
+        }
+    }
+
+    // Step 6: Take mod p
+    let k = (s3 * c3_x19 + s2 * c2_x19 + s1 * c1_x19 + c0_x19);
+    let sum = (s4 * c4 + s3 * c3 + s2 * c2 + s1 * c1 + c0);
+
+    assert(u64_5_as_nat(a) * u64_5_as_nat(b) == k * p() + sum);
+    assert(k * p() + sum == (k as nat) * p() + (sum as nat));
+
+    assert((u64_5_as_nat(a) * u64_5_as_nat(b)) % p() == ((k as nat) * p() + (sum as nat)) % p());
+    assert(((k as nat) * p() + (sum as nat)) % p() == (sum as nat) % p()) by {
+        lemma_mod_sum_factor(k as int, sum as int, p() as int);
     }
 }
 

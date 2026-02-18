@@ -1,7 +1,7 @@
-// Lemmas and spec functions only used in field_verus.rs
+// Lemmas and spec functions for the u64 field arithmetic in field.rs.
 // A lemma should be in this module instead of `common_lemmas` if:
-//  - It references some constant prominent in `field_verus` (e.g. 51 for bit operations, 2^255 -19)
-//  - It defines or reasons about a spec function relevant only to `field_verus`
+//  - It references some constant prominent in field.rs (e.g. 51 for bit operations, 2^255 -19)
+//  - It defines or reasons about a spec function relevant only to field.rs
 pub mod add_lemmas;
 
 pub mod as_bytes_lemmas;
@@ -15,6 +15,8 @@ pub mod negate_lemmas;
 pub mod pow2_51_lemmas;
 
 pub mod pow2k_lemmas;
+
+pub mod mul_lemmas;
 
 pub mod reduce_lemmas;
 

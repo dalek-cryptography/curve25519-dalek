@@ -20,19 +20,6 @@ use crate::specs::field_specs_u64::*;
 
 verus! {
 
-// Auxiliary lemma for reordering terms in the pow2k proof
-pub proof fn lemma_reorder_mul(a: int, b: int)
-    ensures
-        2 * (a * (19 * b)) == 19 * (2 * (a * b)),
-{
-    // 2*( a * (19 * b)) = (2 * a) * (19 * b)
-    lemma_mul_is_associative(2, a, 19 * b);
-    // (2 * a) * (19 * b) = (19 * b) * (2 * a) = 19 * (b * (2 * a))
-    lemma_mul_is_associative(19, b, 2 * a);
-    // (b * (2 * a)) = (b * (a * 2)) = 2 * (a * b)
-    lemma_mul_is_associative(b, a, 2);
-}
-
 pub open spec fn c0_0_val(a: [u64; 5]) -> u128 {
     (a[0] * a[0] + 2 * (a[1] * (19 * a[4]) + a[2] * (19 * a[3]))) as u128
 }
@@ -505,106 +492,50 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
             lemma_mod_diff_factor(carry as int, c_arr_as_nat as int, p() as int);
         }
 
-        // We use the lemma_u64_5_as_nat_squared lemma to see what (u64_5_as_nat(a)^2) evaluates to (mod p)
+        // Use the general product lemma for a*a (squaring is a special case of multiplication)
+        lemma_u64_5_as_nat_product(a, a);
 
-        // The nat_squared lemma gives us the following:
-        // u64_5_as_nat(a) * u64_5_as_nat(a) ==
-        // pow2(8 * 51) * (a[4] * a[4]) +
-        // pow2(7 * 51) * (2 * (a[3] * a[4])) +
-        // pow2(6 * 51) * (a[3] * a[3] + 2 * (a[2] * a[4])) +
-        // pow2(5 * 51) * (2 * (a[2] * a[3]) + 2 * (a[1] * a[4])) +
-        // pow2(4 * 51) * (a[2] * a[2] + 2 * (a[1] * a[3]) + 2 * (a[0] * a[4])) +
-        // pow2(3 * 51) * (2 * (a[1] * a[2]) + 2 * (a[0] * a[3])) +
-        // pow2(2 * 51) * (a[1] * a[1] + 2 * (a[0] * a[2])) +
-        // pow2(1 * 51) * (2 * (a[0] * a[1])) +
-        //                (a[0] * a[0])
-        //
-        // AND
-        //
-        // (u64_5_as_nat(a) * u64_5_as_nat(a)) % p() ==
-        // (
-        //     pow2(4 * 51) * (a[2] * a[2] + 2 * (a[1] * a[3]) + 2 * (a[0] * a[4])) +
-        //     pow2(3 * 51) * (2 * (a[1] *  a[2]) + 2 * (a[0] *  a[3]) + 19 * (a[4] * a[4])) +
-        //     pow2(2 * 51) * (a[1] * a[1] + 2 * (a[0] *  a[2]) + 19 * (2 * (a[3] * a[4]))) +
-        //     pow2(1 * 51) * (2 * (a[0] *  a[1]) + 19 * (a[3] * a[3] + 2 * (a[2] * a[4]))) +
-        //                    (a[0] *  a[0] + 19 * (2 * (a[2] * a[3]) + 2 * (a[1] * a[4])))
-        // ) as nat % p()
-        lemma_u64_5_as_nat_squared(a);
-
-        // We're basically done, what remains is to prove that the coefficients next to pow2(i * 51)
-        // are exactly ci_0s (via distributivity and associativity)
+        // Bridge c_i_0 specs to the product lemma's coefficient form.
+        // The squaring c_i_0 specs use 2*(a[i]*(19*a[j])) while the product form
+        // uses a[i]*a[j] + a[j]*a[i] (symmetric pairs). Associativity pulls out
+        // the 19 and commutativity pairs the cross terms; the solver handles 2*x == x+x.
 
         let a3_19 = 19 * a[3];
         let a4_19 = 19 * a[4];
 
-        // let c0_0: u128 = a[0] *  a[0] + 2*( a[1] * a4_19 + a[2] * a3_19);
-        assert(c0_0 == (a[0] * a[0] + 19 * (2 * (a[2] * a[3]) + 2 * (a[1] * a[4])))) by {
-            // The solver does distributivity on its own.
-            // LHS = a[0] *  a[0] + 2*( a[1] * a4_19 + a[2] * a3_19);
-            //     = a[0] *  a[0] + 2*( a[1] * a4_19 ) + 2 * (a[2] * a3_19);
-            // RHS = a[0] *  a[0] + 19 * (2 * (a[2] * a[3]) + 2 * (a[1] * a[4]))
-            //     = a[0] *  a[0] + 19 * (2 * (a[2] * a[3])) + 19 * (2 * (a[1] * a[4]))
-            // goals
-            // 1) 2 * (a[1] * a4_19) = 19 * (2 * (a[1] * a[4]))
-            // 2) 2 * (a[2] * a3_19) = 19 * (2 * (a[2] * a[3]))
-            assert(2 * (a[1] * a4_19) == 19 * (2 * (a[1] * a[4]))) by {
-                lemma_reorder_mul(a[1] as int, a[4] as int);
-            }
-
-            assert(2 * (a[2] * a3_19) == 19 * (2 * (a[2] * a[3]))) by {
-                lemma_reorder_mul(a[2] as int, a[3] as int);
-            }
+        assert(c0_0 == (a[0] * a[0] + 19 * (a[1] * a[4] + a[2] * a[3] + a[3] * a[2] + a[4] * a[1])))
+            by {
+            lemma_mul_is_associative(a[1] as int, a[4] as int, 19);
+            lemma_mul_is_associative(a[2] as int, a[3] as int, 19);
+            lemma_mul_is_commutative(a[3] as int, a[2] as int);
+            lemma_mul_is_commutative(a[4] as int, a[1] as int);
         }
 
-        // let c1_0: u128 = a[3] * a3_19 + 2*( a[0] *  a[1] + a[2] * a4_19);
-        assert(c1_0 == (2 * (a[0] * a[1]) + 19 * (a[3] * a[3] + 2 * (a[2] * a[4])))) by {
-            // The solver does distributivity on its own.
-            // LHS = a[3] * a3_19 + 2*( a[0] *  a[1] + a[2] * a4_19)
-            //     = a[3] * a3_19 + 2*( a[0] *  a[1]) + 2 * (a[2] * a4_19)
-            // RHS = 2 * (a[0] *  a[1]) + 19 * (a[3] * a[3] + 2 * (a[2] * a[4]))
-            //     = 2 * (a[0] *  a[1]) + 19 * (a[3] * a[3]) + 19 * (2 * (a[2] * a[4]))
-            // goals: 1) a[3] * a3_19 = 19 * (a[3] * a[3])
-            //        2) 2 * (a[2] * a4_19) = 19 * (2 * (a[2] * a[4]))
-            assert(a[3] * a3_19 == 19 * (a[3] * a[3])) by {
-                lemma_mul_is_associative(a[3] as int, a[3] as int, 19);
-            }
-
-            assert(2 * (a[2] * a4_19) == 19 * (2 * (a[2] * a[4]))) by {
-                lemma_reorder_mul(a[2] as int, a[4] as int);
-            }
+        assert(c1_0 == (a[0] * a[1] + a[1] * a[0] + 19 * (a[2] * a[4] + a[3] * a[3] + a[4] * a[2])))
+            by {
+            lemma_mul_is_associative(a[3] as int, a[3] as int, 19);
+            lemma_mul_is_associative(a[2] as int, a[4] as int, 19);
+            lemma_mul_is_commutative(a[1] as int, a[0] as int);
+            lemma_mul_is_commutative(a[4] as int, a[2] as int);
         }
 
-        // let c2_0: u128 = a[1] *  a[1] + 2*( a[0] *  a[2] + a[4] * a3_19);
-        assert(c2_0 == (a[1] * a[1] + 2 * (a[0] * a[2]) + 19 * (2 * (a[3] * a[4])))) by {
-            // The solver does distributivity on its own.
-            // LHS = a[1] * a[1] + 2 * (a[0] *  a[2] + a[4] * a3_19)
-            //     = a[1] * a[1] + 2 * (a[0] *  a[2]) +  2 * (a[4] * a3_19)
-            // RHS = a[1] * a[1] + 2 * (a[0] *  a[2]) + 19 * (2 * (a[3] * a[4]))
-            // goals: 2 * (a[4] * a3_19) = 19 * (2 * (a[3] * a[4]))
-            assert(2 * (a[4] * a3_19) == 19 * (2 * (a[3] * a[4]))) by {
-                lemma_mul_is_associative(a[4] as int, a[3] as int, 19);
-            }
+        assert(c2_0 == (a[0] * a[2] + a[1] * a[1] + a[2] * a[0] + 19 * (a[3] * a[4] + a[4] * a[3])))
+            by {
+            lemma_mul_is_associative(a[4] as int, a[3] as int, 19);
+            lemma_mul_is_commutative(a[2] as int, a[0] as int);
+            lemma_mul_is_commutative(a[4] as int, a[3] as int);
         }
 
-        // let c3_0: u128 = a[4] * a4_19 + 2*( a[0] *  a[3] + a[1] *  a[2]);
-        assert(c3_0 == (2 * (a[1] * a[2]) + 2 * (a[0] * a[3]) + 19 * (a[4] * a[4]))) by {
-            // The solver does distributivity on its own.
-            // LHS = a[4] * a4_19 + 2 * (a[0] *  a[3] + a[1] *  a[2])
-            //     = a[4] * a4_19 + 2 * (a[0] *  a[3]) + 2 * (a[1] *  a[2])
-            // RHS = 2 * (a[1] *  a[2]) + 2 * (a[0] *  a[3]) + 19 * (a[4] * a[4])
-            // goals: a[4] * a4_19 = 19 * (a[4] * a[4])
-            assert(a[4] * a4_19 == 19 * (a[4] * a[4])) by {
-                lemma_mul_is_associative(a[4] as int, a[4] as int, 19);
-            }
+        assert(c3_0 == (a[0] * a[3] + a[1] * a[2] + a[2] * a[1] + a[3] * a[0] + 19 * (a[4] * a[4])))
+            by {
+            lemma_mul_is_associative(a[4] as int, a[4] as int, 19);
+            lemma_mul_is_commutative(a[2] as int, a[1] as int);
+            lemma_mul_is_commutative(a[3] as int, a[0] as int);
         }
 
-        // let c4_0: u128 = a[2] *  a[2] + 2*( a[0] *  a[4] + a[1] *  a[3]);
-        assert(c4_0 == (a[2] * a[2] + 2 * (a[1] * a[3]) + 2 * (a[0] * a[4]))) by {
-            // The solver does distributivity on its own.
-            // LHS = a[2] * a[2] + 2 * (a[0] * a[4] + a[1] * a[3])
-            //     = a[2] * a[2] + 2 * (a[0] * a[4]) + 2 * (a[1] * a[3])
-            // RHS = a[2] * a[2] + 2 * (a[1] * a[3]) + 2 * (a[0] * a[4])
-            // goals: none
+        assert(c4_0 == (a[0] * a[4] + a[1] * a[3] + a[2] * a[2] + a[3] * a[1] + a[4] * a[0])) by {
+            lemma_mul_is_commutative(a[3] as int, a[1] as int);
+            lemma_mul_is_commutative(a[4] as int, a[0] as int);
         }
     }
 

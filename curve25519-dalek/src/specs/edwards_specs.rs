@@ -562,25 +562,6 @@ pub open spec fn compressed_edwards_y_corresponds_to_edwards(
      && (compressed.0[31] >> 7) == (((x_affine % crate::specs::field_specs_u64::p()) % 2) as u8)
 }
 
-/// Check if a CompressedEdwardsY has a valid sign bit.
-///
-/// ## Mathematical basis
-///
-/// For points with x = 0 on the Edwards curve, the curve equation gives y² = 1,
-/// so y = ±1. These special points (the identity (0,1) and the point (0,-1))
-/// have only one valid sign bit: 0, since sign_bit = x % 2 = 0.
-///
-/// ## Definition
-///
-/// If the Y coordinate yields x = 0 (i.e., y² ≡ 1 mod p), the sign bit must be 0.
-pub open spec fn compressed_y_has_valid_sign_bit(bytes: &[u8; 32]) -> bool {
-    let y = field_element_from_bytes(bytes);
-    let sign_bit = bytes[31] >> 7;
-    // If y² ≡ 1 (mod p), then x = 0, so sign_bit must be 0
-    // Equivalently: sign_bit == 1 implies y² ≢ 1
-    field_square(y) == 1 ==> sign_bit == 0
-}
-
 /// Check if a ProjectiveNielsPoint corresponds to an EdwardsPoint
 /// A ProjectiveNielsPoint (Y_plus_X, Y_minus_X, Z, T2d) corresponds to EdwardsPoint (X:Y:Z:T) if:
 /// 1. Y_plus_X = Y + X (mod p)

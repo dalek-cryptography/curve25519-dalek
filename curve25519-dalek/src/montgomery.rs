@@ -87,6 +87,8 @@ use crate::lemmas::common_lemmas::pow_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::edwards_lemmas::curve_equation_lemmas::*;
 #[allow(unused_imports)]
+use crate::lemmas::edwards_lemmas::decompress_lemmas::*;
+#[allow(unused_imports)]
 use crate::lemmas::field_lemmas::add_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::as_bytes_lemmas::*;
@@ -1124,13 +1126,18 @@ impl MontgomeryPoint {
     /// twist of (the Montgomery form of) Curve25519;
     ///
     pub fn to_edwards(&self, sign: u8) -> (result: Option<EdwardsPoint>)
+        requires
+            sign == 0 || sign == 1,
         ensures
-            match result {
-                Some(edwards) => montgomery_corresponds_to_edwards(*self, edwards)
-                    && is_well_formed_edwards_point(edwards) && edwards_point_as_affine(edwards)
-                    == spec_montgomery_to_edwards_affine(spec_montgomery(*self), sign),
-                None => is_equal_to_minus_one(spec_montgomery(*self)),
-            },
+            result.is_some() ==> is_well_formed_edwards_point(result.unwrap()),
+            is_valid_montgomery_point(*self) && !is_equal_to_minus_one(spec_montgomery(*self))
+                ==> result.is_some(),
+            result.is_some() && is_valid_montgomery_point(*self) && !is_equal_to_minus_one(
+                spec_montgomery(*self),
+            ) ==> edwards_point_as_affine(result.unwrap()) == spec_montgomery_to_edwards_affine(
+                spec_montgomery(*self),
+                sign,
+            ),
     {
         // To decompress the Montgomery u coordinate to an
         // `EdwardsPoint`, we apply the birational map to obtain the
@@ -1149,36 +1156,111 @@ impl MontgomeryPoint {
 
         if u == FieldElement::MINUS_ONE {
             proof {
-                assume(is_equal_to_minus_one(spec_montgomery(*self)));
+                // In this path, `spec_montgomery(*self) == -1`, so the "valid & not -1 ⇒ Some"
+                // postcondition is vacuously true.
+                assert(u64_5_as_nat(u.limbs) == u8_32_as_nat(&self.0) % pow2(255));
+                assert(fe51_as_canonical_nat(&u) == spec_montgomery(*self));
+                assert(is_equal_to_minus_one(spec_montgomery(*self))) by {
+                    let minus_one = FieldElement::MINUS_ONE;
+                    lemma_fe51_to_bytes_equal_implies_field_element_equal(&u, &minus_one);
+                    assert(fe51_as_canonical_nat(&u) == fe51_as_canonical_nat(&minus_one));
+
+                    axiom_minus_one_field_element_value();
+                    assert(fe51_as_canonical_nat(&minus_one) == field_sub(0, 1));
+                    assert(fe51_as_canonical_nat(&u) == field_sub(0, 1));
+                    assert(spec_montgomery(*self) == field_sub(0, 1));
+                }
             }
             return None;
         }
         let one = FieldElement::ONE;
 
-        /* VERIFICATION NOTE: need to prove preconditions for arithmetic traits */
-        assume(false);
+        proof {
+            lemma_one_limbs_bounded_51();
+            lemma_fe51_limbs_bounded_weaken(&u, 51, 54);
+            lemma_fe51_limbs_bounded_weaken(&one, 51, 54);
+            assert(fe51_limbs_bounded(&u, 51));
+            assert(fe51_limbs_bounded(&one, 51));
+            lemma_sum_of_limbs_bounded_from_fe51_bounded(&u, &one, 51);
+        }
 
-        let y = &(&u - &one) * &(&u + &one).invert();
+        let u_minus_one = &u - &one;
+        let u_plus_one = &u + &one;
 
-        let mut y_bytes = y.as_bytes();
+        proof {
+            assert(fe51_limbs_bounded(&u_plus_one, 52));
+            lemma_fe51_limbs_bounded_weaken(&u_plus_one, 52, 54);
+        }
+
+        let u_plus_one_inv = u_plus_one.invert();
+        /* ORIGINAL CODE: let y = &(&u - &one) * &(&u + &one).invert(); */
+        let y = &u_minus_one * &u_plus_one_inv;
+
+        /* ORIGINAL CODE: let mut y_bytes = y.as_bytes(); */
+        let y_bytes0 = y.as_bytes();
+        let ghost y_bytes_pre = y_bytes0;
+        let mut y_bytes = y_bytes0;
         y_bytes[31] ^= sign << 7;
+
+        proof {
+            let y_val = fe51_as_canonical_nat(&y);
+
+            assert(u8_32_as_nat(&y_bytes_pre) == y_val);
+            assert(y_val < p()) by {
+                pow255_gt_19();
+                lemma_mod_bound(u64_5_as_nat(y.limbs) as int, p() as int);
+            };
+            lemma_canonical_bytes_bit255_zero(&y_bytes_pre, y_val);
+
+            lemma_xor_sign_bit_preserves_y(&y_bytes_pre, &y_bytes, y_val, sign);
+        }
 
         let result = CompressedEdwardsY(y_bytes).decompress();
 
         proof {
-            // assumed postconditions
-            match result {
-                Some(edwards) => {
-                    assume(montgomery_corresponds_to_edwards(*self, edwards));
-                    assume(is_well_formed_edwards_point(edwards));
-                    assume(edwards_point_as_affine(edwards) == spec_montgomery_to_edwards_affine(
-                        spec_montgomery(*self),
-                        sign,
+            if result.is_some() {
+                assert(is_well_formed_edwards_point(result.unwrap()));
+            }
+            if is_valid_montgomery_point(*self) && !is_equal_to_minus_one(spec_montgomery(*self)) {
+                let u_nat = spec_montgomery(*self);
+                assert(is_valid_u_coordinate(u_nat));
+                axiom_montgomery_valid_u_implies_edwards_y_valid(u_nat);
+
+                assert(u64_5_as_nat(u.limbs) == u8_32_as_nat(&self.0) % pow2(255));
+                assert(fe51_as_canonical_nat(&u) == u_nat);
+
+                let y_nat = fe51_as_canonical_nat(&y);
+                assert(y_nat == edwards_y_from_montgomery_u(u_nat)) by {
+                    lemma_one_field_element_value();
+                    assert(fe51_as_canonical_nat(&one) == 1);
+                    assert(fe51_as_canonical_nat(&u_minus_one) == field_sub(u_nat, 1));
+                    assert(fe51_as_canonical_nat(&u_plus_one) == field_add(u_nat, 1));
+                    assert(fe51_as_canonical_nat(&u_plus_one_inv) == field_inv(
+                        field_add(u_nat, 1),
                     ));
-                },
-                None => {
-                    assume(is_equal_to_minus_one(spec_montgomery(*self)));
-                },
+                    assert(y_nat == field_mul(field_sub(u_nat, 1), field_inv(field_add(u_nat, 1))));
+                    assert(edwards_y_from_montgomery_u(u_nat) == field_mul(
+                        field_sub(u_nat, 1),
+                        field_inv(field_add(u_nat, 1)),
+                    ));
+                }
+                assert(math_is_valid_y_coordinate(y_nat));
+                assert(field_element_from_bytes(&y_bytes) == y_nat);
+                assert(math_is_valid_y_coordinate(field_element_from_bytes(&y_bytes)));
+                assert(result.is_some());
+
+                if result.is_some() {
+                    let point = result.unwrap();
+
+                    lemma_edwards_affine_when_z_is_one(point);
+                    let x_exec = fe51_as_canonical_nat(&point.X);
+                    assert(edwards_point_as_affine(point) == (x_exec, y_nat));
+
+                    assert((y_bytes[31] >> 7) == sign);
+                    assert(field_square(y_nat) != 1 ==> ((x_exec % 2) as u8 == sign));
+
+                    lemma_to_edwards_correctness(x_exec, y_nat, sign, u_nat);
+                }
             }
         }
 

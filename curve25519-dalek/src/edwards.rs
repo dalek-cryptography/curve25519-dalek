@@ -274,17 +274,7 @@ impl CompressedEdwardsY {
     /// Returns `None` if the input is not the \\(y\\)-coordinate of a
     /// curve point.
     ///
-    pub fn decompress(&self) -> (result: Option<
-        EdwardsPoint,
-    >)
-    // The compressed point must have a valid sign bit. This is automatically
-    // satisfied for points produced by `compress()`. For externally-sourced
-    // bytes (e.g., from network input), callers must ensure this invariant.
-    //
-    // See `compressed_y_has_valid_sign_bit` in `edwards_specs.rs` for full justification.
-
-        requires
-            compressed_y_has_valid_sign_bit(&self.0),
+    pub fn decompress(&self) -> (result: Option<EdwardsPoint>)
         ensures
     // Decompression succeeds iff the y-coordinate is valid
 
@@ -302,8 +292,10 @@ impl CompressedEdwardsY {
              && is_well_formed_edwards_point(
                 result.unwrap(),
             )
-            // The X coordinate sign bit matches the sign bit from the compressed representation
-             && fe51_as_canonical_nat_sign_bit(&result.unwrap().X) == (self.0[31] >> 7)),
+            // The X coordinate sign bit matches the compressed sign bit when y² ≠ 1.
+            // When y² == 1, x = 0 so negation is the identity and sign bit is always 0.
+             && (field_square(field_element_from_bytes(&self.0)) != 1
+                ==> fe51_as_canonical_nat_sign_bit(&result.unwrap().X) == (self.0[31] >> 7))),
     {
         let (is_valid_y_coord, X, Y, Z) = decompress::step_1(self);
 
@@ -1828,6 +1820,12 @@ impl EdwardsPoint {
         let M1 = crate::montgomery::elligator_encode(&fe);
 
         // Convert to Edwards point
+        proof {
+            assert(sign_bit == 0 || sign_bit == 1) by (bit_vector)
+                requires
+                    sign_bit == (byte31 & 0x80u8) >> 7u8,
+            ;
+        }
         let E1_opt = M1.to_edwards(sign_bit);
 
         // elligator_encode never produces u = -1 (lemma_elligator_never_minus_one),

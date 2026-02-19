@@ -24,10 +24,14 @@ description: Help complete and debug Verus proofs in verified-cryptography Rust 
 - If you hit rarer tool limitations (e.g., `by (compute)` stability), see `references/common-issues.md`.
 - If the repo uses `verusfmt`, run it on touched files before final verification/commit (`references/workflow.md`).
 
+## Where to put helper lemmas
+
+Put new lemmas in the right module: **generic field algebra** (any d) → `field_lemmas/field_algebra_lemmas.rs`; **Ed25519 curve structure** → `edwards_lemmas/curve_equation_lemmas.rs`; **decompression / Montgomery→Edwards** → `edwards_lemmas/decompress_lemmas.rs`. Prefer calling field lemmas directly at call sites; avoid thin wrappers and redundant “connection” lemmas. See `references/lemma-reference.md` for the full table and guidelines.
+
 ## Reference map
 
 - `references/workflow.md`: step-by-step workflow + verification commands
-- `references/lemma-reference.md`: where to look + common lemma names/patterns
+- `references/lemma-reference.md`: where to put new lemmas + where to look + common lemma names/patterns
 - `references/techniques.md`: proof tactics and patterns (including opaque + `reveal`)
 - `references/common-issues.md`: common Verus error messages and fixes
 - `references/patterns.md`: worked mini-patterns from “compress” proof work

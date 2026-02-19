@@ -33,6 +33,8 @@ use crate::lemmas::field_lemmas::sqrt_ratio_lemmas::*;
 use crate::specs::edwards_specs::*;
 use crate::specs::field_specs::*;
 use crate::specs::field_specs_u64::*;
+#[cfg(verus_keep_ghost)]
+use crate::specs::montgomery_specs::edwards_y_from_montgomery_u;
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power::*;
@@ -151,53 +153,6 @@ pub proof fn lemma_decompress_field_element_sign_bit(
 }
 
 // =============================================================================
-// Sign Bit and Curve Interaction
-// =============================================================================
-/// Lemma: From compressed_y_has_valid_sign_bit, derive that sign_bit=1 implies x≠0
-///
-/// ## Mathematical Proof
-///
-/// The twisted Edwards curve equation is: -x² + y² = 1 + d·x²·y²
-/// Rearranging: y² - 1 = x²(1 + d·y²)
-///
-/// If x = 0, then y² - 1 = 0, so y² = 1.
-/// Contrapositive: If y² ≠ 1, then x ≠ 0.
-///
-/// From precondition: sign_bit = 1 ==> y² ≠ 1
-/// From curve: y² ≠ 1 ==> x ≠ 0
-/// Combined: sign_bit = 1 ==> x ≠ 0
-pub proof fn lemma_sign_bit_one_implies_x_nonzero(bytes: &[u8; 32], x: nat, y: nat)
-    requires
-        compressed_y_has_valid_sign_bit(bytes),  // decompress precondition
-        y == field_element_from_bytes(bytes),  // Y from bytes
-        math_on_edwards_curve(x, y),  // (x, y) on curve
-        x < p(),  // X bounded
-
-    ensures
-// If sign bit is 1, x must be non-zero (since -0 = 0)
-
-        (bytes[31] >> 7) == 1 ==> x != 0,
-{
-    let sign_bit = bytes[31] >> 7;
-    let y_sq = field_square(y);
-
-    if sign_bit == 1 {
-        // From compressed_y_has_valid_sign_bit: y² == 1 ==> sign_bit == 0
-        // Contrapositive: sign_bit == 1 ==> y² != 1
-        assert(y_sq != 1);
-
-        // From curve equation and y² != 1, x must be non-zero (contrapositive)
-        assert(x != 0) by {
-            // If x == 0, then by lemma_x_zero_implies_y_squared_one, y² == 1
-            // But we have y² != 1, contradiction
-            if x == 0 {
-                lemma_x_zero_implies_y_squared_one(x, y);
-            }
-        };
-    }
-}
-
-// =============================================================================
 // Main Decompress Lemma
 // =============================================================================
 /// Main lemma for decompress valid branch: proves all postconditions for Some(point).
@@ -214,8 +169,8 @@ pub proof fn lemma_sign_bit_one_implies_x_nonzero(bytes: &[u8; 32], x: nat, y: n
 /// - fe51_as_canonical_nat_sign_bit(&point.X) == (repr_bytes[31] >> 7)
 pub proof fn lemma_decompress_valid_branch(repr_bytes: &[u8; 32], x_orig: nat, point: &EdwardsPoint)
     requires
-        compressed_y_has_valid_sign_bit(repr_bytes),
-        // step_1 postconditions
+// step_1 postconditions
+
         fe51_as_canonical_nat(&point.Y) == field_element_from_bytes(repr_bytes),
         math_on_edwards_curve(x_orig, fe51_as_canonical_nat(&point.Y)),
         // X is non-negative root (LSB = 0)
@@ -237,7 +192,12 @@ pub proof fn lemma_decompress_valid_branch(repr_bytes: &[u8; 32], x_orig: nat, p
     ensures
         is_valid_edwards_point(*point),
         fe51_as_canonical_nat(&point.Y) == field_element_from_bytes(repr_bytes),
-        fe51_as_canonical_nat_sign_bit(&point.X) == (repr_bytes[31] >> 7),
+        // Sign bit correctness when y² ≠ 1 (i.e., x ≠ 0).
+        // When y² == 1, x = 0 and negation is the identity, so the sign bit
+        // in the result is always 0 regardless of the compressed sign bit.
+        field_square(field_element_from_bytes(repr_bytes)) != 1 ==> fe51_as_canonical_nat_sign_bit(
+            &point.X,
+        ) == (repr_bytes[31] >> 7),
 {
     let x_final = fe51_as_canonical_nat(&point.X);
     let y_final = fe51_as_canonical_nat(&point.Y);
@@ -273,42 +233,118 @@ pub proof fn lemma_decompress_valid_branch(repr_bytes: &[u8; 32], x_orig: nat, p
     // =========================================================================
 
     // =========================================================================
-    // Goal 3: Sign bit correctness
+    // Goal 3: Sign bit correctness (conditional on y² ≠ 1)
     // =========================================================================
-    assert(fe51_as_canonical_nat_sign_bit(&point.X) == (repr_bytes[31] >> 7)) by {
-        let x_before = x_orig;
-        let x_after = x_final;
-        let repr_byte_31 = repr_bytes[31];
+    let y_sq = field_square(y_final);
+    if y_sq != 1 {
+        assert(fe51_as_canonical_nat_sign_bit(&point.X) == (repr_bytes[31] >> 7)) by {
+            let x_before = x_orig;
+            let x_after = x_final;
+            let repr_byte_31 = repr_bytes[31];
 
-        // ((x_after % p) % 2) as u8 == sign_bit
-        assert((x_after % 2) as u8 == (repr_byte_31 >> 7)) by {
-            let sign_bit = repr_byte_31 >> 7;
+            assert((x_after % 2) as u8 == (repr_byte_31 >> 7)) by {
+                let sign_bit = repr_byte_31 >> 7;
 
-            // sign_bit ∈ {0, 1}
-            assert(sign_bit == 0 || sign_bit == 1) by (bit_vector)
-                requires
-                    sign_bit == repr_byte_31 >> 7,
-            ;
+                assert(sign_bit == 0 || sign_bit == 1) by (bit_vector)
+                    requires
+                        sign_bit == repr_byte_31 >> 7,
+                ;
 
-            // Precondition 1: sqrt_ratio_i returns non-negative root (LSB = 0)
+                // When y² ≠ 1, x ≠ 0 (contrapositive of x=0 ⟹ y²=1)
+                assert(sign_bit == 1 ==> x_before != 0) by {
+                    if sign_bit == 1 && x_before == 0 {
+                        lemma_x_zero_implies_y_squared_one(x_before, y_final);
+                    }
+                };
 
-            // Precondition 2: sign_bit == 1 ==> x != 0
-            assert(sign_bit == 1 ==> x_before != 0) by {
-                lemma_sign_bit_one_implies_x_nonzero(repr_bytes, x_before, y_final);
+                assert(x_after == if sign_bit == 1 {
+                    field_neg(x_before)
+                } else {
+                    x_before
+                }) by {
+                    lemma_small_mod(x_before, p());
+                };
+
+                lemma_decompress_field_element_sign_bit(x_before, x_after, sign_bit);
             };
-
-            // Precondition 3: x_after matches conditional expression
-            assert(x_after == if sign_bit == 1 {
-                field_neg(x_before)
-            } else {
-                x_before
-            }) by {
-                lemma_small_mod(x_before, p());
-            };
-
-            lemma_decompress_field_element_sign_bit(x_before, x_after, sign_bit);
         };
+    }
+}
+
+// =============================================================================
+// Decompression spec match and Montgomery→Edwards correctness
+// =============================================================================
+/// Lemma: Decompression from y and sign recovers the original point.
+pub proof fn lemma_decompress_spec_matches_point(x: nat, y: nat, sign_bit: u8)
+    requires
+        math_on_edwards_curve(x, y),
+        x < p(),
+        y < p(),
+        (x % 2) == (sign_bit as nat),
+        sign_bit == 0 || sign_bit == 1,
+    ensures
+        spec_edwards_decompress_from_y_and_sign(y, sign_bit) == Some((x, y)),
+{
+    assert(math_is_valid_y_coordinate(y)) by {
+        let d = fe51_as_canonical_nat(&EDWARDS_D);
+        lemma_field_curve_point_implies_valid_y(d, x, y);
+        reveal(math_is_valid_y_coordinate);
+        let u = field_sub(field_square(y), 1);
+        let v = field_add(field_mul(d, field_square(y)), 1);
+        lemma_small_mod(u, p());
+        lemma_small_mod(v, p());
+        if u == 0 {
+        } else {
+            assert(v != 0);
+            assert(field_mul(field_square(x), v) == u);
+            assert(x < p());
+        }
     };
+
+    if field_square(y) == 1 {
+        assert(x == 0) by {
+            let d = fe51_as_canonical_nat(&EDWARDS_D);
+            axiom_d_plus_one_nonzero();
+            lemma_field_y_sq_one_implies_x_zero(d, x, y);
+        };
+    }
+    let x_chosen = choose|xc: nat|
+        math_on_edwards_curve(xc, y) && xc < p() && (xc % 2) == (sign_bit as nat);
+    assert(math_on_edwards_curve(x, y) && x < p() && (x % 2) == (sign_bit as nat));
+    assert(x == x_chosen) by {
+        lemma_unique_x_with_parity(x, x_chosen, y);
+    };
+}
+
+/// Helper lemma: exact functional correctness for Montgomery→Edwards conversion.
+pub proof fn lemma_to_edwards_correctness(x_exec: nat, y_nat: nat, sign_bit: u8, u_nat: nat)
+    requires
+        math_on_edwards_curve(x_exec, y_nat),
+        x_exec < p(),
+        y_nat < p(),
+        sign_bit == 0 || sign_bit == 1,
+        field_square(y_nat) != 1 ==> ((x_exec % 2) as u8 == sign_bit),
+        y_nat == edwards_y_from_montgomery_u(u_nat),
+        u_nat < p(),
+        u_nat != field_sub(0, 1),
+    ensures
+        (x_exec, y_nat) == spec_montgomery_to_edwards_affine(u_nat, sign_bit),
+{
+    if field_square(y_nat) == 1 {
+        assert(x_exec == 0) by {
+            let d = fe51_as_canonical_nat(&EDWARDS_D);
+            axiom_d_plus_one_nonzero();
+            lemma_field_y_sq_one_implies_x_zero(d, x_exec, y_nat);
+        };
+        assert(spec_edwards_decompress_from_y_and_sign(y_nat, 0u8) == Some((0nat, y_nat))) by {
+            lemma_decompress_spec_matches_point(0nat, y_nat, 0u8);
+        };
+    } else {
+        assert(spec_edwards_decompress_from_y_and_sign(y_nat, sign_bit) == Some((x_exec, y_nat)))
+            by {
+            lemma_decompress_spec_matches_point(x_exec, y_nat, sign_bit);
+        };
+    }
 }
 
 } // verus!

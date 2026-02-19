@@ -39,7 +39,21 @@ Common patterns to search for:
 - `lemma_mod_*` - For modular arithmetic
 - `lemma_*_bound` - For establishing bounds
 
-### Phase 3: Incremental Proof Development
+### Phase 3: Where to Put New Helper Lemmas
+**Place lemmas in the right module so they stay reusable and avoid circular deps.**
+
+| Kind of lemma | Put in | Examples |
+|---------------|--------|----------|
+| **Generic field algebra** (holds for any d / any field elements) | `lemmas/field_lemmas/field_algebra_lemmas.rs` | From curve eq derive x²·v=u; on-curve (x,y) witnesses valid y; y²=1 ⇒ x=0 when d+1≠0. Take `d` as parameter; precondition = curve equation in field form. No EDWARDS_D or math_on_edwards_curve. |
+| **Ed25519 curve structure** (tied to EDWARDS_D or curve predicate) | `lemmas/edwards_lemmas/curve_equation_lemmas.rs` | lemma_unique_x_with_parity, axiom_d_plus_one_nonzero. Call field lemmas with d = EDWARDS_D; don’t duplicate their proofs. |
+| **Decompression / Montgomery→Edwards** (spec match, to_edwards correctness) | `lemmas/edwards_lemmas/decompress_lemmas.rs` | lemma_decompress_spec_matches_point, lemma_to_edwards_correctness. Not generic curve eq; about decompress API and birational map. |
+
+**Guidelines:**
+- Prefer calling generic field lemmas directly at call sites (e.g. `lemma_field_curve_eq_x2v_eq_u(d, x, y)` with `d = fe51_as_canonical_nat(&EDWARDS_D)`) rather than thin curve-only wrappers. If you keep a wrapper, make it a one-liner that just calls the field lemma.
+- Avoid “connection” lemmas whose precondition is exactly another lemma’s postcondition; inline that proof at the single call site instead.
+- Lemmas used from another module must be `pub proof fn` (e.g. `axiom_d_plus_one_nonzero` used from decompress_lemmas).
+
+### Phase 4: Incremental Proof Development
 **Use the "moving assume(false)" technique:**
 
 1. Start with structure, add `assume(false)` at key points:
@@ -62,7 +76,7 @@ Common patterns to search for:
 3. Replace `assume(false)` one at a time, verifying after each replacement
 4. Keep intermediate assertions that help the prover
 
-### Phase 4: Apply Proof Techniques
+### Phase 5: Apply Proof Techniques
 
 #### Technique 1: Bit Vector Reasoning
 Use `by (bit_vector)` for:
@@ -596,7 +610,7 @@ lemma_field_mul_assoc(sZ, x1x2y1y2, math_field_mul(2, d));
 
 **Why this order matters:** `comm(a, b*c)` produces `b*c*a` which doesn't simplify further. You need `assoc` first to separate the factors, then `comm` on the pair, then `assoc` to regroup.
 
-### Phase 5: Handle Common Issues
+### Phase 6: Handle Common Issues
 
 #### Issue: "Expected Interp(Array), got Interp(FreeVar)"
 **Solution:** Extract array elements to local variables before proof blocks
@@ -706,7 +720,7 @@ proof {
 
 **When cleaning up:** Check top-level imports for wildcards (`*`) and remove any specific imports inside proof blocks that are already covered.
 
-### Phase 6: Verification and Cleanup
+### Phase 7: Verification and Cleanup
 
 1. **Verify incrementally:**
    ```bash

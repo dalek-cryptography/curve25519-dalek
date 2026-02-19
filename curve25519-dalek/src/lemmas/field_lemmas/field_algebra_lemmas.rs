@@ -18,6 +18,12 @@
 //! - `lemma_quotient_of_squares`: a²/b² = (a/b)²
 //! - `lemma_product_of_squares_eq_square_of_product`: x²·y² = (x·y)²
 //! - `lemma_field_square_of_pow_mod`: field_square(x^k % p) = x^(2k) % p
+//!
+//! ## Twisted Edwards curve equation identity
+//!
+//! - `lemma_field_curve_eq_x2v_eq_u`: from y² − x² = 1 + d·x²·y² derive x²·(d·y²+1) = y²−1 (any d)
+//! - `lemma_field_curve_point_implies_valid_y`: on-curve (x,y) with param d witnesses valid y (any d)
+//! - `lemma_field_y_sq_one_implies_x_zero`: on curve with param d, y² = 1 implies x = 0 (when d+1 ≠ 0)
 #![allow(unused_imports)]
 use crate::lemmas::common_lemmas::div_mod_lemmas::*;
 use crate::lemmas::common_lemmas::number_theory_lemmas::*;
@@ -172,6 +178,19 @@ pub proof fn lemma_field_add_comm(a: nat, b: nat)
     assert(field_add(a, b) == (a + b) % p);
     assert(field_add(b, a) == (b + a) % p);
     assert((a + b) as int == (b + a) as int);
+}
+
+/// field_add normalizes its inputs mod p, so pre-reducing a is a no-op.
+pub proof fn lemma_field_add_canonical_left(a: nat, b: nat)
+    ensures
+        field_add(a % p(), b) == field_add(a, b),
+{
+    let m = p() as int;
+    p_gt_2();
+    lemma_mod_bound(a as int, m);
+    lemma_small_mod(a % p(), p());
+    lemma_add_mod_noop(a as int, b as int, m);
+    lemma_add_mod_noop((a % p()) as int, b as int, m);
 }
 
 /// Lemma: (x + y) − (z + y) = x − z (mod p) for reduced values.
@@ -1367,6 +1386,211 @@ pub proof fn lemma_field_mul_comm(a: nat, b: nat)
         field_mul(a, b) == field_mul(b, a),
 {
     lemma_mul_is_commutative(a as int, b as int);
+}
+
+// =============================================================================
+// Twisted Edwards curve equation identity
+// =============================================================================
+/// Lemma: From y² − x² = 1 + d·x²·y² (mod p) derive x²·(d·y² + 1) = y² − 1.
+///
+/// Holds for any d (field element). Precondition is the twisted Edwards curve
+/// equation in field form; conclusion is x²·v = u with v = d·y²+1, u = y²−1.
+pub proof fn lemma_field_curve_eq_x2v_eq_u(d: nat, x: nat, y: nat)
+    requires
+        field_sub(field_square(y), field_square(x)) == field_add(
+            1,
+            field_mul(d, field_mul(field_square(x), field_square(y))),
+        ),
+    ensures
+        field_mul(field_square(x), field_add(field_mul(d, field_square(y)), 1)) == field_sub(
+            field_square(y),
+            1,
+        ),
+{
+    let pp = p();
+    let pn = pp as int;
+    p_gt_2();
+
+    let x2 = field_square(x);
+    let y2 = field_square(y);
+    let x2y2 = field_mul(x2, y2);
+    let dy2 = field_mul(d, y2);
+    let dx2y2 = field_mul(d, x2y2);
+    let v = field_add(dy2, 1);
+    let u = field_sub(y2, 1);
+
+    assert(field_sub(y2, x2) == field_add(1, dx2y2));
+
+    assert(x2 < pp) by {
+        lemma_mod_bound((x * x) as int, pn);
+    };
+    assert(y2 < pp) by {
+        lemma_mod_bound((y * y) as int, pn);
+    };
+    assert(dx2y2 < pp) by {
+        lemma_mod_bound((d * x2y2) as int, pn);
+    };
+
+    assert(field_mul(d, x2y2) == field_mul(x2, dy2)) by {
+        lemma_field_mul_assoc(d, x2, y2);
+        lemma_field_mul_comm(d, x2);
+        lemma_field_mul_assoc(x2, d, y2);
+    };
+
+    assert(field_mul(x2, v) == field_add(field_mul(x2, dy2), field_mul(x2, 1))) by {
+        lemma_field_mul_distributes_over_add(x2, dy2, 1);
+    };
+    assert(field_mul(x2, 1) == x2) by {
+        lemma_field_mul_one_right(x2);
+        lemma_small_mod(x2, pp);
+    };
+
+    assert(field_add(field_add(1, dx2y2), x2) == y2) by {
+        lemma_field_add_sub_cancel(y2, x2);
+    };
+
+    assert(field_sub(y2, 1) == field_add(dx2y2, x2)) by {
+        lemma_small_mod(y2, pp);
+        lemma_small_mod(1nat, pp);
+        lemma_mod_add_multiples_vanish(y2 as int - 1, pn);
+        lemma_add_mod_noop(1int + dx2y2 as int, x2 as int, pn);
+        lemma_add_mod_noop((1int + dx2y2 as int) % pn, x2 as int, pn);
+        lemma_sub_mod_noop(1int + dx2y2 as int + x2 as int, 1int, pn);
+        assert((1int + dx2y2 as int + x2 as int - 1) == (dx2y2 as int + x2 as int));
+        lemma_mod_bound(((y2 as int + pn) - 1) as int, pn);
+        lemma_mod_bound((dx2y2 + x2) as int, pn);
+        lemma_small_mod(u, pp);
+        lemma_small_mod(field_add(dx2y2, x2), pp);
+    };
+}
+
+/// Lemma: A point (x, y) on the curve with parameter d witnesses valid y.
+///
+/// If y² − x² = 1 + d·x²·y² (mod p), then either u = 0 (y² = 1)
+/// or v ≠ 0 and x²·v = u, so y is "valid" in the sense that u/v is a square.
+pub proof fn lemma_field_curve_point_implies_valid_y(d: nat, x: nat, y: nat)
+    requires
+        field_sub(field_square(y), field_square(x)) == field_add(
+            1,
+            field_mul(d, field_mul(field_square(x), field_square(y))),
+        ),
+    ensures
+        (field_sub(field_square(y), 1) == 0) || (field_add(field_mul(d, field_square(y)), 1) != 0
+            && field_mul(field_square(x), field_add(field_mul(d, field_square(y)), 1)) == field_sub(
+            field_square(y),
+            1,
+        )),
+{
+    let u = field_sub(field_square(y), 1);
+    let v = field_add(field_mul(d, field_square(y)), 1);
+    lemma_field_curve_eq_x2v_eq_u(d, x, y);
+    assert(field_mul(field_square(x), v) == u);
+
+    if u == 0 {
+    } else {
+        assert(v != 0) by {
+            if v == 0 {
+                p_gt_2();
+                lemma_mod_bound((field_mul(d, field_square(y)) + 1) as int, p() as int);
+                lemma_small_mod(v, p());
+                lemma_field_mul_zero_right(field_square(x), v);
+            }
+        };
+    }
+}
+
+/// Lemma: On the curve with parameter d, y² = 1 implies x = 0.
+///
+/// From y² − x² = 1 + d·x²·y² with y² = 1 we get (d+1)·x² = 0; if d+1 ≠ 0 then x² = 0, so x = 0.
+pub proof fn lemma_field_y_sq_one_implies_x_zero(d: nat, x: nat, y: nat)
+    requires
+        x < p(),
+        field_square(y) == 1,
+        field_sub(field_square(y), field_square(x)) == field_add(
+            1,
+            field_mul(d, field_mul(field_square(x), field_square(y))),
+        ),
+        field_add(d, 1) != 0,
+    ensures
+        x == 0,
+{
+    let x2 = field_square(x);
+    let y2 = field_square(y);
+    p_gt_2();
+
+    assert(x2 < p()) by {
+        lemma_mod_bound((x * x) as int, p() as int);
+    };
+    assert(field_mul(x2, 1) == x2) by {
+        lemma_field_mul_one_right(x2);
+        lemma_small_mod(x2, p());
+    };
+
+    let neg_x2 = field_neg(x2);
+    assert(neg_x2 < p()) by {
+        lemma_mod_bound((p() - x2 % p()) as int, p() as int);
+    };
+    assert(field_sub(1, x2) == field_add(1, neg_x2)) by {
+        lemma_field_sub_eq_add_neg(1nat, x2);
+    };
+    assert(field_add(neg_x2, 1) == field_add(1, neg_x2)) by {
+        lemma_field_add_comm(1nat, neg_x2);
+    };
+    assert(field_sub(field_add(neg_x2, 1), 1) == neg_x2) by {
+        lemma_field_sub_add_cancel(neg_x2, 1nat);
+    };
+
+    let dx2 = field_mul(d, x2);
+    assert(dx2 < p()) by {
+        lemma_mod_bound((d * x2) as int, p() as int);
+    };
+    assert(field_add(dx2, 1) == field_add(1, dx2)) by {
+        lemma_field_add_comm(1nat, dx2);
+    };
+    assert(field_sub(field_add(dx2, 1), 1) == dx2) by {
+        lemma_field_sub_add_cancel(dx2, 1nat);
+    };
+
+    assert(field_sub(1, x2) == field_add(1, dx2));
+    assert(field_add(neg_x2, 1) == field_add(dx2, 1));
+    assert(neg_x2 == dx2);
+
+    assert(field_add(neg_x2, x2) == 0) by {
+        lemma_field_sub_self(x2);
+        lemma_field_sub_eq_add_neg(x2, x2);
+        lemma_field_add_comm(x2, neg_x2);
+    };
+    assert(field_add(dx2, x2) == 0);
+
+    assert(field_mul(1, x2) == x2) by {
+        lemma_field_mul_one_left(x2);
+        lemma_small_mod(x2, p());
+    };
+    assert(field_mul(x2, field_add(d, 1)) == field_add(dx2, x2)) by {
+        lemma_field_mul_distributes_over_add(x2, d, 1);
+        lemma_field_mul_comm(x2, d);
+        lemma_field_mul_comm(x2, 1nat);
+    };
+    assert(field_mul(field_add(d, 1), x2) == 0) by {
+        lemma_field_mul_comm(field_add(d, 1), x2);
+    };
+
+    assert(x2 % p() == 0) by {
+        if x2 % p() != 0 {
+            lemma_small_mod(field_add(d, 1), p());
+            lemma_nonzero_product(field_add(d, 1), x2);
+        }
+    };
+    assert(x2 == 0);
+
+    assert(x == 0) by {
+        assert(x % p() == 0) by {
+            if x % p() != 0 {
+                lemma_nonzero_product(x, x);
+            }
+        };
+        lemma_small_mod(x, p());
+    };
 }
 
 /// Lemma: a · inv(a·b) = inv(b)

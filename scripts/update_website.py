@@ -34,7 +34,7 @@ def main():
             "--output",
             "outputs/curve25519_functions.csv",
             "--github-base-url",
-            "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/",
+            "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/",
         ],
         cwd=repo_root,
         capture_output=True,

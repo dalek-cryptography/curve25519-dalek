@@ -13,11 +13,11 @@ Install via `cargo install --git https://github.com/Beneficial-AI-Foundation/pro
 ```bash
 # Generate tracked functions CSV (replaces analyze_verus_specs_proofs.py + functions_to_track.csv)
 probe-verus tracked-csv curve25519-dalek/src --output outputs/curve25519_functions.csv \
-  --github-base-url "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/"
+  --github-base-url "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/"
 
 # Generate specs data JSON (replaces extract_specs.py)
 probe-verus specs-data curve25519-dalek/src --output docs/specs_data.json \
-  --github-base-url "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/"
+  --github-base-url "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/"
 ```
 
 ### csv_to_markdown.py 

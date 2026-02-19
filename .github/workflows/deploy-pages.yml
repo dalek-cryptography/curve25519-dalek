@@ -65,7 +65,7 @@ jobs:
       - name: Generate tracked functions CSV
         run: |
           probe-verus tracked-csv curve25519-dalek/src --output outputs/curve25519_functions.csv \
-            --github-base-url "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/"
+            --github-base-url "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/"
 
       - name: Update stats history
         run: |
@@ -95,7 +95,7 @@ jobs:
       - name: Generate specs data
         run: |
           probe-verus specs-data curve25519-dalek/src --output docs/specs_data.json \
-            --github-base-url "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/" \
+            --github-base-url "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/" \
             --libsignal-entrypoints .github/data/focus_dalek_entrypoints.json
 
       - name: Copy charts and CSV to docs

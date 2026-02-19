@@ -1183,7 +1183,7 @@ impl UnpackedScalar {
     /// Inverts an UnpackedScalar in Montgomery form.
     #[rustfmt::skip] // keep alignment of addition chain and squarings
     #[allow(clippy::just_underscores_and_digits)]
-    pub fn montgomery_invert(&self) -> UnpackedScalar {
+    pub(crate) fn montgomery_invert(&self) -> UnpackedScalar {
         // Uses the addition chain from
         // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
         let    _1 = *self;
@@ -1239,7 +1239,7 @@ impl UnpackedScalar {
     }
 
     /// Inverts an UnpackedScalar not in Montgomery form.
-    pub fn invert(&self) -> UnpackedScalar {
+    pub(crate) fn invert(&self) -> UnpackedScalar {
         self.as_montgomery().montgomery_invert().from_montgomery()
     }
 }
@@ -1438,7 +1438,7 @@ pub(crate) mod test {
     use alloc::vec::Vec;
 
     /// x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
-    pub static X: Scalar = Scalar {
+    pub(crate) static X: Scalar = Scalar {
         bytes: [
             0x4e, 0x5a, 0xb4, 0x34, 0x5d, 0x47, 0x08, 0x84, 0x59, 0x13, 0xb4, 0x64, 0x1b, 0xc2,
             0x7d, 0x52, 0x52, 0xa5, 0x85, 0x10, 0x1b, 0xcc, 0x42, 0x44, 0xd4, 0x49, 0xf4, 0xa8,
@@ -1446,7 +1446,7 @@ pub(crate) mod test {
         ],
     };
     /// 1/x = 6859937278830797291664592131120606308688036382723378951768035303146619657244
-    pub static XINV: Scalar = Scalar {
+    pub(crate) static XINV: Scalar = Scalar {
         bytes: [
             0x1c, 0xdc, 0x17, 0xfc, 0xe0, 0xe9, 0xa5, 0xbb, 0xd9, 0x24, 0x7e, 0x56, 0xbb, 0x01,
             0x63, 0x47, 0xbb, 0xba, 0x31, 0xed, 0xd5, 0xa9, 0xbb, 0x96, 0xd5, 0x0b, 0xcd, 0x7a,
@@ -1454,7 +1454,7 @@ pub(crate) mod test {
         ],
     };
     /// y = 2592331292931086675770238855846338635550719849568364935475441891787804997264
-    pub static Y: Scalar = Scalar {
+    pub(crate) static Y: Scalar = Scalar {
         bytes: [
             0x90, 0x76, 0x33, 0xfe, 0x1c, 0x4b, 0x66, 0xa4, 0xa2, 0x8d, 0x2d, 0xd7, 0x67, 0x83,
             0x86, 0xc3, 0x53, 0xd0, 0xde, 0x54, 0x55, 0xd4, 0xfc, 0x9d, 0xe8, 0xef, 0x7a, 0xc3,

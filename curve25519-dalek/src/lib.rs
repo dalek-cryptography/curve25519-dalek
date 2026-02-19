@@ -28,6 +28,7 @@
     clippy::unwrap_used,
     missing_docs,
     rust_2018_idioms,
+    unreachable_pub,
     unused_lifetimes,
     unused_qualifications
 )]

@@ -393,7 +393,7 @@ function inflateVerifiedBody(card) {
     const hasInformal = fn.informal_interpretation && fn.informal_interpretation.trim();
     const hasInterpretations = hasMath || hasInformal;
     const hasRefs = fn.referenced_specs && fn.referenced_specs.length > 0;
-    const contractHtml = highlightSpecNames(fn.contract, fn.referenced_specs || []);
+    const contractHtml = highlightSpecNames(deduplicateContract(fn.contract), fn.referenced_specs || []);
 
     const docHtml = hasDoc
         ? fn.doc_comment.split("\n").filter(Boolean).map(p => `<p>${escapeHtml(p)}</p>`).join("")
@@ -761,7 +761,7 @@ function inflateSpecBody(card) {
         })()}
         <div class="spec-code-wrapper">
             <button class="copy-btn">Copy</button>
-            <pre><code class="language-rust">${escapeHtml(spec.body)}</code></pre>
+            <pre><code class="language-rust">${escapeHtml(hasDoc ? stripLeadingDocComments(spec.body) : spec.body)}</code></pre>
         </div>
         ${inlineRefsHtml}
         <div class="spec-comments">
@@ -1147,6 +1147,44 @@ window.downloadCSV = function() {
 };
 
 // ── Utilities ────────────────────────────────────────────────
+
+// probe-verus specs-data concatenates signature_text (dedented, possibly
+// truncated at a `{` inside an expression) with the raw source contract.
+// This causes requires/ensures clauses to appear twice, and the first copy
+// may be incomplete.  Fix: keep the signature lines (before the first
+// keyword) and replace the broken first copy with the complete raw source.
+function deduplicateContract(contract) {
+    if (!contract) return contract;
+    const lines = contract.split("\n");
+    let firstKeywordIdx = -1;
+    let secondKeywordIdx = -1;
+    const seen = {};
+    for (let i = 0; i < lines.length; i++) {
+        const trimmed = lines[i].trim();
+        if (trimmed === "requires" || trimmed === "ensures") {
+            if (seen[trimmed]) { secondKeywordIdx = i; break; }
+            if (firstKeywordIdx === -1) firstKeywordIdx = i;
+            seen[trimmed] = true;
+        }
+    }
+    if (secondKeywordIdx === -1) return contract;
+    const signature = lines.slice(0, firstKeywordIdx);
+    const rawContract = lines.slice(secondKeywordIdx);
+    return signature.concat(rawContract).join("\n").trimEnd();
+}
+
+// Strip leading `///` doc-comment lines from a spec body when doc_comment is
+// already rendered separately as formatted text.
+function stripLeadingDocComments(body) {
+    if (!body) return body;
+    const lines = body.split("\n");
+    let start = 0;
+    while (start < lines.length && (lines[start].trimStart().startsWith("///") || lines[start].trim() === "")) {
+        start++;
+    }
+    return start > 0 ? lines.slice(start).join("\n") : body;
+}
+
 function escapeHtml(str) {
     if (!str) return "";
     const div = document.createElement("div");

@@ -118,7 +118,7 @@ fn gen_u128<R: Rng>(rng: &mut R) -> u128 {
 ///
 /// The latter prevents a malleability attack wherein an adversary, without access
 /// to the signing key(s), can take any valid signature, `(s,R)`, and swap
-/// `s` with `s' = -z1`.  This doesn't constitute a signature forgery, merely
+/// `s` with `s' = -s`.  This doesn't constitute a signature forgery, merely
 /// a vulnerability, as the resulting signature will not pass single
 /// signature verification.  (Thanks to Github users @real_or_random and
 /// @jonasnick for pointing out this malleability issue.)

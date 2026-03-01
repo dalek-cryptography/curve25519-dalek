@@ -285,6 +285,37 @@ pub proof fn axiom_ristretto_basepoint_table_valid()
     ));
 }
 
+// --- Equality axiom ---
+/// Ristretto equivalence can be tested via cross-multiplication of projective coordinates.
+///
+/// Two well-formed Edwards points P1 = (X1:Y1:Z1:T1), P2 = (X2:Y2:Z2:T2) satisfy:
+///   ristretto_equivalent(P1, P2) ⟺ (X1·Y2 == Y1·X2) || (X1·X2 == Y1·Y2)
+///
+/// This is a standard result from the Ristretto/Decaf construction:
+/// the 4-torsion coset condition P1 - P2 ∈ E[4] is equivalent to
+/// the projective cross-multiplication check.
+///
+/// Reference: [RISTRETTO] §3.2; Hamburg, "Decaf" §4.
+pub proof fn axiom_ristretto_cross_mul_iff_equivalent(p1: EdwardsPoint, p2: EdwardsPoint)
+    requires
+        is_well_formed_edwards_point(p1),
+        is_well_formed_edwards_point(p2),
+    ensures
+        ristretto_equivalent(p1, p2) == (field_mul(
+            fe51_as_canonical_nat(&edwards_x(p1)),
+            fe51_as_canonical_nat(&edwards_y(p2)),
+        ) == field_mul(fe51_as_canonical_nat(&edwards_y(p1)), fe51_as_canonical_nat(&edwards_x(p2)))
+            || field_mul(
+            fe51_as_canonical_nat(&edwards_x(p1)),
+            fe51_as_canonical_nat(&edwards_x(p2)),
+        ) == field_mul(
+            fe51_as_canonical_nat(&edwards_y(p1)),
+            fe51_as_canonical_nat(&edwards_y(p2)),
+        )),
+{
+    admit();
+}
+
 // =============================================================================
 // Ristretto Elligator Map (Hash-to-Group)
 // =============================================================================
@@ -1057,5 +1088,90 @@ mod test_ristretto_decode_axioms {
             bool::from(fermat.ct_eq(&FieldElement::ONE)),
             "Fermat's Little Theorem: 2^(p-1) must equal 1 mod p"
         );
+    }
+
+    /// Validate axiom_ristretto_cross_mul_iff_equivalent:
+    /// Ristretto equivalence ⟺ projective cross-multiplication check.
+    ///
+    /// For well-formed Edwards points P1=(X1:Y1:Z1:T1), P2=(X2:Y2:Z2:T2):
+    ///   ristretto_equivalent(P1, P2) ⟺ (X1·Y2 == Y1·X2 || X1·X2 == Y1·Y2)
+    ///
+    /// Tests:
+    ///   (a) Non-equivalent points: [i]B vs [j]B for i ≠ j fail the check
+    ///   (b) Equivalent points: P and P + T for 4-torsion T pass the check
+    ///   (c) Self-equivalence: P cross-mul P always passes
+    #[test]
+    fn test_ristretto_cross_mul_iff_equivalent() {
+        use crate::scalar::Scalar;
+
+        let bp = constants::RISTRETTO_BASEPOINT_POINT;
+        let torsion = crate::backend::serial::u64::constants::EIGHT_TORSION;
+
+        fn cross_mul_check(p1: &EdwardsPoint, p2: &EdwardsPoint) -> bool {
+            let x1y2 = &p1.X * &p2.Y;
+            let y1x2 = &p1.Y * &p2.X;
+            let x1x2 = &p1.X * &p2.X;
+            let y1y2 = &p1.Y * &p2.Y;
+            bool::from(x1y2.ct_eq(&y1x2)) || bool::from(x1x2.ct_eq(&y1y2))
+        }
+
+        // (a) Non-equivalent: [i]B vs [j]B for distinct small scalars
+        let multiples: alloc::vec::Vec<EdwardsPoint> =
+            (1u64..=20).map(|i| &Scalar::from(i) * &bp.0).collect();
+        for i in 0..multiples.len() {
+            for j in (i + 1)..multiples.len() {
+                assert!(
+                    !cross_mul_check(&multiples[i], &multiples[j]),
+                    "{}B and {}B should NOT be cross-mul equivalent",
+                    i + 1,
+                    j + 1
+                );
+            }
+        }
+
+        // (b) Equivalent: P + T for each 4-torsion element T should be equivalent to P
+        // The 4-torsion subgroup E[4] consists of points at indices 0, 2, 4, 6 in EIGHT_TORSION
+        let four_torsion_indices = [0usize, 2, 4, 6];
+        for &scalar_val in &[1u64, 3, 7, 13, 19] {
+            let p = &Scalar::from(scalar_val) * &bp.0;
+            for &ti in &four_torsion_indices {
+                let shifted = &p + &torsion[ti];
+                assert!(
+                    cross_mul_check(&p, &shifted),
+                    "{}B + T[{}] should be cross-mul equivalent to {}B",
+                    scalar_val,
+                    ti,
+                    scalar_val,
+                );
+            }
+        }
+
+        // (c) Self-equivalence: every point is equivalent to itself
+        for i in 0..multiples.len() {
+            assert!(
+                cross_mul_check(&multiples[i], &multiples[i]),
+                "{}B should be cross-mul equivalent to itself",
+                i + 1
+            );
+        }
+
+        // (d) Cross-check: verify cross_mul_check agrees with RistrettoPoint::ct_eq
+        for i in 0..multiples.len() {
+            for j in i..multiples.len() {
+                let rp_i = RistrettoPoint(multiples[i]);
+                let rp_j = RistrettoPoint(multiples[j]);
+                let ristretto_eq = bool::from(rp_i.ct_eq(&rp_j));
+                let cross_mul = cross_mul_check(&multiples[i], &multiples[j]);
+                assert_eq!(
+                    ristretto_eq,
+                    cross_mul,
+                    "Mismatch for {}B vs {}B: ct_eq={}, cross_mul={}",
+                    i + 1,
+                    j + 1,
+                    ristretto_eq,
+                    cross_mul
+                );
+            }
+        }
     }
 }

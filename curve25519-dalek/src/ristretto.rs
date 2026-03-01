@@ -188,6 +188,8 @@ use crate::backend::serial::u64::subtle_assumes::{
     choice_into, choice_not, choice_or, conditional_assign_generic,
     conditional_negate_field_element, ct_eq_bytes32,
 };
+#[allow(unused_imports)]
+use crate::core_assumes::compressed_ristretto_from_array_result;
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::core_assumes::seq_from32;
@@ -205,6 +207,9 @@ use crate::lemmas::common_lemmas::to_nat_lemmas::lemma_canonical_bytes_equal;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::lemmas::edwards_lemmas::constants_lemmas::lemma_edwards_d_limbs_bounded;
 #[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use crate::lemmas::edwards_lemmas::curve_equation_lemmas::lemma_edwards_scalar_mul_identity;
+#[cfg(verus_keep_ghost)]
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::lemmas::edwards_lemmas::curve_equation_lemmas::lemma_z_one_affine_implies_projective;
 #[cfg(verus_keep_ghost)]
@@ -214,7 +219,7 @@ use crate::lemmas::field_lemmas::add_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::lemmas::field_lemmas::as_bytes_lemmas::{
     lemma_as_bytes_equals_spec_fe51_to_bytes, lemma_canonical_check_backward,
-    lemma_is_negative_equals_parity, lemma_seq_eq_implies_array_eq,
+    lemma_ct_eq_iff_canonical_nat, lemma_is_negative_equals_parity, lemma_seq_eq_implies_array_eq,
 };
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)] // Used in verus! blocks
@@ -334,7 +339,6 @@ impl CompressedRistretto {
     ///
     /// Returns [`TryFromSliceError`] if the input `bytes` slice does not have
     /// a length of 32.
-    #[verifier::external]  // TODO: fix for Verus 88f7396
     pub fn from_slice(bytes: &[u8]) -> (result: Result<CompressedRistretto, TryFromSliceError>)
         ensures
             bytes@.len() == 32 ==> matches!(result, Ok(_)),
@@ -345,20 +349,8 @@ impl CompressedRistretto {
             },
     {
         // ORIGINAL CODE: bytes.try_into().map(CompressedRistretto)
-        // VERUS WORKAROUND: Verus doesn't allow datatype constructors like CompressedRistretto as function values,
-        // so we use a closure |arr| CompressedRistretto(arr) instead of CompressedRistretto directly.
-        // Also, try_into is wrapped in an external function for Verus compatibility.
         let arr_result = try_into_32_bytes_array(bytes);
-        let result = arr_result.map(|arr| CompressedRistretto(arr));
-
-        proof {
-            // Verus can't track bytes through the .map closure
-            assume(match result {
-                Ok(point) => point.0@ == bytes@,
-                Err(_) => true,
-            });
-        }
-        result
+        compressed_ristretto_from_array_result(arr_result)
     }
 }
 
@@ -2222,10 +2214,16 @@ impl Identity for RistrettoPoint {
             is_well_formed_edwards_point(result.0),
             is_in_even_subgroup(result.0),
     {
+        let ep = EdwardsPoint::identity();
+
         proof {
-            assume(false);
+            assert(is_in_even_subgroup(ep)) by {
+                assert(edwards_scalar_mul(edwards_identity(), 2) == edwards_identity()) by {
+                    lemma_edwards_scalar_mul_identity(2);
+                }
+            }
         }
-        RistrettoPoint(EdwardsPoint::identity())
+        RistrettoPoint(ep)
     }
 }
 
@@ -2243,14 +2241,34 @@ impl Default for RistrettoPoint {
 // ------------------------------------------------------------------------
 // Equality
 // ------------------------------------------------------------------------
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::cmp::PartialEqSpecImpl for RistrettoPoint {
+    open spec fn obeys_eq_spec() -> bool {
+        true
+    }
+
+    open spec fn eq_spec(&self, other: &Self) -> bool {
+        ristretto_equivalent(self.0, other.0)
+    }
+}
+
 impl PartialEq for RistrettoPoint {
-    fn eq(&self, other: &RistrettoPoint) -> bool {
-        // VERIFICATION NOTE: assume(false) postpones proof obligations
-        proof {
-            assume(false);
-        }
+    fn eq(&self, other: &RistrettoPoint) -> (result: bool)
+        ensures
+            result == ristretto_equivalent(self.0, other.0),
+    {
         // ORIGINAL CODE: self.ct_eq(other).into()
-        choice_into(self.ct_eq(other))
+        let choice = self.ct_eq(other);
+        let result = choice_into(choice);
+
+        proof {
+            assert(result == ristretto_equivalent(self.0, other.0)) by {
+                // ct_eq ensures: choice_is_true(choice) ⟺ ristretto_equivalent
+                // choice_into ensures: result == choice_is_true(choice)
+            }
+        }
+
+        result
     }
 }
 
@@ -2273,25 +2291,26 @@ impl ConstantTimeEq for RistrettoPoint {
     ///
     /// * `Choice(1)` if the two `RistrettoPoint`s are equal;
     /// * `Choice(0)` otherwise.
-    fn ct_eq(&self, other: &RistrettoPoint) -> (result:
-        Choice)/* requires clause in ConstantTimeEqSpecImplRistretto:
-           is_well_formed_edwards_point(self.0) && is_well_formed_edwards_point(other.0) */
-
+    fn ct_eq(&self, other: &RistrettoPoint) -> (result: Choice)
         ensures
     // Two Ristretto points are equal iff they are in the same equivalence class
 
             choice_is_true(result) == ristretto_equivalent(self.0, other.0),
     {
         proof {
-            // Precondition from ConstantTimeEqSpecImplRistretto::ct_eq_req needed for multiplications below
-            /* VERIFICATION NOTE:
-            - Verus does not support adding a "requires" clause to ct_eq with ConstantTimeEqSpecImplRistretto,
-            - For standard types like Add, a "requires" clause for "add" was supported through the AddSpecImpl
-            */
-            assume(self.ct_eq_req(other));
-            // Weaken from 52-bounded (EdwardsPoint invariant) to 54-bounded (mul precondition)
-            lemma_edwards_point_weaken_to_54(&self.0);
-            lemma_edwards_point_weaken_to_54(&other.0);
+            // use_type_invariant cannot be inside assert-by (Verus mode restriction)
+            use_type_invariant(self.0);
+            use_type_invariant(other.0);
+
+            // Weaken 52-bounded (type invariant) → 54-bounded (Mul precondition)
+            assert(fe51_limbs_bounded(&self.0.X, 54) && fe51_limbs_bounded(&self.0.Y, 54)) by {
+                lemma_unfold_edwards(self.0);
+                lemma_edwards_point_weaken_to_54(&self.0);
+            }
+            assert(fe51_limbs_bounded(&other.0.X, 54) && fe51_limbs_bounded(&other.0.Y, 54)) by {
+                lemma_unfold_edwards(other.0);
+                lemma_edwards_point_weaken_to_54(&other.0);
+            }
         }
 
         let X1Y2 = &self.0.X * &other.0.Y;
@@ -2299,12 +2318,42 @@ impl ConstantTimeEq for RistrettoPoint {
         let X1X2 = &self.0.X * &other.0.X;
         let Y1Y2 = &self.0.Y * &other.0.Y;
 
-        proof {
-            assume(false);
-        }  // VERIFICATION NOTE: postpone remainder of proof
-
         // ORIGINAL CODE: X1Y2.ct_eq(&Y1X2) | X1X2.ct_eq(&Y1Y2)
-        choice_or(X1Y2.ct_eq(&Y1X2), X1X2.ct_eq(&Y1Y2))
+        let eq1 = X1Y2.ct_eq(&Y1X2);
+        let eq2 = X1X2.ct_eq(&Y1Y2);
+        let result = choice_or(eq1, eq2);
+
+        proof {
+            let x1 = fe51_as_canonical_nat(&self.0.X);
+            let y1 = fe51_as_canonical_nat(&self.0.Y);
+            let x2 = fe51_as_canonical_nat(&other.0.X);
+            let y2 = fe51_as_canonical_nat(&other.0.Y);
+
+            // Bridge byte-level comparison to canonical nat comparison
+            assert((fe51_as_canonical_nat(&X1Y2) == fe51_as_canonical_nat(&Y1X2)) <==> (
+            spec_fe51_as_bytes(&X1Y2) == spec_fe51_as_bytes(&Y1X2))) by {
+                lemma_ct_eq_iff_canonical_nat(&X1Y2, &Y1X2);
+            }
+            assert((fe51_as_canonical_nat(&X1X2) == fe51_as_canonical_nat(&Y1Y2)) <==> (
+            spec_fe51_as_bytes(&X1X2) == spec_fe51_as_bytes(&Y1Y2))) by {
+                lemma_ct_eq_iff_canonical_nat(&X1X2, &Y1Y2);
+            }
+
+            // Products equal field_mul (from Mul postconditions)
+            assert(fe51_as_canonical_nat(&X1Y2) == field_mul(x1, y2));
+            assert(fe51_as_canonical_nat(&Y1X2) == field_mul(y1, x2));
+            assert(fe51_as_canonical_nat(&X1X2) == field_mul(x1, x2));
+            assert(fe51_as_canonical_nat(&Y1Y2) == field_mul(y1, y2));
+
+            // Cross-multiplication test ⟺ ristretto_equivalent
+            assert(choice_is_true(result) == ristretto_equivalent(self.0, other.0)) by {
+                lemma_unfold_edwards(self.0);
+                lemma_unfold_edwards(other.0);
+                axiom_ristretto_cross_mul_iff_equivalent(self.0, other.0);
+            }
+        }
+
+        result
     }
 }
 

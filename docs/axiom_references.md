@@ -366,6 +366,20 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 
 ---
 
+### axiom_ristretto_cross_mul_iff_equivalent(p1, p2)
+**Signature:** `axiom_ristretto_cross_mul_iff_equivalent(p1: EdwardsPoint, p2: EdwardsPoint)` — requires `is_well_formed_edwards_point(p1)` and `is_well_formed_edwards_point(p2)`; ensures `ristretto_equivalent(p1, p2) == (X1·Y2 == Y1·X2 || X1·X2 == Y1·Y2)` where the products are `field_mul` of the projective coordinates.
+
+**Claim:** Two well-formed Edwards points are Ristretto-equivalent (differ by a 4-torsion element) if and only if their projective coordinates satisfy the cross-multiplication check: `X1·Y2 ≡ Y1·X2 (mod p)` or `X1·X2 ≡ Y1·Y2 (mod p)`.
+
+**Reference:** Hamburg (2015) — "Decaf: Eliminating cofactors through point compression" §4; Ristretto specification §3.2
+**URL:** https://eprint.iacr.org/2015/673.pdf; https://ristretto.group/formulas/equality.html
+
+**Justification:** This is a standard result from the Ristretto/Decaf construction. Two points P1, P2 ∈ 2E are equivalent under the E[4] quotient (P1 − P2 ∈ E[4]) iff the cross-multiplication test holds on their projective coordinates. The four 4-torsion elements {O, (0,−1), (√(−1),0), (−√(−1),0)} yield exactly the two disjoint conditions in the disjunction.
+
+**Runtime validation:** `test_ristretto_cross_mul_iff_equivalent` — verifies for basepoint multiples and torsion-shifted points that Ristretto equivalence matches the cross-multiplication check.
+
+---
+
 ### axiom_ristretto_decode_on_curve(s)
 **Signature:** `axiom_ristretto_decode_on_curve(s: nat)` — requires `s < p()` and `spec_ristretto_decode_ok(s)`; ensures `is_on_edwards_curve(spec_ristretto_decode_x(s), spec_ristretto_decode_y(s))`.
 
@@ -506,6 +520,7 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 | axiom_minus_one_field_element_value | field_lemmas/constants_lemmas.rs | Math | GF(p) arithmetic |
 | axiom_affine_odd_multiples_of_basepoint_valid | window_specs.rs | Construction | RFC 8032; implementation |
 | axiom_ristretto_basepoint_table_valid | ristretto_specs.rs | Construction | Hamburg 2019 |
+| axiom_ristretto_cross_mul_iff_equivalent | ristretto_specs.rs | Paper + test | Hamburg 2015 §4; Ristretto §3.2 |
 | lemma_invsqrt_unique | sqrt_ratio_lemmas.rs | **PROVEN** | Uses lemma_no_square_root_when_times_i + lemma_nonneg_square_root_unique |
 | lemma_nat_invsqrt_satisfies_relation | sqrt_ratio_lemmas.rs | **PROVEN** | Uses lemma_sqrt_ratio_check_value + lemma_fourth_root_of_unity + lemma_multiply_by_i_flips_sign |
 | lemma_sqrt_ratio_mutual_exclusion | sqrt_ratio_lemmas.rs | **PROVEN** | Uses lemma_no_square_root_when_times_i |

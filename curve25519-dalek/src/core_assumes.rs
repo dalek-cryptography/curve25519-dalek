@@ -9,7 +9,7 @@ use crate::field::FieldElement;
 #[allow(unused_imports)]
 use crate::montgomery::MontgomeryPoint;
 #[allow(unused_imports)]
-use crate::ristretto::RistrettoPoint;
+use crate::ristretto::{CompressedRistretto, RistrettoPoint};
 #[allow(unused_imports)]
 use crate::specs::core_specs::*;
 #[allow(unused_imports)]
@@ -80,6 +80,22 @@ pub fn compressed_edwards_y_from_array_result(
         arr_result.is_ok() ==> result.unwrap().0@ == arr_result.unwrap()@,
 {
     arr_result.map(|arr| crate::edwards::CompressedEdwardsY(arr))
+}
+
+/// Construct a CompressedRistretto from an array result.
+///
+/// Analogous to compressed_edwards_y_from_array_result but for CompressedRistretto.
+/// Verus cannot automatically verify properties through Result::map,
+/// so we provide this wrapper with explicit postconditions.
+#[verifier::external_body]
+pub fn compressed_ristretto_from_array_result(
+    arr_result: Result<[u8; 32], TryFromSliceError>,
+) -> (result: Result<CompressedRistretto, TryFromSliceError>)
+    ensures
+        arr_result.is_ok() <==> result.is_ok(),
+        arr_result.is_ok() ==> result.unwrap().0@ == arr_result.unwrap()@,
+{
+    arr_result.map(|arr| CompressedRistretto(arr))
 }
 
 /// Extract the first 32 bytes from a 64-byte array.

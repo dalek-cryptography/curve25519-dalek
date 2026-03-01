@@ -1013,7 +1013,7 @@ pub proof fn lemma_identity_affine_coords(point: EdwardsPoint)
 //                                                                    selects x sign
 //
 // Spec functions (in pipeline order):
-//   1. nonspec_map_to_curve           -- top-level: bytes -> [8]P
+//   1. spec_nonspec_map_to_curve       -- top-level: bytes -> [8]P
 //   2. montgomery_to_edwards_affine    -- Montgomery u + sign -> Edwards (x,y)
 //   3. spec_edwards_decompress_from_y      -- Edwards y + sign -> (x,y)
 //
@@ -1036,7 +1036,7 @@ pub proof fn lemma_identity_affine_coords(point: EdwardsPoint)
 ///
 /// Note from Dalek code: This is NOT a proper hash-to-curve (non-uniform distribution).
 /// A proper hash-to-curve applies Elligator twice and adds the results.
-pub open spec fn nonspec_map_to_curve(hash_bytes: Seq<u8>) -> (nat, nat)
+pub open spec fn spec_nonspec_map_to_curve(hash_bytes: Seq<u8>) -> (nat, nat)
     recommends
         hash_bytes.len() == 32,
 {

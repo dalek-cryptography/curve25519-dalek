@@ -1929,7 +1929,7 @@ impl RistrettoPoint {
         ensures
     // The result is the Elligator map applied to r_0
 
-            edwards_point_as_affine(result.0) == elligator_ristretto_flavor(
+            edwards_point_as_affine(result.0) == spec_elligator_ristretto_flavor(
                 fe51_as_canonical_nat(r_0),
             ),
             // The result is a valid Ristretto point: well-formed and in the even subgroup

@@ -343,7 +343,7 @@ pub open spec fn spec_sqrt_ad_minus_one() -> nat {
 /// Affine output:    x = X/Z,  y = Y/T
 ///
 /// Reference: [RISTRETTO] §4.3.4; https://ristretto.group/formulas/elligator.html
-pub open spec fn elligator_ristretto_flavor(r_0: nat) -> (nat, nat) {
+pub open spec fn spec_elligator_ristretto_flavor(r_0: nat) -> (nat, nat) {
     let i = sqrt_m1();
     let d = fe51_as_canonical_nat(&EDWARDS_D);
     let one_minus_d_sq = field_mul(field_sub(1, d), field_add(1, d));
@@ -413,8 +413,8 @@ pub open spec fn ristretto_from_uniform_bytes(bytes: &[u8; 64]) -> (nat, nat) {
     let b2 = uniform_bytes_second(bytes);
     let r1 = field_element_from_bytes(&b1);
     let r2 = field_element_from_bytes(&b2);
-    let p1 = elligator_ristretto_flavor(r1);
-    let p2 = elligator_ristretto_flavor(r2);
+    let p1 = spec_elligator_ristretto_flavor(r1);
+    let p2 = spec_elligator_ristretto_flavor(r2);
     edwards_add(p1.0, p1.1, p2.0, p2.1)
 }
 

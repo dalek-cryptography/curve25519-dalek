@@ -1827,7 +1827,7 @@ impl EdwardsPoint {
         ensures
             is_well_formed_edwards_point(result),
             // Functional correctness: result = spec applied to first 32 bytes of SHA-512(input)
-            edwards_point_as_affine(result) == nonspec_map_to_curve(
+            edwards_point_as_affine(result) == spec_nonspec_map_to_curve(
                 spec_sha512(bytes@).subrange(0, 32),
             ),
     {
@@ -1934,7 +1934,7 @@ impl EdwardsPoint {
 
             // Step 8: combine — the result equals the spec
             assert(edwards_point_as_affine(result) == edwards_scalar_mul(P, 8));
-            assert(edwards_point_as_affine(result) == nonspec_map_to_curve(res@));
+            assert(edwards_point_as_affine(result) == spec_nonspec_map_to_curve(res@));
         }
 
         result

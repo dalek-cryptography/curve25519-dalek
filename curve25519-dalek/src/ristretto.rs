@@ -185,8 +185,8 @@ use crate::backend::serial::u64::constants::spec_eight_torsion;
 use crate::backend::serial::u64::subtle_assumes::choice_is_true;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::backend::serial::u64::subtle_assumes::{
-    choice_into, choice_not, choice_or, conditional_assign_generic,
-    conditional_negate_field_element, ct_eq_bytes32,
+    choice_into, choice_not, choice_or, conditional_assign_field_element,
+    conditional_assign_generic, conditional_negate_field_element, ct_eq_bytes32,
 };
 #[allow(unused_imports)]
 use crate::core_assumes::compressed_ristretto_from_array_result;
@@ -205,7 +205,9 @@ use crate::field::FieldElement;
 use crate::lemmas::common_lemmas::to_nat_lemmas::lemma_canonical_bytes_equal;
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)] // Used in verus! blocks
-use crate::lemmas::edwards_lemmas::constants_lemmas::lemma_edwards_d_limbs_bounded;
+use crate::lemmas::edwards_lemmas::constants_lemmas::{
+    lemma_edwards_d_limbs_bounded, lemma_edwards_d_limbs_bounded_54,
+};
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)]
 use crate::lemmas::edwards_lemmas::curve_equation_lemmas::lemma_edwards_scalar_mul_identity;
@@ -227,8 +229,12 @@ use crate::lemmas::field_lemmas::batch_invert_lemmas::lemma_is_zero_iff_canonica
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::lemmas::field_lemmas::constants_lemmas::{
-    lemma_invsqrt_a_minus_d_limbs_bounded, lemma_one_field_element_value,
-    lemma_one_limbs_bounded_51,
+    lemma_d_minus_one_squared_limbs_bounded, lemma_d_minus_one_squared_value,
+    lemma_elligator_constants_bounded, lemma_invsqrt_a_minus_d_limbs_bounded,
+    lemma_minus_one_field_element_value, lemma_minus_one_limbs_bounded_51,
+    lemma_one_field_element_value, lemma_one_limbs_bounded_51,
+    lemma_one_minus_d_squared_limbs_bounded, lemma_one_minus_d_squared_value,
+    lemma_sqrt_ad_minus_one_limbs_bounded,
 };
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)] // Used in verus! blocks
@@ -1914,6 +1920,11 @@ impl RistrettoPoint {
         let p2 = &self.0 + &t4;
         let p3 = &self.0 + &t6;
         let result = [p0, p1, p2, p3];
+        proof {
+            assert(t2 == spec_eight_torsion()[2]);
+            assert(t4 == spec_eight_torsion()[4]);
+            assert(t6 == spec_eight_torsion()[6]);
+        }
         result
     }
 
@@ -1925,6 +1936,7 @@ impl RistrettoPoint {
     ///
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
+    /* ORIGINAL_CODE:
     pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> (result: RistrettoPoint)
         ensures
     // The result is the Elligator map applied to r_0
@@ -1939,44 +1951,410 @@ impl RistrettoPoint {
         proof {
             assume(false);  // PROOF BYPASS
         }
+    */
+    pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> (result: RistrettoPoint)
+        requires
+            fe51_limbs_bounded(r_0, 54),
+        ensures
+            edwards_point_as_affine(result.0) == spec_elligator_ristretto_flavor(
+                fe51_as_canonical_nat(r_0),
+            ),
+            is_well_formed_edwards_point(result.0),
+            is_in_even_subgroup(result.0),
+    {
+        // Ghost spec-level names (for readability in proof steps)
+        let ghost r_0_nat = fe51_as_canonical_nat(r_0);
+        let ghost i_spec = sqrt_m1();
+        let ghost d_spec = fe51_as_canonical_nat(&constants::EDWARDS_D);
+
         let i = &constants::SQRT_M1;
         let d = &constants::EDWARDS_D;
         let one_minus_d_sq = &constants::ONE_MINUS_EDWARDS_D_SQUARED;
         let d_minus_one_sq = &constants::EDWARDS_D_MINUS_ONE_SQUARED;
         let mut c = constants::MINUS_ONE;
-
         let one = FieldElement::ONE;
 
-        let r = i * &r_0.square();
-        let N_s = &(&r + &one) * one_minus_d_sq;
-        let D = &(&c - &(d * &r)) * &(&r + d);
+        // ------- Limb bounds for constants -------
+        proof {
+            lemma_elligator_constants_bounded();
+        }
 
+        // ORIGINAL_CODE: let r = i * &r_0.square();
+        let r_0_sq = r_0.square();
+        proof {
+            assert(fe51_limbs_bounded(&r_0_sq, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&r_0_sq, 52, 54);
+            };
+        }
+        let r = i * &r_0_sq;
+        let ghost r_nat = fe51_as_canonical_nat(&r);
+
+        // ORIGINAL_CODE: let N_s = &(&r + &one) * one_minus_d_sq;
+        proof {
+            assert(sum_of_limbs_bounded(&r, &one, u64::MAX)) by {
+                lemma_fe51_limbs_bounded_weaken(&one, 51, 52);
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&r, &one, 52);
+            };
+        }
+        let r_plus_one = &r + &one;
+        proof {
+            assert(fe51_limbs_bounded(&r_plus_one, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&r_plus_one, 53, 54);
+            };
+            assert(fe51_limbs_bounded(one_minus_d_sq, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(one_minus_d_sq, 51, 54);
+            };
+        }
+        let N_s = &r_plus_one * one_minus_d_sq;
+        let ghost n_s_nat = fe51_as_canonical_nat(&N_s);
+
+        // ORIGINAL_CODE: let D = &(&c - &(d * &r)) * &(&r + d);
+        proof {
+            assert(fe51_limbs_bounded(d, 54) && fe51_limbs_bounded(&r, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(d, 51, 54);
+                lemma_fe51_limbs_bounded_weaken(&r, 52, 54);
+            };
+        }
+        let d_times_r = d * &r;
+        proof {
+            assert(fe51_limbs_bounded(&c, 54) && fe51_limbs_bounded(&d_times_r, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&c, 51, 54);
+                lemma_fe51_limbs_bounded_weaken(&d_times_r, 52, 54);
+            };
+        }
+        let c_minus_dr = &c - &d_times_r;
+        proof {
+            assert(sum_of_limbs_bounded(&r, d, u64::MAX)) by {
+                lemma_fe51_limbs_bounded_weaken(d, 51, 52);
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&r, d, 52);
+            };
+        }
+        let r_plus_d = &r + d;
+        proof {
+            assert(fe51_limbs_bounded(&r_plus_d, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&r_plus_d, 53, 54);
+            };
+        }
+        let D = &c_minus_dr * &r_plus_d;
+        let ghost d_val_nat = fe51_as_canonical_nat(&D);
+
+        // sqrt_ratio_i(N_s, D)
+        proof {
+            assert(fe51_limbs_bounded(&N_s, 54) && fe51_limbs_bounded(&D, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&N_s, 52, 54);
+                lemma_fe51_limbs_bounded_weaken(&D, 52, 54);
+            };
+        }
         let (Ns_D_is_sq, mut s) = FieldElement::sqrt_ratio_i(&N_s, &D);
+        let ghost s_after_sqrt = s;
+
+        // s_prime = s * r_0
+        proof {
+            assert(fe51_limbs_bounded(&s, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&s, 52, 54);
+            };
+        }
         let mut s_prime = &s * r_0;
+        let ghost s_prime_before_negate = s_prime;
         // VERUS WORKAROUND: Use choice_not wrapper instead of ! operator on Choice
         let s_prime_is_pos = choice_not(s_prime.is_negative());
         // VERUS WORKAROUND: Use conditional_negate_field_element wrapper
+        proof {
+            assert(fe51_limbs_bounded(&s_prime, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&s_prime, 52, 54);
+            };
+        }
         conditional_negate_field_element(&mut s_prime, s_prime_is_pos);
 
-        // VERUS WORKAROUND: Use choice_not and conditional_assign_generic wrappers
+        // VERUS WORKAROUND: Use choice_not and conditional_assign wrappers
         let not_sq = choice_not(Ns_D_is_sq);
-        conditional_assign_generic(&mut s, &s_prime, not_sq);
-        conditional_assign_generic(&mut c, &r, not_sq);
+        let ghost s_before_assign = s;
+        let ghost s_prime_final = s_prime;
+        proof {
+            lemma_fe51_limbs_bounded_weaken(&s, 52, 54);
+            lemma_fe51_limbs_bounded_weaken(&c, 51, 54);
+            lemma_fe51_limbs_bounded_weaken(&r, 52, 54);
+        }
+        conditional_assign_field_element(&mut s, &s_prime, not_sq);
+        let ghost c_before_assign = c;
+        conditional_assign_field_element(&mut c, &r, not_sq);
 
-        let N_t = &(&(&c * &(&r - &one)) * d_minus_one_sq) - &D;
+        // ORIGINAL_CODE: let N_t = &(&(&c * &(&r - &one)) * d_minus_one_sq) - &D;
+        proof {
+            lemma_fe51_limbs_bounded_weaken(&one, 51, 54);
+        }
+        let r_minus_one = &r - &one;
+        let c_times_rm1 = &c * &r_minus_one;
+        proof {
+            assert(fe51_limbs_bounded(&c_times_rm1, 54) && fe51_limbs_bounded(d_minus_one_sq, 54))
+                by {
+                lemma_fe51_limbs_bounded_weaken(&c_times_rm1, 52, 54);
+                lemma_fe51_limbs_bounded_weaken(d_minus_one_sq, 51, 54);
+            };
+        }
+        let c_rm1_dsq = &c_times_rm1 * d_minus_one_sq;
+        proof {
+            assert(fe51_limbs_bounded(&c_rm1_dsq, 54) && fe51_limbs_bounded(&D, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&c_rm1_dsq, 52, 54);
+                lemma_fe51_limbs_bounded_weaken(&D, 52, 54);
+            };
+        }
+        let N_t = &c_rm1_dsq - &D;
+
         let s_sq = s.square();
+
+        proof {
+            assert(sum_of_limbs_bounded(&s, &s, u64::MAX)) by {
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&s, &s, 54);
+            };
+        }
+        let s_plus_s = &s + &s;
+        proof {
+            assert(fe51_limbs_bounded(&s_plus_s, 54) && fe51_limbs_bounded(&D, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&s_plus_s, 53, 54);
+                lemma_fe51_limbs_bounded_weaken(&D, 52, 54);
+            };
+        }
+        let cp_X = &s_plus_s * &D;
+
+        let cp_Z = &N_t * &constants::SQRT_AD_MINUS_ONE;
+
+        proof {
+            assert(fe51_limbs_bounded(&s_sq, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&s_sq, 52, 54);
+            };
+        }
+        let cp_Y = &FieldElement::ONE - &s_sq;
+
+        proof {
+            assert(sum_of_limbs_bounded(&FieldElement::ONE, &s_sq, u64::MAX)) by {
+                lemma_fe51_limbs_bounded_weaken(&FieldElement::ONE, 51, 52);
+                lemma_sum_of_limbs_bounded_from_fe51_bounded(&FieldElement::ONE, &s_sq, 52);
+            };
+        }
+        let cp_T = &FieldElement::ONE + &s_sq;
 
         use crate::backend::serial::curve_models::CompletedPoint;
 
-        // The conversion from W_i is exactly the conversion from P1xP1.
-        RistrettoPoint(
-            CompletedPoint {
-                X: &(&s + &s) * &D,
-                Z: &N_t * &constants::SQRT_AD_MINUS_ONE,
-                Y: &FieldElement::ONE - &s_sq,
-                T: &FieldElement::ONE + &s_sq,
-            }.as_extended(),
-        )
+        let cp = CompletedPoint { X: cp_X, Z: cp_Z, Y: cp_Y, T: cp_T };
+
+        // Ghost variables for proof blocks below (declared once, used in multiple blocks)
+        let ghost s_nat = fe51_as_canonical_nat(&s);
+        let ghost n_t_nat = fe51_as_canonical_nat(&N_t);
+        let ghost s_sq_nat = fe51_as_canonical_nat(&s_sq);
+
+        let ghost spec_s_if_square = field_abs(
+            field_mul(nat_invsqrt(field_mul(n_s_nat, d_val_nat)), n_s_nat),
+        );
+        let ghost spec_was_square = is_sqrt_ratio(n_s_nat, d_val_nat, spec_s_if_square);
+
+        // ------- Functional correctness: connect exec to spec -------
+        proof {
+            let one_minus_d_sq_nat = fe51_as_canonical_nat(&constants::ONE_MINUS_EDWARDS_D_SQUARED);
+            let d_minus_one_sq_nat = fe51_as_canonical_nat(&constants::EDWARDS_D_MINUS_ONE_SQUARED);
+            let c_init_nat = fe51_as_canonical_nat(&constants::MINUS_ONE);
+            let s_after_sqrt_nat = fe51_as_canonical_nat(&s_after_sqrt);
+
+            // Constant value lemmas
+            assert(c_init_nat == field_neg(1)) by {
+                lemma_minus_one_field_element_value();
+            };
+            assert(fe51_as_canonical_nat(&FieldElement::ONE) == 1) by {
+                lemma_one_field_element_value();
+            };
+            assert(one_minus_d_sq_nat == field_mul(field_sub(1, d_spec), field_add(1, d_spec))) by {
+                lemma_one_minus_d_squared_value();
+            };
+            assert(d_minus_one_sq_nat == field_square(field_sub(d_spec, 1))) by {
+                lemma_d_minus_one_squared_value();
+            };
+
+            // r = i * r_0²: Mul postcondition + square bridge
+            assert(r_nat == field_mul(i_spec, field_square(r_0_nat))) by {
+                assert(fe51_as_canonical_nat(&r_0_sq) == field_square(r_0_nat)) by {
+                    lemma_square_matches_field_square(
+                        u64_5_as_nat(r_0.limbs),
+                        u64_5_as_nat(r_0_sq.limbs),
+                    );
+                };
+            };
+
+            // N_s = (r+1) * one_minus_d_sq: from Add then Mul postconditions
+            assert(n_s_nat == field_mul(field_add(r_nat, 1), one_minus_d_sq_nat));
+
+            // D = (c - d*r) * (r + d): from Sub, Mul, Add, Mul postconditions
+            assert(d_val_nat == field_mul(
+                field_sub(c_init_nat, field_mul(d_spec, r_nat)),
+                field_add(r_nat, d_spec),
+            ));
+
+            // sqrt_ratio_i result matches nat_invsqrt formulation, and was_square matches spec
+            assert(s_after_sqrt_nat == spec_s_if_square && choice_is_true(Ns_D_is_sq)
+                == spec_was_square) by {
+                assert(s_after_sqrt_nat < p()) by {
+                    lemma_canonical_nat_lt_p(&s_after_sqrt);
+                };
+                assert(n_s_nat < p()) by {
+                    lemma_canonical_nat_lt_p(&N_s);
+                };
+                assert(d_val_nat < p()) by {
+                    lemma_canonical_nat_lt_p(&D);
+                };
+                lemma_sqrt_ratio_matches_invsqrt_mul(
+                    n_s_nat,
+                    d_val_nat,
+                    s_after_sqrt_nat,
+                    choice_is_true(Ns_D_is_sq),
+                );
+            };
+
+            // s_after_sqrt == spec_s_if_square, so s_prime_raw matches too
+            assert(fe51_as_canonical_nat(&s_prime_before_negate) == field_mul(
+                spec_s_if_square,
+                r_0_nat,
+            ));
+
+            assert(s_sq_nat == field_square(s_nat)) by {
+                lemma_square_matches_field_square(u64_5_as_nat(s.limbs), u64_5_as_nat(s_sq.limbs));
+            };
+        }
+
+        // ------- s_prime / conditional_assign alignment -------
+        proof {
+            let s_after_sqrt_nat = fe51_as_canonical_nat(&s_after_sqrt);
+            let s_prime_raw_nat = fe51_as_canonical_nat(&s_prime_before_negate);
+
+            assert(choice_is_true(s_prime_is_pos) == !is_negative(s_prime_raw_nat)) by {
+                lemma_is_negative_bridge(&s_prime_before_negate, s_prime_raw_nat);
+            };
+            let s_prime_final_nat = fe51_as_canonical_nat(&s_prime_final);
+            assert(s_prime_final_nat == if !is_negative(s_prime_raw_nat) {
+                field_neg(s_prime_raw_nat)
+            } else {
+                s_prime_raw_nat
+            });
+
+            let was_square = choice_is_true(Ns_D_is_sq);
+            let c_nat = fe51_as_canonical_nat(&c);
+
+            assert(s_nat == if was_square {
+                s_after_sqrt_nat
+            } else {
+                s_prime_final_nat
+            }) by {
+                if was_square {
+                    assert(!choice_is_true(not_sq));
+                    assert(s == s_before_assign);
+                } else {
+                    assert(choice_is_true(not_sq));
+                    assert(s == s_prime_final);
+                }
+            };
+            let c_init_nat = fe51_as_canonical_nat(&constants::MINUS_ONE);
+            let r_nat = fe51_as_canonical_nat(&r);
+            assert(c_nat == if was_square {
+                c_init_nat
+            } else {
+                r_nat
+            }) by {
+                if was_square {
+                    assert(!choice_is_true(not_sq));
+                    assert(c == c_before_assign);
+                } else {
+                    assert(choice_is_true(not_sq));
+                    assert(c == r);
+                }
+            };
+        }
+
+        // ------- Spec connection: guide Z3 through the spec unfolding -------
+        proof {
+            assert(field_add(s_nat, s_nat) == field_mul(2, s_nat)) by {
+                lemma_add_self_eq_double(s_nat);
+            };
+            let spec_x_completed = field_mul(field_mul(2, s_nat), d_val_nat);
+            let spec_z_completed = field_mul(n_t_nat, spec_sqrt_ad_minus_one());
+            let spec_y_completed = field_sub(1, s_sq_nat);
+            let spec_t_completed = field_add(1, s_sq_nat);
+
+            assert(fe51_as_canonical_nat(&cp.X) == spec_x_completed);
+            assert(fe51_as_canonical_nat(&cp.Z) == spec_z_completed);
+            assert(fe51_as_canonical_nat(&cp.Y) == spec_y_completed);
+            assert(fe51_as_canonical_nat(&cp.T) == spec_t_completed);
+
+            // Guide Z3 through the spec's field_abs by matching
+            // the spec's intermediate `s` to the exec's `s_nat`.
+            // These hints must remain floating (not scoped in assert-by)
+            // to avoid rlimit issues in full verification.
+            assert(choice_is_true(Ns_D_is_sq) == spec_was_square);
+            assert(s_nat == if spec_was_square {
+                spec_s_if_square
+            } else {
+                let s_prime_raw = field_mul(spec_s_if_square, r_0_nat);
+                if !is_negative(s_prime_raw) {
+                    field_neg(s_prime_raw)
+                } else {
+                    s_prime_raw
+                }
+            });
+
+            assert(completed_point_as_affine_edwards(cp) == spec_elligator_ristretto_flavor(
+                r_0_nat,
+            ));
+        }
+
+        // ------- Nonzero denominators + validity -------
+        proof {
+            assert(fe51_as_canonical_nat(&cp.Z) != 0 && fe51_as_canonical_nat(&cp.T) != 0) by {
+                assert(s_nat < p()) by {
+                    lemma_canonical_nat_lt_p(&s);
+                };
+                assert(n_t_nat < p()) by {
+                    lemma_canonical_nat_lt_p(&N_t);
+                };
+                assert((s_nat, n_t_nat, d_val_nat) == elligator_intermediates(r_0_nat));
+                lemma_elligator_nonzero_denominators(
+                    fe51_as_canonical_nat(&cp.Z),
+                    fe51_as_canonical_nat(&cp.T),
+                    r_0_nat,
+                    s_nat,
+                    n_t_nat,
+                    d_val_nat,
+                );
+            };
+
+            assert(is_valid_completed_point(cp)) by {
+                axiom_elligator_on_curve(r_0_nat);
+                assert(completed_point_as_affine_edwards(cp) == spec_elligator_ristretto_flavor(
+                    r_0_nat,
+                ));
+            };
+        }
+
+        proof {
+            assert(fe51_limbs_bounded(&cp.X, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&cp.X, 52, 54);
+            };
+            assert(fe51_limbs_bounded(&cp.Z, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&cp.Z, 52, 54);
+            };
+            assert(fe51_limbs_bounded(&cp.T, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&cp.T, 53, 54);
+            };
+        }
+
+        let extended = cp.as_extended();
+
+        // ------- Prove postconditions -------
+        proof {
+            assert(is_well_formed_edwards_point(extended));
+            assert(edwards_point_as_affine(extended) == completed_point_as_affine_edwards(cp));
+            assert(is_in_even_subgroup(extended)) by {
+                axiom_elligator_in_even_subgroup(r_0_nat);
+            };
+        }
+
+        RistrettoPoint(extended)
     }
 
     #[cfg(any(test, feature = "rand_core"))]
@@ -2155,11 +2533,21 @@ impl RistrettoPoint {
         /* ORIGINAL CODE: let mut r_1_bytes = [0u8;32]; r_1_bytes.copy_from_slice(&bytes[0..32]); */
         let r_1_bytes = first_32_bytes(bytes);  // Verus: copy_from_slice unsupported
         let r_1 = FieldElement::from_bytes(&r_1_bytes);
+        proof {
+            assert(fe51_limbs_bounded(&r_1, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&r_1, 51, 54);
+            };
+        }
         let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
 
         /* ORIGINAL CODE: let mut r_2_bytes = [0u8;32]; r_2_bytes.copy_from_slice(&bytes[32..64]); */
         let r_2_bytes = last_32_bytes(bytes);  // Verus: copy_from_slice unsupported
         let r_2 = FieldElement::from_bytes(&r_2_bytes);
+        proof {
+            assert(fe51_limbs_bounded(&r_2, 54)) by {
+                lemma_fe51_limbs_bounded_weaken(&r_2, 51, 54);
+            };
+        }
         let R_2 = RistrettoPoint::elligator_ristretto_flavor(&r_2);
 
         // Applying Elligator twice and adding the results ensures a

@@ -1140,7 +1140,7 @@ impl MontgomeryPoint {
                     lemma_fe51_to_bytes_equal_implies_field_element_equal(&u, &minus_one);
                     assert(fe51_as_canonical_nat(&u) == fe51_as_canonical_nat(&minus_one));
 
-                    axiom_minus_one_field_element_value();
+                    lemma_minus_one_field_element_value();
                     assert(fe51_as_canonical_nat(&minus_one) == field_sub(0, 1));
                     assert(fe51_as_canonical_nat(&u) == field_sub(0, 1));
                     assert(montgomery_point_as_nat(*self) == field_sub(0, 1));

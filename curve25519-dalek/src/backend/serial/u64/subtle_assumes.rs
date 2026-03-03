@@ -382,6 +382,25 @@ pub fn conditional_assign_generic<T>(a: &mut T, b: &T, choice: Choice) where
     a.conditional_assign(b, choice)
 }
 
+/// FieldElement-specific conditional_assign with limb-bound propagation.
+///
+/// Wraps `ConditionallySelectable::conditional_assign` for `FieldElement51`,
+/// propagating `fe51_limbs_bounded` through the branch. The generic wrapper
+/// `conditional_assign_generic` cannot express limb bounds because its
+/// contract is type-erased.
+#[verifier::external_body]
+pub fn conditional_assign_field_element(a: &mut FieldElement51, b: &FieldElement51, choice: Choice)
+    requires
+        fe51_limbs_bounded(old(a), 54),
+        fe51_limbs_bounded(b, 54),
+    ensures
+        !choice_is_true(choice) ==> *a == *old(a),
+        choice_is_true(choice) ==> *a == *b,
+        fe51_limbs_bounded(a, 54),
+{
+    a.conditional_assign(b, choice)
+}
+
 /*** ConditionallySelectable specification for FieldElement51 ***/
 
 /// Wrapper for conditional_select on FieldElement51

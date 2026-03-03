@@ -517,6 +517,16 @@ pub open spec fn is_negative(a: nat) -> bool {
     field_canonical(a) % 2 == 1
 }
 
+/// Canonical non-negative representative ("absolute value" in GF(p)):
+/// negate if the canonical encoding is odd, else identity.
+pub open spec fn field_abs(a: nat) -> nat {
+    if is_negative(a) {
+        field_neg(a)
+    } else {
+        a
+    }
+}
+
 /// Inverse square root in GF(p): returns the canonical nonneg r such that
 /// r²·a ≡ 1 or r²·a ≡ √(-1) (mod p).
 ///

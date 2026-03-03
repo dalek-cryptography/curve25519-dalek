@@ -47,6 +47,12 @@ use crate::constants;
 use crate::edwards::EdwardsPoint;
 #[allow(unused_imports)]
 use crate::field::FieldElement;
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::constants_lemmas::lemma_sqrt_ad_minus_one_nonzero;
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::field_algebra_lemmas::lemma_nonzero_product;
 #[allow(unused_imports)]
 use crate::ristretto::{CompressedRistretto, RistrettoPoint};
 use vstd::prelude::*;
@@ -344,39 +350,7 @@ pub open spec fn spec_sqrt_ad_minus_one() -> nat {
 ///
 /// Reference: [RISTRETTO] §4.3.4; https://ristretto.group/formulas/elligator.html
 pub open spec fn spec_elligator_ristretto_flavor(r_0: nat) -> (nat, nat) {
-    let i = sqrt_m1();
-    let d = fe51_as_canonical_nat(&EDWARDS_D);
-    let one_minus_d_sq = field_mul(field_sub(1, d), field_add(1, d));
-    let d_minus_one_sq = field_square(field_sub(d, 1));
-    let c_init: nat = field_neg(1);
-
-    let r = field_mul(i, field_square(r_0));
-    let n_s = field_mul(field_add(r, 1), one_minus_d_sq);
-    let d_val = field_mul(field_sub(c_init, field_mul(d, r)), field_add(r, d));
-
-    let invsqrt = nat_invsqrt(field_mul(n_s, d_val));
-    let s_if_square = field_mul(invsqrt, n_s);
-    let was_square = is_sqrt_ratio(n_s, d_val, s_if_square);
-
-    let s_prime_raw = field_mul(s_if_square, r_0);
-    let s_prime = if !is_negative(s_prime_raw) {
-        field_neg(s_prime_raw)
-    } else {
-        s_prime_raw
-    };
-
-    let s = if was_square {
-        s_if_square
-    } else {
-        s_prime
-    };
-    let c = if was_square {
-        c_init
-    } else {
-        r
-    };
-
-    let n_t = field_sub(field_mul(field_mul(c, field_sub(r, 1)), d_minus_one_sq), d_val);
+    let (s, n_t, d_val) = elligator_intermediates(r_0);
     let s_sq = field_square(s);
 
     let sqrt_ad_minus_one = spec_sqrt_ad_minus_one();
@@ -479,9 +453,148 @@ pub open spec fn ristretto_equivalent(p1: EdwardsPoint, p2: EdwardsPoint) -> boo
     diff == t0 || diff == t2 || diff == t4 || diff == t6
 }
 
+// =============================================================================
+// Elligator Map Helpers and Axioms
+// =============================================================================
+/// Extract the Elligator intermediate values (s, n_t, d_val) from r_0.
+/// These are the values computed partway through elligator_ristretto_flavor,
+/// before the final completed-point construction.
+///
+/// Returns (s, n_t, d_val) where:
+///   s     = the final s value after conditional assignment
+///   n_t   = N_t = c·(r−1)·(d−1)² − D
+///   d_val = D = (c₀ − d·r)(r + d)
+pub open spec fn elligator_intermediates(r_0: nat) -> (nat, nat, nat) {
+    let i = sqrt_m1();
+    let d = fe51_as_canonical_nat(&EDWARDS_D);
+    let one_minus_d_sq = field_mul(field_sub(1, d), field_add(1, d));
+    let d_minus_one_sq = field_square(field_sub(d, 1));
+    let c_init: nat = field_neg(1);
+
+    let r = field_mul(i, field_square(r_0));
+    let n_s = field_mul(field_add(r, 1), one_minus_d_sq);
+    let d_val = field_mul(field_sub(c_init, field_mul(d, r)), field_add(r, d));
+
+    let invsqrt_val = nat_invsqrt(field_mul(n_s, d_val));
+    let s_if_square = field_abs(field_mul(invsqrt_val, n_s));
+    let was_square = is_sqrt_ratio(n_s, d_val, s_if_square);
+
+    let s_prime_raw = field_mul(s_if_square, r_0);
+    let s_prime = if !is_negative(s_prime_raw) {
+        field_neg(s_prime_raw)
+    } else {
+        s_prime_raw
+    };
+
+    let s = if was_square {
+        s_if_square
+    } else {
+        s_prime
+    };
+    let c = if was_square {
+        c_init
+    } else {
+        r
+    };
+    let n_t = field_sub(field_mul(field_mul(c, field_sub(r, 1)), d_minus_one_sq), d_val);
+
+    (s, n_t, d_val)
+}
+
+/// Axiom: the Elligator map always produces a point on the Edwards curve.
+///
+/// This is a standard result from the Ristretto/Decaf construction: the
+/// Elligator map parametrizes points via the Jacobi quartic, and the
+/// resulting coordinates always satisfy the Edwards curve equation.
+///
+/// Reference: [RISTRETTO] §4.3.4; Hamburg, "Decaf" §4
+/// Runtime validation: `test_elligator_on_curve` (200+ inputs)
+pub proof fn axiom_elligator_on_curve(r_0: nat)
+    ensures
+        is_on_edwards_curve(
+            spec_elligator_ristretto_flavor(r_0).0,
+            spec_elligator_ristretto_flavor(r_0).1,
+        ),
+{
+    admit();
+}
+
+/// Axiom: The Elligator intermediates have nonzero denominators.
+///
+/// (1) N_t ≠ 0 (mod p): N_t = c·(r − 1)·(d − 1)² − D avoids zero because the
+///     algebraic structure of the map avoids degenerate cases.
+/// (2) 1 + s² ≠ 0 (mod p): s never equals ±√(−1), even though −1 is a square
+///     in GF(p), because the Elligator construction never produces those values.
+///
+/// Reference: [RISTRETTO] section 4.3.4; Hamburg, "Decaf" section 4
+/// Runtime validation: `test_elligator_nonzero_denominators` (200+ inputs)
+pub proof fn axiom_elligator_nonzero_intermediates(
+    r_0: nat,
+    s_nat: nat,
+    n_t_nat: nat,
+    d_val_nat: nat,
+)
+    requires
+        s_nat < p(),
+        (s_nat, n_t_nat, d_val_nat) == elligator_intermediates(r_0),
+    ensures
+        n_t_nat % p() != 0,
+        field_add(1, field_square(s_nat)) != 0,
+{
+    admit();
+}
+
+/// The Elligator completed point has nonzero Z and T denominators.
+///
+/// Z = N_t · √(ad−1) ≠ 0: N_t ≠ 0 (axiom) ∧ √(ad−1) ≠ 0 (proven)
+///   ⟹ product ≠ 0 (no zero divisors in GF(p)).
+/// T = 1 + s² ≠ 0: from axiom_elligator_nonzero_intermediates.
+///
+/// Reference: [RISTRETTO] section 4.3.4; Hamburg, "Decaf" section 4
+/// Runtime validation: `test_elligator_nonzero_denominators` (200+ inputs)
+pub proof fn lemma_elligator_nonzero_denominators(
+    z_completed: nat,
+    t_completed: nat,
+    r_0: nat,
+    s_nat: nat,
+    n_t_nat: nat,
+    d_val_nat: nat,
+)
+    requires
+        s_nat < p(),
+        n_t_nat < p(),
+        t_completed == field_add(1, field_square(s_nat)),
+        z_completed == field_mul(n_t_nat, spec_sqrt_ad_minus_one()),
+        (s_nat, n_t_nat, d_val_nat) == elligator_intermediates(r_0),
+    ensures
+        z_completed != 0,
+        t_completed != 0,
+{
+    axiom_elligator_nonzero_intermediates(r_0, s_nat, n_t_nat, d_val_nat);
+    lemma_sqrt_ad_minus_one_nonzero();
+    lemma_nonzero_product(n_t_nat, spec_sqrt_ad_minus_one());
+}
+
+/// Axiom: the Elligator map always produces a point in the even subgroup 2E.
+///
+/// The Elligator construction naturally produces points that are doubles of
+/// some curve point (arising from the Jacobi quartic parametrization).
+/// Combined with the E[4] coset quotient, this gives the prime-order Ristretto group.
+///
+/// Reference: [RISTRETTO] §4.3.4; Hamburg, "Decaf" §3
+/// Runtime validation: `test_elligator_in_even_subgroup` (200+ inputs)
+pub proof fn axiom_elligator_in_even_subgroup(r_0: nat)
+    ensures
+        forall|point: EdwardsPoint|
+            edwards_point_as_affine(point) == spec_elligator_ristretto_flavor(r_0)
+                && is_well_formed_edwards_point(point) ==> #[trigger] is_in_even_subgroup(point),
+{
+    admit();
+}
+
 } // verus!
 // ------------------------------------------------------------------------
-// Axiom Validation Tests for Ristretto Decode
+// Axiom Validation Tests for Ristretto Decode and Elligator
 // ------------------------------------------------------------------------
 /// Square-and-multiply: compute base^exp where exp is a 256-bit little-endian integer.
 /// Used only in tests.
@@ -1172,6 +1285,246 @@ mod test_ristretto_decode_axioms {
                     cross_mul
                 );
             }
+        }
+    }
+
+    /// Validate axiom_elligator_on_curve:
+    /// The Elligator map always produces a point on the Edwards curve.
+    /// We verify [L]*P == identity (prime-order subgroup membership implies on-curve).
+    #[test]
+    fn test_elligator_on_curve() {
+        use crate::scalar::Scalar;
+
+        let l_bytes = [
+            0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9,
+            0xde, 0x14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10,
+        ];
+        let l_scalar = Scalar::from_bytes_mod_order(l_bytes);
+        let identity_bytes = [
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ];
+
+        // Test with small field elements
+        for val in 0u64..50 {
+            let mut fe_bytes = [0u8; 32];
+            fe_bytes[0] = (val & 0xff) as u8;
+            let fe = FieldElement::from_bytes(&fe_bytes);
+            let pt = RistrettoPoint::elligator_ristretto_flavor(&fe);
+            let l_result = &l_scalar * &pt.0;
+            assert_eq!(
+                l_result.compress().as_bytes(),
+                &identity_bytes,
+                "elligator({}): [L]P must be identity",
+                val
+            );
+        }
+
+        // Test with hash-derived field elements
+        use sha2::{Digest, Sha512};
+        for seed in 0u32..200 {
+            let mut hasher = Sha512::new();
+            hasher.update(b"elligator_on_curve_test_");
+            hasher.update(seed.to_le_bytes());
+            let hash = hasher.finalize();
+            let mut fe_bytes = [0u8; 32];
+            fe_bytes.copy_from_slice(&hash[..32]);
+            let fe = FieldElement::from_bytes(&fe_bytes);
+            let pt = RistrettoPoint::elligator_ristretto_flavor(&fe);
+            let l_result = &l_scalar * &pt.0;
+            assert_eq!(
+                l_result.compress().as_bytes(),
+                &identity_bytes,
+                "elligator(hash seed {}): [L]P must be identity",
+                seed
+            );
+        }
+    }
+
+    /// Validate axiom_elligator_in_even_subgroup:
+    /// The Elligator map always produces a point in the prime-order subgroup
+    /// (which is the even subgroup for cofactor-8 curves).
+    /// We check [8]P != identity (not a torsion point) and [L]P == identity.
+    #[test]
+    fn test_elligator_in_even_subgroup() {
+        use crate::scalar::Scalar;
+
+        let l_bytes = [
+            0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9,
+            0xde, 0x14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10,
+        ];
+        let l_scalar = Scalar::from_bytes_mod_order(l_bytes);
+        let identity_bytes = [
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ];
+
+        use sha2::{Digest, Sha512};
+        let mut nonzero_count = 0u32;
+        for seed in 0u32..200 {
+            let mut hasher = Sha512::new();
+            hasher.update(b"elligator_even_subgroup_test_");
+            hasher.update(seed.to_le_bytes());
+            let hash = hasher.finalize();
+            let mut fe_bytes = [0u8; 32];
+            fe_bytes.copy_from_slice(&hash[..32]);
+            let fe = FieldElement::from_bytes(&fe_bytes);
+            let pt = RistrettoPoint::elligator_ristretto_flavor(&fe);
+
+            // [L]P must be identity (prime-order subgroup)
+            let l_result = &l_scalar * &pt.0;
+            assert_eq!(
+                l_result.compress().as_bytes(),
+                &identity_bytes,
+                "seed {}: [L]P must be identity",
+                seed
+            );
+
+            // Most points should NOT be torsion (i.e., [8]P != identity)
+            let eight_p = pt.0.mul_by_pow_2(3);
+            if eight_p.compress().as_bytes() != &identity_bytes {
+                nonzero_count += 1;
+            }
+        }
+        assert!(
+            nonzero_count >= 190,
+            "expected most elligator outputs to be non-torsion, got {} / 200",
+            nonzero_count
+        );
+    }
+
+    /// Validate that the Elligator completed-point denominators are never zero.
+    /// This tests the Z ≠ 0 and T ≠ 0 properties used as inline `assume`s
+    /// in elligator_ristretto_flavor.
+    #[test]
+    fn test_elligator_nonzero_denominators() {
+        use sha2::{Digest, Sha512};
+        use subtle::{ConditionallyNegatable, ConditionallySelectable};
+
+        for seed in 0u32..200 {
+            let mut hasher = Sha512::new();
+            hasher.update(b"elligator_denom_test_");
+            hasher.update(seed.to_le_bytes());
+            let hash = hasher.finalize();
+            let mut fe_bytes = [0u8; 32];
+            fe_bytes.copy_from_slice(&hash[..32]);
+            let r_0 = FieldElement::from_bytes(&fe_bytes);
+
+            let i = &constants::SQRT_M1;
+            let d = &constants::EDWARDS_D;
+            let one = FieldElement::ONE;
+            let c_init = constants::MINUS_ONE;
+
+            let r = i * &r_0.square();
+            let n_s = &(&r + &one) * &constants::ONE_MINUS_EDWARDS_D_SQUARED;
+            let d_val = &(&c_init - &(d * &r)) * &(&r + d);
+
+            let (is_sq, mut s) = FieldElement::sqrt_ratio_i(&n_s, &d_val);
+            let mut s_prime = &s * &r_0;
+            let s_prime_is_pos = !s_prime.is_negative();
+            s_prime.conditional_negate(s_prime_is_pos);
+
+            let not_sq = !is_sq;
+            FieldElement51::conditional_assign(&mut s, &s_prime, not_sq);
+            let mut c = c_init;
+            FieldElement51::conditional_assign(&mut c, &r, not_sq);
+
+            let n_t = &(&(&c * &(&r - &one)) * &constants::EDWARDS_D_MINUS_ONE_SQUARED) - &d_val;
+            let s_sq = s.square();
+
+            // T = 1 + s²
+            let t_completed = &FieldElement::ONE + &s_sq;
+            // Z = N_t * sqrt(ad-1)
+            let z_completed = &n_t * &constants::SQRT_AD_MINUS_ONE;
+
+            let t_bytes = t_completed.as_bytes();
+            let z_bytes = z_completed.as_bytes();
+            let t_is_zero = t_bytes.iter().all(|&b| b == 0);
+            let z_is_zero = z_bytes.iter().all(|&b| b == 0);
+
+            assert!(!t_is_zero, "seed {}: T_completed = 1 + s² is zero", seed);
+            assert!(
+                !z_is_zero,
+                "seed {}: Z_completed = N_t * sqrt(ad-1) is zero",
+                seed
+            );
+        }
+    }
+
+    /// Validate axiom_one_minus_d_squared_value:
+    /// ONE_MINUS_EDWARDS_D_SQUARED == (1-d)(1+d) where d = EDWARDS_D.
+    #[test]
+    fn test_one_minus_d_squared_value() {
+        use subtle::ConstantTimeEq;
+        let d = constants::EDWARDS_D;
+        let one = FieldElement::ONE;
+        let one_minus_d = &one - &d;
+        let one_plus_d = &one + &d;
+        let computed = &one_minus_d * &one_plus_d;
+        assert!(
+            bool::from(computed.ct_eq(&constants::ONE_MINUS_EDWARDS_D_SQUARED)),
+            "ONE_MINUS_EDWARDS_D_SQUARED != (1-d)(1+d)"
+        );
+    }
+
+    /// Validate axiom_d_minus_one_squared_value:
+    /// EDWARDS_D_MINUS_ONE_SQUARED == (d-1)^2.
+    #[test]
+    fn test_d_minus_one_squared_value() {
+        use subtle::ConstantTimeEq;
+        let d = constants::EDWARDS_D;
+        let one = FieldElement::ONE;
+        let d_minus_one = &d - &one;
+        let computed = d_minus_one.square();
+        assert!(
+            bool::from(computed.ct_eq(&constants::EDWARDS_D_MINUS_ONE_SQUARED)),
+            "EDWARDS_D_MINUS_ONE_SQUARED != (d-1)^2"
+        );
+    }
+
+    /// Validate lemma_sqrt_ratio_matches_invsqrt_mul:
+    /// sqrt_ratio_i(u, v) == |nat_invsqrt(u*v) * u| (nonneg correction applied).
+    ///
+    /// The raw product invsqrt(u*v)*u can be negative (~half the time),
+    /// so we apply conditional_negate (the runtime equivalent of field_abs)
+    /// before comparing to the exec result r which is always non-negative.
+    #[test]
+    fn test_sqrt_ratio_matches_invsqrt_mul() {
+        use subtle::ConstantTimeEq;
+
+        fn invsqrt_field(a: &FieldElement) -> FieldElement {
+            let (_ok, result) = a.invsqrt();
+            result
+        }
+
+        use sha2::{Digest, Sha512};
+        for seed in 0u32..500 {
+            let mut hasher = Sha512::new();
+            hasher.update(b"sqrt_ratio_invsqrt_test_");
+            hasher.update(seed.to_le_bytes());
+            let hash = hasher.finalize();
+
+            let mut u_bytes = [0u8; 32];
+            let mut v_bytes = [0u8; 32];
+            u_bytes.copy_from_slice(&hash[..32]);
+            v_bytes.copy_from_slice(&hash[32..64]);
+            let u = FieldElement::from_bytes(&u_bytes);
+            let v = FieldElement::from_bytes(&v_bytes);
+
+            let (_is_sq, r) = FieldElement::sqrt_ratio_i(&u, &v);
+            let uv = &u * &v;
+            let inv = invsqrt_field(&uv);
+            let mut s_spec = &inv * &u;
+
+            // Apply field_abs: conditional_negate if negative
+            let neg = s_spec.is_negative();
+            s_spec.conditional_negate(neg);
+
+            assert!(
+                bool::from(r.ct_eq(&s_spec)),
+                "seed {}: sqrt_ratio_i(u,v) != nonneg(invsqrt(u*v) * u)",
+                seed
+            );
         }
     }
 }

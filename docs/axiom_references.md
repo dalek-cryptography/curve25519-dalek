@@ -300,16 +300,6 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 
 ---
 
-### axiom_minus_one_field_element_value() (field_lemmas/constants_lemmas.rs)
-**Claim:** `fe51_as_canonical_nat(MINUS_ONE)` = −1 mod p (i.e., p − 1)
-
-**Reference:** GF(p) arithmetic  
-**URL:** https://www.rfc-editor.org/rfc/rfc7748#section-4.1
-
-**Justification:** `FieldElement51::MINUS_ONE` is a precomputed constant representing p − 1 in the 51-bit limb representation. Can be verified by computing `field_sub(0, 1)` and checking the limb encoding.
-
-**Runtime validation:** `test_minus_one_field_element_value` — verifies MINUS_ONE = ZERO − ONE and MINUS_ONE + ONE = ZERO.
-
 ---
 
 ## 7. Window/Table Specs (window_specs.rs)
@@ -336,36 +326,6 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 
 ---
 
-### lemma_invsqrt_unique() [sqrt_ratio_lemmas.rs] — PROVEN
-**Claim:** The nonnegative inverse square root is unique: for nonzero `a` in GF(p), if `r < p`, `r` is nonneg (even canonical encoding), and either `r²·a ≡ 1 (mod p)` or `r²·a ≡ √(−1) (mod p)`, then `r == nat_invsqrt(a)`.
-
-**Reference:** p = 2²⁵⁵ − 19 ≡ 5 (mod 8); Bernstein, Duif, Lange, Schwabe, Yang (2012) — Ed25519 implementation; Hamburg (2015) — Decaf  
-**URL:** https://eprint.iacr.org/2015/673; https://ristretto.group/formulas/invsqrt.html
-
-**Justification:** In GF(p) with p ≡ 5 (mod 8), every nonzero element has either 0 or 2 square roots. For the two disjoint cases (square and non-square times √(−1)), the nonneg root (canonical encoding with even LSB) is unique. The `nat_invsqrt` spec function is defined to return this unique value. Uniqueness follows from: if two nonneg values satisfy the same quadratic relation, they differ by at most sign, but both being nonneg forces equality.
-
-**Mechanization status:** Fully proven. Uses `lemma_no_square_root_when_times_i` for mixed cases (when one value satisfies `is_sqrt_ratio` and the other `is_sqrt_ratio_times_i`) and `lemma_nonneg_square_root_unique` for same cases. Its dependency `lemma_nat_invsqrt_satisfies_relation` is also fully proven.
-
----
-
-### lemma_nat_invsqrt_satisfies_relation() [sqrt_ratio_lemmas.rs — FULLY PROVEN]
-**Claim:** For nonzero `a` in GF(p), `nat_invsqrt(a)` is nonneg (even), less than p, and satisfies `is_sqrt_ratio(1, a, nat_invsqrt(a))` or `is_sqrt_ratio_times_i(1, a, nat_invsqrt(a))`.
-
-**Reference:** Same as `lemma_invsqrt_unique` — follows from the constructive definition of `nat_invsqrt`.
-
-**Mechanization status:** Fully proven. Uses `lemma_sqrt_ratio_check_value` to connect check to a fourth root of unity, `lemma_fourth_root_of_unity` to show check ∈ {1, -1, i, -i}, `lemma_multiply_by_i_flips_sign` for the adjustment step, and `lemma_conditional_negate_makes_even` for sign correction.
-
----
-
----
-
-### lemma_sqrt_ratio_mutual_exclusion() [sqrt_ratio_lemmas.rs — FULLY PROVEN]
-**Claim:** `is_sqrt_ratio(u, v, r)` and `is_sqrt_ratio_times_i(u, v, r)` are mutually exclusive when `u % p ≠ 0`.
-
-**Status:** Fully proven (no admits). Proof uses `lemma_no_square_root_when_times_i` (also fully proven). Previously contained `admit()` and was named `axiom_sqrt_ratio_mutual_exclusion`.
-
----
-
 ### axiom_ristretto_cross_mul_iff_equivalent(p1, p2)
 **Signature:** `axiom_ristretto_cross_mul_iff_equivalent(p1: EdwardsPoint, p2: EdwardsPoint)` — requires `is_well_formed_edwards_point(p1)` and `is_well_formed_edwards_point(p2)`; ensures `ristretto_equivalent(p1, p2) == (X1·Y2 == Y1·X2 || X1·X2 == Y1·Y2)` where the products are `field_mul` of the projective coordinates.
 
@@ -377,6 +337,60 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 **Justification:** This is a standard result from the Ristretto/Decaf construction. Two points P1, P2 ∈ 2E are equivalent under the E[4] quotient (P1 − P2 ∈ E[4]) iff the cross-multiplication test holds on their projective coordinates. The four 4-torsion elements {O, (0,−1), (√(−1),0), (−√(−1),0)} yield exactly the two disjoint conditions in the disjunction.
 
 **Runtime validation:** `test_ristretto_cross_mul_iff_equivalent` — verifies for basepoint multiples and torsion-shifted points that Ristretto equivalence matches the cross-multiplication check.
+
+---
+
+### axiom_elligator_on_curve(r_0) (ristretto_specs.rs)
+**Signature:** `axiom_elligator_on_curve(r_0: nat)` — ensures `is_on_edwards_curve(spec_elligator_ristretto_flavor(r_0).0, spec_elligator_ristretto_flavor(r_0).1)`.
+
+**Claim:** The Elligator Ristretto map always produces a point satisfying the Edwards curve equation −x² + y² = 1 + d·x²·y².
+
+**Reference:** Hamburg (2015) — "Decaf: Eliminating cofactors through point compression" §4; Ristretto specification §4.3.4  
+**URL:** https://eprint.iacr.org/2015/673; https://ristretto.group/formulas/elligator.html
+
+**Justification:** The Elligator map parametrizes points via the Jacobi quartic, and the resulting coordinates always satisfy the Edwards curve equation. This follows from the algebraic construction of the map.
+
+**Runtime validation:** `test_elligator_on_curve` — verifies [L]·P = identity for 250+ inputs (small field elements + hash-derived).
+
+---
+
+### axiom_elligator_n_t_nonzero(r_0, s_nat, n_t_nat, d_val_nat) (ristretto_specs.rs)
+**Claim:** The Elligator map's intermediate N_t = c·(r−1)·(d−1)² − D is always nonzero.
+
+**Reference:** Hamburg (2015) — "Decaf" §4; Ristretto specification §4.3.4  
+**URL:** https://eprint.iacr.org/2015/673; https://ristretto.group/formulas/elligator.html
+
+**Justification:** N_t is a nondegenerate polynomial in the Elligator intermediates. Its nonzero property follows from the algebraic structure of the map.
+
+**Runtime validation:** `test_elligator_nonzero_denominators` — verifies N_t ≠ 0 for 200+ hash-derived inputs.
+
+---
+
+### axiom_elligator_t_completed_nonzero(r_0, s_nat, n_t_nat, d_val_nat) (ristretto_specs.rs)
+**Claim:** T = 1 + s² ≠ 0, i.e., the Elligator map never produces s = ±√(−1).
+
+**Reference:** Hamburg (2015) — "Decaf" §4; Ristretto specification §4.3.4  
+**URL:** https://eprint.iacr.org/2015/673; https://ristretto.group/formulas/elligator.html
+
+**Justification:** Even though −1 IS a square in GF(p) (with √(−1) = i), the specific s values produced by the Elligator construction never equal ±i. This is an algebraic consequence of the map structure.
+
+**Runtime validation:** `test_elligator_nonzero_denominators` — verifies T = 1 + s² ≠ 0 for 200+ hash-derived inputs.
+
+**Note:** Together with `lemma_sqrt_ad_minus_one_nonzero` (proven) and `lemma_nonzero_product` (proven), these two axioms imply the previously monolithic `axiom_elligator_nonzero_denominators`, now the proven `lemma_elligator_nonzero_denominators`.
+
+---
+
+### axiom_elligator_in_even_subgroup(r_0, point) (ristretto_specs.rs)
+**Signature:** `axiom_elligator_in_even_subgroup(r_0: nat, point: EdwardsPoint)` — requires `edwards_point_as_affine(point) == spec_elligator_ristretto_flavor(r_0)` and `is_well_formed_edwards_point(point)`; ensures `is_in_even_subgroup(point)`.
+
+**Claim:** The Elligator Ristretto map always produces a point in the even subgroup 2E = {2Q : Q ∈ E}, i.e., it is the double of some curve point.
+
+**Reference:** Hamburg (2015) — "Decaf" §3; Hamburg (2019) — "Ristretto"; Ristretto specification §4.3.4  
+**URL:** https://eprint.iacr.org/2015/673; https://eprint.iacr.org/2020/1400; https://ristretto.group/details/isogenies.html
+
+**Justification:** The Elligator construction naturally produces points that are doubles of some curve point (arising from the Jacobi quartic parametrization). Combined with the E[4] coset quotient, this gives the prime-order Ristretto group.
+
+**Runtime validation:** `test_elligator_in_even_subgroup` — verifies [L]·P = identity and [8]·P ≠ identity for 200+ hash-derived inputs.
 
 ---
 
@@ -405,16 +419,6 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 ---
 
 ## 9. Square Root of −1 (sqrt_m1_lemmas.rs)
-
-### ~~axiom_sqrt_m1_limbs_bounded()~~ → lemma_sqrt_m1_limbs_bounded() — **PROVEN**
-**Claim:** `SQRT_M1` has 51-bit (and 54-bit) bounded limbs
-
-**Reference:** Concrete constant encoding  
-**Justification:** Each limb of SQRT_M1 = [1718705420411056, 234908883556509, 2233514472574048, 2117202627021982, 765476049583133] is less than 2^51 = 2251799813685248. Proven via concrete limb assertions and `by (bit_vector)`.
-
-**Runtime validation:** `test_sqrt_m1_limbs_bounded` — checks each limb < 2^51 and verifies SQRT_M1² = −1.
-
----
 
 ### axiom_sqrt_m1_squared(), axiom_sqrt_m1_not_square(), axiom_neg_sqrt_m1_not_square()
 **Claim:** `spec_sqrt_m1()`² = −1 (mod p); sqrt(−1) and −sqrt(−1) are not squares
@@ -517,16 +521,15 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 | axiom_edwards_scalar_mul_distributive | curve_equation_lemmas.rs | Math | Group theory |
 | axiom_edwards_to_montgomery_correspondence | curve_equation_lemmas.rs | Algebra | Bernstein et al. 2008 |
 | axiom_edwards_d2_is_2d | edwards_lemmas/constants_lemmas.rs | RFC | RFC 7748 |
-| axiom_minus_one_field_element_value | field_lemmas/constants_lemmas.rs | Math | GF(p) arithmetic |
 | axiom_affine_odd_multiples_of_basepoint_valid | window_specs.rs | Construction | RFC 8032; implementation |
 | axiom_ristretto_basepoint_table_valid | ristretto_specs.rs | Construction | Hamburg 2019 |
+| axiom_elligator_on_curve | ristretto_specs.rs | Paper + test | Hamburg 2015 §4; test (250+ inputs) |
+| axiom_elligator_n_t_nonzero | ristretto_specs.rs | Paper + test | Hamburg 2015 §4; test (200+ inputs) |
+| axiom_elligator_t_completed_nonzero | ristretto_specs.rs | Paper + test | Hamburg 2015 §4; test (200+ inputs) |
+| axiom_elligator_in_even_subgroup | ristretto_specs.rs | Paper + test | Hamburg 2015/2019; test (200+ inputs) |
 | axiom_ristretto_cross_mul_iff_equivalent | ristretto_specs.rs | Paper + test | Hamburg 2015 §4; Ristretto §3.2 |
-| lemma_invsqrt_unique | sqrt_ratio_lemmas.rs | **PROVEN** | Uses lemma_no_square_root_when_times_i + lemma_nonneg_square_root_unique |
-| lemma_nat_invsqrt_satisfies_relation | sqrt_ratio_lemmas.rs | **PROVEN** | Uses lemma_sqrt_ratio_check_value + lemma_fourth_root_of_unity + lemma_multiply_by_i_flips_sign |
-| lemma_sqrt_ratio_mutual_exclusion | sqrt_ratio_lemmas.rs | **PROVEN** | Uses lemma_no_square_root_when_times_i |
 | axiom_ristretto_decode_on_curve | ristretto_specs.rs | Paper + test | Hamburg 2015; test_ristretto_decode_on_curve |
 | axiom_ristretto_decode_in_even_subgroup | ristretto_specs.rs | Paper + test | Hamburg 2015/2019; test (100+ points) |
-| lemma_sqrt_m1_limbs_bounded | sqrt_m1_lemmas.rs | **PROVEN** | Concrete limb checks + bit_vector |
 | axiom_sqrt_m1_squared | sqrt_m1_lemmas.rs | Math | p ≡ 5 (mod 8) |
 | axiom_sqrt_m1_not_square | sqrt_m1_lemmas.rs | Math | p ≡ 5 (mod 8) |
 | axiom_neg_sqrt_m1_not_square | sqrt_m1_lemmas.rs | Math | p ≡ 5 (mod 8) |

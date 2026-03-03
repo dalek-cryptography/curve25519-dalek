@@ -21,8 +21,17 @@
 //!
 //! - Edwards curve-specific constants (EDWARDS_D, EDWARDS_D2) are in `edwards_lemmas::constants_lemmas`.
 #![allow(unused_imports)]
-use crate::backend::serial::u64::constants::{INVSQRT_A_MINUS_D, MONTGOMERY_A, MONTGOMERY_A_NEG};
+use crate::backend::serial::u64::constants::{
+    EDWARDS_D, EDWARDS_D_MINUS_ONE_SQUARED, INVSQRT_A_MINUS_D, MONTGOMERY_A, MONTGOMERY_A_NEG,
+    ONE_MINUS_EDWARDS_D_SQUARED, SQRT_AD_MINUS_ONE, SQRT_M1,
+};
 use crate::backend::serial::u64::field::FieldElement51;
+#[cfg(verus_keep_ghost)]
+use crate::lemmas::edwards_lemmas::constants_lemmas::{
+    lemma_edwards_d_limbs_bounded, lemma_edwards_d_limbs_bounded_54,
+};
+#[cfg(verus_keep_ghost)]
+use crate::lemmas::field_lemmas::sqrt_m1_lemmas::lemma_sqrt_m1_limbs_bounded;
 use crate::specs::field_specs::*;
 use crate::specs::field_specs_u64::*;
 use vstd::arithmetic::div_mod::*;
@@ -149,14 +158,192 @@ pub proof fn lemma_minus_one_limbs_bounded_51()
     };
 }
 
-/// Axiom: fe51_as_canonical_nat(MINUS_ONE) = -1 (mod p)
-pub proof fn axiom_minus_one_field_element_value()
+/// fe51_as_canonical_nat(MINUS_ONE) = -1 (mod p)
+///
+/// MINUS_ONE limbs = [2^51-20, 2^51-1, 2^51-1, 2^51-1, 2^51-1]
+/// u64_5_as_nat telescopes to pow2(255) - 20 = p - 1.
+pub proof fn lemma_minus_one_field_element_value()
     ensures
         fe51_as_canonical_nat(&FieldElement51::MINUS_ONE) == field_sub(0, 1),
+        fe51_as_canonical_nat(&FieldElement51::MINUS_ONE) == field_neg(1),
 {
-    // This constant corresponds to p-1 in GF(p).
-    // Kept as an axiom for now.
-    admit();
+    let limbs = FieldElement51::MINUS_ONE.limbs;
+    let p51 = 2251799813685248nat;
+
+    assert(pow2(51) == p51) by {
+        lemma2_to64_rest();
+    };
+    assert(pow2(102) == pow2(51) * pow2(51)) by {
+        lemma_pow2_adds(51, 51);
+    };
+    assert(pow2(153) == pow2(51) * pow2(102)) by {
+        lemma_pow2_adds(51, 102);
+    };
+    assert(pow2(204) == pow2(51) * pow2(153)) by {
+        lemma_pow2_adds(51, 153);
+    };
+    assert(pow2(255) == pow2(51) * pow2(204)) by {
+        lemma_pow2_adds(51, 204);
+    };
+
+    assert(limbs[0] as nat == p51 - 20);
+    assert(limbs[1] as nat == p51 - 1);
+    assert(limbs[2] as nat == p51 - 1);
+    assert(limbs[3] as nat == p51 - 1);
+    assert(limbs[4] as nat == p51 - 1);
+
+    assert(p51 * (p51 - 1) == pow2(102) - p51) by (nonlinear_arith)
+        requires
+            pow2(102) == p51 * p51,
+    ;
+    assert(pow2(102) * (p51 - 1) == pow2(153) - pow2(102)) by (nonlinear_arith)
+        requires
+            pow2(153) == p51 * pow2(102),
+    ;
+    assert(pow2(153) * (p51 - 1) == pow2(204) - pow2(153)) by (nonlinear_arith)
+        requires
+            pow2(204) == p51 * pow2(153),
+    ;
+    assert(pow2(204) * (p51 - 1) == pow2(255) - pow2(204)) by (nonlinear_arith)
+        requires
+            pow2(255) == p51 * pow2(204),
+    ;
+
+    assert(u64_5_as_nat(limbs) == pow2(255) - 20) by (nonlinear_arith)
+        requires
+            limbs[0] as nat == p51 - 20,
+            limbs[1] as nat == p51 - 1,
+            limbs[2] as nat == p51 - 1,
+            limbs[3] as nat == p51 - 1,
+            limbs[4] as nat == p51 - 1,
+            p51 * (p51 - 1) == pow2(102) - p51,
+            pow2(102) * (p51 - 1) == pow2(153) - pow2(102),
+            pow2(153) * (p51 - 1) == pow2(204) - pow2(153),
+            pow2(204) * (p51 - 1) == pow2(255) - pow2(204),
+            u64_5_as_nat(limbs) == limbs[0] as nat + p51 * limbs[1] as nat + pow2(102)
+                * limbs[2] as nat + pow2(153) * limbs[3] as nat + pow2(204) * limbs[4] as nat,
+    ;
+
+    assert(u64_5_as_nat(limbs) == (p() - 1) as nat) by (nonlinear_arith)
+        requires
+            u64_5_as_nat(limbs) == pow2(255) - 20,
+            p() == (pow2(255) - 19) as nat,
+    ;
+    assert(u64_5_as_nat(limbs) % p() == (p() - 1) as nat) by {
+        lemma_small_mod((p() - 1) as nat, p());
+    };
+    p_gt_2();
+    assert(fe51_as_canonical_nat(&FieldElement51::MINUS_ONE) == (p() - 1) as nat);
+    assert(field_neg(1) == (p() - 1) as nat) by {
+        lemma_small_mod(1nat, p());
+        lemma_small_mod((p() - 1) as nat, p());
+    };
+}
+
+/// Crate-local pow2/u5_nat/p() that the Verus `by (compute_only)` interpreter
+/// can evaluate.  vstd's `pow2` is cross-crate, so the interpreter refuses it.
+/// After the compute phase, `lemma_bridge_local_pow2` equates each local_pow2(k)
+/// with pow2(k), letting Z3 unify local_u5_nat/local_p with u64_5_as_nat/p().
+#[verifier::memoize]
+spec fn local_pow2(n: nat) -> nat
+    decreases n,
+{
+    if n == 0 {
+        1
+    } else {
+        2 * local_pow2((n - 1) as nat)
+    }
+}
+
+spec fn local_u5_nat(limbs: [u64; 5]) -> nat {
+    (limbs[0] as nat) + local_pow2(51) * (limbs[1] as nat) + local_pow2(102) * (limbs[2] as nat)
+        + local_pow2(153) * (limbs[3] as nat) + local_pow2(204) * (limbs[4] as nat)
+}
+
+spec fn local_p() -> nat {
+    (local_pow2(255) - 19) as nat
+}
+
+/// Bridge: local_pow2(k) == pow2(k) for k ∈ {51, 102, 153, 204, 255}.
+///
+/// After this, Z3 can derive local_u5_nat(l) == u64_5_as_nat(l) and
+/// local_p() == p() automatically.
+proof fn lemma_bridge_local_pow2()
+    ensures
+        local_pow2(51) == pow2(51),
+        local_pow2(102) == pow2(102),
+        local_pow2(153) == pow2(153),
+        local_pow2(204) == pow2(204),
+        local_pow2(255) == pow2(255),
+{
+    assert(local_pow2(51) == 2251799813685248nat) by (compute_only);
+    assert(pow2(51) == 2251799813685248nat) by {
+        lemma2_to64_rest();
+    };
+
+    assert(local_pow2(102) == local_pow2(51) * local_pow2(51)) by (compute_only);
+    assert(pow2(102) == pow2(51) * pow2(51)) by {
+        lemma_pow2_adds(51, 51);
+    };
+
+    assert(local_pow2(153) == local_pow2(51) * local_pow2(102)) by (compute_only);
+    assert(pow2(153) == pow2(51) * pow2(102)) by {
+        lemma_pow2_adds(51, 102);
+    };
+
+    assert(local_pow2(204) == local_pow2(51) * local_pow2(153)) by (compute_only);
+    assert(pow2(204) == pow2(51) * pow2(153)) by {
+        lemma_pow2_adds(51, 153);
+    };
+
+    assert(local_pow2(255) == local_pow2(51) * local_pow2(204)) by (compute_only);
+    assert(pow2(255) == pow2(51) * pow2(204)) by {
+        lemma_pow2_adds(51, 204);
+    };
+}
+
+/// ONE_MINUS_EDWARDS_D_SQUARED = (1−d)(1+d) mod p
+///
+/// Proved by computation (local_pow2 evaluated by interpreter) then bridged to
+/// spec-level functions via `lemma_bridge_local_pow2`.
+pub proof fn lemma_one_minus_d_squared_value()
+    ensures
+        fe51_as_canonical_nat(&ONE_MINUS_EDWARDS_D_SQUARED) == field_mul(
+            field_sub(1, fe51_as_canonical_nat(&crate::backend::serial::u64::constants::EDWARDS_D)),
+            field_add(1, fe51_as_canonical_nat(&crate::backend::serial::u64::constants::EDWARDS_D)),
+        ),
+{
+    assert({
+        let lp = local_p();
+        let omd_val = local_u5_nat(ONE_MINUS_EDWARDS_D_SQUARED.limbs) % lp;
+        let d_val = local_u5_nat(crate::backend::serial::u64::constants::EDWARDS_D.limbs) % lp;
+        let one_minus_d = (((1nat % lp) + lp - (d_val % lp)) as nat) % lp;
+        let one_plus_d = (1nat + d_val) % lp;
+        omd_val == (one_minus_d * one_plus_d) % lp
+    }) by (compute_only);
+
+    lemma_bridge_local_pow2();
+}
+
+/// EDWARDS_D_MINUS_ONE_SQUARED = (d−1)² mod p
+///
+/// Proved by computation (local_pow2 evaluated by interpreter) then bridged to
+/// spec-level functions via `lemma_bridge_local_pow2`.
+pub proof fn lemma_d_minus_one_squared_value()
+    ensures
+        fe51_as_canonical_nat(&EDWARDS_D_MINUS_ONE_SQUARED) == field_square(
+            field_sub(fe51_as_canonical_nat(&crate::backend::serial::u64::constants::EDWARDS_D), 1),
+        ),
+{
+    assert({
+        let lp = local_p();
+        let dmo_val = local_u5_nat(EDWARDS_D_MINUS_ONE_SQUARED.limbs) % lp;
+        let d_val = local_u5_nat(crate::backend::serial::u64::constants::EDWARDS_D.limbs) % lp;
+        let d_minus_one = (((d_val % lp) + lp - (1nat % lp)) as nat) % lp;
+        dmo_val == (d_minus_one * d_minus_one) % lp
+    }) by (compute_only);
+
+    lemma_bridge_local_pow2();
 }
 
 // =============================================================================
@@ -211,6 +398,148 @@ pub proof fn lemma_invsqrt_a_minus_d_limbs_bounded()
         assert(1777959178193151u64 < (1u64 << 54)) by (bit_vector);
         assert(2118520810568447u64 < (1u64 << 54)) by (bit_vector);
     };
+}
+
+// =============================================================================
+// Ristretto Elligator Constants
+// =============================================================================
+/// SQRT_AD_MINUS_ONE = sqrt(a*d - 1) has 51-bit bounded limbs.
+///
+/// limbs = [2241493124984347, 425987919032274, 2207028919301688, 1220490630685848, 974799131293748]
+/// max limb = 2241493124984347 < 2^51 = 2251799813685248
+pub proof fn lemma_sqrt_ad_minus_one_limbs_bounded()
+    ensures
+        fe51_limbs_bounded(&SQRT_AD_MINUS_ONE, 51),
+        fe51_limbs_bounded(&SQRT_AD_MINUS_ONE, 54),
+{
+    assert(fe51_limbs_bounded(&SQRT_AD_MINUS_ONE, 51)) by {
+        assert(2241493124984347u64 < (1u64 << 51)) by (bit_vector);
+        assert(425987919032274u64 < (1u64 << 51)) by (bit_vector);
+        assert(2207028919301688u64 < (1u64 << 51)) by (bit_vector);
+        assert(1220490630685848u64 < (1u64 << 51)) by (bit_vector);
+        assert(974799131293748u64 < (1u64 << 51)) by (bit_vector);
+    };
+    assert(fe51_limbs_bounded(&SQRT_AD_MINUS_ONE, 54)) by {
+        assert(2241493124984347u64 < (1u64 << 54)) by (bit_vector);
+        assert(425987919032274u64 < (1u64 << 54)) by (bit_vector);
+        assert(2207028919301688u64 < (1u64 << 54)) by (bit_vector);
+        assert(1220490630685848u64 < (1u64 << 54)) by (bit_vector);
+        assert(974799131293748u64 < (1u64 << 54)) by (bit_vector);
+    };
+}
+
+/// ONE_MINUS_EDWARDS_D_SQUARED = 1 - d² has 51-bit bounded limbs.
+///
+/// limbs = [1136626929484150, 1998550399581263, 496427632559748, 118527312129759, 45110755273534]
+/// max limb = 1998550399581263 < 2^51 = 2251799813685248
+pub proof fn lemma_one_minus_d_squared_limbs_bounded()
+    ensures
+        fe51_limbs_bounded(&ONE_MINUS_EDWARDS_D_SQUARED, 51),
+        fe51_limbs_bounded(&ONE_MINUS_EDWARDS_D_SQUARED, 54),
+{
+    assert(fe51_limbs_bounded(&ONE_MINUS_EDWARDS_D_SQUARED, 51)) by {
+        assert(1136626929484150u64 < (1u64 << 51)) by (bit_vector);
+        assert(1998550399581263u64 < (1u64 << 51)) by (bit_vector);
+        assert(496427632559748u64 < (1u64 << 51)) by (bit_vector);
+        assert(118527312129759u64 < (1u64 << 51)) by (bit_vector);
+        assert(45110755273534u64 < (1u64 << 51)) by (bit_vector);
+    };
+    assert(fe51_limbs_bounded(&ONE_MINUS_EDWARDS_D_SQUARED, 54)) by {
+        assert(1136626929484150u64 < (1u64 << 54)) by (bit_vector);
+        assert(1998550399581263u64 < (1u64 << 54)) by (bit_vector);
+        assert(496427632559748u64 < (1u64 << 54)) by (bit_vector);
+        assert(118527312129759u64 < (1u64 << 54)) by (bit_vector);
+        assert(45110755273534u64 < (1u64 << 54)) by (bit_vector);
+    };
+}
+
+/// EDWARDS_D_MINUS_ONE_SQUARED = (d - 1)^2 has 51-bit bounded limbs.
+///
+/// limbs = [1507062230895904, 1572317787530805, 683053064812840, 317374165784489, 1572899562415810]
+/// max limb = 1572899562415810 < 2^51 = 2251799813685248
+pub proof fn lemma_d_minus_one_squared_limbs_bounded()
+    ensures
+        fe51_limbs_bounded(&EDWARDS_D_MINUS_ONE_SQUARED, 51),
+        fe51_limbs_bounded(&EDWARDS_D_MINUS_ONE_SQUARED, 54),
+{
+    assert(fe51_limbs_bounded(&EDWARDS_D_MINUS_ONE_SQUARED, 51)) by {
+        assert(1507062230895904u64 < (1u64 << 51)) by (bit_vector);
+        assert(1572317787530805u64 < (1u64 << 51)) by (bit_vector);
+        assert(683053064812840u64 < (1u64 << 51)) by (bit_vector);
+        assert(317374165784489u64 < (1u64 << 51)) by (bit_vector);
+        assert(1572899562415810u64 < (1u64 << 51)) by (bit_vector);
+    };
+    assert(fe51_limbs_bounded(&EDWARDS_D_MINUS_ONE_SQUARED, 54)) by {
+        assert(1507062230895904u64 < (1u64 << 54)) by (bit_vector);
+        assert(1572317787530805u64 < (1u64 << 54)) by (bit_vector);
+        assert(683053064812840u64 < (1u64 << 54)) by (bit_vector);
+        assert(317374165784489u64 < (1u64 << 54)) by (bit_vector);
+        assert(1572899562415810u64 < (1u64 << 54)) by (bit_vector);
+    };
+}
+
+/// SQRT_AD_MINUS_ONE is nonzero as a field element.
+///
+/// Proved by computation: local_u5_nat(limbs) % local_p() != 0,
+/// then bridged to spec-level functions via pow2 equalities.
+pub proof fn lemma_sqrt_ad_minus_one_nonzero()
+    ensures
+        fe51_as_canonical_nat(&SQRT_AD_MINUS_ONE) != 0,
+        fe51_as_canonical_nat(&SQRT_AD_MINUS_ONE) % p() != 0,
+{
+    assert(local_u5_nat(SQRT_AD_MINUS_ONE.limbs) % local_p() != 0) by (compute_only);
+
+    assert(local_pow2(51) == 2251799813685248nat) by (compute_only);
+    assert(pow2(51) == 2251799813685248nat) by {
+        lemma2_to64_rest();
+    };
+    assert(local_pow2(102) == local_pow2(51) * local_pow2(51)) by (compute_only);
+    assert(pow2(102) == pow2(51) * pow2(51)) by {
+        lemma_pow2_adds(51, 51);
+    };
+    assert(local_pow2(153) == local_pow2(51) * local_pow2(102)) by (compute_only);
+    assert(pow2(153) == pow2(51) * pow2(102)) by {
+        lemma_pow2_adds(51, 102);
+    };
+    assert(local_pow2(204) == local_pow2(51) * local_pow2(153)) by (compute_only);
+    assert(pow2(204) == pow2(51) * pow2(153)) by {
+        lemma_pow2_adds(51, 153);
+    };
+    assert(local_pow2(255) == local_pow2(51) * local_pow2(204)) by (compute_only);
+    assert(pow2(255) == pow2(51) * pow2(204)) by {
+        lemma_pow2_adds(51, 204);
+    };
+
+    assert(fe51_as_canonical_nat(&SQRT_AD_MINUS_ONE) != 0);
+    assert(fe51_as_canonical_nat(&SQRT_AD_MINUS_ONE) % p() != 0) by {
+        lemma_mod_bound(fe51_as_nat(&SQRT_AD_MINUS_ONE) as int, p() as int);
+        lemma_small_mod(fe51_as_canonical_nat(&SQRT_AD_MINUS_ONE), p());
+    };
+}
+
+/// Bundle all constant limb-bound facts needed by elligator_ristretto_flavor.
+///
+/// Establishes 51-bit and 54-bit bounds for: SQRT_M1, EDWARDS_D, ONE, MINUS_ONE,
+/// ONE_MINUS_EDWARDS_D_SQUARED, EDWARDS_D_MINUS_ONE_SQUARED, SQRT_AD_MINUS_ONE.
+pub proof fn lemma_elligator_constants_bounded()
+    ensures
+        fe51_limbs_bounded(&SQRT_M1, 54),
+        fe51_limbs_bounded(&EDWARDS_D, 51),
+        fe51_limbs_bounded(&EDWARDS_D, 54),
+        fe51_limbs_bounded(&FieldElement51::ONE, 51),
+        fe51_limbs_bounded(&FieldElement51::MINUS_ONE, 51),
+        fe51_limbs_bounded(&ONE_MINUS_EDWARDS_D_SQUARED, 51),
+        fe51_limbs_bounded(&EDWARDS_D_MINUS_ONE_SQUARED, 51),
+        fe51_limbs_bounded(&SQRT_AD_MINUS_ONE, 51),
+{
+    lemma_sqrt_m1_limbs_bounded();
+    lemma_edwards_d_limbs_bounded();
+    lemma_edwards_d_limbs_bounded_54();
+    lemma_one_limbs_bounded_51();
+    lemma_minus_one_limbs_bounded_51();
+    lemma_one_minus_d_squared_limbs_bounded();
+    lemma_d_minus_one_squared_limbs_bounded();
+    lemma_sqrt_ad_minus_one_limbs_bounded();
 }
 
 } // verus!

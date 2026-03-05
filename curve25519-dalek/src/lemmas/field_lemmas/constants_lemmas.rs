@@ -346,6 +346,26 @@ pub proof fn lemma_d_minus_one_squared_value()
     lemma_bridge_local_pow2();
 }
 
+/// d + 1 is nonzero in GF(p), i.e., d != p - 1.
+///
+/// Proved by concrete evaluation: d is the Edwards curve parameter stored in
+/// EDWARDS_D, and (d + 1) mod p is computed to be nonzero via the interpreter.
+pub proof fn lemma_d_plus_one_nonzero()
+    ensures
+        field_add(fe51_as_canonical_nat(&EDWARDS_D), 1) != 0,
+{
+    assert({
+        let lp = local_p();
+        let d_val = local_u5_nat(EDWARDS_D.limbs) % lp;
+        let d_plus_one = (d_val + 1) % lp;
+        d_plus_one != 0
+    }) by (compute_only);
+
+    assert(field_add(fe51_as_canonical_nat(&EDWARDS_D), 1) != 0) by {
+        lemma_bridge_local_pow2();
+    };
+}
+
 // =============================================================================
 // Curve constants (backend::serial::u64::constants)
 // =============================================================================

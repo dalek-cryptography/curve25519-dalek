@@ -2460,7 +2460,7 @@ pub proof fn lemma_unique_x_with_parity(x1: nat, x2: nat, y: nat)
         assert(v == field_add(d, 1)) by {
             lemma_field_add_canonical_left(d, 1);
         };
-        axiom_d_plus_one_nonzero();
+        crate::lemmas::field_lemmas::constants_lemmas::lemma_d_plus_one_nonzero();
         lemma_small_mod(v, p());
         assert(false);
     }
@@ -2538,17 +2538,6 @@ pub proof fn lemma_unique_x_with_parity(x1: nat, x2: nat, y: nat)
             assert(false);
         }
     }
-}
-
-/// Axiom: The Ed25519 curve parameter d satisfies d + 1 ≢ 0 (mod p).
-///
-/// Equivalent to d ≠ −1, a standard requirement for twisted Edwards curves.
-/// For Ed25519, d = −121665/121666.
-pub proof fn axiom_d_plus_one_nonzero()
-    ensures
-        field_add(fe51_as_canonical_nat(&EDWARDS_D), 1) != 0,
-{
-    admit();
 }
 
 /// Lemma: A valid extended Edwards point lies on the affine curve.

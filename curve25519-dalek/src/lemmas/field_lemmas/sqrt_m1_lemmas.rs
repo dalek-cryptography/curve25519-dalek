@@ -740,4 +740,104 @@ pub proof fn lemma_fourth_root_of_unity(x: nat)
     }
 }
 
+// =============================================================================
+// Algebraic identities involving sqrt(-1)
+// =============================================================================
+/// (a · i) · i = −a in GF(p), where i = √(−1).
+///
+/// Follows from associativity and i² = −1.
+pub proof fn lemma_mul_i_squared_is_neg(a: nat)
+    ensures
+        field_mul(field_mul(a, sqrt_m1()), sqrt_m1()) == field_neg(a),
+{
+    let pn = p();
+    assert(pn > 2) by {
+        p_gt_2();
+    };
+    let i = sqrt_m1();
+    assert(field_mul(field_mul(a, i), i) == field_mul(a, field_mul(i, i))) by {
+        lemma_field_mul_assoc(a, i, i);
+    };
+    assert(field_mul(i, i) == field_neg(1nat)) by {
+        axiom_sqrt_m1_squared();
+        lemma_small_mod(1nat, pn);
+        lemma_small_mod((pn - 1) as nat, pn);
+    };
+    assert(field_mul(a, field_neg(1nat)) == field_neg(a)) by {
+        lemma_field_mul_comm(a, field_neg(1nat));
+        lemma_neg_one_times_is_neg(a);
+    };
+}
+
+/// 1 − (e/f)·i = (f − e·i)/f  in GF(p), where i = √(−1), f ≠ 0.
+///
+/// Proof: write 1 = f·f⁻¹, then factor out f⁻¹ from f·f⁻¹ − (e·i)·f⁻¹.
+pub proof fn lemma_one_minus_x_times_i(e: nat, f: nat)
+    requires
+        f % p() != 0,
+    ensures
+        field_sub(1nat, field_mul(field_mul(e, field_inv(f)), sqrt_m1())) == field_mul(
+            field_sub(f, field_mul(e, sqrt_m1())),
+            field_inv(f),
+        ),
+{
+    assert(p() > 2) by {
+        p_gt_2();
+    };
+    let i = sqrt_m1();
+    let inv_f = field_inv(f);
+    assert(1nat == field_mul(f, inv_f)) by {
+        lemma_inv_mul_cancel(f);
+        lemma_field_mul_comm(inv_f, f);
+    };
+    assert(field_mul(field_mul(e, inv_f), i) == field_mul(field_mul(e, i), inv_f)) by {
+        lemma_field_mul_assoc(e, inv_f, i);
+        lemma_field_mul_comm(inv_f, i);
+        lemma_field_mul_assoc(e, i, inv_f);
+    };
+    assert(field_sub(field_mul(f, inv_f), field_mul(field_mul(e, i), inv_f)) == field_mul(
+        field_sub(f, field_mul(e, i)),
+        inv_f,
+    )) by {
+        lemma_reverse_distribute_sub(f, field_mul(e, i), inv_f);
+    };
+}
+
+/// 1 + (e/f)·i = (f + e·i)/f  in GF(p), where i = √(−1), f ≠ 0.
+///
+/// Proof: write 1 = f·f⁻¹, then factor out f⁻¹ from f·f⁻¹ + (e·i)·f⁻¹.
+pub proof fn lemma_one_plus_x_times_i(e: nat, f: nat)
+    requires
+        f % p() != 0,
+    ensures
+        field_add(1nat, field_mul(field_mul(e, field_inv(f)), sqrt_m1())) == field_mul(
+            field_add(f, field_mul(e, sqrt_m1())),
+            field_inv(f),
+        ),
+{
+    assert(p() > 2) by {
+        p_gt_2();
+    };
+    let i = sqrt_m1();
+    let inv_f = field_inv(f);
+    assert(1nat == field_mul(f, inv_f)) by {
+        lemma_inv_mul_cancel(f);
+        lemma_field_mul_comm(inv_f, f);
+    };
+    assert(field_mul(field_mul(e, inv_f), i) == field_mul(field_mul(e, i), inv_f)) by {
+        lemma_field_mul_assoc(e, inv_f, i);
+        lemma_field_mul_comm(inv_f, i);
+        lemma_field_mul_assoc(e, i, inv_f);
+    };
+    assert(field_add(field_mul(f, inv_f), field_mul(field_mul(e, i), inv_f)) == field_mul(
+        field_add(f, field_mul(e, i)),
+        inv_f,
+    )) by {
+        lemma_field_mul_comm(field_add(f, field_mul(e, i)), inv_f);
+        lemma_field_mul_distributes_over_add(inv_f, f, field_mul(e, i));
+        lemma_field_mul_comm(inv_f, f);
+        lemma_field_mul_comm(inv_f, field_mul(e, i));
+    };
+}
+
 } // verus!

@@ -238,16 +238,6 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 
 ---
 
-### axiom_d_plus_one_nonzero()
-**Claim:** The Ed25519 curve parameter d satisfies d + 1 ≢ 0 (mod p)
-
-**Reference:** RFC 7748 Section 4.1; Bernstein et al. (2008)  
-**URL:** https://www.rfc-editor.org/rfc/rfc7748#section-4.1
-
-**Justification:** For Ed25519, d = −121665/121666. This is a standard requirement for twisted Edwards curves (d ≠ −1). Can be verified computationally.
-
----
-
 ### axiom_scalar_mul_distributes_over_neg(), axiom_neg_distributes_over_add(), axiom_add_neg_is_identity()
 **Claim:** Standard group properties: [n](−P) = −[n]P; −(P+Q) = (−P)+(−Q); P + (−P) = identity
 
@@ -418,7 +408,35 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 
 ---
 
-## 9. Square Root of −1 (sqrt_m1_lemmas.rs)
+## 9. Inverse Square Root (field_specs.rs)
+
+### axiom_invsqrt_factors_over_square(a, b)
+**Signature:** `axiom_invsqrt_factors_over_square(a: nat, b: nat)` — requires `a % p() != 0`, `b % p() != 0`; ensures `nat_invsqrt(field_mul(a, field_square(b))) == field_abs(field_mul(nat_invsqrt(a), field_inv(b)))`.
+
+**Claim:** For nonzero a, b in GF(p): invsqrt(a·b²) = field_abs(invsqrt(a) · inv(b)).
+
+**Reference:** Standard property of (inverse) square roots in finite fields.  
+**URL:** N/A (standard algebra)
+
+**Justification:** If r = nat_invsqrt(a) then r²·a ∈ {1, √(−1)}. Let s = r·inv(b). Then s²·(a·b²) = r²·inv(b²)·a·b² = r²·a ∈ {1, √(−1)}, so s is a valid inverse square root of a·b². After canonical sign normalisation (field_abs), s and nat_invsqrt(a·b²) agree because nat_invsqrt returns the unique non-negative representative.
+
+**Runtime validation:** `test_invsqrt_factors_over_square` — validates for 200 points using diverse field elements derived from basepoint multiples.
+
+### axiom_nat_invsqrt_neg_one_minus_d()
+**Signature:** `axiom_nat_invsqrt_neg_one_minus_d()` — ensures `nat_invsqrt(field_sub(field_neg(1), d)) == C_IAD` where `C_IAD = fe51_as_canonical_nat(&INVSQRT_A_MINUS_D)`.
+
+**Claim:** The canonical inverse square root of (−1 − d) is the constant INVSQRT_A_MINUS_D.
+
+**Reference:** ristretto.group/formulas/encoding.html; Hamburg (2015) Decaf §6
+
+**Justification:** Concrete numerical fact: nat_invsqrt computes the unique non-negative inverse square root; INVSQRT_A_MINUS_D is this value for the argument (−1 − d). This implies C_IAD²·(−1−d) = 1 as a corollary.
+
+**Runtime validation:** `test_nat_invsqrt_neg_one_minus_d` — computes sqrt_ratio_i(1, −1−d) and checks equality with INVSQRT_A_MINUS_D.
+
+---
+
+## 10. Square Root of −1 (sqrt_m1_lemmas.rs)
+
 
 ### axiom_sqrt_m1_squared(), axiom_sqrt_m1_not_square(), axiom_neg_sqrt_m1_not_square()
 **Claim:** `spec_sqrt_m1()`² = −1 (mod p); sqrt(−1) and −sqrt(−1) are not squares
@@ -432,7 +450,7 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 
 ---
 
-## 10. Probability (proba_specs.rs)
+## 11. Probability (proba_specs.rs)
 
 ### axiom_uniform_bytes_split(), axiom_from_bytes_uniform(), axiom_from_bytes_independent()
 **Claim:** Uniformity properties for byte-to-field conversion and splitting
@@ -460,7 +478,7 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 
 ---
 
-## 11. Core Assumes (core_assumes.rs)
+## 12. Core Assumes (core_assumes.rs)
 
 ### axiom_hash_is_canonical()
 **Claim:** Equal field elements hash identically
@@ -480,7 +498,7 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 
 ---
 
-## 12. Unused Montgomery Reduce (unused_montgomery_reduce_lemmas.rs)
+## 13. Unused Montgomery Reduce (unused_montgomery_reduce_lemmas.rs)
 
 ### axiom_two_l_div_pow2_208_le_pow2_45()
 **Claim:** `(2·L) / 2²⁰⁸ ≤ 2⁴⁵` where L is the group order
@@ -513,7 +531,6 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 | axiom_binomial_theorem | number_theory_lemmas.rs | Math | Standard mathematics |
 | axiom_edwards_add_associative | curve_equation_lemmas.rs | Paper | Bernstein et al. 2008 |
 | axiom_edwards_add_complete | curve_equation_lemmas.rs | Paper | Bernstein et al. 2008 Thm. 3.3 |
-| axiom_d_plus_one_nonzero | curve_equation_lemmas.rs | RFC | RFC 7748 §4.1 |
 | axiom_scalar_mul_distributes_over_neg | curve_equation_lemmas.rs | Math | Group theory |
 | axiom_neg_distributes_over_add | curve_equation_lemmas.rs | Math | Group theory |
 | axiom_add_neg_is_identity | curve_equation_lemmas.rs | Math | Group theory |
@@ -527,6 +544,8 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 | axiom_elligator_n_t_nonzero | ristretto_specs.rs | Paper + test | Hamburg 2015 §4; test (200+ inputs) |
 | axiom_elligator_t_completed_nonzero | ristretto_specs.rs | Paper + test | Hamburg 2015 §4; test (200+ inputs) |
 | axiom_elligator_in_even_subgroup | ristretto_specs.rs | Paper + test | Hamburg 2015/2019; test (200+ inputs) |
+| axiom_invsqrt_factors_over_square | field_specs.rs | Math + test | Standard finite field algebra; test (200 inputs) |
+| axiom_nat_invsqrt_neg_one_minus_d | ristretto_specs.rs | Computation + test | ristretto.group; test_nat_invsqrt_neg_one_minus_d |
 | axiom_ristretto_cross_mul_iff_equivalent | ristretto_specs.rs | Paper + test | Hamburg 2015 §4; Ristretto §3.2 |
 | axiom_ristretto_decode_on_curve | ristretto_specs.rs | Paper + test | Hamburg 2015; test_ristretto_decode_on_curve |
 | axiom_ristretto_decode_in_even_subgroup | ristretto_specs.rs | Paper + test | Hamburg 2015/2019; test (100+ points) |

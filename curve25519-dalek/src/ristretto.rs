@@ -187,6 +187,7 @@ use crate::backend::serial::u64::subtle_assumes::choice_is_true;
 use crate::backend::serial::u64::subtle_assumes::{
     choice_into, choice_not, choice_or, conditional_assign_field_element,
     conditional_assign_generic, conditional_negate_field_element, ct_eq_bytes32,
+    negate_field_element,
 };
 #[allow(unused_imports)]
 use crate::core_assumes::compressed_ristretto_from_array_result;
@@ -249,6 +250,13 @@ use crate::lemmas::field_lemmas::sqrt_m1_lemmas::lemma_sqrt_m1_limbs_bounded;
 use crate::lemmas::field_lemmas::sqrt_ratio_lemmas::*;
 #[cfg(verus_keep_ghost)]
 #[allow(unused_imports)]
+use crate::lemmas::ristretto_lemmas::axioms::*;
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use crate::lemmas::ristretto_lemmas::batch_compress_lemmas::*;
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use crate::lemmas::ristretto_lemmas::elligator_lemmas::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::specs::core_specs::*;
 #[allow(unused_imports)] // Used in verus! blocks
@@ -1444,6 +1452,48 @@ impl BatchCompressState {
     }
 }
 
+/// All six field elements in a BatchCompressState have 54-bit bounded limbs.
+#[cfg(feature = "alloc")]
+pub open spec fn batch_state_limbs_bounded(state: &BatchCompressState) -> bool {
+    fe51_limbs_bounded(&state.e, 54) && fe51_limbs_bounded(&state.f, 54) && fe51_limbs_bounded(
+        &state.g,
+        54,
+    ) && fe51_limbs_bounded(&state.h, 54) && fe51_limbs_bounded(&state.eg, 54)
+        && fe51_limbs_bounded(&state.fh, 54)
+}
+
+/// The algebraic relationship between a `BatchCompressState` and the source Edwards point.
+///
+/// Given point (X:Y:Z:T) with curve parameter d, the state fields satisfy:
+///   - e  = 2·X·Y
+///   - f  = Z² + d·T²
+///   - g  = Y² + X²
+///   - h  = Z² − d·T²
+///   - eg = e·g
+///   - fh = f·h
+///
+/// Note: kept co-located with `BatchCompressState` to avoid circular imports.
+#[cfg(feature = "alloc")]
+pub open spec fn batch_state_matches_point(
+    state: &BatchCompressState,
+    point: crate::edwards::EdwardsPoint,
+) -> bool {
+    let (x, y, z, t) = edwards_point_as_nat(point);
+    let d = fe51_as_canonical_nat(&constants::EDWARDS_D);
+    fe51_as_canonical_nat(&state.e) == field_mul(2, field_mul(x, y)) && fe51_as_canonical_nat(
+        &state.f,
+    ) == field_add(field_square(z), field_mul(d, field_square(t))) && fe51_as_canonical_nat(
+        &state.g,
+    ) == field_add(field_square(y), field_square(x)) && fe51_as_canonical_nat(&state.h)
+        == field_sub(field_square(z), field_mul(d, field_square(t))) && fe51_as_canonical_nat(
+        &state.eg,
+    ) == field_mul(fe51_as_canonical_nat(&state.e), fe51_as_canonical_nat(&state.g))
+        && fe51_as_canonical_nat(&state.fh) == field_mul(
+        fe51_as_canonical_nat(&state.f),
+        fe51_as_canonical_nat(&state.h),
+    )
+}
+
 #[cfg(all(feature = "alloc", verus_keep_ghost))]
 impl<'a> vstd::std_specs::convert::FromSpecImpl<&'a RistrettoPoint> for BatchCompressState {
     open spec fn obeys_from_spec() -> bool {
@@ -1466,6 +1516,10 @@ impl<'a> From<&'a RistrettoPoint> for BatchCompressState {
         */
 
         ensures
+            fe51_limbs_bounded(&result.e, 54),
+            fe51_limbs_bounded(&result.f, 54),
+            fe51_limbs_bounded(&result.g, 54),
+            fe51_limbs_bounded(&result.h, 54),
             fe51_limbs_bounded(&result.eg, 54),
             fe51_limbs_bounded(&result.fh, 54),
             ({
@@ -1738,25 +1792,21 @@ impl RistrettoPoint {
                     )@
                 },
     {
-        proof {
-            assume(false);
-        }  // VERIFICATION NOTE: postpone full proof
-
         // ORIGINAL CODE: let states: Vec<BatchCompressState> = points.into_iter().map(BatchCompressState::from).collect();
-        // Refactored to explicit loop for Verus compatibility
         let mut states: Vec<BatchCompressState> = Vec::with_capacity(points.len());
         let mut k: usize = 0;
         while k < points.len()
             invariant
                 k <= points.len(),
                 states.len() == k,
-                // Track limb bounds from From ensures
                 forall|idx: int|
                     #![auto]
-                    0 <= idx < states.len() ==> fe51_limbs_bounded(&states[idx].eg, 54),
+                    0 <= idx < states.len() ==> batch_state_limbs_bounded(&states[idx]),
                 forall|idx: int|
-                    #![auto]
-                    0 <= idx < states.len() ==> fe51_limbs_bounded(&states[idx].fh, 54),
+                    0 <= idx < states.len() ==> batch_state_matches_point(
+                        &states[idx],
+                        #[trigger] points@[idx].0,
+                    ),
             decreases points.len() - k,
         {
             states.push(BatchCompressState::from(&points[k]));
@@ -1764,83 +1814,377 @@ impl RistrettoPoint {
         }
 
         // ORIGINAL CODE: let mut invs: Vec<FieldElement> = states.iter().map(|state| state.efgh()).collect();
-        // Refactored to explicit loop for Verus compatibility
         let mut invs: Vec<FieldElement> = Vec::with_capacity(states.len());
-        let mut i: usize = 0;
-        while i < states.len()
+        let mut j: usize = 0;
+        while j < states.len()
             invariant
-                i <= states.len(),
-                invs.len() == i,
-                // Track limb bounds from From ensures
+                j <= states.len(),
+                invs.len() == j,
+                states.len() == points.len(),
                 forall|idx: int|
                     #![auto]
-                    0 <= idx < states.len() ==> fe51_limbs_bounded(&states[idx].eg, 54),
+                    0 <= idx < states.len() ==> batch_state_limbs_bounded(&states[idx]),
+                forall|idx: int|
+                    0 <= idx < states.len() ==> batch_state_matches_point(
+                        &states[idx],
+                        #[trigger] points@[idx].0,
+                    ),
                 forall|idx: int|
                     #![auto]
-                    0 <= idx < states.len() ==> fe51_limbs_bounded(&states[idx].fh, 54),
-            decreases states.len() - i,
+                    0 <= idx < invs.len() ==> fe51_as_canonical_nat(&invs[idx]) == field_mul(
+                        fe51_as_canonical_nat(&states[idx].eg),
+                        fe51_as_canonical_nat(&states[idx].fh),
+                    ),
+                forall|idx: int|
+                    #![auto]
+                    0 <= idx < invs.len() ==> fe51_limbs_bounded(&invs[idx], 54),
+            decreases states.len() - j,
         {
-            invs.push(states[i].efgh());
-            i = i + 1;
+            invs.push(states[j].efgh());
+            j = j + 1;
         }
 
         // ORIGINAL CODE: FieldElement::batch_invert(&mut invs[..]);
         Self::batch_invert_vec(&mut invs);
 
+        proof {
+            assert(pow2(255) > 19) by {
+                pow255_gt_19();
+            };
+
+            // Bridge batch_invert postcondition to per-element inverse relationships.
+            // field_mul returns values in [0, p()), so x % p() == x for all results.
+            // Derive both orders: field_mul(egfh, inv) == 1 AND field_mul(inv, egfh) == 1.
+            // The second order is needed by lemma_batch_compress_equals_compress_of_double.
+            assert forall|idx: int|
+                #![auto]
+                0 <= idx < invs.len() && field_mul(
+                    fe51_as_canonical_nat(&states[idx].eg),
+                    fe51_as_canonical_nat(&states[idx].fh),
+                ) != 0 implies ({
+                let egfh = field_mul(
+                    fe51_as_canonical_nat(&states[idx].eg),
+                    fe51_as_canonical_nat(&states[idx].fh),
+                );
+                let inv_val = fe51_as_canonical_nat(&invs[idx]);
+                field_mul(egfh, inv_val) == 1 && field_mul(inv_val, egfh) == 1
+            }) by {
+                let egfh_nat = field_mul(
+                    fe51_as_canonical_nat(&states[idx].eg),
+                    fe51_as_canonical_nat(&states[idx].fh),
+                );
+                let inv_val = fe51_as_canonical_nat(&invs[idx]);
+                lemma_small_mod(egfh_nat, p());
+                lemma_field_mul_comm(egfh_nat, inv_val);
+            };
+
+            assert forall|idx: int|
+                #![auto]
+                0 <= idx < invs.len() && field_mul(
+                    fe51_as_canonical_nat(&states[idx].eg),
+                    fe51_as_canonical_nat(&states[idx].fh),
+                ) == 0 implies fe51_as_canonical_nat(&invs[idx]) == 0 by {
+                let egfh_nat = field_mul(
+                    fe51_as_canonical_nat(&states[idx].eg),
+                    fe51_as_canonical_nat(&states[idx].fh),
+                );
+                lemma_small_mod(egfh_nat, p());
+            };
+        }
+
         // ORIGINAL CODE: states.iter().zip(invs.iter()).map(|(state, inv)| { ... }).collect()
         // Refactored to explicit loop for Verus compatibility
         let mut results: Vec<CompressedRistretto> = Vec::with_capacity(states.len());
+
+        proof {
+            assert(fe51_limbs_bounded(&constants::SQRT_M1, 54)) by {
+                lemma_sqrt_m1_limbs_bounded();
+            };
+            assert(fe51_limbs_bounded(&constants::INVSQRT_A_MINUS_D, 54)) by {
+                lemma_invsqrt_a_minus_d_limbs_bounded();
+            };
+        }
+
         let mut j: usize = 0;
         while j < states.len()
             invariant
+        // --- Loop progress ---
+
                 j <= states.len(),
                 results.len() == j,
+                // --- Constant facts (re-stated for Verus loop framing) ---
+                fe51_limbs_bounded(&constants::SQRT_M1, 54),
+                fe51_limbs_bounded(&constants::INVSQRT_A_MINUS_D, 54),
+                states.len() == points@.len(),
+                invs.len() == states.len(),
+                // --- Read-only vector invariants (states/invs/points unchanged in this loop) ---
+                forall|idx: int|
+                    #![auto]
+                    0 <= idx < states.len() ==> batch_state_limbs_bounded(&states[idx]),
+                forall|idx: int|
+                    #![auto]
+                    0 <= idx < invs.len() ==> fe51_limbs_bounded(&invs[idx], 54),
+                forall|idx: int|
+                    0 <= idx < points@.len() ==> is_well_formed_edwards_point(
+                        #[trigger] points@[idx].0,
+                    ),
+                forall|idx: int|
+                    0 <= idx < states.len() ==> batch_state_matches_point(
+                        &states[idx],
+                        #[trigger] points@[idx].0,
+                    ),
+                forall|idx: int|
+                    #![auto]
+                    0 <= idx < invs.len() && field_mul(
+                        fe51_as_canonical_nat(&states[idx].eg),
+                        fe51_as_canonical_nat(&states[idx].fh),
+                    ) != 0 ==> ({
+                        let egfh = field_mul(
+                            fe51_as_canonical_nat(&states[idx].eg),
+                            fe51_as_canonical_nat(&states[idx].fh),
+                        );
+                        let inv_val = fe51_as_canonical_nat(&invs[idx]);
+                        field_mul(egfh, inv_val) == 1 && field_mul(inv_val, egfh) == 1
+                    }),
+                forall|idx: int|
+                    #![auto]
+                    0 <= idx < invs.len() && field_mul(
+                        fe51_as_canonical_nat(&states[idx].eg),
+                        fe51_as_canonical_nat(&states[idx].fh),
+                    ) == 0 ==> fe51_as_canonical_nat(&invs[idx]) == 0,
+                // --- Inductive postcondition: results[0..j] are correct ---
+                forall|idx: int|
+                    0 <= idx < j ==> {
+                        let point_affine = edwards_point_as_affine(#[trigger] points@[idx].0);
+                        let doubled_affine = edwards_double(point_affine.0, point_affine.1);
+                        #[trigger] results@[idx].0@ == ristretto_compress_affine(
+                            doubled_affine.0,
+                            doubled_affine.1,
+                        )@
+                    },
             decreases states.len() - j,
         {
-            proof {
-                assume(false);
-            }  // VERIFICATION NOTE: postpone loop body proof
-
             let state = &states[j];
             let inv = &invs[j];
 
+            let ghost e_nat = fe51_as_canonical_nat(&state.e);
+            let ghost f_nat = fe51_as_canonical_nat(&state.f);
+            let ghost g_nat = fe51_as_canonical_nat(&state.g);
+            let ghost h_nat = fe51_as_canonical_nat(&state.h);
+            let ghost eg_nat = fe51_as_canonical_nat(&state.eg);
+            let ghost fh_nat = fe51_as_canonical_nat(&state.fh);
+            let ghost inv_nat = fe51_as_canonical_nat(inv);
+
             let Zinv = &state.eg * inv;
             let Tinv = &state.fh * inv;
+            let ghost zinv_nat = fe51_as_canonical_nat(&Zinv);
+            let ghost tinv_nat = fe51_as_canonical_nat(&Tinv);
 
             let mut magic = constants::INVSQRT_A_MINUS_D;
 
-            let negcheck1 = (&state.eg * &Zinv).is_negative();
+            // ORIGINAL CODE: let negcheck1 = (&state.eg * &Zinv).is_negative();
+            let eg_times_zinv = &state.eg * &Zinv;
+            let negcheck1 = eg_times_zinv.is_negative();
+
+            let ghost negcheck1_spec = is_negative(field_mul(eg_nat, zinv_nat));
+            proof {
+                assert(choice_is_true(negcheck1) == negcheck1_spec) by {
+                    lemma_is_negative_bridge(&eg_times_zinv, field_mul(eg_nat, zinv_nat));
+                };
+            }
 
             let mut e = state.e;
             let mut g = state.g;
             let mut h = state.h;
 
             // ORIGINAL CODE: let minus_e = -&e;
-            let minus_e = negate_field(&e);
+            let minus_e = negate_field_element(&e);
             let f_times_sqrta = &state.f * &constants::SQRT_M1;
 
+            let ghost old_e = e;
+            let ghost old_g = g;
+            let ghost old_h = h;
+            let ghost old_magic = magic;
+
             // ORIGINAL CODE: e.conditional_assign(&state.g, negcheck1);
-            conditional_assign_generic(&mut e, &state.g, negcheck1);
+            conditional_assign_field_element(&mut e, &state.g, negcheck1);
             // ORIGINAL CODE: g.conditional_assign(&minus_e, negcheck1);
-            conditional_assign_generic(&mut g, &minus_e, negcheck1);
+            conditional_assign_field_element(&mut g, &minus_e, negcheck1);
             // ORIGINAL CODE: h.conditional_assign(&f_times_sqrta, negcheck1);
-            conditional_assign_generic(&mut h, &f_times_sqrta, negcheck1);
+            conditional_assign_field_element(&mut h, &f_times_sqrta, negcheck1);
 
             // ORIGINAL CODE: magic.conditional_assign(&constants::SQRT_M1, negcheck1);
-            conditional_assign_generic(&mut magic, &constants::SQRT_M1, negcheck1);
+            conditional_assign_field_element(&mut magic, &constants::SQRT_M1, negcheck1);
 
-            let negcheck2 = (&(&h * &e) * &Zinv).is_negative();
+            let ghost e_rot = fe51_as_canonical_nat(&e);
+            let ghost g_rot = fe51_as_canonical_nat(&g);
+            let ghost h_rot = fe51_as_canonical_nat(&h);
+            let ghost magic_nat = fe51_as_canonical_nat(&magic);
+
+            proof {
+                // Bridge: conditional_assign postconditions + negcheck1_spec yield the rotation
+                assert(e_rot == if negcheck1_spec {
+                    g_nat
+                } else {
+                    e_nat
+                });
+                assert(g_rot == if negcheck1_spec {
+                    field_neg(e_nat)
+                } else {
+                    g_nat
+                });
+                assert(h_rot == if negcheck1_spec {
+                    field_mul(f_nat, sqrt_m1())
+                } else {
+                    h_nat
+                });
+                assert(magic_nat == if negcheck1_spec {
+                    sqrt_m1()
+                } else {
+                    fe51_as_canonical_nat(&constants::INVSQRT_A_MINUS_D)
+                });
+            }
+
+            // ORIGINAL CODE: let negcheck2 = (&(&h * &e) * &Zinv).is_negative();
+            let he = &h * &e;
+            let he_zinv = &he * &Zinv;
+            let negcheck2 = he_zinv.is_negative();
+
+            let ghost negcheck2_spec = is_negative(field_mul(field_mul(h_rot, e_rot), zinv_nat));
+            proof {
+                assert(fe51_as_canonical_nat(&he) == field_mul(h_rot, e_rot));
+                assert(fe51_as_canonical_nat(&he_zinv) == field_mul(
+                    field_mul(h_rot, e_rot),
+                    zinv_nat,
+                ));
+                assert(choice_is_true(negcheck2) == negcheck2_spec) by {
+                    lemma_is_negative_bridge(
+                        &he_zinv,
+                        field_mul(field_mul(h_rot, e_rot), zinv_nat),
+                    );
+                };
+            }
 
             // ORIGINAL CODE: g.conditional_negate(negcheck2);
             conditional_negate_field_element(&mut g, negcheck2);
 
-            let mut s = &(&h - &g) * &(&magic * &(&g * &Tinv));
+            let ghost g_final = fe51_as_canonical_nat(&g);
+            proof {
+                assert(g_final == if negcheck2_spec {
+                    field_neg(g_rot)
+                } else {
+                    g_rot
+                });
+            }
+
+            // ORIGINAL CODE: let mut s = &(&h - &g) * &(&magic * &(&g * &Tinv));
+            let h_minus_g = &h - &g;
+            let g_tinv = &g * &Tinv;
+            let magic_g_tinv = &magic * &g_tinv;
+            let mut s = &h_minus_g * &magic_g_tinv;
+
+            let ghost s_pre_nat = fe51_as_canonical_nat(&s);
+            proof {
+                assert(fe51_as_canonical_nat(&g_tinv) == field_mul(g_final, tinv_nat));
+                assert(fe51_as_canonical_nat(&magic_g_tinv) == field_mul(
+                    magic_nat,
+                    field_mul(g_final, tinv_nat),
+                ));
+                assert(fe51_as_canonical_nat(&h_minus_g) == field_sub(h_rot, g_final));
+                assert(s_pre_nat == field_mul(
+                    field_sub(h_rot, g_final),
+                    field_mul(magic_nat, field_mul(g_final, tinv_nat)),
+                ));
+            }
 
             let s_is_negative = s.is_negative();
+
+            let ghost s_neg_spec = is_negative(s_pre_nat);
+            proof {
+                assert(choice_is_true(s_is_negative) == s_neg_spec) by {
+                    lemma_is_negative_bridge(&s, s_pre_nat);
+                };
+            }
+
             // ORIGINAL CODE: s.conditional_negate(s_is_negative);
             conditional_negate_field_element(&mut s, s_is_negative);
 
-            results.push(CompressedRistretto(s.as_bytes()));
+            let ghost s_final_nat = fe51_as_canonical_nat(&s);
+            proof {
+                assert(s_final_nat == if s_neg_spec {
+                    field_neg(s_pre_nat)
+                } else {
+                    s_pre_nat
+                });
+            }
+
+            let s_bytes = s.as_bytes();
+            let compressed = CompressedRistretto(s_bytes);
+
+            proof {
+                // Part 1: Prove s_bytes == u8_32_from_nat(s_final_nat)
+                assert(s_bytes == u8_32_from_nat(s_final_nat)) by {
+                    assert(u8_32_as_nat(&s_bytes) == s_final_nat);
+                    assert(s_final_nat < pow2(256)) by {
+                        lemma_canonical_nat_lt_p(&s);
+                        pow255_gt_19();
+                        lemma_pow2_strictly_increases(255, 256);
+                    };
+                    assert(s_final_nat % pow2(256) == s_final_nat) by {
+                        lemma_small_mod(s_final_nat, pow2(256));
+                    };
+                    let chosen = u8_32_from_nat(s_final_nat);
+                    lemma_canonical_bytes_equal(&s_bytes, &chosen);
+                };
+
+                // Part 2: compressed.0 matches batch_compress_body (solver unfolding)
+                assert(compressed.0 == batch_compress_body(
+                    e_nat,
+                    f_nat,
+                    g_nat,
+                    h_nat,
+                    eg_nat,
+                    fh_nat,
+                    inv_nat,
+                ));
+
+                // Part 3: Connect batch_compress_body to ristretto_compress_affine
+                let point_affine = edwards_point_as_affine(points@[j as int].0);
+                let doubled_affine = edwards_double(point_affine.0, point_affine.1);
+                let expected = ristretto_compress_affine(doubled_affine.0, doubled_affine.1);
+
+                assert(compressed.0@ == expected@) by {
+                    let (x, y, z, t) = edwards_point_as_nat(points@[j as int].0);
+                    let d = fe51_as_canonical_nat(&constants::EDWARDS_D);
+
+                    assert(is_well_formed_edwards_point(points@[j as int].0));
+                    assert(field_canonical(z) != 0);
+                    assert(field_mul(z, t) == field_mul(x, y));
+                    assert(is_on_edwards_curve_projective(x, y, z));
+                    pow255_gt_19();
+                    lemma_small_mod(z, p());
+                    assert(z % p() != 0);
+                    lemma_small_mod(x, p());
+                    lemma_small_mod(y, p());
+                    lemma_small_mod(t, p());
+
+                    lemma_batch_compress_equals_compress_of_double(
+                        x,
+                        y,
+                        z,
+                        t,
+                        e_nat,
+                        f_nat,
+                        g_nat,
+                        h_nat,
+                        eg_nat,
+                        fh_nat,
+                        inv_nat,
+                    );
+                };
+            }
+
+            results.push(compressed);
             j = j + 1;
         }
 
@@ -1855,11 +2199,15 @@ impl RistrettoPoint {
     ///   - Complex `&mut` argument expressions are unsupported
     ///
     /// This thin wrapper is external_body but propagates ensures from
-    /// FieldElement::batch_invert (field.rs:522), which is fully Verus-verified.
-    /// The ensures match batch_invert's postconditions exactly.
+    /// FieldElement::batch_invert (field.rs:520), which is fully Verus-verified.
+    /// The ensures match batch_invert's postconditions exactly (field.rs:531-545).
     #[cfg(feature = "alloc")]
     #[verifier::external_body]
     fn batch_invert_vec(invs: &mut Vec<FieldElement>)
+        requires
+            forall|i: int|
+                #![auto]
+                0 <= i < old(invs).len() ==> fe51_limbs_bounded(&old(invs)[i], 54),
         ensures
             invs.len() == old(invs).len(),
             // From FieldElement::batch_invert ensures (field.rs:535-549):
@@ -1870,6 +2218,7 @@ impl RistrettoPoint {
                     ==> is_inverse_field(&old(invs)[i], &invs[i])) && ((fe51_as_canonical_nat(
                     &old(invs)[i],
                 ) == 0) ==> fe51_as_canonical_nat(&invs[i]) == 0),
+            forall|i: int| #![auto] 0 <= i < invs.len() ==> fe51_limbs_bounded(&invs[i], 54),
     {
         // Delegates to Verus-verified FieldElement::batch_invert
         FieldElement::batch_invert(invs.as_mut_slice());

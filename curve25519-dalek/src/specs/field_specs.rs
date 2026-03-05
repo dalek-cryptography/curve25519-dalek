@@ -620,4 +620,32 @@ pub open spec fn sqrt_m1() -> nat {
     fe51_as_canonical_nat(&constants::SQRT_M1)
 }
 
+// =============================================================================
+// Axiom: nat_invsqrt factoring over perfect squares
+// =============================================================================
+/// Axiom: nat_invsqrt factors over perfect squares in GF(p).
+///
+/// For nonzero a, b:  nat_invsqrt(a · b²) = field_abs(nat_invsqrt(a) · field_inv(b))
+///
+/// ## Mathematical justification
+/// If r = nat_invsqrt(a), then r² · a ∈ {1, √(−1)}.
+/// Let s = r · inv(b).  Then s² · (a · b²) = r² · inv(b)² · a · b² = r² · a ∈ {1, √(−1)},
+/// so s is a valid inverse square root of a · b².
+/// After canonical sign normalisation (field_abs), s and nat_invsqrt(a · b²) agree
+/// because nat_invsqrt returns the unique non-negative representative.
+///
+/// Reference: standard property of (inverse) square roots in finite fields.
+/// Runtime validation: `test_invsqrt_factors_over_square`
+pub proof fn axiom_invsqrt_factors_over_square(a: nat, b: nat)
+    requires
+        a % p() != 0,
+        b % p() != 0,
+    ensures
+        nat_invsqrt(field_mul(a, field_square(b))) == field_abs(
+            field_mul(nat_invsqrt(a), field_inv(b)),
+        ),
+{
+    admit();
+}
+
 } // verus!

@@ -180,6 +180,39 @@ pub proof fn lemma_field_add_comm(a: nat, b: nat)
     assert((a + b) as int == (b + a) as int);
 }
 
+/// field_add is associative: (a+b)+c = a+(b+c) in GF(p).
+pub proof fn lemma_field_add_assoc(a: nat, b: nat, c: nat)
+    ensures
+        field_add(field_add(a, b), c) == field_add(a, field_add(b, c)),
+{
+    let m = p() as int;
+    let pn = p();
+    assert(pn > 2) by {
+        p_gt_2();
+    };
+
+    let ab = field_add(a, b);
+    let bc = field_add(b, c);
+
+    // Both sides reduce to (a+b+c) % p
+    assert(field_add(ab, c) == ((a + b + c) as int % m) as nat) by {
+        assert(ab < pn) by {
+            lemma_mod_bound((a + b) as int, m);
+        };
+        lemma_small_mod(ab, pn);
+        lemma_add_mod_noop(ab as int, c as int, m);
+        lemma_add_mod_noop((a + b) as int, c as int, m);
+    };
+    assert(field_add(a, bc) == ((a + b + c) as int % m) as nat) by {
+        assert(bc < pn) by {
+            lemma_mod_bound((b + c) as int, m);
+        };
+        lemma_small_mod(bc, pn);
+        lemma_add_mod_noop(a as int, bc as int, m);
+        lemma_add_mod_noop(a as int, (b + c) as int, m);
+    };
+}
+
 /// field_add normalizes its inputs mod p, so pre-reducing a is a no-op.
 pub proof fn lemma_field_add_canonical_left(a: nat, b: nat)
     ensures
@@ -3034,6 +3067,158 @@ pub proof fn lemma_cross_mul_iff_div_eq(a: nat, b: nat, c: nat, d: nat)
         // a*inv_b == c*inv_d and d*b == b*d ⇒ chain gives a*d == c*b
         assert(field_mul(d, b) == field_mul(b, d));
         assert(field_mul(a, d) == field_mul(c, b));
+    }
+}
+
+// =============================================================================
+// Absolute value and sign lemmas
+// =============================================================================
+/// In GF(p), z ≠ 0 implies z² ≠ 0.
+///
+/// Formally: z < p ∧ z mod p ≠ 0  ⟹  z² mod p ≠ 0.
+/// Follows from GF(p) having no zero divisors.
+pub proof fn lemma_field_square_nonzero(z: nat)
+    requires
+        z < p(),
+        z % p() != 0,
+    ensures
+        field_square(z) % p() != 0,
+{
+    assert(z != 0) by {
+        lemma_field_element_reduced(z);
+    };
+    assert(field_square(z) != 0) by {
+        p_gt_2();
+        lemma_nonzero_product(z, z);
+    };
+    assert(field_square(z) % p() == field_square(z)) by {
+        lemma_field_element_reduced(field_square(z));
+    };
+}
+
+/// a · 1 = a in GF(p) for any a < p.
+///
+/// Convenience wrapper combining `lemma_field_mul_one_right` with
+/// `lemma_field_element_reduced` to discharge the modular reduction.
+pub proof fn lemma_mul_one_identity(a: nat)
+    requires
+        a < p(),
+    ensures
+        field_mul(a, 1nat) == a,
+{
+    assert(field_mul(a, 1nat) == a) by {
+        lemma_field_mul_one_right(a);
+        lemma_field_element_reduced(a);
+    };
+}
+
+/// (x + y)² − (x − y)² = 4·x·y  in GF(p).
+///
+/// By the difference-of-squares identity (s − d)(s + d) = s² − d²
+/// with s = x + y, d = x − y, together with:
+///   (x + y) + (x − y) = 2x,   (x + y) − (x − y) = 2y.
+pub proof fn lemma_sum_sq_minus_diff_sq(x: nat, y: nat)
+    ensures
+        field_sub(field_square(field_add(x, y)), field_square(field_sub(x, y))) == field_mul(
+            field_mul(2nat, 2nat),
+            field_mul(x, y),
+        ),
+{
+    assert(p() > 2) by {
+        p_gt_2();
+    };
+    let s = field_add(x, y);
+    let d = field_sub(x, y);
+
+    assert(field_sub(field_square(s), field_square(d)) == field_mul(
+        field_mul(2nat, 2nat),
+        field_mul(x, y),
+    )) by {
+        lemma_field_diff_of_squares(s, d);
+        lemma_field_add_sub_recover_double(x, y);
+        lemma_field_add_add_recover_double(x, y);
+        lemma_field_mul_exchange(2nat, y, 2nat, x);
+        lemma_field_mul_comm(y, x);
+    };
+}
+
+/// |−a| = |a| in GF(p) for a < p.
+///
+/// The absolute-value function satisfies field_abs(field_neg(a)) = field_abs(a)
+/// because negation simply flips the "negative" predicate.
+pub proof fn lemma_field_abs_neg(a: nat)
+    requires
+        a < p(),
+    ensures
+        field_abs(field_neg(a)) == field_abs(a),
+{
+    assert(p() > 2 && p() % 2 == 1) by {
+        p_gt_2();
+        lemma_p_is_odd();
+    };
+    if a == 0 {
+        assert(field_canonical(0nat) == 0nat) by {
+            lemma_small_mod(0nat, p());
+        };
+        assert(field_canonical(p()) == 0nat) by {
+            assert(p() % p() == 0nat) by (nonlinear_arith)
+                requires
+                    p() > 0,
+            ;
+        };
+    } else {
+        let neg_a = field_neg(a);
+        assert(field_canonical(a) == a) by {
+            lemma_small_mod(a, p());
+        };
+        assert(neg_a == (p() - a) as nat) by {
+            lemma_small_mod((p() - a) as nat, p());
+        };
+        assert(field_canonical(neg_a) == neg_a) by {
+            lemma_small_mod(neg_a, p());
+        };
+        assert(a % 2 != neg_a % 2) by (nonlinear_arith)
+            requires
+                a as int + neg_a as int == p() as int,
+                p() % 2 == 1,
+        ;
+        assert(field_neg(neg_a) == a) by {
+            lemma_field_neg_neg(a);
+            lemma_small_mod(a, p());
+        };
+        if is_negative(a) {
+            assert(field_abs(a) == neg_a);
+            assert(!is_negative(neg_a));
+            assert(field_abs(neg_a) == neg_a);
+        } else {
+            assert(field_abs(a) == a);
+            assert(is_negative(neg_a));
+            assert(field_abs(neg_a) == field_neg(neg_a));
+        }
+    }
+}
+
+/// |a · x| = |b · x| when a = b or a = −b.
+///
+/// Follows from |−(b·x)| = |b·x| (see lemma_field_abs_neg).
+pub proof fn lemma_field_abs_mul_sign(a: nat, b: nat, x: nat)
+    requires
+        a == b || a == field_neg(b),
+    ensures
+        field_abs(field_mul(a, x)) == field_abs(field_mul(b, x)),
+{
+    assert(p() > 2) by {
+        p_gt_2();
+    };
+    if a == b {
+    } else {
+        assert(field_mul(a, x) == field_neg(field_mul(b, x))) by {
+            lemma_field_neg_mul_left(b, x);
+        };
+        assert(field_abs(field_mul(a, x)) == field_abs(field_mul(b, x))) by {
+            lemma_mod_bound((b * x) as int, p() as int);
+            lemma_field_abs_neg(field_mul(b, x));
+        };
     }
 }
 

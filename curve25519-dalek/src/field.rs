@@ -542,6 +542,7 @@ impl FieldElement {
                 // If input was zero, it remains zero
                 ((fe51_as_canonical_nat(&old(inputs)[i]) == 0) ==> fe51_as_canonical_nat(&inputs[i])
                     == 0)),
+            forall|i: int| #![auto] 0 <= i < inputs.len() ==> fe51_limbs_bounded(&inputs[i], 54),
     {
         // Montgomery's Trick and Fast Implementation of Masked AES
         // Genelle, Prouff and Quisquater

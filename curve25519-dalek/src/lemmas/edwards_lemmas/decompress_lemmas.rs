@@ -28,6 +28,8 @@ use crate::edwards::EdwardsPoint;
 use crate::lemmas::common_lemmas::number_theory_lemmas::*;
 use crate::lemmas::edwards_lemmas::curve_equation_lemmas::*;
 use crate::lemmas::edwards_lemmas::step1_lemmas::*;
+#[cfg(verus_keep_ghost)]
+use crate::lemmas::field_lemmas::constants_lemmas::lemma_d_plus_one_nonzero;
 use crate::lemmas::field_lemmas::field_algebra_lemmas::*;
 use crate::lemmas::field_lemmas::sqrt_ratio_lemmas::*;
 use crate::specs::edwards_specs::*;
@@ -309,7 +311,7 @@ pub proof fn lemma_decompress_spec_matches_point(x: nat, y: nat, sign_bit: u8)
     if field_square(y) == 1 {
         assert(x == 0) by {
             let d = fe51_as_canonical_nat(&EDWARDS_D);
-            axiom_d_plus_one_nonzero();
+            lemma_d_plus_one_nonzero();
             lemma_field_y_sq_one_implies_x_zero(d, x, y);
         };
     }
@@ -338,7 +340,7 @@ pub proof fn lemma_to_edwards_correctness(x: nat, y: nat, sign_bit: u8, u: nat)
     if field_square(y) == 1 {
         assert(x == 0) by {
             let d = fe51_as_canonical_nat(&EDWARDS_D);
-            axiom_d_plus_one_nonzero();
+            lemma_d_plus_one_nonzero();
             lemma_field_y_sq_one_implies_x_zero(d, x, y);
         };
         assert(edwards_decompress_from_y_and_sign(y, 0u8) == Some((0nat, y))) by {

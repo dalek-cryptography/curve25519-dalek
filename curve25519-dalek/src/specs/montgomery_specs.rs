@@ -16,6 +16,9 @@
 //! - **Projective representation**: specs connecting `(U:W)` to affine points
 //! - **Edwards-Montgomery maps**: birational equivalence `u = (1+y)/(1-y)`
 //! - **Elligator2**: hash-to-curve mapping
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use super::core_specs::u8_32_as_nat;
 #[allow(unused_imports)]
 use super::field_specs::*;
 #[allow(unused_imports)]
@@ -24,10 +27,19 @@ use crate::backend::serial::u64::constants::MONTGOMERY_A;
 use crate::constants::APLUS2_OVER_FOUR;
 #[allow(unused_imports)]
 use crate::constants::X25519_BASEPOINT;
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use crate::lemmas::common_lemmas::to_nat_lemmas::lemma_u8_32_as_nat_first_byte_only;
 #[allow(unused_imports)]
 use crate::montgomery::ProjectivePoint;
 #[allow(unused_imports)]
 use crate::specs::field_specs_u64::*;
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use vstd::arithmetic::div_mod::lemma_small_mod;
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use vstd::arithmetic::power2::{lemma2_to64, lemma_pow2_strictly_increases, pow2};
 use vstd::prelude::*;
 
 verus! {
@@ -507,6 +519,29 @@ pub open spec fn montgomery_ladder_invariant(
             },
         ),
     )
+}
+
+/// The X25519 basepoint has u-coordinate 9.
+///
+/// Unfolds `spec_x25519_basepoint_u()` = `field_element_from_bytes([9, 0, ..., 0])`
+/// = `field_canonical(u8_32_as_nat([9,0,...]) % pow2(255))` = 9.
+pub proof fn lemma_x25519_basepoint_u_is_9()
+    ensures
+        spec_x25519_basepoint_u() == 9nat,
+{
+    // Step 1: u8_32_as_nat([9, 0, ..., 0]) = 9 (byte 0 is 9, rest are 0)
+    let bp_bytes = X25519_BASEPOINT.0;
+    lemma_u8_32_as_nat_first_byte_only(&bp_bytes);
+    assert(u8_32_as_nat(&bp_bytes) == 9nat);
+    // Step 2: 9 % pow2(255) = 9
+    pow255_gt_19();
+    lemma_small_mod(9nat, pow2(255));
+    // Step 3: field_canonical(9) = 9 % p() = 9
+    assert(p() > 9) by {
+        lemma2_to64();
+        lemma_pow2_strictly_increases(5nat, 255nat);
+    };
+    lemma_small_mod(9nat, p());
 }
 
 } // verus!

@@ -1284,7 +1284,7 @@ pub proof fn lemma_bucket_weighted_sum_equals_column_sum(
             assert(edwards_scalar_mul(edwards_neg(pt), (-d) as nat) == edwards_neg(
                 edwards_scalar_mul(pt, (-d) as nat),
             )) by {
-                axiom_scalar_mul_distributes_over_neg(pt, (-d) as nat);
+                lemma_scalar_mul_distributes_over_neg(pt, (-d) as nat);
             }
             reveal(edwards_scalar_mul_signed);
         } else {

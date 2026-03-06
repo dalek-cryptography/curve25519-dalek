@@ -212,16 +212,8 @@ pub const RISTRETTO_BASEPOINT_TABLE: &'static RistrettoBasepointTable = unsafe {
 };
 
 } // verus!
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_edwards_d2_is_double_d() {
-        let d2 = &EDWARDS_D + &EDWARDS_D;
-        assert_eq!(d2, EDWARDS_D2);
-    }
-}
+// Runtime test for EDWARDS_D2 == 2*EDWARDS_D removed:
+// now formally proved as lemma_edwards_d2_is_2d in constants_lemmas.rs.
 // #[cfg(test)]
 // mod test {
 //     use crate::constants;

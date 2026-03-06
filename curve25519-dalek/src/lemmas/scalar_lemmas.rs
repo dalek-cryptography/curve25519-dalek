@@ -98,8 +98,12 @@ pub proof fn lemma_square_internal_correct(a: &[u64; 5], z: &[u128; 9])
         lemma_pow2_adds(156, 208);
         lemma_pow2_adds(208, 208);
     };
-    lemma_nine_limbs_equals_slice128_as_nat(&z);
-    lemma_five_limbs_equals_to_nat(&a);
+    assert(nine_limbs_to_nat_aux(&z) == slice128_as_nat(z)) by {
+        lemma_nine_limbs_equals_slice128_as_nat(&z);
+    };
+    assert(five_limbs_to_nat_aux(*a) == limbs52_as_nat(a)) by {
+        lemma_five_limbs_equals_to_nat(&a);
+    };
 }
 
 pub proof fn lemma_mul_internal_no_overflow()
@@ -149,9 +153,15 @@ pub proof fn lemma_mul_internal_correct(a: &[u64; 5], b: &[u64; 5], z: &[u128; 9
         lemma_pow2_adds(156, 208);
         lemma_pow2_adds(208, 208);
     };
-    lemma_nine_limbs_equals_slice128_as_nat(&z);
-    lemma_five_limbs_equals_to_nat(&a);
-    lemma_five_limbs_equals_to_nat(&b);
+    assert(nine_limbs_to_nat_aux(&z) == slice128_as_nat(z)) by {
+        lemma_nine_limbs_equals_slice128_as_nat(&z);
+    };
+    assert(five_limbs_to_nat_aux(*a) == limbs52_as_nat(a)) by {
+        lemma_five_limbs_equals_to_nat(&a);
+    };
+    assert(five_limbs_to_nat_aux(*b) == limbs52_as_nat(b)) by {
+        lemma_five_limbs_equals_to_nat(&b);
+    };
 }
 
 pub proof fn lemma_nine_limbs_equals_slice128_as_nat(limbs: &[u128; 9])
@@ -655,13 +665,23 @@ pub proof fn lemma_carry_bounded_after_mask(carry: u64, mask: u64)
     assert((1u64 << 53) == 2 * (1u64 << 52)) by (bit_vector);
     broadcast use lemma_u64_shr_is_div;
 
-    lemma_pow2_pos(52);
-    lemma_u64_shift_is_pow2(52);
+    assert(pow2(52) > 0) by {
+        lemma_pow2_pos(52);
+    };
+    assert((1u64 << 52) as int == pow2(52) as int) by {
+        lemma_u64_shift_is_pow2(52);
+    };
     assert(carry >> 52 == carry / (1u64 << 52));
-    lemma_fundamental_div_mod(carry as int, (1u64 << 52) as int);
+    assert(carry as int == (carry / (1u64 << 52)) as int * (1u64 << 52) as int + (carry % (1u64
+        << 52)) as int) by {
+        lemma_fundamental_div_mod(carry as int, (1u64 << 52) as int);
+    };
     let q = carry / (1u64 << 52);
     let r = carry % (1u64 << 52);
-    lemma_mul_strict_inequality_converse(q as int, 2int, (1u64 << 52) as int);
+    assert(q < 2) by {
+        assert((q as int) * ((1u64 << 52) as int) < 2 * ((1u64 << 52) as int));
+        lemma_mul_strict_inequality_converse(q as int, 2int, (1u64 << 52) as int);
+    };
 }
 
 pub proof fn lemma_add_loop_bounds(i: int, carry: u64, a_limb: u64, b_limb: u64)
@@ -692,13 +712,23 @@ pub proof fn lemma_add_carry_and_sum_bounds(carry: u64, mask: u64)
     assert((1u64 << 53) == 2 * (1u64 << 52)) by (bit_vector);
     broadcast use lemma_u64_shr_is_div;
 
-    lemma_pow2_pos(52);
-    lemma_u64_shift_is_pow2(52);
+    assert(pow2(52) > 0) by {
+        lemma_pow2_pos(52);
+    };
+    assert((1u64 << 52) as int == pow2(52) as int) by {
+        lemma_u64_shift_is_pow2(52);
+    };
     assert(carry >> 52 == carry / (1u64 << 52));
-    lemma_fundamental_div_mod(carry as int, (1u64 << 52) as int);
+    assert(carry as int == (carry / (1u64 << 52)) as int * (1u64 << 52) as int + (carry % (1u64
+        << 52)) as int) by {
+        lemma_fundamental_div_mod(carry as int, (1u64 << 52) as int);
+    };
     let q = carry / (1u64 << 52);
     let r = carry % (1u64 << 52);
-    lemma_mul_strict_inequality_converse(q as int, 2int, (1u64 << 52) as int);
+    assert(q < 2) by {
+        assert((q as int) * ((1u64 << 52) as int) < 2 * ((1u64 << 52) as int));
+        lemma_mul_strict_inequality_converse(q as int, 2int, (1u64 << 52) as int);
+    };
 }
 
 pub proof fn lemma_l_value_properties(l_value: &Scalar52, sum: &Scalar52)
@@ -723,8 +753,12 @@ pub proof fn lemma_from_montgomery_limbs_conversion(limbs: &[u128; 9], self_limb
     ensures
         slice128_as_nat(limbs) == limbs52_as_nat(self_limbs),
 {
-    lemma_nine_limbs_equals_slice128_as_nat(limbs);
-    lemma_five_limbs_equals_to_nat(self_limbs);
+    assert(nine_limbs_to_nat_aux(limbs) == slice128_as_nat(limbs)) by {
+        lemma_nine_limbs_equals_slice128_as_nat(limbs);
+    };
+    assert(five_limbs_to_nat_aux(*self_limbs) == limbs52_as_nat(self_limbs)) by {
+        lemma_five_limbs_equals_to_nat(self_limbs);
+    };
     assert(limbs[0] == self_limbs[0] as u128);
     assert(nine_limbs_to_nat_aux(limbs) == (self_limbs[0] as nat) + (self_limbs[1] as nat) * pow2(
         52,
@@ -757,7 +791,10 @@ pub proof fn lemma_limbs_bounded_implies_prod_bounded(s: &Scalar52, t: &Scalar52
                 u64::MAX as nat,
             );
         }
-        lemma_mul_is_commutative(s.limbs[i] as int, t.limbs[j] as int);
+        assert((s.limbs[i] as int) * (t.limbs[j] as int) == (t.limbs[j] as int) * (
+        s.limbs[i] as int)) by {
+            lemma_mul_is_commutative(s.limbs[i] as int, t.limbs[j] as int);
+        };
         assert(((1u64 << 52) * u64::MAX) * 5 <= u128::MAX) by (compute);
     }
 }
@@ -832,19 +869,19 @@ pub proof fn lemma_cancel_mul_montgomery_mod(x: nat, a: nat, rr: nat)
         (x % group_order()) == ((a * montgomery_radix()) % group_order()),
 {
     // 1. Substitute rr with r*r
-    lemma_mul_mod_noop_right(a as int, rr as int, group_order() as int);
-    lemma_mul_mod_noop_right(
-        a as int,
-        (montgomery_radix() * montgomery_radix()) as int,
-        group_order() as int,
-    );
-
-    // let lhs = (x * montgomery_radix()) % group_order();
-    // let step1 = (a * rr) % group_order();
-    // let step2 = (a * (rr % group_order())) % group_order();
-    // let step3 = (a * ((montgomery_radix() * montgomery_radix()) % group_order())) % group_order();
-    // let step4 = (a * (montgomery_radix() * montgomery_radix())) % group_order();
-    // let rhs = (a * montgomery_radix() * montgomery_radix()) % group_order();
+    assert((a as int * rr as int) % (group_order() as int) == (a as int * (rr as int
+        % group_order() as int)) % (group_order() as int)) by {
+        lemma_mul_mod_noop_right(a as int, rr as int, group_order() as int);
+    };
+    assert((a as int * (montgomery_radix() * montgomery_radix()) as int) % (group_order() as int)
+        == (a as int * ((montgomery_radix() * montgomery_radix()) as int % group_order() as int))
+        % (group_order() as int)) by {
+        lemma_mul_mod_noop_right(
+            a as int,
+            (montgomery_radix() * montgomery_radix()) as int,
+            group_order() as int,
+        );
+    };
     lemma_mul_is_associative(a as int, montgomery_radix() as int, montgomery_radix() as int);
 
     assert((x * montgomery_radix()) % group_order() == (a * montgomery_radix() * montgomery_radix())
@@ -901,10 +938,10 @@ pub proof fn lemma_cancel_mul_montgomery_mod(x: nat, a: nat, rr: nat)
 
     assert((x * R * R_inv) % L == (R_inv * (x * R)) % L) by {
         lemma_mul_is_commutative(R_inv as int, (x * R) as int);
-    }
+    };
     assert((a * R * R * R_inv) % L == (R_inv * (a * R * R)) % L) by {
         lemma_mul_is_commutative(R_inv as int, (a * R * R) as int);
-    }
+    };
     assert((x * R * R_inv) % L == (a * R * R * R_inv) % L);
     // Both sides equal when multiplied by R^-1
     assert((inv_montgomery_radix() * (x * montgomery_radix())) % group_order() == (
@@ -914,7 +951,6 @@ pub proof fn lemma_cancel_mul_montgomery_mod(x: nat, a: nat, rr: nat)
         * montgomery_radix() * montgomery_radix() * inv_montgomery_radix()) % group_order());
 
     // Step 2: Group (R * R^-1) together using associativity
-    // x * (R * R^-1) and (a * R) * (R * R^-1)
     lemma_mul_is_associative(x as int, montgomery_radix() as int, inv_montgomery_radix() as int);
     lemma_mul_is_associative(
         (a * montgomery_radix()) as int,
@@ -2447,8 +2483,8 @@ pub proof fn lemma_cancel_mul_R_mod_L(a: nat, b: nat)
         lemma_group_order_is_odd();
         // R = 2^260 (only factor is 2)
         // Therefore gcd(R, L) = 1, and gcd(R % L, L) = gcd(R, L) = 1
-        axiom_gcd_mod_noop(r, l);
-        axiom_gcd_pow2_odd(260, l);
+        lemma_gcd_mod_noop(r, l);
+        lemma_gcd_pow2_odd(260, l);
     };
 
     lemma_cancel_coprime_factor(a, b, r, l);
@@ -2478,11 +2514,11 @@ pub proof fn lemma_cancel_mul_L_mod_R(a: nat, b: nat)
     // Establish gcd(L % R, R) == 1
     assert(spec_gcd(l % r, r) == 1) by {
         lemma_group_order_is_odd();
-        axiom_gcd_mod_noop(l, r);
+        lemma_gcd_mod_noop(l, r);
         // gcd(L, R) = gcd(L, 2^260) = 1 since L is odd
-        axiom_gcd_symmetric(l, r);
-        axiom_gcd_pow2_odd(260, l);
-        axiom_gcd_symmetric(pow2(260), l);
+        lemma_gcd_symmetric(l, r);
+        lemma_gcd_pow2_odd(260, l);
+        lemma_gcd_symmetric(pow2(260), l);
     };
 
     lemma_cancel_coprime_factor(a, b, l, r);

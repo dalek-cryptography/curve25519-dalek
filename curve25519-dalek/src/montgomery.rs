@@ -392,7 +392,7 @@ impl MontgomeryPoint {
                 axiom_edwards_to_montgomery_commutes_with_scalar_mul(B.0, B.1, n);
             }
             assert(montgomery_u_from_edwards_y(B.1) == spec_x25519_basepoint_u()) by {
-                axiom_edwards_basepoint_maps_to_montgomery_basepoint();
+                lemma_edwards_basepoint_maps_to_montgomery_basepoint();
             }
             assert(is_valid_u_coordinate(montgomery_u_from_edwards_y(edwards_scalar_mul(B, n).1)))
                 by {
@@ -1457,7 +1457,7 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (result: MontgomeryPoint)
             ));
             // MONTGOMERY_A_NEG encodes -A:
             assert(fe51_as_canonical_nat(&MONTGOMERY_A_NEG) == field_neg(A)) by {
-                axiom_montgomery_a_neg_is_neg_a();
+                lemma_montgomery_a_neg_is_neg_a();
             }
             // Replace d_1 with denom (asserted above).
             assert(fe51_as_canonical_nat(&d_1) == field_add(1, field_mul(2, field_square(r))));
@@ -2488,16 +2488,16 @@ fn differential_add_and_double(
                     if P_aff == Q_aff {
                         assert(montgomery_add(B, P_aff) == P_aff);
                         axiom_montgomery_add_associative(B, P_aff, montgomery_neg(P_aff));
-                        axiom_montgomery_add_inverse(P_aff);
-                        axiom_montgomery_add_identity(B);
+                        lemma_montgomery_add_inverse(P_aff);
+                        lemma_montgomery_add_identity(B);
                         assert(B == MontgomeryAffine::Infinity);
                         assert(false);
                     }
                 }
                 assert(montgomery_sub(Q_aff, P_aff) == B) by {
                     axiom_montgomery_add_associative(B, P_aff, montgomery_neg(P_aff));
-                    axiom_montgomery_add_inverse(P_aff);
-                    axiom_montgomery_add_identity(B);
+                    lemma_montgomery_add_inverse(P_aff);
+                    lemma_montgomery_add_identity(B);
                 }
                 axiom_xadd_projective_correct(P_aff, Q_aff, U_P0, W_P0, U_Q0, W_Q0, u_diff);
                 assert(projective_represents_montgomery_or_infinity(
@@ -2567,16 +2567,16 @@ fn differential_add_and_double(
                     if P_aff == Q_aff {
                         assert(montgomery_add(B, Q_aff) == Q_aff);
                         axiom_montgomery_add_associative(B, Q_aff, montgomery_neg(Q_aff));
-                        axiom_montgomery_add_inverse(Q_aff);
-                        axiom_montgomery_add_identity(B);
+                        lemma_montgomery_add_inverse(Q_aff);
+                        lemma_montgomery_add_identity(B);
                         assert(B == MontgomeryAffine::Infinity);
                         assert(false);
                     }
                 }
                 assert(montgomery_sub(P_aff, Q_aff) == B) by {
                     axiom_montgomery_add_associative(B, Q_aff, montgomery_neg(Q_aff));
-                    axiom_montgomery_add_inverse(Q_aff);
-                    axiom_montgomery_add_identity(B);
+                    lemma_montgomery_add_inverse(Q_aff);
+                    lemma_montgomery_add_identity(B);
                 }
                 axiom_xadd_projective_correct(P_aff, Q_aff, U_P0, W_P0, U_Q0, W_Q0, u_diff);
                 assert(projective_represents_montgomery_or_infinity(

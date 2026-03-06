@@ -182,8 +182,10 @@ pub proof fn lemma_gcd_with_prime(a: nat, prime: nat)
         lemma_mod_bound(a as int, prime as int);
     };
 
-    lemma_gcd_divides_both(a_red, prime);
-    lemma_gcd_positive(a_red, prime);
+    assert(g > 0 && (a_red % g == 0 && prime % g == 0)) by {
+        lemma_gcd_positive(a_red, prime);
+        lemma_gcd_divides_both(a_red, prime);
+    };
 
     if g != 1 {
         // g | prime and g > 1 implies g == prime (by primality)
@@ -210,49 +212,198 @@ pub proof fn lemma_gcd_with_prime(a: nat, prime: nat)
 // require significant proof infrastructure to formally verify with our current
 // GCD definition. They are accepted as axioms.
 // =============================================================================
-/// Axiom: gcd(a, b) = gcd(b, a) (commutativity of GCD)
+/// Lemma: gcd(a, b) = gcd(b, a) (commutativity of GCD)
 ///
-/// Mathematical proof: The GCD is defined as the largest common divisor of a and b.
-/// Since "common divisor of a and b" is the same as "common divisor of b and a",
-/// the GCD is symmetric.
-pub proof fn axiom_gcd_symmetric(a: nat, b: nat)
+/// Proof: Each gcd divides both a and b, hence divides the other gcd.
+/// Mutual divisibility of positive naturals implies equality.
+pub proof fn lemma_gcd_symmetric(a: nat, b: nat)
     ensures
         spec_gcd(a, b) == spec_gcd(b, a),
 {
-    admit();
+    let g_ab = spec_gcd(a, b);
+    let g_ba = spec_gcd(b, a);
+
+    if a == 0 && b == 0 {
+    } else {
+        assert(g_ab > 0 && g_ba > 0) by {
+            lemma_gcd_positive(a, b);
+            lemma_gcd_positive(b, a);
+        };
+        assert(a % g_ab == 0 && b % g_ab == 0) by {
+            lemma_gcd_divides_both(a, b);
+        };
+        assert(b % g_ba == 0 && a % g_ba == 0) by {
+            lemma_gcd_divides_both(b, a);
+        };
+        assert(g_ba % g_ab == 0) by {
+            lemma_common_divisor_divides_gcd(b, a, g_ab);
+        };
+        assert(g_ab % g_ba == 0) by {
+            lemma_common_divisor_divides_gcd(a, b, g_ba);
+        };
+        assert(g_ab <= g_ba) by {
+            lemma_mod_is_zero_when_divisible(g_ba, g_ab);
+        };
+        assert(g_ba <= g_ab) by {
+            lemma_mod_is_zero_when_divisible(g_ab, g_ba);
+        };
+    }
 }
 
-/// Axiom: gcd(a % m, m) = gcd(a, m) for m > 0
+/// Lemma: gcd(a % m, m) = gcd(a, m) for m > 0
 ///
-/// Mathematical proof: By the Euclidean algorithm property,
-/// gcd(a, m) = gcd(m, a % m) = gcd(a % m, m) (using commutativity).
-/// This reflects that reducing a modulo m doesn't change the GCD with m.
-pub proof fn axiom_gcd_mod_noop(a: nat, m: nat)
+/// Proof: spec_gcd(a, m) unfolds to spec_gcd(m, a % m) since m > 0,
+/// and lemma_gcd_symmetric gives spec_gcd(a % m, m) = spec_gcd(m, a % m).
+pub proof fn lemma_gcd_mod_noop(a: nat, m: nat)
     requires
         m > 0,
     ensures
         spec_gcd(a % m, m) == spec_gcd(a, m),
 {
-    admit();
+    assert(spec_gcd(a % m, m) == spec_gcd(m, a % m)) by {
+        lemma_gcd_symmetric(a % m, m);
+    };
 }
 
-/// Axiom: gcd(2^k, n) = 1 when n is odd
-///
-/// Mathematical proof:
-/// - 2^k has only factor 2 (repeated k times)
-/// - An odd number n has no factor of 2
-/// - Therefore, gcd(2^k, n) = 1
-///
-/// The only divisors of 2^k are {1, 2, 4, ..., 2^k}.
-/// Since n is odd, 2 doesn't divide n, so no power of 2 > 1 divides n.
-pub proof fn axiom_gcd_pow2_odd(k: nat, n: nat)
+/// If d divides n and n is odd, then d is odd
+proof fn lemma_divisor_of_odd_is_odd(n: nat, d: nat)
     requires
-        n % 2 == 1,  // n is odd
+        d > 0,
+        n % d == 0,
+        n % 2 == 1,
+    ensures
+        d % 2 == 1,
+{
+    if d % 2 == 0 {
+        let ni = n as int;
+        let di = d as int;
+        lemma_fundamental_div_mod(ni, di);
+        let q = ni / di;
+        assert(ni == q * di + ni % di);
+        assert(ni % di == 0);
+        assert(ni == q * di) by (nonlinear_arith)
+            requires
+                ni == q * di + ni % di,
+                ni % di == 0,
+        ;
+        lemma_fundamental_div_mod(di, 2int);
+        let h = di / 2;
+        assert(di == 2 * h + di % 2);
+        assert(di % 2 == 0);
+        assert(di == 2 * h) by (nonlinear_arith)
+            requires
+                di == 2 * h + di % 2,
+                di % 2 == 0,
+        ;
+        assert(ni == 2 * (q * h)) by (nonlinear_arith)
+            requires
+                ni == q * di,
+                di == 2 * h,
+        ;
+        assert(ni % 2 == 0) by {
+            lemma_mod_multiples_basic(q * h, 2int);
+        };
+    }
+}
 
+/// Coprime cancellation: d | (a * b) and gcd(d, a) = 1 implies d | b
+proof fn lemma_coprime_div_cancel(d: nat, a: nat, b: nat)
+    requires
+        d > 0,
+        (a * b) % d == 0,
+        spec_gcd(d, a) == 1,
+    ensures
+        b % d == 0,
+{
+    if d == 1 {
+    } else {
+        let di = d as int;
+        let ai = a as int;
+        let bi = b as int;
+
+        lemma_bezout_identity(d, a);
+        lemma_extended_gcd_is_gcd(d, a);
+        let r = spec_extended_gcd(d, a);
+        let x = r.x;
+        let y = r.y;
+
+        assert(bi * di * x + ai * bi * y == bi) by (nonlinear_arith)
+            requires
+                di * x + ai * y == 1,
+        ;
+
+        assert((bi * di * x) % di == 0) by {
+            assert(bi * di * x == di * (bi * x)) by (nonlinear_arith);
+            lemma_mod_multiples_basic(bi * x, di);
+        };
+
+        assert((ai * bi) % di == 0);
+
+        assert((ai * bi * y) % di == 0) by {
+            lemma_mul_mod_noop_left(ai * bi, y, di);
+            lemma_mul_basics(y);
+        };
+
+        assert(bi % di == 0) by {
+            lemma_add_mod_noop(bi * di * x, ai * bi * y, di);
+            lemma_small_mod(0nat, d);
+        };
+    }
+}
+
+/// The only odd positive divisor of pow2(k) is 1
+proof fn lemma_only_odd_divisor_of_pow2(k: nat, d: nat)
+    requires
+        d > 0,
+        pow2(k) % d == 0,
+        d % 2 == 1,
+    ensures
+        d == 1,
+    decreases k,
+{
+    if k == 0 {
+        assert(pow2(0) == 1) by {
+            lemma2_to64();
+        };
+        lemma_mod_is_zero_when_divisible(1, d);
+    } else {
+        let km1 = (k - 1) as nat;
+        assert(pow2(k) == 2 * pow2(km1)) by {
+            lemma_pow2_adds(1, km1);
+            assert(pow2(1) == 2) by {
+                lemma2_to64();
+            };
+        };
+
+        lemma_gcd_mod_noop(d, 2);
+        assert(spec_gcd(d % 2, 2) == spec_gcd(d, 2));
+        assert(d % 2 == 1);
+        assert(spec_gcd(1, 2) == 1) by {
+            reveal_with_fuel(spec_gcd, 4);
+        };
+        assert(spec_gcd(d, 2) == 1);
+
+        assert((2 * pow2(km1)) % d == 0);
+        lemma_coprime_div_cancel(d, 2, pow2(km1));
+        lemma_only_odd_divisor_of_pow2(km1, d);
+    }
+}
+
+/// gcd(2^k, n) = 1 when n is odd
+pub proof fn lemma_gcd_pow2_odd(k: nat, n: nat)
+    requires
+        n % 2 == 1,
     ensures
         spec_gcd(pow2(k), n) == 1,
 {
-    admit();
+    let g = spec_gcd(pow2(k), n);
+    assert(pow2(k) > 0) by {
+        lemma_pow2_pos(k);
+    };
+    lemma_gcd_positive(pow2(k), n);
+    lemma_gcd_divides_both(pow2(k), n);
+    lemma_divisor_of_odd_is_odd(n, g);
+    lemma_only_odd_divisor_of_pow2(k, g);
 }
 
 /// Helper: if n % d == 0 and d > 0, then d <= n (or n == 0)
@@ -485,14 +636,83 @@ proof fn lemma_binomial_absorption_factorial(n: nat, k: nat)
     lemma_mul_equality_converse(common as int, (k * binom_n_k) as int, (n * binom_nm1_km1) as int);
 }
 
-/// C(n,k) * k! * (n-k)! = n! (well-known combinatorial identity)
+/// C(n,k) * k! * (n-k)! = n!
 proof fn lemma_binomial_factorial_relation(n: nat, k: nat)
     requires
         k <= n,
     ensures
         binomial(n, k) * factorial(k) * factorial((n - k) as nat) == factorial(n),
+    decreases n,
 {
-    admit();
+    if n == 0 {
+        assert(binomial(0, 0) == 1);
+        assert(factorial(0) == 1);
+    } else if k == 0 {
+        assert(binomial(n, 0) == 1);
+        assert(factorial(0) == 1);
+        assert(1 * 1 == 1nat);
+        assert(binomial(n, 0) * factorial(0) * factorial(n) == factorial(n)) by {
+            lemma_mul_basics(factorial(n) as int);
+        };
+    } else if k == n {
+        assert(binomial(n, n) == 1);
+        assert(factorial(0) == 1);
+        assert(binomial(n, n) * factorial(n) * factorial(0) == factorial(n)) by {
+            lemma_mul_basics(factorial(n) as int);
+        };
+    } else {
+        // 0 < k < n
+        let nm1 = (n - 1) as nat;
+        let km1 = (k - 1) as nat;
+        let nmk = (n - k) as nat;
+        let nmkm1 = (n - 1 - k) as nat;
+
+        lemma_binomial_factorial_relation(nm1, km1);
+        // IH1: binomial(nm1, km1) * factorial(km1) * factorial(nmk) == factorial(nm1)
+        lemma_binomial_factorial_relation(nm1, k);
+        // IH2: binomial(nm1, k) * factorial(k) * factorial(nmkm1) == factorial(nm1)
+
+        let ba = binomial(nm1, km1) as int;
+        let bb = binomial(nm1, k) as int;
+        let fk = factorial(k) as int;
+        let fkm1 = factorial(km1) as int;
+        let fnmk = factorial(nmk) as int;
+        let fnmkm1 = factorial(nmkm1) as int;
+        let fnm1 = factorial(nm1) as int;
+        let ki = k as int;
+        let nmki = nmk as int;
+        let ni = n as int;
+
+        // Pascal's identity and factorial recurrences
+        assert(binomial(n, k) as int == ba + bb);
+        assert(fk == ki * fkm1);
+        assert(fnmk == nmki * fnmkm1);
+        assert(factorial(n) as int == ni * fnm1);
+
+        // ba * fk * fnmk = ba * (k * fkm1) * fnmk = k * (ba * fkm1 * fnmk) = k * fnm1
+        assert(ba * fk * fnmk == ki * fnm1) by (nonlinear_arith)
+            requires
+                ba * fkm1 * fnmk == fnm1,
+                fk == ki * fkm1,
+        ;
+
+        // bb * fk * fnmk = bb * fk * (nmk * fnmkm1) = nmk * (bb * fk * fnmkm1) = nmk * fnm1
+        assert(bb * fk * fnmk == nmki * fnm1) by (nonlinear_arith)
+            requires
+                bb * fk * fnmkm1 == fnm1,
+                fnmk == nmki * fnmkm1,
+        ;
+
+        // (ba + bb) * fk * fnmk = k * fnm1 + nmk * fnm1 = n * fnm1 = factorial(n)
+        assert((ba + bb) * fk * fnmk == ni * fnm1) by (nonlinear_arith)
+            requires
+                ba * fk * fnmk == ki * fnm1,
+                bb * fk * fnmk == nmki * fnm1,
+                ki + nmki == ni,
+        ;
+
+        assert(binomial(n, k) * factorial(k) * factorial(nmk) == factorial(n));
+    }
 }
 
 /// n! > 0
@@ -567,7 +787,7 @@ proof fn lemma_binomial_expansion_mod_p(a: nat, p: nat)
         (pow((a + 1) as int, p) as nat) % p == (1 + (pow(a as int, p) as nat)) % p,
 {
     lemma_partial_binomial_sum_mod_p(a, p, p);
-    axiom_binomial_theorem(a, p);
+    lemma_binomial_theorem(a, p);
 }
 
 /// Σ_{k=0}^{max_k} C(n,k) * a^k
@@ -581,12 +801,168 @@ spec fn binomial_sum(a: nat, n: nat, max_k: nat) -> nat
     }
 }
 
-/// Binomial Theorem: (a+1)^n = Σ_{k=0}^{n} C(n,k) * a^k (axiom)
-proof fn axiom_binomial_theorem(a: nat, n: nat)
+/// Σ_{k=0}^{max_k} C(n,k) * a^{k+1} (shifted version for binomial theorem proof)
+spec fn shifted_binomial_sum(a: nat, n: nat, max_k: nat) -> nat
+    decreases max_k,
+{
+    if max_k == 0 {
+        binomial(n, 0) * pow(a as int, 1) as nat
+    } else {
+        shifted_binomial_sum(a, n, (max_k - 1) as nat) + binomial(n, max_k) * pow(
+            a as int,
+            (max_k + 1) as nat,
+        ) as nat
+    }
+}
+
+/// shifted_binomial_sum(a, n, j) == a * binomial_sum(a, n, j)
+proof fn lemma_shifted_is_a_times(a: nat, n: nat, j: nat)
+    ensures
+        shifted_binomial_sum(a, n, j) == a * binomial_sum(a, n, j),
+    decreases j,
+{
+    if j == 0 {
+        assert(pow(a as int, 1) == (a as int) * pow(a as int, 0)) by {
+            reveal(pow);
+        };
+        assert(pow(a as int, 0) == 1) by {
+            reveal(pow);
+        };
+        let b0 = binomial(n, 0) as int;
+        let ai = a as int;
+        assert(b0 * (ai * 1) == ai * (b0 * 1)) by (nonlinear_arith);
+    } else {
+        lemma_shifted_is_a_times(a, n, (j - 1) as nat);
+        assert(pow(a as int, (j + 1) as nat) == (a as int) * pow(a as int, j)) by {
+            reveal(pow);
+        };
+        let sj1 = shifted_binomial_sum(a, n, (j - 1) as nat) as int;
+        let bsj1 = binomial_sum(a, n, (j - 1) as nat) as int;
+        let ai = a as int;
+        let bj = binomial(n, j) as int;
+        let pj = pow(a as int, j) as int;
+        let pj1 = pow(a as int, (j + 1) as nat) as int;
+        lemma_pow_nonnegative(a as int, j);
+        lemma_pow_nonnegative(a as int, (j + 1) as nat);
+        assert(sj1 + bj * pj1 == ai * (bsj1 + bj * pj)) by (nonlinear_arith)
+            requires
+                sj1 == ai * bsj1,
+                pj1 == ai * pj,
+        ;
+    }
+}
+
+/// Terms with index > n contribute zero to binomial_sum
+proof fn lemma_binomial_sum_excess_zero(a: nat, n: nat, j: nat)
+    requires
+        j > n,
+    ensures
+        binomial_sum(a, n, j) == binomial_sum(a, n, (j - 1) as nat),
+{
+    assert(binomial(n, j) == 0);
+    lemma_pow_nonnegative(a as int, j);
+}
+
+/// Pascal decomposition of binomial_sum: split C(n,k) into C(n-1,k-1) and C(n-1,k) terms
+proof fn lemma_pascal_sum_split(a: nat, n: nat, j: nat)
+    requires
+        n >= 1,
+        j <= n,
+    ensures
+        binomial_sum(a, n, j) == (if j == 0 {
+            0nat
+        } else {
+            shifted_binomial_sum(a, (n - 1) as nat, (j - 1) as nat)
+        }) + binomial_sum(a, (n - 1) as nat, j),
+    decreases j,
+{
+    let nm1 = (n - 1) as nat;
+    if j == 0 {
+        assert(binomial(n, 0) == 1);
+        assert(binomial(nm1, 0) == 1);
+    } else {
+        lemma_pascal_sum_split(a, n, (j - 1) as nat);
+        lemma_pow_nonnegative(a as int, j);
+        lemma_pow_nonnegative(a as int, (j + 1) as nat);
+
+        // Pascal's identity: C(n, j) = C(n-1, j-1) + C(n-1, j)
+        let jm1 = (j - 1) as nat;
+        if j < n {
+            assert(binomial(n, j) == binomial(nm1, jm1) + binomial(nm1, j));
+        } else {
+            // j == n: C(n,n) = 1, C(n-1,n-1) = 1, C(n-1,n) = 0
+            assert(binomial(n, n) == 1);
+            assert(binomial(nm1, nm1) == 1);
+            assert(binomial(nm1, n) == 0);
+        }
+
+        let cn1j1 = binomial(nm1, jm1) as int;
+        let cn1j = binomial(nm1, j) as int;
+        let pj = pow(a as int, j) as int;
+
+        // C(n,j) * a^j = C(n-1,j-1) * a^j + C(n-1,j) * a^j
+        assert((cn1j1 + cn1j) * pj == cn1j1 * pj + cn1j * pj) by (nonlinear_arith);
+
+        // Unroll the definition of shifted_binomial_sum(a, nm1, jm1)
+        if j == 1 {
+            // shifted(a, nm1, 0) = C(nm1, 0) * pow(a, 1)
+            assert(shifted_binomial_sum(a, nm1, 0) == binomial(nm1, 0) * pow(a as int, 1) as nat);
+        } else {
+            // shifted(a, nm1, jm1) = shifted(a, nm1, jm1-1) + C(nm1, jm1) * pow(a, jm1+1)
+            // jm1 + 1 == j
+            assert(shifted_binomial_sum(a, nm1, jm1) == shifted_binomial_sum(
+                a,
+                nm1,
+                (jm1 - 1) as nat,
+            ) + binomial(nm1, jm1) * pow(a as int, j) as nat);
+        }
+
+        // Unroll binomial_sum(a, nm1, j) = binomial_sum(a, nm1, jm1) + C(nm1, j) * a^j
+        assert(binomial_sum(a, nm1, j) == binomial_sum(a, nm1, jm1) + binomial(nm1, j) * pow(
+            a as int,
+            j,
+        ) as nat);
+    }
+}
+
+/// Binomial Theorem: (a+1)^n = Σ_{k=0}^{n} C(n,k) * a^k
+proof fn lemma_binomial_theorem(a: nat, n: nat)
     ensures
         binomial_sum(a, n, n) == pow((a + 1) as int, n) as nat,
+    decreases n,
 {
-    admit();
+    if n == 0 {
+        assert(pow(a as int, 0) == 1) by {
+            reveal(pow);
+        };
+        assert(pow((a + 1) as int, 0) == 1) by {
+            reveal(pow);
+        };
+        assert(binomial(0, 0) == 1);
+    } else {
+        let nm1 = (n - 1) as nat;
+        let a1 = (a + 1) as int;
+
+        lemma_binomial_theorem(a, nm1);
+        lemma_pascal_sum_split(a, n, n);
+        lemma_binomial_sum_excess_zero(a, nm1, n);
+        lemma_shifted_is_a_times(a, nm1, nm1);
+
+        let bs = binomial_sum(a, nm1, nm1) as int;
+        let ai = a as int;
+
+        // binomial_sum(a, n, n) == shifted(a, nm1, nm1) + bs(a, nm1, n)
+        //                       == a * bs + bs  (since bs(nm1, n) == bs(nm1, nm1) and shifted == a * bs)
+        //                       == (a + 1) * bs
+        //                       == (a + 1) * pow(a+1, n-1)
+        //                       == pow(a+1, n)
+        assert((ai + 1) * bs == ai * bs + bs) by (nonlinear_arith);
+        assert(pow(a1, n) == a1 * pow(a1, nm1)) by {
+            reveal(pow);
+        };
+        lemma_pow_nonnegative(a1, n);
+        lemma_pow_nonnegative(a1, nm1);
+    }
 }
 
 /// Partial binomial sum modulo p

@@ -28,7 +28,9 @@ use crate::specs::primality_specs::*;
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
 #[cfg(verus_keep_ghost)]
-use vstd::arithmetic::power2::{lemma2_to64, lemma_pow2_strictly_increases, pow2};
+use vstd::arithmetic::power2::{
+    lemma2_to64, lemma2_to64_rest, lemma_pow2_adds, lemma_pow2_strictly_increases, pow2,
+};
 use vstd::prelude::*;
 
 verus! {
@@ -49,31 +51,37 @@ pub proof fn axiom_montgomery_add_associative(
     admit();
 }
 
-/// Axiom: Left identity element
+/// Lemma: Left identity element
 /// ∞ + P = P
-pub proof fn axiom_montgomery_add_identity_left(P: MontgomeryAffine)
+pub proof fn lemma_montgomery_add_identity_left(P: MontgomeryAffine)
     ensures
         montgomery_add(MontgomeryAffine::Infinity, P) == P,
 {
-    admit();
 }
 
-/// Axiom: Infinity is the identity element (right identity)
+/// Lemma: Infinity is the identity element (right identity)
 /// P + ∞ = P
-pub proof fn axiom_montgomery_add_identity(P: MontgomeryAffine)
+pub proof fn lemma_montgomery_add_identity(P: MontgomeryAffine)
     ensures
         montgomery_add(P, MontgomeryAffine::Infinity) == P,
 {
-    admit();
 }
 
-/// Axiom: every point has an inverse
+/// Lemma: every point has an inverse
 /// P + (-P) = ∞
-pub proof fn axiom_montgomery_add_inverse(P: MontgomeryAffine)
+pub proof fn lemma_montgomery_add_inverse(P: MontgomeryAffine)
     ensures
         montgomery_add(P, montgomery_neg(P)) == MontgomeryAffine::Infinity,
 {
-    admit();
+    match P {
+        MontgomeryAffine::Infinity => {},
+        MontgomeryAffine::Finite { u, v } => {
+            assert(field_add(v, field_neg(v)) == 0) by {
+                lemma_field_sub_self(v);
+                lemma_field_sub_eq_add_neg(v, v);
+            }
+        },
+    }
 }
 
 // =============================================================================
@@ -394,7 +402,7 @@ pub proof fn lemma_montgomery_scalar_mul_add(P: MontgomeryAffine, m: nat, n: nat
     if m == 0 {
         // Base case: [0 + n]P = [n]P = ∞ + [n]P = [0]P + [n]P
         assert(montgomery_scalar_mul(P, 0) == MontgomeryAffine::Infinity);
-        axiom_montgomery_add_identity_left(montgomery_scalar_mul(P, n));
+        lemma_montgomery_add_identity_left(montgomery_scalar_mul(P, n));
     } else {
         let m_minus_1 = (m - 1) as nat;
 
@@ -821,17 +829,75 @@ proof fn lemma_montgomery_a_value()
     }
 }
 
-/// MONTGOMERY_A_NEG represents field_neg(A) where A = 486662.
-/// Its limbs encode p - 486662 in the 51-bit representation.
-/// Verified by runtime test `test_montgomery_a_neg_value`.
-pub proof fn axiom_montgomery_a_neg_is_neg_a()
+// Local helper specs for by(compute_only) evaluation.
+spec fn local_pow2_m(n: nat) -> nat
+    decreases n,
+{
+    if n == 0 {
+        1
+    } else {
+        2 * local_pow2_m((n - 1) as nat)
+    }
+}
+
+spec fn local_u5_nat_m(limbs: [u64; 5]) -> nat {
+    (limbs[0] as nat) + local_pow2_m(51) * (limbs[1] as nat) + local_pow2_m(102) * (limbs[2] as nat)
+        + local_pow2_m(153) * (limbs[3] as nat) + local_pow2_m(204) * (limbs[4] as nat)
+}
+
+spec fn local_p_m() -> nat {
+    (local_pow2_m(255) - 19) as nat
+}
+
+proof fn lemma_bridge_local_pow2_m()
+    ensures
+        local_pow2_m(51) == pow2(51),
+        local_pow2_m(102) == pow2(102),
+        local_pow2_m(153) == pow2(153),
+        local_pow2_m(204) == pow2(204),
+        local_pow2_m(255) == pow2(255),
+{
+    assert(local_pow2_m(51) == 2251799813685248nat) by (compute_only);
+    assert(pow2(51) == 2251799813685248nat) by {
+        lemma2_to64_rest();
+    };
+    assert(local_pow2_m(102) == local_pow2_m(51) * local_pow2_m(51)) by (compute_only);
+    assert(pow2(102) == pow2(51) * pow2(51)) by {
+        lemma_pow2_adds(51, 51);
+    };
+    assert(local_pow2_m(153) == local_pow2_m(51) * local_pow2_m(102)) by (compute_only);
+    assert(pow2(153) == pow2(51) * pow2(102)) by {
+        lemma_pow2_adds(51, 102);
+    };
+    assert(local_pow2_m(204) == local_pow2_m(51) * local_pow2_m(153)) by (compute_only);
+    assert(pow2(204) == pow2(51) * pow2(153)) by {
+        lemma_pow2_adds(51, 153);
+    };
+    assert(local_pow2_m(255) == local_pow2_m(51) * local_pow2_m(204)) by (compute_only);
+    assert(pow2(255) == pow2(51) * pow2(204)) by {
+        lemma_pow2_adds(51, 204);
+    };
+}
+
+/// MONTGOMERY_A_NEG encodes field_neg(MONTGOMERY_A) = p - 486662 in 51-bit limb form.
+///
+/// Proved by concrete computation with by(compute_only).
+pub proof fn lemma_montgomery_a_neg_is_neg_a()
     ensures
         fe51_as_canonical_nat(&MONTGOMERY_A_NEG) == field_neg(fe51_as_canonical_nat(&MONTGOMERY_A)),
 {
-    // The limbs of MONTGOMERY_A_NEG are [2^51-19-486662, 2^51-1, 2^51-1, 2^51-1, 2^51-1],
-    // which is exactly p - 486662 in the 51-bit limb representation.
-    // The concrete large-number arithmetic is verified by the runtime test.
-    admit();
+    assert(fe51_as_canonical_nat(&MONTGOMERY_A_NEG) == field_neg(
+        fe51_as_canonical_nat(&MONTGOMERY_A),
+    )) by {
+        assert({
+            let lp = local_p_m();
+            let neg_a_val = local_u5_nat_m(MONTGOMERY_A_NEG.limbs) % lp;
+            let a_val = local_u5_nat_m(MONTGOMERY_A.limbs) % lp;
+            neg_a_val == ((lp - (a_val % lp)) as nat) % lp
+        }) by (compute_only);
+
+        lemma_bridge_local_pow2_m();
+    };
 }
 
 /// Helper: show that small constants (< 1048576) are less than p.
@@ -938,18 +1004,161 @@ proof fn lemma_eps_when_d_is_minus_one(d: nat, A: nat)
     }
 }
 
-/// Axiom: if d = -A/(1+2r²) and d+A = 1 (mod p), then r² = inv(2·(A-1)).
-/// Verified by runtime test `test_nonsquare_branch_identity`.
-proof fn axiom_nonsquare_branch_r_sq(A: nat, d: nat, d_denom: nat, r_sq: nat)
+/// If d = -A/(1+2r²) and d+A = 1 (mod p), then r² = inv(2·(A-1)).
+proof fn lemma_nonsquare_branch_r_sq(A: nat, d: nat, d_denom: nat, r_sq: nat)
     requires
         A == 486662nat,
+        r_sq < p(),
         d_denom == field_add(1, field_mul(2, r_sq)),
         d == field_mul(field_neg(A), field_inv(d_denom)),
         field_neg(field_add(d, A)) == field_sub(0, 1),
     ensures
         r_sq == field_inv((2nat * 486661nat) % p()),
 {
-    admit();
+    let pp = p();
+    p_gt_2();
+
+    // Step 1: field_add(d, A) == 1
+    let dpa = field_add(d, A);
+    assert(field_sub(0, 1) == (pp - 1) as nat) by {
+        lemma_small_mod(0, pp);
+        lemma_small_mod(1, pp);
+        lemma_small_mod((pp - 1) as nat, pp);
+    };
+    assert(dpa < pp) by {
+        lemma_mod_bound((d + A) as int, pp as int);
+    };
+    if dpa == 0 {
+        assert(field_neg(0) == 0nat) by {
+            lemma_mod_self_0(pp as int);
+        };
+        assert(false);
+    }
+    assert(field_neg(dpa) == (pp - dpa) as nat) by {
+        lemma_small_mod(dpa, pp);
+        lemma_small_mod((pp - dpa) as nat, pp);
+    };
+    assert(dpa == 1);
+
+    // Step 2: d_denom % p != 0 (otherwise d=0, d+A=A=486662≠1)
+    assert(d_denom % pp != 0) by {
+        if d_denom % pp == 0 {
+            assert(field_inv(d_denom) == 0);
+            lemma_field_mul_zero_right(field_neg(A), field_inv(d_denom));
+            assert(d == 0);
+            lemma_p_gt_small(A);
+            assert(field_add(0, A) == A) by {
+                lemma_small_mod(A, pp);
+            };
+            assert(false);
+        }
+    };
+
+    // Step 3: d * d_denom = -A (by associativity + inverse cancellation)
+    let neg_a = field_neg(A);
+    let inv_dd = field_inv(d_denom);
+    lemma_field_mul_assoc(neg_a, inv_dd, d_denom);
+    assert(field_mul(field_mul(neg_a, inv_dd), d_denom) == field_mul(
+        neg_a,
+        field_mul(inv_dd, d_denom),
+    ));
+    assert(d == field_mul(neg_a, inv_dd));
+    lemma_inv_mul_cancel(d_denom);
+    assert(field_mul(inv_dd, d_denom) == 1);
+    lemma_field_mul_one_right(neg_a);
+    assert(neg_a < pp) by {
+        lemma_mod_bound((pp - A % pp) as int, pp as int);
+    };
+    lemma_small_mod(neg_a, pp);
+    assert(field_mul(neg_a, 1) == neg_a);
+    assert(field_mul(d, d_denom) == neg_a);
+
+    // Step 4: (d+A) * d_denom = d*d_denom + A*d_denom (distributivity)
+    lemma_field_mul_distributes_over_add(d_denom, d, A);
+    lemma_field_mul_comm(d_denom, d);
+    lemma_field_mul_comm(d_denom, A);
+    lemma_field_mul_comm(d_denom, dpa);
+    assert(field_mul(dpa, d_denom) == field_add(field_mul(d, d_denom), field_mul(A, d_denom)));
+
+    // Step 5: Since dpa=1, 1*d_denom = d_denom
+    lemma_field_mul_one_left(d_denom);
+    assert(d_denom < pp) by {
+        lemma_mod_bound((1 + (2 * r_sq) % pp) as int, pp as int);
+    };
+    lemma_small_mod(d_denom, pp);
+    assert(field_mul(dpa, d_denom) == d_denom);
+
+    // Step 6: d_denom = -A + A*d_denom
+    assert(d_denom == field_add(field_neg(A), field_mul(A, d_denom)));
+
+    // Step 7: A*(1 + 2*r_sq) = A + A*2*r_sq (expand via distributivity)
+    let two_rsq = field_mul(2, r_sq);
+    lemma_field_mul_distributes_over_add(A, 1, two_rsq);
+    lemma_field_mul_one_right(A);
+    lemma_p_gt_small(A);
+    lemma_small_mod(A, pp);
+    let a_two_rsq = field_mul(A, two_rsq);
+
+    // Step 8: -A + (A + A*2*r_sq) = (-A + A) + A*2*r_sq = 0 + A*2*r_sq = A*2*r_sq
+    lemma_field_add_assoc(field_neg(A), A, a_two_rsq);
+    assert(field_neg(A) == (pp - A) as nat) by {
+        lemma_small_mod(A, pp);
+        lemma_small_mod((pp - A) as nat, pp);
+    };
+    assert(field_add(field_neg(A), A) == 0) by {
+        lemma_mod_self_0(pp as int);
+    };
+    assert(a_two_rsq < pp) by {
+        lemma_mod_bound((A * two_rsq) as int, pp as int);
+    };
+    assert(field_add(0, a_two_rsq) == a_two_rsq) by {
+        lemma_small_mod(a_two_rsq, pp);
+    };
+    assert(d_denom == a_two_rsq);
+
+    // Step 9: A*2*r_sq = (A*2)*r_sq by associativity
+    lemma_field_mul_assoc(A, 2, r_sq);
+    assert(a_two_rsq == field_mul(field_mul(A, 2), r_sq));
+    assert(field_mul(A, 2) == 973324nat) by {
+        assert(486662nat * 2 == 973324nat) by (compute);
+        lemma_p_gt_small(973324nat);
+        lemma_small_mod(973324nat, pp);
+    };
+
+    // Step 10: Subtract 2*r_sq from both sides: 1 = (973324 - 2)*r_sq = 973322*r_sq
+    assert(two_rsq < pp) by {
+        lemma_mod_bound((2 * r_sq) as int, pp as int);
+    };
+    assert(1nat < pp);
+    lemma_field_sub_add_cancel(1, two_rsq);
+    assert(field_sub(d_denom, two_rsq) == 1);
+    assert(field_sub(field_mul(973324nat, r_sq), two_rsq) == 1);
+    lemma_field_mul_distributes_over_sub_right(973324nat, 2nat, r_sq);
+    assert(field_sub(973324nat, 2nat) == 973322nat) by {
+        lemma_small_mod(973324nat, pp);
+        lemma_small_mod(2nat, pp);
+        lemma_mod_add_multiples_vanish(973322int, pp as int);
+        lemma_small_mod(973322nat, pp);
+    };
+    assert(field_mul(973322nat, r_sq) == 1);
+
+    // Step 11: 973322 = 2*486661, so r_sq = inv(2*486661)
+    assert(973322nat == 2nat * 486661nat) by (compute);
+    let two_a1 = (2nat * 486661nat) % pp;
+    assert(two_a1 == 973322nat) by {
+        lemma_small_mod(973322nat, pp);
+    };
+    assert(field_mul(two_a1, r_sq) == 1);
+
+    lemma_field_mul_comm(two_a1, r_sq);
+    assert(1nat % pp == 1nat) by {
+        lemma_small_mod(1nat, pp);
+    };
+    lemma_solve_for_left_factor(r_sq, two_a1, 1);
+    lemma_field_mul_one_left(field_inv(two_a1));
+    field_inv_property(two_a1);
+    lemma_small_mod(field_inv(two_a1), pp);
+    lemma_small_mod(r_sq, pp);
 }
 
 // =============================================================================
@@ -1041,9 +1250,13 @@ pub proof fn lemma_elligator_never_minus_one(r: nat)
             let two_a1 = (2nat * 486661nat) % p();
 
             // r² = inv(2*486661) by axiom
+            assert(r_sq < p()) by {
+                p_gt_2();
+                lemma_mod_bound((r * r) as int, p() as int);
+            };
             assert(r_sq == field_inv(two_a1)) by {
                 lemma_montgomery_a_value();
-                axiom_nonsquare_branch_r_sq(A, d, d_denom, r_sq);
+                lemma_nonsquare_branch_r_sq(A, d, d_denom, r_sq);
             }
 
             // inv(2*486661) is not a QR
@@ -1075,17 +1288,127 @@ pub proof fn lemma_elligator_never_minus_one(r: nat)
     }
 }
 
-/// Axiom: The Ed25519 basepoint maps to the X25519 basepoint under the Edwards-to-Montgomery map.
+/// Lemma: The Ed25519 basepoint maps to the X25519 basepoint under the Edwards→Montgomery map.
 ///
-/// The map φ: Edwards → Montgomery sends (x, y) to u = (1+y)/(1-y).
-/// For the Ed25519 basepoint B with affine y-coordinate y_B, we have φ(B).u = u_B.
+/// The map φ sends (x, y) to u = (1+y)/(1-y). For the Ed25519 basepoint, φ(B).u = 9.
+/// Proved by concrete modular arithmetic: 9·(1-y) ≡ (1+y) (mod p).
 ///
 /// Reference: <https://www.rfc-editor.org/rfc/rfc7748#section-4.1>
-pub proof fn axiom_edwards_basepoint_maps_to_montgomery_basepoint()
+pub proof fn lemma_edwards_basepoint_maps_to_montgomery_basepoint()
     ensures
         montgomery_u_from_edwards_y(spec_ed25519_basepoint().1) == spec_x25519_basepoint_u(),
 {
-    admit();
+    let y_limbs: [u64; 5] = [
+        1801439850948184u64,
+        1351079888211148,
+        450359962737049,
+        900719925474099,
+        1801439850948198,
+    ];
+    lemma_ed25519_basepoint_y();
+    let y = spec_ed25519_basepoint().1;
+    assert(y == u64_5_as_nat(y_limbs));
+
+    let pp = p();
+
+    // Key fact: the basepoint y-coordinate satisfies 5y = 4p + 4 (i.e. y = 4/5 mod p)
+    assert(5 * y == 4 * pp + 4) by {
+        assert({
+            let y_local = local_u5_nat_m(
+                [
+                    1801439850948184u64,
+                    1351079888211148u64,
+                    450359962737049u64,
+                    900719925474099u64,
+                    1801439850948198u64,
+                ],
+            );
+            let lp = local_p_m();
+            5 * y_local == 4 * lp + 4
+        }) by (compute_only);
+        lemma_bridge_local_pow2_m();
+    };
+
+    // From 5y = 4p+4: y < p (since y = (4p+4)/5 < p for p > 1)
+    assert(y < pp) by {
+        p_gt_2();
+    };
+
+    let denom = field_sub(1nat, y);
+    let numer = field_add(1nat, y);
+
+    // Since 5y = 4p+4 and p > 9: y > 1 and y < p-1
+    assert(y > 1) by {
+        p_gt_2();
+    };
+    assert(y < pp - 1) by {
+        lemma_p_gt_small(9);
+    };
+    assert(1 + y < pp);
+
+    // field_sub(1, y) = ((1%p + p - y%p) as nat) % p
+    // Since 1 < p and y < p: this simplifies to (1 + p - y) % p = p + 1 - y (since y > 1)
+    assert(field_canonical(1nat) == 1nat) by {
+        lemma_p_gt_small(1);
+        lemma_small_mod(1nat, pp);
+    };
+    assert(field_canonical(y) == y) by {
+        lemma_small_mod(y, pp);
+    };
+    assert(denom == ((1 + pp - y) as nat) % pp);
+    let sub_val: nat = (pp + 1 - y) as nat;
+    assert(sub_val < pp);
+    assert(denom == sub_val) by {
+        lemma_small_mod(sub_val, pp);
+    };
+
+    // field_add(1, y) = (1 + y) % p = 1 + y (since 1 + y < p)
+    assert(numer == 1 + y) by {
+        lemma_small_mod(1 + y, pp);
+    };
+
+    // denom != 0 follows from y < p (so p+1-y >= 2)
+    assert(denom != 0);
+
+    // 9*denom = 9(p+1-y) = 9p + 9 - 9y = 9p + 9 - 9y
+    // numer + p = 1 + y + p
+    // Check: 9(p+1-y) = (1+y) + p  ⟺  9p+9-9y = p+1+y  ⟺  8p+8 = 10y  ⟺  4p+4 = 5y ✓
+    assert(9 * denom == numer + pp) by {
+        assert(9 * ((pp + 1 - y) as nat) == (1 + y) + pp);
+    };
+
+    // field_mul(9, denom) = (9*denom) % p = (numer + p) % p = numer
+    assert(field_mul(9nat, denom) == numer) by {
+        p_gt_2();
+        assert(numer < pp);
+        assert(9 * denom == numer + pp);
+        // (numer + 1*pp) % pp == numer % pp == numer
+        lemma_mod_multiples_vanish(1, numer as int, pp as int);
+        lemma_small_mod(numer, pp);
+    };
+
+    // Algebraic: numer = 9*denom implies (1+y)*inv(1-y) = 9
+    assert(montgomery_u_from_edwards_y(y) == 9nat) by {
+        assert(numer == field_mul(9nat, denom));
+        assert(field_mul(field_mul(9nat, denom), field_inv(denom)) == field_mul(
+            9nat,
+            field_mul(denom, field_inv(denom)),
+        )) by {
+            lemma_field_mul_assoc(9nat, denom, field_inv(denom));
+        };
+        assert(field_mul(denom, field_inv(denom)) == 1) by {
+            lemma_inv_mul_cancel(denom);
+            lemma_field_mul_comm(field_inv(denom), denom);
+        };
+        assert(field_mul(9nat, 1) == 9nat) by {
+            lemma_field_mul_one_right(9nat);
+            lemma_p_gt_small(9);
+            lemma_small_mod(9, p());
+        };
+    };
+
+    // spec_x25519_basepoint_u() == 9
+    lemma_x25519_basepoint_u_is_9();
 }
 
 /// Axiom: The Edwards-to-Montgomery map commutes with scalar multiplication.
@@ -1150,76 +1473,6 @@ mod test_qr_axioms {
         a.modpow(&(p - BigUint::from(2u32)), p)
     }
 
-    #[test]
-    fn test_nonsquare_branch_identity() {
-        // Verify: for any r, if -(d+A) = -1 with d = -A/(1+2r²),
-        // then r² = inv(2*486661) mod p.
-        // We check: inv(2*486661) is not a QR, confirming no such r exists.
-        let p = p();
-        let a = BigUint::from(486662u32);
-        let two_a1 = (BigUint::from(2u32) * BigUint::from(486661u32)) % &p;
-        let inv_two_a1 = mod_inv(&two_a1, &p);
-
-        // inv(2*486661) should not be a QR (same as 2*486661 not being QR)
-        assert!(
-            !is_qr(&inv_two_a1, &p),
-            "inv(2*486661) should NOT be a QR mod p"
-        );
-
-        // Also verify the algebra: if d = 1-A and d = -A/(1+2r²),
-        // then 1+2r² = A/(A-1) and r² = 1/(2*(A-1)) = inv(2*486661)
-        let one_minus_a = (&p + BigUint::one() - &a) % &p;
-        let a_minus_1 = BigUint::from(486661u32);
-        let denom = (&a * mod_inv(&a_minus_1, &p)) % &p; // A/(A-1)
-        let two_r_sq = (&denom + &p - BigUint::one()) % &p; // denom - 1
-        let r_sq = (&two_r_sq * mod_inv(&BigUint::from(2u32), &p)) % &p;
-        assert_eq!(r_sq, inv_two_a1, "r² should equal inv(2*486661)");
-    }
-
-    #[test]
-    fn test_montgomery_a_neg_value() {
-        // Verify MONTGOMERY_A_NEG encodes -486662 mod p.
-        // Its limbs are [2^51-19-486662, 2^51-1, 2^51-1, 2^51-1, 2^51-1],
-        // which sums to p - 486662.
-        let p = p();
-        let a = BigUint::from(486662u32);
-        let neg_a = (&p - &a) % &p;
-
-        // Compute u64_5_as_nat from the constant's limbs
-        let l0 = BigUint::from(2251799813198567u64);
-        let l1 = BigUint::from(2251799813685247u64);
-        let pow2_51 = BigUint::one() << 51;
-        let pow2_102 = BigUint::one() << 102;
-        let pow2_153 = BigUint::one() << 153;
-        let pow2_204 = BigUint::one() << 204;
-        let nat = &l0 + &l1 * &pow2_51 + &l1 * &pow2_102 + &l1 * &pow2_153 + &l1 * &pow2_204;
-        assert_eq!(&nat % &p, neg_a, "MONTGOMERY_A_NEG should encode -A mod p");
-    }
-
-    /// Test that the Edwards-to-Montgomery map sends the Ed25519 basepoint to u = 9.
-    ///
-    /// Verifies axiom_edwards_basepoint_maps_to_montgomery_basepoint:
-    ///   u = (1 + y) / (1 - y) mod p = 9
-    ///
-    /// Reference: <https://www.rfc-editor.org/rfc/rfc7748#section-4.1>
-    #[test]
-    fn test_edwards_basepoint_maps_to_montgomery_9() {
-        let p = p();
-        // Ed25519 basepoint Y-coordinate (RFC 8032 Section 5.1)
-        let y: BigUint =
-            "46316835694926478169428394003475163141307993866256225615783033603165251855960"
-                .parse()
-                .unwrap();
-
-        // u = (1 + y) / (1 - y) mod p
-        let one_plus_y = (BigUint::one() + &y) % &p;
-        let one_minus_y = (&p + BigUint::one() - &y) % &p;
-        let u = (&one_plus_y * mod_inv(&one_minus_y, &p)) % &p;
-
-        assert_eq!(
-            u,
-            BigUint::from(9u32),
-            "Edwards basepoint should map to u = 9"
-        );
-    }
+    // test_edwards_basepoint_maps_to_montgomery_9 removed: now formally proved as
+    // lemma_edwards_basepoint_maps_to_montgomery_basepoint.
 }

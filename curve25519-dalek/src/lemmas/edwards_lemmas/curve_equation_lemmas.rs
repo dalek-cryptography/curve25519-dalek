@@ -119,17 +119,16 @@ pub proof fn lemma_identity_is_valid_extended()
     ensures
         is_valid_extended_edwards_point(0, 1, 1, 0),
 {
-    // First prove (0, 1) is on the curve
-    lemma_identity_on_curve();
-
-    // t = x * y = 0 * 1 = 0
-    assert(field_mul(0nat, 1nat) == 0) by {
-        p_gt_2();
-        lemma_small_mod(0nat, p());
-    }
-
-    // Use the affine-to-extended lemma
-    lemma_affine_to_extended_valid(0nat, 1nat, 0nat);
+    assert(is_valid_extended_edwards_point(0, 1, 1, 0)) by {
+        assert(is_on_edwards_curve(0, 1)) by {
+            lemma_identity_on_curve();
+        };
+        assert(field_mul(0nat, 1nat) == 0) by {
+            p_gt_2();
+            lemma_small_mod(0nat, p());
+        };
+        lemma_affine_to_extended_valid(0nat, 1nat, 0nat);
+    };
 }
 
 /// The identity projective point (X=0, Y=1, Z=1) is valid, has bounded limbs,
@@ -1170,32 +1169,109 @@ pub proof fn lemma_edwards_add_identity_left(x: nat, y: nat)
 // =============================================================================
 // Axioms: Signed scalar multiplication linearity (group law)
 // =============================================================================
-/// Axiom: Scalar multiplication distributes over point negation.
+/// Lemma: Scalar multiplication distributes over point negation.
 /// [n](-P) = -([n]P)
-pub proof fn axiom_scalar_mul_distributes_over_neg(P: (nat, nat), n: nat)
+///
+/// Proof by structural induction mirroring edwards_scalar_mul's recursion.
+/// Even case uses double = add(x,x) + neg_distributes_over_add.
+/// Odd case uses add(prev, P) + neg_distributes_over_add.
+pub proof fn lemma_scalar_mul_distributes_over_neg(P: (nat, nat), n: nat)
     ensures
         edwards_scalar_mul(edwards_neg(P), n) == edwards_neg(edwards_scalar_mul(P, n)),
+    decreases n,
 {
-    admit();
+    if n == 0 {
+        assert(field_neg(0nat) == 0nat) by {
+            p_gt_2();
+            lemma_small_mod(0nat, p());
+            lemma_mod_self_0(p() as int);
+        };
+    } else if n == 1 {
+    } else if n % 2 == 0 {
+        let half_n = (n / 2) as nat;
+        let H = edwards_scalar_mul(P, half_n);
+        assert(edwards_scalar_mul(edwards_neg(P), half_n) == edwards_neg(H)) by {
+            lemma_scalar_mul_distributes_over_neg(P, half_n);
+        };
+        assert(edwards_add(edwards_neg(H).0, edwards_neg(H).1, edwards_neg(H).0, edwards_neg(H).1)
+            == edwards_neg(edwards_add(H.0, H.1, H.0, H.1))) by {
+            lemma_neg_distributes_over_add(H, H);
+        };
+    } else {
+        let prev_n = (n - 1) as nat;
+        let prev = edwards_scalar_mul(P, prev_n);
+        assert(edwards_scalar_mul(edwards_neg(P), prev_n) == edwards_neg(prev)) by {
+            lemma_scalar_mul_distributes_over_neg(P, prev_n);
+        };
+        assert(edwards_add(
+            edwards_neg(prev).0,
+            edwards_neg(prev).1,
+            edwards_neg(P).0,
+            edwards_neg(P).1,
+        ) == edwards_neg(edwards_add(prev.0, prev.1, P.0, P.1))) by {
+            lemma_neg_distributes_over_add(prev, P);
+        };
+    }
 }
 
-/// Axiom: Negation distributes over addition (group homomorphism property).
+/// Lemma: Negation distributes over addition (group homomorphism property).
 /// (-P) + (-Q) = -(P + Q)
-pub proof fn axiom_neg_distributes_over_add(P: (nat, nat), Q: (nat, nat))
+///
+/// Proof outline: edwards_neg flips the x-coordinate only.
+/// neg(x)*neg(y) = x*y so the denominator parameter t is unchanged,
+/// while neg(x)*y = neg(x*y), so the x-numerator picks up a sign flip.
+pub proof fn lemma_neg_distributes_over_add(P: (nat, nat), Q: (nat, nat))
     ensures
         edwards_add(edwards_neg(P).0, edwards_neg(P).1, edwards_neg(Q).0, edwards_neg(Q).1)
             == edwards_neg(edwards_add(P.0, P.1, Q.0, Q.1)),
 {
-    admit();
-}
+    let (px, py) = (P.0, P.1);
+    let (qx, qy) = (Q.0, Q.1);
+    let neg_px = field_neg(px);
+    let neg_qx = field_neg(qx);
 
-/// Axiom: Adding a point and its negation gives identity.
-/// P + (-P) = O (identity)
-pub proof fn axiom_add_neg_is_identity(P: (nat, nat))
-    ensures
-        edwards_add(P.0, P.1, edwards_neg(P).0, edwards_neg(P).1) == edwards_identity(),
-{
-    admit();
+    let d = fe51_as_canonical_nat(&EDWARDS_D);
+    let x1x2 = field_mul(px, qx);
+    let y1y2 = field_mul(py, qy);
+    let x1y2 = field_mul(px, qy);
+    let y1x2 = field_mul(py, qx);
+    let t = field_mul(d, field_mul(x1x2, y1y2));
+    let denom_x = field_add(1, t);
+    let denom_y = field_sub(1, t);
+    let x3 = field_mul(field_add(x1y2, y1x2), field_inv(denom_x));
+    let y3 = field_mul(field_add(y1y2, x1x2), field_inv(denom_y));
+
+    // Key fact: neg*neg = id in GF(p)
+    assert(field_mul(neg_px, neg_qx) == x1x2) by {
+        lemma_field_neg_mul_left(px, neg_qx);
+        lemma_field_mul_neg(px, qx);
+        lemma_neg_neg(field_mul(px, qx));
+        p_gt_2();
+        lemma_mod_bound((px * qx) as int, p() as int);
+        lemma_field_element_reduced(field_mul(px, qx));
+    };
+
+    // neg*pos = neg(pos*pos)
+    assert(field_mul(neg_px, qy) == field_neg(x1y2)) by {
+        lemma_field_neg_mul_left(px, qy);
+    };
+    assert(field_mul(py, neg_qx) == field_neg(y1x2)) by {
+        lemma_field_mul_neg(py, qx);
+    };
+
+    // neg(a)+neg(b) = neg(a+b) in GF(p)
+    assert(field_add(field_neg(x1y2), field_neg(y1x2)) == field_neg(field_add(x1y2, y1x2))) by {
+        lemma_field_sub_eq_add_neg(field_neg(x1y2), y1x2);
+        lemma_field_sub_antisymmetric(y1x2, field_neg(x1y2));
+        lemma_sub_neg_eq_add(y1x2, x1y2);
+        lemma_field_add_comm(y1x2, x1y2);
+    };
+
+    // neg(num)*inv = neg(num*inv)
+    let x_num = field_add(x1y2, y1x2);
+    assert(field_mul(field_neg(x_num), field_inv(denom_x)) == field_neg(x3)) by {
+        lemma_field_neg_mul_left(x_num, field_inv(denom_x));
+    };
 }
 
 /// Negation flips the sign of signed scalar multiplication:
@@ -1274,7 +1350,7 @@ pub proof fn lemma_edwards_scalar_mul_signed_composition(P: (nat, nat), a: int, 
 
         // LHS: [b]((neg_x, y)) where (x, y) = [|a|]P
         // By axiom: [b](-Q) = -([b]Q)
-        axiom_scalar_mul_distributes_over_neg(edwards_scalar_mul(P, abs_a), b);
+        lemma_scalar_mul_distributes_over_neg(edwards_scalar_mul(P, abs_a), b);
 
         // [b]([|a|]P) = [|a|*b]P by unsigned composition
         lemma_edwards_scalar_mul_composition(P, abs_a, b);
@@ -2932,16 +3008,13 @@ pub proof fn lemma_completed_point_ratios(
     }
 }
 
-/// Axiom: For field elements Y, Z with Z ≠ 0: (Z+Y)/(Z-Y) == (1+y)/(1-y) where y = Y/Z.
+/// Lemma: For field elements Y, Z with Z != 0: (Z+Y)/(Z-Y) == (1+y)/(1-y) where y = Y/Z.
 ///
 /// Used by `to_montgomery` to compute the Edwards-to-Montgomery map u = (1+y)/(1-y)
 /// directly from the projective Y, Z coordinates as (Z+Y)/(Z-Y).
-///
-/// TODO: prove this from field algebra (cross-multiply and simplify).
-pub proof fn axiom_edwards_to_montgomery_correspondence(y: nat, z: nat)
+pub proof fn lemma_edwards_to_montgomery_correspondence(y: nat, z: nat)
     requires
-        z % p() != 0,  // Non-identity point (Z ≠ 0)
-
+        z % p() != 0,
     ensures
         ({
             let y_affine = field_mul(y, field_inv(z));
@@ -2952,7 +3025,82 @@ pub proof fn axiom_edwards_to_montgomery_correspondence(y: nat, z: nat)
             projective_result == affine_result
         }),
 {
-    admit();
+    let inv_z = field_inv(z);
+    let y_aff = field_mul(y, inv_z);
+
+    assert(p() > 2) by {
+        p_gt_2();
+    };
+
+    assert(inv_z % p() != 0) by {
+        lemma_inv_mul_cancel(z);
+        p_gt_2();
+        if inv_z % p() == 0 {
+            lemma_mul_mod_noop_left(inv_z as int, z as int, p() as int);
+            assert(field_mul(inv_z, z) == 0nat) by {
+                lemma_mod_self_0(p() as int);
+            };
+        }
+    };
+
+    // z * inv(z) = 1
+    assert(field_mul(z, inv_z) == 1nat) by {
+        lemma_inv_mul_cancel(z);
+        lemma_field_mul_comm(inv_z, z);
+    };
+
+    // Step 1: add(1, y*inv_z) = mul(add(z, y), inv_z)
+    assert(field_add(1nat, y_aff) == field_mul(field_add(z, y), inv_z)) by {
+        lemma_field_mul_distributes_over_add(inv_z, z, y);
+        lemma_field_mul_comm(inv_z, field_add(z, y));
+        lemma_field_mul_comm(inv_z, y);
+    };
+
+    // Step 2: sub(1, y*inv_z) = mul(sub(z, y), inv_z)
+    assert(field_sub(1nat, y_aff) == field_mul(field_sub(z, y), inv_z)) by {
+        lemma_field_mul_distributes_over_sub_right(z, y, inv_z);
+        lemma_field_mul_comm(z, inv_z);
+        lemma_field_mul_comm(y, inv_z);
+    };
+
+    let zpy = field_add(z, y);
+    let zmy = field_sub(z, y);
+    let one_plus_y = field_add(1nat, y_aff);
+    let one_minus_y = field_sub(1nat, y_aff);
+
+    let proj = field_mul(zpy, field_inv(zmy));
+    let affi = field_mul(one_plus_y, field_inv(one_minus_y));
+
+    // Step 3: cancel inv_z from numerator and denominator
+    if zmy % p() != 0 {
+        assert(affi == proj) by {
+            lemma_cancel_common_factor(zpy, zmy, inv_z);
+        };
+    } else {
+        assert(zmy == 0nat) by {
+            lemma_mod_bound(z as int, p() as int);
+            lemma_mod_bound(y as int, p() as int);
+            lemma_mod_bound((z % p() + p() - y % p()) as int, p() as int);
+            lemma_small_mod(zmy, p());
+        };
+
+        assert(one_minus_y == 0nat) by {
+            assert(field_mul(0nat, inv_z) == 0nat) by {
+                lemma_field_mul_comm(0nat, inv_z);
+                lemma_field_mul_one_left(0nat);
+            };
+        };
+
+        assert(proj == 0nat) by {
+            lemma_field_mul_comm(zpy, 0nat);
+            lemma_field_mul_one_left(0nat);
+        };
+        assert(affi == 0nat) by {
+            lemma_field_mul_comm(one_plus_y, 0nat);
+            lemma_field_mul_one_left(0nat);
+        };
+    }
+    assert(proj == affi);
 }
 
 /// Lemma: When Z = 1 in a well-formed EdwardsPoint, the affine coordinates

@@ -99,6 +99,25 @@ pub closed spec fn spec_ed25519_basepoint() -> (nat, nat) {
     )
 }
 
+/// Expose the y-coordinate of the Ed25519 basepoint for cross-module proofs.
+///
+/// Since `spec_ed25519_basepoint` is a closed spec fn, its body is only visible
+/// within this module. This lemma exports the y-coordinate so other modules
+/// can prove concrete properties (e.g., the Edwards→Montgomery basepoint map).
+pub proof fn lemma_ed25519_basepoint_y()
+    ensures
+        spec_ed25519_basepoint().1 == u64_5_as_nat(
+            [
+                1801439850948184u64,
+                1351079888211148u64,
+                450359962737049u64,
+                900719925474099u64,
+                1801439850948198u64,
+            ],
+        ),
+{
+}
+
 // =============================================================================
 // EdwardsBasepointTable Specification
 // =============================================================================

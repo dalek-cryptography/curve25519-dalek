@@ -20,3 +20,6 @@ extend-ignore-re = [
 "pn" = "pn" # Variable name for prime number
 "ba" = "ba" # Variable name for B+A curve point addition
 "Thm" = "Thm" # Abbreviation for Theorem
+"numer" = "numer" # Abbreviation for numerator
+"hom" = "hom" # Group homomorphism (math term)
+"Hom" = "Hom" # Group homomorphism (math term)

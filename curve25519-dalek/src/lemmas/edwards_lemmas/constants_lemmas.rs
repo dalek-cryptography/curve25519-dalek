@@ -115,29 +115,85 @@ pub(crate) proof fn lemma_edwards_d2_limbs_bounded_54()
     };
 }
 
-/// EDWARDS_D2 equals 2 * EDWARDS_D in the field
+// Local helper specs for by(compute_only) evaluation (interpreter cannot
+// evaluate vstd::pow2 directly, so we mirror the definition locally).
+spec fn local_pow2(n: nat) -> nat
+    decreases n,
+{
+    if n == 0 {
+        1
+    } else {
+        2 * local_pow2((n - 1) as nat)
+    }
+}
+
+spec fn local_u5_nat(limbs: [u64; 5]) -> nat {
+    (limbs[0] as nat) + local_pow2(51) * (limbs[1] as nat) + local_pow2(102) * (limbs[2] as nat)
+        + local_pow2(153) * (limbs[3] as nat) + local_pow2(204) * (limbs[4] as nat)
+}
+
+spec fn local_p() -> nat {
+    (local_pow2(255) - 19) as nat
+}
+
+proof fn lemma_bridge_local_pow2_d2()
+    ensures
+        local_pow2(51) == pow2(51),
+        local_pow2(102) == pow2(102),
+        local_pow2(153) == pow2(153),
+        local_pow2(204) == pow2(204),
+        local_pow2(255) == pow2(255),
+{
+    assert(local_pow2(51) == 2251799813685248nat) by (compute_only);
+    assert(pow2(51) == 2251799813685248nat) by {
+        lemma2_to64_rest();
+    };
+
+    assert(local_pow2(102) == local_pow2(51) * local_pow2(51)) by (compute_only);
+    assert(pow2(102) == pow2(51) * pow2(51)) by {
+        lemma_pow2_adds(51, 51);
+    };
+
+    assert(local_pow2(153) == local_pow2(51) * local_pow2(102)) by (compute_only);
+    assert(pow2(153) == pow2(51) * pow2(102)) by {
+        lemma_pow2_adds(51, 102);
+    };
+
+    assert(local_pow2(204) == local_pow2(51) * local_pow2(153)) by (compute_only);
+    assert(pow2(204) == pow2(51) * pow2(153)) by {
+        lemma_pow2_adds(51, 153);
+    };
+
+    assert(local_pow2(255) == local_pow2(51) * local_pow2(204)) by (compute_only);
+    assert(pow2(255) == pow2(51) * pow2(204)) by {
+        lemma_pow2_adds(51, 204);
+    };
+}
+
+/// EDWARDS_D2 equals 2 * EDWARDS_D in the field.
 ///
-/// ## Mathematical Background
-/// EDWARDS_D2 is precomputed as 2*d mod p in the curve25519-dalek library.
-/// This is a well-established relationship for the curve25519 constants.
-///
-/// The postcondition states that fe51_as_canonical_nat(&EDWARDS_D2) equals
-/// field_mul(2, fe51_as_canonical_nat(&EDWARDS_D)), i.e., 2*d mod p.
-pub(crate) proof fn axiom_edwards_d2_is_2d()
+/// Proved by concrete computation: the interpreter evaluates both sides using
+/// local helper specs, then a bridge connects to the spec-level functions.
+pub(crate) proof fn lemma_edwards_d2_is_2d()
     ensures
         fe51_as_canonical_nat(&constants::EDWARDS_D2) == field_mul(
             2,
             fe51_as_canonical_nat(&EDWARDS_D),
         ),
 {
-    // Trusted assumption.
-    //
-    // `constants::EDWARDS_D2` is the concrete FieldElement constant intended to equal
-    // `2 * constants::EDWARDS_D` in GF(p), where p = 2^255 - 19.
-    //
-    // This relationship is enforced by a runtime unit test (see `curve25519-dalek/src/constants.rs`)
-    // and matches the upstream curve25519-dalek definition of EDWARDS_D2.
-    admit();
+    assert(fe51_as_canonical_nat(&constants::EDWARDS_D2) == field_mul(
+        2,
+        fe51_as_canonical_nat(&EDWARDS_D),
+    )) by {
+        assert({
+            let lp = local_p();
+            let d2_val = local_u5_nat(constants::EDWARDS_D2.limbs) % lp;
+            let d_val = local_u5_nat(EDWARDS_D.limbs) % lp;
+            d2_val == (2 * d_val) % lp
+        }) by (compute_only);
+
+        lemma_bridge_local_pow2_d2();
+    };
 }
 
 // =============================================================================

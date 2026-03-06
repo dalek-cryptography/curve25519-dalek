@@ -1387,7 +1387,7 @@ impl EdwardsPoint {
 
                 // EDWARDS_D2 equals 2*d in the field.
                 assert(fe51_as_canonical_nat(&constants::EDWARDS_D2) == field_mul(2, d)) by {
-                    axiom_edwards_d2_is_2d();
+                    lemma_edwards_d2_is_2d();
                 }
 
                 // Rewrite and commute.
@@ -1497,7 +1497,7 @@ impl EdwardsPoint {
             // xy2d: need to show (x*y)*(2*d) == ((x*y)*2)*d
             assert(fe51_as_canonical_nat(&xy) == field_mul(x_affine, y_affine));
             assert(fe51_as_canonical_nat(&constants::EDWARDS_D2) == field_mul(2, d)) by {
-                axiom_edwards_d2_is_2d();
+                lemma_edwards_d2_is_2d();
             }
 
             let xy_val = field_mul(x_affine, y_affine);
@@ -1634,7 +1634,7 @@ impl EdwardsPoint {
             let one_minus_y = field_sub(1, y_affine);
             let affine_result = field_mul(one_plus_y, field_inv(one_minus_y));
             assert(u_field == affine_result) by {
-                axiom_edwards_to_montgomery_correspondence(y, z);
+                lemma_edwards_to_montgomery_correspondence(y, z);
             }
 
             // Step 5: Match the spec

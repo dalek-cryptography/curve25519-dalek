@@ -169,6 +169,31 @@ pub proof fn axiom_elligator_in_even_subgroup(r_0: nat)
     admit();
 }
 
+/// Axiom: The even subgroup (image of [2]) is closed under Edwards addition.
+///
+/// If P = 2·Q₁ and Q = 2·Q₂, then P + Q = 2·Q₁ + 2·Q₂ = 2·(Q₁ + Q₂).
+/// The algebraic identity follows from lemma_edwards_double_of_add (fully proven).
+/// Admitted because the existential witness requires lifting affine → EdwardsPoint.
+///
+/// Reference: standard group theory (sum of doubles is a double)
+pub proof fn axiom_even_subgroup_closed_under_add(p1: EdwardsPoint, p2: EdwardsPoint)
+    requires
+        is_in_even_subgroup(p1),
+        is_in_even_subgroup(p2),
+        is_well_formed_edwards_point(p1),
+        is_well_formed_edwards_point(p2),
+    ensures
+        forall|result: EdwardsPoint|
+            edwards_point_as_affine(result) == edwards_add(
+                edwards_point_as_affine(p1).0,
+                edwards_point_as_affine(p1).1,
+                edwards_point_as_affine(p2).0,
+                edwards_point_as_affine(p2).1,
+            ) && is_well_formed_edwards_point(result) ==> is_in_even_subgroup(result),
+{
+    admit();
+}
+
 // =============================================================================
 // Axiom: nat_invsqrt(−1 − d) = C_IAD  and  C_IAD² · (−1 − d) = 1
 // =============================================================================

@@ -2905,39 +2905,50 @@ impl RistrettoPoint {
         let result = R_1 + R_2;
         proof {
             // Add postcondition proves is_well_formed_edwards_point(result.0)
-            assume(is_in_even_subgroup(result.0));
-            assume(edwards_point_as_affine(result.0) == ristretto_from_uniform_bytes(bytes));
+            // Even subgroup: R_1 and R_2 are in the even subgroup (from elligator),
+            // and the even subgroup is closed under addition.
+            assert(is_in_even_subgroup(result.0)) by {
+                axiom_even_subgroup_closed_under_add(R_1.0, R_2.0);
+            };
+
+            // Functional correctness: connect exec operations to spec.
+            // The spec ristretto_from_uniform_bytes uses uniform_bytes_first/second (choose-based)
+            // and field_element_from_bytes. We bridge via view equality and from_bytes postconditions.
+            assert(edwards_point_as_affine(result.0) == ristretto_from_uniform_bytes(bytes)) by {
+                // Connect exec byte arrays to spec byte arrays via view equality
+                assert(r_1_bytes@ == bytes@.subrange(0, 32));
+                assert(r_2_bytes@ == bytes@.subrange(32, 64));
+            };
             assert(is_uniform_bytes(bytes) ==> is_uniform_ristretto_point(&result)) by {
-                // To prove A ==> B, assume A and derive B.
-                assume(is_uniform_bytes(bytes));
+                if is_uniform_bytes(bytes) {
+                    // 1. Split uniform bytes into independent uniform halves
+                    axiom_uniform_bytes_split(bytes, &r_1_bytes, &r_2_bytes);
+                    assert(is_uniform_bytes(&r_1_bytes));
+                    assert(is_uniform_bytes(&r_2_bytes));
+                    assert(is_independent_uniform_bytes32(&r_1_bytes, &r_2_bytes));
 
-                // 1. Split uniform bytes into independent uniform halves
-                axiom_uniform_bytes_split(bytes, &r_1_bytes, &r_2_bytes);
-                assert(is_uniform_bytes(&r_1_bytes));
-                assert(is_uniform_bytes(&r_2_bytes));
-                assert(is_independent_uniform_bytes32(&r_1_bytes, &r_2_bytes));
+                    // 2. from_bytes: uniform bytes -> uniform field elements (from from_bytes ensures)
+                    assert(is_uniform_field_element(&r_1));
+                    assert(is_uniform_field_element(&r_2));
 
-                // 2. from_bytes: uniform bytes -> uniform field elements (from from_bytes ensures)
-                assert(is_uniform_field_element(&r_1));
-                assert(is_uniform_field_element(&r_2));
+                    //    from_bytes_independent: independence is preserved
+                    axiom_from_bytes_independent(&r_1_bytes, &r_2_bytes, &r_1, &r_2);
+                    assert(is_independent_uniform_field_elements(&r_1, &r_2));
 
-                //    from_bytes_independent: independence is preserved
-                axiom_from_bytes_independent(&r_1_bytes, &r_2_bytes, &r_1, &r_2);
-                assert(is_independent_uniform_field_elements(&r_1, &r_2));
+                    // 3. Elligator: uniform field element -> uniform over Elligator IMAGE (~half group)
+                    axiom_uniform_elligator(&r_1, &R_1);
+                    axiom_uniform_elligator(&r_2, &R_2);
+                    assert(is_uniform_over_elligator_image(&R_1));
+                    assert(is_uniform_over_elligator_image(&R_2));
 
-                // 3. Elligator: uniform field element -> uniform over Elligator IMAGE (~half group)
-                axiom_uniform_elligator(&r_1, &R_1);
-                axiom_uniform_elligator(&r_2, &R_2);
-                assert(is_uniform_over_elligator_image(&R_1));
-                assert(is_uniform_over_elligator_image(&R_2));
+                    // 4. Elligator preserves independence
+                    axiom_uniform_elligator_independent(&r_1, &r_2, &R_1, &R_2);
+                    assert(is_independent_uniform_ristretto_points(&R_1, &R_2));
 
-                // 4. Elligator preserves independence
-                axiom_uniform_elligator_independent(&r_1, &r_2, &R_1, &R_2);
-                assert(is_independent_uniform_ristretto_points(&R_1, &R_2));
-
-                // 5. Two independent Elligator-image points sum to a full-uniform point
-                axiom_uniform_elligator_sum(&R_1, &R_2, &result);
-                assert(is_uniform_ristretto_point(&result));
+                    // 5. Two independent Elligator-image points sum to a full-uniform point
+                    axiom_uniform_elligator_sum(&R_1, &R_2, &result);
+                    assert(is_uniform_ristretto_point(&result));
+                }
             }
         }
         result
@@ -3495,16 +3506,6 @@ impl RistrettoPoint {
                 scalar * constants::RISTRETTO_BASEPOINT_TABLE
             }
         };
-        proof {
-            // The underlying Edwards mul_base ensures the functional correctness.
-            // Since edwards_scalar_mul == edwards_scalar_mul and
-            // spec_ristretto_basepoint() == spec_ristretto_basepoint(), the postcondition holds.
-            assume(is_well_formed_edwards_point(r.0));
-            assume(edwards_point_as_affine(r.0) == edwards_scalar_mul(
-                spec_ristretto_basepoint(),
-                scalar_as_nat(scalar),
-            ));
-        }
         r
     }
 }

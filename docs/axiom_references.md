@@ -384,6 +384,18 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 
 ---
 
+### axiom_even_subgroup_closed_under_add(p1, p2)
+**Signature:** `axiom_even_subgroup_closed_under_add(p1: EdwardsPoint, p2: EdwardsPoint)` — requires `is_in_even_subgroup(p1)`, `is_in_even_subgroup(p2)`, `is_well_formed_edwards_point(p1)`, `is_well_formed_edwards_point(p2)`; ensures that for any well-formed result with `edwards_point_as_affine(result) == edwards_add(affine(p1), affine(p2))`, `is_in_even_subgroup(result)`.
+
+**Claim:** The even subgroup 2E is closed under Edwards addition: if P = 2·Q₁ and Q = 2·Q₂, then P + Q = 2·(Q₁ + Q₂) ∈ 2E.
+
+**Reference:** Standard group theory; algebraic identity proven by `lemma_edwards_double_of_add` (fully verified)
+**URL:** N/A (standard algebra)
+
+**Justification:** The algebraic identity 2·A + 2·B = 2·(A + B) is proven by the fully-verified `lemma_edwards_double_of_add` in `curve_equation_lemmas.rs`. The `admit()` is needed only because the existential witness in `is_in_even_subgroup` requires an `EdwardsPoint` (projective representation), and lifting from affine coordinates to `EdwardsPoint` is not currently formalized.
+
+---
+
 ### axiom_ristretto_decode_on_curve(s)
 **Signature:** `axiom_ristretto_decode_on_curve(s: nat)` — requires `s < p()` and `spec_ristretto_decode_ok(s)`; ensures `is_on_edwards_curve(spec_ristretto_decode_x(s), spec_ristretto_decode_y(s))`.
 
@@ -544,6 +556,7 @@ This document maps each axiom in the curve25519-dalek verification to its justif
 | axiom_elligator_n_t_nonzero | ristretto_specs.rs | Paper + test | Hamburg 2015 §4; test (200+ inputs) |
 | axiom_elligator_t_completed_nonzero | ristretto_specs.rs | Paper + test | Hamburg 2015 §4; test (200+ inputs) |
 | axiom_elligator_in_even_subgroup | ristretto_specs.rs | Paper + test | Hamburg 2015/2019; test (200+ inputs) |
+| axiom_even_subgroup_closed_under_add | ristretto_lemmas/axioms.rs | Math (proven algebraically) | Group theory; lemma_edwards_double_of_add |
 | axiom_invsqrt_factors_over_square | field_specs.rs | Math + test | Standard finite field algebra; test (200 inputs) |
 | axiom_nat_invsqrt_neg_one_minus_d | ristretto_specs.rs | Computation + test | ristretto.group; test_nat_invsqrt_neg_one_minus_d |
 | axiom_ristretto_cross_mul_iff_equivalent | ristretto_specs.rs | Paper + test | Hamburg 2015 §4; Ristretto §3.2 |

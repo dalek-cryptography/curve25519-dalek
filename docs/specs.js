@@ -72,7 +72,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Load data
     try {
         const response = await fetch("specs_data.json");
-        const data = await response.json();
+        let data = await response.json();
+        if (data.schema && data.data) {
+            data = data.data;
+        }
         verifiedFunctions = data.verified_functions || [];
         specFunctions = data.spec_functions || [];
     } catch (err) {

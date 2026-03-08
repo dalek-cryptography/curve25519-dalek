@@ -130,13 +130,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const csvModal = document.getElementById('csvModal');
     const csvPreviewTrigger = document.querySelector('.csv-preview-trigger');
 
+    // Load data eagerly so preview total is set on page load
+    loadCsvData();
+
     // Open CSV modal when clicking the preview image
     if (csvPreviewTrigger) {
         csvPreviewTrigger.addEventListener('click', () => {
             csvModal.style.display = 'block';
-            if (csvFunctionsData.length === 0) {
-                loadCsvData();
-            }
         });
     }
 
@@ -162,73 +162,56 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Load and parse CSV
+    // Load function data from specs_data.json (includes verified, external, and axioms)
     async function loadCsvData() {
         try {
-            const response = await fetch('outputs/curve25519_functions.csv');
-            const csvText = await response.text();
-            
-            // Parse CSV (handles quoted fields with commas)
-            function parseCSVLine(line) {
-                const result = [];
-                let current = '';
-                let inQuotes = false;
-                
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    if (char === '"') {
-                        inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
-                        result.push(current.trim());
-                        current = '';
-                    } else {
-                        current += char;
-                    }
-                }
-                result.push(current.trim());
-                return result;
-            }
-            
-            const lines = csvText.trim().split('\n');
-            const headers = parseCSVLine(lines[0]);
-            
-            csvFunctionsData = lines.slice(1).map(line => {
-                const values = parseCSVLine(line);
-                const func = {};
-                headers.forEach((header, i) => {
-                    func[header] = values[i] || '';
+            const response = await fetch('specs_data.json');
+            const raw = await response.json();
+            const data = raw.data || raw;
+            const vf = data.verified_functions || [];
+            const sf = data.spec_functions || [];
+
+            csvFunctionsData = [];
+            for (const f of vf) {
+                csvFunctionsData.push({
+                    function: f.display_name || f.name,
+                    module: f.module || '',
+                    link: f.github_link || '',
+                    category: f.category,
+                    has_proof: f.has_proof,
                 });
-                return func;
-            });
-            
+            }
+            for (const f of sf) {
+                if (f.category !== 'axiom') continue;
+                csvFunctionsData.push({
+                    function: f.display_name || f.name,
+                    module: f.module || '',
+                    link: f.github_link || '',
+                    category: f.category,
+                    has_proof: false,
+                });
+            }
+
+            document.getElementById('csvModalTotal').textContent = csvFunctionsData.length;
+            const previewEl = document.getElementById('csvPreviewTotal');
+            if (previewEl) previewEl.textContent = csvFunctionsData.length;
             renderCsvTable();
         } catch (error) {
-            console.error('Error loading CSV:', error);
-            document.getElementById('csvTableBody').innerHTML = 
+            console.error('Error loading function data:', error);
+            document.getElementById('csvTableBody').innerHTML =
                 '<tr><td colspan="5" class="loading">Error loading data</td></tr>';
         }
     }
 
-    function extractModule(link) {
-        if (!link) return 'unknown';
-        if (link.includes('.rs#')) {
-            const match = link.split('.rs#')[0];
-            if (match.includes('/')) {
-                return match.split('/').pop() + '.rs';
-            }
-        }
-        return 'unknown';
-    }
-
     function getStatus(func) {
-        if (func.has_proof === 'yes') {
-            return { class: 'verified', text: '✓ Verified' };
-        } else if (func.has_spec === 'ext') {
+        if (func.category === 'axiom') {
+            return { class: 'axiom', text: '⚡ Axiom' };
+        } else if (func.category === 'external') {
             return { class: 'external', text: '⊕ External' };
-        } else if (func.has_spec === 'yes') {
-            return { class: 'spec', text: '○ Spec Only' };
+        } else if (func.has_proof) {
+            return { class: 'verified', text: '✓ Verified' };
         } else {
-            return { class: 'none', text: '· No Spec' };
+            return { class: 'spec', text: '○ Spec Only' };
         }
     }
 
@@ -236,49 +219,61 @@ document.addEventListener('DOMContentLoaded', function() {
         const tbody = document.getElementById('csvTableBody');
         const searchBox = document.getElementById('csvSearch');
         const searchTerm = searchBox ? searchBox.value.toLowerCase() : '';
-        
+
         let filteredFunctions = csvFunctionsData.filter(func => {
-            // Apply search filter
-            const matchesSearch = !searchTerm || 
+            const matchesSearch = !searchTerm ||
                 func.function.toLowerCase().includes(searchTerm) ||
                 func.module.toLowerCase().includes(searchTerm);
-            
+
             if (!matchesSearch) return false;
-            
-            // Apply status filter
+
             if (currentCsvFilter === 'all') return true;
-            if (currentCsvFilter === 'verified') return func.has_proof === 'yes';
-            if (currentCsvFilter === 'spec') return func.has_spec === 'yes' || func.has_spec === 'ext';
-            if (currentCsvFilter === 'external') return func.has_spec === 'ext';
-            if (currentCsvFilter === 'none') return !func.has_spec && !func.has_proof;
-            
+            if (currentCsvFilter === 'verified') return func.category === 'tracked' && func.has_proof;
+            if (currentCsvFilter === 'spec') return func.category === 'tracked' && !func.has_proof;
+            if (currentCsvFilter === 'external') return func.category === 'external';
+            if (currentCsvFilter === 'axiom') return func.category === 'axiom';
+
             return true;
         });
-        
+
         if (filteredFunctions.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="loading">No functions match your filters</td></tr>';
             return;
         }
-        
+
         tbody.innerHTML = filteredFunctions.map(func => {
             const status = getStatus(func);
-            // Use module from CSV, but shorten it for display (last 2 parts)
             let displayModule = func.module;
             if (displayModule.includes('::')) {
                 const parts = displayModule.split('::');
                 displayModule = parts.slice(-2).join('::');
             }
-            
+
+            const linkCell = func.link
+                ? `<a href="${func.link}" target="_blank" class="function-link">View Source →</a>`
+                : '';
+            const graphCell = func.link
+                ? `<a href="https://beneficial-ai-foundation.github.io/dalek-lite/callgraph/?source=${encodeURIComponent(func.function.replace(/\(.*$/, ''))}&sink=${encodeURIComponent(func.function.replace(/\(.*$/, ''))}" target="_blank" class="function-link">Graph →</a>`
+                : '';
+
             return `
                 <tr>
                     <td class="function-name">${func.function}</td>
                     <td class="function-module">${displayModule}</td>
                     <td><span class="status-badge status-${status.class}">${status.text}</span></td>
-                    <td><a href="${func.link}" target="_blank" class="function-link">View Source →</a></td>
-                    <td><a href="https://beneficial-ai-foundation.github.io/dalek-lite/callgraph/?source=${encodeURIComponent(func.function.replace(/\(.*$/, ''))}&sink=${encodeURIComponent(func.function.replace(/\(.*$/, ''))}" target="_blank" class="function-link">Graph →</a></td>
+                    <td>${linkCell}</td>
+                    <td>${graphCell}</td>
                 </tr>
             `;
         }).join('');
+
+        const verified = csvFunctionsData.filter(f => f.category === 'tracked' && f.has_proof).length;
+        const ext = csvFunctionsData.filter(f => f.category === 'external').length;
+        const axioms = csvFunctionsData.filter(f => f.category === 'axiom').length;
+        const summary = document.getElementById('csvSummary');
+        if (summary) {
+            summary.textContent = `${verified} Verified | ${ext} External | ${axioms} Axioms — showing ${filteredFunctions.length} of ${csvFunctionsData.length}`;
+        }
     }
 
     // Search functionality for CSV modal
@@ -337,22 +332,35 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('fullyVerifiedPct').textContent = `${stats.proof_completion_rate}%`;
             
             // Update metrics section
-            document.getElementById('specCompletionRate').textContent = `${stats.with_specs_pct}%`;
-            document.getElementById('specCompletionDesc').textContent = 
-                `${stats.with_specs} of ${stats.total_functions} functions have specs`;
             document.getElementById('proofCompletionRate').textContent = `${stats.proof_completion_rate}%`;
             document.getElementById('proofCompletionDesc').textContent = 
                 `${stats.fully_verified} of ${stats.with_specs} specs are fully proven`;
             
-            // Update CSV preview and modal totals
-            document.getElementById('csvPreviewTotal').textContent = stats.total_functions;
-            document.getElementById('csvModalTotal').textContent = stats.total_functions;
+            // CSV preview and modal totals are set by loadCsvData from specs_data.json
         } catch (error) {
             console.error('Error loading stats:', error);
             // Keep fallback values that are hardcoded in HTML
         }
     }
     
+    async function loadSpecsCounts() {
+        try {
+            const response = await fetch('specs_data.json');
+            const raw = await response.json();
+            const data = raw.data || raw;
+            const vf = data.verified_functions || [];
+            const sf = data.spec_functions || [];
+            const extCount = vf.filter(f => f.category === 'external').length;
+            const axiomCount = sf.filter(f => f.category === 'axiom').length;
+            const el = document.getElementById('externalCount');
+            if (el) el.textContent = extCount;
+            const al = document.getElementById('axiomCount');
+            if (al) al.textContent = axiomCount;
+        } catch (error) {
+            console.error('Error loading specs counts:', error);
+        }
+    }
+
     // Load certifications history
     async function loadCertifications() {
         try {
@@ -528,6 +536,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load time period on page load
     loadTimePeriod();
     loadStats();
+    loadSpecsCounts();
     loadCertifications();
 });
 

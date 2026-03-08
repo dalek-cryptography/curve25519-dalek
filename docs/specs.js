@@ -52,6 +52,7 @@ let searchLeft = "";              // search in left panel
 let searchRight = "";             // search in right panel
 let specFilterRefs = null;        // null = show all, or Set of spec names to filter right panel
 let specFilterSource = "";        // display name of the function that set the filter
+let targetFilter = "all";         // "all" | "proved" | "spec" — filters left panel target fns
 
 let db = null;
 let commentsCache = {};
@@ -86,6 +87,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
+    // Normalize module names (merge submodules into parents, split u64 from backend)
+    const MODULE_ALIASES = { "scalar_helpers": "scalar" };
+    for (const fn of verifiedFunctions) {
+        fn.module = MODULE_ALIASES[fn.module] || fn.module;
+        if (fn.module === "backend" && fn.sub_module === "u64") fn.module = "u64";
+    }
+    for (const s of specFunctions) {
+        s.module = MODULE_ALIASES[s.module] || s.module;
+        if (s.module === "backend" && s.sub_module === "u64") s.module = "u64";
+    }
+
     // Build lookup
     for (const s of specFunctions) {
         specLookup[s.name] = s;
@@ -95,13 +107,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     buildContentHashes();
 
     // Stats
-    const modules = [...new Set(verifiedFunctions.map(v => v.module))];
+    const trackedFunctions = verifiedFunctions.filter(v => v.category !== "external");
+    const externalFunctions = verifiedFunctions.filter(v => v.category === "external");
+    const modules = [...new Set(trackedFunctions.map(v => v.module))];
     const axiomCount = specFunctions.filter(s => s.category === "axiom").length;
     const specOnlyCount = specFunctions.filter(s => s.category !== "axiom").length;
-    const withSpecsCount = verifiedFunctions.filter(v => v.has_spec).length;
-    const publicCount = verifiedFunctions.filter(v => v.is_public).length;
-    const libsignalCount = verifiedFunctions.filter(v => v.is_libsignal).length;
-    document.getElementById("totalFunctions").textContent = verifiedFunctions.length;
+    const publicCount = trackedFunctions.filter(v => v.is_public).length;
+    const libsignalCount = trackedFunctions.filter(v => v.is_libsignal).length;
+    document.getElementById("totalFunctions").textContent = trackedFunctions.length;
+    document.getElementById("totalExternal").textContent = externalFunctions.length;
     document.getElementById("totalSpecs").textContent = specOnlyCount;
     document.getElementById("totalAxioms").textContent = axiomCount;
 
@@ -186,7 +200,10 @@ function createModulePill(displayName, count, moduleId) {
     `;
     const countEl = el.querySelector(".pill-count");
     el.addEventListener("click", () => {
-        if (activeModules.has(moduleId)) {
+        if (specFilterRefs) {
+            specFilterRefs = null;
+            specFilterSource = "";
+        } else if (activeModules.has(moduleId)) {
             activeModules.delete(moduleId);
             el.classList.remove("active");
         } else {
@@ -211,6 +228,8 @@ function buildAttributeFilters(publicCount, libsignalCount) {
     publicEl.addEventListener("click", () => {
         filterPublic = !filterPublic;
         publicEl.classList.toggle("active", filterPublic);
+        specFilterRefs = null;
+        specFilterSource = "";
         autoFilterBypassed = false;
         renderLeftPanel();
         renderRightPanel();
@@ -224,6 +243,8 @@ function buildAttributeFilters(publicCount, libsignalCount) {
     libsignalEl.addEventListener("click", () => {
         filterLibsignal = !filterLibsignal;
         libsignalEl.classList.toggle("active", filterLibsignal);
+        specFilterRefs = null;
+        specFilterSource = "";
         autoFilterBypassed = false;
         renderLeftPanel();
         renderRightPanel();
@@ -240,20 +261,24 @@ function buildAttributeFilters(publicCount, libsignalCount) {
  * This way, every count shows "how many would I see if I clicked this pill?".
  */
 function updateFilterCounts() {
+    // Exclude external functions from pill counts (they always appear at bottom)
+    let tracked = verifiedFunctions.filter(v => v.category !== "external");
+    if (targetFilter === "proved") tracked = tracked.filter(v => v.has_proof);
+    else if (targetFilter === "spec") tracked = tracked.filter(v => v.has_spec && !v.has_proof);
+
     // Base list filtered by attribute toggles (for module pills)
-    let attrFiltered = verifiedFunctions;
+    let attrFiltered = tracked;
     if (filterPublic) attrFiltered = attrFiltered.filter(v => v.is_public);
     if (filterLibsignal) attrFiltered = attrFiltered.filter(v => v.is_libsignal);
 
     for (const pill of modulePills) {
         const cnt = attrFiltered.filter(v => v.module === pill.moduleId).length;
         pill.countEl.textContent = cnt;
-        // Hide module pills with 0 matches
         pill.el.style.display = cnt === 0 ? "none" : "";
     }
 
     // Base list filtered by active modules (for attribute pills)
-    let modFiltered = verifiedFunctions;
+    let modFiltered = tracked;
     if (activeModules.size > 0) modFiltered = modFiltered.filter(v => activeModules.has(v.module));
 
     if (attrPillPublic) {
@@ -268,23 +293,25 @@ function updateFilterCounts() {
     }
 }
 
-// ── Left panel: tracked functions ────────────────────────────
+// ── Left panel: verified + external functions ────────────────
 function getFilteredVerified() {
     let list = verifiedFunctions;
+    if (targetFilter === "proved") {
+        list = list.filter(v => v.category === "external" || v.has_proof);
+    } else if (targetFilter === "spec") {
+        list = list.filter(v => v.category === "external" || (v.has_spec && !v.has_proof));
+    }
     if (activeModules.size > 0) {
-        list = list.filter(v => activeModules.has(v.module));
+        list = list.filter(v => v.category === "external" || activeModules.has(v.module));
     }
     if (filterPublic) {
-        list = list.filter(v => v.is_public);
+        list = list.filter(v => v.category === "external" || v.is_public);
     }
     if (filterLibsignal) {
-        list = list.filter(v => v.is_libsignal);
+        list = list.filter(v => v.category === "external" || v.is_libsignal);
     }
     if (searchLeft) {
         list = list.filter(v => {
-            // Search top-level fields only (name, module, docs,
-            // interpretations) — exclude contract body and referenced
-            // spec names to avoid false matches.
             const h = (
                 v.name + " " + v.display_name + " " + v.module + " " +
                 (v.doc_comment || "") + " " +
@@ -293,8 +320,12 @@ function getFilteredVerified() {
             return h.includes(searchLeft);
         });
     }
-    // Sort by module (backend last), then by sub_module, then by display name
+    // Sort: tracked first (module backend last, then sub_module, then name),
+    // external at the end (by module then name)
     list.sort((a, b) => {
+        const aExt = a.category === "external" ? 1 : 0;
+        const bExt = b.category === "external" ? 1 : 0;
+        if (aExt !== bExt) return aExt - bExt;
         const ma = a.module === "backend" ? 1 : 0;
         const mb = b.module === "backend" ? 1 : 0;
         if (ma !== mb) return ma - mb;
@@ -320,11 +351,25 @@ function renderLeftPanel() {
         return;
     }
 
-    countEl.textContent = filtered.length;
+    // Count excludes external (shown separately)
+    countEl.textContent = filtered.filter(v => v.category !== "external").length;
 
     let html = "";
     let currentGroup = null;
+    let externalHeaderShown = false;
+    let firstVerifiedShown = false;
     for (const fn of filtered) {
+        if (fn.category === "external") {
+            if (!externalHeaderShown) {
+                externalHeaderShown = true;
+                const extCount = filtered.filter(v => v.category === "external").length;
+                html += `<div id="external-top" class="module-group-header external-group-header">External Functions <span class="external-group-count">${extCount}</span></div>`;
+                currentGroup = null;
+            }
+        } else if (!firstVerifiedShown) {
+            firstVerifiedShown = true;
+            html += `<div id="verified-top"></div>`;
+        }
         const group = fn.sub_module || fn.module;
         if (group !== currentGroup) {
             currentGroup = group;
@@ -343,23 +388,50 @@ function renderLeftPanel() {
             card.classList.toggle("open");
         });
     });
+
+    // Wire up left panel title jump links
+    const scrollParent = container.closest(".panel-scroll");
+    const jumpVerified = document.getElementById("jumpVerified");
+    if (jumpVerified) {
+        jumpVerified.onclick = e => {
+            e.preventDefault();
+            const target = document.getElementById("verified-top");
+            if (target && scrollParent) {
+                scrollParent.scrollTo({ top: target.offsetTop - scrollParent.offsetTop, behavior: "smooth" });
+            }
+        };
+    }
+    const jumpExternal = document.getElementById("jumpExternal");
+    if (jumpExternal) {
+        jumpExternal.onclick = e => {
+            e.preventDefault();
+            const target = document.getElementById("external-top");
+            if (target && scrollParent) {
+                scrollParent.scrollTo({ top: target.offsetTop - scrollParent.offsetTop, behavior: "smooth" });
+            }
+        };
+    }
 }
 
 function renderVerifiedCard(fn) {
     const hasProof = fn.has_proof;
     const hasSpec = fn.has_spec;
+    const isExternal = fn.category === "external";
     const hasMath = fn.math_interpretation && fn.math_interpretation.trim();
 
     // Status badges
     const badges = [];
-    if (hasProof) badges.push(`<span class="fn-badge fn-badge-proof">proved</span>`);
-    else if (hasSpec) badges.push(`<span class="fn-badge fn-badge-spec">spec</span>`);
+    if (isExternal) badges.push(`<span class="fn-badge fn-badge-external">external</span>`);
+    else if (hasProof) badges.push(`<span class="fn-badge fn-badge-proof">proved</span>`);
+    else if (hasSpec) badges.push(`<span class="fn-badge fn-badge-spec">unproved</span>`);
     else badges.push(`<span class="fn-badge fn-badge-nospec">no spec</span>`);
     if (fn.is_libsignal) badges.push(`<span class="fn-badge fn-badge-libsignal">libsignal</span>`);
 
+    const cardClass = isExternal ? " card-external" : hasProof ? " card-proved" : hasSpec ? " card-spec" : " card-nospec";
+
     // Render only the header; body is injected lazily on first open
     return `
-    <div class="spec-card${hasProof ? " card-proved" : hasSpec ? " card-spec" : " card-nospec"}" data-id="${escapeAttr(fn.id)}" data-module="${escapeAttr(fn.module)}">
+    <div class="spec-card${cardClass}" data-id="${escapeAttr(fn.id)}" data-module="${escapeAttr(fn.module)}">
         <div class="spec-header">
             <div class="spec-toggle">&#9654;</div>
             <div class="spec-info">
@@ -526,17 +598,19 @@ function hasLeftFilter() {
 function getFilteredSpecs() {
     let list = specFunctions;
 
-    // Filter by referenced specs (from "Show referenced specs" button)
+    // Filter by referenced specs (from "Show referenced specs" button).
+    // Always keep axioms visible so the "Axioms" jump link works.
     if (specFilterRefs) {
-        list = list.filter(s => specFilterRefs.has(s.name));
+        list = list.filter(s => s.category === "axiom" || specFilterRefs.has(s.name));
     }
 
     // Auto-filter: when a left-panel filter is active, show only specs
     // reachable (transitively) from the visible verified functions.
+    // Axioms are always kept so the "Axioms" jump link works.
     // Skip when autoFilterBypassed (user navigated to an out-of-scope spec).
     if (!specFilterRefs && !autoFilterBypassed && hasLeftFilter()) {
         const reachable = getReachableSpecs(getFilteredVerified());
-        list = list.filter(s => reachable.has(s.name));
+        list = list.filter(s => s.category === "axiom" || reachable.has(s.name));
     }
 
     if (searchRight) {
@@ -611,18 +685,21 @@ function renderRightPanel() {
     let html = "";
     let currentMod = null;
     let axiomHeaderShown = false;
+    let firstSpecHeaderShown = false;
     for (const spec of filtered) {
         if (spec.category === "axiom") {
             // Single header for all axioms
             if (!axiomHeaderShown) {
                 axiomHeaderShown = true;
                 const axiomCount = filtered.filter(s => s.category === "axiom").length;
-                html += `<div class="module-group-header axiom-group-header">Axioms <span class="axiom-group-count">${axiomCount}</span></div>`;
+                html += `<div id="axioms-top" class="module-group-header axiom-group-header">Axioms <span class="axiom-group-count">${axiomCount}</span></div>`;
             }
         } else {
             if (spec.module !== currentMod) {
                 currentMod = spec.module;
-                html += `<div class="module-group-header">${escapeHtml(currentMod)}</div>`;
+                const anchorId = !firstSpecHeaderShown ? ' id="specs-top"' : '';
+                firstSpecHeaderShown = true;
+                html += `<div${anchorId} class="module-group-header">${escapeHtml(currentMod)}</div>`;
             }
         }
         html += renderSpecCard(spec);
@@ -638,6 +715,29 @@ function renderRightPanel() {
             card.classList.toggle("open");
         });
     });
+
+    // Wire up title jump links (use onclick to avoid accumulating listeners on re-render)
+    const scrollParent = container.closest(".panel-scroll");
+    const jumpSpecs = document.getElementById("jumpSpecs");
+    if (jumpSpecs) {
+        jumpSpecs.onclick = e => {
+            e.preventDefault();
+            const target = document.getElementById("specs-top");
+            if (target && scrollParent) {
+                scrollParent.scrollTo({ top: target.offsetTop - scrollParent.offsetTop, behavior: "smooth" });
+            }
+        };
+    }
+    const jumpAxioms = document.getElementById("jumpAxioms");
+    if (jumpAxioms) {
+        jumpAxioms.onclick = e => {
+            e.preventDefault();
+            const target = document.getElementById("axioms-top");
+            if (target && scrollParent) {
+                scrollParent.scrollTo({ top: target.offsetTop - scrollParent.offsetTop, behavior: "smooth" });
+            }
+        };
+    }
 }
 
 function renderInlineRefCard(spec, visited) {
@@ -836,6 +936,21 @@ function clearSpecFilter() {
     specFilterSource = "";
     renderRightPanel();
 }
+
+window.setTargetFilter = function(value) {
+    targetFilter = value;
+    const labels = { all: "All", proved: "Proved", spec: "Unproved" };
+    const dd = document.getElementById("targetDropdown");
+    if (dd) {
+        dd.classList.remove("open");
+        dd.querySelector(".target-toggle").innerHTML = `${labels[value] || value} <span class="target-caret">&#9662;</span>`;
+        dd.querySelectorAll(".target-item").forEach(item => {
+            item.classList.toggle("active", item.dataset.value === value);
+        });
+    }
+    renderLeftPanel();
+    renderRightPanel();
+};
 
 // ── Scroll to and highlight a spec card on the right ─────────
 let autoFilterBypassed = false;  // true when we showed all specs to reach a target
@@ -1067,12 +1182,20 @@ function downloadFilenameSuffix() {
     return parts.join("-");
 }
 
+document.addEventListener("click", (e) => {
+    const dd = document.getElementById("downloadDropdown");
+    if (dd && !dd.contains(e.target)) dd.classList.remove("open");
+    const td = document.getElementById("targetDropdown");
+    if (td && !td.contains(e.target)) td.classList.remove("open");
+});
+
 window.downloadMarkdown = function() {
+    document.getElementById("downloadDropdown")?.classList.remove("open");
     try {
         const filteredLeft = getFilteredVerified();
         const filteredRight = getFilteredSpecs();
 
-        let md = "# Verified Function Specifications\n\n";
+        let md = "# Function Specifications\n\n";
 
         md += `## Function Contracts (${filteredLeft.length})\n\n`;
         for (const fn of filteredLeft) {
@@ -1117,6 +1240,7 @@ window.downloadMarkdown = function() {
 };
 
 window.downloadCSV = function() {
+    document.getElementById("downloadDropdown")?.classList.remove("open");
     try {
         const filteredLeft = getFilteredVerified();
         const filteredRight = getFilteredSpecs();

@@ -86,17 +86,17 @@ jobs:
              touch outputs/stats_history.jsonl; \
            fi)
 
-      - name: Generate charts
-        run: |
-          python3 scripts/plot_progress.py
-          python3 scripts/plot_progress_over_time.py
-          python3 scripts/plot_csv_preview.py
-
       - name: Generate specs data
         run: |
           probe-verus specs-data curve25519-dalek/src --output docs/specs_data.json \
             --github-base-url "https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/" \
             --libsignal-entrypoints .github/data/focus_dalek_entrypoints.json
+
+      - name: Generate charts
+        run: |
+          python3 scripts/plot_progress.py
+          python3 scripts/plot_progress_over_time.py
+          python3 scripts/plot_csv_preview.py
 
       - name: Copy charts and CSV to docs
         run: |

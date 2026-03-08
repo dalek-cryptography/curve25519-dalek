@@ -143,6 +143,11 @@ body {
     border-color: var(--secondary-color);
 }
 
+.stat-card.amber-card {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+}
+
 .stat-number {
     font-size: 3rem;
     font-weight: 700;
@@ -160,6 +165,29 @@ body {
     font-weight: 600;
     margin-top: 0.5rem;
     color: var(--secondary-color);
+}
+
+.stat-stacked {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.stat-stacked-row {
+    text-align: center;
+}
+
+.stat-number-sm {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #f59e0b;
+}
+
+.stat-label-sm {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    margin-top: 0.3rem;
 }
 
 .cta-buttons {
@@ -427,6 +455,18 @@ body {
 .status-external {
     background: #fef3c7;
     color: #92400e;
+}
+
+.status-axiom {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.csv-summary {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-top: 0.75rem;
 }
 
 .status-none {

@@ -5,6 +5,8 @@ use core::array::TryFromSliceError;
 use core::convert::TryInto;
 
 #[allow(unused_imports)]
+use crate::edwards::EdwardsPoint;
+#[allow(unused_imports)]
 use crate::field::FieldElement;
 #[allow(unused_imports)]
 use crate::montgomery::MontgomeryPoint;
@@ -122,6 +124,27 @@ pub fn last_32_bytes(bytes: &[u8; 64]) -> (result: [u8; 32])
     result
 }
 
+/// Extract bytes[8..24] into a `[u8; 16]`.
+#[verifier::external_body]
+pub fn bytes32_8_to_24(bytes: &[u8; 32]) -> (result: [u8; 16])
+    ensures
+        forall|i: int| 0 <= i < 16 ==> result[i] == bytes[(8 + i) as int],
+{
+    let mut result = [0u8;16];
+    result.copy_from_slice(&bytes[8..24]);
+    result
+}
+
+/// Overwrite dst[8..24] with src[0..16], preserving all other bytes.
+#[verifier::external_body]
+pub fn write_bytes32_8_to_24(dst: &mut [u8; 32], src: &[u8; 16])
+    ensures
+        forall|i: int| 0 <= i < 16 ==> dst[(8 + i) as int] == src[i],
+        forall|i: int| (0 <= i < 8 || 24 <= i < 32) ==> dst[i] == old(dst)[i],
+{
+    dst[8..24].copy_from_slice(src);
+}
+
 // NOTE: Probabilistic specs (is_uniform_*, axiom_uniform_*) are in proba_specs.rs.
 // External type specifications for formatters
 #[verifier::external_type_specification]
@@ -231,7 +254,10 @@ pub fn negate_field<T>(a: &T) -> (result: T) where for <'a>&'a T: core::ops::Neg
 }
 
 // Spec function: models the state of a hasher after hashing bytes
-pub spec fn spec_state_after_hash<H, T, const N: usize>(initial_state: H, bytes: &[T; N]) -> H;
+pub uninterp spec fn spec_state_after_hash<H, T, const N: usize>(
+    initial_state: H,
+    bytes: &[T; N],
+) -> H;
 
 // Assume specification for array hash implementation
 // This is used when hashing fixed-size arrays like [u8; 32] in Hash implementations.
@@ -408,6 +434,40 @@ pub fn sha512_hash_bytes(input: &[u8]) -> (result: [u8; 64])
         is_uniform_bytes(input) ==> is_uniform_bytes(&result),
 {
     let mut hasher = sha2::Sha512::new();
+    hasher.update(input);
+    hasher.finalize().into()
+}
+
+#[cfg(all(feature = "digest", not(verus_keep_ghost)))]
+#[verifier::external_body]
+pub fn sha256_hash_bytes(input: &[u8]) -> (result: [u8; 32]) {
+    let mut hasher = sha2::Sha256::new();
+    hasher.update(input);
+    hasher.finalize().into()
+}
+
+#[cfg(all(feature = "digest", verus_keep_ghost))]
+/// Uninterpreted spec function for SHA-256 hash.
+/// Models the SHA-256 hash as a function from input bytes to 32 output bytes.
+pub uninterp spec fn spec_sha256(input: Seq<u8>) -> Seq<u8>;
+
+#[cfg(all(feature = "digest", verus_keep_ghost))]
+/// Axiom: SHA-256 always produces exactly 32 bytes of output.
+pub proof fn axiom_sha256_output_length(input: Seq<u8>)
+    ensures
+        spec_sha256(input).len() == 32,
+{
+    admit();
+}
+
+#[cfg(all(feature = "digest", verus_keep_ghost))]
+#[verifier::external_body]
+/// Compute SHA-256 hash of input bytes.
+pub fn sha256_hash_bytes(input: &[u8]) -> (result: [u8; 32])
+    ensures
+        result@ == spec_sha256(input@),
+{
+    let mut hasher = sha2::Sha256::new();
     hasher.update(input);
     hasher.finalize().into()
 }

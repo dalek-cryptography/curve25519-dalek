@@ -47,6 +47,12 @@ use crate::constants;
 use crate::edwards::EdwardsPoint;
 #[allow(unused_imports)]
 use crate::field::FieldElement;
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::constants_lemmas::lemma_sqrt_ad_minus_one_nonzero;
+#[cfg(verus_keep_ghost)]
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::field_algebra_lemmas::lemma_nonzero_product;
 #[allow(unused_imports)]
 use crate::ristretto::{CompressedRistretto, RistrettoPoint};
 use vstd::prelude::*;
@@ -335,6 +341,21 @@ pub open spec fn is_ristretto_coset(points: [EdwardsPoint; 4], base: EdwardsPoin
     )
     // points[3] = base + T[6]
      && edwards_point_as_affine(points[3]) == edwards_add(base_affine.0, base_affine.1, t6.0, t6.1)
+}
+
+/// The 4 affine points forming the Ristretto coset base + E[4].
+///
+/// Returns `[base, base+T₂, base+T₄, base+T₆]` as affine `(nat, nat)` tuples.
+pub open spec fn ristretto_coset_affine(x: nat, y: nat) -> [(nat, nat); 4] {
+    let t2 = edwards_point_as_affine(spec_eight_torsion()[2]);
+    let t4 = edwards_point_as_affine(spec_eight_torsion()[4]);
+    let t6 = edwards_point_as_affine(spec_eight_torsion()[6]);
+    [
+        (x, y),
+        edwards_add(x, y, t2.0, t2.1),
+        edwards_add(x, y, t4.0, t4.1),
+        edwards_add(x, y, t6.0, t6.1),
+    ]
 }
 
 /// Two points are Ristretto-equivalent when their difference is a 4-torsion element.

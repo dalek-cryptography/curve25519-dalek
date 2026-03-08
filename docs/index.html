@@ -37,12 +37,24 @@
             <div class="hero-stats">
                 <div class="stat-card highlight-card">
                     <div class="stat-number" id="withSpecs">84</div>
-                    <div class="stat-label">Tracked Functions</div>
+                    <div class="stat-label">Specified Functions</div>
                 </div>
                 <div class="stat-card success-card">
                     <div class="stat-number" id="fullyVerified">43</div>
                     <div class="stat-label">Fully Verified</div>
                     <div class="stat-percent" id="fullyVerifiedPct">16.7%</div>
+                </div>
+                <div class="stat-card amber-card">
+                    <div class="stat-stacked">
+                        <div class="stat-stacked-row">
+                            <div class="stat-number-sm" id="externalCount">0</div>
+                            <div class="stat-label-sm">External Functions</div>
+                        </div>
+                        <div class="stat-stacked-row">
+                            <div class="stat-number-sm" id="axiomCount">0</div>
+                            <div class="stat-label-sm">Axioms</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -57,11 +69,6 @@
                         <img src="outputs/verification_funnel.png" alt="Verification Funnel" class="zoomable" data-title="Verus Verification Funnel">
                         
                         <div class="metrics-inline">
-                            <div class="metric-item">
-                                <span class="metric-label">Spec Completion Rate</span>
-                                <span class="metric-value" id="specCompletionRate">32.7%</span>
-                                <span class="metric-description" id="specCompletionDesc">84 of 257 functions have specs</span>
-                            </div>
                             <div class="metric-item">
                                 <span class="metric-label">Proof Completion Rate</span>
                                 <span class="metric-value" id="proofCompletionRate">51.2%</span>
@@ -95,8 +102,8 @@
                     <img src="outputs/csv_preview.png" alt="CSV Preview" class="chart-img csv-preview-trigger" data-title="Function Status Data">
                 </div>
                 <p class="chart-description">
-                    Sample preview of tracked functions. <strong>Click image to browse all <span id="csvPreviewTotal">215</span> functions.</strong>
-                    <a href="outputs/curve25519_functions.csv" download class="csv-link">Download full CSV →</a>
+                    <strong>Click image to browse all <span id="csvPreviewTotal">607</span> functions.</strong>
+                    <a href="outputs/curve25519_functions.csv" download class="csv-link">Download CSV →</a>
                 </p>
             </div>
         </div>
@@ -329,9 +336,9 @@ cargo verus verify</code></pre>
                 <div class="filter-buttons">
                     <button class="filter-btn active" data-filter="all">All</button>
                     <button class="filter-btn" data-filter="verified">Verified</button>
-                    <button class="filter-btn" data-filter="spec">With Specs</button>
+                    <button class="filter-btn" data-filter="spec">Spec Only</button>
                     <button class="filter-btn" data-filter="external">External</button>
-                    <button class="filter-btn" data-filter="none">No Specs</button>
+                    <button class="filter-btn" data-filter="axiom">Axioms</button>
                 </div>
             </div>
             <div class="csv-table-container">
@@ -352,6 +359,7 @@ cargo verus verify</code></pre>
                     </tbody>
                 </table>
             </div>
+            <p class="csv-summary" id="csvSummary"></p>
         </div>
     </div>
 

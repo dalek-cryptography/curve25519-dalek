@@ -31,38 +31,151 @@
     gap: 3rem;
 }
 
-.download-bar {
+.download-dropdown {
+    position: relative;
     margin-left: 0.75rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
     flex-shrink: 0;
 }
 
-.download-label {
-    font-size: 0.7rem;
-    color: var(--text-secondary);
-    white-space: nowrap;
-}
-
-.download-btn {
-    display: inline-block;
+.download-toggle {
     background: #e8f0fe;
     color: var(--primary);
     border: 1px solid #c2d5f2;
-    padding: 0.3rem 0.65rem;
-    border-radius: 6px;
-    font-size: 0.7rem;
-    font-weight: 600;
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
     cursor: pointer;
-    white-space: nowrap;
-    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
 }
 
-.download-btn:hover {
+.download-toggle:hover {
     background: #3b82f6;
     color: #fff;
     border-color: #3b82f6;
+}
+
+.download-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 28px;
+    padding-top: 4px;
+    background: transparent;
+    z-index: 100;
+    min-width: 100px;
+}
+
+.download-menu-inner {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.download-dropdown.open .download-menu {
+    display: block;
+}
+
+.download-item {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.download-item:hover {
+    background: #e8f0fe;
+    color: var(--primary);
+}
+
+/* ── Target filter dropdown (next to "Target Functions" pill) ── */
+.target-dropdown {
+    position: relative;
+    display: inline-flex;
+    vertical-align: middle;
+    margin-left: 0.25rem;
+}
+
+.target-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid rgba(52, 152, 219, 0.25);
+    border-radius: 10px;
+    background: rgba(52, 152, 219, 0.08);
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    line-height: 1.3;
+}
+
+.target-toggle:hover {
+    background: rgba(52, 152, 219, 0.18);
+    border-color: var(--accent);
+}
+
+.target-caret {
+    font-size: 0.55rem;
+    opacity: 0.7;
+}
+
+.target-menu {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 100%;
+    padding-top: 3px;
+    z-index: 100;
+    min-width: 80px;
+}
+
+.target-menu-inner {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.target-dropdown.open .target-menu {
+    display: block;
+}
+
+.target-item {
+    display: block;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.1s;
+}
+
+.target-item:hover {
+    background: #e8f0fe;
+    color: var(--primary);
+}
+
+.target-item.active {
+    background: #e8f0fe;
+    color: var(--accent);
+    font-weight: 700;
 }
 
 .spec-stat {
@@ -75,6 +188,10 @@
     font-size: 2.5rem;
     font-weight: 700;
     color: var(--secondary-color);
+}
+
+.spec-stat-number.stat-amber {
+    color: #b45309;
 }
 
 .spec-stat-label {
@@ -311,6 +428,27 @@
     margin: 0;
     white-space: nowrap;
 }
+.panel-title-link {
+    color: var(--accent);
+    text-decoration: none;
+    cursor: pointer;
+    padding: 0.2rem 0.55rem;
+    border-radius: 12px;
+    background: rgba(52, 152, 219, 0.1);
+    border: 1px solid rgba(52, 152, 219, 0.25);
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: background 0.15s, border-color 0.15s;
+}
+.panel-title-link:hover {
+    background: rgba(52, 152, 219, 0.2);
+    border-color: var(--accent);
+}
+.panel-title-sep {
+    color: var(--text-secondary);
+    font-weight: 400;
+    margin: 0 0.1rem;
+}
 
 .panel-toolbar {
     display: flex;
@@ -522,9 +660,9 @@
 }
 
 .fn-badge-spec {
-    color: #1e40af;
-    background: #dbeafe;
-    border: 1px solid #93c5fd;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
 }
 
 .fn-badge-nospec {
@@ -569,6 +707,33 @@
 /* Axiom card — subtle amber left border */
 .spec-card.axiom-card {
     border-left: 3px solid #f59e0b;
+}
+
+/* External function card — amber left border (matches axiom style) */
+.spec-card.card-external {
+    border-left: 3px solid #f59e0b;
+}
+
+.fn-badge-external {
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+}
+
+/* External group header at bottom of left panel */
+.external-group-header {
+    color: #92400e;
+    border-bottom-color: #f59e0b;
+    margin-top: 1rem;
+}
+
+.external-group-count {
+    font-size: 0.65rem;
+    font-weight: 600;
+    background: #fef3c7;
+    padding: 0.08rem 0.35rem;
+    border-radius: 8px;
+    margin-left: 0.3rem;
 }
 
 .spec-github {

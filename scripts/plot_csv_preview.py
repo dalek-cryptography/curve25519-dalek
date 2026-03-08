@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate a visual preview/snapshot of the CSV file as an image."""
 
+import json
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -14,11 +15,11 @@ def create_csv_preview() -> None:
 
     # Sample functions to show - mix of different statuses
     verified = df[df["has_proof"] == "yes"].head(8)
-    with_specs = df[(df["has_spec"] == "yes") & (df["has_proof"] != "yes")].head(8)
-    no_specs = df[(df["has_spec"] != "yes") & (df["has_proof"] != "yes")].head(8)
+    external = df[df["has_spec"] == "ext"].head(6)
+    with_specs = df[(df["has_spec"] == "yes") & (df["has_proof"] != "yes")].head(6)
 
     # Combine samples
-    sample = pd.concat([verified, with_specs, no_specs]).head(25)
+    sample = pd.concat([verified, external, with_specs]).head(25)
 
     # Prepare display data
     display_data = []
@@ -93,16 +94,35 @@ def create_csv_preview() -> None:
                 else:
                     cell.set_text_props(color="#6b7280")
 
-    # Add summary stats at bottom
-    total = len(df)
-    verified_count = len(df[df["has_proof"] == "yes"])
-    spec_count = len(df[df["has_spec"] == "yes"])
+    # Load counts from specs_data.json for accurate totals (with CSV fallback)
+    specs_path = Path(__file__).parent.parent / "docs" / "specs_data.json"
+    specified = verified_count = external_count = axiom_count = None
+    if specs_path.exists():
+        try:
+            with open(specs_path) as f:
+                raw = json.load(f)
+            data = raw.get("data", raw)
+            vf = data.get("verified_functions", [])
+            sf = data.get("spec_functions", [])
+            specified = len([f for f in vf if f.get("category") == "tracked"])
+            verified_count = len(
+                [f for f in vf if f.get("category") == "tracked" and f.get("has_proof")]
+            )
+            external_count = len([f for f in vf if f.get("category") == "external"])
+            axiom_count = len([f for f in sf if f.get("category") == "axiom"])
+        except (OSError, json.JSONDecodeError, TypeError):
+            pass
+    if specified is None:
+        specified = int(((df["has_spec"] == "yes") | (df["has_spec"] == "ext")).sum())
+        verified_count = int((df["has_proof"] == "yes").sum())
+        external_count = int((df["has_spec"] == "ext").sum())
+        axiom_count = 0
 
     summary_text = (
-        f"Total Functions: {total}  |  "
+        f"Specified: {specified}  |  "
         f"Verified: {verified_count}  |  "
-        f"With Specs: {spec_count}  |  "
-        f"Completion Rate: {verified_count / spec_count * 100:.1f}%"
+        f"External: {external_count}  |  "
+        f"Axioms: {axiom_count}"
     )
 
     fig.text(

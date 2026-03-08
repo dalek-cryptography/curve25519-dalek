@@ -9,9 +9,9 @@
     "probe:curve25519-dalek/4.1.3/edwards/EdwardsPoint#impl<EdwardsPoint>#[EdwardsPoint][Neg]neg()",
     "probe:curve25519-dalek/4.1.3/edwards/impl<&EdwardsPoint>#[EdwardsPoint]vartime_double_scalar_mul_basepoint()",
     "probe:curve25519-dalek/4.1.3/lizard/lizard_ristretto/&RistrettoPoint#impl<(u8,/[[u8;/{const}];/{const}])>#[RistrettoPoint]decode_253_bits()",
-    "probe:curve25519-dalek/4.1.3/lizard/lizard_ristretto/&RistrettoPoint#impl<Option<[u8;/{const}]>\nwhere\n////D:/Digest,\n////D:/Digest<OutputSize/=/U32>,>#[RistrettoPoint]lizard_decode()",
+    "probe:curve25519-dalek/4.1.3/lizard/lizard_ristretto/&RistrettoPoint#impl<Option<[u8;/{const}]>>#[RistrettoPoint]lizard_decode_verus()",
     "probe:curve25519-dalek/4.1.3/lizard/lizard_ristretto/impl<&[u8;/{const}]>#[RistrettoPoint]from_uniform_bytes_single_elligator()",
-    "probe:curve25519-dalek/4.1.3/lizard/lizard_ristretto/impl<&[u8;/{const}]>#[RistrettoPoint]lizard_encode()",
+    "probe:curve25519-dalek/4.1.3/lizard/lizard_ristretto/impl<&[u8;/{const}]>#[RistrettoPoint]lizard_encode_verus()",
     "probe:curve25519-dalek/4.1.3/montgomery/&MontgomeryPoint#impl<u8>#[MontgomeryPoint]to_edwards()",
     "probe:curve25519-dalek/4.1.3/ristretto/&CompressedRistretto#impl<Option<RistrettoPoint>>#[CompressedRistretto]decompress()",
     "probe:curve25519-dalek/4.1.3/ristretto/&CompressedRistretto#impl<[u8;/{const}]>#[CompressedRistretto]as_bytes()",
@@ -173,11 +173,11 @@
       "relative_path": "curve25519-dalek/src/edwards.rs"
     },
     {
-      "display_name": "lizard_decode",
+      "display_name": "lizard_decode_verus",
       "relative_path": "curve25519-dalek/src/lizard/lizard_ristretto.rs"
     },
     {
-      "display_name": "lizard_encode",
+      "display_name": "lizard_encode_verus",
       "relative_path": "curve25519-dalek/src/lizard/lizard_ristretto.rs"
     },
     {

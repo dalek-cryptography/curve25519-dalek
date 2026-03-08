@@ -16,6 +16,9 @@ pub mod primality_specs;
 
 pub mod ristretto_specs;
 
+#[cfg(feature = "lizard")]
+pub mod lizard_specs;
+
 pub mod iterator_specs;
 
 pub mod scalar_specs;

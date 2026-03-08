@@ -265,10 +265,8 @@ def plot_funnel(stats: Dict[str, int], output_dir: Path):
     total = stats["total"]
 
     # Funnel stages for Verus
-    # Note: "With Verus Spec" only counts functions with full specs (not external)
     stages = [
-        ("Total Functions", total),
-        ("With Verus Spec", stats["verus_specs_full"]),
+        ("Specified Functions", stats["verus_specs_full"]),
         ("Fully Verified", stats["verus_proofs"]),
     ]
 
@@ -277,7 +275,7 @@ def plot_funnel(stats: Dict[str, int], output_dir: Path):
     widths = [stage[1] for stage in stages]
     labels = [stage[0] for stage in stages]
 
-    colors = ["#95a5a6", "#3498db", "#2ecc71"]
+    colors = ["#3498db", "#2ecc71"]
 
     for i, (width, label, color) in enumerate(zip(widths, labels, colors)):
         # Draw bar
@@ -332,40 +330,42 @@ def plot_funnel(stats: Dict[str, int], output_dir: Path):
 def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
     """Create a breakdown by file/module."""
 
-    # Simplify module names for display
+    # Simplify module names to match specs browser grouping (probe-verus derive_short_module)
     def simplify_module(module: str) -> str:
         if pd.isna(module) or not module:
             return "unknown"
-        # Remove crate prefix for cleaner display
-        # e.g., "curve25519_dalek::backend::serial::u64::field" -> "u64::field"
-        # e.g., "curve25519_dalek::scalar" -> "scalar"
         parts = module.replace("curve25519_dalek::", "").split("::")
-        # Always show last 2 levels (or fewer if not available)
-        if len(parts) >= 2:
-            return "::".join(parts[-2:])
+        if parts and parts[0] == "lizard":
+            return "lizard"
+        if parts and parts[-1] == "scalar_helpers":
+            return "scalar"
+        # backend::serial::* all merge into "backend"
+        if parts and parts[0] == "backend":
+            for p in parts:
+                if p.startswith("u") and p[1:].isdigit():
+                    return p
+            return "backend"
         return parts[-1] if parts else "unknown"
 
-    # Count by module
-    module_stats = []
-    for module in df["module"].unique():
-        module_df = df[df["module"] == module]
-        total = len(module_df)
-        verus_specs = (
-            module_df["has_spec"].notna() & (module_df["has_spec"] != "")
-        ).sum()
-        verus_proofs = (module_df["has_proof"] == "yes").sum()
-
-        module_stats.append(
-            {
-                "module": module,
-                "display_module": simplify_module(module),
-                "total": total,
-                "verus_specs": verus_specs,
-                "verus_proofs": verus_proofs,
-                "spec_pct": round(verus_specs * 100 / total, 1) if total > 0 else 0,
-                "proof_pct": round(verus_proofs * 100 / total, 1) if total > 0 else 0,
-            }
-        )
+    # Count by display module (merges submodules like lizard::* into one)
+    df["_display_module"] = df["module"].apply(simplify_module)
+    merged = {}
+    for display_mod in df["_display_module"].unique():
+        mod_df = df[df["_display_module"] == display_mod]
+        total = len(mod_df)
+        verus_specs = (mod_df["has_spec"].notna() & (mod_df["has_spec"] != "")).sum()
+        verus_proofs = (mod_df["has_proof"] == "yes").sum()
+        merged[display_mod] = {
+            "module": display_mod,
+            "display_module": display_mod,
+            "total": total,
+            "verus_specs": verus_specs,
+            "verus_proofs": verus_proofs,
+            "spec_pct": round(verus_specs * 100 / total, 1) if total > 0 else 0,
+            "proof_pct": round(verus_proofs * 100 / total, 1) if total > 0 else 0,
+        }
+    module_stats = list(merged.values())
+    df.drop(columns=["_display_module"], inplace=True)
 
     # Sort by total functions
     module_stats.sort(key=lambda x: x["total"], reverse=True)

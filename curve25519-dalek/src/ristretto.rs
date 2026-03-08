@@ -2285,22 +2285,6 @@ impl RistrettoPoint {
     ///
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
-    /* ORIGINAL_CODE:
-    pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> (result: RistrettoPoint)
-        ensures
-    // The result is the Elligator map applied to r_0
-
-            edwards_point_as_affine(result.0) == spec_elligator_ristretto_flavor(
-                fe51_as_canonical_nat(r_0),
-            ),
-            // The result is a valid Ristretto point: well-formed and in the even subgroup
-            is_well_formed_edwards_point(result.0),
-            is_in_even_subgroup(result.0),
-    {
-        proof {
-            assume(false);  // PROOF BYPASS
-        }
-    */
     pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> (result: RistrettoPoint)
         requires
             fe51_limbs_bounded(r_0, 54),

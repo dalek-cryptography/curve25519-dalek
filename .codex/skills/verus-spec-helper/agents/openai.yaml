@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verus Spec Helper"
+  short_description: "Draft and tighten Verus specs"
+  default_prompt: "Use $verus-spec-helper to draft and tighten Verus specifications (requires/ensures, math reference specs, exec/spec correspondence); proofs may be admit()."

@@ -294,16 +294,14 @@ impl Hash for MontgomeryPoint {
             assert(spec_fe51_as_bytes(&fe) == spec_fe51_as_bytes(&fe_spec)) by {
                 lemma_field_element_equal_implies_fe51_to_bytes_equal(&fe, &fe_spec);
             }
-            assert(*state == spec_state_after_hash_montgomery(initial_state, self)) by {
-                assert(spec_fe51_as_bytes(&fe) == canonical_seq);
-                assert(seq_from32(&canonical_bytes) == canonical_seq);
+            assert(seq_from32(&canonical_bytes) == canonical_seq) by {
+                assert(seq_from32(&canonical_bytes) == spec_fe51_as_bytes(&fe));
+                assert(spec_fe51_as_bytes(&fe) == spec_fe51_as_bytes(&fe_spec));
+            }
+            assert(canonical_bytes == canonical_arr) by {
                 assert(canonical_seq.len() == 32);
                 assert(canonical_seq =~= seq_from32(&canonical_arr));
-                assert(canonical_bytes == canonical_arr) by {
-                    lemma_seq_eq_implies_array_eq(&canonical_bytes, &canonical_arr);
-                }
-                assert(*state == spec_state_after_hash(initial_state, &canonical_bytes));
-                assert(*state == spec_state_after_hash(initial_state, &canonical_arr));
+                lemma_seq_eq_implies_array_eq(&canonical_bytes, &canonical_arr);
             }
         }
     }

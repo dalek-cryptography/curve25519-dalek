@@ -12,7 +12,7 @@ runs:
       shell: bash
       run: |
         set -e
-        SHA=$(git ls-remote https://github.com/Beneficial-AI-Foundation/probe-verus.git refs/heads/include-external-body | cut -f1)
+        SHA=$(git ls-remote https://github.com/Beneficial-AI-Foundation/probe-verus.git HEAD | cut -f1)
         if [ -z "$SHA" ]; then
           echo "Error: Failed to fetch probe-verus commit SHA" >&2
           exit 1
@@ -30,4 +30,4 @@ runs:
       if: steps.cache-probe-verus.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        cargo install --git https://github.com/Beneficial-AI-Foundation/probe-verus.git --branch include-external-body
+        cargo install --git https://github.com/Beneficial-AI-Foundation/probe-verus.git

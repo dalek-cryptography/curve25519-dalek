@@ -20,3 +20,4 @@ pub mod niels_addition_correctness;
 pub mod pippenger_lemmas;
 pub mod step1_lemmas;
 pub mod straus_lemmas;
+pub mod vartime_double_base_lemmas;

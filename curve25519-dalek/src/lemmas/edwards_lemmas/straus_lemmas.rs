@@ -29,7 +29,7 @@
 //! - `lemma_straus_vt_correct`: H\_vt(0) = sum\_of\_scalar\_muls(scalars, points)
 #![allow(non_snake_case)]
 
-use crate::backend::serial::curve_models::ProjectiveNielsPoint;
+use crate::backend::serial::curve_models::{AffineNielsPoint, ProjectiveNielsPoint};
 use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
 use crate::window::LookupTable;
@@ -289,6 +289,37 @@ pub proof fn lemma_naf_select_is_signed_scalar_mul_projective(
     }
 }
 
+/// NafLookupTable8 affine select correctness: select by odd positive digit -> [d]*P.
+#[cfg(feature = "precomputed-tables")]
+pub proof fn lemma_naf_select_is_signed_scalar_mul_affine8(
+    table: [AffineNielsPoint; 64],
+    digit: i8,
+    result: AffineNielsPoint,
+    basepoint: (nat, nat),
+)
+    requires
+        0 < digit < 128,
+        (digit as int) % 2 != 0,
+        forall|j: int|
+            0 <= j < 64 ==> affine_niels_point_as_affine_edwards(#[trigger] table[j])
+                == edwards_scalar_mul(basepoint, (2 * j + 1) as nat),
+        result == table[((digit as int) / 2) as int],
+    ensures
+        affine_niels_point_as_affine_edwards(result) == edwards_scalar_mul_signed(
+            basepoint,
+            digit as int,
+        ),
+{
+    reveal(edwards_scalar_mul_signed);
+    let j = ((digit as int) / 2) as int;
+    assert(0 <= j < 64);
+    assert(affine_niels_point_as_affine_edwards(table[j]) == edwards_scalar_mul(
+        basepoint,
+        (2 * j + 1) as nat,
+    ));
+    assert((2 * j + 1) as nat == digit as nat);
+}
+
 // =============================================================================
 // Straus CT step lemma (unfold opaque spec)
 // =============================================================================
@@ -491,6 +522,25 @@ pub proof fn lemma_naf_digit_positive_select_preconditions(digit: i8)
     ;
 }
 
+/// For a NAF digit d > 0 from a valid NAF(8), d is odd and d < 128.
+#[cfg(feature = "precomputed-tables")]
+pub proof fn lemma_naf_digit_positive_select_preconditions_width8(digit: i8)
+    requires
+        digit > 0,
+        (digit as int) % 2 != 0,
+        digit < 128,
+    ensures
+        (digit as usize) & 1usize == 1usize,
+        (digit as usize) < 128usize,
+{
+    assert((digit as usize) < 128usize);
+    assert((digit as usize) & 1usize == 1usize) by (bit_vector)
+        requires
+            digit > 0i8,
+            (digit as int) % 2 != 0,
+    ;
+}
+
 /// For a NAF digit d < 0 from a valid NAF(5), -d is odd and -d < 16.
 /// This establishes the select preconditions for the negated digit.
 pub proof fn lemma_naf_digit_negative_select_preconditions(digit: i8)
@@ -507,6 +557,26 @@ pub proof fn lemma_naf_digit_negative_select_preconditions(digit: i8)
         requires
             digit < 0i8,
             digit > -16i8,
+            (digit as int) % 2 != 0,
+    ;
+}
+
+/// For a NAF digit d < 0 from a valid NAF(8), -d is odd and -d < 128.
+#[cfg(feature = "precomputed-tables")]
+pub proof fn lemma_naf_digit_negative_select_preconditions_width8(digit: i8)
+    requires
+        digit < 0,
+        (digit as int) % 2 != 0,
+        digit > -128,
+    ensures
+        ((-digit) as usize) & 1usize == 1usize,
+        ((-digit) as usize) < 128usize,
+{
+    assert(((-digit) as usize) < 128usize);
+    assert(((-digit) as usize) & 1usize == 1usize) by (bit_vector)
+        requires
+            digit < 0i8,
+            digit > -128i8,
             (digit as int) % 2 != 0,
     ;
 }
@@ -597,6 +667,60 @@ pub proof fn lemma_column_sum_step_zero_digit(
     assert(term == (0nat, 1nat));
     // edwards_add(col_k, identity) == col_k (when col_k is canonical)
     lemma_edwards_add_identity_right_canonical(col_k);
+}
+
+/// If every digit in column `j` is zero, the column sum is the identity.
+pub proof fn lemma_column_sum_all_zero(
+    points_affine: Seq<(nat, nat)>,
+    digits: Seq<Seq<i8>>,
+    j: int,
+    n: int,
+)
+    requires
+        0 <= n <= points_affine.len(),
+        n <= digits.len(),
+        0 <= j,
+        forall|k: int| 0 <= k < n ==> j < (#[trigger] digits[k]).len(),
+        forall|k: int|
+            0 <= k < n ==> (#[trigger] points_affine[k]).0 < p() && points_affine[k].1 < p(),
+        forall|k: int| 0 <= k < n ==> #[trigger] digits[k][j] == 0,
+    ensures
+        straus_column_sum(points_affine, digits, j, n) == edwards_identity(),
+    decreases n,
+{
+    if n <= 0 {
+    } else {
+        lemma_column_sum_all_zero(points_affine, digits, j, n - 1);
+        lemma_column_sum_canonical(points_affine, digits, j, n - 1);
+        lemma_column_sum_step_zero_digit(points_affine, digits, j, n - 1);
+        assert(straus_column_sum(points_affine, digits, j, n - 1) == edwards_identity());
+    }
+}
+
+/// If all digits strictly above `i` are zero, then `straus_vt_partial(i + 1)` is the identity.
+pub proof fn lemma_straus_vt_zero_suffix(points_affine: Seq<(nat, nat)>, nafs: Seq<Seq<i8>>, i: int)
+    requires
+        0 <= i < 256,
+        nafs.len() == points_affine.len(),
+        forall|k: int| 0 <= k < nafs.len() ==> (#[trigger] nafs[k]).len() == 256,
+        forall|k: int|
+            0 <= k < points_affine.len() ==> (#[trigger] points_affine[k]).0 < p()
+                && points_affine[k].1 < p(),
+        forall|k: int, j: int| 0 <= k < nafs.len() && i < j < 256 ==> #[trigger] nafs[k][j] == 0,
+    ensures
+        straus_vt_partial(points_affine, nafs, i + 1) == edwards_identity(),
+    decreases 255 - i,
+{
+    if i == 255 {
+        lemma_straus_vt_base(points_affine, nafs);
+    } else {
+        lemma_straus_vt_step(points_affine, nafs, i + 1);
+        lemma_straus_vt_zero_suffix(points_affine, nafs, i + 1);
+        lemma_column_sum_all_zero(points_affine, nafs, i + 1, points_affine.len() as int);
+        lemma_double_identity();
+        p_gt_2();
+        lemma_edwards_add_identity_right_canonical(edwards_identity());
+    }
 }
 
 // =============================================================================

@@ -377,6 +377,124 @@ macro_rules! define_edwards_scalar_mul_variants_verus {
     };
 }
 
+/// Define wrapper variants for `RistrettoPoint * Scalar` and `Scalar * RistrettoPoint`
+/// with functional-correctness postconditions.
+///
+/// Exec-wise, this is equivalent to what
+/// `define_mul_variants_verus!(LHS = RistrettoPoint, RHS = Scalar, Output = RistrettoPoint)`
+/// and `define_mul_variants_verus!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint)`
+/// would generate (each impl forwards to a borrowed-argument multiplication).
+///
+/// We write it as a specialized macro so we can attach `ensures` postconditions to
+/// the wrapper variants, instead of only having specs on `&RistrettoPoint * &Scalar`.
+macro_rules! define_ristretto_scalar_mul_variants_verus {
+    () => {
+        verus! {
+        // =======================================================================
+        // RistrettoPoint * Scalar variants (forwards to &RistrettoPoint * &Scalar)
+        // =======================================================================
+        impl<'b> core::ops::Mul<&'b $crate::scalar::Scalar> for $crate::ristretto::RistrettoPoint {
+            type Output = $crate::ristretto::RistrettoPoint;
+
+            fn mul(self, scalar: &'b $crate::scalar::Scalar) -> (result: $crate::ristretto::RistrettoPoint)
+                ensures
+                    $crate::specs::edwards_specs::is_well_formed_edwards_point(result.0),
+                    $crate::specs::edwards_specs::edwards_point_as_affine(result.0)
+                        == $crate::specs::edwards_specs::edwards_scalar_mul(
+                        $crate::specs::edwards_specs::edwards_point_as_affine(self.0),
+                        $crate::specs::scalar_specs::scalar_as_nat(scalar),
+                    ),
+            {
+                &self * scalar
+            }
+        }
+
+        impl<'a> core::ops::Mul<$crate::scalar::Scalar> for &'a $crate::ristretto::RistrettoPoint {
+            type Output = $crate::ristretto::RistrettoPoint;
+
+            fn mul(self, scalar: $crate::scalar::Scalar) -> (result: $crate::ristretto::RistrettoPoint)
+                ensures
+                    $crate::specs::edwards_specs::is_well_formed_edwards_point(result.0),
+                    $crate::specs::edwards_specs::edwards_point_as_affine(result.0)
+                        == $crate::specs::edwards_specs::edwards_scalar_mul(
+                        $crate::specs::edwards_specs::edwards_point_as_affine(self.0),
+                        $crate::specs::scalar_specs::scalar_as_nat(&scalar),
+                    ),
+            {
+                self * &scalar
+            }
+        }
+
+        impl core::ops::Mul<$crate::scalar::Scalar> for $crate::ristretto::RistrettoPoint {
+            type Output = $crate::ristretto::RistrettoPoint;
+
+            fn mul(self, scalar: $crate::scalar::Scalar) -> (result: $crate::ristretto::RistrettoPoint)
+                ensures
+                    $crate::specs::edwards_specs::is_well_formed_edwards_point(result.0),
+                    $crate::specs::edwards_specs::edwards_point_as_affine(result.0)
+                        == $crate::specs::edwards_specs::edwards_scalar_mul(
+                        $crate::specs::edwards_specs::edwards_point_as_affine(self.0),
+                        $crate::specs::scalar_specs::scalar_as_nat(&scalar),
+                    ),
+            {
+                &self * &scalar
+            }
+        }
+
+        // =======================================================================
+        // Scalar * RistrettoPoint variants (forwards to &Scalar * &RistrettoPoint)
+        // =======================================================================
+        impl<'b> core::ops::Mul<&'b $crate::ristretto::RistrettoPoint> for $crate::scalar::Scalar {
+            type Output = $crate::ristretto::RistrettoPoint;
+
+            fn mul(self, point: &'b $crate::ristretto::RistrettoPoint) -> (result: $crate::ristretto::RistrettoPoint)
+                ensures
+                    $crate::specs::edwards_specs::is_well_formed_edwards_point(result.0),
+                    $crate::specs::edwards_specs::edwards_point_as_affine(result.0)
+                        == $crate::specs::edwards_specs::edwards_scalar_mul(
+                        $crate::specs::edwards_specs::edwards_point_as_affine(point.0),
+                        $crate::specs::scalar_specs::scalar_as_nat(&self),
+                    ),
+            {
+                &self * point
+            }
+        }
+
+        impl<'a> core::ops::Mul<$crate::ristretto::RistrettoPoint> for &'a $crate::scalar::Scalar {
+            type Output = $crate::ristretto::RistrettoPoint;
+
+            fn mul(self, point: $crate::ristretto::RistrettoPoint) -> (result: $crate::ristretto::RistrettoPoint)
+                ensures
+                    $crate::specs::edwards_specs::is_well_formed_edwards_point(result.0),
+                    $crate::specs::edwards_specs::edwards_point_as_affine(result.0)
+                        == $crate::specs::edwards_specs::edwards_scalar_mul(
+                        $crate::specs::edwards_specs::edwards_point_as_affine(point.0),
+                        $crate::specs::scalar_specs::scalar_as_nat(self),
+                    ),
+            {
+                self * &point
+            }
+        }
+
+        impl core::ops::Mul<$crate::ristretto::RistrettoPoint> for $crate::scalar::Scalar {
+            type Output = $crate::ristretto::RistrettoPoint;
+
+            fn mul(self, point: $crate::ristretto::RistrettoPoint) -> (result: $crate::ristretto::RistrettoPoint)
+                ensures
+                    $crate::specs::edwards_specs::is_well_formed_edwards_point(result.0),
+                    $crate::specs::edwards_specs::edwards_point_as_affine(result.0)
+                        == $crate::specs::edwards_specs::edwards_scalar_mul(
+                        $crate::specs::edwards_specs::edwards_point_as_affine(point.0),
+                        $crate::specs::scalar_specs::scalar_as_nat(&self),
+                    ),
+            {
+                &self * &point
+            }
+        }
+        }
+    };
+}
+
 /// Define non-borrow variants of `MulAssign`.
 macro_rules! define_mul_assign_variants {
     (LHS = $lhs:ty, RHS = $rhs:ty) => {

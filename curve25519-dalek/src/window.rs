@@ -1044,11 +1044,13 @@ impl NafLookupTable8<AffineNielsPoint> {
             x & 1 == 1,  // x is odd
             x < 128,  // x in {1, 3, 5, ..., 127}
             naf_lookup_table8_affine_limbs_bounded(self.0),
+            forall|j: int| 0 <= j < 64 ==> is_valid_affine_niels_point(#[trigger] self.0[j]),
         ensures
             result == self.0[(x / 2) as int],
             fe51_limbs_bounded(&result.y_plus_x, 54),
             fe51_limbs_bounded(&result.y_minus_x, 54),
             fe51_limbs_bounded(&result.xy2d, 54),
+            is_valid_affine_niels_point(result),
     {
         #[cfg(not(verus_keep_ghost))]
         {

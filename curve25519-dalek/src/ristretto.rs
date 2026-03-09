@@ -3480,7 +3480,20 @@ impl RistrettoPoint {
     {
         let r = {
             #[cfg(not(feature = "precomputed-tables"))]
-            { scalar * constants::RISTRETTO_BASEPOINT_POINT }
+            {
+                /* ORIGINAL CODE: { scalar * constants::RISTRETTO_BASEPOINT_POINT } */
+                let ed_bp = constants::ED25519_BASEPOINT_POINT;
+                proof {
+                    use_type_invariant(ed_bp);
+                    lemma_unfold_edwards(ed_bp);
+                    assert(edwards_point_limbs_bounded(ed_bp));
+                    assert(sum_of_limbs_bounded(&edwards_y(ed_bp), &edwards_x(ed_bp), u64::MAX));
+                    assert(is_valid_edwards_point(ed_bp));
+                    assert(is_well_formed_edwards_point(ed_bp));
+                }
+                let bp = RistrettoPoint(ed_bp);
+                scalar * bp
+            }
 
             #[cfg(feature = "precomputed-tables")]
             {
@@ -3497,8 +3510,7 @@ impl RistrettoPoint {
 } // verus!
 define_mul_assign_variants!(LHS = RistrettoPoint, RHS = Scalar);
 
-define_mul_variants!(LHS = RistrettoPoint, RHS = Scalar, Output = RistrettoPoint);
-define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint);
+define_ristretto_scalar_mul_variants_verus!();
 
 // ------------------------------------------------------------------------
 // Multiscalar Multiplication impls

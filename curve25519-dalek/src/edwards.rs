@@ -2629,7 +2629,19 @@ impl EdwardsPoint {
             ),
     {
         #[cfg(not(feature = "precomputed-tables"))]
-        { scalar * constants::ED25519_BASEPOINT_POINT }
+        {
+            /* ORIGINAL CODE: { scalar * constants::ED25519_BASEPOINT_POINT } */
+            let bp = constants::ED25519_BASEPOINT_POINT;
+            proof {
+                use_type_invariant(bp);
+                lemma_unfold_edwards(bp);
+                assert(edwards_point_limbs_bounded(bp));
+                assert(sum_of_limbs_bounded(&edwards_y(bp), &edwards_x(bp), u64::MAX));
+                assert(is_valid_edwards_point(bp));
+                assert(is_well_formed_edwards_point(bp));
+            }
+            scalar * bp
+        }
         #[cfg(feature = "precomputed-tables")]
         {
             proof {

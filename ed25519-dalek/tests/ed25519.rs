@@ -440,6 +440,35 @@ mod integrations {
             verifier.finalize_and_verify().is_err(),
             "Verification of a signature on a different message passed!"
         );
+
+        let mut verifier = keypair.verify_stream_strict(&good_sig).unwrap();
+        verifier.update(good);
+        assert!(
+            verifier.finalize_and_verify().is_ok(),
+            "Strict stream verification of a valid signature failed!"
+        );
+
+        let mut verifier = keypair.verify_stream_strict(&bad_sig).unwrap();
+        verifier.update(good);
+        assert!(
+            verifier.finalize_and_verify().is_err(),
+            "Strict stream verification of a signature on a different message passed!"
+        );
+
+        let mut verifier = keypair.verify_stream_strict(&good_sig).unwrap();
+        verifier.update("test ");
+        verifier.update("message");
+        assert!(
+            verifier.finalize_and_verify().is_ok(),
+            "Strict stream verification of a valid signature with chunked update failed!"
+        );
+
+        let mut verifier = keypair.verify_stream_strict(&good_sig).unwrap();
+        verifier.update(bad);
+        assert!(
+            verifier.finalize_and_verify().is_err(),
+            "Strict stream verification of a signature on a different message passed!"
+        );
     }
 
     #[cfg(feature = "digest")]

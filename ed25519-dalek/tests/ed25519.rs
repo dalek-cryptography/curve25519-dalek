@@ -239,6 +239,63 @@ mod vectors {
         // small order pubkeys.
         assert!(vk.verify_strict(message1, &sig).is_err());
         assert!(vk.verify_strict(message2, &sig).is_err());
+
+        #[cfg(feature = "hazmat")]
+        {
+            // verify_stream should accept both messages (same as verify)
+            let mut verifier = vk.verify_stream(&sig).unwrap();
+            verifier.update(message1);
+            assert!(verifier.finalize_and_verify().is_ok());
+
+            let mut verifier = vk.verify_stream(&sig).unwrap();
+            verifier.update(message2);
+            assert!(verifier.finalize_and_verify().is_ok());
+
+            // verify_stream_strict should reject both (same as verify_strict)
+            assert!(vk.verify_stream_strict(&sig).is_err());
+        }
+    }
+
+    // Tests that verify_strict() rejects small-order R values. We construct a valid signature
+    // where R is the identity point (small order). The verification equation [s]B = R + [k]A
+    // holds when s = k*a and R = identity. This should be accepted by verify() but rejected by
+    // verify_strict() and verify_stream_strict().
+    #[test]
+    #[allow(non_snake_case)]
+    fn low_order_R() {
+        let message = b"Send 100 USD to Alice";
+
+        // Normal keypair: secret scalar a, public key A = [a]B
+        let a = non_null_scalar();
+        let A = a * ED25519_BASEPOINT_POINT;
+
+        // R = identity (small order)
+        let R = EdwardsPoint::default();
+
+        // Compute k = H(R || A || M) and s = k * a
+        let k = compute_challenge(message, &A, &R, None);
+        let s = k * a;
+
+        let signature = serialize_signature(&R, &s);
+        let vk = VerifyingKey::from_bytes(A.compress().as_bytes()).unwrap();
+        let sig = Signature::try_from(&signature[..]).unwrap();
+
+        // verify() should accept (low-order R is permitted)
+        assert!(vk.verify(message, &sig).is_ok());
+
+        // verify_strict() should reject (low-order R)
+        assert!(vk.verify_strict(message, &sig).is_err());
+
+        #[cfg(feature = "hazmat")]
+        {
+            // verify_stream should accept (same as verify)
+            let mut verifier = vk.verify_stream(&sig).unwrap();
+            verifier.update(message);
+            assert!(verifier.finalize_and_verify().is_ok());
+
+            // verify_stream_strict should reject (same as verify_strict)
+            assert!(vk.verify_stream_strict(&sig).is_err());
+        }
     }
 
     // Identical to repudiation() above, but testing verify_prehashed against

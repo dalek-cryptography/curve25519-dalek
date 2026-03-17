@@ -47,6 +47,7 @@ curve25519-dalek = { version = "=5.0.0-pre.6", default-features = false, feature
     "digest",
     "rand_core",
 ] }
+ed25519-dalek = {path = ".", features = ["rand_core"] } # Force enable the rand_core feature for tests
 x25519-dalek = { version = "=3.0.0-pre.6", default-features = false, features = [
     "static_secrets",
 ] }

@@ -398,7 +398,7 @@ mod integrations {
         );
     }
 
-    #[cfg(feature = "digest")]
+    #[cfg(all(feature = "digest", feature = "hazmat"))]
     #[test]
     fn sign_verify_digest_equivalence() {
         // TestSignVerify

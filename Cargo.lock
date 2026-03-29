@@ -326,7 +326,7 @@ version = "5.0.0-pre.6"
 dependencies = [
  "bincode",
  "cfg-if",
- "cpufeatures 0.2.17",
+ "cpufeatures 0.3.0",
  "criterion",
  "curve25519-dalek-derive",
  "digest",

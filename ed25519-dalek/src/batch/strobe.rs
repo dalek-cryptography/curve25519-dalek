@@ -1,6 +1,7 @@
 //! Minimal implementation of (parts of) Strobe.
 
 use core::ops::{Deref, DerefMut};
+use keccak::Keccak;
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -57,7 +58,7 @@ impl Strobe128 {
             let mut st = AlignedKeccakState([0u8; 200]);
             st[0..6].copy_from_slice(&[1, STROBE_R + 2, 1, 0, 1, 96]);
             st[6..18].copy_from_slice(b"STROBEv1.0.2");
-            keccak::f1600(transmute_state(&mut st));
+            Keccak::new().with_f1600(|f1600| f1600(transmute_state(&mut st)));
 
             st
         };
@@ -100,7 +101,7 @@ impl Strobe128 {
         self.state[self.pos as usize] ^= self.pos_begin;
         self.state[(self.pos + 1) as usize] ^= 0x04;
         self.state[(STROBE_R + 1) as usize] ^= 0x80;
-        keccak::f1600(transmute_state(&mut self.state));
+        Keccak::new().with_f1600(|f1600| f1600(transmute_state(&mut self.state)));
         self.pos = 0;
         self.pos_begin = 0;
     }

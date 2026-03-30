@@ -9,7 +9,6 @@
 
 //! Batch signature verification.
 
-mod strobe;
 mod transcript;
 
 use alloc::vec::Vec;

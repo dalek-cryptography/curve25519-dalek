@@ -1,6 +1,6 @@
 use super::MERLIN_PROTOCOL_LABEL;
-use super::strobe::Strobe128;
 use core::convert::Infallible;
+use strobe_rs::{SecParam, Strobe};
 
 fn encode_usize_as_u32(x: usize) -> [u8; 4] {
     u32::try_from(x).expect("usize too large").to_le_bytes()
@@ -37,7 +37,7 @@ fn encode_usize_as_u32(x: usize) -> [u8; 4] {
 /// Merlin](https://merlin.cool/use/index.html) section.
 #[derive(Clone)]
 pub struct Transcript {
-    strobe: Strobe128,
+    strobe: Strobe,
 }
 
 impl Transcript {
@@ -53,7 +53,7 @@ impl Transcript {
     /// the Merlin website for more details on why.
     pub fn new(label: &'static [u8]) -> Transcript {
         let mut transcript = Transcript {
-            strobe: Strobe128::new(MERLIN_PROTOCOL_LABEL),
+            strobe: Strobe::new(MERLIN_PROTOCOL_LABEL, SecParam::B128),
         };
         transcript.append_message(b"dom-sep", label);
 
@@ -129,7 +129,7 @@ impl Transcript {
 /// [rekey_with_witness_bytes]: TranscriptRngBuilder::rekey_with_witness_bytes
 /// [finalize]: TranscriptRngBuilder::finalize
 pub struct TranscriptRngBuilder {
-    strobe: Strobe128,
+    strobe: Strobe,
 }
 
 impl TranscriptRngBuilder {
@@ -183,7 +183,7 @@ impl TranscriptRngBuilder {
 /// Randomness](https://merlin.cool/transcript/rng.html) section of
 /// the Merlin website.
 pub struct TranscriptRng {
-    strobe: Strobe128,
+    strobe: Strobe,
 }
 
 impl rand_core::TryRng for TranscriptRng {

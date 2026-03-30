@@ -492,6 +492,17 @@ impl SigningKey {
         self.verifying_key.verify_stream(signature)
     }
 
+    /// Constructs stream verifier with candidate `signature`, applying strict verification checks.
+    ///
+    /// See [`VerifyingKey::verify_stream_strict()`] for more details.
+    #[cfg(feature = "hazmat")]
+    pub fn verify_stream_strict(
+        &self,
+        signature: &ed25519::Signature,
+    ) -> Result<StreamVerifier, SignatureError> {
+        self.verifying_key.verify_stream_strict(signature)
+    }
+
     /// Convert this signing key into a byte representation of an unreduced, unclamped Curve25519
     /// scalar. This is NOT the same thing as `self.to_scalar().to_bytes()`, since `to_scalar()`
     /// performs a clamping step, which changes the value of the resulting scalar.

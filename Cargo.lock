@@ -397,6 +397,7 @@ dependencies = [
  "criterion",
  "curve25519-dalek",
  "ed25519",
+ "ed25519-dalek",
  "getrandom 0.4.0",
  "hex",
  "hex-literal",

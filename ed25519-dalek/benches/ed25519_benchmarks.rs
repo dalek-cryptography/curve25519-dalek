@@ -14,11 +14,10 @@ mod ed25519_benches {
     use ed25519_dalek::Signature;
     use ed25519_dalek::Signer;
     use ed25519_dalek::SigningKey;
-    use rand_core::prelude::ThreadRng;
-    use rand_core::rng;
+    use getrandom::{SysRng, rand_core::UnwrapErr};
 
     fn sign(c: &mut Criterion) {
-        let mut csprng: ThreadRng = rng();
+        let mut csprng = UnwrapErr(SysRng);
         let keypair: SigningKey = SigningKey::generate(&mut csprng);
         let msg: &[u8] = b"";
 
@@ -26,7 +25,7 @@ mod ed25519_benches {
     }
 
     fn verify(c: &mut Criterion) {
-        let mut csprng: ThreadRng = rng();
+        let mut csprng = UnwrapErr(SysRng);
         let keypair: SigningKey = SigningKey::generate(&mut csprng);
         let msg: &[u8] = b"";
         let sig: Signature = keypair.sign(msg);
@@ -37,7 +36,7 @@ mod ed25519_benches {
     }
 
     fn verify_strict(c: &mut Criterion) {
-        let mut csprng: ThreadRng = rng();
+        let mut csprng = UnwrapErr(SysRng);
         let keypair: SigningKey = SigningKey::generate(&mut csprng);
         let msg: &[u8] = b"";
         let sig: Signature = keypair.sign(msg);
@@ -58,7 +57,7 @@ mod ed25519_benches {
         for size in BATCH_SIZES {
             let name = format!("size={size}");
             group.bench_function(name, |b| {
-                let mut csprng: ThreadRng = rng();
+                let mut csprng = UnwrapErr(SysRng);
                 let keypairs: Vec<SigningKey> = (0..size)
                     .map(|_| SigningKey::generate(&mut csprng))
                     .collect();
@@ -78,7 +77,7 @@ mod ed25519_benches {
     fn verify_batch_signatures(_: &mut Criterion) {}
 
     fn key_generation(c: &mut Criterion) {
-        let mut csprng: ThreadRng = rng();
+        let mut csprng = UnwrapErr(SysRng);
 
         c.bench_function("Ed25519 keypair generation", move |b| {
             b.iter(|| SigningKey::generate(&mut csprng))

@@ -18,16 +18,16 @@
 //! curve model.
 
 #[allow(missing_docs)]
-pub mod variable_base;
+pub(crate) mod variable_base;
 
 #[allow(missing_docs)]
-pub mod vartime_double_base;
+pub(crate) mod vartime_double_base;
 
 #[cfg(feature = "alloc")]
-pub mod straus;
+pub(crate) mod straus;
 
 #[cfg(feature = "alloc")]
-pub mod precomputed_straus;
+pub(crate) mod precomputed_straus;
 
 #[cfg(feature = "alloc")]
-pub mod pippenger;
+pub(crate) mod pippenger;

@@ -44,7 +44,7 @@ use crate::traits::VartimeMultiscalarMul;
 ///
 /// [solution]: https://www.jstor.org/stable/2310929
 /// [problem]: https://www.jstor.org/stable/2312273
-pub struct Straus {}
+pub(crate) struct Straus {}
 
 impl MultiscalarMul for Straus {
     type Point = EdwardsPoint;

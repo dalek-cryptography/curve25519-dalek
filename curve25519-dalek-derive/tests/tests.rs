@@ -104,16 +104,33 @@ mod inner_spec {
     #[for_target_feature("avx2")]
     const IS_AVX2: bool = true;
 
+    #[for_target_feature("sse2")]
     #[test]
     fn test_specialized() {
         assert!(!IS_AVX2);
     }
 
+    #[for_target_feature("avx2")]
+    #[test]
+    fn test_specialized_avx2() {
+        assert!(IS_AVX2);
+    }
+
     #[cfg(test)]
+    #[for_target_feature("sse2")]
     mod tests {
         #[test]
         fn test_specialized_inner() {
             assert!(!super::IS_AVX2);
+        }
+    }
+
+    #[cfg(test)]
+    #[for_target_feature("avx2")]
+    mod tests_avx2 {
+        #[test]
+        fn test_specialized_inner_avx2() {
+            assert!(super::IS_AVX2);
         }
     }
 }
@@ -127,9 +144,17 @@ fn test_sse2_only() {}
 // pretty esoteric feature. Looking at the table of supported avx512 features at
 // https://en.wikipedia.org/wiki/AVX-512#CPUs_with_AVX-512 it seems avx512vp2intersect is one of the
 // most unusual ones that has rustc knows about
+#[cfg(target_feature = "avx512vp2intersect")]
 #[unsafe_target_feature("avx512vp2intersect")]
 #[test]
 fn test_unset_target_feature() {
+    assert!(std::arch::is_x86_feature_detected!("avx512vp2intersect"));
+}
+
+#[cfg(not(target_feature = "avx512vp2intersect"))]
+#[unsafe_target_feature("avx512vp2intersect")]
+#[test]
+fn test_unset_target_feature_removed() {
     compile_error!("When an unknown target_feature is set on a test, unsafe_target_feature is expected remove the function");
 }
 

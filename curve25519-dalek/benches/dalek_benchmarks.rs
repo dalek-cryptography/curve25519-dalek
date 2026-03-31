@@ -75,6 +75,38 @@ mod edwards_benches {
         });
     }
 
+    fn vartime_triple_base_scalar_mul_128<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        c.bench_function("Variable-time a1*A1+a2*A2+b*B (128-bit a1,a2)", |bench| {
+            let mut rng = rng();
+            let A1 = EdwardsPoint::mul_base(&Scalar::random(&mut rng));
+            let A2 = EdwardsPoint::mul_base(&Scalar::random(&mut rng));
+
+            bench.iter_batched(
+                || {
+                    // Generate 128-bit scalars for a1 and a2
+                    let mut a1_bytes = [0u8; 32];
+                    let mut a2_bytes = [0u8; 32];
+
+                    // Fill lower 16 bytes with random data, upper 16 bytes are zero
+                    for i in 0..16 {
+                        a1_bytes[i] = rng.next_u32() as u8;
+                        a2_bytes[i] = rng.next_u32() as u8;
+                    }
+
+                    let a1 = Scalar::from_bytes_mod_order(a1_bytes);
+                    let a2 = Scalar::from_bytes_mod_order(a2_bytes);
+                    let b = Scalar::random(&mut rng);
+
+                    (a1, a2, b)
+                },
+                |(a1, a2, b)| {
+                    EdwardsPoint::vartime_triple_scalar_mul_basepoint(&a1, &A1, &a2, &A2, &b)
+                },
+                BatchSize::SmallInput,
+            );
+        });
+    }
+
     #[cfg(feature = "digest")]
     fn encode_to_curve<M: Measurement>(c: &mut BenchmarkGroup<M>) {
         let mut rng = UnwrapErr(SysRng);
@@ -116,6 +148,7 @@ mod edwards_benches {
         consttime_fixed_base_scalar_mul(&mut g);
         consttime_variable_base_scalar_mul(&mut g);
         vartime_double_base_scalar_mul(&mut g);
+        vartime_triple_base_scalar_mul_128(&mut g);
         encode_to_curve(&mut g);
         hash_to_curve(&mut g);
     }
@@ -410,10 +443,44 @@ mod scalar_benches {
     }
 }
 
+mod heea_benches {
+    use curve25519_dalek::traits::HEEADecomposition;
+
+    use super::*;
+
+    fn heea_generate_half_size_scalars<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        let mut rng = rng();
+        let random_scalars: Vec<Scalar> = (0..100)
+            .map(|_| {
+                let mut random_bytes = [0u8; 32];
+                rng.fill_bytes(&mut random_bytes);
+                Scalar::from_bytes_mod_order(random_bytes)
+            })
+            .collect();
+
+        c.bench_function("Generate half-size scalars (hEEA)", |bench| {
+            let mut i = 0;
+            bench.iter(|| {
+                let h = &random_scalars[i % random_scalars.len()];
+                i += 1;
+                h.heea_decompose()
+            })
+        });
+    }
+
+    pub(crate) fn heea_benches() {
+        let mut c = Criterion::default();
+        let mut g = c.benchmark_group("heea benches");
+
+        heea_generate_half_size_scalars(&mut g);
+    }
+}
+
 criterion_main!(
     scalar_benches::scalar_benches,
     montgomery_benches::montgomery_benches,
     ristretto_benches::ristretto_benches,
     edwards_benches::edwards_benches,
     multiscalar_benches::multiscalar_benches,
+    heea_benches::heea_benches,
 );

@@ -9,6 +9,9 @@
 
 //! ed25519 public keys.
 
+#[cfg(feature = "digest")]
+use curve25519_dalek::digest::{common::KeySizeUser, typenum::U32};
+
 use core::fmt::Debug;
 use core::hash::{Hash, Hasher};
 
@@ -114,6 +117,11 @@ impl From<EdwardsPoint> for VerifyingKey {
             compressed: point.compress(),
         }
     }
+}
+
+#[cfg(feature = "digest")]
+impl KeySizeUser for VerifyingKey {
+    type KeySize = U32;
 }
 
 impl VerifyingKey {

@@ -220,8 +220,8 @@ impl MontgomeryPoint {
         self.0
     }
 
-    /// Attempt to convert to an `EdwardsPoint`, using the supplied
-    /// choice of sign for the `EdwardsPoint`.
+    /// Attempt to convert to an `CompressedEdwardsY`, using the supplied
+    /// choice of sign for the `CompressedEdwardsY`.
     ///
     /// # Inputs
     ///
@@ -230,16 +230,16 @@ impl MontgomeryPoint {
     ///
     /// # Return
     ///
-    /// * `Some(EdwardsPoint)` if `self` is the \\(u\\)-coordinate of a
+    /// * `Some(CompressedEdwardsY)` if `self` is the \\(u\\)-coordinate of a
     ///   point on (the Montgomery form of) Curve25519;
     ///
     /// * `None` if `self` is the \\(u\\)-coordinate of a point on the
     ///   twist of (the Montgomery form of) Curve25519;
     ///
-    pub fn to_edwards(&self, sign: u8) -> Option<EdwardsPoint> {
+    pub fn to_edwards_compressed(&self, sign: u8) -> Option<CompressedEdwardsY> {
         // To decompress the Montgomery u coordinate to an
-        // `EdwardsPoint`, we apply the birational map to obtain the
-        // Edwards y coordinate, then do Edwards decompression.
+        // `CompressedEdwardsY`, we apply the birational map to obtain the
+        // Edwards y coordinate.
         //
         // The birational map is y = (u-1)/(u+1).
         //
@@ -264,7 +264,18 @@ impl MontgomeryPoint {
         let mut y_bytes = y.to_bytes();
         y_bytes[31] ^= sign << 7;
 
-        CompressedEdwardsY(y_bytes).decompress()
+        Some(CompressedEdwardsY(y_bytes))
+    }
+
+    /// Attempt to convert to an `EdwardsPoint`, using the supplied
+    /// choice of sign for the `EdwardsPoint`.
+    ///
+    /// See [`to_edwards_compressed`](`Self::to_edwards_compressed`) for detailed behavior.
+    pub fn to_edwards(&self, sign: u8) -> Option<EdwardsPoint> {
+        // To decompress the Montgomery u coordinate to an
+        // `EdwardsPoint`, obtain the Edwards y coordinate,
+        // then do Edwards decompression.
+        self.to_edwards_compressed(sign)?.decompress()
     }
 }
 

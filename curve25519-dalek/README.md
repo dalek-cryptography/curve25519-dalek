@@ -234,6 +234,12 @@ inappropriate CPU would cause `SIGILL`, but the entire backend is only
 invoked when the appropriate CPU features are detected at runtime, or
 when the whole program is compiled with the appropriate `target_feature`s.
 
+## Formal Verification
+
+[![](https://verilib.org/assets/img/Badge%20-%20Wide-4x.png)](https://verilib.org/cert/5132)
+
+A large chunk of `curve25519-dalek` has been formally verified with [Verus](https://verus-lang.github.io/verus/guide/). Specifically, the 280 Rust functions in version 4.1.3 of `curve25519-dalek` that are used directly or indirectly by the Signal Messenger app. For more details on what was verified and with which assumptions, see the VeriLib page [here](https://verilib.org/cert/5132).
+
 # Performance
 
 Benchmarks are run using [`criterion.rs`][criterion]:

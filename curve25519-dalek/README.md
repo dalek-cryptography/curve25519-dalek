@@ -236,7 +236,13 @@ when the whole program is compiled with the appropriate `target_feature`s.
 
 ## Formal Verification
 
-[![](https://verilib.org/assets/img/Badge%20-%20Wide-4x.png)](https://verilib.org/cert/5132)
+v4.1.3 backend u64:
+<a href="https://verilib.org/cert/5132">
+  <img
+   alt="the word 'certified', next to a checkmark"
+   width="100px"
+   src="https://verilib.org/assets/img/Badge%20-%20Wide-4x.png"/>
+</a>
 
 A large chunk of `curve25519-dalek` has been formally verified with [Verus](https://verus-lang.github.io/verus/guide/). Specifically, the 280 Rust functions in version 4.1.3 of `curve25519-dalek` that are used directly or indirectly by the Signal Messenger app. For more details on what was verified and with which assumptions, see the VeriLib page [here](https://verilib.org/cert/5132).
 

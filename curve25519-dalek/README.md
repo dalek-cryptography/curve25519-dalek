@@ -236,7 +236,6 @@ when the whole program is compiled with the appropriate `target_feature`s.
 
 ## Formal Verification
 
-v4.1.3 backend u64:
 <a href="https://verilib.org/cert/5132">
   <img
    alt="the word 'certified', next to a checkmark"

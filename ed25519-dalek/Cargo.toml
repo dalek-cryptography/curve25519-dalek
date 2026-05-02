@@ -31,8 +31,8 @@ all-features = true
 curve25519-dalek = { version = "=5.0.0-pre.6", default-features = false, features = [
     "digest",
 ] }
-ed25519 = { version = "3.0.0-rc.4", default-features = false }
-signature = { version = "3.0.0-rc.10", optional = true, default-features = false }
+ed25519 = { version = "3.0.0-rc.5", default-features = false }
+signature = { version = "3.0", optional = true, default-features = false }
 sha2 = { version = "0.11", default-features = false }
 subtle = { version = "2.3.0", default-features = false }
 
@@ -51,10 +51,10 @@ curve25519-dalek = { version = "=5.0.0-pre.6", default-features = false, feature
 x25519-dalek = { version = "=3.0.0-pre.6", default-features = false, features = [
     "static_secrets",
 ] }
-blake2 = "0.11.0-rc.5"
-chacha20 = { version = "0.10.0-rc.10", default-features = false, features = ["rng"] }
-sha3 = "0.11.0-rc.9"
-getrandom = { version = "0.4.0-rc.1", features = ["sys_rng"] }
+blake2 = "0.11.0-rc.6"
+chacha20 = { version = "0.10", default-features = false, features = ["rng"] }
+sha3 = "0.11"
+getrandom = { version = "0.4", features = ["sys_rng"] }
 hex = "0.4"
 bincode = "1.0"
 serde_json = "1.0"

@@ -719,10 +719,10 @@ impl TryFrom<&pkcs8::KeypairBytes> for SigningKey {
         // Validate the public key in the PKCS#8 document if present
         if let Some(public_bytes) = &pkcs8_key.public_key {
             let expected_verifying_key = VerifyingKey::from_bytes(public_bytes.as_ref())
-                .map_err(|_| pkcs8::Error::KeyMalformed)?;
+                .map_err(|_| pkcs8::Error::KeyMalformed(pkcs8::KeyError::Invalid))?;
 
             if signing_key.verifying_key() != expected_verifying_key {
-                return Err(pkcs8::Error::KeyMalformed);
+                return Err(pkcs8::Error::KeyMalformed(pkcs8::KeyError::Invalid));
             }
         }
 

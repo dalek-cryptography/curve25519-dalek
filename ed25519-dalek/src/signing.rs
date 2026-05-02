@@ -717,10 +717,6 @@ impl TryFrom<&pkcs8::KeypairBytes> for SigningKey {
         let signing_key = SigningKey::from_bytes(&pkcs8_key.secret_key);
 
         // Validate the public key in the PKCS#8 document if present.
-        // `pkcs8::Error::KeyMalformed` was changed to a tuple variant
-        // `KeyMalformed(KeyError)` upstream; the bare reference is now a
-        // function pointer rather than an `Error` value. Pass
-        // `KeyError::Invalid` to construct an `Error`.
         if let Some(public_bytes) = &pkcs8_key.public_key {
             let expected_verifying_key = VerifyingKey::from_bytes(public_bytes.as_ref())
                 .map_err(|_| pkcs8::Error::KeyMalformed(pkcs8::KeyError::Invalid))?;

@@ -293,6 +293,17 @@ impl VerifyingKey {
         self.raw_verify_prehashed::<Sha512, MsgDigest>(prehashed_message, context, signature)
     }
 
+    /// Perform strict checks to prevent scalar and point melleability, as defined in the documentation of [`Self::verify_strict`].
+    #[allow(non_snake_case)]
+    fn strict_checks(&self, signature_R: &EdwardsPoint) -> Result<(), SignatureError> {
+        // Logical OR is fine here as we're not trying to be constant time.
+        if signature_R.is_small_order() || self.point.is_small_order() {
+            Err(InternalError::Verify.into())
+        } else {
+            Ok(())
+        }
+    }
+
     /// Strictly verify a signature on a message with this keypair's public key.
     ///
     /// # On The (Multiple) Sources of Malleability in Ed25519 Signatures
@@ -368,10 +379,7 @@ impl VerifyingKey {
             .decompress()
             .ok_or_else(|| SignatureError::from(InternalError::Verify))?;
 
-        // Logical OR is fine here as we're not trying to be constant time.
-        if signature_R.is_small_order() || self.point.is_small_order() {
-            return Err(InternalError::Verify.into());
-        }
+        self.strict_checks(&signature_R)?;
 
         let expected_R = RCompute::<Sha512>::compute(self, signature, None, &[message]);
         if expected_R == signature.R {
@@ -392,6 +400,31 @@ impl VerifyingKey {
         signature: &ed25519::Signature,
     ) -> Result<StreamVerifier, SignatureError> {
         let signature = InternalSignature::try_from(signature)?;
+        Ok(StreamVerifier::new(*self, signature))
+    }
+
+    /// Constructs stream verifier with candidate `signature`, applying strict verification checks.
+    ///
+    /// Like [`Self::verify_stream()`], but additionally rejects signatures where either the
+    /// signature's R value or the public key has small order. This matches the checks performed
+    /// by [`Self::verify_strict()`].
+    ///
+    /// See [`Self::verify_strict()`] for more details on strict verification.
+    #[cfg(feature = "hazmat")]
+    #[allow(non_snake_case)]
+    pub fn verify_stream_strict(
+        &self,
+        signature: &ed25519::Signature,
+    ) -> Result<StreamVerifier, SignatureError> {
+        let signature = InternalSignature::try_from(signature)?;
+
+        let signature_R = signature
+            .R
+            .decompress()
+            .ok_or_else(|| SignatureError::from(InternalError::Verify))?;
+
+        self.strict_checks(&signature_R)?;
+
         Ok(StreamVerifier::new(*self, signature))
     }
 
@@ -443,10 +476,7 @@ impl VerifyingKey {
             .decompress()
             .ok_or_else(|| SignatureError::from(InternalError::Verify))?;
 
-        // Logical OR is fine here as we're not trying to be constant time.
-        if signature_R.is_small_order() || self.point.is_small_order() {
-            return Err(InternalError::Verify.into());
-        }
+        self.strict_checks(&signature_R)?;
 
         let message = prehashed_message.finalize();
         let expected_R = RCompute::<Sha512>::compute(self, signature, Some(ctx), &[&message]);

@@ -129,7 +129,9 @@ fn get_test_vectors() -> impl Iterator<Item = TestVector> {
 
 /// Tests that the verify() and verify_strict() functions succeed only on test cases whose flags
 /// (i.e., edge cases it falls into) are a subset of VERIFY_ALLOWED_EDGECASES and
-/// VERIFY_STRICT_ALLOWED_EDGECASES, respectively
+/// VERIFY_STRICT_ALLOWED_EDGECASES, respectively.
+/// Also tests that verify_stream() and verify_stream_strict() produce identical results to their
+/// non-streaming counterparts.
 #[test]
 fn check_validation_criteria() {
     let verify_allowed_edgecases = Set::from_iter(VERIFY_ALLOWED_EDGECASES.to_vec());
@@ -152,6 +154,19 @@ fn check_validation_criteria() {
             assert!(!success, "verify() expected failure in testcase #{number}",);
         }
 
+        #[cfg(feature = "hazmat")]
+        {
+            // verify_stream() should produce the same result as verify()
+            let stream_success = pubkey.verify_stream(&sig).is_ok_and(|mut verifier| {
+                verifier.update(&msg);
+                verifier.finalize_and_verify().is_ok()
+            });
+            assert_eq!(
+                success, stream_success,
+                "verify_stream() disagrees with verify() in testcase #{number}",
+            );
+        }
+
         // If all the verify_strict-permitted flags here are ones we permit, then verify_strict()
         // should succeed. Otherwise, it should not.
         let success = pubkey.verify_strict(&msg, &sig).is_ok();
@@ -164,6 +179,20 @@ fn check_validation_criteria() {
             assert!(
                 !success,
                 "verify_strict() expected failure in testcase #{number}",
+            );
+        }
+
+        #[cfg(feature = "hazmat")]
+        {
+            // verify_stream_strict() should produce the same result as verify_strict()
+            let stream_strict_success =
+                pubkey.verify_stream_strict(&sig).is_ok_and(|mut verifier| {
+                    verifier.update(&msg);
+                    verifier.finalize_and_verify().is_ok()
+                });
+            assert_eq!(
+                success, stream_strict_success,
+                "verify_stream_strict() disagrees with verify_strict() in testcase #{number}",
             );
         }
     }

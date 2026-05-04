@@ -20,13 +20,11 @@ fn byte_basepoint_matches_edwards_scalar_mul() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serde_bincode_public_key_roundtrip() {
-    use bincode;
-
+fn serde_postcard_public_key_roundtrip() {
     let public_key = PublicKey::from(X25519_BASEPOINT_BYTES);
 
-    let encoded = bincode::serialize(&public_key).unwrap();
-    let decoded: PublicKey = bincode::deserialize(&encoded).unwrap();
+    let encoded = postcard::to_allocvec(&public_key).unwrap();
+    let decoded: PublicKey = postcard::from_bytes(&encoded).unwrap();
 
     assert_eq!(encoded.len(), 32);
     assert_eq!(decoded.as_bytes(), public_key.as_bytes());
@@ -34,23 +32,19 @@ fn serde_bincode_public_key_roundtrip() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serde_bincode_public_key_matches_from_bytes() {
-    use bincode;
-
+fn serde_postcard_public_key_matches_from_bytes() {
     let expected = PublicKey::from(X25519_BASEPOINT_BYTES);
-    let decoded: PublicKey = bincode::deserialize(&X25519_BASEPOINT_BYTES).unwrap();
+    let decoded: PublicKey = postcard::from_bytes(&X25519_BASEPOINT_BYTES).unwrap();
 
     assert_eq!(decoded.as_bytes(), expected.as_bytes());
 }
 
 #[test]
 #[cfg(feature = "serde")]
-fn serde_bincode_static_secret_roundtrip() {
-    use bincode;
-
+fn serde_postcard_static_secret_roundtrip() {
     let static_secret = StaticSecret::from([0x24; 32]);
-    let encoded = bincode::serialize(&static_secret).unwrap();
-    let decoded: StaticSecret = bincode::deserialize(&encoded).unwrap();
+    let encoded = postcard::to_allocvec(&static_secret).unwrap();
+    let decoded: StaticSecret = postcard::from_bytes(&encoded).unwrap();
 
     assert_eq!(encoded.len(), 32);
     assert_eq!(decoded.to_bytes(), static_secret.to_bytes());
@@ -58,11 +52,9 @@ fn serde_bincode_static_secret_roundtrip() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn serde_bincode_static_secret_matches_from_bytes() {
-    use bincode;
-
+fn serde_postcard_static_secret_matches_from_bytes() {
     let expected = StaticSecret::from([0x24; 32]);
-    let decoded: StaticSecret = bincode::deserialize(&[0x24; 32]).unwrap();
+    let decoded: StaticSecret = postcard::from_bytes(&[0x24; 32]).unwrap();
 
     assert_eq!(decoded.to_bytes(), expected.to_bytes());
 }

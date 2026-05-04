@@ -1282,26 +1282,26 @@ mod test {
 
     #[test]
     #[cfg(feature = "serde")]
-    fn serde_bincode_basepoint_roundtrip() {
-        use bincode;
-
-        let encoded = bincode::serialize(&constants::RISTRETTO_BASEPOINT_POINT).unwrap();
+    fn serde_postcard_basepoint_roundtrip() {
+        let encoded = postcard::to_allocvec(&constants::RISTRETTO_BASEPOINT_POINT).unwrap();
         let enc_compressed =
-            bincode::serialize(&constants::RISTRETTO_BASEPOINT_COMPRESSED).unwrap();
+            postcard::to_allocvec(&constants::RISTRETTO_BASEPOINT_COMPRESSED).unwrap();
         assert_eq!(encoded, enc_compressed);
 
         // Check that the encoding is 32 bytes exactly
         assert_eq!(encoded.len(), 32);
 
-        let dec_uncompressed: RistrettoPoint = bincode::deserialize(&encoded).unwrap();
-        let dec_compressed: CompressedRistretto = bincode::deserialize(&encoded).unwrap();
+        let dec_uncompressed: RistrettoPoint = postcard::from_bytes(&encoded).unwrap();
+        let dec_compressed: CompressedRistretto = postcard::from_bytes(&encoded).unwrap();
 
         assert_eq!(dec_uncompressed, constants::RISTRETTO_BASEPOINT_POINT);
         assert_eq!(dec_compressed, constants::RISTRETTO_BASEPOINT_COMPRESSED);
 
-        // Check that the encoding itself matches the usual one
+        // Check that the encoding itself matches the usual one.
+        // serde::Deserialize on fixed-size arrays calls tuple deserialization. postcard
+        // (de)serializes tuples by just doing each element and that's it.
         let raw_bytes = constants::RISTRETTO_BASEPOINT_COMPRESSED.as_bytes();
-        let bp: RistrettoPoint = bincode::deserialize(raw_bytes).unwrap();
+        let bp: RistrettoPoint = postcard::from_bytes(raw_bytes).unwrap();
         assert_eq!(bp, constants::RISTRETTO_BASEPOINT_POINT);
     }
 

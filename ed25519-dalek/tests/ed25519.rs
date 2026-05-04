@@ -547,8 +547,10 @@ mod serialisation {
 
     use super::*;
 
-    // The size for bincode to serialize the length of a byte array.
-    static BINCODE_INT_LENGTH: usize = 8;
+    // The minimum number of bytes needed for postcard to encode a length prefix for a sequence. We
+    // only want to serialize secret keys, signatures, and (compressed) public keys, all of which
+    // are less than 128 bytes in length. So the initial `varint(usize)` will only take 1 byte.
+    static POSTCARD_MIN_LEN_SIZE: usize = 1;
 
     static PUBLIC_KEY_BYTES: [u8; PUBLIC_KEY_LENGTH] = [
         130, 039, 155, 015, 062, 076, 188, 063, 124, 122, 026, 251, 233, 253, 225, 220, 014, 041,
@@ -569,10 +571,10 @@ mod serialisation {
     ];
 
     #[test]
-    fn serialize_deserialize_signature_bincode() {
+    fn serialize_deserialize_signature_postcard() {
         let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES);
-        let encoded_signature: Vec<u8> = bincode::serialize(&signature).unwrap();
-        let decoded_signature: Signature = bincode::deserialize(&encoded_signature).unwrap();
+        let encoded_signature: Vec<u8> = postcard::to_allocvec(&signature).unwrap();
+        let decoded_signature: Signature = postcard::from_bytes(&encoded_signature).unwrap();
 
         assert_eq!(signature, decoded_signature);
     }
@@ -587,11 +589,11 @@ mod serialisation {
     }
 
     #[test]
-    fn serialize_deserialize_verifying_key_bincode() {
+    fn serialize_deserialize_verifying_key_postcard() {
         let verifying_key: VerifyingKey = VerifyingKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
-        let encoded_verifying_key: Vec<u8> = bincode::serialize(&verifying_key).unwrap();
+        let encoded_verifying_key: Vec<u8> = postcard::to_allocvec(&verifying_key).unwrap();
         let decoded_verifying_key: VerifyingKey =
-            bincode::deserialize(&encoded_verifying_key).unwrap();
+            postcard::from_bytes(&encoded_verifying_key).unwrap();
 
         assert_eq!(
             &PUBLIC_KEY_BYTES[..],
@@ -638,10 +640,10 @@ mod serialisation {
     }
 
     #[test]
-    fn serialize_deserialize_signing_key_bincode() {
+    fn serialize_deserialize_signing_key_postcard() {
         let signing_key = SigningKey::from_bytes(&SECRET_KEY_BYTES);
-        let encoded_signing_key: Vec<u8> = bincode::serialize(&signing_key).unwrap();
-        let decoded_signing_key: SigningKey = bincode::deserialize(&encoded_signing_key).unwrap();
+        let encoded_signing_key: Vec<u8> = postcard::to_allocvec(&signing_key).unwrap();
+        let decoded_signing_key: SigningKey = postcard::from_bytes(&encoded_signing_key).unwrap();
 
         #[allow(clippy::needless_range_loop)]
         for i in 0..SECRET_KEY_LENGTH {
@@ -705,8 +707,8 @@ mod serialisation {
     fn serialize_verifying_key_size() {
         let verifying_key: VerifyingKey = VerifyingKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
         assert_eq!(
-            bincode::serialized_size(&verifying_key).unwrap() as usize,
-            BINCODE_INT_LENGTH + PUBLIC_KEY_LENGTH
+            postcard::to_allocvec(&verifying_key).unwrap().len(),
+            POSTCARD_MIN_LEN_SIZE + PUBLIC_KEY_LENGTH
         );
     }
 
@@ -714,8 +716,8 @@ mod serialisation {
     fn serialize_signature_size() {
         let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES);
         assert_eq!(
-            bincode::serialized_size(&signature).unwrap() as usize,
-            SIGNATURE_LENGTH
+            postcard::to_allocvec(&signature).unwrap().len(),
+            POSTCARD_MIN_LEN_SIZE + SIGNATURE_LENGTH
         );
     }
 
@@ -723,8 +725,8 @@ mod serialisation {
     fn serialize_signing_key_size() {
         let signing_key = SigningKey::from_bytes(&SECRET_KEY_BYTES);
         assert_eq!(
-            bincode::serialized_size(&signing_key).unwrap() as usize,
-            BINCODE_INT_LENGTH + SECRET_KEY_LENGTH
+            postcard::to_allocvec(&signing_key).unwrap().len(),
+            POSTCARD_MIN_LEN_SIZE + SECRET_KEY_LENGTH
         );
     }
 }

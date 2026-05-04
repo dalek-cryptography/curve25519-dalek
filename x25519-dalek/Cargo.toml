@@ -51,7 +51,7 @@ serde = { version = "1", default-features = false, optional = true, features = [
 zeroize = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
-bincode = "1"
+postcard = { version = "1", features = ["alloc"] }
 criterion = "0.5"
 getrandom = { version = "0.4", features = ["sys_rng"] }
 

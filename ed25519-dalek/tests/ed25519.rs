@@ -549,7 +549,9 @@ mod serialisation {
 
     // The minimum number of bytes needed for postcard to encode a length prefix for a sequence. We
     // only want to serialize secret keys, signatures, and (compressed) public keys, all of which
-    // are less than 128 bytes in length. So the initial `varint(usize)` will only take 1 byte.
+    // have a `Serialize` impl that calls `serialize_bytes` (which serializes a seq, in postcard
+    // parlance) on the byte representation.  Since all of these have a byte representation of
+    // length <128, the initial `varint(usize)` will be precisely 1 byte for all of them.
     static POSTCARD_MIN_LEN_SIZE: usize = 1;
 
     static PUBLIC_KEY_BYTES: [u8; PUBLIC_KEY_LENGTH] = [

@@ -188,14 +188,14 @@
 //! ```
 //!
 //! They can be then serialised into any of the wire formats which serde supports.
-//! For example, using [bincode](https://github.com/TyOverby/bincode):
+//! For example, using [postcard](https://docs.rs/postcard):
 //!
 #![cfg_attr(all(feature = "rand_core", feature = "serde"), doc = "```")]
 #![cfg_attr(not(all(feature = "rand_core", feature = "serde")), doc = "```ignore")]
 //! # fn main() {
 //! # use getrandom::{SysRng, rand_core::{TryRng, UnwrapErr}};
 //! # use ed25519_dalek::{SigningKey, Signature, Signer, Verifier, VerifyingKey};
-//! use bincode::serialize;
+//! use postcard::to_allocvec;
 //! # let mut csprng = UnwrapErr(SysRng);
 //! # let signing_key: SigningKey = SigningKey::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
@@ -203,8 +203,8 @@
 //! # let verifying_key: VerifyingKey = signing_key.verifying_key();
 //! # let verified: bool = verifying_key.verify(message, &signature).is_ok();
 //!
-//! let encoded_verifying_key: Vec<u8> = serialize(&verifying_key).unwrap();
-//! let encoded_signature: Vec<u8> = serialize(&signature).unwrap();
+//! let encoded_verifying_key: Vec<u8> = to_allocvec(&verifying_key).unwrap();
+//! let encoded_signature: Vec<u8> = to_allocvec(&signature).unwrap();
 //! # }
 //! ```
 //!
@@ -216,8 +216,8 @@
 //! # fn main() {
 //! # use getrandom::{SysRng, rand_core::{TryRng, UnwrapErr}};
 //! # use ed25519_dalek::{SigningKey, Signature, Signer, Verifier, VerifyingKey};
-//! # use bincode::serialize;
-//! use bincode::deserialize;
+//! # use postcard::to_allocvec;
+//! use postcard::from_bytes;
 //!
 //! # let mut csprng = UnwrapErr(SysRng);
 //! # let signing_key: SigningKey = SigningKey::generate(&mut csprng);
@@ -225,10 +225,10 @@
 //! # let signature: Signature = signing_key.sign(message);
 //! # let verifying_key: VerifyingKey = signing_key.verifying_key();
 //! # let verified: bool = verifying_key.verify(message, &signature).is_ok();
-//! # let encoded_verifying_key: Vec<u8> = serialize(&verifying_key).unwrap();
-//! # let encoded_signature: Vec<u8> = serialize(&signature).unwrap();
-//! let decoded_verifying_key: VerifyingKey = deserialize(&encoded_verifying_key).unwrap();
-//! let decoded_signature: Signature = deserialize(&encoded_signature).unwrap();
+//! # let encoded_verifying_key: Vec<u8> = to_allocvec(&verifying_key).unwrap();
+//! # let encoded_signature: Vec<u8> = to_allocvec(&signature).unwrap();
+//! let decoded_verifying_key: VerifyingKey = from_bytes(&encoded_verifying_key).unwrap();
+//! let decoded_signature: Signature = from_bytes(&encoded_signature).unwrap();
 //!
 //! # assert_eq!(verifying_key, decoded_verifying_key);
 //! # assert_eq!(signature, decoded_signature);

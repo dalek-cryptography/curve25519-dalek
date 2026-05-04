@@ -1862,17 +1862,18 @@ pub(crate) mod test {
 
     #[test]
     #[cfg(feature = "serde")]
-    fn serde_bincode_scalar_roundtrip() {
-        use bincode;
-        let encoded = bincode::serialize(&X).unwrap();
-        let parsed: Scalar = bincode::deserialize(&encoded).unwrap();
+    fn serde_postcard_scalar_roundtrip() {
+        let encoded = postcard::to_allocvec(&X).unwrap();
+        let parsed: Scalar = postcard::from_bytes(&encoded).unwrap();
         assert_eq!(parsed, X);
 
         // Check that the encoding is 32 bytes exactly
         assert_eq!(encoded.len(), 32);
 
-        // Check that the encoding itself matches the usual one
-        assert_eq!(X, bincode::deserialize(X.as_bytes()).unwrap(),);
+        // Check that the encoding itself matches the usual one.
+        // serde::Deserialize on fixed-size arrays calls tuple deserialization. postcard
+        // (de)serializes tuples by just doing each element and that's it.
+        assert_eq!(X, postcard::from_bytes(X.as_bytes()).unwrap(),);
     }
 
     #[cfg(debug_assertions)]

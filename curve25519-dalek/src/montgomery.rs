@@ -537,17 +537,18 @@ mod test {
 
     #[test]
     #[cfg(feature = "serde")]
-    fn serde_bincode_basepoint_roundtrip() {
-        use bincode;
-
-        let encoded = bincode::serialize(&constants::X25519_BASEPOINT).unwrap();
-        let decoded: MontgomeryPoint = bincode::deserialize(&encoded).unwrap();
+    fn serde_postcard_basepoint_roundtrip() {
+        let encoded = postcard::to_allocvec(&constants::X25519_BASEPOINT).unwrap();
+        let decoded: MontgomeryPoint = postcard::from_bytes(&encoded).unwrap();
 
         assert_eq!(encoded.len(), 32);
         assert_eq!(decoded, constants::X25519_BASEPOINT);
 
+        // Check that the encoding itself matches the usual one.
+        // serde::Deserialize on fixed-size arrays calls tuple deserialization. postcard
+        // (de)serializes tuples by just doing each element and that's it.
         let raw_bytes = constants::X25519_BASEPOINT.as_bytes();
-        let bp: MontgomeryPoint = bincode::deserialize(raw_bytes).unwrap();
+        let bp: MontgomeryPoint = postcard::from_bytes(raw_bytes).unwrap();
         assert_eq!(bp, constants::X25519_BASEPOINT);
     }
 

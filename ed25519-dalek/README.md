@@ -8,7 +8,7 @@ verification.
 To import `ed25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-ed25519-dalek = "3.0.0-pre.6"
+ed25519-dalek = "3.0.0-pre.7"
 ```
 
 # Feature Flags

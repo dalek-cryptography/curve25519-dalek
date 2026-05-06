@@ -8,6 +8,15 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # 3.x series
 
+## 3.0.0-pre.7
+
+* Upgrade `ed25519` dependency to v3.0.0
+* Upgrade `signature` dependency to v3.0.0
+* Upgrade `sha3` dependency to v0.11
+* Upgrade `getrandom` dependency to v0.4
+* Upgrade `chacha20` dependency to v0.10
+* Add `strobe-rs` dependency and delete vendored STROBE impl
+
 ## 3.0.0-pre.6
 
 * Upgrade `rand_core` dependency to v0.10.0

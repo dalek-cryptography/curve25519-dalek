@@ -177,13 +177,6 @@ use digest::array::typenum::U64;
 use crate::constants;
 use crate::field::FieldElement;
 
-#[cfg(feature = "group")]
-use {
-    group::{GroupEncoding, cofactor::CofactorGroup, prime::PrimeGroup},
-    rand_core::TryRng,
-    subtle::CtOption,
-};
-
 #[cfg(feature = "rand_core")]
 use {
     core::convert::Infallible,
@@ -1170,86 +1163,6 @@ impl Debug for RistrettoPoint {
 }
 
 // ------------------------------------------------------------------------
-// group traits
-// ------------------------------------------------------------------------
-
-// Use the full trait path to avoid Group::identity overlapping Identity::identity in the
-// rest of the module (e.g. tests).
-#[cfg(feature = "group")]
-impl group::Group for RistrettoPoint {
-    type Scalar = Scalar;
-
-    fn try_from_rng<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
-        // NOTE: this is duplicated due to different `rng` bounds
-        let mut uniform_bytes = [0u8; 64];
-        rng.try_fill_bytes(&mut uniform_bytes)?;
-        Ok(RistrettoPoint::from_uniform_bytes(&uniform_bytes))
-    }
-
-    fn identity() -> Self {
-        Identity::identity()
-    }
-
-    fn generator() -> Self {
-        constants::RISTRETTO_BASEPOINT_POINT
-    }
-
-    fn is_identity(&self) -> Choice {
-        self.ct_eq(&Identity::identity())
-    }
-
-    fn double(&self) -> Self {
-        self + self
-    }
-}
-
-#[cfg(feature = "group")]
-impl GroupEncoding for RistrettoPoint {
-    type Repr = [u8; 32];
-
-    fn from_bytes(bytes: &Self::Repr) -> CtOption<Self> {
-        let (s_encoding_is_canonical, s_is_negative, s) =
-            decompress::step_1(&CompressedRistretto(*bytes));
-
-        let s_is_valid = s_encoding_is_canonical & !s_is_negative;
-
-        let (ok, t_is_negative, y_is_zero, res) = decompress::step_2(s);
-
-        CtOption::new(res, s_is_valid & ok & !t_is_negative & !y_is_zero)
-    }
-
-    fn from_bytes_unchecked(bytes: &Self::Repr) -> CtOption<Self> {
-        // Just use the checked API; the checks we could skip aren't expensive.
-        Self::from_bytes(bytes)
-    }
-
-    fn to_bytes(&self) -> Self::Repr {
-        self.compress().to_bytes()
-    }
-}
-
-#[cfg(feature = "group")]
-impl PrimeGroup for RistrettoPoint {}
-
-/// Ristretto has a cofactor of 1.
-#[cfg(feature = "group")]
-impl CofactorGroup for RistrettoPoint {
-    type Subgroup = Self;
-
-    fn clear_cofactor(&self) -> Self::Subgroup {
-        *self
-    }
-
-    fn into_subgroup(self) -> CtOption<Self::Subgroup> {
-        CtOption::new(self, Choice::from(1))
-    }
-
-    fn is_torsion_free(&self) -> Choice {
-        Choice::from(1)
-    }
-}
-
-// ------------------------------------------------------------------------
 // Zeroize traits
 // ------------------------------------------------------------------------
 
@@ -1277,8 +1190,6 @@ mod test {
     use crate::edwards::CompressedEdwardsY;
     #[cfg(feature = "rand_core")]
     use getrandom::{SysRng, rand_core::UnwrapErr};
-    #[cfg(feature = "group")]
-    use proptest::prelude::*;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -1489,57 +1400,6 @@ mod test {
             let compressed_P = P.compress();
             let Q = compressed_P.decompress().unwrap();
             assert_eq!(P, Q);
-        }
-    }
-
-    #[test]
-    #[cfg(all(feature = "alloc", feature = "rand_core", feature = "group"))]
-    fn double_and_compress_1024_random_points() {
-        use group::Group;
-        let mut rng = SysRng;
-
-        let mut points: Vec<RistrettoPoint> = (0..1024)
-            .map(|_| RistrettoPoint::try_from_rng(&mut rng).unwrap())
-            .collect();
-        points[500] = <RistrettoPoint as Group>::identity();
-
-        let compressed = RistrettoPoint::double_and_compress_batch(&points);
-
-        for (P, P2_compressed) in points.iter().zip(compressed.iter()) {
-            assert_eq!(*P2_compressed, (P + P).compress());
-        }
-    }
-
-    #[cfg(feature = "group")]
-    proptest! {
-        #[test]
-        fn multiply_double_and_compress_random_points(
-            p1 in any::<[u8; 64]>(),
-            p2 in any::<[u8; 64]>(),
-            s1 in any::<[u8; 32]>(),
-            s2 in any::<[u8; 32]>(),
-        ) {
-            use group::Group;
-
-            let scalars = [
-                Scalar::from_bytes_mod_order(s1),
-                Scalar::ZERO,
-                Scalar::from_bytes_mod_order(s2),
-            ];
-
-            let points = [
-                RistrettoPoint::from_uniform_bytes(&p1),
-                <RistrettoPoint as Group>::identity(),
-                RistrettoPoint::from_uniform_bytes(&p2),
-            ];
-
-            let multiplied_points: [_; 3] =
-                core::array::from_fn(|i| scalars[i].div_by_2() * points[i]);
-            let compressed = RistrettoPoint::double_and_compress_batch(&multiplied_points);
-
-            for ((s, P), P2_compressed) in scalars.iter().zip(points).zip(compressed) {
-                prop_assert_eq!(P2_compressed, (s * P).compress());
-            }
         }
     }
 

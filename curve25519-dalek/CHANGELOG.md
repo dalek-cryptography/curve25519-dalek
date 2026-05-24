@@ -5,7 +5,7 @@ major series.
 
 ## 5.x series
 
-### 5.0.0 - 2026-05-24
+### 5.0.0-rc.0 - 2026-05-24
 
 * Remove `ff` and `group` features until they have a release
 * Upgrade `rand_core` dependency to v0.10.0

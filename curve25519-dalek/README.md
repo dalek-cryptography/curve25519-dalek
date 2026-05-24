@@ -30,12 +30,10 @@ cofactor-related abstraction mismatches.
 
 # Use
 
-## Stable
-
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "5"
+curve25519-dalek = "5.0.0-rc.0"
 ```
 
 If opting into [SemVer-exempted features](#public-api-semver-exemptions) a range
@@ -74,6 +72,7 @@ latest breaking changes in high level are below:
 * Remove deprecated functions `FieldElement::as_bytes()` and `EdwardsPoint::nonspec_map_to_curve()`
 * Use constant-time equality testing for compressed Ristretto and Edwards points, rather than autoderived equality
 * Undeprecate `Scalar::from_bits()`
+* Remove `group` and `group-bits` features temporarily. Will reinstate once the underlying deps have a release.
 
 # Backends
 

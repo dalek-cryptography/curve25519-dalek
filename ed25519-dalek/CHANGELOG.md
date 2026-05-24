@@ -8,7 +8,7 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # 3.x series
 
-## 3.0.0 - 2026-05-24
+## 3.0.0-rc.0 - 2026-05-24
 
 * Upgrade `ed25519` dependency to v3.0.0
 * Upgrade `signature` dependency to v3.0.0

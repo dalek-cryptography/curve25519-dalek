@@ -4,7 +4,7 @@ Entries are listed in reverse chronological order.
 
 # 3.x Series
 
-## 3.0.0 - 2026-05-24
+## 3.0.0-rc.0 - 2026-05-24
 
 * Upgrade `rand_core` dependency to v0.10.0
 * Removed `alloc` feature flag, which was doing nothing

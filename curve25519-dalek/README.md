@@ -55,8 +55,6 @@ curve25519-dalek = ">= 5.0, < 5.2"
 | `digest`           |          | Enables `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. Also enables hash-to-curve methods `EdwardsPoint::{encode_to_curve, hash_to_curve}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `serde`            |          | Enables `serde` serialization/deserialization for all the point and scalar types. |
 | `legacy_compatibility`|       | Enables `Scalar::from_bits`, which allows the user to build unreduced scalars whose arithmetic is broken. Do not use this unless you know what you're doing. |
-| `group`            |          | Enables external `group` and `ff` crate traits. |
-| `group-bits`       |          | Enables `group` and impls `ff::PrimeFieldBits` for `Scalar`.  |
 | `lizard`           |          | Enables the [Lizard](src/lizard/README.md) bytestring-to-point injection for `RistrettoPoint`. Specifically enables the methods `lizard_encode` and `lizard_decode`. |
 
 To disable the default features when using `curve25519-dalek` as a dependency,

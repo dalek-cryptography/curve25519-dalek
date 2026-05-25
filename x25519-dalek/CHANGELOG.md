@@ -4,14 +4,14 @@ Entries are listed in reverse chronological order.
 
 # 3.x Series
 
-## 3.0.0-rc.0 - 2026-05-24
+## 3.0.0-rc.0 - 2026-05-25
 
-* Upgrade `rand_core` dependency to v0.10.0
-* Removed `alloc` feature flag, which was doing nothing
+* Remove `alloc` feature flag, which was doing nothing
 * Update edition to 2024
 * Update the MSRV from 1.60 to 1.85
 * Remove `Zeroize` impl for `x25519::{EphemeralSecret, ReusableSecret, SharedSecret, StaticSecret}` to prevent misuse. These are now only zeroized on drop.
 * Remove deprecated functions `{Ephemeral,Reusable,Static}Secret::new()`
+* Upgrade `rand_core` dependency to v0.10.0
 
 # 2.x Series
 

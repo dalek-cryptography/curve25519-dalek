@@ -8,20 +8,21 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # 3.x series
 
-## 3.0.0-rc.0 - 2026-05-24
+## 3.0.0-rc.0 - 2026-05-25
 
+* Add allocation-free `EdwardsPoint::compress_batch` ([#832](https://github.com/dalek-cryptography/curve25519-dalek/pull/832))
+* Add `strobe-rs` dependency and delete vendored STROBE impl ([#895](https://github.com/dalek-cryptography/curve25519-dalek/pull/895))
+* Make signing and verifying keys use `pkcs8::spki::SignatureAlgorithmIdentifier` instead of `DynSignatureAlgorithmIdentifier` ([#779](https://github.com/dalek-cryptography/curve25519-dalek/pull/779))
+* Impl `MultipartSigner` and `MultipartVerifier` for `SigningKey` and `VerifyingKey` ([#764](https://github.com/dalek-cryptography/curve25519-dalek/pull/764))
 * Upgrade `ed25519` dependency to v3.0.0
 * Upgrade `signature` dependency to v3.0.0
-* Upgrade `sha3` dependency to v0.11
+* Upgrade `sha2` and `sha3` dependencies to v0.11
 * Upgrade `getrandom` dependency to v0.4
 * Upgrade `chacha20` dependency to v0.10
-* Add `strobe-rs` dependency and delete vendored STROBE impl
 * Upgrade `rand_core` dependency to v0.10.0
-* Upgrade `digest` and `sha2` deps
 * Update edition to 2024
 * Update the MSRV from 1.60 to 1.85
-* Remove `std` feature
-* Make signing and verifying keys use `pkcs8::spki::SignatureAlgorithmIdentifier` instead of `DynSignatureAlgorithmIdentifier`
+* Remove `std` feature now that `error::Error` is in `core`
 
 # 2.x series
 

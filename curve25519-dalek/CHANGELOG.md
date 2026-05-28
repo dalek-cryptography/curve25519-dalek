@@ -5,7 +5,7 @@ major series.
 
 ## 5.x series
 
-### 5.0.0-rc.0 - 2026-05-25
+### 5.0.0-rc.0 - 2026-05-28
 
 * Remove `ff` and `group` features until they have a release ([#907](https://github.com/dalek-cryptography/curve25519-dalek/pull/907))
 * Perf: Use maximum available NAF window size in `VartimePrecomputedStraus` ([#848](https://github.com/dalek-cryptography/curve25519-dalek/pull/848))

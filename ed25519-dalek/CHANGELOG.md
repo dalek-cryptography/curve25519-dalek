@@ -8,7 +8,7 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # 3.x series
 
-## 3.0.0-rc.0 - 2026-05-25
+## 3.0.0-rc.0 - 2026-05-28
 
 * Add allocation-free `EdwardsPoint::compress_batch` ([#832](https://github.com/dalek-cryptography/curve25519-dalek/pull/832))
 * Add `strobe-rs` dependency and delete vendored STROBE impl ([#895](https://github.com/dalek-cryptography/curve25519-dalek/pull/895))

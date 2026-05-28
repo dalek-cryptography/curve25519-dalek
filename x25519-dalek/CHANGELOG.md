@@ -4,7 +4,7 @@ Entries are listed in reverse chronological order.
 
 # 3.x Series
 
-## 3.0.0-rc.0 - 2026-05-25
+## 3.0.0-rc.0 - 2026-05-28
 
 * Remove `alloc` feature flag, which was doing nothing
 * Update edition to 2024

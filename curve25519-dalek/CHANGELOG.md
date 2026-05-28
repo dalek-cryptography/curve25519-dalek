@@ -5,43 +5,26 @@ major series.
 
 ## 5.x series
 
-## 5.0.0-pre.6
+### 5.0.0-rc.0 - 2026-05-28
 
+* Remove `ff` and `group` features until they have a release ([#907](https://github.com/dalek-cryptography/curve25519-dalek/pull/907))
+* Perf: Use maximum available NAF window size in `VartimePrecomputedStraus` ([#848](https://github.com/dalek-cryptography/curve25519-dalek/pull/848))
+* Add Lizard bytes-to-point injection for Ristretto. Gated under `lizard` feature. ([#826](https://github.com/dalek-cryptography/curve25519-dalek/pull/826))
+* Rename `Scalar::batch_invert` -> `Scalar::invert_batch` for consistency. Also make it no-alloc. ([#789](https://github.com/dalek-cryptography/curve25519-dalek/pull/789))
+* Add an allocating batch inversion called `Scalar::invert_batch_alloc` ([#789](https://github.com/dalek-cryptography/curve25519-dalek/pull/789))
+* Add `Scalar::div_by_2` ([#805](https://github.com/dalek-cryptography/curve25519-dalek/pull/805))
+* Add `EdwardsPoint::hash_to_curve` ([#786](https://github.com/dalek-cryptography/curve25519-dalek/pull/786))
+* Undeprecate `Scalar::from_bits()`
+* Remove deprecated functions `FieldElement::as_bytes()` and `EdwardsPoint::nonspec_map_to_curve()`
 * Upgrade `rand_core` dependency to v0.10.0
 * Upgrade `digest` and `sha2` deps
-
-## 5.0.0-pre.5
-
-* Upgrade `rand_core` dependency to v0.10.0-rc-6
-
-## 5.0.0-pre.4
-
-* Add allocation-free `EdwardsPoint::compress_batch()`
-* Perf: Use maximum available NAF window size in `VartimePrecomputedStraus`
-* Upgrade `rand_core` dependency to v0.10.0-rc-3
-
-## 5.0.0-pre.3
-
-* Add Lizard bytes-to-point injection for Ristretto. Gated under `lizard` feature.
-* Upgrade `rand_core` dependency to v0.10.0-rc-2
-
-## 5.0.0-pre.1
-
-* Rename `Scalar::batch_invert` -> `Scalar::invert_batch` for consistency. Also make it no-alloc.
-* Add an allocating batch inversion called `Scalar::invert_batch_alloc`.
-* Add `Scalar::div_by_2`
-
-## 5.0.0-pre.0
-
 * Update edition to 2024
 * Update the MSRV from 1.60 to 1.85
-* Remove deprecated functions `FieldElement::as_bytes()` and `EdwardsPoint::nonspec_map_to_curve()`
 * Use constant-time equality testing for compressed Ristretto and Edwards points, rather than autoderived equality
-* Undeprecate `Scalar::from_bits()`
 
 ## 4.x series
 
-### 4.2.0 [YANKED]
+### 4.2.0 [YANKED] - 2025-07-08
 
 NOTE: yanked because `hash_to_curve` was improperly implemented (#785)
 
@@ -52,7 +35,7 @@ NOTE: yanked because `hash_to_curve` was improperly implemented (#785)
 * Add batch conversion function `EdwardsPoint::to_montgomery_batch()`
 * Make `VartimePrecomputedStraus::optional_mixed_multiscalar_mul()` and `VartimeRistrettoPrecomputation::vartime_mixed_multiscalar_mul()` accept more points than static scalars
 
-### 4.1.3
+### 4.1.3 - 2024-06-18
 
 * Security: Fix timing leak in Scalar subtraction on u32, u64, fiat_u32, and fiat_u64 backends
 * Fix assorted new warnings and lints from rustc and clippy

@@ -70,8 +70,11 @@ impl RistrettoPoint {
         if n_found == 1 { Some(result) } else { None }
     }
 
-    /// Computes the at most 8 positive FieldElements f such that `self ==
+    /// Computes the at most 16 FieldElements f such that `self ==
     /// RistrettoPoint::elligator_ristretto_flavor(f)`.
+    /// The first 8 return values are positive field elements (i.e., have the LSB (`bytes[0] & 1`)
+    /// unset), if defined. The last 8 return values are negative field elements (i.e., have the LSB
+    /// set), if defined.
     fn elligator_ristretto_flavor_inverse(&self) -> [CtOption<FieldElement>; 16] {
         // Elligator2 computes a Point from a FieldElement in two steps: first
         // it computes a (s,t) on the Jacobi quartic and then computes the

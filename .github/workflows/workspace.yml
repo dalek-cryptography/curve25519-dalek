@@ -28,9 +28,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: rustup target add ${{ matrix.target }}
       - run: ${{ matrix.deps }}
-      - run: cargo test --target ${{ matrix.target }} --no-default-features
+      - run: cargo test --workspace --exclude wycheproof-ed25519-dalek --target ${{ matrix.target }} --no-default-features
       - run: cargo test --target ${{ matrix.target }}
-      - run: cargo test --target ${{ matrix.target }} --all-features
+      # wycheproof is excluded as --all-features turns on everything in the whole workspace collectively
+      # ed25519-dalek feature legacy_features cause wycheproof tc 63 & 85 to fail
+      - run: cargo test --workspace --exclude wycheproof-ed25519-dalek --target ${{ matrix.target }} --all-features
 
   test-nightly:
     name: Test Nightly

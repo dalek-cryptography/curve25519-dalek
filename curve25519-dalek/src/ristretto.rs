@@ -674,7 +674,7 @@ impl RistrettoPoint {
     /// results are added, to ensure a uniform distribution.
     #[cfg(feature = "rand_core")]
     pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
-        Self::try_from_rng(rng)
+        Self::try_random(rng)
             .map_err(|_: Infallible| {})
             .expect("[bug] unfallible rng failed")
     }
@@ -696,7 +696,7 @@ impl RistrettoPoint {
     /// point should be unknown.  The map is applied twice and the
     /// results are added, to ensure a uniform distribution.
     #[cfg(feature = "rand_core")]
-    pub fn try_from_rng<R: TryCryptoRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+    pub fn try_random<R: TryCryptoRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         let mut uniform_bytes = [0u8; 64];
         rng.try_fill_bytes(&mut uniform_bytes)?;
 
@@ -1179,7 +1179,7 @@ impl Debug for RistrettoPoint {
 impl group::Group for RistrettoPoint {
     type Scalar = Scalar;
 
-    fn try_from_rng<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+    fn try_random<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         // NOTE: this is duplicated due to different `rng` bounds
         let mut uniform_bytes = [0u8; 64];
         rng.try_fill_bytes(&mut uniform_bytes)?;
@@ -1499,7 +1499,7 @@ mod test {
         let mut rng = SysRng;
 
         let mut points: Vec<RistrettoPoint> = (0..1024)
-            .map(|_| RistrettoPoint::try_from_rng(&mut rng).unwrap())
+            .map(|_| RistrettoPoint::try_random(&mut rng).unwrap())
             .collect();
         points[500] = <RistrettoPoint as Group>::identity();
 

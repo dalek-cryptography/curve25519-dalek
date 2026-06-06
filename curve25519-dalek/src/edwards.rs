@@ -1461,7 +1461,7 @@ impl Debug for EdwardsPoint {
 impl group::Group for EdwardsPoint {
     type Scalar = Scalar;
 
-    fn try_from_rng<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+    fn try_random<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         let mut repr = CompressedEdwardsY([0u8; 32]);
         loop {
             rng.try_fill_bytes(&mut repr.0)?;
@@ -1713,13 +1713,13 @@ impl Zeroize for SubgroupPoint {
 impl group::Group for SubgroupPoint {
     type Scalar = Scalar;
 
-    fn try_from_rng<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+    fn try_random<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         use group::ff::Field;
 
         // This will almost never loop, but `Group::random` is documented as returning a
         // non-identity element.
         let s = loop {
-            let s: Scalar = Field::try_from_rng(rng)?;
+            let s: Scalar = Field::try_random(rng)?;
             if !s.is_zero_vartime() {
                 break s;
             }

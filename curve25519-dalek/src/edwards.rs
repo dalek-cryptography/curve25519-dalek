@@ -110,6 +110,13 @@ use digest::{
     typenum::IsGreater,
 };
 
+#[cfg(feature = "group")]
+use {
+    group::{GroupEncoding, cofactor::CofactorGroup, prime::PrimeGroup},
+    rand_core::TryRng,
+    subtle::CtOption,
+};
+
 #[cfg(feature = "rand_core")]
 use rand_core::Rng;
 
@@ -1441,6 +1448,338 @@ impl Debug for EdwardsPoint {
             "EdwardsPoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n}}",
             &self.X, &self.Y, &self.Z, &self.T
         )
+    }
+}
+
+// ------------------------------------------------------------------------
+// group traits
+// ------------------------------------------------------------------------
+
+// Use the full trait path to avoid Group::identity overlapping Identity::identity in the
+// rest of the module (e.g. tests).
+#[cfg(feature = "group")]
+impl group::Group for EdwardsPoint {
+    type Scalar = Scalar;
+
+    fn try_from_rng<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+        let mut repr = CompressedEdwardsY([0u8; 32]);
+        loop {
+            rng.try_fill_bytes(&mut repr.0)?;
+            if let Some(p) = repr.decompress() {
+                if !IsIdentity::is_identity(&p) {
+                    break Ok(p);
+                }
+            }
+        }
+    }
+
+    fn identity() -> Self {
+        Identity::identity()
+    }
+
+    fn generator() -> Self {
+        constants::ED25519_BASEPOINT_POINT
+    }
+
+    fn is_identity(&self) -> Choice {
+        self.ct_eq(&Identity::identity())
+    }
+
+    fn double(&self) -> Self {
+        self.double()
+    }
+}
+
+#[cfg(feature = "group")]
+impl GroupEncoding for EdwardsPoint {
+    type Repr = [u8; 32];
+
+    fn from_bytes(bytes: &Self::Repr) -> CtOption<Self> {
+        let repr = CompressedEdwardsY(*bytes);
+        let (is_valid_y_coord, X, Y, Z) = decompress::step_1(&repr);
+        CtOption::new(decompress::step_2(&repr, X, Y, Z), is_valid_y_coord)
+    }
+
+    fn from_bytes_unchecked(bytes: &Self::Repr) -> CtOption<Self> {
+        // Just use the checked API; there are no checks we can skip.
+        Self::from_bytes(bytes)
+    }
+
+    fn to_bytes(&self) -> Self::Repr {
+        self.compress().to_bytes()
+    }
+}
+
+/// A `SubgroupPoint` represents a point on the Edwards form of Curve25519, that is
+/// guaranteed to be in the prime-order subgroup.
+#[cfg(feature = "group")]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SubgroupPoint(EdwardsPoint);
+
+#[cfg(feature = "group")]
+impl From<SubgroupPoint> for EdwardsPoint {
+    fn from(p: SubgroupPoint) -> Self {
+        p.0
+    }
+}
+
+#[cfg(feature = "group")]
+impl Neg for SubgroupPoint {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        SubgroupPoint(-self.0)
+    }
+}
+
+#[cfg(feature = "group")]
+impl Add<&SubgroupPoint> for &SubgroupPoint {
+    type Output = SubgroupPoint;
+    fn add(self, other: &SubgroupPoint) -> SubgroupPoint {
+        SubgroupPoint(self.0 + other.0)
+    }
+}
+
+#[cfg(feature = "group")]
+define_add_variants!(
+    LHS = SubgroupPoint,
+    RHS = SubgroupPoint,
+    Output = SubgroupPoint
+);
+
+#[cfg(feature = "group")]
+impl Add<&SubgroupPoint> for &EdwardsPoint {
+    type Output = EdwardsPoint;
+    fn add(self, other: &SubgroupPoint) -> EdwardsPoint {
+        self + other.0
+    }
+}
+
+#[cfg(feature = "group")]
+define_add_variants!(
+    LHS = EdwardsPoint,
+    RHS = SubgroupPoint,
+    Output = EdwardsPoint
+);
+
+#[cfg(feature = "group")]
+impl AddAssign<&SubgroupPoint> for SubgroupPoint {
+    fn add_assign(&mut self, rhs: &SubgroupPoint) {
+        self.0 += rhs.0
+    }
+}
+
+#[cfg(feature = "group")]
+define_add_assign_variants!(LHS = SubgroupPoint, RHS = SubgroupPoint);
+
+#[cfg(feature = "group")]
+impl AddAssign<&SubgroupPoint> for EdwardsPoint {
+    fn add_assign(&mut self, rhs: &SubgroupPoint) {
+        *self += rhs.0
+    }
+}
+
+#[cfg(feature = "group")]
+define_add_assign_variants!(LHS = EdwardsPoint, RHS = SubgroupPoint);
+
+#[cfg(feature = "group")]
+impl Sub<&SubgroupPoint> for &SubgroupPoint {
+    type Output = SubgroupPoint;
+    fn sub(self, other: &SubgroupPoint) -> SubgroupPoint {
+        SubgroupPoint(self.0 - other.0)
+    }
+}
+
+#[cfg(feature = "group")]
+define_sub_variants!(
+    LHS = SubgroupPoint,
+    RHS = SubgroupPoint,
+    Output = SubgroupPoint
+);
+
+#[cfg(feature = "group")]
+impl Sub<&SubgroupPoint> for &EdwardsPoint {
+    type Output = EdwardsPoint;
+    fn sub(self, other: &SubgroupPoint) -> EdwardsPoint {
+        self - other.0
+    }
+}
+
+#[cfg(feature = "group")]
+define_sub_variants!(
+    LHS = EdwardsPoint,
+    RHS = SubgroupPoint,
+    Output = EdwardsPoint
+);
+
+#[cfg(feature = "group")]
+impl SubAssign<&SubgroupPoint> for SubgroupPoint {
+    fn sub_assign(&mut self, rhs: &SubgroupPoint) {
+        self.0 -= rhs.0;
+    }
+}
+
+#[cfg(feature = "group")]
+define_sub_assign_variants!(LHS = SubgroupPoint, RHS = SubgroupPoint);
+
+#[cfg(feature = "group")]
+impl SubAssign<&SubgroupPoint> for EdwardsPoint {
+    fn sub_assign(&mut self, rhs: &SubgroupPoint) {
+        *self -= rhs.0;
+    }
+}
+
+#[cfg(feature = "group")]
+define_sub_assign_variants!(LHS = EdwardsPoint, RHS = SubgroupPoint);
+
+#[cfg(feature = "group")]
+impl<T> Sum<T> for SubgroupPoint
+where
+    T: Borrow<SubgroupPoint>,
+{
+    fn sum<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = T>,
+    {
+        use group::Group;
+        iter.fold(SubgroupPoint::identity(), |acc, item| acc + item.borrow())
+    }
+}
+
+#[cfg(feature = "group")]
+impl Mul<&Scalar> for &SubgroupPoint {
+    type Output = SubgroupPoint;
+
+    /// Scalar multiplication: compute `scalar * self`.
+    ///
+    /// For scalar multiplication of a basepoint,
+    /// `EdwardsBasepointTable` is approximately 4x faster.
+    fn mul(self, scalar: &Scalar) -> SubgroupPoint {
+        SubgroupPoint(self.0 * scalar)
+    }
+}
+
+#[cfg(feature = "group")]
+define_mul_variants!(LHS = Scalar, RHS = SubgroupPoint, Output = SubgroupPoint);
+
+#[cfg(feature = "group")]
+impl Mul<&SubgroupPoint> for &Scalar {
+    type Output = SubgroupPoint;
+
+    /// Scalar multiplication: compute `scalar * self`.
+    ///
+    /// For scalar multiplication of a basepoint,
+    /// `EdwardsBasepointTable` is approximately 4x faster.
+    fn mul(self, point: &SubgroupPoint) -> SubgroupPoint {
+        point * self
+    }
+}
+
+#[cfg(feature = "group")]
+define_mul_variants!(LHS = SubgroupPoint, RHS = Scalar, Output = SubgroupPoint);
+
+#[cfg(feature = "group")]
+impl MulAssign<&Scalar> for SubgroupPoint {
+    fn mul_assign(&mut self, scalar: &Scalar) {
+        self.0 *= scalar;
+    }
+}
+
+#[cfg(feature = "group")]
+define_mul_assign_variants!(LHS = SubgroupPoint, RHS = Scalar);
+
+#[cfg(feature = "group")]
+impl ConstantTimeEq for SubgroupPoint {
+    fn ct_eq(&self, other: &SubgroupPoint) -> Choice {
+        self.0.ct_eq(&other.0)
+    }
+}
+
+#[cfg(feature = "group")]
+impl ConditionallySelectable for SubgroupPoint {
+    fn conditional_select(a: &SubgroupPoint, b: &SubgroupPoint, choice: Choice) -> SubgroupPoint {
+        SubgroupPoint(EdwardsPoint::conditional_select(&a.0, &b.0, choice))
+    }
+}
+
+#[cfg(all(feature = "group", feature = "zeroize"))]
+impl Zeroize for SubgroupPoint {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
+#[cfg(feature = "group")]
+impl group::Group for SubgroupPoint {
+    type Scalar = Scalar;
+
+    fn try_from_rng<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+        use group::ff::Field;
+
+        // This will almost never loop, but `Group::random` is documented as returning a
+        // non-identity element.
+        let s = loop {
+            let s: Scalar = Field::try_from_rng(rng)?;
+            if !s.is_zero_vartime() {
+                break s;
+            }
+        };
+
+        // This gives an element of the prime-order subgroup.
+        Ok(Self::generator() * s)
+    }
+
+    fn identity() -> Self {
+        SubgroupPoint(Identity::identity())
+    }
+
+    fn generator() -> Self {
+        SubgroupPoint(EdwardsPoint::generator())
+    }
+
+    fn is_identity(&self) -> Choice {
+        self.0.ct_eq(&Identity::identity())
+    }
+
+    fn double(&self) -> Self {
+        SubgroupPoint(self.0.double())
+    }
+}
+
+#[cfg(feature = "group")]
+impl GroupEncoding for SubgroupPoint {
+    type Repr = <EdwardsPoint as GroupEncoding>::Repr;
+
+    fn from_bytes(bytes: &Self::Repr) -> CtOption<Self> {
+        EdwardsPoint::from_bytes(bytes).and_then(|p| p.into_subgroup())
+    }
+
+    fn from_bytes_unchecked(bytes: &Self::Repr) -> CtOption<Self> {
+        EdwardsPoint::from_bytes_unchecked(bytes).and_then(|p| p.into_subgroup())
+    }
+
+    fn to_bytes(&self) -> Self::Repr {
+        self.0.compress().to_bytes()
+    }
+}
+
+#[cfg(feature = "group")]
+impl PrimeGroup for SubgroupPoint {}
+
+#[cfg(feature = "group")]
+impl CofactorGroup for EdwardsPoint {
+    type Subgroup = SubgroupPoint;
+
+    fn clear_cofactor(&self) -> Self::Subgroup {
+        SubgroupPoint(self.mul_by_cofactor())
+    }
+
+    fn into_subgroup(self) -> CtOption<Self::Subgroup> {
+        CtOption::new(SubgroupPoint(self), CofactorGroup::is_torsion_free(&self))
+    }
+
+    fn is_torsion_free(&self) -> Choice {
+        (self * constants::BASEPOINT_ORDER).ct_eq(&Self::identity())
     }
 }
 

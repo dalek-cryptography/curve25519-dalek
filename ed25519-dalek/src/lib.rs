@@ -253,6 +253,7 @@ extern crate alloc;
 #[macro_use]
 extern crate std;
 
+#[cfg(feature = "rand_core")]
 pub use rand_core;
 
 pub use ed25519;

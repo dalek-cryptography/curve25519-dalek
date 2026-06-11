@@ -71,7 +71,6 @@ alloc = ["zeroize?/alloc"]
 precomputed-tables = []
 legacy_compatibility = []
 group = ["dep:group", "rand_core"]
-group-bits = ["group", "ff/bits"]
 digest = ["dep:digest"]
 lizard = ["digest"]
 

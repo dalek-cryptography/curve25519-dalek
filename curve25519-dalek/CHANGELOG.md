@@ -8,7 +8,8 @@ major series.
 
 # Unreleased
 
-* Remove `group-bits` feature due to soundness issues with underlying trait [#909](https://github.com/dalek-cryptography/curve25519-dalek/pull/909)
+* Remove `group-bits` feature due to soundness issues with underlying trait ([#909](https://github.com/dalek-cryptography/curve25519-dalek/pull/909))
+* Re-export `rand_core` ([#908](https://github.com/dalek-cryptography/curve25519-dalek/pull/908))
 
 ### 5.0.0-rc.0 - 2026-05-28
 

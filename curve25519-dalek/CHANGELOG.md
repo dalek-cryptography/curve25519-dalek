@@ -5,6 +5,11 @@ major series.
 
 ## 5.x series
 
+
+# Unreleased
+
+* Remove `group-bits` feature due to soundness issues with underlying trait [#909](https://github.com/dalek-cryptography/curve25519-dalek/pull/909)
+
 ### 5.0.0-rc.0 - 2026-05-28
 
 * Remove `ff` and `group` features until they have a release ([#907](https://github.com/dalek-cryptography/curve25519-dalek/pull/907))

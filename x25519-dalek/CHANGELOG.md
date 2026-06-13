@@ -4,6 +4,10 @@ Entries are listed in reverse chronological order.
 
 # 3.x Series
 
+## Unreleased
+
+* Re-export `rand_core` ([#908](https://github.com/dalek-cryptography/curve25519-dalek/pull/908))
+
 ## 3.0.0-rc.0 - 2026-05-28
 
 * Remove `alloc` feature flag, which was doing nothing

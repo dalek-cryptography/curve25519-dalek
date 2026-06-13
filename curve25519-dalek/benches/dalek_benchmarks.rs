@@ -304,7 +304,7 @@ mod ristretto_benches {
                 |b, &&size| {
                     let mut rng = SysRng;
                     let points: Vec<RistrettoPoint> = (0..size)
-                        .map(|_| RistrettoPoint::try_from_rng(&mut rng).unwrap())
+                        .map(|_| RistrettoPoint::try_random(&mut rng).unwrap())
                         .collect();
                     b.iter(|| RistrettoPoint::double_and_compress_batch(&points));
                 },

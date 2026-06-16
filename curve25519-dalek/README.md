@@ -33,7 +33,7 @@ cofactor-related abstraction mismatches.
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "5.0.0-rc.0"
+curve25519-dalek = "5.0.0-rc.1"
 ```
 
 If opting into [SemVer-exempted features](#public-api-semver-exemptions) a range

@@ -103,7 +103,7 @@ To import `x25519-dalek`, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies]
-x25519-dalek = "3.0.0-rc.0"
+x25519-dalek = "3.0.0-rc.1"
 ```
 
 # Feature Flags

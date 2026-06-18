@@ -8,7 +8,7 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # 3.x series
 
-## 3.0.0-rc.1 - 2026-06-16
+## 3.0.0-rc.1 - 2026-06-18
 
 * Re-export `rand_core` ([#908](https://github.com/dalek-cryptography/curve25519-dalek/pull/908))
 

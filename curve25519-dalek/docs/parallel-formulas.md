@@ -219,7 +219,7 @@ element vectors, whose optimum choice is determined by the details of
 the instruction set.  However, it's not possible to perfectly separate
 the implementation of the field element vectors from the
 implementation of the point operations.  Instead, the [`avx2`] and
-[`ifma`] backends provide `ExtendedPoint` and `CachedPoint` types, and
+`ifma` backends provide `ExtendedPoint` and `CachedPoint` types, and
 the [`scalar_mul`] code uses one of the backend types by a type alias.
 
 # Comparison to non-vectorized formulas

@@ -20,8 +20,8 @@
 //! (allowing the CPU to compute two carry chains in parallel).  These
 //! will be used if available.
 
-pub mod field;
+pub(crate) mod field;
 
-pub mod scalar;
+pub(crate) mod scalar;
 
-pub mod constants;
+pub(crate) mod constants;

@@ -59,7 +59,7 @@ use crate::traits::VartimeMultiscalarMul;
 /// Therefore, the optimal choice of `w` grows slowly as `n` grows.
 ///
 /// This algorithm is adapted from section 4 of <https://eprint.iacr.org/2012/549.pdf>.
-pub struct Pippenger;
+pub(crate) struct Pippenger;
 
 impl VartimeMultiscalarMul for Pippenger {
     type Point = EdwardsPoint;

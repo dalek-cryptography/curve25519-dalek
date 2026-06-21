@@ -44,14 +44,14 @@ macro_rules! impl_lookup_table {
         /// still technically possible.  It would be nice to prevent direct
         /// access to the table.
         #[derive(Copy, Clone)]
-        pub struct $name<T>(pub(crate) [T; $size]);
+        pub(crate) struct $name<T>(pub(crate) [T; $size]);
 
         impl<T> $name<T>
         where
             T: Identity + ConditionallySelectable + ConditionallyNegatable,
         {
             /// Given \\(-8 \leq x \leq 8\\), return \\(xP\\) in constant time.
-            pub fn select(&self, x: i8) -> T {
+            pub(crate) fn select(&self, x: i8) -> T {
                 debug_assert!(x >= $neg);
                 debug_assert!(x as i16 <= $size as i16); // XXX We have to convert to i16s here for the radix-256 case.. this is wrong.
 
@@ -184,7 +184,7 @@ pub(crate) struct NafLookupTable5<T>(pub(crate) [T; 8]);
 
 impl<T: Copy> NafLookupTable5<T> {
     /// Given public, odd \\( x \\) with \\( 0 < x < 2^4 \\), return \\(xA\\).
-    pub fn select(&self, x: usize) -> T {
+    pub(crate) fn select(&self, x: usize) -> T {
         debug_assert_eq!(x & 1, 1);
         debug_assert!(x < 16);
 
@@ -230,7 +230,7 @@ pub(crate) struct NafLookupTable8<T>(pub(crate) [T; 64]);
 
 #[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
 impl<T: Copy> NafLookupTable8<T> {
-    pub fn select(&self, x: usize) -> T {
+    pub(crate) fn select(&self, x: usize) -> T {
         debug_assert_eq!(x & 1, 1);
         debug_assert!(x < 128);
 

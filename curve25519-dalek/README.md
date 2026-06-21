@@ -248,9 +248,9 @@ A large chunk of `curve25519-dalek` has been formally verified with [Verus](http
 Benchmarks are run using [`criterion.rs`][criterion]:
 
 ```sh
-cargo bench --features "rand_core"
+cargo bench --features "rand_core,digest"
 export RUSTFLAGS='-C target_cpu=native'
-cargo +nightly bench --features "rand_core"
+cargo +nightly bench --features "rand_core,digest"
 ```
 
 Performance is a secondary goal behind correctness, safety, and

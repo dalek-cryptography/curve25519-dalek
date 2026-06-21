@@ -299,15 +299,21 @@ fn process_function(
     outer: Option<(syn::Generics, Box<syn::Type>)>,
 ) -> TokenStream {
     // Split comma-separated features and create enable tokens for each
-    let tmp = attributes.value();
-    let features = tmp.split(',').map(|f| {
-        let feature_lit = syn::LitStr::new(f, attributes.span());
-        quote::quote! { enable = #feature_lit }
-    });
+    let (enable_features, target_features) = attributes
+        .value()
+        .split(',')
+        .map(|f| {
+            let feature_lit = syn::LitStr::new(f, attributes.span());
+            (
+                quote::quote! { enable = #feature_lit },
+                quote::quote! { target_feature = #feature_lit },
+            )
+        })
+        .unzip::<_, _, Vec<_>, Vec<_>>();
 
     if function.sig.unsafety.is_some() {
         return quote::quote! {
-            #[target_feature(#(#features),*)]
+            #[target_feature(#(#enable_features),*)]
             #function
         }
         .into();
@@ -402,7 +408,7 @@ fn process_function(
             }
             syn::Meta::Path(path) if is_path_eq(path, "test") => {
                 maybe_outer_attributes.push(attribute);
-                maybe_cfg = quote::quote! { #[cfg(target_feature = #attributes)] };
+                maybe_cfg = quote::quote! { #[cfg(all(#(#target_features),*))] };
             }
             syn::Meta::List(syn::MetaList { path, tokens, .. })
                 if is_path_eq(path, "inline") && tokens.to_string() == "always" =>
@@ -444,7 +450,7 @@ fn process_function(
 
         let item_trait_impl = quote::quote! {
             impl #outer_impl_generics #trait_ident #outer_ty_generics for #self_ty #outer_where_clause {
-                #[target_feature(#(#features),*)]
+                #[target_feature(#(#enable_features),*)]
                 #maybe_inline
                 unsafe fn #function_inner_name #fn_impl_generics (#(#function_args_inner),*) #function_return #fn_where_clause #function_body
             }
@@ -467,7 +473,7 @@ fn process_function(
             #maybe_cfg
             #(#maybe_outer_attributes)*
             #function_visibility fn #function_name #fn_impl_generics (#(#function_args_outer),*) #function_return #fn_where_clause {
-                #[target_feature(#(#features),*)]
+                #[target_feature(#(#enable_features),*)]
                 #maybe_inline
                 unsafe fn #function_inner_name #fn_impl_generics (#(#function_args_inner),*) #function_return #fn_where_clause #function_body
                 unsafe {

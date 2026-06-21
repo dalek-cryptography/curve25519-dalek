@@ -21,6 +21,12 @@ impl std::fmt::Display for DalekBits {
     }
 }
 
+fn target_has_feature(feature: &str) -> bool {
+    std::env::var("CARGO_CFG_TARGET_FEATURE")
+        .map(|features| features.split(',').any(|f| f == feature))
+        .unwrap_or(false)
+}
+
 fn main() {
     let target_arch = match std::env::var("CARGO_CFG_TARGET_ARCH") {
         Ok(arch) => arch,
@@ -104,8 +110,8 @@ fn is_capable_avx512(arch: &str, bits: DalekBits, rustc_version: rustc_version::
     }
 
     is_capable_simd(arch, bits)
-        && cfg!(target_feature = "avx512ifma")
-        && cfg!(target_feature = "avx512vl")
+        && target_has_feature("avx512ifma")
+        && target_has_feature("avx512vl")
 }
 
 // Deterministic cfg(curve25519_dalek_bits) when this is not explicitly set.

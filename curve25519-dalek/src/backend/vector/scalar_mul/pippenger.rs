@@ -89,7 +89,7 @@ pub mod spec {
                 // Iterate over pairs of (point, scalar)
                 // and add/sub the point to the corresponding bucket.
                 // Note: if we add support for precomputed lookup tables,
-                // we'll be adding/subtractiong point premultiplied by `digits[i]` to buckets[0].
+                // we'll be adding/subtracting point premultiplied by `digits[i]` to buckets[0].
                 for (digits, pt) in scalars_points.iter() {
                     // Widen digit so that we don't run into edge cases when w=8.
                     let digit = digits[digit_index] as i16;

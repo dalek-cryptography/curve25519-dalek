@@ -1147,7 +1147,7 @@ macro_rules! impl_basepoint_table {
                 (&<$point>::identity() + &self.0[0].select(1)).as_extended()
             }
 
-            /// The computation uses Pippeneger's algorithm, as described for the
+            /// The computation uses Pippenger's algorithm, as described for the
             /// specific case of radix-16 on page 13 of the Ed25519 paper.
             ///
             /// # Piggenger's Algorithm Generalised

@@ -305,7 +305,7 @@ dependencies = [
 
 [[package]]
 name = "curve25519-dalek"
-version = "5.0.0-rc.0"
+version = "5.0.0-rc.1"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -372,7 +372,7 @@ dependencies = [
 
 [[package]]
 name = "ed25519-dalek"
-version = "3.0.0-rc.0"
+version = "3.0.0-rc.1"
 dependencies = [
  "blake2",
  "chacha20",
@@ -1489,7 +1489,7 @@ dependencies = [
 
 [[package]]
 name = "x25519-dalek"
-version = "3.0.0-rc.0"
+version = "3.0.0-rc.1"
 dependencies = [
  "criterion",
  "curve25519-dalek",

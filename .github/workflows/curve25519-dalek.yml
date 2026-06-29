@@ -65,7 +65,7 @@ jobs:
         run: cargo build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --no-default-features
       - name: no_std fiat / cargo hack ${{ matrix.crate }}
         env:
-          RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'      
+          RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
         run: cargo hack build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --each-feature --exclude-features default,std,getrandom
 
   test-serial:
@@ -128,6 +128,24 @@ jobs:
         # It should pick AVX2 due to stable toolchain used since AVX512 requires nigthly
         RUSTFLAGS: '-C target_feature=+avx2'
       run: cargo test --no-default-features --features alloc,precomputed-tables,zeroize,group --target x86_64-unknown-linux-gnu
+
+  test-avx512-sde:
+    name: Test avx512 backend under Intel SDE
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+    - uses: RustCrypto/actions/intel-sde-install@master
+    - name: Route the target through sde64
+      run: |
+        mkdir -p .cargo
+        echo '[target.x86_64-unknown-linux-gnu]' > .cargo/config.toml
+        echo 'runner = "sde64 -future --"' >> .cargo/config.toml
+    - env:
+        # avx512ifma + avx512vl are the two extensions curve25519-dalek's avx512 backend needs
+        RUSTFLAGS: '-C target_feature=+avx512ifma,+avx512vl'
+        RUSTDOCFLAGS: '-C target_feature=+avx512ifma,+avx512vl'
+      run: cargo test --target x86_64-unknown-linux-gnu
 
   msrv:
     name: Current MSRV is 1.85.0

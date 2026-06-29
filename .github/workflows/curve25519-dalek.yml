@@ -41,6 +41,7 @@ jobs:
       - run: ${{ matrix.deps }}
       - env:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
+          RUSTDOCFLAGS: '--cfg curve25519_dalek_backend="fiat"'
         run: cargo test --target ${{ matrix.target }}
 
   # Default no_std test only tests using serial across all crates
@@ -62,10 +63,12 @@ jobs:
       - name: no_std fiat / no feat ${{ matrix.crate }}
         env:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
+          RUSTDOCFLAGS: '--cfg curve25519_dalek_backend="fiat"'
         run: cargo build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --no-default-features
       - name: no_std fiat / cargo hack ${{ matrix.crate }}
         env:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
+          RUSTDOCFLAGS: '--cfg curve25519_dalek_backend="fiat"'
         run: cargo hack build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --each-feature --exclude-features default,std,getrandom
 
   test-serial:
@@ -87,6 +90,7 @@ jobs:
       - run: ${{ matrix.deps }}
       - env:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="serial"'
+          RUSTDOCFLAGS: '--cfg curve25519_dalek_backend="serial"'
         run: cargo test --target ${{ matrix.target }}
 
   build-script:
@@ -113,6 +117,7 @@ jobs:
         #   3) run all of the normal tests using the best available SIMD backend.
         # This should automatically pick up the simd backend in a x84_64 runner
         RUSTFLAGS: '-C target_cpu=native'
+        RUSTDOCFLAGS: '-C target_cpu=native'
       run: cargo test --target x86_64-unknown-linux-gnu
 
   test-simd-stable:
@@ -127,6 +132,7 @@ jobs:
         # This should automatically pick up the simd backend in a x86_64 runner
         # It should pick AVX2 due to stable toolchain used since AVX512 requires nigthly
         RUSTFLAGS: '-C target_feature=+avx2'
+        RUSTDOCFLAGS: '-C target_feature=+avx2'
       run: cargo test --no-default-features --features alloc,precomputed-tables,zeroize,group --target x86_64-unknown-linux-gnu
 
   test-avx512-sde:

@@ -66,7 +66,28 @@ impl RistrettoPoint {
             }
             n_found += ok.unwrap_u8();
         }
-        // Per the README, the likelihood that n_found == 2 is something like 2^-122
+        // The probability that n_found >= 2 is at most 7 * 2^-125 < 2^-122.
+        //
+        // Proof (ROM): there are at most 7 other positive preimage field elements
+        // fe[1]..fe[7] besides the encoding preimage fe[0] = fe_uuid.
+        //
+        // Claim: if fe[j] (j >= 1) passes TagCheck, then payload(fe[j]) != uuid.
+        // Proof of claim: if payload(fe[j]) == uuid, the tag check would require
+        // outer_bytes(fe[j]) == mask(SHA256(uuid)) == outer_bytes(fe_uuid), forcing
+        // fe[j] == fe_uuid as field elements — contradiction.
+        //
+        // Therefore any fe[j] that could pass TagCheck queries SHA256 at a fresh
+        // input distinct from uuid. Under the random oracle model that output is
+        // independent uniform, and TagCheck constrains 63 bits from bytes[0..8]
+        // (LSB of byte 0 always 0) plus 62 bits from bytes[24..32] (top two bits
+        // of byte 31 always 0) = 125 constrained bits. Each succeeds with
+        // probability 2^-125. Union bound over 7 preimages: 7 * 2^-125 < 2^-122.
+        //
+        // Note: the 8 negative preimage field elements (bytes[0] & 1 == 1) are
+        // excluded from the loop above (the first 8 values from
+        // elligator_ristretto_flavor_inverse are the positive ones). They can
+        // never pass TagCheck because the expected_bytes construction always clears
+        // the LSB, so the ct_eq comparison is guaranteed to fail on byte 0.
         if n_found == 1 { Some(result) } else { None }
     }
 
@@ -133,6 +154,15 @@ impl RistrettoPoint {
 
         let s0 = &s_over_x * &self.0.X;
         let s1 = &(-(&sp_over_xp)) * &self.0.X;
+        // Algebraic identity: s0 * s1 = -1 in GF(p).
+        //
+        // s0 =  γ·Y²·(Z-Y)·X,  s1 = -γ·Y²·(Z+Y)·X,  γ² = 1/(Y⁴·X²·(Z²-Y²))
+        // ⟹  s0·s1 = -γ²·Y⁴·X²·(Z²-Y²) = -1.
+        //
+        // So JC₀ and JC₁ are algebraically dependent: S₁ = -1/S₀. Despite this,
+        // the lizard_decode collision bound is unaffected: the SHA256 tag check
+        // operates on serialized field element bytes, not on the S-coordinates,
+        // and GF(p) inversion scrambles the byte representation completely.
 
         // t_0 := -2/sqrt(-d-1) * Z * sOverX
         // t_1 := -2/sqrt(-d-1) * Z * spOverXp

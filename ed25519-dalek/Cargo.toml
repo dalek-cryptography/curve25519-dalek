@@ -51,7 +51,7 @@ curve25519-dalek = { version = "5.0.0-rc.1", default-features = false, features 
 x25519-dalek = { version = "3.0.0-rc.1", default-features = false, features = [
     "static_secrets",
 ] }
-blake2 = "0.11.0-rc.6"
+blake2 = "=0.11.0-rc.6"
 chacha20 = { version = "0.10", default-features = false, features = ["rng"] }
 sha3 = "0.11"
 getrandom = { version = "0.4", features = ["sys_rng"] }

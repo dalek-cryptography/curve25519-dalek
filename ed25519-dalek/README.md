@@ -8,7 +8,7 @@ verification.
 To import `ed25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-ed25519-dalek = "3.0.0-rc.1"
+ed25519-dalek = "3.0.0"
 ```
 
 # Feature Flags
@@ -32,13 +32,12 @@ This crate is `#[no_std]` compatible with `default-features = false`.
 
 See [CHANGELOG.md](CHANGELOG.md) for a list of changes made in past versions of this crate.
 
-## Breaking Changes in 3.0.0
+## Important Breaking Changes in 3.0.0
 
 * Update edition to 2024
 * Update the MSRV from 1.60 to 1.85
-* Update `ed25519` and `signature` deps
-* Remove `std` feature
-* Make signing and verifying keys use `pkcs8::spki::SignatureAlgorithmIdentifier` instead of `DynSignatureAlgorithmIdentifier`
+* Remove `std` feature now that `error::Error` is in `core`
+* Make signing and verifying keys use `pkcs8::spki::SignatureAlgorithmIdentifier` instead of `DynSignatureAlgorithmIdentifier` ([#779](https://github.com/dalek-cryptography/curve25519-dalek/pull/779))
 
 # Documentation
 

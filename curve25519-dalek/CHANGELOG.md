@@ -3,34 +3,36 @@
 Entries are listed in reverse chronological order per undeprecated
 major series.
 
-## 5.x series
+# 5.x series
 
-### 5.0.0-rc.1 - 2026-06-18
- Unreleased
+## 5.0.0 - 2026-07-03
 
+### Breaking Changes
+
+* Update edition to 2024
+* Update the MSRV from 1.60 to 1.85
 * Remove `group-bits` feature due to soundness issues with underlying trait ([#909](https://github.com/dalek-cryptography/curve25519-dalek/pull/909))
 * Re-export `rand_core` ([#908](https://github.com/dalek-cryptography/curve25519-dalek/pull/908))
-
-### 5.0.0-rc.0 - 2026-05-28
-
 * Remove `ff` and `group` features until they have a release ([#907](https://github.com/dalek-cryptography/curve25519-dalek/pull/907))
-* Perf: Use maximum available NAF window size in `VartimePrecomputedStraus` ([#848](https://github.com/dalek-cryptography/curve25519-dalek/pull/848))
-* Add Lizard bytes-to-point injection for Ristretto. Gated under `lizard` feature. ([#826](https://github.com/dalek-cryptography/curve25519-dalek/pull/826))
 * Rename `Scalar::batch_invert` -> `Scalar::invert_batch` for consistency. Also make it no-alloc. ([#789](https://github.com/dalek-cryptography/curve25519-dalek/pull/789))
+* Remove deprecated functions `FieldElement::as_bytes()` and `EdwardsPoint::nonspec_map_to_curve()` ([#778](https://github.com/dalek-cryptography/curve25519-dalek/pull/778))
+* Upgrade `rand_core` dependency to v0.10.0
+* Upgrade `digest` and `sha2` deps
+
+### Other Changes
+
+* Perf: Use maximum available NAF window size in `VartimePrecomputedStraus` ([#848](https://github.com/dalek-cryptography/curve25519-dalek/pull/848))
+* Perf: Skip checking 8 candidate points in `RistrettoPoint::lizard_decode` ([#882](https://github.com/dalek-cryptography/curve25519-dalek/pull/882))
+* Add Lizard bytes-to-point injection for Ristretto. Gated under `lizard` feature. ([#826](https://github.com/dalek-cryptography/curve25519-dalek/pull/826))
 * Add an allocating batch inversion called `Scalar::invert_batch_alloc` ([#789](https://github.com/dalek-cryptography/curve25519-dalek/pull/789))
 * Add `Scalar::div_by_2` ([#805](https://github.com/dalek-cryptography/curve25519-dalek/pull/805))
 * Add `EdwardsPoint::hash_to_curve` ([#786](https://github.com/dalek-cryptography/curve25519-dalek/pull/786))
-* Undeprecate `Scalar::from_bits()`
-* Remove deprecated functions `FieldElement::as_bytes()` and `EdwardsPoint::nonspec_map_to_curve()`
-* Upgrade `rand_core` dependency to v0.10.0
-* Upgrade `digest` and `sha2` deps
-* Update edition to 2024
-* Update the MSRV from 1.60 to 1.85
+* Undeprecate `Scalar::from_bits()` ([#780](https://github.com/dalek-cryptography/curve25519-dalek/pull/780))
 * Use constant-time equality testing for compressed Ristretto and Edwards points, rather than autoderived equality
 
-## 4.x series
+# 4.x series
 
-### 4.2.0 [YANKED] - 2025-07-08
+## 4.2.0 [YANKED] - 2025-07-08
 
 NOTE: yanked because `hash_to_curve` was improperly implemented (#785)
 
@@ -41,21 +43,21 @@ NOTE: yanked because `hash_to_curve` was improperly implemented (#785)
 * Add batch conversion function `EdwardsPoint::to_montgomery_batch()`
 * Make `VartimePrecomputedStraus::optional_mixed_multiscalar_mul()` and `VartimeRistrettoPrecomputation::vartime_mixed_multiscalar_mul()` accept more points than static scalars
 
-### 4.1.3 - 2024-06-18
+## 4.1.3 - 2024-06-18
 
 * Security: Fix timing leak in Scalar subtraction on u32, u64, fiat_u32, and fiat_u64 backends
 * Fix assorted new warnings and lints from rustc and clippy
 
-### 4.1.2
+## 4.1.2
 
 * Fix nightly SIMD build
 
-### 4.1.1
+## 4.1.1
 
 * Mark `constants::BASEPOINT_ORDER` deprecated from pub API
 * Add implementation for `PrimeFieldBits`, behind the `group-bits` feature flag.
 
-### 4.1.0
+## 4.1.0
 
 * Add arbitrary integer multiplication with `MontgomeryPoint::mul_bits_be`
 * Add implementations of the `ff` and `group` traits, behind the `group` feature flag
@@ -64,9 +66,9 @@ NOTE: yanked because `hash_to_curve` was improperly implemented (#785)
 * Mark `Scalar::clamp_integer` as `#[must_use]`
 * Various documentation fixes
 
-### 4.0.0
+## 4.0.0
 
-#### Breaking changes
+### Breaking changes
 
 * Update the MSRV from 1.41 to 1.60
 * Provide SemVer policy
@@ -87,7 +89,7 @@ NOTE: yanked because `hash_to_curve` was improperly implemented (#785)
 * Remove `Scalar::from_bytes_clamped` and `Scalar::reduce`
 * Deprecate and feature-gate `Scalar::from_bits` behind `legacy_compatibility`
 
-#### Other changes
+### Other changes
 
 * Add `EdwardsPoint::{mul_base, mul_base_clamped}`, `MontgomeryPoint::{mul_base, mul_base_clamped}`, and `BasepointTable::mul_base_clamped`
 * Add `precomputed-tables` feature
@@ -103,25 +105,25 @@ NOTE: yanked because `hash_to_curve` was improperly implemented (#785)
 * Relax the `zeroize` dependency to `^1`
 * Update the edition from 2015 to 2021
 
-## 3.x series
+# 3.x series
 
-### 3.2.0
+## 3.2.0
 
 * Add support for getting the identity element for the Montgomery
   form of curve25519, which is useful in certain protocols for
   checking contributory behaviour in derivation of shared secrets.
 
-### 3.1.2
+## 3.1.2
 
 * Revert a commit which mistakenly removed support for `zeroize` traits
   for some point types, as well as elligator2 support for Edwards points.
 
-### 3.1.1
+## 3.1.1
 
 * Fix documentation builds on nightly due to syntax changes to
   `#![cfg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
 
-### 3.1.0
+## 3.1.0
 
 * Add support for the Elligator2 encoding for Edwards points.
 * Add two optional formally-verified field arithmetic backends which
@@ -136,56 +138,56 @@ NOTE: yanked because `hash_to_curve` was improperly implemented (#785)
   consumers of `curve25519-dalek` should call these methods manually
   when needed.
 
-### 3.0.3
+## 3.0.3
 
 * Fix documentation builds on nightly due to syntax changes to
   `#![cfg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
 
-### 3.0.2
+## 3.0.2
 
 * Multiple documentation typo fixes.
 * Fixes to make using `alloc`+`no_std` possible for stable Rust.
 
-### 3.0.1
+## 3.0.1
 
 * Update the optional `packed-simd` dependency to rely on a newer,
   maintained version of the `packed-simd-2` crate.
 
-### 3.0.0
+## 3.0.0
 
-#### Breaking changes
+### Breaking changes
 
 * Update the `digest` dependency to `0.9`.  This requires a major version
   because the `digest` traits are part of the public API, but there are
   otherwise no changes to the API.
 
-## 2.x series
+# 2.x series
 
-### 2.1.3
+## 2.1.3
 
 * Fix documentation builds on nightly due to syntax changes to
   `#![fg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
 
-### 2.1.2
+## 2.1.2
 
 * Multiple documentation typo fixes.
 * Fix `alloc` feature working with stable rust.
 
-### 2.1.1
+## 2.1.1
 
 * Update the optional `packed-simd` dependency to rely on a newer,
   maintained version of the `packed-simd-2` crate.
 
-### 2.1.0
+## 2.1.0
 
 * Make `Scalar::from_bits` a `const fn`, allowing its use in `const` contexts.
 
-### 2.0.0
+## 2.0.0
 
 The only significant change is the data model change to the `serde` feature;
 besides the `rand_core` version bump, there are no other user-visible changes.
 
-#### Breaking changes
+### Breaking changes
 
 * Fix a data modeling error in the `serde` feature pointed out by Trevor Perrin
   which caused points and scalars to be serialized with length fields rather
@@ -194,7 +196,7 @@ besides the `rand_core` version bump, there are no other user-visible changes.
   matches the conventional encoding for X/Ed25519.
 * Update `rand_core` to `0.5`, allowing use with new `rand` versions.
 
-#### Other changes
+### Other changes
 
 * Switch from `clear_on_drop` to `zeroize` (by Tony Arcieri).
 * Require `subtle = ^2.2.1` and remove the note advising nightly Rust, which is
@@ -204,24 +206,24 @@ besides the `rand_core` version bump, there are no other user-visible changes.
 * Remove the `build.rs` hack which loaded the entire crate into its own
   `build.rs` to generate constants, and keep the constants in the source code.
 
-## 1.x series
+# 1.x series
 
-### 1.2.6
+## 1.2.6
 
 * Fixes to make using alloc+no_std possible for stable Rust.
 
-### 1.2.5
+## 1.2.5
 
 * Update the optional `packed-simd` dependency to rely on a newer,
   maintained version of the `packed-simd-2` crate.
 
-### 1.2.4
+## 1.2.4
 
 * Specify a semver bound for `clear_on_drop` rather than an exact version,
   addressing an issue where changes to inline assembly in rustc prevented
   `clear_on_drop` from working without an update.
 
-### 1.2.3
+## 1.2.3
 
 * Fix an issue identified by a Quarkslab audit (and Jack Grigg), where manually
   constructing unreduced `Scalar` values, as needed for X/Ed25519, and then
@@ -235,14 +237,14 @@ besides the `rand_core` version bump, there are no other user-visible changes.
 * Fix compilation on nightly broken due to changes to the `#[doc(include)]` path
   root (not quite correctly done in 1.2.2).
 
-### 1.2.2
+## 1.2.2
 
 * Fix a typo in an internal doc-comment.
 * Add the "crypto" tag to crate metadata.
 * Fix compilation on nightly broken due to changes to the `#[doc(include)]` path
   root.
 
-### 1.2.1
+## 1.2.1
 
 * Fix a bug in bucket index calculations in the Pippenger multiscalar algorithm
   for very large input sizes.
@@ -251,7 +253,7 @@ besides the `rand_core` version bump, there are no other user-visible changes.
 * Ensure that multiscalar and NAF computations work correctly on extremal
   `Scalar` values constructed via `from_bits`.
 
-### 1.2.0
+## 1.2.0
 
 * New multiscalar multiplication algorithm with better performance for
   large problem sizes.  The backend algorithm is selected
@@ -260,16 +262,16 @@ besides the `rand_core` version bump, there are no other user-visible changes.
 * Equality of Edwards points is now checked in projective coordinates.
 * Serde can now be used with `no_std`.
 
-### 1.1.4
+## 1.1.4
 
 * Fix typos in documentation comments.
 * Remove unnecessary `Default` bound on `Scalar::from_hash`.
 
-### 1.1.3
+## 1.1.3
 
 * Reverts the change in 1.1.0 to allow owned and borrowed RNGs, which caused a breakage due to a subtle interaction with ownership rules.  (The `RngCore` change is retained).
 
-### 1.1.2
+## 1.1.2
 
 * Disabled KaTeX on `docs.rs` pending proper [support upstream](https://github.com/rust-lang/docs.rs/issues/302).
 
@@ -277,7 +279,7 @@ besides the `rand_core` version bump, there are no other user-visible changes.
 
 * Fixed an issue related to `#[cfg(rustdoc)]` which prevented documenting multiple backends.
 
-### 1.1.0
+## 1.1.0
 
 * Adds support for precomputation for multiscalar multiplication.
 * Restructures the internal source tree into `serial` and `vector` backends (no change to external API).
@@ -286,18 +288,18 @@ besides the `rand_core` version bump, there are no other user-visible changes.
 * Replaces the `rand` dependency with `rand_core`.
 * Generalizes trait bounds on `RistrettoPoint::random()` and `Scalar::random()` to allow owned and borrowed RNGs and to allow `RngCore` instead of `Rng`.
 
-### 1.0.3
+## 1.0.3
 
 * Adds `ConstantTimeEq` implementation for compressed points.
 
-### 1.0.2
+## 1.0.2
 
 * Fixes a typo in the naming of variables in Ristretto formulas (no change to functionality).
 
-### 1.0.1
+## 1.0.1
 
 * Depends on the stable `2.0` version of `subtle` instead of `2.0.0-pre.0`.
 
-### 1.0.0
+## 1.0.0
 
 Initial stable release.  Yanked due to a dependency mistake (see above).

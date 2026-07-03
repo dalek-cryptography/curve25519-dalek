@@ -33,7 +33,7 @@ cofactor-related abstraction mismatches.
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "5.0.0-rc.1"
+curve25519-dalek = "5.0.0"
 ```
 
 If opting into [SemVer-exempted features](#public-api-semver-exemptions) a range
@@ -64,16 +64,16 @@ disable it when running `cargo`, add the `--no-default-features` CLI flag.
 
 Breaking changes for each major version release can be found in
 [`CHANGELOG.md`](CHANGELOG.md), under the "Breaking changes" subheader. The
-latest breaking changes in high level are below:
+important latest breaking changes are below:
 
-### Breaking changes in 5.0.0
+### Important Breaking Changes in 5.0.0
 
 * Update edition to 2024
 * Update the MSRV from 1.60 to 1.85
 * Remove deprecated functions `FieldElement::as_bytes()` and `EdwardsPoint::nonspec_map_to_curve()`
-* Use constant-time equality testing for compressed Ristretto and Edwards points, rather than autoderived equality
-* Undeprecate `Scalar::from_bits()`
 * Remove `group` and `group-bits` features temporarily. Will reinstate once the underlying deps have a release.
+* Rename `Scalar::batch_invert` -> `Scalar::invert_batch` for consistency. Also make it no-alloc. ([#789](https://github.com/dalek-cryptography/curve25519-dalek/pull/789))
+* Remove deprecated functions `FieldElement::as_bytes()` and `EdwardsPoint::nonspec_map_to_curve()`
 
 # Backends
 

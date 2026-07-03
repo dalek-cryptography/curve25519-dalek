@@ -4,18 +4,20 @@ Entries are listed in reverse chronological order.
 
 # 3.x Series
 
-## 3.0.0-rc.1 - 2026-06-18
+## 3.0.0 - 2026-07-03
 
-* Re-export `rand_core` ([#908](https://github.com/dalek-cryptography/curve25519-dalek/pull/908))
+### Breaking Changes
 
-## 3.0.0-rc.0 - 2026-05-28
-
-* Remove `alloc` feature flag, which was doing nothing
 * Update edition to 2024
 * Update the MSRV from 1.60 to 1.85
-* Remove `Zeroize` impl for `x25519::{EphemeralSecret, ReusableSecret, SharedSecret, StaticSecret}` to prevent misuse. These are now only zeroized on drop.
-* Remove deprecated functions `{Ephemeral,Reusable,Static}Secret::new()`
+* Remove `Zeroize` impl for `x25519::{EphemeralSecret, ReusableSecret, SharedSecret, StaticSecret}` to prevent misuse. These are now only zeroized on drop. ([#782](https://github.com/dalek-cryptography/curve25519-dalek/pull/782))
+* Remove `alloc` feature flag, which was doing nothing ([#857](https://github.com/dalek-cryptography/curve25519-dalek/pull/857))
+* Remove deprecated functions `{Ephemeral,Reusable,Static}Secret::new()` ([#778](https://github.com/dalek-cryptography/curve25519-dalek/pull/778))
 * Upgrade `rand_core` dependency to v0.10.0
+
+### Other Changes
+
+* Re-export `rand_core` ([#908](https://github.com/dalek-cryptography/curve25519-dalek/pull/908))
 
 # 2.x Series
 

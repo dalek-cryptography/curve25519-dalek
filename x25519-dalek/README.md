@@ -103,7 +103,7 @@ To import `x25519-dalek`, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies]
-x25519-dalek = "3.0.0-rc.1"
+x25519-dalek = "3.0.0"
 ```
 
 # Feature Flags
@@ -118,6 +118,18 @@ This crate is `#[no_std]` compatible with `default-features = false`.
 | `reusable_secrets`   |          | Exposes the `ReusableSecret` struct |
 | `static_secrets`     |          | Exposes the `StaticSecret` struct |
 | `serde`              |          | Enables `serde` serialization/deserialization for `PublicKey` and `StaticSecret` |
+
+# Major Changes
+
+See [CHANGELOG.md](CHANGELOG.md) for a list of changes made in past versions of this crate.
+
+## Important Breaking Changes in 3.0.0
+
+* Update edition to 2024
+* Update the MSRV from 1.60 to 1.85
+* Remove `Zeroize` impl for `x25519::{EphemeralSecret, ReusableSecret, SharedSecret, StaticSecret}` to prevent misuse. These are now only zeroized on drop. ([#782](https://github.com/dalek-cryptography/curve25519-dalek/pull/782))
+* Remove `alloc` feature flag, which was doing nothing ([#857](https://github.com/dalek-cryptography/curve25519-dalek/pull/857))
+* Remove deprecated functions `{Ephemeral,Reusable,Static}Secret::new()` ([#778](https://github.com/dalek-cryptography/curve25519-dalek/pull/778))
 
 # MSRV
 

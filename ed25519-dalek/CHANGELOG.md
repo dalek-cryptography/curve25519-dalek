@@ -29,6 +29,7 @@ Entries are listed in reverse chronological order per undeprecated major series.
 * Add allocation-free `EdwardsPoint::compress_batch` ([#832](https://github.com/dalek-cryptography/curve25519-dalek/pull/832))
 * Add `strobe-rs` dependency and delete vendored STROBE impl ([#895](https://github.com/dalek-cryptography/curve25519-dalek/pull/895))
 * Impl `MultipartSigner` and `MultipartVerifier` for `SigningKey` and `VerifyingKey` ([#764](https://github.com/dalek-cryptography/curve25519-dalek/pull/764))
+* Impl `KeySizeUser`, `TryKeyInit`, and `Generate` for `SigningKey`. Also impl `KeySizeUser` for `VerifyingKey` [#733](https://github.com/dalek-cryptography/curve25519-dalek/pull/733)
 
 # 2.x series
 

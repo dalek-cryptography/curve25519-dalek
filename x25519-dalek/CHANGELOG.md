@@ -4,7 +4,7 @@ Entries are listed in reverse chronological order.
 
 # 3.x Series
 
-## 3.0.0 - 2026-07-03
+## 3.0.0 - 2026-07-06
 
 ### Breaking Changes
 

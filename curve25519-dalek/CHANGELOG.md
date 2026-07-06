@@ -5,7 +5,7 @@ major series.
 
 # 5.x series
 
-## 5.0.0 - 2026-07-03
+## 5.0.0 - 2026-07-06
 
 ### Breaking Changes
 

@@ -8,7 +8,7 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # 3.x series
 
-## 3.0.0 - 2026-07-03
+## 3.0.0 - 2026-07-06
 
 ### Breaking Changes
 

@@ -13,6 +13,7 @@ major series.
 * Update the MSRV from 1.60 to 1.85
 * Remove `group-bits` feature due to soundness issues with underlying trait ([#909](https://github.com/dalek-cryptography/curve25519-dalek/pull/909))
 * Re-export `rand_core` ([#908](https://github.com/dalek-cryptography/curve25519-dalek/pull/908))
+* Rename `unstable_avx512` backend to `avx512`, and no longer require nightly for it ([#913](https://github.com/dalek-cryptography/curve25519-dalek/pull/913))
 * Rename `Scalar::batch_invert` -> `Scalar::invert_batch` for consistency. Also make it no-alloc. ([#789](https://github.com/dalek-cryptography/curve25519-dalek/pull/789))
 * Remove deprecated functions `FieldElement::as_bytes()` and `EdwardsPoint::nonspec_map_to_curve()` ([#778](https://github.com/dalek-cryptography/curve25519-dalek/pull/778))
 * Upgrade `rand_core` dependency to v0.10.0

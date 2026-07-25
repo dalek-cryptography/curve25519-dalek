@@ -251,17 +251,18 @@ fn process_mod(
 }
 
 fn process_impl(attributes: &syn::LitStr, mut item_impl: syn::ItemImpl) -> TokenStream {
-    unsupported_if_some!(item_impl.defaultness);
+    unsupported_if_some!(item_impl.modifiers.defaultness);
     unsupported_if_some!(item_impl.unsafety);
 
     let mut items = Vec::new();
     for item in item_impl.items.drain(..) {
         match item {
             syn::ImplItem::Fn(function) => {
-                unsupported_if_some!(function.defaultness);
+                unsupported_if_some!(function.modifiers.defaultness);
                 let function = syn::ItemFn {
                     attrs: function.attrs,
                     vis: function.vis,
+                    modifiers: function.modifiers,
                     sig: function.sig,
                     block: Box::new(function.block),
                 };
@@ -311,7 +312,7 @@ fn process_function(
         })
         .unzip::<_, _, Vec<_>, Vec<_>>();
 
-    if function.sig.unsafety.is_some() {
+    if matches!(function.sig.safety, syn::Safety::Unsafe(_)) {
         return quote::quote! {
             #[target_feature(#(#enable_features),*)]
             #function
@@ -338,7 +339,13 @@ fn process_function(
         match arg {
             syn::FnArg::Receiver(receiver) => {
                 unsupported_if_some!(receiver.attrs.first());
-                unsupported_if_some!(receiver.colon_token);
+                unsupported_if_some!(
+                    if let syn::ReceiverKind::Typed(colon_token, _) = receiver.kind {
+                        Some(colon_token)
+                    } else {
+                        None
+                    }
+                );
 
                 if outer.is_none() {
                     return syn::Error::new(receiver.span(), "unsupported by #[unsafe_target_feature(...)]; put the attribute on the outer `impl`").into_compile_error().into();

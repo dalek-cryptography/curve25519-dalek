@@ -339,13 +339,12 @@ fn process_function(
         match arg {
             syn::FnArg::Receiver(receiver) => {
                 unsupported_if_some!(receiver.attrs.first());
-                unsupported_if_some!(
-                    if let syn::ReceiverKind::Typed(colon_token, _) = receiver.kind {
-                        Some(colon_token)
-                    } else {
-                        None
-                    }
-                );
+                match &receiver.kind {
+                    syn::ReceiverKind::Value | syn::ReceiverKind::Reference(..) => {}
+                    syn::ReceiverKind::Typed(colon_token, _) => unsupported!(colon_token),
+                    // ReceiverKind non-exhaustive. Reject receivers we don't know about
+                    _ => unsupported!(receiver),
+                }
 
                 if outer.is_none() {
                     return syn::Error::new(receiver.span(), "unsupported by #[unsafe_target_feature(...)]; put the attribute on the outer `impl`").into_compile_error().into();

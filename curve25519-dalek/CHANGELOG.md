@@ -10,6 +10,7 @@ major series.
 * Add `EdwardsPoint::vartime_triple_scalar_mul_basepoint`, computing `a1*A1 + a2*A2 + b*B` in roughly half the doublings of the naive approach when `a1` and `a2` are less than 2^128 ([#858](https://github.com/dalek-cryptography/curve25519-dalek/pull/858))
 * Add `HalfWidthScalar`, a `Scalar` that is known to be less than 2^128 ([#858](https://github.com/dalek-cryptography/curve25519-dalek/pull/858))
 * Perf: Square `FieldElement51` directly rather than through `pow2k(1)` ([#922](https://github.com/dalek-cryptography/curve25519-dalek/pull/922))
+* Perf: Double the 64-bit inputs when squaring `FieldElement51`, rather than the 128-bit products ([#923](https://github.com/dalek-cryptography/curve25519-dalek/pull/923))
 
 ## 5.0.0 - 2026-07-06
 

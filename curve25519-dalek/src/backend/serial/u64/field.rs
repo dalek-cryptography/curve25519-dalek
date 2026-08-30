@@ -600,16 +600,29 @@ fn square_limbs(mut a: [u64; 5]) -> [u64; 5] {
     let a3_19 = 19 * a[3];
     let a4_19 = 19 * a[4];
 
-    // Multiply to get 128-bit coefficients of output.
+    // Precomputation: the doublings.
     //
-    // The 128-bit multiplications by 2 turn into 1 slr + 1 slrd each,
-    // which doesn't seem any better or worse than doing them as precomputations
-    // on the 64-bit inputs.
-    let     c0: u128 = m(a[0],  a[0]) + 2*( m(a[1], a4_19) + m(a[2], a3_19) );
-    let mut c1: u128 = m(a[3], a3_19) + 2*( m(a[0],  a[1]) + m(a[2], a4_19) );
-    let mut c2: u128 = m(a[1],  a[1]) + 2*( m(a[0],  a[2]) + m(a[4], a3_19) );
-    let mut c3: u128 = m(a[4], a4_19) + 2*( m(a[0],  a[3]) + m(a[1],  a[2]) );
-    let mut c4: u128 = m(a[2],  a[2]) + 2*( m(a[0],  a[4]) + m(a[1],  a[3]) );
+    // Every product below other than the five squares a[i]^2 appears exactly
+    // twice in the full 5x5 product, so it is computed once and doubled. The
+    // doubling is done here, on one 64-bit operand, rather than on the 128-bit
+    // product: `2*(x*y) == (2*x)*y`, so the coefficients are unchanged, but a
+    // 64-bit shift is one instruction where a 128-bit one is two, and four
+    // shifts here cover ten doubled products.
+    //
+    // `2*a[i]` fits into a u64 whenever 51 + b + 1 < 64, i.e. b < 12, and
+    // `2*19*a[3]` whenever 51 + b + lg(19) + 1 < 64, i.e. b < 7.75. Both are
+    // slacker than the b < 3 this function already requires.
+    let a0_2 = 2 * a[0];
+    let a1_2 = 2 * a[1];
+    let a2_2 = 2 * a[2];
+    let a3_19_2 = 2 * a3_19;
+
+    // Multiply to get 128-bit coefficients of output.
+    let     c0: u128 = m(a[0], a[0]) + m(a1_2, a4_19) + m(a2_2, a3_19);
+    let mut c1: u128 = m(a[3], a3_19) + m(a0_2,  a[1]) + m(a2_2, a4_19);
+    let mut c2: u128 = m(a[1], a[1])  + m(a0_2,  a[2]) + m(a[4], a3_19_2);
+    let mut c3: u128 = m(a[4], a4_19) + m(a0_2,  a[3]) + m(a1_2, a[2]);
+    let mut c4: u128 = m(a[2], a[2])  + m(a0_2,  a[4]) + m(a1_2, a[3]);
 
     // Same bound as in multiply:
     //    c[i] < 2^(102 + 2*b) * (1+i + (4-i)*19)

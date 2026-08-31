@@ -82,7 +82,7 @@ Curve arithmetic is implemented and used by one of the following backends:
 
 | Backend           | Selection | Implementation                                           | Bits / Word sizes |
 | :---              | :---      | :---                                                     | :---              |
-| `serial`          | Automatic | An optimized, non-parllel implementation                 | `32` and `64`     |
+| `serial`          | Automatic | An optimized, non-parallel implementation                 | `32` and `64`     |
 | `fiat`            | Manual    | Formally verified field arithmetic from [fiat-crypto]    | `32` and `64`     |
 | `simd`            | Automatic | Intel AVX2 accelerated backend                           | `64` only         |
 | `avx512`          | Automatic | Intel AVX512 IFMA accelerated backend                    | `64` only         |

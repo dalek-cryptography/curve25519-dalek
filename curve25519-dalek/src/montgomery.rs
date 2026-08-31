@@ -406,7 +406,7 @@ impl ProjectivePoint {
     ///
     /// * \\( u = U / W \\) if \\( W \neq 0 \\);
     /// * \\( 0 \\) if \\( W \eq 0 \\);
-    pub fn as_affine(&self) -> MontgomeryPoint {
+    pub(crate) fn as_affine(&self) -> MontgomeryPoint {
         let u = &self.U * &self.W.invert();
         MontgomeryPoint(u.to_bytes())
     }

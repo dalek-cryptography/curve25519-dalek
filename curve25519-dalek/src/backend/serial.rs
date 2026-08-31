@@ -39,11 +39,11 @@ cfg_if! {
 
         #[cfg(curve25519_dalek_bits = "64")]
         #[doc(hidden)]
-        pub mod u64;
+        pub(crate) mod u64;
 
     }
 }
 
-pub mod curve_models;
+pub(crate) mod curve_models;
 
-pub mod scalar_mul;
+pub(crate) mod scalar_mul;

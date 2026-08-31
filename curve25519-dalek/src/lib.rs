@@ -31,6 +31,19 @@
     unused_lifetimes,
     unused_qualifications
 )]
+#![cfg_attr(
+    test,
+    allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::needless_borrow,
+        clippy::needless_borrows_for_generic_args,
+        clippy::op_ref,
+        clippy::needless_range_loop,
+        clippy::bool_comparison,
+        clippy::useless_vec
+    )
+)]
 
 //------------------------------------------------------------------------
 // External dependencies:

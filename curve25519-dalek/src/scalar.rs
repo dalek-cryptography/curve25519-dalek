@@ -146,8 +146,11 @@ use zeroize::Zeroize;
 
 use crate::backend;
 use crate::constants;
+use crate::scalar::heea::{I256, curve25519_heea_vartime};
+use crate::traits::HEEADecomposition;
 
-pub(crate) const HEEA_MAX_INDEX: usize = 129;
+mod heea;
+pub(crate) use heea::HEEA_MAX_INDEX;
 
 cfg_if! {
     if #[cfg(curve25519_dalek_backend = "fiat")] {
@@ -548,10 +551,49 @@ impl From<u128> for Scalar {
     }
 }
 
+impl From<&Scalar> for I256 {
+    fn from(s: &Scalar) -> I256 {
+        I256::from_le_bytes(s.to_bytes())
+    }
+}
+
 #[cfg(feature = "zeroize")]
 impl Zeroize for Scalar {
     fn zeroize(&mut self) {
         self.bytes.zeroize();
+    }
+}
+
+impl HEEADecomposition for Scalar {
+    /// Generate half-size scalars (rho, tau) for a given hash value h
+    ///
+    /// This function takes the hash value h from the signature verification equation
+    /// and produces two half-size scalars rho and tau such that rho = tau*h (mod ell).
+    ///
+    /// And a flag indicating if rho is negative in its signed representation.
+    fn heea_decompose(&self) -> (HalfWidthScalar, HalfWidthScalar, bool) {
+        // Convert h to I256
+        let v = self.into();
+
+        // Run the algorithm
+        let (mut rho_i, mut tau_i) = curve25519_heea_vartime(v);
+
+        // Convert back to Scalars and ensure shortness
+        let mut flip_h = false;
+        if rho_i < I256::ZERO {
+            rho_i = -rho_i;
+            flip_h = !flip_h;
+        }
+        if tau_i < I256::ZERO {
+            tau_i = -tau_i;
+            flip_h = !flip_h;
+        }
+
+        // Both magnitudes are less than 2^128, so they are `HalfWidthScalar`s.
+        let rho = HalfWidthScalar::from_positive_i256(&rho_i);
+        let tau = HalfWidthScalar::from_positive_i256(&tau_i);
+
+        (rho, tau, flip_h)
     }
 }
 
@@ -1475,6 +1517,21 @@ impl HalfWidthScalar {
     /// [`Scalar::non_adjacent_form`].
     pub(crate) fn non_adjacent_form(&self, w: usize) -> [i8; 256] {
         self.0.non_adjacent_form(w)
+    }
+
+    /// Construct a `HalfWidthScalar` from a non-negative [`I256`] which is less than
+    /// \\( 2^{128} \\). Anything above that bound is truncated to its low 128 bits.
+    pub(crate) fn from_positive_i256(val: &I256) -> Self {
+        debug_assert!(val >= &I256::ZERO);
+        let bytes = val.to_le_bytes();
+        debug_assert!(
+            bytes[16..].iter().all(|&byte| byte == 0),
+            "value must be less than 2^128"
+        );
+
+        let mut lo = [0u8; 16];
+        lo.copy_from_slice(&bytes[..16]);
+        Self::from_bytes(lo)
     }
 }
 

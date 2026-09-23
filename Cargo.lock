@@ -369,6 +369,7 @@ dependencies = [
  "pkcs8",
  "serdect",
  "signature",
+ "zeroize",
 ]
 
 [[package]]

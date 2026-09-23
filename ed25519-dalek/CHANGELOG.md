@@ -8,6 +8,10 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # 3.x series
 
+## Unreleased
+
+* Enable `ed25519/zeroize` and `sha2/zeroize` from the `zeroize` feature ([#925](https://github.com/dalek-cryptography/curve25519-dalek/pull/925))
+
 ## 3.0.0 - 2026-07-06
 
 ### Breaking Changes

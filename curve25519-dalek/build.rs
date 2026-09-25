@@ -146,7 +146,9 @@ mod deterministic {
             //Issues: 449 and 456
             //TODO: When adding arch defaults use proper types not String match
             //TODO(Arm): Needs tests + benchmarks to back this up
-            //TODO(Wasm32): Needs tests + benchmarks to back this up
+            // Wasm32: measured; the pointer-width default is the right one.
+            // Forcing bits="64" is 1.6-1.9x slower for X25519, because wasm has no
+            // 64x64->128 multiply, so serial::u64's u128 products are emulated.
             _ => match target_pointer_width.as_ref() {
                 "64" => DalekBits::Dalek64,
                 "32" => DalekBits::Dalek32,

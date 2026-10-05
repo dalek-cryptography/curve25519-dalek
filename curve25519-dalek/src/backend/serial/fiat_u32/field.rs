@@ -239,7 +239,7 @@ impl FieldElement2625 {
         FieldElement2625(output)
     }
 
-    /// Serialize this `FieldElement51` to a 32-byte array.  The
+    /// Serialize this `FieldElement2625` to a 32-byte array.  The
     /// encoding is canonical.
     pub fn to_bytes(self) -> [u8; 32] {
         let mut bytes = [0u8; 32];

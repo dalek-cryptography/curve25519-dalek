@@ -273,7 +273,6 @@ impl TryFrom<&[u8]> for CompressedEdwardsY {
 // structs containing `EdwardsPoint`s and use Serde's derived
 // serializers to serialize those structures.
 
-#[cfg(feature = "digest")]
 use constants::ED25519_SQRTAM2;
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
@@ -646,7 +645,6 @@ impl EdwardsPoint {
             .collect()
     }
 
-    #[cfg(feature = "digest")]
     // The function `map_to_curve` calculates an [EdwardsPoint] from a [FieldElement].
     fn map_to_curve(fe: FieldElement) -> EdwardsPoint {
         let c1 = ED25519_SQRTAM2;
@@ -774,6 +772,34 @@ impl EdwardsPoint {
                 }
             }
         }
+    }
+
+    /// Construct a `EdwardsPoint` from 64 bytes of data.
+    ///
+    /// If the input bytes are uniformly distributed, the resulting
+    /// point will be uniformly distributed over the group, and its
+    /// discrete log with respect to other points should be unknown.
+    ///
+    /// # Implementation
+    ///
+    /// This function splits the input array into two 32-byte halves,
+    /// takes the low 255 bits of each half mod p, applies the Elligator2
+    /// map to each, and adds the results.
+    pub fn from_uniform_bytes(bytes: &[u8; 64]) -> EdwardsPoint {
+        // https://www.rfc-editor.org/rfc/rfc9380.html#section-3-4.1.2
+
+        let mut q = [0u8; 32];
+
+        q.copy_from_slice(&bytes[0..32]);
+        let q0 = FieldElement::from_bytes(&q);
+        let Q0 = Self::map_to_curve(q0);
+
+        q.copy_from_slice(&bytes[32..64]);
+        let q1 = FieldElement::from_bytes(&q);
+        let Q1 = Self::map_to_curve(q1);
+
+        let R = Q0 + Q1;
+        R.mul_by_cofactor()
     }
 }
 

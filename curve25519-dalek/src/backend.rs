@@ -40,7 +40,7 @@ use crate::scalar::HalfWidthScalar;
 
 mod util;
 
-pub mod serial;
+pub(crate) mod serial;
 
 #[cfg(curve25519_dalek_backend = "simd")]
 pub mod vector;
@@ -82,7 +82,10 @@ fn get_selected_backend() -> BackendKind {
 
 #[allow(missing_docs)]
 #[cfg(feature = "alloc")]
-pub fn pippenger_optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
+pub(crate) fn pippenger_optional_multiscalar_mul<I, J>(
+    scalars: I,
+    points: J,
+) -> Option<EdwardsPoint>
 where
     I: IntoIterator,
     I::Item: core::borrow::Borrow<Scalar>,
@@ -115,7 +118,7 @@ pub(crate) enum VartimePrecomputedStraus {
 
 #[cfg(feature = "alloc")]
 impl VartimePrecomputedStraus {
-    pub fn new<I>(static_points: I) -> Self
+    pub(crate) fn new<I>(static_points: I) -> Self
     where
         I: IntoIterator,
         I::Item: core::borrow::Borrow<EdwardsPoint>,
@@ -135,7 +138,7 @@ impl VartimePrecomputedStraus {
     }
 
     /// Return the number of static points in the precomputation.
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         use crate::traits::VartimePrecomputedMultiscalarMul;
 
         match self {
@@ -148,7 +151,7 @@ impl VartimePrecomputedStraus {
     }
 
     /// Determine if the precomputation is empty.
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         use crate::traits::VartimePrecomputedMultiscalarMul;
 
         match self {
@@ -160,7 +163,7 @@ impl VartimePrecomputedStraus {
         }
     }
 
-    pub fn optional_mixed_multiscalar_mul<I, J, K>(
+    pub(crate) fn optional_mixed_multiscalar_mul<I, J, K>(
         &self,
         static_scalars: I,
         dynamic_scalars: J,
@@ -199,7 +202,7 @@ impl VartimePrecomputedStraus {
 
 #[allow(missing_docs)]
 #[cfg(feature = "alloc")]
-pub fn straus_multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+pub(crate) fn straus_multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
 where
     I: IntoIterator,
     I::Item: core::borrow::Borrow<Scalar>,
@@ -227,7 +230,7 @@ where
 
 #[allow(missing_docs)]
 #[cfg(feature = "alloc")]
-pub fn straus_optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
+pub(crate) fn straus_optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
 where
     I: IntoIterator,
     I::Item: core::borrow::Borrow<Scalar>,
@@ -256,7 +259,7 @@ where
 }
 
 /// Perform constant-time, variable-base scalar multiplication.
-pub fn variable_base_mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
+pub(crate) fn variable_base_mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
     match get_selected_backend() {
         #[cfg(curve25519_dalek_backend = "simd")]
         BackendKind::Avx2 => vector::scalar_mul::variable_base::spec_avx2::mul(point, scalar),
@@ -270,7 +273,7 @@ pub fn variable_base_mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint 
 
 /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
 #[allow(non_snake_case)]
-pub fn vartime_double_base_mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
+pub(crate) fn vartime_double_base_mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
     match get_selected_backend() {
         #[cfg(curve25519_dalek_backend = "simd")]
         BackendKind::Avx2 => vector::scalar_mul::vartime_double_base::spec_avx2::mul(a, A, b),

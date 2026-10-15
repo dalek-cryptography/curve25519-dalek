@@ -140,6 +140,21 @@ impl Zeroize for MontgomeryPoint {
 }
 
 impl MontgomeryPoint {
+    /// Maps a 32-byte string to a Montgomery u-coordinate using
+    /// the Elligator2 map from RFC 9380.
+    ///
+    /// The input is interpreted as a little-endian field element,
+    /// with the most significant bit ignored.
+    ///
+    /// This is a low-level mapping, not a hash-to-curve operation.
+    #[cfg(feature = "digest")]
+    pub fn map_to_curve(bytes: [u8; 32]) -> Self {
+        let r = FieldElement::from_bytes(&bytes);
+        let (un, ud, _, _) = elligator_encode(&r);
+
+        Self((&un * &ud.invert()).to_bytes())
+    }
+
     /// Fixed-base scalar multiplication (i.e. multiplication by the base point).
     pub fn mul_base(scalar: &Scalar) -> Self {
         EdwardsPoint::mul_base(scalar).to_montgomery()
@@ -725,7 +740,6 @@ mod test {
         }
     }
 
-    #[cfg(feature = "alloc")]
     #[cfg(feature = "digest")]
     const ELLIGATOR_CORRECT_OUTPUT: [u8; 32] = [
         0x5f, 0x35, 0x20, 0x00, 0x1c, 0x6c, 0x99, 0x36, 0xa3, 0x12, 0x06, 0xaf, 0xe7, 0xc7, 0xac,
@@ -734,27 +748,50 @@ mod test {
     ];
 
     #[test]
-    #[cfg(feature = "alloc")]
     #[cfg(feature = "digest")]
     fn montgomery_elligator_correct() {
-        use alloc::vec::Vec;
-        let bytes: Vec<u8> = (0u8..32u8).collect();
-        let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
+        let bytes: [u8; 32] = core::array::from_fn(|i| i as u8);
 
-        let fe = FieldElement::from_bytes(&bits_in);
-        let (un, ud, ..) = elligator_encode(&fe);
-        let u = &un * &ud.invert();
-        assert_eq!(u.to_bytes(), ELLIGATOR_CORRECT_OUTPUT);
+        let point = MontgomeryPoint::map_to_curve(bytes);
+
+        assert_eq!(point.to_bytes(), ELLIGATOR_CORRECT_OUTPUT);
     }
 
     #[test]
     #[cfg(feature = "digest")]
     fn montgomery_elligator_zero_zero() {
         let zero = [0u8; 32];
-        let fe = FieldElement::from_bytes(&zero);
-        let (un, ud, ..) = elligator_encode(&fe);
-        let u = &un * &ud.invert();
-        assert_eq!(u.to_bytes(), zero);
+
+        assert_eq!(MontgomeryPoint::map_to_curve(zero).to_bytes(), zero);
+    }
+
+    #[test]
+    #[cfg(feature = "digest")]
+    fn montgomery_elligator_ignores_msb() {
+        let mut input = [0x42; 32];
+        input[31] = 0x53;
+
+        let mut with_msb = input;
+        with_msb[31] |= 0x80;
+
+        assert_eq!(
+            MontgomeryPoint::map_to_curve(input).to_bytes(),
+            MontgomeryPoint::map_to_curve(with_msb).to_bytes(),
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "digest")]
+    fn montgomery_elligator_noncanonical_input() {
+        let noncanonical = [0xff; 32];
+
+        let mut canonical = [0u8; 32];
+        canonical[0] = 18;
+
+        assert_eq!(
+            MontgomeryPoint::map_to_curve(noncanonical).to_bytes(),
+            MontgomeryPoint::map_to_curve(canonical).to_bytes(),
+        );
     }
 
     // Check that FE_C2 is correctly defined

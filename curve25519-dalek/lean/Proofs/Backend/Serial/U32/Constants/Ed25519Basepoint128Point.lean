@@ -50,7 +50,7 @@ theorem ED25519_BASEPOINT_128_POINT_spec :
     rw [edwards.EdwardsPoint.«i686-tables».toExtended_def]
     subst hX hY hZ hT
     simp only [toField_def, asNat_def, Array.asNat2625_make]
-    rw [edwards_eq_numerals]
+    rw [curve25519.Proofs.edwards_eq]
     decide +kernel)
   refine ⟨key.1, key.2, ?_⟩
   unfold edwards.EdwardsPoint.«i686-tables».LimbsLt
@@ -83,7 +83,7 @@ theorem ED25519_BASEPOINT_128_POINT_spec :
     rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def]
     subst hX hY hZ hT
     simp only [toField_def, asNat_def, Array.asNat2625_make]
-    rw [edwards_eq_numerals]
+    rw [curve25519.Proofs.edwards_eq]
     decide +kernel)
   refine ⟨key.1, key.2, ?_⟩
   unfold edwards.EdwardsPoint.«i686-no-tables».LimbsLt

@@ -7,20 +7,19 @@ public import Curve25519.Ristretto.Encoding
 public import Curve25519.X25519
 import Curve25519.Proofs.Ristretto.Algebra
 import Curve25519.Proofs.Ristretto.Elligator
-import Mathlib.Tactic.FieldSimp
+import Curve25519.Ristretto.Even
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring
 public section
 
 /-! # The ristretto255 map (RFC 9496 §4.3.4)
 
 `Ristretto.mapRep r₀` is RFC 9496's `MAP(r₀)`, the Elligator-style map of a field element to an
 even point of `edwards` (hidden; coordinates `mapRep_x`, `mapRep_y`, with the `sqrtRatioM1` case
-split, and `even_mapRep`), `Ristretto.map r₀` its class, and `Ristretto.fromUniform n` the one-way
-map of §4.3.4 on the little-endian value `n` of 64 uniform bytes: `MAP(r₀) + MAP(r₁)` for the two
-32-byte halves masked to 255 bits (`decodeU`), as a representative (`fromUniformRep`) and as a
-class (`fromUniform_eq_add_map`). The field identities behind the on-curve proof of `mapRep` are
-in `Curve25519.Proofs.Ristretto.Elligator` (not audited). -/
+split, and `even_mapRep`), and `Ristretto.fromUniformRep n` the one-way map of §4.3.4 on the
+little-endian value `n` of 64 uniform bytes: `MAP(r₀) + MAP(r₁)` for the two 32-byte halves
+masked to 255 bits (`decodeU`), an even point (`even_fromUniformRep`). The field identities
+behind the on-curve proof of `mapRep` are in `Curve25519.Proofs.Ristretto.Elligator` (not
+audited). -/
 
 namespace curve25519.Ristretto
 
@@ -69,7 +68,7 @@ private theorem map_facts (r₀ : ZMod p) :
     unfold mapN
     rw [dMinusOneSq_eq]
   rw [hN]
-  refine Proofs.ell_good (mapR r₀) (mapS r₀) (mapC r₀)
+  refine Proofs.map_equation_of_branch (mapR r₀) (mapS r₀) (mapC r₀)
     (if (sqrtRatioM1 (mapU r₀) (mapV r₀)).1 then 1 else mapR r₀) (mapV r₀) rfl hns ?_
   by_cases hv : mapV r₀ = 0
   · right
@@ -179,30 +178,15 @@ theorem mapRep_one_add_sq_ne_zero (r₀ : ZMod p) :
   (map_facts r₀).2.1
 
 /-- **`MAP(r₀)` is even**: `1 - y² = (2 s / (1 + s²))²`. -/
-theorem even_mapRep (r₀ : ZMod p) : Even (mapRep r₀) := by
-  have hs := (map_facts r₀).2.1
-  rw [even_iff_isSquare]
-  change IsSquare (1 - ((1 - mapS r₀ ^ 2) / (1 + mapS r₀ ^ 2)) ^ 2)
-  refine ⟨2 * mapS r₀ / (1 + mapS r₀ ^ 2), ?_⟩
-  field_simp
-  ring
-
-/-- `MAP(r₀)` as an element of ristretto255: the class of `mapRep r₀`. -/
-noncomputable def map (r₀ : ZMod p) : Ristretto :=
-  mk (mapRep r₀) (even_mapRep r₀)
-
-theorem map_def (r₀ : ZMod p) : map r₀ = mk (mapRep r₀) (even_mapRep r₀) := by
-  unfold map
-  rfl
-
-theorem mk_mapRep (r₀ : ZMod p) (h : Even (mapRep r₀)) : mk (mapRep r₀) h = map r₀ := by
-  rw [map_def]
+theorem even_mapRep (r₀ : ZMod p) : Even (mapRep r₀) :=
+  even_of_y_eq_div (map_facts r₀).2.1 rfl
 
 /-! ### The one-way map -/
 
 /-- RFC 9496 §4.3.4, the one-way map on the little-endian value `n` of 64 uniform bytes, as a
 representative: `MAP(r₀) + MAP(r₁)` for the two 32-byte halves `r₀ = n % 2^256`,
-`r₁ = n / 2^256`, each masked to 255 bits and reduced (`decodeU`). -/
+`r₁ = n / 2^256`, each masked to 255 bits and reduced (`decodeU`). Meant for `n < 2^512` (64
+bytes); for larger `n` the high half `n / 2^256` keeps all the upper bits before masking. -/
 noncomputable def fromUniformRep (n : ℕ) : edwards.Point :=
   mapRep (decodeU (n % 2 ^ 256)) + mapRep (decodeU (n / 2 ^ 256))
 
@@ -214,31 +198,5 @@ theorem fromUniformRep_def (n : ℕ) :
 theorem even_fromUniformRep (n : ℕ) : Even (fromUniformRep n) := by
   rw [fromUniformRep_def]
   exact (even_mapRep _).add (even_mapRep _)
-
-/-- RFC 9496 §4.3.4, the one-way map on the little-endian value `n` of 64 uniform bytes: the
-class of `fromUniformRep n`, i.e. `map (n % 2^256) + map (n / 2^256)` with the halves masked to
-255 bits (`fromUniform_eq_add_map`). -/
-noncomputable def fromUniform (n : ℕ) : Ristretto :=
-  mk (fromUniformRep n) (even_fromUniformRep n)
-
-theorem fromUniform_def (n : ℕ) :
-    fromUniform n = mk (fromUniformRep n) (even_fromUniformRep n) := by
-  unfold fromUniform
-  rfl
-
-theorem mk_fromUniformRep (n : ℕ) (h : Even (fromUniformRep n)) :
-    mk (fromUniformRep n) h = fromUniform n := by
-  rw [fromUniform_def]
-
-theorem fromUniform_eq_mk (n : ℕ) :
-    fromUniform n = mk (mapRep (decodeU (n % 2 ^ 256)) + mapRep (decodeU (n / 2 ^ 256)))
-      ((even_mapRep _).add (even_mapRep _)) := by
-  rw [fromUniform_def, mk_eq_mk_iff]
-  exact rel_of_eq (fromUniformRep_def n)
-
-/-- The one-way map is the sum of the two Elligator maps, in ristretto255. -/
-theorem fromUniform_eq_add_map (n : ℕ) :
-    fromUniform n = map (decodeU (n % 2 ^ 256)) + map (decodeU (n / 2 ^ 256)) := by
-  rw [fromUniform_eq_mk, mk_add (even_mapRep _) (even_mapRep _), map_def, map_def]
 
 end curve25519.Ristretto

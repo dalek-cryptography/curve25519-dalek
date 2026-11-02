@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Curve25519.Edwards.Basic
 import Curve25519.Proofs.Edwards.Certs
+import Mathlib.Tactic.LinearCombination
 public section
 
 /-! # The basepoint
@@ -47,7 +48,7 @@ theorem basepoint_y_eq : basepoint.y =
 
 /-- The basepoint has `y = 4/5`. -/
 theorem basepoint_y : basepoint.y = 4 / 5 := by
-  rw [basepoint_y_eq, eq_div_iff Proofs.five_ne_zero]
+  rw [basepoint_y_eq, eq_div_iff (NeZero.ne (5 : ZMod p))]
   exact Proofs.basepoint_y_mul_five
 
 /-- The basepoint has even `x` (RFC 8032: the "positive" square root). -/
@@ -55,11 +56,12 @@ theorem basepoint_x_val_even : basepoint.x.val % 2 = 0 := by
   rw [basepoint_x_eq]
   exact Proofs.basepoint_x_val_mod_two
 
+/-- The basepoint is not `0 = (0, 1)`: its `y` is `4/5 ≠ 1`. -/
 theorem basepoint_ne_zero : basepoint ≠ 0 := by
   intro h
-  have hx := congrArg TwistedEdwardsModel.Point.x h
-  rw [basepoint_x_eq, TwistedEdwardsModel.zero_x] at hx
-  exact Proofs.basepoint_x_ne_zero hx
+  have hy := congrArg TwistedEdwardsModel.Point.y h
+  rw [basepoint_y, TwistedEdwardsModel.zero_y, div_eq_one_iff_eq (NeZero.ne (5 : ZMod p))] at hy
+  exact one_ne_zero (by linear_combination -hy : (1 : ZMod p) = 0)
 
 /-- `L • basepoint = 0`. -/
 theorem L_nsmul_basepoint : L • basepoint = 0 :=

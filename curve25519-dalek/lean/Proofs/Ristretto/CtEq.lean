@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Curve25519.Ristretto.Basic
+public import Curve25519.Ristretto.Even
 public import Defs.Edwards
 public import Subtle.Contract
 import Proofs.Backend.Serial.U64.Field.Mul

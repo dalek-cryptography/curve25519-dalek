@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519.Edwards.Basic
-import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
-import Mathlib.Tactic.FieldSimp
+import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.Tactic.NormNum
 public section
 
 /-! # X25519 (RFC 7748 §5) on numbers
@@ -24,7 +24,8 @@ The meaning: `x25519 k u` is the `u`-coordinate of `clamp k • Q` for any point
 `u`-coordinate `decodeU u` (`x25519_eq_xMul` with `MontgomeryModel.xMul_eq_u_nsmul`,
 `MontgomeryModel.xMul_eq_u_nsmul_twist`; `2` is not a square modulo `p`, `not_isSquare_two`).
 
-`clamp`, `decodeU`, `encodeU` and `x25519` are exposed (the kernel can evaluate them);
+`clamp`, `decodeU`, `encodeU` and `x25519` are exposed, so that they unfold (the kernel evaluates
+`x25519` only where `p` unfolds too: the test vectors import `Curve25519.Basic` with `import all`);
 `montgomeryTwist` is hidden (`montgomeryTwist_def`, `montgomeryTwist_A`, `montgomeryTwist_B`). -/
 
 namespace curve25519
@@ -71,6 +72,11 @@ theorem clamp_mod_two_pow (k : ℕ) : clamp (k % 2 ^ 256) = clamp k := by
 theorem encodeU_lt (u : ZMod p) : encodeU u < p :=
   ZMod.val_lt u
 
+/-- The encoding of the basepoint coordinate `9`. -/
+theorem encodeU_nine : encodeU 9 = 9 := by
+  unfold encodeU
+  exact ZMod.val_ofNat_of_lt nine_lt_p
+
 theorem decodeU_of_lt {n : ℕ} (hn : n < 2 ^ 255) : decodeU n = (n : ZMod p) := by
   unfold decodeU
   rw [Nat.mod_eq_of_lt hn]
@@ -113,19 +119,10 @@ theorem x25519_lt (k u : ℕ) : x25519 k u < p :=
 
 /-- The ladder constant of curve25519 is `121665`. -/
 theorem montgomery_a24_eq : montgomery.a24 = 121665 := by
-  have h4 : (4 : ZMod p) ≠ 0 := by
-    rw [show (4 : ZMod p) = 2 * 2 by norm_num]
-    exact mul_ne_zero two_ne_zero two_ne_zero
-  rw [MontgomeryModel.a24, montgomery_A_eq, div_eq_iff h4]
+  rw [MontgomeryModel.a24, montgomery_A_eq, div_eq_iff four_ne_zero]
   norm_num
 
 /-! ### The quadratic twist -/
-
-/-- `2` is not a square modulo `p`, since `p ≡ 5 (mod 8)`. -/
-theorem not_isSquare_two : ¬ IsSquare (2 : ZMod p) := by
-  have h2 := two_lt_p
-  rw [ZMod.exists_sq_eq_two_iff (by omega), p_mod_eight]
-  decide
 
 /-- The quadratic twist `2 v² = u³ + A u² + u` of `montgomery`: the other curve on which the
 ladder computes (`x25519_eq_xMul`). -/
@@ -147,15 +144,11 @@ instance instIsNonsingularMontgomeryTwist : montgomeryTwist.IsNonsingular := by
   rw [montgomeryTwist_def]
   exact montgomery.isNonsingular_twist two_ne_zero
 
-/-- The ladder of the twist is the ladder of `montgomery`. -/
-theorem montgomeryTwist_ladder : montgomeryTwist.ladder = montgomery.ladder := by
-  rw [montgomeryTwist_def, MontgomeryModel.ladder_twist]
-
 /-! ### The meaning of `x25519` -/
 
-/-- `x25519 k u` is `u(clamp k • Q)` for a point `Q` of `montgomery` or of `montgomeryTwist`
-with `u`-coordinate `decodeU u` (`MontgomeryModel.xMul_eq_u_nsmul`,
-`MontgomeryModel.xMul_eq_u_nsmul_twist`). -/
+/-- `x25519 k u` is the x-only multiplication `xMul` by `clamp k` of `decodeU u`, which is
+`u(clamp k • Q)` for a point `Q` of `montgomery` or of `montgomeryTwist` with `u`-coordinate
+`decodeU u` (`MontgomeryModel.xMul_eq_u_nsmul`, `MontgomeryModel.xMul_eq_u_nsmul_twist`). -/
 theorem x25519_eq_xMul (k u : ℕ) :
     x25519 k u = encodeU (montgomery.xMul 2 (clamp k) (decodeU u)) := by
   unfold x25519
@@ -172,11 +165,9 @@ theorem x25519_eq_u_nsmul (k : ℕ) (Q : montgomery.Point) :
 theorem x25519_eq_u_nsmul_twist (k : ℕ) (Q : montgomeryTwist.Point) :
     x25519 k (encodeU Q.u) = encodeU (clamp k • Q).u := by
   rw [x25519_eq_xMul, decodeU_encodeU]
-  revert Q
-  unfold montgomeryTwist
-  intro Q
   have : (montgomery.twist 2).IsNonsingular := instIsNonsingularMontgomeryTwist
-  exact congrArg encodeU (MontgomeryModel.xMul_eq_u_nsmul_twist not_isSquare_two (clamp k) Q)
+  exact congrArg encodeU
+    (MontgomeryModel.xMul_eq_u_nsmul_twist (M := montgomery) not_isSquare_two (clamp k) Q)
 
 /-- A coordinate whose `u ↦ u(8 • Q)` image is `0` (a point of order dividing `8` on the curve
 or the twist, or `u = 0`) is sent to `0` by `x25519` for every scalar, since clamped scalars

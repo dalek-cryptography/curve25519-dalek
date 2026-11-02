@@ -95,7 +95,7 @@ theorem as_affine_niels_spec_point (self : EdwardsPoint.«x86_64-tables») (hsel
     rw [AffineNielsPoint.«x86_64-tables».onCurve_iff,
       AffineNielsPoint.«x86_64-tables».toPoint_def, hr,
       EdwardsPoint.«x86_64-tables».toPoint_def]
-    exact ⟨Extended.onCurve_toAffineNiels two_ne_zero hon,
+    exact ⟨Extended.onCurve_toAffineNiels hon,
       Extended.toPoint_toAffineNiels hon, hb⟩
 
 end «EdwardsPointx86_64-tables»
@@ -134,7 +134,7 @@ theorem as_affine_niels_spec_point (self : EdwardsPoint.«i686-tables») (hself 
     rw [AffineNielsPoint.«i686-tables».onCurve_iff,
       AffineNielsPoint.«i686-tables».toPoint_def, hr,
       EdwardsPoint.«i686-tables».toPoint_def]
-    exact ⟨Extended.onCurve_toAffineNiels two_ne_zero hon,
+    exact ⟨Extended.onCurve_toAffineNiels hon,
       Extended.toPoint_toAffineNiels hon, hb⟩
 
 end «EdwardsPointi686-tables»
@@ -174,7 +174,7 @@ theorem as_affine_niels_spec_point (self : EdwardsPoint.«x86_64-no-tables»)
     rw [AffineNielsPoint.«x86_64-no-tables».onCurve_iff,
       AffineNielsPoint.«x86_64-no-tables».toPoint_def, hr,
       EdwardsPoint.«x86_64-no-tables».toPoint_def]
-    exact ⟨Extended.onCurve_toAffineNiels two_ne_zero hon,
+    exact ⟨Extended.onCurve_toAffineNiels hon,
       Extended.toPoint_toAffineNiels hon, hb⟩
 
 end «EdwardsPointx86_64-no-tables»
@@ -214,7 +214,7 @@ theorem as_affine_niels_spec_point (self : EdwardsPoint.«i686-no-tables»)
     rw [AffineNielsPoint.«i686-no-tables».onCurve_iff,
       AffineNielsPoint.«i686-no-tables».toPoint_def, hr,
       EdwardsPoint.«i686-no-tables».toPoint_def]
-    exact ⟨Extended.onCurve_toAffineNiels two_ne_zero hon,
+    exact ⟨Extended.onCurve_toAffineNiels hon,
       Extended.toPoint_toAffineNiels hon, hb⟩
 
 end «EdwardsPointi686-no-tables»

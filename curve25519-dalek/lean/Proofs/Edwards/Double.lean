@@ -40,12 +40,12 @@ theorem double_spec_point (self : EdwardsPoint.«x86_64-tables») (hself : self.
     double self ⦃ (r : EdwardsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = 2 • self.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (double_spec self hself) fun r ⟨hr, hb⟩ => by
-    have hon' := Projective.double_onCurve edwards_a_eq_neg_one (Extended.onCurve_toProjective hon)
+    have hon' := Projective.double_onCurve (Extended.onCurve_toProjective hon)
     rw [EdwardsPoint.«x86_64-tables».onCurve_iff,
       EdwardsPoint.«x86_64-tables».toPoint_def,
       hr,
       EdwardsPoint.«x86_64-tables».toPoint_def, Completed.toPoint_toExtended hon',
-      Projective.toPoint_double edwards_a_eq_neg_one (Extended.onCurve_toProjective hon),
+      Projective.toPoint_double (Extended.onCurve_toProjective hon),
       Extended.toPoint_toProjective hon]
     exact ⟨Completed.onCurve_toExtended hon', rfl, hb⟩
 
@@ -73,12 +73,12 @@ theorem double_spec_point (self : EdwardsPoint.«i686-tables») (hself : self.Li
     double self ⦃ (r : EdwardsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = 2 • self.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (double_spec self hself) fun r ⟨hr, hb⟩ => by
-    have hon' := Projective.double_onCurve edwards_a_eq_neg_one (Extended.onCurve_toProjective hon)
+    have hon' := Projective.double_onCurve (Extended.onCurve_toProjective hon)
     rw [EdwardsPoint.«i686-tables».onCurve_iff,
       EdwardsPoint.«i686-tables».toPoint_def,
       hr,
       EdwardsPoint.«i686-tables».toPoint_def, Completed.toPoint_toExtended hon',
-      Projective.toPoint_double edwards_a_eq_neg_one (Extended.onCurve_toProjective hon),
+      Projective.toPoint_double (Extended.onCurve_toProjective hon),
       Extended.toPoint_toProjective hon]
     exact ⟨Completed.onCurve_toExtended hon', rfl, hb⟩
 
@@ -106,12 +106,12 @@ theorem double_spec_point (self : EdwardsPoint.«x86_64-no-tables») (hself : se
     double self ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = 2 • self.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (double_spec self hself) fun r ⟨hr, hb⟩ => by
-    have hon' := Projective.double_onCurve edwards_a_eq_neg_one (Extended.onCurve_toProjective hon)
+    have hon' := Projective.double_onCurve (Extended.onCurve_toProjective hon)
     rw [EdwardsPoint.«x86_64-no-tables».onCurve_iff,
       EdwardsPoint.«x86_64-no-tables».toPoint_def,
       hr,
       EdwardsPoint.«x86_64-no-tables».toPoint_def, Completed.toPoint_toExtended hon',
-      Projective.toPoint_double edwards_a_eq_neg_one (Extended.onCurve_toProjective hon),
+      Projective.toPoint_double (Extended.onCurve_toProjective hon),
       Extended.toPoint_toProjective hon]
     exact ⟨Completed.onCurve_toExtended hon', rfl, hb⟩
 
@@ -139,12 +139,12 @@ theorem double_spec_point (self : EdwardsPoint.«i686-no-tables») (hself : self
     double self ⦃ (r : EdwardsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = 2 • self.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (double_spec self hself) fun r ⟨hr, hb⟩ => by
-    have hon' := Projective.double_onCurve edwards_a_eq_neg_one (Extended.onCurve_toProjective hon)
+    have hon' := Projective.double_onCurve (Extended.onCurve_toProjective hon)
     rw [EdwardsPoint.«i686-no-tables».onCurve_iff,
       EdwardsPoint.«i686-no-tables».toPoint_def,
       hr,
       EdwardsPoint.«i686-no-tables».toPoint_def, Completed.toPoint_toExtended hon',
-      Projective.toPoint_double edwards_a_eq_neg_one (Extended.onCurve_toProjective hon),
+      Projective.toPoint_double (Extended.onCurve_toProjective hon),
       Extended.toPoint_toProjective hon]
     exact ⟨Completed.onCurve_toExtended hon', rfl, hb⟩
 

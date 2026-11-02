@@ -29,11 +29,13 @@ namespace «RistrettoPointx86_64-tables»
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `RistrettoPoint::from_uniform_bytes`: RFC 9496's one-way map of the 64 bytes' little-endian
-value, `MAP(r₀) + MAP(r₁)` for the two halves; limbs `< 2^52`. -/
+value, `MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255 representative);
+limbs `< 2^52`. -/
 @[step]
 theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«x86_64-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧ r.LimbsLt 52 ⦄ := by
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧
+        r.LimbsLt 52 ⦄ := by
   unfold from_uniform_bytes
   step*
   have hlen : bytes.val.length = 64 := bytes.property
@@ -49,7 +51,7 @@ theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     (by rw [hA, hB, List.take_append_drop])
   obtain ⟨-, h2⟩ := Array.asNat_append_eq bytes (to_slice_mut_back s2) (to_slice_mut_back1 s5)
     (by rw [hA, hB, List.take_append_drop])
-  refine ⟨r_post, ?_, r_post2⟩
+  refine (fun h => ⟨r_post, by rw [h]; exact Ristretto.even_fromUniformRep _, h, r_post2⟩) ?_
   rw [r_post1, R_1_post1, R_2_post1, toField_eq_decodeU_of_asNat_eq r_1_post,
     toField_eq_decodeU_of_asNat_eq r_2_post, h1, h2, Ristretto.fromUniformRep_def]
   rfl
@@ -61,11 +63,13 @@ namespace «RistrettoPointi686-tables»
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `RistrettoPoint::from_uniform_bytes`: RFC 9496's one-way map of the 64 bytes' little-endian
-value, `MAP(r₀) + MAP(r₁)` for the two halves; limbs `< 2^26`. -/
+value, `MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255 representative);
+limbs `< 2^26`. -/
 @[step]
 theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«i686-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧ r.LimbsLt 26 ⦄ := by
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧
+        r.LimbsLt 26 ⦄ := by
   unfold from_uniform_bytes
   step*
   have hlen : bytes.val.length = 64 := bytes.property
@@ -81,7 +85,7 @@ theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     (by rw [hA, hB, List.take_append_drop])
   obtain ⟨-, h2⟩ := Array.asNat_append_eq bytes (to_slice_mut_back s2) (to_slice_mut_back1 s5)
     (by rw [hA, hB, List.take_append_drop])
-  refine ⟨r_post, ?_, r_post2⟩
+  refine (fun h => ⟨r_post, by rw [h]; exact Ristretto.even_fromUniformRep _, h, r_post2⟩) ?_
   rw [r_post1, R_1_post1, R_2_post1, toField_eq_decodeU_of_mod r_1_post,
     toField_eq_decodeU_of_mod r_2_post, h1, h2, Ristretto.fromUniformRep_def]
   rfl
@@ -93,11 +97,13 @@ namespace «RistrettoPointx86_64-no-tables»
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `RistrettoPoint::from_uniform_bytes`: RFC 9496's one-way map of the 64 bytes' little-endian
-value, `MAP(r₀) + MAP(r₁)` for the two halves; limbs `< 2^52`. -/
+value, `MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255 representative);
+limbs `< 2^52`. -/
 @[step]
 theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧ r.LimbsLt 52 ⦄ := by
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧
+        r.LimbsLt 52 ⦄ := by
   unfold from_uniform_bytes
   step*
   have hlen : bytes.val.length = 64 := bytes.property
@@ -113,7 +119,7 @@ theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     (by rw [hA, hB, List.take_append_drop])
   obtain ⟨-, h2⟩ := Array.asNat_append_eq bytes (to_slice_mut_back s2) (to_slice_mut_back1 s5)
     (by rw [hA, hB, List.take_append_drop])
-  refine ⟨r_post, ?_, r_post2⟩
+  refine (fun h => ⟨r_post, by rw [h]; exact Ristretto.even_fromUniformRep _, h, r_post2⟩) ?_
   rw [r_post1, R_1_post1, R_2_post1, toField_eq_decodeU_of_asNat_eq r_1_post,
     toField_eq_decodeU_of_asNat_eq r_2_post, h1, h2, Ristretto.fromUniformRep_def]
   rfl
@@ -125,11 +131,13 @@ namespace «RistrettoPointi686-no-tables»
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `RistrettoPoint::from_uniform_bytes`: RFC 9496's one-way map of the 64 bytes' little-endian
-value, `MAP(r₀) + MAP(r₁)` for the two halves; limbs `< 2^26`. -/
+value, `MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255 representative);
+limbs `< 2^26`. -/
 @[step]
 theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«i686-no-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧ r.LimbsLt 26 ⦄ := by
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧
+        r.LimbsLt 26 ⦄ := by
   unfold from_uniform_bytes
   step*
   have hlen : bytes.val.length = 64 := bytes.property
@@ -145,7 +153,7 @@ theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     (by rw [hA, hB, List.take_append_drop])
   obtain ⟨-, h2⟩ := Array.asNat_append_eq bytes (to_slice_mut_back s2) (to_slice_mut_back1 s5)
     (by rw [hA, hB, List.take_append_drop])
-  refine ⟨r_post, ?_, r_post2⟩
+  refine (fun h => ⟨r_post, by rw [h]; exact Ristretto.even_fromUniformRep _, h, r_post2⟩) ?_
   rw [r_post1, R_1_post1, R_2_post1, toField_eq_decodeU_of_mod r_1_post,
     toField_eq_decodeU_of_mod r_2_post, h1, h2, Ristretto.fromUniformRep_def]
   rfl

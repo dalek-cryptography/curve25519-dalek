@@ -56,7 +56,7 @@ private theorem oddLimbs_length : oddLimbs.length = 192 := by
 private theorem odd_check :
     checkRow edwards (pow2 edwards 1 (basepointExt edwards)) (basepointExt edwards) oddLimbs =
       true := by
-  rw [edwards_eq_numerals]
+  rw [curve25519.Proofs.edwards_eq]
   decide +kernel
 
 private theorem odd_bounded :

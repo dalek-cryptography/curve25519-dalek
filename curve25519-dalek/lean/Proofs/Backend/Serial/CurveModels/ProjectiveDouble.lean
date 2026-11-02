@@ -30,7 +30,7 @@ variable (B : Backend)
   let fe1 ← B.sub ZZ2 YY_minus_XX
   ok (mk fe YY_plus_XX YY_minus_XX fe1)
 
-/-- `projectiveDouble` computes `Projective.double`. -/
+/-- `projectiveDouble` computes `Projective.double` (the `a = -1` form of the formula). -/
 theorem projectiveDouble_spec
     (hadd : B.AddSpec) (hsub : B.SubSpec) (hsq : B.SquareSpec) (hsq2 : B.Square2Spec)
     {P : Type} (mk : B.F → B.F → B.F → B.F → P) (X Y Z : B.F)
@@ -52,7 +52,7 @@ theorem projectiveDouble_spec
   refine ⟨a, b, c, d, rfl, ?_, B.red_mulIn ha', B.sum2_mulIn hb', B.red_mulIn hc',
     B.red_mulIn hd'⟩
   rw [ha, hd, hb, hc, hxysq, hzz2, hxy, hxx, hyy]
-  rfl
+  ext <;> simp only [Projective.double, edwards_a_eq_neg_one] <;> ring
 
 end Curve25519Dalek.Backend
 
@@ -89,8 +89,8 @@ theorem double_spec_point (self : ProjectivePoint.«x86_64-tables») (hself : se
     rw [CompletedPoint.«x86_64-tables».onCurve_iff,
       CompletedPoint.«x86_64-tables».toPoint_def, hr,
       ProjectivePoint.«x86_64-tables».toPoint_def]
-    exact ⟨Projective.double_onCurve edwards_a_eq_neg_one hon,
-      Projective.toPoint_double edwards_a_eq_neg_one hon, hb⟩
+    exact ⟨Projective.double_onCurve hon,
+      Projective.toPoint_double hon, hb⟩
 
 end «ProjectivePointx86_64-tables»
 
@@ -125,8 +125,8 @@ theorem double_spec_point (self : ProjectivePoint.«i686-tables») (hself : self
     rw [CompletedPoint.«i686-tables».onCurve_iff,
       CompletedPoint.«i686-tables».toPoint_def, hr,
       ProjectivePoint.«i686-tables».toPoint_def]
-    exact ⟨Projective.double_onCurve edwards_a_eq_neg_one hon,
-      Projective.toPoint_double edwards_a_eq_neg_one hon, hb⟩
+    exact ⟨Projective.double_onCurve hon,
+      Projective.toPoint_double hon, hb⟩
 
 end «ProjectivePointi686-tables»
 
@@ -161,8 +161,8 @@ theorem double_spec_point (self : ProjectivePoint.«x86_64-no-tables») (hself :
     rw [CompletedPoint.«x86_64-no-tables».onCurve_iff,
       CompletedPoint.«x86_64-no-tables».toPoint_def, hr,
       ProjectivePoint.«x86_64-no-tables».toPoint_def]
-    exact ⟨Projective.double_onCurve edwards_a_eq_neg_one hon,
-      Projective.toPoint_double edwards_a_eq_neg_one hon, hb⟩
+    exact ⟨Projective.double_onCurve hon,
+      Projective.toPoint_double hon, hb⟩
 
 end «ProjectivePointx86_64-no-tables»
 
@@ -197,8 +197,8 @@ theorem double_spec_point (self : ProjectivePoint.«i686-no-tables») (hself : s
     rw [CompletedPoint.«i686-no-tables».onCurve_iff,
       CompletedPoint.«i686-no-tables».toPoint_def, hr,
       ProjectivePoint.«i686-no-tables».toPoint_def]
-    exact ⟨Projective.double_onCurve edwards_a_eq_neg_one hon,
-      Projective.toPoint_double edwards_a_eq_neg_one hon, hb⟩
+    exact ⟨Projective.double_onCurve hon,
+      Projective.toPoint_double hon, hb⟩
 
 end «ProjectivePointi686-no-tables»
 

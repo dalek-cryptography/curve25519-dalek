@@ -1,7 +1,7 @@
 name = "curve25519-dalek"
 version = "0.1.0"
 keywords = ["formal verification"]
-defaultTargets = ["Curve25519Dalek", "Subtle", "Zeroize", "EllipticCurve", "Curve25519", "Defs", "Specs", "Proofs"]
+defaultTargets = ["Curve25519Dalek", "Subtle", "Zeroize", "Curve25519", "Defs", "Specs", "Proofs"]
 
 [leanOptions]
 pp.unicode.fun = true
@@ -10,6 +10,12 @@ relaxedAutoImplicit = false
 weak.linter.mathlibStandardSet = true
 weak.linter.style.header = false
 maxRecDepth = 10000
+
+# Elliptic curves and their models over a field, independent of any curve.
+[[require]]
+name = "EllipticCurve"
+git = "https://github.com/Beneficial-AI-Foundation/elliptic-curve.git"
+rev = "4015c7cfab714640e77500bdbde6e64face3fbaa"
 
 # The pinned Aeneas version. Also read by `scripts/aeneas-install.sh` to download
 # the charon/aeneas binaries from the GitHub. The `rev` must be a GitHub release tag.
@@ -34,12 +40,8 @@ srcDir = "."
 name = "Curve25519Dalek"
 srcDir = "curve25519-dalek/lean"
 
-# Elliptic-curve models over a field, independent of any curve.
-[[lean_lib]]
-name = "EllipticCurve"
-srcDir = "."
-
-# Curve25519 in general (parameters, later the curve models), independent of dalek.
+# Curve25519 in general (parameters, models, encodings; `Curve25519/Models`, and
+# `Curve25519/ToEllipticCurve` staged for the EllipticCurve library), independent of dalek.
 [[lean_lib]]
 name = "Curve25519"
 srcDir = "."

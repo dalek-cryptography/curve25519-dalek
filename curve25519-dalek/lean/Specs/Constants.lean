@@ -40,12 +40,12 @@ The tables `ED25519_BASEPOINT_TABLE` and `RISTRETTO_BASEPOINT_TABLE` exist only 
 tables (`x86_64-tables`, `i686-tables`). Not restated here: `BASEPOINT_ORDER` (`pub(crate)`, proved
 in `Proofs/Constants/BasepointOrder.lean`).
 
-Definitions used: `EdwardsPoint.toPoint`, `OnCurve`, `LimbsLt`, `CompressedEdwardsY.asNat`
-(`Defs/Edwards.lean`), `MontgomeryPoint.asNat` (`Defs/Montgomery.lean`), `curve25519.basepoint`
-(`Curve25519/Edwards/Basepoint.lean`), `curve25519.encode` (`Curve25519/Edwards/Encoding.lean`),
-`curve25519.eightTorsion` (`Curve25519/Edwards/Torsion.lean`), `curve25519.montgomeryBasepoint`
-(`Curve25519/Montgomery.lean`), `curve25519.encodeU`, `curve25519.x25519`
-(`Curve25519/X25519.lean`), the tables' `Represents` (`Defs/Edwards.lean`),
+Definitions used: Mathlib's `Even`, `EdwardsPoint.toPoint`, `OnCurve`, `LimbsLt`,
+`CompressedEdwardsY.asNat` (`Defs/Edwards.lean`), `MontgomeryPoint.asNat` (`Defs/Montgomery.lean`),
+`curve25519.basepoint` (`Curve25519/Edwards/Basepoint.lean`), `curve25519.encode`
+(`Curve25519/Edwards/Encoding.lean`), `curve25519.eightTorsion` (`Curve25519/Edwards/Torsion.lean`),
+`curve25519.montgomeryBasepoint` (`Curve25519/Montgomery.lean`), `curve25519.encodeU`,
+`curve25519.x25519` (`Curve25519/X25519.lean`), the tables' `Represents` (`Defs/Edwards.lean`),
 `CompressedRistretto.asNat` (`Defs/Ristretto.lean`), `Ristretto.encodeRep`
 (`Curve25519/Ristretto/`). -/
 
@@ -291,10 +291,11 @@ recall RISTRETTO_BASEPOINT_COMPRESSED_spec :
 
 namespace «x86_64-tables»
 
-/-- `RISTRETTO_BASEPOINT_POINT`: the basepoint; limbs `< 2^52`. -/
+/-- `RISTRETTO_BASEPOINT_POINT`: the basepoint, an even point (a ristretto255 representative);
+limbs `< 2^52`. -/
 recall RISTRETTO_BASEPOINT_POINT_spec :
     RISTRETTO_BASEPOINT_POINT.«x86_64-tables» ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
-      r.OnCurve ∧ r.toPoint = basepoint ∧ r.LimbsLt 52 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = basepoint ∧ r.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms RISTRETTO_BASEPOINT_POINT_spec
@@ -303,10 +304,11 @@ end «x86_64-tables»
 
 namespace «i686-tables»
 
-/-- `RISTRETTO_BASEPOINT_POINT`: the basepoint; limbs `< 2^26`. -/
+/-- `RISTRETTO_BASEPOINT_POINT`: the basepoint, an even point (a ristretto255 representative);
+limbs `< 2^26`. -/
 recall RISTRETTO_BASEPOINT_POINT_spec :
     RISTRETTO_BASEPOINT_POINT.«i686-tables» ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
-      r.OnCurve ∧ r.toPoint = basepoint ∧ r.LimbsLt 26 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = basepoint ∧ r.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms RISTRETTO_BASEPOINT_POINT_spec
@@ -315,11 +317,12 @@ end «i686-tables»
 
 namespace «x86_64-no-tables»
 
-/-- `RISTRETTO_BASEPOINT_POINT`: the basepoint; limbs `< 2^52`. -/
+/-- `RISTRETTO_BASEPOINT_POINT`: the basepoint, an even point (a ristretto255 representative);
+limbs `< 2^52`. -/
 recall RISTRETTO_BASEPOINT_POINT_spec :
     RISTRETTO_BASEPOINT_POINT.«x86_64-no-tables»
       ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
-        r.OnCurve ∧ r.toPoint = basepoint ∧ r.LimbsLt 52 ⦄
+        r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = basepoint ∧ r.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms RISTRETTO_BASEPOINT_POINT_spec
@@ -328,11 +331,12 @@ end «x86_64-no-tables»
 
 namespace «i686-no-tables»
 
-/-- `RISTRETTO_BASEPOINT_POINT`: the basepoint; limbs `< 2^26`. -/
+/-- `RISTRETTO_BASEPOINT_POINT`: the basepoint, an even point (a ristretto255 representative);
+limbs `< 2^26`. -/
 recall RISTRETTO_BASEPOINT_POINT_spec :
     RISTRETTO_BASEPOINT_POINT.«i686-no-tables»
       ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
-        r.OnCurve ∧ r.toPoint = basepoint ∧ r.LimbsLt 26 ⦄
+        r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = basepoint ∧ r.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms RISTRETTO_BASEPOINT_POINT_spec

@@ -48,7 +48,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 @[step]
 theorem compress_spec (self : AffinePoint.«x86_64-tables») :
     compress self ⦃ (r : CompressedEdwardsY) =>
-      r.asNat = self.y.toField.val + 2 ^ 255 * (if self.x.toField.isNeg then 1 else 0) ⦄ := by
+      r.asNat = self.y.toField.val + 2 ^ 255 * (if self.x.toField.IsNeg then 1 else 0) ⦄ := by
   unfold compress
   step as ⟨s, hs⟩
   step as ⟨c, hcv, hc⟩
@@ -67,7 +67,7 @@ theorem compress_spec (self : AffinePoint.«x86_64-tables») :
   have hset : (s.set 31#usize i3).asNat 8 + 2 ^ (8 * 31) * s[31]!.val
       = s.asNat 8 + 2 ^ (8 * 31) * i3.val :=
     Array.asNat_set_add 8 s 31#usize i3 (by simp)
-  have hsign : (if self.x.toField.isNeg then 1 else 0) = c.val := by
+  have hsign : (if self.x.toField.IsNeg then 1 else 0) = c.val := by
     rcases hcv with rfl | rfl
     · rw [ite_eq_right ((eq_zero_iff_not_isNeg_toField (Or.inl rfl) hc).mp rfl)]
       rfl
@@ -99,7 +99,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 @[step]
 theorem compress_spec (self : AffinePoint.«i686-tables») :
     compress self ⦃ (r : CompressedEdwardsY) =>
-      r.asNat = self.y.toField.val + 2 ^ 255 * (if self.x.toField.isNeg then 1 else 0) ⦄ := by
+      r.asNat = self.y.toField.val + 2 ^ 255 * (if self.x.toField.IsNeg then 1 else 0) ⦄ := by
   unfold compress
   step as ⟨s, hs⟩
   step as ⟨c, hcv, hc⟩
@@ -118,7 +118,7 @@ theorem compress_spec (self : AffinePoint.«i686-tables») :
   have hset : (s.set 31#usize i3).asNat 8 + 2 ^ (8 * 31) * s[31]!.val
       = s.asNat 8 + 2 ^ (8 * 31) * i3.val :=
     Array.asNat_set_add 8 s 31#usize i3 (by simp)
-  have hsign : (if self.x.toField.isNeg then 1 else 0) = c.val := by
+  have hsign : (if self.x.toField.IsNeg then 1 else 0) = c.val := by
     rcases hcv with rfl | rfl
     · rw [ite_eq_right ((eq_zero_iff_not_isNeg_toField (Or.inl rfl) hc).mp rfl)]
       rfl
@@ -150,7 +150,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 @[step]
 theorem compress_spec (self : AffinePoint.«x86_64-no-tables») :
     compress self ⦃ (r : CompressedEdwardsY) =>
-      r.asNat = self.y.toField.val + 2 ^ 255 * (if self.x.toField.isNeg then 1 else 0) ⦄ := by
+      r.asNat = self.y.toField.val + 2 ^ 255 * (if self.x.toField.IsNeg then 1 else 0) ⦄ := by
   unfold compress
   step as ⟨s, hs⟩
   step as ⟨c, hcv, hc⟩
@@ -169,7 +169,7 @@ theorem compress_spec (self : AffinePoint.«x86_64-no-tables») :
   have hset : (s.set 31#usize i3).asNat 8 + 2 ^ (8 * 31) * s[31]!.val
       = s.asNat 8 + 2 ^ (8 * 31) * i3.val :=
     Array.asNat_set_add 8 s 31#usize i3 (by simp)
-  have hsign : (if self.x.toField.isNeg then 1 else 0) = c.val := by
+  have hsign : (if self.x.toField.IsNeg then 1 else 0) = c.val := by
     rcases hcv with rfl | rfl
     · rw [ite_eq_right ((eq_zero_iff_not_isNeg_toField (Or.inl rfl) hc).mp rfl)]
       rfl
@@ -201,7 +201,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 @[step]
 theorem compress_spec (self : AffinePoint.«i686-no-tables») :
     compress self ⦃ (r : CompressedEdwardsY) =>
-      r.asNat = self.y.toField.val + 2 ^ 255 * (if self.x.toField.isNeg then 1 else 0) ⦄ := by
+      r.asNat = self.y.toField.val + 2 ^ 255 * (if self.x.toField.IsNeg then 1 else 0) ⦄ := by
   unfold compress
   step as ⟨s, hs⟩
   step as ⟨c, hcv, hc⟩
@@ -220,7 +220,7 @@ theorem compress_spec (self : AffinePoint.«i686-no-tables») :
   have hset : (s.set 31#usize i3).asNat 8 + 2 ^ (8 * 31) * s[31]!.val
       = s.asNat 8 + 2 ^ (8 * 31) * i3.val :=
     Array.asNat_set_add 8 s 31#usize i3 (by simp)
-  have hsign : (if self.x.toField.isNeg then 1 else 0) = c.val := by
+  have hsign : (if self.x.toField.IsNeg then 1 else 0) = c.val := by
     rcases hcv with rfl | rfl
     · rw [ite_eq_right ((eq_zero_iff_not_isNeg_toField (Or.inl rfl) hc).mp rfl)]
       rfl

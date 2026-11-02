@@ -53,7 +53,7 @@ private theorem compress_batch.closure_1.call_mut_spec {N : Usize}
     compress_batch.closure_1.Insts.CoreOpsFunctionFnMutTupleUsizeCompressedEdwardsY.call_mut
       (inputs, zs) i ⦃ (r : CompressedEdwardsY) (c' : compress_batch.closure_1 N) =>
         r.asNat = (inputs[i.val]!.Y.toField / inputs[i.val]!.Z.toField).val +
-          2 ^ 255 * (if (inputs[i.val]!.X.toField / inputs[i.val]!.Z.toField).isNeg then 1 else 0) ∧
+          2 ^ 255 * (if (inputs[i.val]!.X.toField / inputs[i.val]!.Z.toField).IsNeg then 1 else 0) ∧
         c' = (inputs, zs) ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hinput
   unfold compress_batch.closure_1.Insts.CoreOpsFunctionFnMutTupleUsizeCompressedEdwardsY.call_mut
@@ -73,7 +73,7 @@ theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«x86_64-ta
     (hinputs : ∀ i < N.val, inputs[i]!.LimbsLt 52) :
     compress_batch inputs ⦃ (r : Array CompressedEdwardsY N) =>
       ∀ i < N.val, r[i]!.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
-        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).isNeg then 1 else 0) ⦄ := by
+        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).IsNeg then 1 else 0) ⦄ := by
   unfold compress_batch
   apply spec_bind (core.array.from_fn_spec N _ inputs (fun _ c => c = inputs)
     (fun i z => z = inputs[i]!.Z) rfl fun i c hi hc => ?_)
@@ -87,7 +87,7 @@ theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«x86_64-ta
     step as ⟨zs1, hzs1⟩
     apply spec_mono (core.array.from_fn_spec N _ (inputs, zs1) (fun _ c => c = (inputs, zs1))
       (fun i x => x.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
-        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).isNeg then 1 else 0))
+        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).IsNeg then 1 else 0))
       rfl fun i c hi hc => ?_)
     · intro r hr i hi
       rw [Array.getElem!_Nat_eq, getElem!_pos r.val i (by simpa using hi)]
@@ -136,7 +136,7 @@ private theorem compress_batch.closure_1.call_mut_spec {N : Usize}
     compress_batch.closure_1.Insts.CoreOpsFunctionFnMutTupleUsizeCompressedEdwardsY.call_mut
       (inputs, zs) i ⦃ (r : CompressedEdwardsY) (c' : compress_batch.closure_1 N) =>
         r.asNat = (inputs[i.val]!.Y.toField / inputs[i.val]!.Z.toField).val +
-          2 ^ 255 * (if (inputs[i.val]!.X.toField / inputs[i.val]!.Z.toField).isNeg then 1 else 0) ∧
+          2 ^ 255 * (if (inputs[i.val]!.X.toField / inputs[i.val]!.Z.toField).IsNeg then 1 else 0) ∧
         c' = (inputs, zs) ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hinput
   unfold compress_batch.closure_1.Insts.CoreOpsFunctionFnMutTupleUsizeCompressedEdwardsY.call_mut
@@ -156,7 +156,7 @@ theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«i686-tabl
     (hinputs : ∀ i < N.val, inputs[i]!.LimbsLt 26) :
     compress_batch inputs ⦃ (r : Array CompressedEdwardsY N) =>
       ∀ i < N.val, r[i]!.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
-        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).isNeg then 1 else 0) ⦄ := by
+        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).IsNeg then 1 else 0) ⦄ := by
   unfold compress_batch
   apply spec_bind (core.array.from_fn_spec N _ inputs (fun _ c => c = inputs)
     (fun i z => z = inputs[i]!.Z) rfl fun i c hi hc => ?_)
@@ -170,7 +170,7 @@ theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«i686-tabl
     step as ⟨zs1, hzs1⟩
     apply spec_mono (core.array.from_fn_spec N _ (inputs, zs1) (fun _ c => c = (inputs, zs1))
       (fun i x => x.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
-        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).isNeg then 1 else 0))
+        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).IsNeg then 1 else 0))
       rfl fun i c hi hc => ?_)
     · intro r hr i hi
       rw [Array.getElem!_Nat_eq, getElem!_pos r.val i (by simpa using hi)]
@@ -219,7 +219,7 @@ private theorem compress_batch.closure_1.call_mut_spec {N : Usize}
     compress_batch.closure_1.Insts.CoreOpsFunctionFnMutTupleUsizeCompressedEdwardsY.call_mut
       (inputs, zs) i ⦃ (r : CompressedEdwardsY) (c' : compress_batch.closure_1 N) =>
         r.asNat = (inputs[i.val]!.Y.toField / inputs[i.val]!.Z.toField).val +
-          2 ^ 255 * (if (inputs[i.val]!.X.toField / inputs[i.val]!.Z.toField).isNeg then 1 else 0) ∧
+          2 ^ 255 * (if (inputs[i.val]!.X.toField / inputs[i.val]!.Z.toField).IsNeg then 1 else 0) ∧
         c' = (inputs, zs) ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hinput
   unfold compress_batch.closure_1.Insts.CoreOpsFunctionFnMutTupleUsizeCompressedEdwardsY.call_mut
@@ -239,7 +239,7 @@ theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«x86_64-no
     (hinputs : ∀ i < N.val, inputs[i]!.LimbsLt 52) :
     compress_batch inputs ⦃ (r : Array CompressedEdwardsY N) =>
       ∀ i < N.val, r[i]!.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
-        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).isNeg then 1 else 0) ⦄ := by
+        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).IsNeg then 1 else 0) ⦄ := by
   unfold compress_batch
   apply spec_bind (core.array.from_fn_spec N _ inputs (fun _ c => c = inputs)
     (fun i z => z = inputs[i]!.Z) rfl fun i c hi hc => ?_)
@@ -253,7 +253,7 @@ theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«x86_64-no
     step as ⟨zs1, hzs1⟩
     apply spec_mono (core.array.from_fn_spec N _ (inputs, zs1) (fun _ c => c = (inputs, zs1))
       (fun i x => x.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
-        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).isNeg then 1 else 0))
+        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).IsNeg then 1 else 0))
       rfl fun i c hi hc => ?_)
     · intro r hr i hi
       rw [Array.getElem!_Nat_eq, getElem!_pos r.val i (by simpa using hi)]
@@ -302,7 +302,7 @@ private theorem compress_batch.closure_1.call_mut_spec {N : Usize}
     compress_batch.closure_1.Insts.CoreOpsFunctionFnMutTupleUsizeCompressedEdwardsY.call_mut
       (inputs, zs) i ⦃ (r : CompressedEdwardsY) (c' : compress_batch.closure_1 N) =>
         r.asNat = (inputs[i.val]!.Y.toField / inputs[i.val]!.Z.toField).val +
-          2 ^ 255 * (if (inputs[i.val]!.X.toField / inputs[i.val]!.Z.toField).isNeg then 1 else 0) ∧
+          2 ^ 255 * (if (inputs[i.val]!.X.toField / inputs[i.val]!.Z.toField).IsNeg then 1 else 0) ∧
         c' = (inputs, zs) ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hinput
   unfold compress_batch.closure_1.Insts.CoreOpsFunctionFnMutTupleUsizeCompressedEdwardsY.call_mut
@@ -322,7 +322,7 @@ theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«i686-no-t
     (hinputs : ∀ i < N.val, inputs[i]!.LimbsLt 26) :
     compress_batch inputs ⦃ (r : Array CompressedEdwardsY N) =>
       ∀ i < N.val, r[i]!.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
-        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).isNeg then 1 else 0) ⦄ := by
+        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).IsNeg then 1 else 0) ⦄ := by
   unfold compress_batch
   apply spec_bind (core.array.from_fn_spec N _ inputs (fun _ c => c = inputs)
     (fun i z => z = inputs[i]!.Z) rfl fun i c hi hc => ?_)
@@ -336,7 +336,7 @@ theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«i686-no-t
     step as ⟨zs1, hzs1⟩
     apply spec_mono (core.array.from_fn_spec N _ (inputs, zs1) (fun _ c => c = (inputs, zs1))
       (fun i x => x.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
-        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).isNeg then 1 else 0))
+        2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).IsNeg then 1 else 0))
       rfl fun i c hi hc => ?_)
     · intro r hr i hi
       rw [Array.getElem!_Nat_eq, getElem!_pos r.val i (by simpa using hi)]

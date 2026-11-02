@@ -12,8 +12,8 @@ public section
 
 /-! # `differential_add_and_double`
 
-The step of the Montgomery ladder on the `x`-only projective points: `P ↦ xDBL P` and
-`Q ↦ xADD P Q u(P - Q)`, matching RFC 7748's formulas `MontgomeryModel.XZ.dbl`,
+The step of the Montgomery ladder on the `x`-only projective points: `P ↦ xDbl P` and
+`Q ↦ XZ.add P Q u(P - Q)`, matching RFC 7748's formulas `MontgomeryModel.XZ.dbl`,
 `MontgomeryModel.XZ.add` exactly as field elements. The code's doubling uses
 `APLUS2_OVER_FOUR = (A + 2) / 4` with `BB`, the RFC's `a24 = (A - 2) / 4` with `AA = BB + E`. -/
 
@@ -60,7 +60,7 @@ private theorem aplus2_eq {c : ZMod p} (h : c * 4 = (A : ZMod p) + 2) :
   rw [h]
   ring
 
-/-- `differentialAddAndDoubleBody`: `P ↦ xDBL P` and `Q ↦ xADD P Q u(P - Q)` exactly. -/
+/-- `differentialAddAndDoubleBody`: `P ↦ xDbl P` and `Q ↦ XZ.add P Q u(P - Q)` exactly. -/
 theorem differentialAddAndDoubleBody_spec (hadd : B.AddSpec) (hsub : B.SubSpec)
     (hmul : B.MulSpec) (hsq : B.SquareSpec) (hA : B.Aplus2OverFourSpec) {P : Type}
     (mk : B.F → B.F → P) (PU PW QU QW affine_PmQ : B.F) (hPU : B.Red PU) (hPW : B.Red PW)
@@ -117,7 +117,7 @@ theorem differential_add_and_double_eq (P Q : ProjectivePoint.«x86_64-tables»)
         (fun U W => (⟨U, W⟩ : ProjectivePoint.«x86_64-tables»)) P.U P.W Q.U Q.W affine_PmQ := rfl
 
 /-- `differential_add_and_double`: one step of the ladder on `(U : W)` coordinates,
-`P ↦ xDBL P` and `Q ↦ xADD P Q u(P - Q)` exactly (RFC 7748 §5); limbs `< 2^52`. -/
+`P ↦ xDbl P` and `Q ↦ XZ.add P Q u(P - Q)` exactly (RFC 7748 §5); limbs `< 2^52`. -/
 @[step]
 theorem differential_add_and_double_spec (P Q : ProjectivePoint.«x86_64-tables»)
     (affine_PmQ : FieldElement51) (hP : P.LimbsLt 52) (hQ : Q.LimbsLt 52)
@@ -150,7 +150,7 @@ theorem differential_add_and_double_eq (P Q : ProjectivePoint.«i686-tables»)
         (fun U W => (⟨U, W⟩ : ProjectivePoint.«i686-tables»)) P.U P.W Q.U Q.W affine_PmQ := rfl
 
 /-- `differential_add_and_double`: one step of the ladder on `(U : W)` coordinates,
-`P ↦ xDBL P` and `Q ↦ xADD P Q u(P - Q)` exactly (RFC 7748 §5); limbs `< 2^26`. -/
+`P ↦ xDbl P` and `Q ↦ XZ.add P Q u(P - Q)` exactly (RFC 7748 §5); limbs `< 2^26`. -/
 @[step]
 theorem differential_add_and_double_spec (P Q : ProjectivePoint.«i686-tables»)
     (affine_PmQ : FieldElement2625) (hP : P.LimbsLt 26) (hQ : Q.LimbsLt 26)
@@ -183,7 +183,7 @@ theorem differential_add_and_double_eq (P Q : ProjectivePoint.«x86_64-no-tables
         (fun U W => (⟨U, W⟩ : ProjectivePoint.«x86_64-no-tables»)) P.U P.W Q.U Q.W affine_PmQ := rfl
 
 /-- `differential_add_and_double`: one step of the ladder on `(U : W)` coordinates,
-`P ↦ xDBL P` and `Q ↦ xADD P Q u(P - Q)` exactly (RFC 7748 §5); limbs `< 2^52`. -/
+`P ↦ xDbl P` and `Q ↦ XZ.add P Q u(P - Q)` exactly (RFC 7748 §5); limbs `< 2^52`. -/
 @[step]
 theorem differential_add_and_double_spec (P Q : ProjectivePoint.«x86_64-no-tables»)
     (affine_PmQ : FieldElement51) (hP : P.LimbsLt 52) (hQ : Q.LimbsLt 52)
@@ -216,7 +216,7 @@ theorem differential_add_and_double_eq (P Q : ProjectivePoint.«i686-no-tables»
         (fun U W => (⟨U, W⟩ : ProjectivePoint.«i686-no-tables»)) P.U P.W Q.U Q.W affine_PmQ := rfl
 
 /-- `differential_add_and_double`: one step of the ladder on `(U : W)` coordinates,
-`P ↦ xDBL P` and `Q ↦ xADD P Q u(P - Q)` exactly (RFC 7748 §5); limbs `< 2^26`. -/
+`P ↦ xDbl P` and `Q ↦ XZ.add P Q u(P - Q)` exactly (RFC 7748 §5); limbs `< 2^26`. -/
 @[step]
 theorem differential_add_and_double_spec (P Q : ProjectivePoint.«i686-no-tables»)
     (affine_PmQ : FieldElement2625) (hP : P.LimbsLt 26) (hQ : Q.LimbsLt 26)

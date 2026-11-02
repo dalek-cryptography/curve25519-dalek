@@ -48,13 +48,13 @@ private theorem point_of_post {self other r : edwards.EdwardsPoint.«x86_64-tabl
     r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 52 := by
   obtain ⟨hr, hb⟩ := h
   have hon' := Extended.subProjectiveNiels_onCurve edwards_a_eq_neg_one hself_on
-    (Extended.onCurve_toProjectiveNiels two_ne_zero hother_on)
+    (Extended.onCurve_toProjectiveNiels hother_on)
   rw [edwards.EdwardsPoint.«x86_64-tables».onCurve_iff,
     edwards.EdwardsPoint.«x86_64-tables».toPoint_def, hr,
     edwards.EdwardsPoint.«x86_64-tables».toPoint_def,
     edwards.EdwardsPoint.«x86_64-tables».toPoint_def, Completed.toPoint_toExtended hon',
     Extended.toPoint_subProjectiveNiels edwards_a_eq_neg_one hself_on
-      (Extended.onCurve_toProjectiveNiels two_ne_zero hother_on),
+      (Extended.onCurve_toProjectiveNiels hother_on),
     Extended.toPoint_toProjectiveNiels hother_on]
   exact ⟨Completed.onCurve_toExtended hon', rfl, hb⟩
 
@@ -99,13 +99,13 @@ private theorem point_of_post {self other r : edwards.EdwardsPoint.«i686-tables
     r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 26 := by
   obtain ⟨hr, hb⟩ := h
   have hon' := Extended.subProjectiveNiels_onCurve edwards_a_eq_neg_one hself_on
-    (Extended.onCurve_toProjectiveNiels two_ne_zero hother_on)
+    (Extended.onCurve_toProjectiveNiels hother_on)
   rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff,
     edwards.EdwardsPoint.«i686-tables».toPoint_def, hr,
     edwards.EdwardsPoint.«i686-tables».toPoint_def,
     edwards.EdwardsPoint.«i686-tables».toPoint_def, Completed.toPoint_toExtended hon',
     Extended.toPoint_subProjectiveNiels edwards_a_eq_neg_one hself_on
-      (Extended.onCurve_toProjectiveNiels two_ne_zero hother_on),
+      (Extended.onCurve_toProjectiveNiels hother_on),
     Extended.toPoint_toProjectiveNiels hother_on]
   exact ⟨Completed.onCurve_toExtended hon', rfl, hb⟩
 
@@ -312,13 +312,13 @@ private theorem point_of_post {self other r : edwards.EdwardsPoint.«x86_64-no-t
     r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 52 := by
   obtain ⟨hr, hb⟩ := h
   have hon' := Extended.subProjectiveNiels_onCurve edwards_a_eq_neg_one hself_on
-    (Extended.onCurve_toProjectiveNiels two_ne_zero hother_on)
+    (Extended.onCurve_toProjectiveNiels hother_on)
   rw [edwards.EdwardsPoint.«x86_64-no-tables».onCurve_iff,
     edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def, hr,
     edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def,
     edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def, Completed.toPoint_toExtended hon',
     Extended.toPoint_subProjectiveNiels edwards_a_eq_neg_one hself_on
-      (Extended.onCurve_toProjectiveNiels two_ne_zero hother_on),
+      (Extended.onCurve_toProjectiveNiels hother_on),
     Extended.toPoint_toProjectiveNiels hother_on]
   exact ⟨Completed.onCurve_toExtended hon', rfl, hb⟩
 
@@ -363,13 +363,13 @@ private theorem point_of_post {self other r : edwards.EdwardsPoint.«i686-no-tab
     r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 26 := by
   obtain ⟨hr, hb⟩ := h
   have hon' := Extended.subProjectiveNiels_onCurve edwards_a_eq_neg_one hself_on
-    (Extended.onCurve_toProjectiveNiels two_ne_zero hother_on)
+    (Extended.onCurve_toProjectiveNiels hother_on)
   rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff,
     edwards.EdwardsPoint.«i686-no-tables».toPoint_def, hr,
     edwards.EdwardsPoint.«i686-no-tables».toPoint_def,
     edwards.EdwardsPoint.«i686-no-tables».toPoint_def, Completed.toPoint_toExtended hon',
     Extended.toPoint_subProjectiveNiels edwards_a_eq_neg_one hself_on
-      (Extended.onCurve_toProjectiveNiels two_ne_zero hother_on),
+      (Extended.onCurve_toProjectiveNiels hother_on),
     Extended.toPoint_toProjectiveNiels hother_on]
   exact ⟨Completed.onCurve_toExtended hon', rfl, hb⟩
 

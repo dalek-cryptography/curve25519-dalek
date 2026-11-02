@@ -49,7 +49,7 @@ theorem ED25519_BASEPOINT_128_POINT_spec :
     rw [edwards.EdwardsPoint.«x86_64-tables».toExtended_def]
     subst hX hY hZ hT
     simp only [toField_def, asNat_def, Array.asNat_def, Array.make_val]
-    rw [edwards_eq_numerals]
+    rw [curve25519.Proofs.edwards_eq]
     decide +kernel)
   refine ⟨key.1, key.2, ?_⟩
   unfold edwards.EdwardsPoint.«x86_64-tables».LimbsLt
@@ -82,7 +82,7 @@ theorem ED25519_BASEPOINT_128_POINT_spec :
     rw [edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def]
     subst hX hY hZ hT
     simp only [toField_def, asNat_def, Array.asNat_def, Array.make_val]
-    rw [edwards_eq_numerals]
+    rw [curve25519.Proofs.edwards_eq]
     decide +kernel)
   refine ⟨key.1, key.2, ?_⟩
   unfold edwards.EdwardsPoint.«x86_64-no-tables».LimbsLt

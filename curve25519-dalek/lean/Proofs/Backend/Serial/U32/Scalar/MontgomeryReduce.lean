@@ -20,6 +20,7 @@ import Proofs.Helpers.Scalar29
 import Proofs.Helpers.StepSpecs
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
+import Proofs.Helpers.Radix
 public section
 
 /-! # `Scalar29::montgomery_reduce`

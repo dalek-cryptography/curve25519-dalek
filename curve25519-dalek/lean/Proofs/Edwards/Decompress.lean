@@ -61,7 +61,7 @@ theorem edStep1Tail_spec (hadd : B.AddSpec) (hsub : B.SubSpec) (hmul : B.MulSpec
       c.IsValid ∧ Y' = Y ∧ B.toField Z = 1 ∧
       (c = 1#u8 ↔ IsSquare (curve25519.edwards.xSq (B.toField Y))) ∧
       (c = 1#u8 → B.toField X ^ 2 = curve25519.edwards.xSq (B.toField Y)) ∧
-      ¬ (B.toField X).isNeg ∧ B.Red X ∧ B.Red Z ⦄ := by
+      ¬ (B.toField X).IsNeg ∧ B.Red X ∧ B.Red Z ⦄ := by
   unfold edStep1Tail
   apply spec_bind hone
   rintro Z ⟨hZ, hZb⟩
@@ -156,7 +156,7 @@ private theorem step_1_spec (repr : CompressedEdwardsY) :
       c.IsValid ∧ Y.toField = ((CompressedEdwardsY.asNat repr % 2 ^ 255 : ℕ) : ZMod p) ∧
       Z.toField = 1 ∧
       (c = 1#u8 ↔ IsSquare (curve25519.edwards.xSq Y.toField)) ∧
-      (c = 1#u8 → X.toField ^ 2 = curve25519.edwards.xSq Y.toField) ∧ ¬ X.toField.isNeg ∧
+      (c = 1#u8 → X.toField ^ 2 = curve25519.edwards.xSq Y.toField) ∧ ¬ X.toField.IsNeg ∧
       X.LimbsLt 52 ∧ Y.LimbsLt 52 ∧
       Z.LimbsLt 52 ⦄ := by
   unfold step_1.«x86_64-tables»
@@ -225,7 +225,7 @@ private theorem step_1_spec (repr : CompressedEdwardsY) :
       c.IsValid ∧ Y.toField = ((CompressedEdwardsY.asNat repr % 2 ^ 255 : ℕ) : ZMod p) ∧
       Z.toField = 1 ∧
       (c = 1#u8 ↔ IsSquare (curve25519.edwards.xSq Y.toField)) ∧
-      (c = 1#u8 → X.toField ^ 2 = curve25519.edwards.xSq Y.toField) ∧ ¬ X.toField.isNeg ∧
+      (c = 1#u8 → X.toField ^ 2 = curve25519.edwards.xSq Y.toField) ∧ ¬ X.toField.IsNeg ∧
       X.LimbsLt 26 ∧ Y.LimbsLt 26 ∧
       Z.LimbsLt 26 ⦄ := by
   unfold step_1.«i686-tables»
@@ -381,7 +381,7 @@ private theorem step_1_spec (repr : CompressedEdwardsY) :
       c.IsValid ∧ Y.toField = ((CompressedEdwardsY.asNat repr % 2 ^ 255 : ℕ) : ZMod p) ∧
       Z.toField = 1 ∧
       (c = 1#u8 ↔ IsSquare (curve25519.edwards.xSq Y.toField)) ∧
-      (c = 1#u8 → X.toField ^ 2 = curve25519.edwards.xSq Y.toField) ∧ ¬ X.toField.isNeg ∧
+      (c = 1#u8 → X.toField ^ 2 = curve25519.edwards.xSq Y.toField) ∧ ¬ X.toField.IsNeg ∧
       X.LimbsLt 52 ∧ Y.LimbsLt 52 ∧
       Z.LimbsLt 52 ⦄ := by
   unfold step_1.«x86_64-no-tables»
@@ -450,7 +450,7 @@ private theorem step_1_spec (repr : CompressedEdwardsY) :
       c.IsValid ∧ Y.toField = ((CompressedEdwardsY.asNat repr % 2 ^ 255 : ℕ) : ZMod p) ∧
       Z.toField = 1 ∧
       (c = 1#u8 ↔ IsSquare (curve25519.edwards.xSq Y.toField)) ∧
-      (c = 1#u8 → X.toField ^ 2 = curve25519.edwards.xSq Y.toField) ∧ ¬ X.toField.isNeg ∧
+      (c = 1#u8 → X.toField ^ 2 = curve25519.edwards.xSq Y.toField) ∧ ¬ X.toField.IsNeg ∧
       X.LimbsLt 26 ∧ Y.LimbsLt 26 ∧
       Z.LimbsLt 26 ⦄ := by
   unfold step_1.«i686-no-tables»

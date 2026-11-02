@@ -6,6 +6,7 @@ module
 public import Curve25519.Edwards.Basepoint
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
+public import Curve25519.Proofs.Edwards.Certs
 import Proofs.Helpers.Coords
 import Proofs.Helpers.ToField
 import Mathlib.Tactic.LinearCombination
@@ -141,12 +142,6 @@ variable (E : TwistedEdwardsModel (ZMod p))
 @[expose] noncomputable def checkTable : E.Extended → List FieldElement51 → ℕ → Bool
   | _, fes, 0 => fes.isEmpty
   | P, fes, n + 1 => checkRow E P P (fes.take 24) && checkTable (pow2 E 8 P) (fes.drop 24) n
-
-/-- `edwards` with numeral coefficients, for the kernel. -/
-theorem edwards_eq_numerals : edwards =
-    ⟨-1, ((37095705934669439343138083508754565189542113879843219016388785533085940283555 : ℕ) :
-      ZMod p)⟩ := by
-  rw [edwards_def, a_def, d_eq_natCast]
 
 /-! ### Soundness -/
 

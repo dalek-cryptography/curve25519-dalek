@@ -387,7 +387,7 @@ theorem sqrtRatioM1_eq {U V R : ZMod p} {c : subtle.Choice}
       c = 0#u8 ∧ R ^ 2 * V = curve25519.sqrtM1 * U)
     (hpar : R.val % 2 = 0) :
     sqrtRatioM1 U V = (decide (c = 1#u8), R) := by
-  have hneg : ¬ R.isNeg := ZMod.not_isNeg_iff.mpr hpar
+  have hneg : ¬ R.IsNeg := ZMod.not_isNeg_iff.mpr hpar
   by_cases hu : U = 0
   · obtain ⟨rfl, hr⟩ := h0 hu
     rw [hu, hr, sqrtRatioM1_zero_left, decide_eq_true rfl]
@@ -403,7 +403,7 @@ theorem sqrtRatioM1_eq {U V R : ZMod p} {c : subtle.Choice}
 
 /-- The shape of `IsNegativeSpec`. -/
 theorem eq_one_iff_isNeg {c : subtle.Choice} {X : ZMod p} (h : c.val = X.val % 2) :
-    c = 1#u8 ↔ X.isNeg := by
+    c = 1#u8 ↔ X.IsNeg := by
   rw [ZMod.isNeg_iff, ← h]
   constructor
   · rintro rfl

@@ -20,7 +20,7 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel
 open Curve25519Dalek.backend.serial.u32.field (FieldElement2625)
 open Curve25519Dalek.backend.serial.curve_models
 open Curve25519Dalek.TableCertificate2625
-open Curve25519Dalek.TableCertificate (basepointExt edwards_eq_numerals onCurve_basepointExt
+open Curve25519Dalek.TableCertificate (basepointExt onCurve_basepointExt
   toPoint_basepointExt pow2_onCurve toPoint_pow2 odd_smul_eq checkPoint checkPoint_sound rows
   rows_length rows_getElem!_getElem! pow2)
 
@@ -61,7 +61,7 @@ private theorem odd128Limbs_length : odd128Limbs32.length = 32 := by
 private theorem odd128_check :
     checkRowProj edwards (pow2 edwards 129 (basepointExt edwards))
       (pow2 edwards 128 (basepointExt edwards)) odd128Limbs32 = true := by
-  rw [edwards_eq_numerals]
+  rw [curve25519.Proofs.edwards_eq]
   decide +kernel
 
 private theorem odd128_bounded :

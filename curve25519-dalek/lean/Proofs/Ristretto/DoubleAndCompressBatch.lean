@@ -204,18 +204,18 @@ theorem compressStateBody_spec (hsub : B.SubSpec) (hmul : B.MulSpec) (hneg : B.N
   -- the field values
   have C : B.toField magic ^ 2 * (a - d) = 1 := by rw [Mg, invsqrtAMinusD_sq_mul]
   have Neg1 := eq_one_iff_isNeg hn1
-  have E1 : B.toField e1 = if (B.toField fe).isNeg then B.toField g else B.toField e :=
+  have E1 : B.toField e1 = if (B.toField fe).IsNeg then B.toField g else B.toField e :=
     eq_ite_of_choice hn1v Neg1 (fun h => by rw [he10 h]) (fun h => by rw [he11 h])
-  have G1 : B.toField g1 = if (B.toField fe).isNeg then -B.toField e else B.toField g :=
+  have G1 : B.toField g1 = if (B.toField fe).IsNeg then -B.toField e else B.toField g :=
     eq_ite_of_choice hn1v Neg1 (fun h => by rw [hg10 h]) (fun h => by rw [hg11 h]; exact hme)
   have H1 : B.toField h1 =
-      if (B.toField fe).isNeg then B.toField f * sqrtM1 else B.toField h :=
+      if (B.toField fe).IsNeg then B.toField f * sqrtM1 else B.toField h :=
     eq_ite_of_choice hn1v Neg1 (fun h => by rw [hh10 h])
       (fun h => by rw [hh11 h, hfts, Fi])
   have M1 : B.toField mg1 =
-      if (B.toField fe).isNeg then (sqrtM1 : ZMod p) else B.toField magic :=
+      if (B.toField fe).IsNeg then (sqrtM1 : ZMod p) else B.toField magic :=
     eq_ite_of_choice hn1v Neg1 (fun h => by rw [hmg10 h]) (fun h => by rw [hmg11 h, Fi])
-  have G2 : B.toField g2 = if (B.toField fe3).isNeg then -B.toField g1 else B.toField g1 :=
+  have G2 : B.toField g2 = if (B.toField fe3).IsNeg then -B.toField g1 else B.toField g1 :=
     eq_ite_of_choice hn2v (eq_one_iff_isNeg hn2) (fun h => by rw [hg20 h])
       (fun h => (hg21 h).1)
   have S1 : B.toField s1 = (B.toField sv).abs :=

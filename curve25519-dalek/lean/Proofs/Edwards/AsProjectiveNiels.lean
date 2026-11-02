@@ -59,7 +59,7 @@ theorem as_projective_niels_spec_point (self : EdwardsPoint.«x86_64-tables»)
     rw [ProjectiveNielsPoint.«x86_64-tables».onCurve_iff,
       ProjectiveNielsPoint.«x86_64-tables».toPoint_def, hr,
       EdwardsPoint.«x86_64-tables».toPoint_def]
-    exact ⟨Extended.onCurve_toProjectiveNiels two_ne_zero hon,
+    exact ⟨Extended.onCurve_toProjectiveNiels hon,
       Extended.toPoint_toProjectiveNiels hon, hb⟩
 
 end «EdwardsPointx86_64-tables»
@@ -98,7 +98,7 @@ theorem as_projective_niels_spec_point (self : EdwardsPoint.«i686-tables»)
     rw [ProjectiveNielsPoint.«i686-tables».onCurve_iff,
       ProjectiveNielsPoint.«i686-tables».toPoint_def, hr,
       EdwardsPoint.«i686-tables».toPoint_def]
-    exact ⟨Extended.onCurve_toProjectiveNiels two_ne_zero hon,
+    exact ⟨Extended.onCurve_toProjectiveNiels hon,
       Extended.toPoint_toProjectiveNiels hon, hb⟩
 
 end «EdwardsPointi686-tables»
@@ -138,7 +138,7 @@ theorem as_projective_niels_spec_point (self : EdwardsPoint.«x86_64-no-tables»
     rw [ProjectiveNielsPoint.«x86_64-no-tables».onCurve_iff,
       ProjectiveNielsPoint.«x86_64-no-tables».toPoint_def, hr,
       EdwardsPoint.«x86_64-no-tables».toPoint_def]
-    exact ⟨Extended.onCurve_toProjectiveNiels two_ne_zero hon,
+    exact ⟨Extended.onCurve_toProjectiveNiels hon,
       Extended.toPoint_toProjectiveNiels hon, hb⟩
 
 end «EdwardsPointx86_64-no-tables»
@@ -178,7 +178,7 @@ theorem as_projective_niels_spec_point (self : EdwardsPoint.«i686-no-tables»)
     rw [ProjectiveNielsPoint.«i686-no-tables».onCurve_iff,
       ProjectiveNielsPoint.«i686-no-tables».toPoint_def, hr,
       EdwardsPoint.«i686-no-tables».toPoint_def]
-    exact ⟨Extended.onCurve_toProjectiveNiels two_ne_zero hon,
+    exact ⟨Extended.onCurve_toProjectiveNiels hon,
       Extended.toPoint_toProjectiveNiels hon, hb⟩
 
 end «EdwardsPointi686-no-tables»

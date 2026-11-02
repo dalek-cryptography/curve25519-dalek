@@ -27,7 +27,7 @@ namespace Curve25519Dalek.edwards
 the low `255` bits of `n` (reduced modulo `p`) and `P.x` is `0` or has the sign of bit `255`. -/
 theorem decodeLenient_eq_some_iff {n : ℕ} {P : curve25519.edwards.Point} :
     decodeLenient n = some P ↔
-      P.y = ((n % 2 ^ 255 : ℕ) : ZMod p) ∧ (P.x = 0 ∨ (P.x.isNeg ↔ n / 2 ^ 255 = 1)) := by
+      P.y = ((n % 2 ^ 255 : ℕ) : ZMod p) ∧ (P.x = 0 ∨ (P.x.IsNeg ↔ n / 2 ^ 255 = 1)) := by
   rw [decodeLenient_def]
   split_ifs with h
   · rw [Option.some.injEq]
@@ -48,7 +48,7 @@ theorem decodeLenient_eq_some_iff {n : ℕ} {P : curve25519.edwards.Point} :
           change P.x = Classical.choose h
           rw [h0]
           exact (pow_eq_zero_iff two_ne_zero).mp hsq
-        · exact ZMod.eq_of_sq_eq_of_isNeg_iff p_mod_two hsq (hs.trans h0.symm)
+        · exact ZMod.eq_of_sq_eq_of_isNeg_iff hsq (hs.trans h0.symm)
   · refine iff_of_false (by simp) ?_
     rintro ⟨hy, hs⟩
     exact h ⟨P.x, hy ▸ P.equation, hs⟩
@@ -68,14 +68,14 @@ theorem decodeLenient_eq_none_iff {n : ℕ} :
     by_cases hx0 : x = 0
     · exact ⟨x, hx, Or.inl hx0⟩
     by_cases hs : n / 2 ^ 255 = 1
-    · rcases ZMod.isNeg_or_isNeg_neg p_mod_two hx0 with hneg | hneg
+    · rcases ZMod.isNeg_or_isNeg_neg hx0 with hneg | hneg
       · exact ⟨x, hx, Or.inr (iff_of_true hneg hs)⟩
       · exact ⟨-x, equation_neg hx, Or.inr (iff_of_true hneg hs)⟩
-    · rcases ZMod.isNeg_or_isNeg_neg p_mod_two hx0 with hneg | hneg
+    · rcases ZMod.isNeg_or_isNeg_neg hx0 with hneg | hneg
       · exact ⟨-x, equation_neg hx,
-          Or.inr (iff_of_false (ZMod.not_isNeg_neg_of_isNeg p_mod_two hneg) hs)⟩
+          Or.inr (iff_of_false (ZMod.not_isNeg_neg_of_isNeg hneg) hs)⟩
       · exact ⟨x, hx, Or.inr (iff_of_false (fun h' =>
-          ZMod.not_isNeg_neg_of_isNeg p_mod_two h' hneg) hs)⟩
+          ZMod.not_isNeg_neg_of_isNeg h' hneg) hs)⟩
 
 theorem decodeLenient_isSome_iff {n : ℕ} :
     (decodeLenient n).isSome ↔ IsSquare (curve25519.edwards.xSq ((n % 2 ^ 255 : ℕ) : ZMod p)) := by
@@ -103,7 +103,7 @@ theorem decodeLenient_encode (P : curve25519.edwards.Point) :
   rw [decodeLenient_eq_some_iff, encode_mod_two_pow_255, ZMod.natCast_zmod_val,
     encode_div_two_pow_255]
   refine ⟨rfl, Or.inr ?_⟩
-  by_cases h : P.x.isNeg <;> simp [h]
+  by_cases h : P.x.IsNeg <;> simp [h]
 
 /-- On canonical inputs, encoding inverts lenient decoding. -/
 theorem encode_of_decodeLenient {n : ℕ} {P : curve25519.edwards.Point}
@@ -114,7 +114,7 @@ theorem encode_of_decodeLenient {n : ℕ} {P : curve25519.edwards.Point}
   rcases hsx with hx | hx
   · have hs' : ¬ n / 2 ^ 255 = 1 := fun h1 => hs ⟨hx, h1⟩
     rw [hx]
-    exact iff_of_false ZMod.isNeg_zero hs'
+    exact iff_of_false ZMod.not_isNeg_zero hs'
   · exact hx
 
 /-- The `y`-coordinate of a leniently decoded point. -/
@@ -124,11 +124,11 @@ theorem decodeLenient_y {n : ℕ} {P : curve25519.edwards.Point} (h : decodeLeni
 
 /-- The sign of the `x`-coordinate of a leniently decoded point: bit `255`, unless `x = 0`. -/
 theorem decodeLenient_x_eq_zero_or_isNeg_iff {n : ℕ} {P : curve25519.edwards.Point}
-    (h : decodeLenient n = some P) : P.x = 0 ∨ (P.x.isNeg ↔ n / 2 ^ 255 = 1) :=
+    (h : decodeLenient n = some P) : P.x = 0 ∨ (P.x.IsNeg ↔ n / 2 ^ 255 = 1) :=
   (decodeLenient_eq_some_iff.mp h).2
 
 /-- What `decompress` computes: the non-negative root `x`, negated when bit `255` is set. -/
-theorem decodeLenient_eq_some_of_sign {n : ℕ} {x : ZMod p} (hneg : ¬ x.isNeg)
+theorem decodeLenient_eq_some_of_sign {n : ℕ} {x : ZMod p} (hneg : ¬ x.IsNeg)
     (P : curve25519.edwards.Point) (hPy : P.y = ((n % 2 ^ 255 : ℕ) : ZMod p))
     (hP0 : n / 2 ^ 255 = 0 → P.x = x) (hP1 : n / 2 ^ 255 = 1 → P.x = -x) (hn : n / 2 ^ 255 ≤ 1) :
     decodeLenient n = some P := by
@@ -141,7 +141,7 @@ theorem decodeLenient_eq_some_of_sign {n : ℕ} {x : ZMod p} (hneg : ¬ x.isNeg)
     · rw [hP1 h, hx0, neg_zero]
       exact Or.inl rfl
     · rw [hP1 h, h]
-      exact Or.inr (iff_of_true (ZMod.isNeg_neg_of_not_isNeg p_mod_two hx0 hneg) rfl)
+      exact Or.inr (iff_of_true (ZMod.isNeg_neg_of_not_isNeg hx0 hneg) rfl)
 
 /-! ### The bytes of a `CompressedEdwardsY` -/
 

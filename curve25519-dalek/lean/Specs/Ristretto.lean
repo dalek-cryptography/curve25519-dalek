@@ -53,11 +53,15 @@ API with their spec statements, restated with `recall` from the theorems proved 
 `Proofs/Ristretto/`, and the axioms they depend on.
 
 A `RistrettoPoint` is an `EdwardsPoint` (`Defs/Ristretto.lean`): the statements are about the
-represented Edwards point, the representative of an element of `curve25519.Ristretto`. Group
-operations are stated exactly on representatives (as for `EdwardsPoint`), so that they also
-hold in the quotient; `ct_eq`/`eq` decide `curve25519.edwards.Rel` (equality in the Ristretto
-group); `compress` is RFC 9496's encoding `Ristretto.encodeRep` of the represented point (for any
-representative); `decompress` is RFC 9496's decoding `Ristretto.decodeRep` of the bytes' value;
+represented Edwards point, which stands for an element of ristretto255 when it is even (Mathlib's
+`Even`). The functions that create points (`decompress`, `from_uniform_bytes`, `map_to_curve`,
+`identity`, `default`, `mul_base`, `RISTRETTO_BASEPOINT_POINT`) state that the point is even.
+Group operations are stated exactly on representatives (as for `EdwardsPoint`), so they keep
+points even and also hold for the elements; `ct_eq`/`eq` decide `curve25519.edwards.Rel`
+(equality in the Ristretto group); `compress` is RFC 9496's encoding `Ristretto.encodeRep` of the
+represented point (for any representative; on even points it is constant exactly on the classes
+of `Rel`, `Ristretto.encodeRep_eq_iff`); `decompress` is RFC 9496's decoding
+`Ristretto.decodeRep` of the bytes' value;
 `double_and_compress_batch` encodes the doubled points; `from_uniform_bytes` is RFC 9496's one-way
 map `Ristretto.fromUniformRep`, and `map_to_curve` its `MAP` (`Ristretto.mapRep`) of the low 255
 bits. Scalars are unreduced (`s.asNat < 2^255`, the `Scalar` invariant). Functions with
@@ -67,8 +71,8 @@ with tables.
 
 Definitions used: `EdwardsPoint.toPoint`, `OnCurve`, `LimbsLt`, the tables' `Represents`
 (`Defs/Edwards.lean`, `Defs/ScalarMul.lean`), `CompressedRistretto.asNat` (`Defs/Ristretto.lean`),
-`Scalar.asNat` (`Defs/Scalar.lean`), `Iterator.Yields` (`Defs/Iterator.lean`),
-`curve25519.edwards.Rel`, `Ristretto.encodeRep`, `Ristretto.decodeRep`, `Ristretto.mapRep`,
+`Scalar.asNat` (`Defs/Scalar.lean`), `Iterator.Yields` (`Defs/Iterator.lean`), Mathlib's
+`Even`, `curve25519.edwards.Rel`, `Ristretto.encodeRep`, `Ristretto.decodeRep`, `Ristretto.mapRep`,
 `Ristretto.fromUniformRep` (`Curve25519/Ristretto/`), `curve25519.basepoint`, `decodeU`
 (`Curve25519/`), `subtle.Choice.IsValid` (`Subtle/`).
 
@@ -135,24 +139,24 @@ namespace Curve25519Dalek.ristretto
 namespace CompressedRistretto
 
 /-- `CompressedRistretto::decompress`: RFC 9496's decoding of the bytes' value (`none` unless it
-is the canonical, non-negative encoding of a point of the class); the point is on the curve with
-limbs `< 2^52`. -/
+is the canonical, non-negative encoding of a point of the class); the point is on the curve,
+even (a ristretto255 representative) and has limbs `< 2^52`. -/
 recall «x86_64-tables».decompress_spec (self : CompressedRistretto) :
     decompress.«x86_64-tables» self ⦃ (r : Option RistrettoPoint.«x86_64-tables») =>
       r.map edwards.EdwardsPoint.«x86_64-tables».toPoint = Ristretto.decodeRep self.asNat ∧
-      ∀ q, r = some q → q.OnCurve ∧ q.LimbsLt 52 ⦄
+      ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms «x86_64-tables».decompress_spec
 
 
 /-- `CompressedRistretto::decompress`: RFC 9496's decoding of the bytes' value (`none` unless it
-is the canonical, non-negative encoding of a point of the class); the point is on the curve with
-limbs `< 2^26`. -/
+is the canonical, non-negative encoding of a point of the class); the point is on the curve,
+even (a ristretto255 representative) and has limbs `< 2^26`. -/
 recall «i686-tables».decompress_spec (self : CompressedRistretto) :
     decompress.«i686-tables» self ⦃ (r : Option RistrettoPoint.«i686-tables») =>
       r.map edwards.EdwardsPoint.«i686-tables».toPoint = Ristretto.decodeRep self.asNat ∧
-      ∀ q, r = some q → q.OnCurve ∧ q.LimbsLt 26 ⦄
+      ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in
@@ -160,12 +164,12 @@ recall «i686-tables».decompress_spec (self : CompressedRistretto) :
 
 
 /-- `CompressedRistretto::decompress`: RFC 9496's decoding of the bytes' value (`none` unless it
-is the canonical, non-negative encoding of a point of the class); the point is on the curve with
-limbs `< 2^52`. -/
+is the canonical, non-negative encoding of a point of the class); the point is on the curve,
+even (a ristretto255 representative) and has limbs `< 2^52`. -/
 recall «x86_64-no-tables».decompress_spec (self : CompressedRistretto) :
     decompress.«x86_64-no-tables» self ⦃ (r : Option RistrettoPoint.«x86_64-no-tables») =>
       r.map edwards.EdwardsPoint.«x86_64-no-tables».toPoint = Ristretto.decodeRep self.asNat ∧
-      ∀ q, r = some q → q.OnCurve ∧ q.LimbsLt 52 ⦄
+      ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in
@@ -173,12 +177,12 @@ recall «x86_64-no-tables».decompress_spec (self : CompressedRistretto) :
 
 
 /-- `CompressedRistretto::decompress`: RFC 9496's decoding of the bytes' value (`none` unless it
-is the canonical, non-negative encoding of a point of the class); the point is on the curve with
-limbs `< 2^26`. -/
+is the canonical, non-negative encoding of a point of the class); the point is on the curve,
+even (a ristretto255 representative) and has limbs `< 2^26`. -/
 recall «i686-no-tables».decompress_spec (self : CompressedRistretto) :
     decompress.«i686-no-tables» self ⦃ (r : Option RistrettoPoint.«i686-no-tables») =>
       r.map edwards.EdwardsPoint.«i686-no-tables».toPoint = Ristretto.decodeRep self.asNat ∧
-      ∀ q, r = some q → q.OnCurve ∧ q.LimbsLt 26 ⦄
+      ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in
@@ -368,10 +372,12 @@ namespace Curve25519Dalek.ristretto
 namespace «RistrettoPointx86_64-tables»
 
 /-- `RistrettoPoint::from_uniform_bytes`: RFC 9496's one-way map of the 64 bytes' little-endian
-value, `MAP(r₀) + MAP(r₁)` for the two halves; limbs `< 2^52`. -/
+value, `MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255 representative);
+limbs `< 2^52`. -/
 recall from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«x86_64-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧ r.LimbsLt 52 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧
+        r.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms from_uniform_bytes_spec
@@ -381,10 +387,12 @@ end «RistrettoPointx86_64-tables»
 namespace «RistrettoPointi686-tables»
 
 /-- `RistrettoPoint::from_uniform_bytes`: RFC 9496's one-way map of the 64 bytes' little-endian
-value, `MAP(r₀) + MAP(r₁)` for the two halves; limbs `< 2^26`. -/
+value, `MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255 representative);
+limbs `< 2^26`. -/
 recall from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«i686-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧ r.LimbsLt 26 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧
+        r.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms from_uniform_bytes_spec
@@ -396,10 +404,12 @@ namespace Curve25519Dalek.ristretto
 namespace «RistrettoPointx86_64-no-tables»
 
 /-- `RistrettoPoint::from_uniform_bytes`: RFC 9496's one-way map of the 64 bytes' little-endian
-value, `MAP(r₀) + MAP(r₁)` for the two halves; limbs `< 2^52`. -/
+value, `MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255 representative);
+limbs `< 2^52`. -/
 recall from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧ r.LimbsLt 52 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧
+        r.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms from_uniform_bytes_spec
@@ -409,10 +419,12 @@ end «RistrettoPointx86_64-no-tables»
 namespace «RistrettoPointi686-no-tables»
 
 /-- `RistrettoPoint::from_uniform_bytes`: RFC 9496's one-way map of the 64 bytes' little-endian
-value, `MAP(r₀) + MAP(r₁)` for the two halves; limbs `< 2^26`. -/
+value, `MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255 representative);
+limbs `< 2^26`. -/
 recall from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«i686-no-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧ r.LimbsLt 26 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧
+        r.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms from_uniform_bytes_spec
@@ -426,7 +438,7 @@ namespace ristretto.RistrettoPoint.«x86_64-tables».Insts.Curve25519_dalekTrait
 /-- `Identity for RistrettoPoint` represents the neutral element. -/
 recall identity_spec :
     identity ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
-      r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms identity_spec
@@ -438,7 +450,7 @@ namespace ristretto.RistrettoPoint.«i686-tables».Insts.Curve25519_dalekTraitsI
 /-- `Identity for RistrettoPoint` represents the neutral element. -/
 recall identity_spec :
     identity ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
-      r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms identity_spec
@@ -452,7 +464,7 @@ namespace ristretto.RistrettoPoint.«x86_64-tables».Insts.CoreDefaultDefault
 /-- `Default for RistrettoPoint` represents the neutral element. -/
 recall default_spec :
     default ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
-      r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms default_spec
@@ -464,7 +476,7 @@ namespace ristretto.RistrettoPoint.«i686-tables».Insts.CoreDefaultDefault
 /-- `Default for RistrettoPoint` represents the neutral element. -/
 recall default_spec :
     default ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
-      r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms default_spec
@@ -478,7 +490,7 @@ namespace ristretto.RistrettoPoint.«x86_64-no-tables».Insts.Curve25519_dalekTr
 /-- `Identity for RistrettoPoint` represents the neutral element. -/
 recall identity_spec :
     identity ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms identity_spec
@@ -490,7 +502,7 @@ namespace ristretto.RistrettoPoint.«i686-no-tables».Insts.Curve25519_dalekTrai
 /-- `Identity for RistrettoPoint` represents the neutral element. -/
 recall identity_spec :
     identity ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
-      r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms identity_spec
@@ -504,7 +516,7 @@ namespace ristretto.RistrettoPoint.«x86_64-no-tables».Insts.CoreDefaultDefault
 /-- `Default for RistrettoPoint` represents the neutral element. -/
 recall default_spec :
     default ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms default_spec
@@ -516,7 +528,7 @@ namespace ristretto.RistrettoPoint.«i686-no-tables».Insts.CoreDefaultDefault
 /-- `Default for RistrettoPoint` represents the neutral element. -/
 recall default_spec :
     default ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
-      r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms default_spec
@@ -2229,7 +2241,8 @@ namespace «RistrettoPointx86_64-tables»
 limbs `< 2^52`. -/
 recall mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255) :
     mul_base scalar ⦃ (r : RistrettoPoint.«x86_64-tables») =>
-      r.OnCurve ∧ r.toPoint = scalar.asNat • basepoint ∧ r.LimbsLt 52 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
+        r.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_base_spec
@@ -2242,7 +2255,8 @@ namespace «RistrettoPointi686-tables»
 limbs `< 2^26`. -/
 recall mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255) :
     mul_base scalar ⦃ (r : RistrettoPoint.«i686-tables») =>
-      r.OnCurve ∧ r.toPoint = scalar.asNat • basepoint ∧ r.LimbsLt 26 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
+        r.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_base_spec
@@ -2257,7 +2271,8 @@ namespace «RistrettoPointx86_64-no-tables»
 limbs `< 2^52`. -/
 recall mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255) :
     mul_base scalar ⦃ (r : RistrettoPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ r.toPoint = scalar.asNat • basepoint ∧ r.LimbsLt 52 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
+        r.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_base_spec
@@ -2270,7 +2285,8 @@ namespace «RistrettoPointi686-no-tables»
 limbs `< 2^26`. -/
 recall mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255) :
     mul_base scalar ⦃ (r : RistrettoPoint.«i686-no-tables») =>
-      r.OnCurve ∧ r.toPoint = scalar.asNat • basepoint ∧ r.LimbsLt 26 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
+        r.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_base_spec
@@ -3282,10 +3298,11 @@ namespace Curve25519Dalek.ristretto.elligator
 namespace «RistrettoPointx86_64-tables»
 
 /-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the low `255` bits of the bytes, reduced
-modulo `p` (`decodeU`); limbs `< 2^52`. -/
+modulo `p` (`decodeU`): an even point (a ristretto255 representative); limbs `< 2^52`. -/
 recall map_to_curve_spec (bytes : Array U8 32#usize) :
     map_to_curve bytes ⦃ (r : RistrettoPoint.«x86_64-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.mapRep (decodeU (bytes.asNat 8)) ∧ r.LimbsLt 52 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep (decodeU (bytes.asNat 8)) ∧
+        r.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms map_to_curve_spec
@@ -3295,10 +3312,11 @@ end «RistrettoPointx86_64-tables»
 namespace «RistrettoPointi686-tables»
 
 /-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the low `255` bits of the bytes, reduced
-modulo `p` (`decodeU`); limbs `< 2^26`. -/
+modulo `p` (`decodeU`): an even point (a ristretto255 representative); limbs `< 2^26`. -/
 recall map_to_curve_spec (bytes : Array U8 32#usize) :
     map_to_curve bytes ⦃ (r : RistrettoPoint.«i686-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.mapRep (decodeU (bytes.asNat 8)) ∧ r.LimbsLt 26 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep (decodeU (bytes.asNat 8)) ∧
+        r.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms map_to_curve_spec
@@ -3310,10 +3328,11 @@ namespace Curve25519Dalek.ristretto.elligator
 namespace «RistrettoPointx86_64-no-tables»
 
 /-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the low `255` bits of the bytes, reduced
-modulo `p` (`decodeU`); limbs `< 2^52`. -/
+modulo `p` (`decodeU`): an even point (a ristretto255 representative); limbs `< 2^52`. -/
 recall map_to_curve_spec (bytes : Array U8 32#usize) :
     map_to_curve bytes ⦃ (r : RistrettoPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.mapRep (decodeU (bytes.asNat 8)) ∧ r.LimbsLt 52 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep (decodeU (bytes.asNat 8)) ∧
+        r.LimbsLt 52 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms map_to_curve_spec
@@ -3323,10 +3342,11 @@ end «RistrettoPointx86_64-no-tables»
 namespace «RistrettoPointi686-no-tables»
 
 /-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the low `255` bits of the bytes, reduced
-modulo `p` (`decodeU`); limbs `< 2^26`. -/
+modulo `p` (`decodeU`): an even point (a ristretto255 representative); limbs `< 2^26`. -/
 recall map_to_curve_spec (bytes : Array U8 32#usize) :
     map_to_curve bytes ⦃ (r : RistrettoPoint.«i686-no-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.mapRep (decodeU (bytes.asNat 8)) ∧ r.LimbsLt 26 ⦄
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep (decodeU (bytes.asNat 8)) ∧
+        r.LimbsLt 26 ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms map_to_curve_spec

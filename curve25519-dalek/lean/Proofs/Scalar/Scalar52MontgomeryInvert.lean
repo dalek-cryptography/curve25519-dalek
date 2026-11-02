@@ -14,6 +14,7 @@ import Proofs.Backend.Serial.U64.Scalar.MontgomerySquare
 import Proofs.Helpers.Montgomery
 import Proofs.Helpers.Scalar
 import Proofs.Helpers.ZMod
+import Proofs.Helpers.Radix
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

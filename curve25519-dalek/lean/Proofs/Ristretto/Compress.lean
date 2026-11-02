@@ -128,17 +128,17 @@ theorem compressBody_spec (hadd : B.AddSpec) (hsub : B.SubSpec) (hmul : B.MulSpe
   step with hcng s sn hsnv (B.red_mulIn hsb) as ⟨s1, hs10, hs11⟩
   step with htb s1 as ⟨r, hr⟩
   -- the code's values as field elements
-  have Xsel : B.toField X' = if (B.toField fe7).isNeg then B.toField iY else B.toField X :=
+  have Xsel : B.toField X' = if (B.toField fe7).IsNeg then B.toField iY else B.toField X :=
     eq_ite_of_choice hrotv (eq_one_iff_isNeg hrot) (fun h => by rw [hX0 h])
       (fun h => by rw [hX1 h])
-  have Ysel : B.toField Y' = if (B.toField fe7).isNeg then B.toField iX else B.toField Y :=
+  have Ysel : B.toField Y' = if (B.toField fe7).IsNeg then B.toField iX else B.toField Y :=
     eq_ite_of_choice hrotv (eq_one_iff_isNeg hrot) (fun h => by rw [hY0 h])
       (fun h => by rw [hY1 h])
   have I21sel : B.toField i21 =
-      if (B.toField fe7).isNeg then B.toField ench else B.toField i2 :=
+      if (B.toField fe7).IsNeg then B.toField ench else B.toField i2 :=
     eq_ite_of_choice hrotv (eq_one_iff_isNeg hrot) (fun h => by rw [hi210 h])
       (fun h => by rw [hi211 h])
-  have Y1sel : B.toField Y1 = if (B.toField fe8).isNeg then -B.toField Y' else B.toField Y' :=
+  have Y1sel : B.toField Y1 = if (B.toField fe8).IsNeg then -B.toField Y' else B.toField Y' :=
     eq_ite_of_choice hcnv (eq_one_iff_isNeg hcn) (fun h => by rw [hY10 h])
       (fun h => (hY11 h).1)
   have S1 : B.toField s1 = (B.toField s).abs :=

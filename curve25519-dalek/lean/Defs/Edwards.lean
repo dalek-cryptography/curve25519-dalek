@@ -335,7 +335,7 @@ reduced modulo `p`, sign `s := n / 2^255`; `none` if no point has this `y`, othe
 `y ≥ p` (reduced) and `x = 0` with `s = 1`. -/
 noncomputable def decodeLenient (n : ℕ) : Option curve25519.edwards.Point :=
   if h : ∃ x : ZMod p, curve25519.edwards.Equation x ((n % 2 ^ 255 : ℕ) : ZMod p) ∧
-      (x = 0 ∨ (x.isNeg ↔ n / 2 ^ 255 = 1)) then
+      (x = 0 ∨ (x.IsNeg ↔ n / 2 ^ 255 = 1)) then
     some ⟨Classical.choose h, ((n % 2 ^ 255 : ℕ) : ZMod p), (Classical.choose_spec h).1⟩
   else none
 
@@ -343,7 +343,7 @@ open scoped Classical in
 theorem decodeLenient_def (n : ℕ) :
     decodeLenient n =
       if h : ∃ x : ZMod p, curve25519.edwards.Equation x ((n % 2 ^ 255 : ℕ) : ZMod p) ∧
-          (x = 0 ∨ (x.isNeg ↔ n / 2 ^ 255 = 1)) then
+          (x = 0 ∨ (x.IsNeg ↔ n / 2 ^ 255 = 1)) then
         some ⟨Classical.choose h, ((n % 2 ^ 255 : ℕ) : ZMod p), (Classical.choose_spec h).1⟩
       else none := by
   unfold decodeLenient

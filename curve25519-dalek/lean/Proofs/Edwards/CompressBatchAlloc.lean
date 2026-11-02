@@ -119,7 +119,7 @@ open scoped Helpers.IndexStep in
 private theorem cbaLoop1_spec (hmul : B.MulSpec) {E : Type} [Inhabited E] (Xf Yf Zf : E → B.F)
     (compress : B.F → B.F → Result edwards.CompressedEdwardsY)
     (hcomp : ∀ x y, compress x y ⦃ (r : edwards.CompressedEdwardsY) =>
-      r.asNat = (B.toField y).val + 2 ^ 255 * (if (B.toField x).isNeg then 1 else 0) ⦄)
+      r.asNat = (B.toField y).val + 2 ^ 255 * (if (B.toField x).IsNeg then 1 else 0) ⦄)
     (inputs : Slice E)
     (hinputs : ∀ k < inputs.length, B.Red (Xf inputs[k]!) ∧ B.Red (Yf inputs[k]!)) (n : Usize)
     (hn : n.val = inputs.length) (zs : alloc.vec.Vec B.F) (hzslen : zs.length = inputs.length)
@@ -129,17 +129,17 @@ private theorem cbaLoop1_spec (hmul : B.MulSpec) {E : Type} [Inhabited E] (Xf Yf
     (hlen : out.length = i.val)
     (hout : ∀ k < i.val, out[k]!.asNat =
       (B.toField (Yf inputs[k]!) / B.toField (Zf inputs[k]!)).val + 2 ^ 255 *
-        (if (B.toField (Xf inputs[k]!) / B.toField (Zf inputs[k]!)).isNeg then 1 else 0)) :
+        (if (B.toField (Xf inputs[k]!) / B.toField (Zf inputs[k]!)).IsNeg then 1 else 0)) :
     B.cbaLoop1 Xf Yf compress inputs n zs out i
       ⦃ (r : alloc.vec.Vec edwards.CompressedEdwardsY) =>
         r.length = inputs.length ∧ ∀ k < inputs.length, r[k]!.asNat =
           (B.toField (Yf inputs[k]!) / B.toField (Zf inputs[k]!)).val + 2 ^ 255 *
-            (if (B.toField (Xf inputs[k]!) / B.toField (Zf inputs[k]!)).isNeg then 1 else 0) ⦄ := by
+            (if (B.toField (Xf inputs[k]!) / B.toField (Zf inputs[k]!)).IsNeg then 1 else 0) ⦄ := by
   unfold cbaLoop1
   apply loop.spec_decr_nat (measure := fun (_, i') => n.val - i'.val)
     (inv := fun (o, i') => i'.val ≤ n.val ∧ o.length = i'.val ∧ ∀ k < i'.val,
       o[k]!.asNat = (B.toField (Yf inputs[k]!) / B.toField (Zf inputs[k]!)).val + 2 ^ 255 *
-        (if (B.toField (Xf inputs[k]!) / B.toField (Zf inputs[k]!)).isNeg then 1 else 0))
+        (if (B.toField (Xf inputs[k]!) / B.toField (Zf inputs[k]!)).IsNeg then 1 else 0))
   · rintro ⟨o, i'⟩ ⟨hi', hl, ho⟩
     unfold cbaLoop1Body
     by_cases hlt : i' < n
@@ -162,7 +162,7 @@ private theorem cbaLoop1_spec (hmul : B.MulSpec) {E : Type} [Inhabited E] (Xf Yf
       rw [hi1, ← hl]
       refine alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x => x.asNat =
         (B.toField (Yf inputs[k]!) / B.toField (Zf inputs[k]!)).val + 2 ^ 255 *
-          (if (B.toField (Xf inputs[k]!) / B.toField (Zf inputs[k]!)).isNeg then 1 else 0))
+          (if (B.toField (Xf inputs[k]!) / B.toField (Zf inputs[k]!)).IsNeg then 1 else 0))
         ho1 (hl ▸ ho) ?_
       rw [hcey, hx, hy, hzk, hep, hl, div_eq_mul_inv, div_eq_mul_inv]
     · simp only [hlt, ite_false, WP.spec_ok]
@@ -176,14 +176,14 @@ theorem compressBatchAlloc_spec (hmul : B.MulSpec) (hinv : B.InvertBatchAllocSpe
     [Inhabited E] (Xf Yf Zf : E → B.F)
     (compress : B.F → B.F → Result edwards.CompressedEdwardsY)
     (hcomp : ∀ x y, compress x y ⦃ (r : edwards.CompressedEdwardsY) =>
-      r.asNat = (B.toField y).val + 2 ^ 255 * (if (B.toField x).isNeg then 1 else 0) ⦄)
+      r.asNat = (B.toField y).val + 2 ^ 255 * (if (B.toField x).IsNeg then 1 else 0) ⦄)
     (inputs : Slice E) (hinputs : ∀ i < inputs.length,
       B.Red (Xf inputs[i]!) ∧ B.Red (Yf inputs[i]!) ∧ B.Red (Zf inputs[i]!)) :
     B.compressBatchAlloc Xf Yf Zf compress inputs
       ⦃ (r : alloc.vec.Vec edwards.CompressedEdwardsY) =>
         r.length = inputs.length ∧ ∀ i < inputs.length, r[i]!.asNat =
           (B.toField (Yf inputs[i]!) / B.toField (Zf inputs[i]!)).val + 2 ^ 255 *
-            (if (B.toField (Xf inputs[i]!) / B.toField (Zf inputs[i]!)).isNeg then 1 else 0) ⦄ := by
+            (if (B.toField (Xf inputs[i]!) / B.toField (Zf inputs[i]!)).IsNeg then 1 else 0) ⦄ := by
   unfold compressBatchAlloc
   step with B.cbaLoop0_spec Zf inputs _ (Slice.len_val inputs)
     (alloc.vec.Vec.with_capacity B.F (Slice.len inputs)) 0#usize (by scalar_tac)
@@ -225,7 +225,7 @@ theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«x86_64-tables»
     compress_batch_alloc inputs ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
       r.length = inputs.length ∧ ∀ i < inputs.length,
         r[i]!.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
-          2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).isNeg then 1 else 0) ⦄ := by
+          2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).IsNeg then 1 else 0) ⦄ := by
   rw [compress_batch_alloc_eq]
   exact Backend.compressBatchAlloc_spec Backend.U64 Backend.U64.mul_spec
     Backend.U64.invertBatchAlloc_spec _ _ _ _
@@ -261,7 +261,7 @@ theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«i686-tables»)
     compress_batch_alloc inputs ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
       r.length = inputs.length ∧ ∀ i < inputs.length,
         r[i]!.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
-          2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).isNeg then 1 else 0) ⦄ := by
+          2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).IsNeg then 1 else 0) ⦄ := by
   rw [compress_batch_alloc_eq]
   exact Backend.compressBatchAlloc_spec Backend.U32 Backend.U32.mul_spec
     Backend.U32.invertBatchAlloc_spec _ _ _ _
@@ -297,7 +297,7 @@ theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«x86_64-no-table
     compress_batch_alloc inputs ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
       r.length = inputs.length ∧ ∀ i < inputs.length,
         r[i]!.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
-          2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).isNeg then 1 else 0) ⦄ := by
+          2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).IsNeg then 1 else 0) ⦄ := by
   rw [compress_batch_alloc_eq]
   exact Backend.compressBatchAlloc_spec Backend.U64 Backend.U64.mul_spec
     Backend.U64.invertBatchAlloc_spec _ _ _ _
@@ -333,7 +333,7 @@ theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«i686-no-tables�
     compress_batch_alloc inputs ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
       r.length = inputs.length ∧ ∀ i < inputs.length,
         r[i]!.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
-          2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).isNeg then 1 else 0) ⦄ := by
+          2 ^ 255 * (if (inputs[i]!.X.toField / inputs[i]!.Z.toField).IsNeg then 1 else 0) ⦄ := by
   rw [compress_batch_alloc_eq]
   exact Backend.compressBatchAlloc_spec Backend.U32 Backend.U32.mul_spec
     Backend.U32.invertBatchAlloc_spec _ _ _ _

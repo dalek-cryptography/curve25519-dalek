@@ -11,8 +11,8 @@ public section
 
 `RistrettoPoint` is `EdwardsPoint` (a type alias in the translation); a representative is valid
 when `self.OnCurve ∧ Even self.toPoint` (Mathlib's `Even`), with the Edwards `LimbsLt` bound as its
-limb bounds: nothing new is defined for it. The quotient and its encoding are
-`curve25519.Ristretto` (`Curve25519/Ristretto/*`): a `decompress` spec reads `r.map toPoint =
+limb bounds: nothing new is defined for it. The encoding is in `curve25519.Ristretto`
+(`Curve25519/Ristretto/*`): a `decompress` spec reads `r.map toPoint =
 Ristretto.decodeRep bytes.asNat`, `compress` reads `r.asNat = Ristretto.encodeRep self.toPoint`,
 `ct_eq` reads `c = 1 ↔ curve25519.edwards.Rel self.toPoint other.toPoint`.
 

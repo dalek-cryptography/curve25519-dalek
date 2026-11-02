@@ -58,7 +58,7 @@ private theorem odd128Limbs_length : odd128Limbs.length = 32 := by
 private theorem odd128_check :
     checkRowProj edwards (pow2 edwards 129 (basepointExt edwards))
       (pow2 edwards 128 (basepointExt edwards)) odd128Limbs = true := by
-  rw [edwards_eq_numerals]
+  rw [curve25519.Proofs.edwards_eq]
   decide +kernel
 
 private theorem odd128_bounded :

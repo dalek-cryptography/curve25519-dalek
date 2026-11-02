@@ -67,11 +67,11 @@ field element. -/
   let iX := X * sqrtM1
   let iY := Y * sqrtM1
   let enchanted := i1 * c
-  let rotate := (T * zInv).isNeg
+  let rotate := (T * zInv).IsNeg
   let X' := if rotate then iY else X
   let Y' := if rotate then iX else Y
   let den := if rotate then enchanted else i2
-  let Y'' := if (X' * zInv).isNeg then -Y' else Y'
+  let Y'' := if (X' * zInv).IsNeg then -Y' else Y'
   (den * (Z - Y'')).abs
 
 /-- **`compress` does not depend on the representative**: on extended coordinates of `P`
@@ -111,7 +111,7 @@ theorem compressProj_eq_encodeRep (P : edwards.Point) {c X Y Z T : ZMod p}
   have hn2 : Z * x * zP = x * zA := by rw [← hz]; ring
   rw [hr]
   congr 1
-  apply ZMod.abs_eq_abs_of_sq_eq p_mod_two
+  apply ZMod.abs_eq_abs_of_sq_eq
   simp only [ite_mul, hn1, hn2]
   split_ifs
   · linear_combination ((1 + y) * (1 - y) * c * (1 - -(x * sqrtM1))) ^ 2 * hkey +
@@ -132,12 +132,12 @@ quantities `e = 2 X Y`, `f = Z² + d T²`, `g = Y² + X²`, `h = Z² - d T²` of
   let inv := (eg * fh)⁻¹
   let zInv := eg * inv
   let tInv := fh * inv
-  let neg1 := (eg * zInv).isNeg
+  let neg1 := (eg * zInv).IsNeg
   let e' := if neg1 then g else e
   let g' := if neg1 then -e else g
   let h' := if neg1 then f * sqrtM1 else h
   let magic := if neg1 then (sqrtM1 : ZMod p) else c
-  let g'' := if (h' * e' * zInv).isNeg then -g' else g'
+  let g'' := if (h' * e' * zInv).IsNeg then -g' else g'
   ((h' - g'') * (magic * (g'' * tInv))).abs
 
 /-- **The batch formula is the encoding of the doubled point**: with `h² - g² = (a - d) e²` (which
@@ -192,11 +192,11 @@ theorem doubleCompress_eq_compressProj {c e f g h : ZMod p} (hc : c ^ 2 * (a - d
       linear_combination (a - d) * e ^ 2 * f ^ 2 * g ^ 2 * h ^ 2 * R6 +
         e ^ 2 * f ^ 2 * g ^ 2 * h ^ 2 * inv ^ 2 * hc + (e * f * g * h * inv) * hinv
     rw [hz]
-    apply ZMod.abs_eq_abs_of_sq_eq p_mod_two
-    by_cases hr : (e * g * (e * g * inv)).isNeg
+    apply ZMod.abs_eq_abs_of_sq_eq
+    by_cases hr : (e * g * (e * g * inv)).IsNeg
     · simp only [ite_eq_left hr]
       rw [show f * (sqrtM1 : ZMod p) * g = g * f * sqrtM1 by ring]
-      by_cases hn : (g * f * (sqrtM1 : ZMod p) * (e * g * inv)).isNeg
+      by_cases hn : (g * f * (sqrtM1 : ZMod p) * (e * g * inv)).IsNeg
       · simp only [ite_eq_left hn]
         linear_combination (inv ^ 2 * e ^ 2 * f ^ 2 * h ^ 2 *
             (f ^ 2 * ((sqrtM1 : ZMod p) ^ 2 - 1) - 2 * e * f * sqrtM1)) * hi -
@@ -209,7 +209,7 @@ theorem doubleCompress_eq_compressProj {c e f g h : ZMod p} (hc : c ^ 2 * (a - d
           (f ^ 2 * (a - d) ^ 2 * e ^ 2 * c ^ 2 * h ^ 2 * (f - e * sqrtM1) ^ 2) * R6
     · simp only [ite_eq_right hr]
       rw [show h * e = e * h by ring]
-      by_cases hn : (e * h * (e * g * inv)).isNeg
+      by_cases hn : (e * h * (e * g * inv)).IsNeg
       · simp only [ite_eq_left hn]
         linear_combination (-(h + g) ^ 2 * g ^ 2 * h ^ 2 * f ^ 2) * R6
       · simp only [ite_eq_right hn]

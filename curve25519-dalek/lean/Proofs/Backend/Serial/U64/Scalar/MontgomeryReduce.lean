@@ -21,6 +21,7 @@ import Proofs.Backend.Serial.U64.Scalar.Index
 import Proofs.Helpers.Array
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.Bitwise
+import Proofs.Helpers.Radix
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

@@ -28,7 +28,7 @@ bit `255`; limbs `< 2^52`. -/
 theorem compress_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52) :
     compress self ⦃ (r : CompressedEdwardsY) =>
       r.asNat = (self.Y.toField / self.Z.toField).val +
-        2 ^ 255 * (if (self.X.toField / self.Z.toField).isNeg then 1 else 0) ⦄ := by
+        2 ^ 255 * (if (self.X.toField / self.Z.toField).IsNeg then 1 else 0) ⦄ := by
   unfold compress
   step as ⟨ap, hx, hy, hb⟩
   step as ⟨r, hr⟩
@@ -54,7 +54,7 @@ bit `255`; limbs `< 2^26`. -/
 theorem compress_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26) :
     compress self ⦃ (r : CompressedEdwardsY) =>
       r.asNat = (self.Y.toField / self.Z.toField).val +
-        2 ^ 255 * (if (self.X.toField / self.Z.toField).isNeg then 1 else 0) ⦄ := by
+        2 ^ 255 * (if (self.X.toField / self.Z.toField).IsNeg then 1 else 0) ⦄ := by
   unfold compress
   step as ⟨ap, hx, hy, hb⟩
   step as ⟨r, hr⟩
@@ -80,7 +80,7 @@ bit `255`; limbs `< 2^52`. -/
 theorem compress_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
     compress self ⦃ (r : CompressedEdwardsY) =>
       r.asNat = (self.Y.toField / self.Z.toField).val +
-        2 ^ 255 * (if (self.X.toField / self.Z.toField).isNeg then 1 else 0) ⦄ := by
+        2 ^ 255 * (if (self.X.toField / self.Z.toField).IsNeg then 1 else 0) ⦄ := by
   unfold compress
   step as ⟨ap, hx, hy, hb⟩
   step as ⟨r, hr⟩
@@ -106,7 +106,7 @@ bit `255`; limbs `< 2^26`. -/
 theorem compress_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26) :
     compress self ⦃ (r : CompressedEdwardsY) =>
       r.asNat = (self.Y.toField / self.Z.toField).val +
-        2 ^ 255 * (if (self.X.toField / self.Z.toField).isNeg then 1 else 0) ⦄ := by
+        2 ^ 255 * (if (self.X.toField / self.Z.toField).IsNeg then 1 else 0) ⦄ := by
   unfold compress
   step as ⟨ap, hx, hy, hb⟩
   step as ⟨r, hr⟩

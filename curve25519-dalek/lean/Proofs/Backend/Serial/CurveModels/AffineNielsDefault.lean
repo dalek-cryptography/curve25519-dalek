@@ -34,7 +34,7 @@ theorem default_spec_point :
   spec_mono default_spec fun r ⟨hr, hb⟩ => by
     rw [AffineNielsPoint.«x86_64-tables».onCurve_iff,
       AffineNielsPoint.«x86_64-tables».toPoint_def, hr]
-    exact ⟨AffineNiels.onCurve_identity two_ne_zero, AffineNiels.toPoint_identity, hb⟩
+    exact ⟨AffineNiels.onCurve_identity, AffineNiels.toPoint_identity, hb⟩
 
 end AffineNielsPoint.«x86_64-tables».Insts.CoreDefaultDefault
 
@@ -57,7 +57,7 @@ theorem default_spec_point :
   spec_mono default_spec fun r ⟨hr, hb⟩ => by
     rw [AffineNielsPoint.«i686-tables».onCurve_iff,
       AffineNielsPoint.«i686-tables».toPoint_def, hr]
-    exact ⟨AffineNiels.onCurve_identity two_ne_zero, AffineNiels.toPoint_identity, hb⟩
+    exact ⟨AffineNiels.onCurve_identity, AffineNiels.toPoint_identity, hb⟩
 
 end AffineNielsPoint.«i686-tables».Insts.CoreDefaultDefault
 
@@ -80,7 +80,7 @@ theorem default_spec_point :
   spec_mono default_spec fun r ⟨hr, hb⟩ => by
     rw [AffineNielsPoint.«x86_64-no-tables».onCurve_iff,
       AffineNielsPoint.«x86_64-no-tables».toPoint_def, hr]
-    exact ⟨AffineNiels.onCurve_identity two_ne_zero, AffineNiels.toPoint_identity, hb⟩
+    exact ⟨AffineNiels.onCurve_identity, AffineNiels.toPoint_identity, hb⟩
 
 end AffineNielsPoint.«x86_64-no-tables».Insts.CoreDefaultDefault
 
@@ -103,7 +103,7 @@ theorem default_spec_point :
   spec_mono default_spec fun r ⟨hr, hb⟩ => by
     rw [AffineNielsPoint.«i686-no-tables».onCurve_iff,
       AffineNielsPoint.«i686-no-tables».toPoint_def, hr]
-    exact ⟨AffineNiels.onCurve_identity two_ne_zero, AffineNiels.toPoint_identity, hb⟩
+    exact ⟨AffineNiels.onCurve_identity, AffineNiels.toPoint_identity, hb⟩
 
 end AffineNielsPoint.«i686-no-tables».Insts.CoreDefaultDefault
 

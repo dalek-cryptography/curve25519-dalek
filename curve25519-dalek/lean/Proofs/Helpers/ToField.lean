@@ -207,7 +207,7 @@ theorem limbs_repeat_zero_lt (k : ℕ) : FieldElement51.LimbsLt k (Array.repeat 
 
 /-- The shape of `is_negative_spec`. -/
 theorem eq_one_iff_isNeg_toField {c : subtle.Choice} {a : FieldElement51}
-    (h : c.val = a.asNat % p % 2) : c = 1#u8 ↔ a.toField.isNeg := by
+    (h : c.val = a.asNat % p % 2) : c = 1#u8 ↔ a.toField.IsNeg := by
   rw [ZMod.isNeg_iff, toField_val, ← h]
   constructor
   · rintro rfl
@@ -216,7 +216,7 @@ theorem eq_one_iff_isNeg_toField {c : subtle.Choice} {a : FieldElement51}
     exact UScalar.eq_of_val_eq h1
 
 theorem eq_zero_iff_not_isNeg_toField {c : subtle.Choice} {a : FieldElement51} (hc : c.IsValid)
-    (h : c.val = a.asNat % p % 2) : c = 0#u8 ↔ ¬ a.toField.isNeg := by
+    (h : c.val = a.asNat % p % 2) : c = 0#u8 ↔ ¬ a.toField.IsNeg := by
   rw [← eq_one_iff_isNeg_toField h]
   rcases hc with rfl | rfl <;> simp
 
@@ -285,7 +285,7 @@ theorem toField_sq_mul_of_mod_sqrtM1 {r v u : FieldElement51}
   rw [toField_def, toField_def, toField_def, h']
 
 theorem not_isNeg_toField_of_mod {r : FieldElement51} (h : r.asNat % p % 2 = 0) :
-    ¬ r.toField.isNeg := by
+    ¬ r.toField.IsNeg := by
   rw [ZMod.not_isNeg_iff, toField_val]
   exact h
 

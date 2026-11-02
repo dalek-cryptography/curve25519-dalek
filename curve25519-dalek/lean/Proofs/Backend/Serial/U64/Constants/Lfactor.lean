@@ -6,6 +6,7 @@ Authors: Markus Dablander
 module
 public import Curve25519Dalek.Funs
 public import Curve25519.Basic
+import Proofs.Helpers.Radix
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP

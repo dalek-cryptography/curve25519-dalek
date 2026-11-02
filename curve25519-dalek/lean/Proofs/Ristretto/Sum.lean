@@ -73,7 +73,7 @@ theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.
     sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.LimbsLt 52 ⦄ := by
   unfold sum
-  step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, hacc, haccb⟩
+  step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, _, hacc, haccb⟩
   apply WP.spec_mono (sum_loop_spec borrowInst iterInst iter xs hiter ps hborrow hps hps_on acc
     haccb hacc_on)
   rintro r ⟨hron, hr, hrb⟩
@@ -137,7 +137,7 @@ theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.
     sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.LimbsLt 26 ⦄ := by
   unfold sum
-  step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, hacc, haccb⟩
+  step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, _, hacc, haccb⟩
   apply WP.spec_mono (sum_loop_spec borrowInst iterInst iter xs hiter ps hborrow hps hps_on acc
     haccb hacc_on)
   rintro r ⟨hron, hr, hrb⟩
@@ -201,7 +201,7 @@ theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.
     sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.LimbsLt 52 ⦄ := by
   unfold sum
-  step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, hacc, haccb⟩
+  step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, _, hacc, haccb⟩
   apply WP.spec_mono (sum_loop_spec borrowInst iterInst iter xs hiter ps hborrow hps hps_on acc
     haccb hacc_on)
   rintro r ⟨hron, hr, hrb⟩
@@ -265,7 +265,7 @@ theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.
     sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.LimbsLt 26 ⦄ := by
   unfold sum
-  step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, hacc, haccb⟩
+  step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, _, hacc, haccb⟩
   apply WP.spec_mono (sum_loop_spec borrowInst iterInst iter xs hiter ps hborrow hps hps_on acc
     haccb hacc_on)
   rintro r ⟨hron, hr, hrb⟩

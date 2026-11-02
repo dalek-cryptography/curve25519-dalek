@@ -17,7 +17,7 @@ root: for `r`, `v = (-1 - r d)(r + d)`, `u = (r + 1)(1 - d²)`, and `(s, c)` the
 `SQRT_RATIO_M1` branch (`s² v = u`, `c = -1` when `u / v` is a square; `s² v = r u`, `c = r`
 when it is not; `s = 0`, `c = r` when `v = 0`), the denominator `N K` with
 `N = c (r - 1)(d - 1)² - v`, `K = SQRT_AD_MINUS_ONE` is nonzero, `1 + s² ≠ 0`, and
-`(2 s v / (N K), (1 - s²) / (1 + s²))` is on `edwards` (`ell_good`). Instantiated by
+`(2 s v / (N K), (1 - s²) / (1 + s²))` is on `edwards` (`map_equation_of_branch`). Instantiated by
 `Curve25519.Ristretto.Map`. -/
 
 namespace curve25519.Proofs
@@ -28,8 +28,8 @@ open TwistedEdwardsModel
 (`e = 1`, `c = -1` or `e = r`, `c = r`) and `D = (-1 - r dd)(r + dd)`, the equation
 `-x² + y² = 1 + dd x² y²` at `x = 2 s D / (N K)`, `y = (1 - S) / (1 + S)`, multiplied out, with
 `K² = -(1 + dd)`. -/
-private theorem ell_E {F : Type*} [Field F] (dd r e c S D : F) (hD : D = (-1 - r * dd) * (r + dd))
-    (hDne : D ≠ 0) (hc : (e = 1 ∧ c = -1) ∨ (e = r ∧ c = r))
+private theorem map_equation_identity {F : Type*} [Field F] (dd r e c S D : F)
+    (hD : D = (-1 - r * dd) * (r + dd)) (hDne : D ≠ 0) (hc : (e = 1 ∧ c = -1) ∨ (e = r ∧ c = r))
     (hS : S * D = e * ((r + 1) * (1 - dd ^ 2))) :
     -(4 * S * D ^ 2) * (1 + S) ^ 2 +
         (1 - S) ^ 2 * (c * (r - 1) * (dd - 1) ^ 2 - D) ^ 2 * (-(1 + dd)) =
@@ -44,7 +44,7 @@ private theorem ell_E {F : Type*} [Field F] (dd r e c S D : F) (hD : D = (-1 - r
   rcases hc with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> ring
 
 /-- The curve equation from the multiplied-out identity. -/
-private theorem ell_equation (s D N : ZMod p) (hN : N ≠ 0) (hs : 1 + s ^ 2 ≠ 0)
+private theorem map_equation_of_identity (s D N : ZMod p) (hN : N ≠ 0) (hs : 1 + s ^ 2 ≠ 0)
     (E : -(4 * s ^ 2 * D ^ 2) * (1 + s ^ 2) ^ 2 + (1 - s ^ 2) ^ 2 * N ^ 2 =
       N ^ 2 * (1 + s ^ 2) ^ 2 + d * (4 * s ^ 2 * D ^ 2) * (1 - s ^ 2) ^ 2) :
     edwards.Equation (2 * s * D / N) ((1 - s ^ 2) / (1 + s ^ 2)) := by
@@ -54,7 +54,7 @@ private theorem ell_equation (s D N : ZMod p) (hN : N ≠ 0) (hs : 1 + s ^ 2 ≠
   linear_combination E
 
 /-- **The core of `MAP`**, abstracted over the branch data. -/
-theorem ell_good (r s c e D : ZMod p) (hD : D = (-1 - r * d) * (r + d))
+theorem map_equation_of_branch (r s c e D : ZMod p) (hD : D = (-1 - r * d) * (r + d))
     (hns : (r + 1) * (1 - d ^ 2) ≠ 0)
     (hcase : (D ≠ 0 ∧ ((e = 1 ∧ c = -1) ∨ (e = r ∧ c = r)) ∧
         s ^ 2 * D = e * ((r + 1) * (1 - d ^ 2))) ∨ (D = 0 ∧ s = 0 ∧ c = r)) :
@@ -68,7 +68,7 @@ theorem ell_good (r s c e D : ZMod p) (hD : D = (-1 - r * d) * (r + d))
   have E0 : -(4 * s ^ 2 * D ^ 2) * (1 + s ^ 2) ^ 2 + (1 - s ^ 2) ^ 2 * Nt ^ 2 * (-(1 + d)) =
       Nt ^ 2 * (-(1 + d)) * (1 + s ^ 2) ^ 2 + d * (4 * s ^ 2 * D ^ 2) * (1 - s ^ 2) ^ 2 := by
     rcases hcase with ⟨hDne, hc, hS⟩ | ⟨hD0, hs0, -⟩
-    · exact ell_E d r e c (s ^ 2) D hD hDne hc hS
+    · exact map_equation_identity d r e c (s ^ 2) D hD hDne hc hS
     · rw [hD0, hs0]
       ring
   have hNt_ne : Nt ≠ 0 := by
@@ -81,10 +81,7 @@ theorem ell_good (r s c e D : ZMod p) (hD : D = (-1 - r * d) * (r + d))
       · have hs2 : s ^ 2 = 0 := by
           rcases mul_eq_zero.mp h0 with h1 | h1
           · rcases mul_eq_zero.mp h1 with h2 | h2
-            · exfalso
-              have h4 : (4 : ZMod p) = 2 * 2 := by norm_num
-              rw [h4] at h2
-              exact two_ne_zero ((mul_self_eq_zero).mp h2)
+            · exact absurd h2 four_ne_zero
             · exact h2
           · exact absurd (pow_eq_zero_iff two_ne_zero |>.mp h1) hDne
         rw [hs2, zero_mul] at hS
@@ -139,10 +136,7 @@ theorem ell_good (r s c e D : ZMod p) (hD : D = (-1 - r * d) * (r + d))
     have hsq : (Nt * sqrtAdMinusOne) ^ 2 = d * (2 * s * D) ^ 2 := by
       have h4 : (4 : ZMod p) * ((Nt * sqrtAdMinusOne) ^ 2 - d * (4 * (-1) * D ^ 2)) = 0 := by
         linear_combination E
-      have h4' : (4 : ZMod p) ≠ 0 := by
-        rw [show (4 : ZMod p) = 2 * 2 by norm_num]
-        exact mul_ne_zero two_ne_zero two_ne_zero
-      have h5 := (mul_eq_zero.mp h4).resolve_left h4'
+      have h5 := (mul_eq_zero.mp h4).resolve_left four_ne_zero
       rw [show (2 * s * D) ^ 2 = 4 * s ^ 2 * D ^ 2 by ring, hS]
       linear_combination h5
     have hsD : 2 * s * D ≠ 0 := by
@@ -153,6 +147,6 @@ theorem ell_good (r s c e D : ZMod p) (hD : D = (-1 - r * d) * (r + d))
     apply not_isSquare_d
     refine ⟨Nt * sqrtAdMinusOne / (2 * s * D), ?_⟩
     rw [div_mul_div_comm, eq_div_iff (mul_ne_zero hsD hsD), ← sq, ← sq, hsq]
-  exact ⟨hNK, hs1, ell_equation s D _ hNK hs1 E⟩
+  exact ⟨hNK, hs1, map_equation_of_identity s D _ hNK hs1 E⟩
 
 end curve25519.Proofs

@@ -57,7 +57,7 @@ private theorem tableLimbs_length : tableLimbs.length = 768 := by
   decide +kernel
 
 private theorem table_check : checkTable edwards (basepointExt edwards) tableLimbs 32 = true := by
-  rw [edwards_eq_numerals]
+  rw [curve25519.Proofs.edwards_eq]
   decide +kernel
 
 private theorem table_bounded :

@@ -6,6 +6,7 @@ Authors: Alessandro D'Angelo, Oliver Butterley
 module
 public import Curve25519.Basic
 public import Defs.Scalar52
+import Proofs.Helpers.Radix
 public section
 
 /-! # Facts about the Montgomery radix `R = 2^260` modulo `L` -/

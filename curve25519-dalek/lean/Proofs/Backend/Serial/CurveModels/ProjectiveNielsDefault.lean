@@ -34,7 +34,7 @@ theorem default_spec_point :
   spec_mono default_spec fun r ⟨hr, hb⟩ => by
     rw [ProjectiveNielsPoint.«x86_64-tables».onCurve_iff,
       ProjectiveNielsPoint.«x86_64-tables».toPoint_def, hr]
-    exact ⟨ProjectiveNiels.onCurve_identity two_ne_zero, ProjectiveNiels.toPoint_identity, hb⟩
+    exact ⟨ProjectiveNiels.onCurve_identity, ProjectiveNiels.toPoint_identity, hb⟩
 
 end ProjectiveNielsPoint.«x86_64-tables».Insts.CoreDefaultDefault
 
@@ -57,7 +57,7 @@ theorem default_spec_point :
   spec_mono default_spec fun r ⟨hr, hb⟩ => by
     rw [ProjectiveNielsPoint.«i686-tables».onCurve_iff,
       ProjectiveNielsPoint.«i686-tables».toPoint_def, hr]
-    exact ⟨ProjectiveNiels.onCurve_identity two_ne_zero, ProjectiveNiels.toPoint_identity, hb⟩
+    exact ⟨ProjectiveNiels.onCurve_identity, ProjectiveNiels.toPoint_identity, hb⟩
 
 end ProjectiveNielsPoint.«i686-tables».Insts.CoreDefaultDefault
 
@@ -80,7 +80,7 @@ theorem default_spec_point :
   spec_mono default_spec fun r ⟨hr, hb⟩ => by
     rw [ProjectiveNielsPoint.«x86_64-no-tables».onCurve_iff,
       ProjectiveNielsPoint.«x86_64-no-tables».toPoint_def, hr]
-    exact ⟨ProjectiveNiels.onCurve_identity two_ne_zero, ProjectiveNiels.toPoint_identity, hb⟩
+    exact ⟨ProjectiveNiels.onCurve_identity, ProjectiveNiels.toPoint_identity, hb⟩
 
 end ProjectiveNielsPoint.«x86_64-no-tables».Insts.CoreDefaultDefault
 
@@ -103,7 +103,7 @@ theorem default_spec_point :
   spec_mono default_spec fun r ⟨hr, hb⟩ => by
     rw [ProjectiveNielsPoint.«i686-no-tables».onCurve_iff,
       ProjectiveNielsPoint.«i686-no-tables».toPoint_def, hr]
-    exact ⟨ProjectiveNiels.onCurve_identity two_ne_zero, ProjectiveNiels.toPoint_identity, hb⟩
+    exact ⟨ProjectiveNiels.onCurve_identity, ProjectiveNiels.toPoint_identity, hb⟩
 
 end ProjectiveNielsPoint.«i686-no-tables».Insts.CoreDefaultDefault
 

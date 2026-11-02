@@ -13,6 +13,7 @@ import Proofs.Backend.Serial.U32.Scalar.MontgomeryMul
 import Proofs.Backend.Serial.U32.Scalar.MontgomerySquare
 import Proofs.Helpers.Scalar29
 import Proofs.Helpers.ZMod
+import Proofs.Helpers.Radix
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

@@ -97,7 +97,7 @@ jobs:
           KEY: lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-${{ github.ref_name }}-${{ github.sha }}
         run: |
           gh cache list --ref "$GITHUB_REF" --key lean-build- --limit 100 --json id,key \
-            --jq '.[] | select(.key != env.KEY) | .id' |
+            --jq 'if any(.[]; .key == env.KEY) then .[] | select(.key != env.KEY) | .id else empty end' |
             xargs -r -n1 gh cache delete
 
       - name: Lint Subtle

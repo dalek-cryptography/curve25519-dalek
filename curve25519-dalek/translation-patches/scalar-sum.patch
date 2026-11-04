@@ -1,0 +1,27 @@
+Translation patch: <Scalar as Sum<T>>::sum
+
+Change: `iter.fold(..)` becomes a `for` loop.
+Why: Aeneas only models `Iterator::next` (aeneas#1057).
+Behaviour: identical for iterators whose `fold` agrees with `next` (all std/lawful iterators): the default `fold` is exactly this loop.
+
+diff --git a/curve25519-dalek/src/scalar.rs b/curve25519-dalek/src/scalar.rs
+index c417780..662f7ea 100644
+--- a/curve25519-dalek/src/scalar.rs
++++ b/curve25519-dalek/src/scalar.rs
+@@ -469,11 +469,15 @@ impl<T> Sum<T> for Scalar
+ where
+     T: Borrow<Scalar>,
+ {
+     fn sum<I>(iter: I) -> Self
+     where
+         I: Iterator<Item = T>,
+     {
+-        iter.fold(Scalar::ZERO, |acc, item| acc + item.borrow())
++        let mut acc = Scalar::ZERO;
++        for item in iter {
++            acc = acc + item.borrow();
++        }
++        acc
+     }
+ }
+ 

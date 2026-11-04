@@ -1,0 +1,65 @@
+name = "curve25519-dalek"
+version = "0.1.0"
+keywords = ["formal verification"]
+defaultTargets = ["Curve25519Dalek", "Subtle", "Zeroize", "Curve25519", "Defs", "Specs", "Proofs"]
+
+[leanOptions]
+pp.unicode.fun = true
+autoImplicit = false
+relaxedAutoImplicit = false
+weak.linter.mathlibStandardSet = true
+weak.linter.style.header = false
+maxRecDepth = 10000
+
+# Elliptic curves and their models over a field, independent of any curve.
+[[require]]
+name = "EllipticCurve"
+git = "https://github.com/Beneficial-AI-Foundation/elliptic-curve.git"
+rev = "4015c7cfab714640e77500bdbde6e64face3fbaa"
+
+# The pinned Aeneas version. Also read by `scripts/aeneas-install.sh` to download
+# the charon/aeneas binaries from the GitHub. The `rev` must be a GitHub release tag.
+[[require]]
+name = "aeneas"
+git = "https://github.com/AeneasVerif/aeneas.git"
+subDir = "backends/lean"
+rev = "nightly-2026.10.30-de16f3c"
+
+# Hand-written library for the `subtle` crate.
+[[lean_lib]]
+name = "Subtle"
+srcDir = "."
+
+# Hand-written library for the `zeroize` crate.
+[[lean_lib]]
+name = "Zeroize"
+srcDir = "."
+
+# Aeneas-generated Lean translation.
+[[lean_lib]]
+name = "Curve25519Dalek"
+srcDir = "curve25519-dalek/lean"
+
+# Curve25519 in general (parameters, models, encodings; `Curve25519/Models`, and
+# `Curve25519/ToEllipticCurve` staged for the EllipticCurve library), independent of dalek.
+[[lean_lib]]
+name = "Curve25519"
+srcDir = "."
+
+# Definitions needed to state the specs (audited). See curve25519-dalek/lean/README.md.
+[[lean_lib]]
+name = "Defs"
+srcDir = "curve25519-dalek/lean"
+globs = ["Defs.*"]
+
+# Spec summaries, one per Rust file (audited). See curve25519-dalek/lean/README.md.
+[[lean_lib]]
+name = "Specs"
+srcDir = "curve25519-dalek/lean"
+globs = ["Specs.*"]
+
+# Proofs, one file per Rust item, and the helper theorems they use. See curve25519-dalek/lean/README.md.
+[[lean_lib]]
+name = "Proofs"
+srcDir = "curve25519-dalek/lean"
+globs = ["Proofs.*"]

@@ -1,0 +1,49 @@
+Translation patch: EdwardsPoint::compress_batch_alloc
+
+Change: `map`/`collect` and `zip`/`map`/`collect` become `for` loops.
+Why: Aeneas only models `Iterator::next` (aeneas#1057).
+Behaviour: identical.
+Relies on: `invert_batch_alloc` takes `&mut [FieldElement]`, so it preserves `zs.len() == inputs.len()`.
+
+diff --git a/curve25519-dalek/src/edwards.rs b/curve25519-dalek/src/edwards.rs
+index 2a75012..e208c30 100644
+--- a/curve25519-dalek/src/edwards.rs
++++ b/curve25519-dalek/src/edwards.rs
+@@ -625,26 +625,27 @@ pub fn compress(&self) -> CompressedEdwardsY {
+         core::array::from_fn(|i| {
+             let x = &inputs[i].X * &zs[i];
+             let y = &inputs[i].Y * &zs[i];
+             AffinePoint { x, y }.compress()
+         })
+     }
+     /// Compress several `EdwardsPoint`s into `CompressedEdwardsY` format, using a batch inversion
+     /// for a significant speedup.
+     #[cfg(feature = "alloc")]
+     pub fn compress_batch_alloc(inputs: &[EdwardsPoint]) -> Vec<CompressedEdwardsY> {
+-        let mut zs = inputs.iter().map(|input| input.Z).collect::<Vec<_>>();
++        let mut zs = Vec::with_capacity(inputs.len());
++        for input in inputs {
++            zs.push(input.Z);
++        }
+         FieldElement::invert_batch_alloc(&mut zs);
+ 
+-        inputs
+-            .iter()
+-            .zip(&zs)
+-            .map(|(input, recip)| {
+-                let x = &input.X * recip;
+-                let y = &input.Y * recip;
+-                AffinePoint { x, y }.compress()
+-            })
+-            .collect()
++        let mut out = Vec::with_capacity(inputs.len());
++        for i in 0..inputs.len() {
++            let x = &inputs[i].X * &zs[i];
++            let y = &inputs[i].Y * &zs[i];
++            out.push(AffinePoint { x, y }.compress());
++        }
++        out
+     }
+ 
+     #[cfg(feature = "digest")]
+     // The function `map_to_curve` calculates an [EdwardsPoint] from a [FieldElement].

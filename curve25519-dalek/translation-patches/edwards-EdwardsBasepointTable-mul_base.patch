@@ -1,0 +1,76 @@
+Translation patch: impl_basepoint_table! mul_base (all EdwardsBasepointTable radixes)
+
+Change: `(0..$adds).filter(odd/even)` becomes `(1/0..$adds).step_by(2)`; parameter `scalar` renamed to `s`.
+Why: Aeneas only models `Iterator::next` (aeneas#1057). The rename: a variable named `scalar` clashes with the `scalar` module in Lean (aeneas#1098).
+Behaviour: identical.
+
+diff --git a/curve25519-dalek/src/edwards.rs b/curve25519-dalek/src/edwards.rs
+index 1120e8f..39aaeab 100644
+--- a/curve25519-dalek/src/edwards.rs
++++ b/curve25519-dalek/src/edwards.rs
+@@ -1189,61 +1189,61 @@ fn basepoint(&self) -> $point {
+             /// The computation uses Pippeneger's algorithm, as described for the
+             /// specific case of radix-16 on page 13 of the Ed25519 paper.
+             ///
+             /// # Piggenger's Algorithm Generalised
+             ///
+             /// Write the scalar \\(a\\) in radix-\\(w\\), where \\(w\\) is a power of
+             /// 2, with coefficients in \\([\frac{-w}{2},\frac{w}{2})\\), i.e.,
+             /// $$
+             ///     a = a\_0 + a\_1 w\^1 + \cdots + a\_{x} w\^{x},
+             /// $$
+             /// with
+             /// $$
+             /// \begin{aligned}
+             ///     \frac{-w}{2} \leq a_i < \frac{w}{2}
+             ///     &&\cdots&&
+             ///     \frac{-w}{2} \leq a\_{x} \leq \frac{w}{2}
+             /// \end{aligned}
+             /// $$
+             /// and the number of additions, \\(x\\), is given by
+             /// \\(x = \lceil \frac{256}{w} \rceil\\). Then
+             /// $$
+             ///     a B = a\_0 B + a\_1 w\^1 B + \cdots + a\_{x-1} w\^{x-1} B.
+             /// $$
+             /// Grouping even and odd coefficients gives
+             /// $$
+             /// \begin{aligned}
+             ///     a B = \quad a\_0 w\^0 B +& a\_2 w\^2 B + \cdots + a\_{x-2} w\^{x-2} B    \\\\
+             ///               + a\_1 w\^1 B +& a\_3 w\^3 B + \cdots + a\_{x-1} w\^{x-1} B    \\\\
+             ///         = \quad(a\_0 w\^0 B +& a\_2 w\^2 B + \cdots + a\_{x-2} w\^{x-2} B)   \\\\
+             ///             + w(a\_1 w\^0 B +& a\_3 w\^2 B + \cdots + a\_{x-1} w\^{x-2} B).  \\\\
+             /// \end{aligned}
+             /// $$
+             /// For each \\(i = 0 \ldots 31\\), we create a lookup table of
+             /// $$
+             /// [w\^{2i} B, \ldots, \frac{w}{2}\cdot w\^{2i} B],
+             /// $$
+             /// and use it to select \\( y \cdot w\^{2i} \cdot B \\) in constant time.
+             ///
+             /// The radix-\\(w\\) representation requires that the scalar is bounded
+             /// by \\(2\^{255}\\), which is always the case.
+             ///
+             /// The above algorithm is trivially generalised to other powers-of-2 radices.
+-            fn mul_base(&self, scalar: &Scalar) -> $point {
+-                let a = scalar.as_radix_2w($radix);
++            fn mul_base(&self, s: &Scalar) -> $point {
++                let a = s.as_radix_2w($radix);
+ 
+                 let tables = &self.0;
+                 let mut P = <$point>::identity();
+ 
+-                for i in (0..$adds).filter(|x| x % 2 == 1) {
++                for i in (1..$adds).step_by(2) {
+                     P = (&P + &tables[i / 2].select(a[i])).as_extended();
+                 }
+ 
+                 P = P.mul_by_pow_2($radix);
+ 
+-                for i in (0..$adds).filter(|x| x % 2 == 0) {
++                for i in (0..$adds).step_by(2) {
+                     P = (&P + &tables[i / 2].select(a[i])).as_extended();
+                 }
+ 
+                 P
+             }
+         }

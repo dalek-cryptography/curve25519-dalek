@@ -1,29 +1,22 @@
 Translation patch: <VartimePrecomputedStraus as VartimePrecomputedMultiscalarMul>::new
 
-Change: `map`/`collect` becomes a helper.
-Why: Aeneas only models `Iterator::next` (aeneas#1057). Loops over a generic `IntoIterator` don't extract, hence the nested `It: Iterator` helper.
+Change: `map`/`collect` becomes a `for` loop that pushes each lookup table into a `Vec`.
+Why: Aeneas only models `Iterator::next` (aeneas#1057).
 Behaviour: identical.
 
 diff --git a/curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs b/curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs
 index 1f6a7f6..53f951f 100644
 --- a/curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs
 +++ b/curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs
-@@ -36,13 +36,22 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
+@@ -36,13 +36,15 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
      fn new<I>(static_points: I) -> Self
      where
          I: IntoIterator,
          I::Item: Borrow<Self::Point>,
      {
-+        fn static_lookup_tables<It>(mut static_points: It) -> Vec<NafLookupTable8<AffineNielsPoint>>
-+        where
-+            It: Iterator,
-+            It::Item: Borrow<EdwardsPoint>,
-+        {
-+            let mut out = Vec::new();
-+            while let Some(P) = static_points.next() {
-+                out.push(NafLookupTable8::<AffineNielsPoint>::from(P.borrow()));
-+            }
-+            out
++        let mut static_lookup_tables = vec![];
++        for P in static_points {
++            static_lookup_tables.push(NafLookupTable8::<AffineNielsPoint>::from(P.borrow()));
 +        }
 +
          Self {
@@ -31,7 +24,7 @@ index 1f6a7f6..53f951f 100644
 -                .into_iter()
 -                .map(|P| NafLookupTable8::<AffineNielsPoint>::from(P.borrow()))
 -                .collect(),
-+            static_lookup_tables: static_lookup_tables(static_points.into_iter()),
++            static_lookup_tables,
          }
      }
  

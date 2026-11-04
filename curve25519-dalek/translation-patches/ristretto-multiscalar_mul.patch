@@ -1,7 +1,7 @@
 Translation patch: <RistrettoPoint as MultiscalarMul>::multiscalar_mul
 
-Change: the lazy `points.map(|P| P.borrow().0)` becomes a `Vec` built by a helper.
-Why: Aeneas only models `Iterator::next` (aeneas#1057). Loops over a generic `IntoIterator` don't extract, hence the nested `It: Iterator` helper.
+Change: the lazy `points.map(|P| P.borrow().0)` becomes a `Vec` built by a `for` loop.
+Why: Aeneas only models `Iterator::next` (aeneas#1057).
 Behaviour: same result for valid inputs. Alone, not identical: the callee's `size_hint` asserts see an
 exact `Vec` (so e.g. `filter` inputs no longer panic, infinite points no longer terminate).
 With edwards-multiscalar_mul.patch applied, the behaviour is as declared there.
@@ -10,7 +10,7 @@ diff --git a/curve25519-dalek/src/ristretto.rs b/curve25519-dalek/src/ristretto.
 index 269662d..a3f6f18 100644
 --- a/curve25519-dalek/src/ristretto.rs
 +++ b/curve25519-dalek/src/ristretto.rs
-@@ -968,13 +968,25 @@ impl MultiscalarMul for RistrettoPoint {
+@@ -968,13 +968,16 @@ impl MultiscalarMul for RistrettoPoint {
      fn multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
      where
          I: IntoIterator,
@@ -19,19 +19,10 @@ index 269662d..a3f6f18 100644
          J::Item: Borrow<RistrettoPoint>,
      {
 -        let extended_points = points.into_iter().map(|P| P.borrow().0);
-+        fn extended_points<It>(mut points: It) -> Vec<EdwardsPoint>
-+        where
-+            It: Iterator,
-+            It::Item: Borrow<RistrettoPoint>,
-+        {
-+            let mut out = Vec::new();
-+            while let Some(P) = points.next() {
-+                out.push(P.borrow().0);
-+            }
-+            out
++        let mut extended_points = vec![];
++        for P in points {
++            extended_points.push(P.borrow().0);
 +        }
-+
-+        let extended_points = extended_points(points.into_iter());
          RistrettoPoint(EdwardsPoint::multiscalar_mul(scalars, extended_points))
      }
  }

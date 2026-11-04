@@ -9,6 +9,7 @@ public import Curve25519Dalek.Funs
 public import Defs.Scalar
 public import Defs.Scalar52
 import Mathlib.Tactic.ReduceModChar
+import Proofs.Helpers.Iterator
 import Proofs.Helpers.Array
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.Bitwise
@@ -48,18 +49,22 @@ namespace Curve25519Dalek.scalar
 @[local step]
 private theorem read_le_u64_into_loop_spec (src : Slice U8) (dst : Slice U64)
     (hsrc : src.length = 8 * dst.length) :
-    read_le_u64_into_loop src dst 0#usize ⦃ (r : Slice U64) =>
+    read_le_u64_into_loop { start := 0#usize, «end» := dst.len } src dst ⦃ (r : Slice U64) =>
       r.length = dst.length ∧
       ∀ i < dst.length, ∀ j : ℕ, j < 8 →
         r[i]!.val / 2 ^ (8 * j) % 2 ^ 8 = src[8 * i + j]!.val ⦄ := by
   unfold read_le_u64_into_loop
-  apply loop.spec_decr_nat (measure := fun (d, i) => d.length - i.val)
-    (inv := fun (d, k) => d.length = dst.length ∧ k.val ≤ dst.length ∧
-      ∀ i < k.val, ∀ j : ℕ, j < 8 → d[i]!.val / 2 ^ (8 * j) % 2 ^ 8 = src[8 * i + j]!.val)
-  · rintro ⟨d, k⟩ ⟨hd, hk, hdone⟩
+  apply loop.spec_decr_nat (measure := fun (it, _) => it.end.val - it.start.val)
+    (inv := fun (it, d) => it.end.val = dst.length ∧
+      d.length = dst.length ∧ it.start.val ≤ dst.length ∧
+      ∀ i < it.start.val, ∀ j : ℕ, j < 8 → d[i]!.val / 2 ^ (8 * j) % 2 ^ 8 = src[8 * i + j]!.val)
+  · rintro ⟨it, d⟩ ⟨hend, hd, hk, hdone⟩
+    let k := it.start
     unfold read_le_u64_into_loop.body
     by_cases hlt : k.val < d.length
-    · simp only [show k < d.len by scalar_tac, ite_true]
+    · step with core.iter.range.IteratorRange.next_Usize_some_spec
+        as ⟨o, it1, ho, hstart, hend1⟩
+      subst ho
       step as ⟨i2, hi2⟩
       step as ⟨i3, hi3⟩
       step as ⟨bytes, hbytes, hblen⟩
@@ -69,7 +74,6 @@ private theorem read_le_u64_into_loop_spec (src : Slice U8) (dst : Slice U64)
         simp only [core.result.Result.expect]
         step as ⟨x, hx⟩
         step as ⟨d1, hd1⟩
-        step as ⟨k1, hk1⟩
         have hword (j : ℕ) (hj : j < 8) :
             x.val / 2 ^ (8 * j) % 2 ^ 8 = src[8 * k.val + j]!.val := by
           have hL : ∀ c ∈ a.val.map (·.val), c < 256 := by
@@ -84,15 +88,17 @@ private theorem read_le_u64_into_loop_spec (src : Slice U8) (dst : Slice U64)
             Nat.ofDigits_div_pow_mod 256 _ hL j,
             List.getElem!_map_eq _ _ _ (by simp only [ha, hblen]; scalar_tac), ha, hbytes,
             List.getElem!_slice _ _ _ _ (by scalar_tac), hi2, Slice.getElem!_Nat_eq]
-        refine ⟨by simp [hd1, hd], by scalar_tac, fun i hi j hj => ?_,
-          by simp only [Slice.length, hd1, Slice.set_val_eq, List.length_set]; scalar_tac⟩
+        refine ⟨by simpa [hend1] using hend, by simp [hd1, hd], by scalar_tac, fun i hi j hj => ?_,
+          by scalar_tac⟩
         by_cases hik : i = k.val
         · rw [hd1, Slice.getElem!_Nat_set_eq _ _ _ _ ⟨hik.symm, by scalar_tac⟩, hik]
           exact hword j hj
         · rw [hd1, Slice.getElem!_Nat_set_ne _ _ _ _ (Ne.symm hik)]
           exact hdone i (by scalar_tac) j hj
       · exact absurd hblen (by scalar_tac)
-    · simp only [show ¬ k < d.len by scalar_tac, ite_false, WP.spec_ok]
+    · step with core.iter.range.IteratorRange.next_Usize_none_spec as ⟨o, it1, ho, hit1⟩
+      subst ho
+      simp only [WP.spec_ok]
       exact ⟨hd, fun i hi j hj => hdone i (by scalar_tac) j hj⟩
   · simp
 

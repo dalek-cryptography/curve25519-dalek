@@ -68,29 +68,30 @@ open ControlFlow
 
 /-- `multiscalar_mul_loop0_loop0.body` over the point operations. -/
 @[expose] def strausMsLoop00Body (lookup_tables : alloc.vec.Vec (window.LookupTable O.N))
-    (scalar_digits : alloc.vec.Vec (Array I8 64#usize)) (j : Usize) (n : Usize) (Q : O.E)
-    (i : Usize) : Result (ControlFlow (O.E × Usize) O.E) := do
-  if i < n
-  then
-    let lt ←
-      alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice (window.LookupTable O.N))
-        lookup_tables i
+    (scalar_digits : alloc.vec.Vec (Array I8 64#usize)) (j : Usize)
+    (iter : core.ops.range.Range Usize) (Q : O.E) :
+    Result (ControlFlow ((core.ops.range.Range Usize) × O.E) O.E) := do
+  let (o, iter1) ← core.iter.range.IteratorRange.next core.iter.range.StepUsize iter
+  match o with
+  | none => ok (done Q)
+  | some i =>
     let a ←
       alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice (Array I8 64#usize)) scalar_digits
         i
+    let lt ←
+      alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice (window.LookupTable O.N))
+        lookup_tables i
     let i1 ← Array.index_usize a j
     let R_i ← O.ltSelect lt i1
     let cp ← O.addN Q R_i
     let Q1 ← O.asExtended cp
-    let i2 ← i + 1#usize
-    ok (cont (Q1, i2))
-  else ok (done Q)
+    ok (cont (iter1, Q1))
 
-/-- `multiscalar_mul_loop0_loop0` over the point operations. -/
-@[expose] def strausMsLoop00 (lookup_tables : alloc.vec.Vec (window.LookupTable O.N))
-    (scalar_digits : alloc.vec.Vec (Array I8 64#usize)) (Q : O.E) (j : Usize) (n : Usize)
-    (i : Usize) : Result O.E := do
-  loop (fun (Q1, i1) => O.strausMsLoop00Body lookup_tables scalar_digits j n Q1 i1) (Q, i)
+/-- The inner range loop over the point operations. -/
+@[expose] def strausMsLoop00 (iter : core.ops.range.Range Usize)
+    (lookup_tables : alloc.vec.Vec (window.LookupTable O.N))
+    (scalar_digits : alloc.vec.Vec (Array I8 64#usize)) (Q : O.E) (j : Usize) : Result O.E := do
+  loop (fun (iter1, Q1) => O.strausMsLoop00Body lookup_tables scalar_digits j iter1 Q1) (iter, Q)
 
 /-- `multiscalar_mul_loop0.body` over the point operations. -/
 @[expose] def strausMsLoop0Body (lookup_tables : alloc.vec.Vec (window.LookupTable O.N))
@@ -107,8 +108,8 @@ open ControlFlow
     let Q1 ← O.mulByPow2 Q 4#u32
     let i := alloc.vec.Vec.len scalar_digits
     let i1 := alloc.vec.Vec.len lookup_tables
-    let n ← core.cmp.min core.cmp.OrdUsize i i1
-    let Q2 ← O.strausMsLoop00 lookup_tables scalar_digits Q1 j n 0#usize
+    let n ← lift (core.cmp.impls.OrdUsize.min i i1)
+    let Q2 ← O.strausMsLoop00 { start := 0#usize, «end» := n } lookup_tables scalar_digits Q1 j
     ok (cont (iter1, Q2))
 
 /-- `multiscalar_mul_loop0` over the point operations. -/
@@ -129,21 +130,27 @@ private theorem strausMsLoop00_spec (haddN : O.AddNSpec) (hasE : O.AsExtendedSpe
     (hD : ∀ k < n.val, ∀ e : ℕ, e < 64 → -8 ≤ (scalar_digits.val[k]!)[e]!.val ∧
       (scalar_digits.val[k]!)[e]!.val ≤ 8)
     (hi : i.val ≤ n.val) (hQ : O.Bnd Q) (hon : O.OnCurve Q) :
-    O.strausMsLoop00 lookup_tables scalar_digits Q j n i ⦃ (r : O.E) => O.OnCurve r ∧ O.Bnd r ∧
+    O.strausMsLoop00 { start := i, «end» := n } lookup_tables scalar_digits Q j
+      ⦃ (r : O.E) => O.OnCurve r ∧ O.Bnd r ∧
         O.toPoint r = O.toPoint Q + ∑ k ∈ Finset.Ico i.val n.val,
           (scalar_digits.val[k]!)[j.val]!.val • P k ⦄ := by
   unfold strausMsLoop00
-  apply loop.spec_decr_nat (measure := fun (_, i') => n.val - i'.val)
-    (inv := fun (Q', i') => i.val ≤ i'.val ∧ i'.val ≤ n.val ∧ O.OnCurve Q' ∧ O.Bnd Q' ∧
-      O.toPoint Q' = O.toPoint Q + ∑ k ∈ Finset.Ico i.val i'.val,
+  apply loop.spec_decr_nat (measure := fun (it, _) => n.val - it.start.val)
+    (inv := fun (it, Q') => it.end = n ∧ i.val ≤ it.start.val ∧
+      it.start.val ≤ n.val ∧ O.OnCurve Q' ∧ O.Bnd Q' ∧
+      O.toPoint Q' = O.toPoint Q + ∑ k ∈ Finset.Ico i.val it.start.val,
         (scalar_digits.val[k]!)[j.val]!.val • P k)
-  · rintro ⟨Q', i'⟩ ⟨hii, hin, hQ'on, hQ'b, hQ'p⟩
+  · rintro ⟨⟨i', e⟩, Q'⟩ ⟨he, hii, hin, hQ'on, hQ'b, hQ'p⟩
+    dsimp only at he
+    subst e
     unfold strausMsLoop00Body
     by_cases hlt : i' < n
-    · simp only [hlt, ite_true]
+    · step with core.iter.range.IteratorRange.next_Usize_some_spec
+        as ⟨o, it1, ho, hi1, he1⟩
+      subst ho
       have hk : i'.val < n.val := hlt
-      step as ⟨lt, hlt'⟩
       step as ⟨d, hd⟩
+      step as ⟨lt, hlt'⟩
       rw [← getElem!_pos] at hlt' hd
       step as ⟨x, hx⟩
       obtain ⟨hrep, hb⟩ := hT i'.val hk
@@ -151,14 +158,15 @@ private theorem strausMsLoop00_spec (haddN : O.AddNSpec) (hasE : O.AsExtendedSpe
         (by rw [hx, hd]; exact hD i'.val hk j.val hj) as ⟨q, hqon, hq, hqb⟩
       step with haddN Q' q hQ'b hqb hQ'on hqon as ⟨c, hcon, hc, hcb⟩
       step with hasE c hcb hcon as ⟨Q1, hQ1on, hQ1, hQ1b⟩
-      step as ⟨i1, hi1⟩
-      refine ⟨by scalar_tac, by scalar_tac, hQ1on, hQ1b, ?_, by scalar_tac⟩
-      rw [hQ1, hc, hQ'p, hq, hx, hd, show i1.val = i'.val + 1 by scalar_tac,
+      refine ⟨he1, by scalar_tac, by scalar_tac, hQ1on, hQ1b, ?_, by scalar_tac⟩
+      rw [hQ1, hc, hQ'p, hq, hx, hd, show it1.start.val = i'.val + 1 by scalar_tac,
         Finset.sum_Ico_succ_top hii, add_assoc]
-    · simp only [hlt, ite_false, WP.spec_ok]
+    · step with core.iter.range.IteratorRange.next_Usize_none_spec as ⟨o, it1, ho, hit1⟩
+      subst ho
+      simp only [WP.spec_ok]
       have : i'.val = n.val := by scalar_tac
       exact ⟨hQ'on, hQ'b, this ▸ hQ'p⟩
-  · exact ⟨le_refl _, hi, hon, hQ, by rw [Finset.Ico_self, Finset.sum_empty, add_zero]⟩
+  · exact ⟨rfl, le_refl _, hi, hon, hQ, by rw [Finset.Ico_self, Finset.sum_empty, add_zero]⟩
 
 /-- The outer loop: after the digit positions `e, …, 63`, the accumulator represents
 `∑_{k < n} radix16Tail d_k e • P_k`. -/

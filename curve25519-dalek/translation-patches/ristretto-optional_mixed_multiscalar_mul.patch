@@ -1,7 +1,7 @@
 Translation patch: <VartimeRistrettoPrecomputation as VartimePrecomputedMultiscalarMul>::optional_mixed_multiscalar_mul
 
-Change: the lazy `dynamic_points.map(..)` becomes a `Vec` built by a helper.
-Why: Aeneas only models `Iterator::next` (aeneas#1057). Loops over a generic `IntoIterator` don't extract, hence the nested `It: Iterator` helper.
+Change: the lazy `dynamic_points.map(..)` becomes a `Vec` built by a `for` loop.
+Why: Aeneas only models `Iterator::next` (aeneas#1057).
 Behaviour: same result for finite inputs, not identical: all dynamic points are read, even after a
 `None`, before the scalars (so input infinite after a `None` no longer terminates).
 
@@ -9,7 +9,7 @@ diff --git a/curve25519-dalek/src/ristretto.rs b/curve25519-dalek/src/ristretto.
 index 269662d..174f38b 100644
 --- a/curve25519-dalek/src/ristretto.rs
 +++ b/curve25519-dalek/src/ristretto.rs
-@@ -1028,22 +1028,33 @@ fn is_empty(&self) -> bool {
+@@ -1028,22 +1028,27 @@ fn is_empty(&self) -> bool {
      fn optional_mixed_multiscalar_mul<I, J, K>(
          &self,
          static_scalars: I,
@@ -23,15 +23,9 @@ index 269662d..174f38b 100644
          J::Item: Borrow<Scalar>,
          K: IntoIterator<Item = Option<Self::Point>>,
      {
-+        fn extended_points<It>(mut points: It) -> Vec<Option<EdwardsPoint>>
-+        where
-+            It: Iterator<Item = Option<RistrettoPoint>>,
-+        {
-+            let mut out = Vec::new();
-+            while let Some(P_opt) = points.next() {
-+                out.push(P_opt.map(|P| P.0));
-+            }
-+            out
++        let mut extended_points = vec![];
++        for P_opt in dynamic_points {
++            extended_points.push(P_opt.map(|P| P.0));
 +        }
 +
          self.0
@@ -39,7 +33,7 @@ index 269662d..174f38b 100644
                  static_scalars,
                  dynamic_scalars,
 -                dynamic_points.into_iter().map(|P_opt| P_opt.map(|P| P.0)),
-+                extended_points(dynamic_points.into_iter()),
++                extended_points,
              )
              .map(RistrettoPoint)
      }

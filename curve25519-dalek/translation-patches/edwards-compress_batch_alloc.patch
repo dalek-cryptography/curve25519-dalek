@@ -1,15 +1,15 @@
 Translation patch: EdwardsPoint::compress_batch_alloc
 
-Change: `map`/`collect` and `zip`/`map`/`collect` become index loops.
+Change: `map`/`collect` and `zip`/`map`/`collect` become `for` loops.
 Why: Aeneas only models `Iterator::next` (aeneas#1057).
 Behaviour: identical.
-Relies on: `invert_batch_alloc` takes `&mut [FieldElement]`, so it keeps the length `n`.
+Relies on: `invert_batch_alloc` takes `&mut [FieldElement]`, so it preserves `zs.len() == inputs.len()`.
 
 diff --git a/curve25519-dalek/src/edwards.rs b/curve25519-dalek/src/edwards.rs
 index 2a75012..e208c30 100644
 --- a/curve25519-dalek/src/edwards.rs
 +++ b/curve25519-dalek/src/edwards.rs
-@@ -625,26 +625,32 @@ pub fn compress(&self) -> CompressedEdwardsY {
+@@ -625,26 +625,27 @@ pub fn compress(&self) -> CompressedEdwardsY {
          core::array::from_fn(|i| {
              let x = &inputs[i].X * &zs[i];
              let y = &inputs[i].Y * &zs[i];
@@ -21,12 +21,9 @@ index 2a75012..e208c30 100644
      #[cfg(feature = "alloc")]
      pub fn compress_batch_alloc(inputs: &[EdwardsPoint]) -> Vec<CompressedEdwardsY> {
 -        let mut zs = inputs.iter().map(|input| input.Z).collect::<Vec<_>>();
-+        let n = inputs.len();
-+        let mut zs = Vec::with_capacity(n);
-+        let mut i = 0;
-+        while i < n {
-+            zs.push(inputs[i].Z);
-+            i += 1;
++        let mut zs = Vec::with_capacity(inputs.len());
++        for input in inputs {
++            zs.push(input.Z);
 +        }
          FieldElement::invert_batch_alloc(&mut zs);
  
@@ -39,13 +36,11 @@ index 2a75012..e208c30 100644
 -                AffinePoint { x, y }.compress()
 -            })
 -            .collect()
-+        let mut out = Vec::with_capacity(n);
-+        let mut i = 0;
-+        while i < n {
++        let mut out = Vec::with_capacity(inputs.len());
++        for i in 0..inputs.len() {
 +            let x = &inputs[i].X * &zs[i];
 +            let y = &inputs[i].Y * &zs[i];
 +            out.push(AffinePoint { x, y }.compress());
-+            i += 1;
 +        }
 +        out
      }

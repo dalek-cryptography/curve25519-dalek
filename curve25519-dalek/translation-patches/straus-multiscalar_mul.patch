@@ -1,7 +1,7 @@
 Translation patch: <Straus as MultiscalarMul>::multiscalar_mul
 
-Change: `map`/`collect` become helpers `lookup_tables`/`scalar_digits`; the `zip` becomes an index loop to the shorter length.
-Why: Aeneas only models `Iterator::next` (aeneas#1057). Loops over a generic `IntoIterator` don't extract, hence the nested `It: Iterator` helper.
+Change: `map`/`collect` become `for` loops; the `zip` becomes a range loop to the shorter length.
+Why: Aeneas only models `Iterator::next` (aeneas#1057).
 Behaviour: identical. Non-functional: the digits `Vec` grows by `push`, so freed buffers holding secret digits are not zeroized.
 Relies on: `as_radix_16` returns `[i8; 64]`.
 
@@ -9,7 +9,7 @@ diff --git a/curve25519-dalek/src/backend/serial/scalar_mul/straus.rs b/curve255
 index a20e393..3da961d 100644
 --- a/curve25519-dalek/src/backend/serial/scalar_mul/straus.rs
 +++ b/curve25519-dalek/src/backend/serial/scalar_mul/straus.rs
-@@ -52,94 +52,114 @@ impl MultiscalarMul for Straus {
+@@ -52,94 +52,96 @@ impl MultiscalarMul for Straus {
      /// Constant-time Straus using a fixed window of size \\(4\\).
      ///
      /// Our goal is to compute
@@ -76,31 +76,10 @@ index a20e393..3da961d 100644
 -            .into_iter()
 -            .map(|point| LookupTable::<ProjectiveNielsPoint>::from(point.borrow()))
 -            .collect();
-+        fn lookup_tables<It>(mut points: It) -> Vec<LookupTable<ProjectiveNielsPoint>>
-+        where
-+            It: Iterator,
-+            It::Item: Borrow<EdwardsPoint>,
-+        {
-+            let mut out = Vec::new();
-+            while let Some(point) = points.next() {
-+                out.push(LookupTable::<ProjectiveNielsPoint>::from(point.borrow()));
-+            }
-+            out
++        let mut lookup_tables = vec![];
++        for point in points {
++            lookup_tables.push(LookupTable::<ProjectiveNielsPoint>::from(point.borrow()));
 +        }
-+
-+        fn scalar_digits<It>(mut scalars: It) -> Vec<[i8; 64]>
-+        where
-+            It: Iterator,
-+            It::Item: Borrow<Scalar>,
-+        {
-+            let mut out = Vec::new();
-+            while let Some(s) = scalars.next() {
-+                out.push(s.borrow().as_radix_16());
-+            }
-+            out
-+        }
-+
-+        let lookup_tables = lookup_tables(points.into_iter());
  
          // This puts the scalar digits into a heap-allocated Vec.
          // To ensure that these are erased, pass ownership of the Vec into a
@@ -110,22 +89,24 @@ index a20e393..3da961d 100644
 -            .into_iter()
 -            .map(|s| s.borrow().as_radix_16())
 -            .collect();
-+        let mut scalar_digits = scalar_digits(scalars.into_iter());
++        let mut scalar_digits = vec![];
++        for s in scalars {
++            scalar_digits.push(s.borrow().as_radix_16());
++        }
  
          let mut Q = EdwardsPoint::identity();
          for j in (0..64).rev() {
              Q = Q.mul_by_pow_2(4);
 -            let it = scalar_digits.iter().zip(lookup_tables.iter());
++            let n = scalar_digits.len().min(lookup_tables.len());
 -            for (s_i, lookup_table_i) in it {
-+            let n = core::cmp::min(scalar_digits.len(), lookup_tables.len());
-+            let mut i = 0;
-+            while i < n {
++            for i in 0..n {
++                let s_i = &scalar_digits[i];
++                let lookup_table_i = &lookup_tables[i];
                  // R_i = s_{i,j} * P_i
--                let R_i = lookup_table_i.select(s_i[j]);
-+                let R_i = lookup_tables[i].select(scalar_digits[i][j]);
+                 let R_i = lookup_table_i.select(s_i[j]);
                  // Q = Q + R_i
                  Q = (&Q + &R_i).as_extended();
-+                i += 1;
              }
          }
  

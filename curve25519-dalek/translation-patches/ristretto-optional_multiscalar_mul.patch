@@ -1,7 +1,7 @@
 Translation patch: <RistrettoPoint as VartimeMultiscalarMul>::optional_multiscalar_mul
 
-Change: the lazy `points.map(|o| o.map(|P| P.0))` becomes a `Vec` built by a helper.
-Why: Aeneas only models `Iterator::next` (aeneas#1057). Loops over a generic `IntoIterator` don't extract, hence the nested `It: Iterator` helper.
+Change: the lazy `points.map(|o| o.map(|P| P.0))` becomes a `Vec` built by a `for` loop.
+Why: Aeneas only models `Iterator::next` (aeneas#1057).
 Behaviour: same result for valid inputs. Alone, not identical: as ristretto-multiscalar_mul, and all
 points are read even after a `None`. With edwards-optional_multiscalar_mul.patch applied, the
 behaviour is as declared there.
@@ -10,7 +10,7 @@ diff --git a/curve25519-dalek/src/ristretto.rs b/curve25519-dalek/src/ristretto.
 index 269662d..29f52a1 100644
 --- a/curve25519-dalek/src/ristretto.rs
 +++ b/curve25519-dalek/src/ristretto.rs
-@@ -984,23 +984,34 @@ impl VartimeMultiscalarMul for RistrettoPoint {
+@@ -984,23 +984,26 @@ impl VartimeMultiscalarMul for RistrettoPoint {
      fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<RistrettoPoint>
      where
          I: IntoIterator,
@@ -18,18 +18,10 @@ index 269662d..29f52a1 100644
          J: IntoIterator<Item = Option<RistrettoPoint>>,
      {
 -        let extended_points = points.into_iter().map(|opt_P| opt_P.map(|P| P.0));
-+        fn extended_points<It>(mut points: It) -> Vec<Option<EdwardsPoint>>
-+        where
-+            It: Iterator<Item = Option<RistrettoPoint>>,
-+        {
-+            let mut out = Vec::new();
-+            while let Some(opt_P) = points.next() {
-+                out.push(opt_P.map(|P| P.0));
-+            }
-+            out
++        let mut extended_points = vec![];
++        for opt_P in points {
++            extended_points.push(opt_P.map(|P| P.0));
 +        }
-+
-+        let extended_points = extended_points(points.into_iter());
  
          EdwardsPoint::optional_multiscalar_mul(scalars, extended_points).map(RistrettoPoint)
      }

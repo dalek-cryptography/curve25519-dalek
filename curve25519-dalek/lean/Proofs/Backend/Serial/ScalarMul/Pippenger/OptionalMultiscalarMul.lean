@@ -43,22 +43,90 @@ namespace Curve25519Dalek.backend.serial.scalar_mul.pippenger
 
 namespace Pippenger.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-tables»
 
-private theorem optional_multiscalar_mul_loop0_eq (bc : Usize)
-    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«x86_64-tables») (b : Usize) :
-    optional_multiscalar_mul_loop0 bc buckets b =
-      EdwardsOps.X86Tables.pippengerLoop0 bc buckets b := rfl
+private theorem optional_multiscalar_mul_loop0_eq (it : core.ops.range.Range Usize)
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«x86_64-tables») :
+    optional_multiscalar_mul_loop0 it buckets =
+      EdwardsOps.X86Tables.pippengerLoop0 it.end buckets it.start := by
+  cases it
+  rfl
 
-private theorem optional_multiscalar_mul_loop1_eq (w bc : Usize)
+private theorem reset_loop_eq (it : core.ops.range.Range Usize)
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«x86_64-tables») :
+    optional_multiscalar_mul_loop1_loop0 it buckets =
+      EdwardsOps.X86Tables.pippengerLoop10 it.end buckets it.start := by
+  cases it
+  rfl
+
+private theorem accumulation_loop_eq
+    (it : core.slice.iter.Iter ((Array I8 64#usize) × ProjectiveNielsPoint.«x86_64-tables»))
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«x86_64-tables») (e : Usize) :
+    optional_multiscalar_mul_loop1_loop1 it buckets e =
+      loop (fun (it1, b) => EdwardsOps.X86Tables.pippengerLoop11Body e it1 b) (it, buckets) := by
+  unfold optional_multiscalar_mul_loop1_loop1
+  congr 1
+  funext ⟨it1, b⟩
+  unfold optional_multiscalar_mul_loop1_loop1.body EdwardsOps.pippengerLoop11Body
+  simp only [uncurry]
+  apply congrArg (Std.bind (core.slice.iter.IteratorSliceIter.next it1))
+  funext ⟨o, it2⟩
+  rcases o with _ | ⟨digits, pt⟩
+  · rfl
+  · apply congrArg (Std.bind (Array.index_usize digits e))
+    funext i
+    apply congrArg (Std.bind (lift (IScalar.cast .I16 i)))
+    funext d
+    apply congrArg (Std.bind (lift (core.cmp.impls.OrdI16.cmp d 0#i16)))
+    funext ordering
+    cases ordering with
+    | lt =>
+      simp only [uncurry, Std.bind_assoc, bind_ok]
+      rfl
+    | eq =>
+      change ok (ControlFlow.cont (it2, b)) =
+        Std.bind (ok b) (fun b1 => ok (ControlFlow.cont (it2, b1)))
+      rw [Std.bind_ok]
+    | gt =>
+      simp only [uncurry, Std.bind_assoc, bind_ok]
+      rfl
+
+private theorem running_sum_loop_eq
+    (it : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«x86_64-tables»)
+    (inter sum : edwards.EdwardsPoint.«x86_64-tables») :
+    optional_multiscalar_mul_loop1_loop2 it buckets inter sum =
+      loop (fun (it1, i, s) => EdwardsOps.X86Tables.pippengerLoop12Body buckets it1 i s)
+        (it, inter, sum) := by
+  unfold optional_multiscalar_mul_loop1_loop2
+  congr 1
+
+private theorem optional_multiscalar_mul_loop1_eq
+    (it : core.iter.adapters.rev.Rev (core.ops.range.Range Usize)) (w bc : Usize)
     (sp : alloc.vec.Vec ((Array I8 64#usize) × ProjectiveNielsPoint.«x86_64-tables»))
     (buckets : alloc.vec.Vec edwards.EdwardsPoint.«x86_64-tables»)
-    (total : Option edwards.EdwardsPoint.«x86_64-tables») (di : Usize) :
-    optional_multiscalar_mul_loop1 w bc sp buckets total di =
-      EdwardsOps.X86Tables.pippengerLoop1 w bc sp buckets total di := by
-  unfold optional_multiscalar_mul_loop1 EdwardsOps.pippengerLoop1
+    (total : Option edwards.EdwardsPoint.«x86_64-tables») :
+    optional_multiscalar_mul_loop1 it w bc sp buckets total =
+      loop (fun (it1, b, t) => EdwardsOps.X86Tables.pippengerLoop1Body w bc sp it1 b t)
+        (it, buckets, total) := by
+  unfold optional_multiscalar_mul_loop1
   congr 1
-  funext ⟨b, t, d⟩
-  -- the two bodies match on `total` with their own matchers
-  cases t <;> rfl
+  funext ⟨it1, b, t⟩
+  unfold optional_multiscalar_mul_loop1.body EdwardsOps.pippengerLoop1Body
+  simp only [reset_loop_eq, accumulation_loop_eq, running_sum_loop_eq,
+    core.slice.Slice.iter, bind_ok, EdwardsOps.pippengerLoop11, EdwardsOps.pippengerLoop12,
+    core.iter.traits.iterator.Iterator.rev.trait_default,
+    core.iter.traits.iterator.Iterator.rev.default]
+  congr 1
+  funext ⟨o, it2⟩
+  cases o with
+  | none => rfl
+  | some e =>
+    congr 1; funext b1
+    funext b2
+    congr 1; funext i
+    congr 1; funext inter
+    congr 1; funext sm
+    congr 1; funext sm1
+    cases t <;> rfl
 
 end Pippenger.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-tables»
 
@@ -99,8 +167,9 @@ private theorem optional_multiscalar_mul_eq {I J Item IntoIter IntoIter2 : Type}
       EdwardsOps.X86Tables.pippengerMain scalarsInst borrowInst pointsInst scalars points := by
   unfold optional_multiscalar_mul EdwardsOps.pippengerMain
   simp only [scalars_points, scalars_points_loop_eq, optional_multiscalar_mul_loop0_eq,
-    optional_multiscalar_mul_loop1_eq]
-  -- down the binds to the match on `o`, which each side does with its own matcher
+    optional_multiscalar_mul_loop1_eq, EdwardsOps.pippengerScalarsPoints,
+    EdwardsOps.pippengerLoop1, core.iter.traits.iterator.Iterator.rev.trait_default,
+    bind_ok, core.iter.traits.iterator.Iterator.rev.default]
   congr 1; funext t
   congr 1; funext scalars1
   congr 1; funext w; congr 1; funext md; congr 1; funext dc; congr 1; funext bc
@@ -143,22 +212,90 @@ end Pippenger.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86
 
 namespace Pippenger.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-tables»
 
-private theorem optional_multiscalar_mul_loop0_eq (bc : Usize)
-    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«i686-tables») (b : Usize) :
-    optional_multiscalar_mul_loop0 bc buckets b =
-      EdwardsOps.I686Tables.pippengerLoop0 bc buckets b := rfl
+private theorem optional_multiscalar_mul_loop0_eq (it : core.ops.range.Range Usize)
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«i686-tables») :
+    optional_multiscalar_mul_loop0 it buckets =
+      EdwardsOps.I686Tables.pippengerLoop0 it.end buckets it.start := by
+  cases it
+  rfl
 
-private theorem optional_multiscalar_mul_loop1_eq (w bc : Usize)
+private theorem reset_loop_eq (it : core.ops.range.Range Usize)
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«i686-tables») :
+    optional_multiscalar_mul_loop1_loop0 it buckets =
+      EdwardsOps.I686Tables.pippengerLoop10 it.end buckets it.start := by
+  cases it
+  rfl
+
+private theorem accumulation_loop_eq
+    (it : core.slice.iter.Iter ((Array I8 64#usize) × ProjectiveNielsPoint.«i686-tables»))
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«i686-tables») (e : Usize) :
+    optional_multiscalar_mul_loop1_loop1 it buckets e =
+      loop (fun (it1, b) => EdwardsOps.I686Tables.pippengerLoop11Body e it1 b) (it, buckets) := by
+  unfold optional_multiscalar_mul_loop1_loop1
+  congr 1
+  funext ⟨it1, b⟩
+  unfold optional_multiscalar_mul_loop1_loop1.body EdwardsOps.pippengerLoop11Body
+  simp only [uncurry]
+  apply congrArg (Std.bind (core.slice.iter.IteratorSliceIter.next it1))
+  funext ⟨o, it2⟩
+  rcases o with _ | ⟨digits, pt⟩
+  · rfl
+  · apply congrArg (Std.bind (Array.index_usize digits e))
+    funext i
+    apply congrArg (Std.bind (lift (IScalar.cast .I16 i)))
+    funext d
+    apply congrArg (Std.bind (lift (core.cmp.impls.OrdI16.cmp d 0#i16)))
+    funext ordering
+    cases ordering with
+    | lt =>
+      simp only [uncurry, Std.bind_assoc, bind_ok]
+      rfl
+    | eq =>
+      change ok (ControlFlow.cont (it2, b)) =
+        Std.bind (ok b) (fun b1 => ok (ControlFlow.cont (it2, b1)))
+      rw [Std.bind_ok]
+    | gt =>
+      simp only [uncurry, Std.bind_assoc, bind_ok]
+      rfl
+
+private theorem running_sum_loop_eq
+    (it : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«i686-tables»)
+    (inter sum : edwards.EdwardsPoint.«i686-tables») :
+    optional_multiscalar_mul_loop1_loop2 it buckets inter sum =
+      loop (fun (it1, i, s) => EdwardsOps.I686Tables.pippengerLoop12Body buckets it1 i s)
+        (it, inter, sum) := by
+  unfold optional_multiscalar_mul_loop1_loop2
+  congr 1
+
+private theorem optional_multiscalar_mul_loop1_eq
+    (it : core.iter.adapters.rev.Rev (core.ops.range.Range Usize)) (w bc : Usize)
     (sp : alloc.vec.Vec ((Array I8 64#usize) × ProjectiveNielsPoint.«i686-tables»))
     (buckets : alloc.vec.Vec edwards.EdwardsPoint.«i686-tables»)
-    (total : Option edwards.EdwardsPoint.«i686-tables») (di : Usize) :
-    optional_multiscalar_mul_loop1 w bc sp buckets total di =
-      EdwardsOps.I686Tables.pippengerLoop1 w bc sp buckets total di := by
-  unfold optional_multiscalar_mul_loop1 EdwardsOps.pippengerLoop1
+    (total : Option edwards.EdwardsPoint.«i686-tables») :
+    optional_multiscalar_mul_loop1 it w bc sp buckets total =
+      loop (fun (it1, b, t) => EdwardsOps.I686Tables.pippengerLoop1Body w bc sp it1 b t)
+        (it, buckets, total) := by
+  unfold optional_multiscalar_mul_loop1
   congr 1
-  funext ⟨b, t, d⟩
-  -- the two bodies match on `total` with their own matchers
-  cases t <;> rfl
+  funext ⟨it1, b, t⟩
+  unfold optional_multiscalar_mul_loop1.body EdwardsOps.pippengerLoop1Body
+  simp only [reset_loop_eq, accumulation_loop_eq, running_sum_loop_eq,
+    core.slice.Slice.iter, bind_ok, EdwardsOps.pippengerLoop11, EdwardsOps.pippengerLoop12,
+    core.iter.traits.iterator.Iterator.rev.trait_default,
+    core.iter.traits.iterator.Iterator.rev.default]
+  congr 1
+  funext ⟨o, it2⟩
+  cases o with
+  | none => rfl
+  | some e =>
+    congr 1; funext b1
+    funext b2
+    congr 1; funext i
+    congr 1; funext inter
+    congr 1; funext sm
+    congr 1; funext sm1
+    cases t <;> rfl
 
 end Pippenger.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-tables»
 
@@ -199,8 +336,9 @@ private theorem optional_multiscalar_mul_eq {I J Item IntoIter IntoIter2 : Type}
       EdwardsOps.I686Tables.pippengerMain scalarsInst borrowInst pointsInst scalars points := by
   unfold optional_multiscalar_mul EdwardsOps.pippengerMain
   simp only [scalars_points, scalars_points_loop_eq, optional_multiscalar_mul_loop0_eq,
-    optional_multiscalar_mul_loop1_eq]
-  -- down the binds to the match on `o`, which each side does with its own matcher
+    optional_multiscalar_mul_loop1_eq, EdwardsOps.pippengerScalarsPoints,
+    EdwardsOps.pippengerLoop1, core.iter.traits.iterator.Iterator.rev.trait_default,
+    bind_ok, core.iter.traits.iterator.Iterator.rev.default]
   congr 1; funext t
   congr 1; funext scalars1
   congr 1; funext w; congr 1; funext md; congr 1; funext dc; congr 1; funext bc
@@ -243,22 +381,90 @@ end Pippenger.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi68
 
 namespace Pippenger.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-no-tables»
 
-private theorem optional_multiscalar_mul_loop0_eq (bc : Usize)
-    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«x86_64-no-tables») (b : Usize) :
-    optional_multiscalar_mul_loop0 bc buckets b =
-      EdwardsOps.X86NoTables.pippengerLoop0 bc buckets b := rfl
+private theorem optional_multiscalar_mul_loop0_eq (it : core.ops.range.Range Usize)
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«x86_64-no-tables») :
+    optional_multiscalar_mul_loop0 it buckets =
+      EdwardsOps.X86NoTables.pippengerLoop0 it.end buckets it.start := by
+  cases it
+  rfl
 
-private theorem optional_multiscalar_mul_loop1_eq (w bc : Usize)
+private theorem reset_loop_eq (it : core.ops.range.Range Usize)
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«x86_64-no-tables») :
+    optional_multiscalar_mul_loop1_loop0 it buckets =
+      EdwardsOps.X86NoTables.pippengerLoop10 it.end buckets it.start := by
+  cases it
+  rfl
+
+private theorem accumulation_loop_eq
+    (it : core.slice.iter.Iter ((Array I8 64#usize) × ProjectiveNielsPoint.«x86_64-no-tables»))
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«x86_64-no-tables») (e : Usize) :
+    optional_multiscalar_mul_loop1_loop1 it buckets e =
+      loop (fun (it1, b) => EdwardsOps.X86NoTables.pippengerLoop11Body e it1 b) (it, buckets) := by
+  unfold optional_multiscalar_mul_loop1_loop1
+  congr 1
+  funext ⟨it1, b⟩
+  unfold optional_multiscalar_mul_loop1_loop1.body EdwardsOps.pippengerLoop11Body
+  simp only [uncurry]
+  apply congrArg (Std.bind (core.slice.iter.IteratorSliceIter.next it1))
+  funext ⟨o, it2⟩
+  rcases o with _ | ⟨digits, pt⟩
+  · rfl
+  · apply congrArg (Std.bind (Array.index_usize digits e))
+    funext i
+    apply congrArg (Std.bind (lift (IScalar.cast .I16 i)))
+    funext d
+    apply congrArg (Std.bind (lift (core.cmp.impls.OrdI16.cmp d 0#i16)))
+    funext ordering
+    cases ordering with
+    | lt =>
+      simp only [uncurry, Std.bind_assoc, bind_ok]
+      rfl
+    | eq =>
+      change ok (ControlFlow.cont (it2, b)) =
+        Std.bind (ok b) (fun b1 => ok (ControlFlow.cont (it2, b1)))
+      rw [Std.bind_ok]
+    | gt =>
+      simp only [uncurry, Std.bind_assoc, bind_ok]
+      rfl
+
+private theorem running_sum_loop_eq
+    (it : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«x86_64-no-tables»)
+    (inter sum : edwards.EdwardsPoint.«x86_64-no-tables») :
+    optional_multiscalar_mul_loop1_loop2 it buckets inter sum =
+      loop (fun (it1, i, s) => EdwardsOps.X86NoTables.pippengerLoop12Body buckets it1 i s)
+        (it, inter, sum) := by
+  unfold optional_multiscalar_mul_loop1_loop2
+  congr 1
+
+private theorem optional_multiscalar_mul_loop1_eq
+    (it : core.iter.adapters.rev.Rev (core.ops.range.Range Usize)) (w bc : Usize)
     (sp : alloc.vec.Vec ((Array I8 64#usize) × ProjectiveNielsPoint.«x86_64-no-tables»))
     (buckets : alloc.vec.Vec edwards.EdwardsPoint.«x86_64-no-tables»)
-    (total : Option edwards.EdwardsPoint.«x86_64-no-tables») (di : Usize) :
-    optional_multiscalar_mul_loop1 w bc sp buckets total di =
-      EdwardsOps.X86NoTables.pippengerLoop1 w bc sp buckets total di := by
-  unfold optional_multiscalar_mul_loop1 EdwardsOps.pippengerLoop1
+    (total : Option edwards.EdwardsPoint.«x86_64-no-tables») :
+    optional_multiscalar_mul_loop1 it w bc sp buckets total =
+      loop (fun (it1, b, t) => EdwardsOps.X86NoTables.pippengerLoop1Body w bc sp it1 b t)
+        (it, buckets, total) := by
+  unfold optional_multiscalar_mul_loop1
   congr 1
-  funext ⟨b, t, d⟩
-  -- the two bodies match on `total` with their own matchers
-  cases t <;> rfl
+  funext ⟨it1, b, t⟩
+  unfold optional_multiscalar_mul_loop1.body EdwardsOps.pippengerLoop1Body
+  simp only [reset_loop_eq, accumulation_loop_eq, running_sum_loop_eq,
+    core.slice.Slice.iter, bind_ok, EdwardsOps.pippengerLoop11, EdwardsOps.pippengerLoop12,
+    core.iter.traits.iterator.Iterator.rev.trait_default,
+    core.iter.traits.iterator.Iterator.rev.default]
+  congr 1
+  funext ⟨o, it2⟩
+  cases o with
+  | none => rfl
+  | some e =>
+    congr 1; funext b1
+    funext b2
+    congr 1; funext i
+    congr 1; funext inter
+    congr 1; funext sm
+    congr 1; funext sm1
+    cases t <;> rfl
 
 end Pippenger.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-no-tables»
 
@@ -299,8 +505,9 @@ private theorem optional_multiscalar_mul_eq {I J Item IntoIter IntoIter2 : Type}
       EdwardsOps.X86NoTables.pippengerMain scalarsInst borrowInst pointsInst scalars points := by
   unfold optional_multiscalar_mul EdwardsOps.pippengerMain
   simp only [scalars_points, scalars_points_loop_eq, optional_multiscalar_mul_loop0_eq,
-    optional_multiscalar_mul_loop1_eq]
-  -- down the binds to the match on `o`, which each side does with its own matcher
+    optional_multiscalar_mul_loop1_eq, EdwardsOps.pippengerScalarsPoints,
+    EdwardsOps.pippengerLoop1, core.iter.traits.iterator.Iterator.rev.trait_default,
+    bind_ok, core.iter.traits.iterator.Iterator.rev.default]
   congr 1; funext t
   congr 1; funext scalars1
   congr 1; funext w; congr 1; funext md; congr 1; funext dc; congr 1; funext bc
@@ -343,22 +550,90 @@ end Pippenger.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86
 
 namespace Pippenger.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-no-tables»
 
-private theorem optional_multiscalar_mul_loop0_eq (bc : Usize)
-    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«i686-no-tables») (b : Usize) :
-    optional_multiscalar_mul_loop0 bc buckets b =
-      EdwardsOps.I686NoTables.pippengerLoop0 bc buckets b := rfl
+private theorem optional_multiscalar_mul_loop0_eq (it : core.ops.range.Range Usize)
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«i686-no-tables») :
+    optional_multiscalar_mul_loop0 it buckets =
+      EdwardsOps.I686NoTables.pippengerLoop0 it.end buckets it.start := by
+  cases it
+  rfl
 
-private theorem optional_multiscalar_mul_loop1_eq (w bc : Usize)
+private theorem reset_loop_eq (it : core.ops.range.Range Usize)
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«i686-no-tables») :
+    optional_multiscalar_mul_loop1_loop0 it buckets =
+      EdwardsOps.I686NoTables.pippengerLoop10 it.end buckets it.start := by
+  cases it
+  rfl
+
+private theorem accumulation_loop_eq
+    (it : core.slice.iter.Iter ((Array I8 64#usize) × ProjectiveNielsPoint.«i686-no-tables»))
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«i686-no-tables») (e : Usize) :
+    optional_multiscalar_mul_loop1_loop1 it buckets e =
+      loop (fun (it1, b) => EdwardsOps.I686NoTables.pippengerLoop11Body e it1 b) (it, buckets) := by
+  unfold optional_multiscalar_mul_loop1_loop1
+  congr 1
+  funext ⟨it1, b⟩
+  unfold optional_multiscalar_mul_loop1_loop1.body EdwardsOps.pippengerLoop11Body
+  simp only [uncurry]
+  apply congrArg (Std.bind (core.slice.iter.IteratorSliceIter.next it1))
+  funext ⟨o, it2⟩
+  rcases o with _ | ⟨digits, pt⟩
+  · rfl
+  · apply congrArg (Std.bind (Array.index_usize digits e))
+    funext i
+    apply congrArg (Std.bind (lift (IScalar.cast .I16 i)))
+    funext d
+    apply congrArg (Std.bind (lift (core.cmp.impls.OrdI16.cmp d 0#i16)))
+    funext ordering
+    cases ordering with
+    | lt =>
+      simp only [uncurry, Std.bind_assoc, bind_ok]
+      rfl
+    | eq =>
+      change ok (ControlFlow.cont (it2, b)) =
+        Std.bind (ok b) (fun b1 => ok (ControlFlow.cont (it2, b1)))
+      rw [Std.bind_ok]
+    | gt =>
+      simp only [uncurry, Std.bind_assoc, bind_ok]
+      rfl
+
+private theorem running_sum_loop_eq
+    (it : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
+    (buckets : alloc.vec.Vec edwards.EdwardsPoint.«i686-no-tables»)
+    (inter sum : edwards.EdwardsPoint.«i686-no-tables») :
+    optional_multiscalar_mul_loop1_loop2 it buckets inter sum =
+      loop (fun (it1, i, s) => EdwardsOps.I686NoTables.pippengerLoop12Body buckets it1 i s)
+        (it, inter, sum) := by
+  unfold optional_multiscalar_mul_loop1_loop2
+  congr 1
+
+private theorem optional_multiscalar_mul_loop1_eq
+    (it : core.iter.adapters.rev.Rev (core.ops.range.Range Usize)) (w bc : Usize)
     (sp : alloc.vec.Vec ((Array I8 64#usize) × ProjectiveNielsPoint.«i686-no-tables»))
     (buckets : alloc.vec.Vec edwards.EdwardsPoint.«i686-no-tables»)
-    (total : Option edwards.EdwardsPoint.«i686-no-tables») (di : Usize) :
-    optional_multiscalar_mul_loop1 w bc sp buckets total di =
-      EdwardsOps.I686NoTables.pippengerLoop1 w bc sp buckets total di := by
-  unfold optional_multiscalar_mul_loop1 EdwardsOps.pippengerLoop1
+    (total : Option edwards.EdwardsPoint.«i686-no-tables») :
+    optional_multiscalar_mul_loop1 it w bc sp buckets total =
+      loop (fun (it1, b, t) => EdwardsOps.I686NoTables.pippengerLoop1Body w bc sp it1 b t)
+        (it, buckets, total) := by
+  unfold optional_multiscalar_mul_loop1
   congr 1
-  funext ⟨b, t, d⟩
-  -- the two bodies match on `total` with their own matchers
-  cases t <;> rfl
+  funext ⟨it1, b, t⟩
+  unfold optional_multiscalar_mul_loop1.body EdwardsOps.pippengerLoop1Body
+  simp only [reset_loop_eq, accumulation_loop_eq, running_sum_loop_eq,
+    core.slice.Slice.iter, bind_ok, EdwardsOps.pippengerLoop11, EdwardsOps.pippengerLoop12,
+    core.iter.traits.iterator.Iterator.rev.trait_default,
+    core.iter.traits.iterator.Iterator.rev.default]
+  congr 1
+  funext ⟨o, it2⟩
+  cases o with
+  | none => rfl
+  | some e =>
+    congr 1; funext b1
+    funext b2
+    congr 1; funext i
+    congr 1; funext inter
+    congr 1; funext sm
+    congr 1; funext sm1
+    cases t <;> rfl
 
 end Pippenger.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-no-tables»
 
@@ -399,8 +674,9 @@ private theorem optional_multiscalar_mul_eq {I J Item IntoIter IntoIter2 : Type}
       EdwardsOps.I686NoTables.pippengerMain scalarsInst borrowInst pointsInst scalars points := by
   unfold optional_multiscalar_mul EdwardsOps.pippengerMain
   simp only [scalars_points, scalars_points_loop_eq, optional_multiscalar_mul_loop0_eq,
-    optional_multiscalar_mul_loop1_eq]
-  -- down the binds to the match on `o`, which each side does with its own matcher
+    optional_multiscalar_mul_loop1_eq, EdwardsOps.pippengerScalarsPoints,
+    EdwardsOps.pippengerLoop1, core.iter.traits.iterator.Iterator.rev.trait_default,
+    bind_ok, core.iter.traits.iterator.Iterator.rev.default]
   congr 1; funext t
   congr 1; funext scalars1
   congr 1; funext w; congr 1; funext md; congr 1; funext dc; congr 1; funext bc

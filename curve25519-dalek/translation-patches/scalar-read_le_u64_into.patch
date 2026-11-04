@@ -1,6 +1,6 @@
 Translation patch: read_le_u64_into
 
-Change: `src.chunks(8).zip(dst.iter_mut())` becomes an index loop with `bytes = &src[8 * i..8 * i + 8]`.
+Change: `src.chunks(8).zip(dst.iter_mut())` becomes a range loop with indexed borrows and `bytes = &src[8 * i..8 * i + 8]`.
 Why: Aeneas only models `Iterator::next` (aeneas#1057).
 Behaviour: identical.
 Relies on: after the `assert!`, `src.len() == 8 * dst.len()`, so the slicing is in bounds and cannot overflow.
@@ -9,7 +9,7 @@ diff --git a/curve25519-dalek/src/scalar.rs b/curve25519-dalek/src/scalar.rs
 index c417780..238455e 100644
 --- a/curve25519-dalek/src/scalar.rs
 +++ b/curve25519-dalek/src/scalar.rs
-@@ -1369,56 +1369,59 @@ impl FromUniformBytes<64> for Scalar {
+@@ -1369,56 +1369,58 @@ impl FromUniformBytes<64> for Scalar {
  /// Read one or more u64s stored as little endian bytes.
  ///
  /// ## Panics
@@ -22,16 +22,14 @@ index c417780..238455e 100644
          dst.len()
      );
 -    for (bytes, val) in src.chunks(8).zip(dst.iter_mut()) {
--        *val = u64::from_le_bytes(
-+    let mut i = 0;
-+    while i < dst.len() {
++    for i in 0..dst.len() {
 +        let bytes = &src[8 * i..8 * i + 8];
-+        dst[i] = u64::from_le_bytes(
++        let val = &mut dst[i];
+         *val = u64::from_le_bytes(
              bytes
                  .try_into()
                  .expect("Incorrect src length, should be 8 * dst.len()"),
          );
-+        i += 1;
      }
  }
  

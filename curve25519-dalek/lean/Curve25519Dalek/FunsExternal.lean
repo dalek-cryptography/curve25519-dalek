@@ -213,3 +213,11 @@ theorem core.borrow.Borrow.Blanket.borrow_spec {T : Type} (x : T) :
 theorem alloc.vec.Vec.is_empty_spec {T : Type} (A : Type) (v : alloc.vec.Vec T) :
     alloc.vec.Vec.is_empty A v ⦃ (b : Bool) => b = decide (v.length = 0) ⦄ :=
   RustAx.alloc.vec_is_empty A v
+
+/-- Iterating over a shared vector uses its slice iterator. -/
+@[rust_fun
+  "alloc::vec::{core::iter::traits::collect::IntoIterator<&'a alloc::vec::Vec<@T>, &'a @T, \
+    core::slice::iter::Iter<'a, @T>>}::into_iter"]
+def SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter
+    {T : Type} (_A : Type) (v : alloc.vec.Vec T) : Result (core.slice.iter.Iter T) :=
+  core.slice.Slice.iter v.deref

@@ -1,7 +1,7 @@
 Translation patch: <EdwardsPoint as VartimeMultiscalarMul>::optional_multiscalar_mul
 
 Change: as edwards-multiscalar_mul; `size = scalars.len()` picks Straus (< 190) or Pippenger.
-Why: Aeneas only models `Iterator::next` (aeneas#1057). Loops over a generic `IntoIterator` don't extract, hence the nested `It: Iterator` helper. `size_hint` cannot be called at all.
+Why: Aeneas only models `Iterator::next` (aeneas#1057). `size_hint` cannot be called at all.
 Behaviour: same result for valid inputs, not identical: as edwards-multiscalar_mul, and all points are
 read even after a `None`.
 
@@ -9,30 +9,22 @@ diff --git a/curve25519-dalek/src/edwards.rs b/curve25519-dalek/src/edwards.rs
 index 1120e8f..c1ada07 100644
 --- a/curve25519-dalek/src/edwards.rs
 +++ b/curve25519-dalek/src/edwards.rs
-@@ -1002,39 +1002,40 @@ impl VartimeMultiscalarMul for EdwardsPoint {
+@@ -1002,39 +1002,32 @@ impl VartimeMultiscalarMul for EdwardsPoint {
      fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
      where
          I: IntoIterator,
          I::Item: Borrow<Scalar>,
          J: IntoIterator<Item = Option<EdwardsPoint>>,
      {
--        // Sanity-check lengths of input iterators
+         // Sanity-check lengths of input iterators
 -        let mut scalars = scalars.into_iter();
 -        let mut points = points.into_iter();
-+        fn collect<It: Iterator>(mut it: It) -> Vec<It::Item> {
-+            let mut out = Vec::new();
-+            while let Some(x) = it.next() {
-+                out.push(x);
-+            }
-+            out
-+        }
- 
++        let scalars = Vec::from_iter(scalars.into_iter());
++        let points = Vec::from_iter(points.into_iter());
+-
 -        // Lower and upper bounds on iterators
 -        let (s_lo, s_hi) = scalars.by_ref().size_hint();
 -        let (p_lo, p_hi) = points.by_ref().size_hint();
-+        // Sanity-check lengths of input iterators
-+        let scalars = collect(scalars.into_iter());
-+        let points = collect(points.into_iter());
  
 -        // They should all be equal
 -        assert_eq!(s_lo, p_lo);

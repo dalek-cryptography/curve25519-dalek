@@ -58,11 +58,13 @@ private theorem nafs_spec {It Clause0_Item : Type}
     (hborrow : List.Forall₂
       (fun x s => borrowInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hlen : xs.length ≤ Usize.max) :
-    nafs iterInst borrowInst scalars
+    loop (fun ((it, out) : It × alloc.vec.Vec (Array I8 256#usize)) =>
+      collect.collectMapBody iterInst borrowInst.borrow
+        (fun s => scalar.Scalar.non_adjacent_form s 5#usize) it out)
+      (scalars, alloc.vec.Vec.new _)
       ⦃ (r : alloc.vec.Vec (Array I8 256#usize)) =>
         List.Forall₂ (fun s d => d.asInt 1 = s.asNat ∧ ∀ i : ℕ, i < 256 → d[i]!.val ≠ 0 →
           d[i]!.val % 2 = 1 ∧ 2 * |d[i]!.val| < 2 ^ 5) ss r.val ⦄ := by
-  unfold nafs nafs_loop
   apply spec_mono (collect.collectMapLoop_spec iterInst borrowInst.borrow
     (fun s => scalar.Scalar.non_adjacent_form s 5#usize)
     (fun s d => d.asInt 1 = s.asNat ∧ ∀ i : ℕ, i < 256 → d[i]!.val ≠ 0 →
@@ -73,104 +75,34 @@ private theorem nafs_spec {It Clause0_Item : Type}
   rintro r ⟨zs, hr, hzs⟩
   simpa [hr] using hzs
 
-open window.«NafLookupTable5ProjectiveNielsPointx86_64-tables».Insts in
-/-- The loop of `lookup_tables`: pushes the tables of the remaining points; `none` iff one of
-them is `none`. -/
-private theorem lookup_tables_loop_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It (Option edwards.EdwardsPoint.«x86_64-tables»))
-    (points : It) (ops : List (Option edwards.EdwardsPoint.«x86_64-tables»))
-    (hit : iterInst.Yields points ops)
-    (hps : ∀ P, some P ∈ ops → P.LimbsLt 52 ∧ P.OnCurve)
-    (out : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables»))
-    (hlen : out.length + ops.length ≤ Usize.max) :
-    lookup_tables_loop iterInst points out
-      ⦃ (r : Option (alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables»)))
-          =>
-        (r = none ↔ none ∈ ops) ∧ ∀ v, r = some v → ∃ zs, v.val = out.val ++ zs ∧
-          List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 54) (ops.filterMap id)
-            zs ⦄ := by
-  induction hit generalizing out with
-  | nil hnext =>
-    unfold lookup_tables_loop loop lookup_tables_loop.body
-    step with hnext as ⟨q, hq⟩
-    obtain ⟨o, it1⟩ := q
-    simp only at hq
-    subst hq
-    simp
-  | @cons it it' x xs' hnext _ ih =>
-    unfold lookup_tables_loop loop lookup_tables_loop.body
-    step with hnext as ⟨q, ho, hit⟩
-    obtain ⟨o, it1⟩ := q
-    simp only at ho hit
-    subst ho hit
-    rcases x with _ | P
-    · simp
-    · obtain ⟨hPb, hPon⟩ := hps P List.mem_cons_self
-      step with «CoreConvertFromSharedAEdwardsPointx86_64-tables».from_spec
-        P hPb hPon as ⟨z, hz, hzb⟩
-      step with alloc.vec.Vec.push_spec out z
-        (by
-          have h : out.length < Usize.max := by simp only [List.length_cons] at hlen; omega
-          exact h) as ⟨out1, hout1⟩
-      have ih' := ih (fun Q hQ => hps Q (List.mem_cons_of_mem _ hQ)) out1 (by
-        rw [alloc.vec.Vec.length_of_val_eq_append hout1]
-        simp only [List.length_cons] at hlen; omega)
-      unfold lookup_tables_loop at ih'
-      apply WP.spec_mono ih'
-      rintro r ⟨hnone, hsome⟩
-      refine ⟨by simp [hnone], fun v hv => ?_⟩
-      obtain ⟨zs, hr, hzs⟩ := hsome v hv
-      exact ⟨z :: zs, by rw [hr, hout1, List.append_assoc, List.singleton_append],
-        by simpa using List.Forall₂.cons ⟨hz, hzb⟩ hzs⟩
-
-/-- The points' tables of odd multiples; `none` iff some point is `none`. -/
-@[local step]
-private theorem lookup_tables_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It (Option edwards.EdwardsPoint.«x86_64-tables»))
-    (points : It) (ops : List (Option edwards.EdwardsPoint.«x86_64-tables»))
-    (hit : iterInst.Yields points ops)
-    (hps : ∀ P, some P ∈ ops → P.LimbsLt 52 ∧ P.OnCurve) (hlen : ops.length ≤ Usize.max) :
-    lookup_tables iterInst points
-      ⦃ (r : Option (alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables»)))
-          =>
-        (r = none ↔ none ∈ ops) ∧ ∀ v, r = some v →
-          List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 54)
-            (ops.filterMap id) v.val ⦄ := by
-  unfold lookup_tables
-  apply spec_mono (lookup_tables_loop_spec iterInst points ops hit hps (alloc.vec.Vec.new _)
-    (by simpa using hlen))
-  rintro r ⟨hnone, hsome⟩
-  refine ⟨hnone, fun v hv => ?_⟩
-  obtain ⟨zs, hr, hzs⟩ := hsome v hv
-  simpa [hr] using hzs
-
 end «VartimeMultiscalarMulStrausEdwardsPointx86_64-tables».optional_multiscalar_mul
 
 namespace Straus.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-tables»
 
-private theorem optional_multiscalar_mul_loop0_loop0_eq
+private theorem optional_multiscalar_mul_loop1_loop0_loop0_eq
     (nafs : alloc.vec.Vec (Array I8 256#usize))
     (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables»))
-    (i : Usize) (t : CompletedPoint.«x86_64-tables») (n k : Usize) :
-    optional_multiscalar_mul_loop0_loop0 nafs lookup_tables i t n k =
-      EdwardsOps.X86Tables.strausLoop00 nafs lookup_tables i t n k := by
-  unfold optional_multiscalar_mul_loop0_loop0 EdwardsOps.strausLoop00
+    (i : Usize) (t : CompletedPoint.«x86_64-tables»)
+    (it : core.ops.range.Range Usize) :
+    optional_multiscalar_mul_loop1_loop0_loop0 it nafs lookup_tables i t =
+      EdwardsOps.X86Tables.strausLoop00 it nafs lookup_tables i t := by
+  unfold optional_multiscalar_mul_loop1_loop0_loop0 EdwardsOps.strausLoop00
   congr 1
 
-private theorem optional_multiscalar_mul_loop0_eq
+private theorem optional_multiscalar_mul_loop1_loop0_eq
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
     (nafs : alloc.vec.Vec (Array I8 256#usize))
     (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables»))
     (r : ProjectivePoint.«x86_64-tables») :
-    optional_multiscalar_mul_loop0 iter nafs lookup_tables r =
+    optional_multiscalar_mul_loop1_loop0 iter nafs lookup_tables r =
       EdwardsOps.X86Tables.strausLoop0 iter nafs lookup_tables r := by
-  unfold optional_multiscalar_mul_loop0 EdwardsOps.strausLoop0
+  unfold optional_multiscalar_mul_loop1_loop0 EdwardsOps.strausLoop0
   congr 1
 
 /-- The outer loop: after the digit positions `e, …, 255`, the accumulator represents
 `∑_{m < n} nafTail d_m e • P_m`. -/
 @[local step]
-private theorem optional_multiscalar_mul_loop0_spec
+private theorem optional_multiscalar_mul_loop1_loop0_spec
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
     (nafs : alloc.vec.Vec (Array I8 256#usize))
     (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables»))
@@ -182,18 +114,19 @@ private theorem optional_multiscalar_mul_loop0_spec
     (hstart : iter.iter.start.val = 0) (hend : iter.iter.end.val ≤ 256)
     (hr : r.OnCurve) (hrb : r.LimbsLt 52)
     (hrp : r.toPoint = ∑ m ∈ Finset.range n, nafTail nafs.val[m]! iter.iter.end.val • P m) :
-    optional_multiscalar_mul_loop0 iter nafs lookup_tables r
+    optional_multiscalar_mul_loop1_loop0 iter nafs lookup_tables r
       ⦃ (res : ProjectivePoint.«x86_64-tables») => res.OnCurve ∧ res.LimbsLt 52 ∧
         res.toPoint = ∑ m ∈ Finset.range n, nafTail nafs.val[m]! 0 • P m ⦄ := by
-  rw [optional_multiscalar_mul_loop0_eq]
+  rw [optional_multiscalar_mul_loop1_loop0_eq]
   exact EdwardsOps.X86Tables.strausLoop0_spec
     EdwardsOps.X86Tables.addN_spec EdwardsOps.X86Tables.subN_spec
     EdwardsOps.X86Tables.asExtended_spec EdwardsOps.X86Tables.pDouble_spec
     EdwardsOps.X86Tables.cAsProjective_spec iter nafs lookup_tables r P n hn hT hD hstart hend hr
     hrb hrp
 
+set_option linter.style.longLine false in
 open «VartimeMultiscalarMulStrausEdwardsPointx86_64-tables» in
-/-- `Straus::optional_multiscalar_mul`: `none` iff some point is `none` (all points are read);
+/-- `Straus::optional_multiscalar_mul`: `none` iff some point is `none`;
 otherwise `∑ s_i • P_i` over the scalars and points, up to the shorter input (unreduced
 scalars `< 2^255`); limbs `< 2^52`. -/
 @[step]
@@ -221,17 +154,36 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause2_IntoIter) => pointsInst.iteratorInst.Yields it ops ⦄ := hpoints
   step with hscalars' as ⟨it, hit⟩
-  step with optional_multiscalar_mul.nafs_spec
-    _ _ it xs hit ss hborrow_scalars hss hxs as ⟨nafs, hnafs⟩
+  unfold optional_multiscalar_mul_loop0
+  apply spec_bind (optional_multiscalar_mul.nafs_spec
+    _ _ it xs hit ss hborrow_scalars hss hxs)
+  intro nafs hnafs
   step with hpoints' as ⟨it1, hit1⟩
-  step with optional_multiscalar_mul.lookup_tables_spec
-    _ it1 ops hit1 hps hops as ⟨o, hnone, hsome⟩
-  rcases o with _ | tables
-  · dsimp only
-    rw [WP.spec_ok]
-    exact ⟨by simpa using hnone, fun R hR => absurd hR (by simp)⟩
-  · have htables := hsome tables rfl
-    obtain ⟨hTlen, hT⟩ := forall₂_getElem! htables
+  let post := fun (r : Option edwards.EdwardsPoint.«x86_64-tables») =>
+    (r = none ↔ none ∈ ops) ∧ ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
+      (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧ R.LimbsLt 52
+  suffices h : ∀ it rest, pointsInst.iteratorInst.Yields it rest →
+      ∀ (seen : List edwards.EdwardsPoint.«x86_64-tables»)
+        (tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables»)),
+      ops = seen.map some ++ rest →
+      List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 54) seen tables.val →
+      optional_multiscalar_mul_loop1 scalarsInst borrowScalarInst pointsInst it nafs tables
+        ⦃ post ⦄ by
+    exact h it1 ops hit1 [] (alloc.vec.Vec.new _) rfl .nil
+  intro it rest hit
+  induction hit with
+  | nil hnext =>
+    intro seen tables hseen htables
+    unfold optional_multiscalar_mul_loop1 loop optional_multiscalar_mul_loop1.body
+    step with hnext as ⟨q, hq⟩
+    obtain ⟨o, it1⟩ := q
+    simp only at hq
+    subst hq
+    have hnn : none ∉ ops := by simp [hseen]
+    have ht : List.Forall₂
+        (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 54) (ops.filterMap id) tables.val := by
+      simpa [hseen] using htables
+    obtain ⟨hTlen, hT⟩ := forall₂_getElem! ht
     obtain ⟨hDlen, hD⟩ := forall₂_getElem! hnafs
     have hn : min ss.length (ops.filterMap id).length = min nafs.length tables.length := by
       rw [hTlen, hDlen]
@@ -239,7 +191,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
         ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
       as ⟨r, hron, hr, hrb⟩
     step as ⟨iter, hiter⟩
-    step with optional_multiscalar_mul_loop0_spec iter nafs tables r
+    step with optional_multiscalar_mul_loop1_loop0_spec iter nafs tables r
       (fun k => (ops.filterMap id)[k]!.toPoint) (min ss.length (ops.filterMap id).length) hn
       (fun k hk => hT k (by have := min_le_right ss.length (ops.filterMap id).length; omega))
       (fun k hk => (hD k (by have := min_le_left ss.length (ops.filterMap id).length; omega)).2)
@@ -251,7 +203,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
             = 256 from rfl, nafTail_eq_zero _ _ fun j hj hj' => by omega, zero_smul]).symm)
       as ⟨q, hqon, hqb, hq⟩
     step with «ProjectivePointx86_64-tables».as_extended_spec_point as ⟨R, hRon, hR, hRb⟩
-    refine ⟨by simpa using hnone, fun R' hR' => ?_⟩
+    refine ⟨by simpa using hnn, fun R' hR' => ?_⟩
     obtain rfl : R = R' := Option.some.inj hR'
     refine ⟨hRon, ?_, hRb⟩
     rw [hR, hq, sum_zipWith_eq]
@@ -259,6 +211,34 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     have hk' := Finset.mem_range.mp hk
     rw [nafTail_zero, (hD k (by have := min_le_left ss.length (ops.filterMap id).length; omega)).1,
       natCast_zsmul]
+  | @cons it it' x rest hnext _ ih =>
+    intro seen tables hseen htables
+    unfold optional_multiscalar_mul_loop1 loop optional_multiscalar_mul_loop1.body
+    step with hnext as ⟨q, ho, hit⟩
+    obtain ⟨o, it1⟩ := q
+    simp only at ho hit
+    subst ho hit
+    rcases x with _ | P
+    · simp [uncurry, core.option.Option.map, post, hseen]
+    · simp only [uncurry, core.option.Option.map, Std.bind_assoc]
+      unfold optional_multiscalar_mul.closure.Insts.«CoreOpsFunctionFnOnceTupleEdwardsPointx86_64-tablesNafLookupTable5ProjectiveNielsPointx86_64-tables».call_once
+      simp only [Std.bind_tc_eq, Std.bind_assoc, bind_ok]
+      obtain ⟨hPb, hPon⟩ := hps P (by simp [hseen])
+      apply spec_bind
+        (window.«NafLookupTable5ProjectiveNielsPointx86_64-tables».Insts.«CoreConvertFromSharedAEdwardsPointx86_64-tables».from_spec
+          P hPb hPon)
+      rintro z ⟨hz, hzb⟩
+      step with alloc.vec.Vec.push_spec tables z (by
+        have hp := congrArg List.length hseen
+        have ht := htables.length_eq
+        simp only [List.length_append, List.length_map, List.length_cons] at hp
+        change tables.val.length < Usize.max
+        omega) as ⟨out, hout⟩
+      have ih' := ih (seen ++ [P]) out
+        (by simpa [List.map_append, List.append_assoc] using hseen)
+        (by rw [hout]; exact List.rel_append htables (List.Forall₂.cons ⟨hz, hzb⟩ .nil))
+      unfold optional_multiscalar_mul_loop1 at ih'
+      exact ih'
 
 end Straus.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-tables»
 
@@ -283,11 +263,13 @@ private theorem nafs_spec {It Clause0_Item : Type}
     (hborrow : List.Forall₂
       (fun x s => borrowInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hlen : xs.length ≤ Usize.max) :
-    nafs iterInst borrowInst scalars
+    loop (fun ((it, out) : It × alloc.vec.Vec (Array I8 256#usize)) =>
+      collect.collectMapBody iterInst borrowInst.borrow
+        (fun s => scalar.Scalar.non_adjacent_form s 5#usize) it out)
+      (scalars, alloc.vec.Vec.new _)
       ⦃ (r : alloc.vec.Vec (Array I8 256#usize)) =>
         List.Forall₂ (fun s d => d.asInt 1 = s.asNat ∧ ∀ i : ℕ, i < 256 → d[i]!.val ≠ 0 →
           d[i]!.val % 2 = 1 ∧ 2 * |d[i]!.val| < 2 ^ 5) ss r.val ⦄ := by
-  unfold nafs nafs_loop
   apply spec_mono (collect.collectMapLoop_spec iterInst borrowInst.borrow
     (fun s => scalar.Scalar.non_adjacent_form s 5#usize)
     (fun s d => d.asInt 1 = s.asNat ∧ ∀ i : ℕ, i < 256 → d[i]!.val ≠ 0 →
@@ -298,104 +280,34 @@ private theorem nafs_spec {It Clause0_Item : Type}
   rintro r ⟨zs, hr, hzs⟩
   simpa [hr] using hzs
 
-open window.«NafLookupTable5ProjectiveNielsPointi686-tables».Insts in
-/-- The loop of `lookup_tables`: pushes the tables of the remaining points; `none` iff one of
-them is `none`. -/
-private theorem lookup_tables_loop_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It (Option edwards.EdwardsPoint.«i686-tables»))
-    (points : It) (ops : List (Option edwards.EdwardsPoint.«i686-tables»))
-    (hit : iterInst.Yields points ops)
-    (hps : ∀ P, some P ∈ ops → P.LimbsLt 26 ∧ P.OnCurve)
-    (out : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-tables»))
-    (hlen : out.length + ops.length ≤ Usize.max) :
-    lookup_tables_loop iterInst points out
-      ⦃ (r : Option (alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-tables»)))
-          =>
-        (r = none ↔ none ∈ ops) ∧ ∀ v, r = some v → ∃ zs, v.val = out.val ++ zs ∧
-          List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 27) (ops.filterMap id)
-            zs ⦄ := by
-  induction hit generalizing out with
-  | nil hnext =>
-    unfold lookup_tables_loop loop lookup_tables_loop.body
-    step with hnext as ⟨q, hq⟩
-    obtain ⟨o, it1⟩ := q
-    simp only at hq
-    subst hq
-    simp
-  | @cons it it' x xs' hnext _ ih =>
-    unfold lookup_tables_loop loop lookup_tables_loop.body
-    step with hnext as ⟨q, ho, hit⟩
-    obtain ⟨o, it1⟩ := q
-    simp only at ho hit
-    subst ho hit
-    rcases x with _ | P
-    · simp
-    · obtain ⟨hPb, hPon⟩ := hps P List.mem_cons_self
-      step with «CoreConvertFromSharedAEdwardsPointi686-tables».from_spec
-        P hPb hPon as ⟨z, hz, hzb⟩
-      step with alloc.vec.Vec.push_spec out z
-        (by
-          have h : out.length < Usize.max := by simp only [List.length_cons] at hlen; omega
-          exact h) as ⟨out1, hout1⟩
-      have ih' := ih (fun Q hQ => hps Q (List.mem_cons_of_mem _ hQ)) out1 (by
-        rw [alloc.vec.Vec.length_of_val_eq_append hout1]
-        simp only [List.length_cons] at hlen; omega)
-      unfold lookup_tables_loop at ih'
-      apply WP.spec_mono ih'
-      rintro r ⟨hnone, hsome⟩
-      refine ⟨by simp [hnone], fun v hv => ?_⟩
-      obtain ⟨zs, hr, hzs⟩ := hsome v hv
-      exact ⟨z :: zs, by rw [hr, hout1, List.append_assoc, List.singleton_append],
-        by simpa using List.Forall₂.cons ⟨hz, hzb⟩ hzs⟩
-
-/-- The points' tables of odd multiples; `none` iff some point is `none`. -/
-@[local step]
-private theorem lookup_tables_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It (Option edwards.EdwardsPoint.«i686-tables»))
-    (points : It) (ops : List (Option edwards.EdwardsPoint.«i686-tables»))
-    (hit : iterInst.Yields points ops)
-    (hps : ∀ P, some P ∈ ops → P.LimbsLt 26 ∧ P.OnCurve) (hlen : ops.length ≤ Usize.max) :
-    lookup_tables iterInst points
-      ⦃ (r : Option (alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-tables»)))
-          =>
-        (r = none ↔ none ∈ ops) ∧ ∀ v, r = some v →
-          List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 27)
-            (ops.filterMap id) v.val ⦄ := by
-  unfold lookup_tables
-  apply spec_mono (lookup_tables_loop_spec iterInst points ops hit hps (alloc.vec.Vec.new _)
-    (by simpa using hlen))
-  rintro r ⟨hnone, hsome⟩
-  refine ⟨hnone, fun v hv => ?_⟩
-  obtain ⟨zs, hr, hzs⟩ := hsome v hv
-  simpa [hr] using hzs
-
 end «VartimeMultiscalarMulStrausEdwardsPointi686-tables».optional_multiscalar_mul
 
 namespace Straus.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-tables»
 
-private theorem optional_multiscalar_mul_loop0_loop0_eq
+private theorem optional_multiscalar_mul_loop1_loop0_loop0_eq
     (nafs : alloc.vec.Vec (Array I8 256#usize))
     (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-tables»))
-    (i : Usize) (t : CompletedPoint.«i686-tables») (n k : Usize) :
-    optional_multiscalar_mul_loop0_loop0 nafs lookup_tables i t n k =
-      EdwardsOps.I686Tables.strausLoop00 nafs lookup_tables i t n k := by
-  unfold optional_multiscalar_mul_loop0_loop0 EdwardsOps.strausLoop00
+    (i : Usize) (t : CompletedPoint.«i686-tables»)
+    (it : core.ops.range.Range Usize) :
+    optional_multiscalar_mul_loop1_loop0_loop0 it nafs lookup_tables i t =
+      EdwardsOps.I686Tables.strausLoop00 it nafs lookup_tables i t := by
+  unfold optional_multiscalar_mul_loop1_loop0_loop0 EdwardsOps.strausLoop00
   congr 1
 
-private theorem optional_multiscalar_mul_loop0_eq
+private theorem optional_multiscalar_mul_loop1_loop0_eq
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
     (nafs : alloc.vec.Vec (Array I8 256#usize))
     (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-tables»))
     (r : ProjectivePoint.«i686-tables») :
-    optional_multiscalar_mul_loop0 iter nafs lookup_tables r =
+    optional_multiscalar_mul_loop1_loop0 iter nafs lookup_tables r =
       EdwardsOps.I686Tables.strausLoop0 iter nafs lookup_tables r := by
-  unfold optional_multiscalar_mul_loop0 EdwardsOps.strausLoop0
+  unfold optional_multiscalar_mul_loop1_loop0 EdwardsOps.strausLoop0
   congr 1
 
 /-- The outer loop: after the digit positions `e, …, 255`, the accumulator represents
 `∑_{m < n} nafTail d_m e • P_m`. -/
 @[local step]
-private theorem optional_multiscalar_mul_loop0_spec
+private theorem optional_multiscalar_mul_loop1_loop0_spec
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
     (nafs : alloc.vec.Vec (Array I8 256#usize))
     (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-tables»))
@@ -407,18 +319,19 @@ private theorem optional_multiscalar_mul_loop0_spec
     (hstart : iter.iter.start.val = 0) (hend : iter.iter.end.val ≤ 256)
     (hr : r.OnCurve) (hrb : r.LimbsLt 26)
     (hrp : r.toPoint = ∑ m ∈ Finset.range n, nafTail nafs.val[m]! iter.iter.end.val • P m) :
-    optional_multiscalar_mul_loop0 iter nafs lookup_tables r
+    optional_multiscalar_mul_loop1_loop0 iter nafs lookup_tables r
       ⦃ (res : ProjectivePoint.«i686-tables») => res.OnCurve ∧ res.LimbsLt 26 ∧
         res.toPoint = ∑ m ∈ Finset.range n, nafTail nafs.val[m]! 0 • P m ⦄ := by
-  rw [optional_multiscalar_mul_loop0_eq]
+  rw [optional_multiscalar_mul_loop1_loop0_eq]
   exact EdwardsOps.I686Tables.strausLoop0_spec
     EdwardsOps.I686Tables.addN_spec EdwardsOps.I686Tables.subN_spec
     EdwardsOps.I686Tables.asExtended_spec EdwardsOps.I686Tables.pDouble_spec
     EdwardsOps.I686Tables.cAsProjective_spec iter nafs lookup_tables r P n hn hT hD hstart hend hr
     hrb hrp
 
+set_option linter.style.longLine false in
 open «VartimeMultiscalarMulStrausEdwardsPointi686-tables» in
-/-- `Straus::optional_multiscalar_mul`: `none` iff some point is `none` (all points are read);
+/-- `Straus::optional_multiscalar_mul`: `none` iff some point is `none`;
 otherwise `∑ s_i • P_i` over the scalars and points, up to the shorter input (unreduced
 scalars `< 2^255`); limbs `< 2^26`. -/
 @[step]
@@ -446,17 +359,36 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause2_IntoIter) => pointsInst.iteratorInst.Yields it ops ⦄ := hpoints
   step with hscalars' as ⟨it, hit⟩
-  step with optional_multiscalar_mul.nafs_spec
-    _ _ it xs hit ss hborrow_scalars hss hxs as ⟨nafs, hnafs⟩
+  unfold optional_multiscalar_mul_loop0
+  apply spec_bind (optional_multiscalar_mul.nafs_spec
+    _ _ it xs hit ss hborrow_scalars hss hxs)
+  intro nafs hnafs
   step with hpoints' as ⟨it1, hit1⟩
-  step with optional_multiscalar_mul.lookup_tables_spec
-    _ it1 ops hit1 hps hops as ⟨o, hnone, hsome⟩
-  rcases o with _ | tables
-  · dsimp only
-    rw [WP.spec_ok]
-    exact ⟨by simpa using hnone, fun R hR => absurd hR (by simp)⟩
-  · have htables := hsome tables rfl
-    obtain ⟨hTlen, hT⟩ := forall₂_getElem! htables
+  let post := fun (r : Option edwards.EdwardsPoint.«i686-tables») =>
+    (r = none ↔ none ∈ ops) ∧ ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
+      (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧ R.LimbsLt 26
+  suffices h : ∀ it rest, pointsInst.iteratorInst.Yields it rest →
+      ∀ (seen : List edwards.EdwardsPoint.«i686-tables»)
+        (tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-tables»)),
+      ops = seen.map some ++ rest →
+      List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 27) seen tables.val →
+      optional_multiscalar_mul_loop1 scalarsInst borrowScalarInst pointsInst it nafs tables
+        ⦃ post ⦄ by
+    exact h it1 ops hit1 [] (alloc.vec.Vec.new _) rfl .nil
+  intro it rest hit
+  induction hit with
+  | nil hnext =>
+    intro seen tables hseen htables
+    unfold optional_multiscalar_mul_loop1 loop optional_multiscalar_mul_loop1.body
+    step with hnext as ⟨q, hq⟩
+    obtain ⟨o, it1⟩ := q
+    simp only at hq
+    subst hq
+    have hnn : none ∉ ops := by simp [hseen]
+    have ht : List.Forall₂
+        (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 27) (ops.filterMap id) tables.val := by
+      simpa [hseen] using htables
+    obtain ⟨hTlen, hT⟩ := forall₂_getElem! ht
     obtain ⟨hDlen, hD⟩ := forall₂_getElem! hnafs
     have hn : min ss.length (ops.filterMap id).length = min nafs.length tables.length := by
       rw [hTlen, hDlen]
@@ -464,7 +396,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
         ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
       as ⟨r, hron, hr, hrb⟩
     step as ⟨iter, hiter⟩
-    step with optional_multiscalar_mul_loop0_spec iter nafs tables r
+    step with optional_multiscalar_mul_loop1_loop0_spec iter nafs tables r
       (fun k => (ops.filterMap id)[k]!.toPoint) (min ss.length (ops.filterMap id).length) hn
       (fun k hk => hT k (by have := min_le_right ss.length (ops.filterMap id).length; omega))
       (fun k hk => (hD k (by have := min_le_left ss.length (ops.filterMap id).length; omega)).2)
@@ -476,7 +408,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
             = 256 from rfl, nafTail_eq_zero _ _ fun j hj hj' => by omega, zero_smul]).symm)
       as ⟨q, hqon, hqb, hq⟩
     step with «ProjectivePointi686-tables».as_extended_spec_point as ⟨R, hRon, hR, hRb⟩
-    refine ⟨by simpa using hnone, fun R' hR' => ?_⟩
+    refine ⟨by simpa using hnn, fun R' hR' => ?_⟩
     obtain rfl : R = R' := Option.some.inj hR'
     refine ⟨hRon, ?_, hRb⟩
     rw [hR, hq, sum_zipWith_eq]
@@ -484,6 +416,34 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     have hk' := Finset.mem_range.mp hk
     rw [nafTail_zero, (hD k (by have := min_le_left ss.length (ops.filterMap id).length; omega)).1,
       natCast_zsmul]
+  | @cons it it' x rest hnext _ ih =>
+    intro seen tables hseen htables
+    unfold optional_multiscalar_mul_loop1 loop optional_multiscalar_mul_loop1.body
+    step with hnext as ⟨q, ho, hit⟩
+    obtain ⟨o, it1⟩ := q
+    simp only at ho hit
+    subst ho hit
+    rcases x with _ | P
+    · simp [uncurry, core.option.Option.map, post, hseen]
+    · simp only [uncurry, core.option.Option.map, Std.bind_assoc]
+      unfold optional_multiscalar_mul.closure.Insts.«CoreOpsFunctionFnOnceTupleEdwardsPointi686-tablesNafLookupTable5ProjectiveNielsPointi686-tables».call_once
+      simp only [Std.bind_tc_eq, Std.bind_assoc, bind_ok]
+      obtain ⟨hPb, hPon⟩ := hps P (by simp [hseen])
+      apply spec_bind
+        (window.«NafLookupTable5ProjectiveNielsPointi686-tables».Insts.«CoreConvertFromSharedAEdwardsPointi686-tables».from_spec
+          P hPb hPon)
+      rintro z ⟨hz, hzb⟩
+      step with alloc.vec.Vec.push_spec tables z (by
+        have hp := congrArg List.length hseen
+        have ht := htables.length_eq
+        simp only [List.length_append, List.length_map, List.length_cons] at hp
+        change tables.val.length < Usize.max
+        omega) as ⟨out, hout⟩
+      have ih' := ih (seen ++ [P]) out
+        (by simpa [List.map_append, List.append_assoc] using hseen)
+        (by rw [hout]; exact List.rel_append htables (List.Forall₂.cons ⟨hz, hzb⟩ .nil))
+      unfold optional_multiscalar_mul_loop1 at ih'
+      exact ih'
 
 end Straus.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-tables»
 
@@ -508,11 +468,13 @@ private theorem nafs_spec {It Clause0_Item : Type}
     (hborrow : List.Forall₂
       (fun x s => borrowInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hlen : xs.length ≤ Usize.max) :
-    nafs iterInst borrowInst scalars
+    loop (fun ((it, out) : It × alloc.vec.Vec (Array I8 256#usize)) =>
+      collect.collectMapBody iterInst borrowInst.borrow
+        (fun s => scalar.Scalar.non_adjacent_form s 5#usize) it out)
+      (scalars, alloc.vec.Vec.new _)
       ⦃ (r : alloc.vec.Vec (Array I8 256#usize)) =>
         List.Forall₂ (fun s d => d.asInt 1 = s.asNat ∧ ∀ i : ℕ, i < 256 → d[i]!.val ≠ 0 →
           d[i]!.val % 2 = 1 ∧ 2 * |d[i]!.val| < 2 ^ 5) ss r.val ⦄ := by
-  unfold nafs nafs_loop
   apply spec_mono (collect.collectMapLoop_spec iterInst borrowInst.borrow
     (fun s => scalar.Scalar.non_adjacent_form s 5#usize)
     (fun s d => d.asInt 1 = s.asNat ∧ ∀ i : ℕ, i < 256 → d[i]!.val ≠ 0 →
@@ -523,106 +485,34 @@ private theorem nafs_spec {It Clause0_Item : Type}
   rintro r ⟨zs, hr, hzs⟩
   simpa [hr] using hzs
 
-open window.«NafLookupTable5ProjectiveNielsPointx86_64-no-tables».Insts in
-/-- The loop of `lookup_tables`: pushes the tables of the remaining points; `none` iff one of
-them is `none`. -/
-private theorem lookup_tables_loop_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It
-        (Option edwards.EdwardsPoint.«x86_64-no-tables»))
-    (points : It) (ops : List (Option edwards.EdwardsPoint.«x86_64-no-tables»))
-    (hit : iterInst.Yields points ops)
-    (hps : ∀ P, some P ∈ ops → P.LimbsLt 52 ∧ P.OnCurve)
-    (out : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-no-tables»))
-    (hlen : out.length + ops.length ≤ Usize.max) :
-    lookup_tables_loop iterInst points out
-      ⦃ (r : Option
-          (alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-no-tables»))) =>
-        (r = none ↔ none ∈ ops) ∧ ∀ v, r = some v → ∃ zs, v.val = out.val ++ zs ∧
-          List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 54) (ops.filterMap id)
-            zs ⦄ := by
-  induction hit generalizing out with
-  | nil hnext =>
-    unfold lookup_tables_loop loop lookup_tables_loop.body
-    step with hnext as ⟨q, hq⟩
-    obtain ⟨o, it1⟩ := q
-    simp only at hq
-    subst hq
-    simp
-  | @cons it it' x xs' hnext _ ih =>
-    unfold lookup_tables_loop loop lookup_tables_loop.body
-    step with hnext as ⟨q, ho, hit⟩
-    obtain ⟨o, it1⟩ := q
-    simp only at ho hit
-    subst ho hit
-    rcases x with _ | P
-    · simp
-    · obtain ⟨hPb, hPon⟩ := hps P List.mem_cons_self
-      step with «CoreConvertFromSharedAEdwardsPointx86_64-no-tables».from_spec
-        P hPb hPon as ⟨z, hz, hzb⟩
-      step with alloc.vec.Vec.push_spec out z
-        (by
-          have h : out.length < Usize.max := by simp only [List.length_cons] at hlen; omega
-          exact h) as ⟨out1, hout1⟩
-      have ih' := ih (fun Q hQ => hps Q (List.mem_cons_of_mem _ hQ)) out1 (by
-        rw [alloc.vec.Vec.length_of_val_eq_append hout1]
-        simp only [List.length_cons] at hlen; omega)
-      unfold lookup_tables_loop at ih'
-      apply WP.spec_mono ih'
-      rintro r ⟨hnone, hsome⟩
-      refine ⟨by simp [hnone], fun v hv => ?_⟩
-      obtain ⟨zs, hr, hzs⟩ := hsome v hv
-      exact ⟨z :: zs, by rw [hr, hout1, List.append_assoc, List.singleton_append],
-        by simpa using List.Forall₂.cons ⟨hz, hzb⟩ hzs⟩
-
-/-- The points' tables of odd multiples; `none` iff some point is `none`. -/
-@[local step]
-private theorem lookup_tables_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It
-        (Option edwards.EdwardsPoint.«x86_64-no-tables»))
-    (points : It) (ops : List (Option edwards.EdwardsPoint.«x86_64-no-tables»))
-    (hit : iterInst.Yields points ops)
-    (hps : ∀ P, some P ∈ ops → P.LimbsLt 52 ∧ P.OnCurve) (hlen : ops.length ≤ Usize.max) :
-    lookup_tables iterInst points
-      ⦃ (r : Option
-          (alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-no-tables»))) =>
-        (r = none ↔ none ∈ ops) ∧ ∀ v, r = some v →
-          List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 54)
-            (ops.filterMap id) v.val ⦄ := by
-  unfold lookup_tables
-  apply spec_mono (lookup_tables_loop_spec iterInst points ops hit hps (alloc.vec.Vec.new _)
-    (by simpa using hlen))
-  rintro r ⟨hnone, hsome⟩
-  refine ⟨hnone, fun v hv => ?_⟩
-  obtain ⟨zs, hr, hzs⟩ := hsome v hv
-  simpa [hr] using hzs
-
 end «VartimeMultiscalarMulStrausEdwardsPointx86_64-no-tables».optional_multiscalar_mul
 
 namespace Straus.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-no-tables»
 
-private theorem optional_multiscalar_mul_loop0_loop0_eq
+private theorem optional_multiscalar_mul_loop1_loop0_loop0_eq
     (nafs : alloc.vec.Vec (Array I8 256#usize))
     (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-no-tables»))
-    (i : Usize) (t : CompletedPoint.«x86_64-no-tables») (n k : Usize) :
-    optional_multiscalar_mul_loop0_loop0 nafs lookup_tables i t n k =
-      EdwardsOps.X86NoTables.strausLoop00 nafs lookup_tables i t n k := by
-  unfold optional_multiscalar_mul_loop0_loop0 EdwardsOps.strausLoop00
+    (i : Usize) (t : CompletedPoint.«x86_64-no-tables»)
+    (it : core.ops.range.Range Usize) :
+    optional_multiscalar_mul_loop1_loop0_loop0 it nafs lookup_tables i t =
+      EdwardsOps.X86NoTables.strausLoop00 it nafs lookup_tables i t := by
+  unfold optional_multiscalar_mul_loop1_loop0_loop0 EdwardsOps.strausLoop00
   congr 1
 
-private theorem optional_multiscalar_mul_loop0_eq
+private theorem optional_multiscalar_mul_loop1_loop0_eq
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
     (nafs : alloc.vec.Vec (Array I8 256#usize))
     (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-no-tables»))
     (r : ProjectivePoint.«x86_64-no-tables») :
-    optional_multiscalar_mul_loop0 iter nafs lookup_tables r =
+    optional_multiscalar_mul_loop1_loop0 iter nafs lookup_tables r =
       EdwardsOps.X86NoTables.strausLoop0 iter nafs lookup_tables r := by
-  unfold optional_multiscalar_mul_loop0 EdwardsOps.strausLoop0
+  unfold optional_multiscalar_mul_loop1_loop0 EdwardsOps.strausLoop0
   congr 1
 
 /-- The outer loop: after the digit positions `e, …, 255`, the accumulator represents
 `∑_{m < n} nafTail d_m e • P_m`. -/
 @[local step]
-private theorem optional_multiscalar_mul_loop0_spec
+private theorem optional_multiscalar_mul_loop1_loop0_spec
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
     (nafs : alloc.vec.Vec (Array I8 256#usize))
     (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-no-tables»))
@@ -634,18 +524,19 @@ private theorem optional_multiscalar_mul_loop0_spec
     (hstart : iter.iter.start.val = 0) (hend : iter.iter.end.val ≤ 256)
     (hr : r.OnCurve) (hrb : r.LimbsLt 52)
     (hrp : r.toPoint = ∑ m ∈ Finset.range n, nafTail nafs.val[m]! iter.iter.end.val • P m) :
-    optional_multiscalar_mul_loop0 iter nafs lookup_tables r
+    optional_multiscalar_mul_loop1_loop0 iter nafs lookup_tables r
       ⦃ (res : ProjectivePoint.«x86_64-no-tables») => res.OnCurve ∧ res.LimbsLt 52 ∧
         res.toPoint = ∑ m ∈ Finset.range n, nafTail nafs.val[m]! 0 • P m ⦄ := by
-  rw [optional_multiscalar_mul_loop0_eq]
+  rw [optional_multiscalar_mul_loop1_loop0_eq]
   exact EdwardsOps.X86NoTables.strausLoop0_spec
     EdwardsOps.X86NoTables.addN_spec EdwardsOps.X86NoTables.subN_spec
     EdwardsOps.X86NoTables.asExtended_spec EdwardsOps.X86NoTables.pDouble_spec
     EdwardsOps.X86NoTables.cAsProjective_spec iter nafs lookup_tables r P n hn hT hD hstart hend hr
     hrb hrp
 
+set_option linter.style.longLine false in
 open «VartimeMultiscalarMulStrausEdwardsPointx86_64-no-tables» in
-/-- `Straus::optional_multiscalar_mul`: `none` iff some point is `none` (all points are read);
+/-- `Straus::optional_multiscalar_mul`: `none` iff some point is `none`;
 otherwise `∑ s_i • P_i` over the scalars and points, up to the shorter input (unreduced
 scalars `< 2^255`); limbs `< 2^52`. -/
 @[step]
@@ -673,17 +564,36 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause2_IntoIter) => pointsInst.iteratorInst.Yields it ops ⦄ := hpoints
   step with hscalars' as ⟨it, hit⟩
-  step with optional_multiscalar_mul.nafs_spec
-    _ _ it xs hit ss hborrow_scalars hss hxs as ⟨nafs, hnafs⟩
+  unfold optional_multiscalar_mul_loop0
+  apply spec_bind (optional_multiscalar_mul.nafs_spec
+    _ _ it xs hit ss hborrow_scalars hss hxs)
+  intro nafs hnafs
   step with hpoints' as ⟨it1, hit1⟩
-  step with optional_multiscalar_mul.lookup_tables_spec
-    _ it1 ops hit1 hps hops as ⟨o, hnone, hsome⟩
-  rcases o with _ | tables
-  · dsimp only
-    rw [WP.spec_ok]
-    exact ⟨by simpa using hnone, fun R hR => absurd hR (by simp)⟩
-  · have htables := hsome tables rfl
-    obtain ⟨hTlen, hT⟩ := forall₂_getElem! htables
+  let post := fun (r : Option edwards.EdwardsPoint.«x86_64-no-tables») =>
+    (r = none ↔ none ∈ ops) ∧ ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
+      (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧ R.LimbsLt 52
+  suffices h : ∀ it rest, pointsInst.iteratorInst.Yields it rest →
+      ∀ (seen : List edwards.EdwardsPoint.«x86_64-no-tables»)
+        (tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-no-tables»)),
+      ops = seen.map some ++ rest →
+      List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 54) seen tables.val →
+      optional_multiscalar_mul_loop1 scalarsInst borrowScalarInst pointsInst it nafs tables
+        ⦃ post ⦄ by
+    exact h it1 ops hit1 [] (alloc.vec.Vec.new _) rfl .nil
+  intro it rest hit
+  induction hit with
+  | nil hnext =>
+    intro seen tables hseen htables
+    unfold optional_multiscalar_mul_loop1 loop optional_multiscalar_mul_loop1.body
+    step with hnext as ⟨q, hq⟩
+    obtain ⟨o, it1⟩ := q
+    simp only at hq
+    subst hq
+    have hnn : none ∉ ops := by simp [hseen]
+    have ht : List.Forall₂
+        (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 54) (ops.filterMap id) tables.val := by
+      simpa [hseen] using htables
+    obtain ⟨hTlen, hT⟩ := forall₂_getElem! ht
     obtain ⟨hDlen, hD⟩ := forall₂_getElem! hnafs
     have hn : min ss.length (ops.filterMap id).length = min nafs.length tables.length := by
       rw [hTlen, hDlen]
@@ -691,7 +601,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
         ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
       as ⟨r, hron, hr, hrb⟩
     step as ⟨iter, hiter⟩
-    step with optional_multiscalar_mul_loop0_spec iter nafs tables r
+    step with optional_multiscalar_mul_loop1_loop0_spec iter nafs tables r
       (fun k => (ops.filterMap id)[k]!.toPoint) (min ss.length (ops.filterMap id).length) hn
       (fun k hk => hT k (by have := min_le_right ss.length (ops.filterMap id).length; omega))
       (fun k hk => (hD k (by have := min_le_left ss.length (ops.filterMap id).length; omega)).2)
@@ -703,7 +613,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
             = 256 from rfl, nafTail_eq_zero _ _ fun j hj hj' => by omega, zero_smul]).symm)
       as ⟨q, hqon, hqb, hq⟩
     step with «ProjectivePointx86_64-no-tables».as_extended_spec_point as ⟨R, hRon, hR, hRb⟩
-    refine ⟨by simpa using hnone, fun R' hR' => ?_⟩
+    refine ⟨by simpa using hnn, fun R' hR' => ?_⟩
     obtain rfl : R = R' := Option.some.inj hR'
     refine ⟨hRon, ?_, hRb⟩
     rw [hR, hq, sum_zipWith_eq]
@@ -711,6 +621,34 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     have hk' := Finset.mem_range.mp hk
     rw [nafTail_zero, (hD k (by have := min_le_left ss.length (ops.filterMap id).length; omega)).1,
       natCast_zsmul]
+  | @cons it it' x rest hnext _ ih =>
+    intro seen tables hseen htables
+    unfold optional_multiscalar_mul_loop1 loop optional_multiscalar_mul_loop1.body
+    step with hnext as ⟨q, ho, hit⟩
+    obtain ⟨o, it1⟩ := q
+    simp only at ho hit
+    subst ho hit
+    rcases x with _ | P
+    · simp [uncurry, core.option.Option.map, post, hseen]
+    · simp only [uncurry, core.option.Option.map, Std.bind_assoc]
+      unfold optional_multiscalar_mul.closure.Insts.«CoreOpsFunctionFnOnceTupleEdwardsPointx86_64-no-tablesNafLookupTable5ProjectiveNielsPointx86_64-no-tables».call_once
+      simp only [Std.bind_tc_eq, Std.bind_assoc, bind_ok]
+      obtain ⟨hPb, hPon⟩ := hps P (by simp [hseen])
+      apply spec_bind
+        (window.«NafLookupTable5ProjectiveNielsPointx86_64-no-tables».Insts.«CoreConvertFromSharedAEdwardsPointx86_64-no-tables».from_spec
+          P hPb hPon)
+      rintro z ⟨hz, hzb⟩
+      step with alloc.vec.Vec.push_spec tables z (by
+        have hp := congrArg List.length hseen
+        have ht := htables.length_eq
+        simp only [List.length_append, List.length_map, List.length_cons] at hp
+        change tables.val.length < Usize.max
+        omega) as ⟨out, hout⟩
+      have ih' := ih (seen ++ [P]) out
+        (by simpa [List.map_append, List.append_assoc] using hseen)
+        (by rw [hout]; exact List.rel_append htables (List.Forall₂.cons ⟨hz, hzb⟩ .nil))
+      unfold optional_multiscalar_mul_loop1 at ih'
+      exact ih'
 
 end Straus.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-no-tables»
 
@@ -735,11 +673,13 @@ private theorem nafs_spec {It Clause0_Item : Type}
     (hborrow : List.Forall₂
       (fun x s => borrowInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hlen : xs.length ≤ Usize.max) :
-    nafs iterInst borrowInst scalars
+    loop (fun ((it, out) : It × alloc.vec.Vec (Array I8 256#usize)) =>
+      collect.collectMapBody iterInst borrowInst.borrow
+        (fun s => scalar.Scalar.non_adjacent_form s 5#usize) it out)
+      (scalars, alloc.vec.Vec.new _)
       ⦃ (r : alloc.vec.Vec (Array I8 256#usize)) =>
         List.Forall₂ (fun s d => d.asInt 1 = s.asNat ∧ ∀ i : ℕ, i < 256 → d[i]!.val ≠ 0 →
           d[i]!.val % 2 = 1 ∧ 2 * |d[i]!.val| < 2 ^ 5) ss r.val ⦄ := by
-  unfold nafs nafs_loop
   apply spec_mono (collect.collectMapLoop_spec iterInst borrowInst.borrow
     (fun s => scalar.Scalar.non_adjacent_form s 5#usize)
     (fun s d => d.asInt 1 = s.asNat ∧ ∀ i : ℕ, i < 256 → d[i]!.val ≠ 0 →
@@ -750,106 +690,34 @@ private theorem nafs_spec {It Clause0_Item : Type}
   rintro r ⟨zs, hr, hzs⟩
   simpa [hr] using hzs
 
-open window.«NafLookupTable5ProjectiveNielsPointi686-no-tables».Insts in
-/-- The loop of `lookup_tables`: pushes the tables of the remaining points; `none` iff one of
-them is `none`. -/
-private theorem lookup_tables_loop_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It
-        (Option edwards.EdwardsPoint.«i686-no-tables»))
-    (points : It) (ops : List (Option edwards.EdwardsPoint.«i686-no-tables»))
-    (hit : iterInst.Yields points ops)
-    (hps : ∀ P, some P ∈ ops → P.LimbsLt 26 ∧ P.OnCurve)
-    (out : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-no-tables»))
-    (hlen : out.length + ops.length ≤ Usize.max) :
-    lookup_tables_loop iterInst points out
-      ⦃ (r : Option
-          (alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-no-tables»))) =>
-        (r = none ↔ none ∈ ops) ∧ ∀ v, r = some v → ∃ zs, v.val = out.val ++ zs ∧
-          List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 27) (ops.filterMap id)
-            zs ⦄ := by
-  induction hit generalizing out with
-  | nil hnext =>
-    unfold lookup_tables_loop loop lookup_tables_loop.body
-    step with hnext as ⟨q, hq⟩
-    obtain ⟨o, it1⟩ := q
-    simp only at hq
-    subst hq
-    simp
-  | @cons it it' x xs' hnext _ ih =>
-    unfold lookup_tables_loop loop lookup_tables_loop.body
-    step with hnext as ⟨q, ho, hit⟩
-    obtain ⟨o, it1⟩ := q
-    simp only at ho hit
-    subst ho hit
-    rcases x with _ | P
-    · simp
-    · obtain ⟨hPb, hPon⟩ := hps P List.mem_cons_self
-      step with «CoreConvertFromSharedAEdwardsPointi686-no-tables».from_spec
-        P hPb hPon as ⟨z, hz, hzb⟩
-      step with alloc.vec.Vec.push_spec out z
-        (by
-          have h : out.length < Usize.max := by simp only [List.length_cons] at hlen; omega
-          exact h) as ⟨out1, hout1⟩
-      have ih' := ih (fun Q hQ => hps Q (List.mem_cons_of_mem _ hQ)) out1 (by
-        rw [alloc.vec.Vec.length_of_val_eq_append hout1]
-        simp only [List.length_cons] at hlen; omega)
-      unfold lookup_tables_loop at ih'
-      apply WP.spec_mono ih'
-      rintro r ⟨hnone, hsome⟩
-      refine ⟨by simp [hnone], fun v hv => ?_⟩
-      obtain ⟨zs, hr, hzs⟩ := hsome v hv
-      exact ⟨z :: zs, by rw [hr, hout1, List.append_assoc, List.singleton_append],
-        by simpa using List.Forall₂.cons ⟨hz, hzb⟩ hzs⟩
-
-/-- The points' tables of odd multiples; `none` iff some point is `none`. -/
-@[local step]
-private theorem lookup_tables_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It
-        (Option edwards.EdwardsPoint.«i686-no-tables»))
-    (points : It) (ops : List (Option edwards.EdwardsPoint.«i686-no-tables»))
-    (hit : iterInst.Yields points ops)
-    (hps : ∀ P, some P ∈ ops → P.LimbsLt 26 ∧ P.OnCurve) (hlen : ops.length ≤ Usize.max) :
-    lookup_tables iterInst points
-      ⦃ (r : Option
-          (alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-no-tables»))) =>
-        (r = none ↔ none ∈ ops) ∧ ∀ v, r = some v →
-          List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 27)
-            (ops.filterMap id) v.val ⦄ := by
-  unfold lookup_tables
-  apply spec_mono (lookup_tables_loop_spec iterInst points ops hit hps (alloc.vec.Vec.new _)
-    (by simpa using hlen))
-  rintro r ⟨hnone, hsome⟩
-  refine ⟨hnone, fun v hv => ?_⟩
-  obtain ⟨zs, hr, hzs⟩ := hsome v hv
-  simpa [hr] using hzs
-
 end «VartimeMultiscalarMulStrausEdwardsPointi686-no-tables».optional_multiscalar_mul
 
 namespace Straus.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-no-tables»
 
-private theorem optional_multiscalar_mul_loop0_loop0_eq
+private theorem optional_multiscalar_mul_loop1_loop0_loop0_eq
     (nafs : alloc.vec.Vec (Array I8 256#usize))
     (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-no-tables»))
-    (i : Usize) (t : CompletedPoint.«i686-no-tables») (n k : Usize) :
-    optional_multiscalar_mul_loop0_loop0 nafs lookup_tables i t n k =
-      EdwardsOps.I686NoTables.strausLoop00 nafs lookup_tables i t n k := by
-  unfold optional_multiscalar_mul_loop0_loop0 EdwardsOps.strausLoop00
+    (i : Usize) (t : CompletedPoint.«i686-no-tables»)
+    (it : core.ops.range.Range Usize) :
+    optional_multiscalar_mul_loop1_loop0_loop0 it nafs lookup_tables i t =
+      EdwardsOps.I686NoTables.strausLoop00 it nafs lookup_tables i t := by
+  unfold optional_multiscalar_mul_loop1_loop0_loop0 EdwardsOps.strausLoop00
   congr 1
 
-private theorem optional_multiscalar_mul_loop0_eq
+private theorem optional_multiscalar_mul_loop1_loop0_eq
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
     (nafs : alloc.vec.Vec (Array I8 256#usize))
     (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-no-tables»))
     (r : ProjectivePoint.«i686-no-tables») :
-    optional_multiscalar_mul_loop0 iter nafs lookup_tables r =
+    optional_multiscalar_mul_loop1_loop0 iter nafs lookup_tables r =
       EdwardsOps.I686NoTables.strausLoop0 iter nafs lookup_tables r := by
-  unfold optional_multiscalar_mul_loop0 EdwardsOps.strausLoop0
+  unfold optional_multiscalar_mul_loop1_loop0 EdwardsOps.strausLoop0
   congr 1
 
 /-- The outer loop: after the digit positions `e, …, 255`, the accumulator represents
 `∑_{m < n} nafTail d_m e • P_m`. -/
 @[local step]
-private theorem optional_multiscalar_mul_loop0_spec
+private theorem optional_multiscalar_mul_loop1_loop0_spec
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
     (nafs : alloc.vec.Vec (Array I8 256#usize))
     (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-no-tables»))
@@ -861,18 +729,19 @@ private theorem optional_multiscalar_mul_loop0_spec
     (hstart : iter.iter.start.val = 0) (hend : iter.iter.end.val ≤ 256)
     (hr : r.OnCurve) (hrb : r.LimbsLt 26)
     (hrp : r.toPoint = ∑ m ∈ Finset.range n, nafTail nafs.val[m]! iter.iter.end.val • P m) :
-    optional_multiscalar_mul_loop0 iter nafs lookup_tables r
+    optional_multiscalar_mul_loop1_loop0 iter nafs lookup_tables r
       ⦃ (res : ProjectivePoint.«i686-no-tables») => res.OnCurve ∧ res.LimbsLt 26 ∧
         res.toPoint = ∑ m ∈ Finset.range n, nafTail nafs.val[m]! 0 • P m ⦄ := by
-  rw [optional_multiscalar_mul_loop0_eq]
+  rw [optional_multiscalar_mul_loop1_loop0_eq]
   exact EdwardsOps.I686NoTables.strausLoop0_spec
     EdwardsOps.I686NoTables.addN_spec EdwardsOps.I686NoTables.subN_spec
     EdwardsOps.I686NoTables.asExtended_spec EdwardsOps.I686NoTables.pDouble_spec
     EdwardsOps.I686NoTables.cAsProjective_spec iter nafs lookup_tables r P n hn hT hD hstart hend hr
     hrb hrp
 
+set_option linter.style.longLine false in
 open «VartimeMultiscalarMulStrausEdwardsPointi686-no-tables» in
-/-- `Straus::optional_multiscalar_mul`: `none` iff some point is `none` (all points are read);
+/-- `Straus::optional_multiscalar_mul`: `none` iff some point is `none`;
 otherwise `∑ s_i • P_i` over the scalars and points, up to the shorter input (unreduced
 scalars `< 2^255`); limbs `< 2^26`. -/
 @[step]
@@ -900,17 +769,36 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause2_IntoIter) => pointsInst.iteratorInst.Yields it ops ⦄ := hpoints
   step with hscalars' as ⟨it, hit⟩
-  step with optional_multiscalar_mul.nafs_spec
-    _ _ it xs hit ss hborrow_scalars hss hxs as ⟨nafs, hnafs⟩
+  unfold optional_multiscalar_mul_loop0
+  apply spec_bind (optional_multiscalar_mul.nafs_spec
+    _ _ it xs hit ss hborrow_scalars hss hxs)
+  intro nafs hnafs
   step with hpoints' as ⟨it1, hit1⟩
-  step with optional_multiscalar_mul.lookup_tables_spec
-    _ it1 ops hit1 hps hops as ⟨o, hnone, hsome⟩
-  rcases o with _ | tables
-  · dsimp only
-    rw [WP.spec_ok]
-    exact ⟨by simpa using hnone, fun R hR => absurd hR (by simp)⟩
-  · have htables := hsome tables rfl
-    obtain ⟨hTlen, hT⟩ := forall₂_getElem! htables
+  let post := fun (r : Option edwards.EdwardsPoint.«i686-no-tables») =>
+    (r = none ↔ none ∈ ops) ∧ ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
+      (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧ R.LimbsLt 26
+  suffices h : ∀ it rest, pointsInst.iteratorInst.Yields it rest →
+      ∀ (seen : List edwards.EdwardsPoint.«i686-no-tables»)
+        (tables : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«i686-no-tables»)),
+      ops = seen.map some ++ rest →
+      List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 27) seen tables.val →
+      optional_multiscalar_mul_loop1 scalarsInst borrowScalarInst pointsInst it nafs tables
+        ⦃ post ⦄ by
+    exact h it1 ops hit1 [] (alloc.vec.Vec.new _) rfl .nil
+  intro it rest hit
+  induction hit with
+  | nil hnext =>
+    intro seen tables hseen htables
+    unfold optional_multiscalar_mul_loop1 loop optional_multiscalar_mul_loop1.body
+    step with hnext as ⟨q, hq⟩
+    obtain ⟨o, it1⟩ := q
+    simp only at hq
+    subst hq
+    have hnn : none ∉ ops := by simp [hseen]
+    have ht : List.Forall₂
+        (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 27) (ops.filterMap id) tables.val := by
+      simpa [hseen] using htables
+    obtain ⟨hTlen, hT⟩ := forall₂_getElem! ht
     obtain ⟨hDlen, hD⟩ := forall₂_getElem! hnafs
     have hn : min ss.length (ops.filterMap id).length = min nafs.length tables.length := by
       rw [hTlen, hDlen]
@@ -918,7 +806,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
         ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
       as ⟨r, hron, hr, hrb⟩
     step as ⟨iter, hiter⟩
-    step with optional_multiscalar_mul_loop0_spec iter nafs tables r
+    step with optional_multiscalar_mul_loop1_loop0_spec iter nafs tables r
       (fun k => (ops.filterMap id)[k]!.toPoint) (min ss.length (ops.filterMap id).length) hn
       (fun k hk => hT k (by have := min_le_right ss.length (ops.filterMap id).length; omega))
       (fun k hk => (hD k (by have := min_le_left ss.length (ops.filterMap id).length; omega)).2)
@@ -930,7 +818,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
             = 256 from rfl, nafTail_eq_zero _ _ fun j hj hj' => by omega, zero_smul]).symm)
       as ⟨q, hqon, hqb, hq⟩
     step with «ProjectivePointi686-no-tables».as_extended_spec_point as ⟨R, hRon, hR, hRb⟩
-    refine ⟨by simpa using hnone, fun R' hR' => ?_⟩
+    refine ⟨by simpa using hnn, fun R' hR' => ?_⟩
     obtain rfl : R = R' := Option.some.inj hR'
     refine ⟨hRon, ?_, hRb⟩
     rw [hR, hq, sum_zipWith_eq]
@@ -938,6 +826,34 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     have hk' := Finset.mem_range.mp hk
     rw [nafTail_zero, (hD k (by have := min_le_left ss.length (ops.filterMap id).length; omega)).1,
       natCast_zsmul]
+  | @cons it it' x rest hnext _ ih =>
+    intro seen tables hseen htables
+    unfold optional_multiscalar_mul_loop1 loop optional_multiscalar_mul_loop1.body
+    step with hnext as ⟨q, ho, hit⟩
+    obtain ⟨o, it1⟩ := q
+    simp only at ho hit
+    subst ho hit
+    rcases x with _ | P
+    · simp [uncurry, core.option.Option.map, post, hseen]
+    · simp only [uncurry, core.option.Option.map, Std.bind_assoc]
+      unfold optional_multiscalar_mul.closure.Insts.«CoreOpsFunctionFnOnceTupleEdwardsPointi686-no-tablesNafLookupTable5ProjectiveNielsPointi686-no-tables».call_once
+      simp only [Std.bind_tc_eq, Std.bind_assoc, bind_ok]
+      obtain ⟨hPb, hPon⟩ := hps P (by simp [hseen])
+      apply spec_bind
+        (window.«NafLookupTable5ProjectiveNielsPointi686-no-tables».Insts.«CoreConvertFromSharedAEdwardsPointi686-no-tables».from_spec
+          P hPb hPon)
+      rintro z ⟨hz, hzb⟩
+      step with alloc.vec.Vec.push_spec tables z (by
+        have hp := congrArg List.length hseen
+        have ht := htables.length_eq
+        simp only [List.length_append, List.length_map, List.length_cons] at hp
+        change tables.val.length < Usize.max
+        omega) as ⟨out, hout⟩
+      have ih' := ih (seen ++ [P]) out
+        (by simpa [List.map_append, List.append_assoc] using hseen)
+        (by rw [hout]; exact List.rel_append htables (List.Forall₂.cons ⟨hz, hzb⟩ .nil))
+      unfold optional_multiscalar_mul_loop1 at ih'
+      exact ih'
 
 end Straus.Insts.«Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-no-tables»
 

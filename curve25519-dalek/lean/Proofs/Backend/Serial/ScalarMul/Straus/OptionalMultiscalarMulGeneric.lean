@@ -55,44 +55,41 @@ open ControlFlow
 
 /-- `optional_multiscalar_mul_loop0_loop0.body` over the point operations. -/
 @[expose] def strausLoop00Body (nafs : alloc.vec.Vec (Array I8 256#usize))
-    (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 O.N)) (i : Usize) (n : Usize) (t : O.C)
-    (k : Usize) : Result (ControlFlow (O.C × Usize) O.C) := do
-  if k < n
-  then
+    (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 O.N)) (i : Usize)
+    (iter : core.ops.range.Range Usize) (t : O.C) :
+    Result (ControlFlow ((core.ops.range.Range Usize) × O.C) O.C) := do
+  let (o, iter1) ← core.iter.range.IteratorRange.next core.iter.range.StepUsize iter
+  match o with
+  | none => ok (done t)
+  | some k =>
     let a ← alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice (Array I8 256#usize)) nafs k
+    let nlt ←
+      alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice (window.NafLookupTable5 O.N))
+        lookup_tables k
     let digit ← Array.index_usize a i
     let o ← lift (core.cmp.impls.OrdI8.cmp digit 0#i8)
-    let t1 ←
-      match o with
-      | Ordering.lt =>
-        do
-        let ep ← O.asExtended t
-        let nlt ←
-          alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice (window.NafLookupTable5 O.N))
-            lookup_tables k
-        let i1 ← -. digit
-        let i2 ← lift (IScalar.hcast .Usize i1)
-        let pnp ← window.NafLookupTable5.select O.copyN nlt i2
-        O.subN ep pnp
-      | Ordering.eq => ok t
-      | Ordering.gt =>
-        do
-        let ep ← O.asExtended t
-        let nlt ←
-          alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice (window.NafLookupTable5 O.N))
-            lookup_tables k
-        let i1 ← lift (IScalar.hcast .Usize digit)
-        let pnp ← window.NafLookupTable5.select O.copyN nlt i1
-        O.addN ep pnp
-    let k1 ← k + 1#usize
-    ok (cont (t1, k1))
-  else ok (done t)
+    match o with
+    | Ordering.lt =>
+      let ep ← O.asExtended t
+      let i1 ← -. digit
+      let i2 ← lift (IScalar.hcast .Usize i1)
+      let pnp ← window.NafLookupTable5.select O.copyN nlt i2
+      let t1 ← O.subN ep pnp
+      ok (cont (iter1, t1))
+    | Ordering.eq => ok (cont (iter1, t))
+    | Ordering.gt =>
+      let ep ← O.asExtended t
+      let i1 ← lift (IScalar.hcast .Usize digit)
+      let pnp ← window.NafLookupTable5.select O.copyN nlt i1
+      let t1 ← O.addN ep pnp
+      ok (cont (iter1, t1))
 
 /-- `optional_multiscalar_mul_loop0_loop0` over the point operations. -/
-@[expose] def strausLoop00 (nafs : alloc.vec.Vec (Array I8 256#usize))
-    (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 O.N)) (i : Usize) (t : O.C) (n : Usize)
-    (k : Usize) : Result O.C := do
-  loop (fun (t1, k1) => O.strausLoop00Body nafs lookup_tables i n t1 k1) (t, k)
+@[expose] def strausLoop00 (iter : core.ops.range.Range Usize)
+    (nafs : alloc.vec.Vec (Array I8 256#usize))
+    (lookup_tables : alloc.vec.Vec (window.NafLookupTable5 O.N)) (i : Usize) (t : O.C) :
+    Result O.C := do
+  loop (fun (iter1, t1) => O.strausLoop00Body nafs lookup_tables i iter1 t1) (iter, t)
 
 /-- `optional_multiscalar_mul_loop0.body` over the point operations. -/
 @[expose] def strausLoop0Body (nafs : alloc.vec.Vec (Array I8 256#usize))
@@ -109,8 +106,8 @@ open ControlFlow
     let t ← O.pDouble r
     let i1 := alloc.vec.Vec.len nafs
     let i2 := alloc.vec.Vec.len lookup_tables
-    let n ← core.cmp.min core.cmp.OrdUsize i1 i2
-    let t1 ← O.strausLoop00 nafs lookup_tables i t n 0#usize
+    let n ← lift (core.cmp.impls.OrdUsize.min i1 i2)
+    let t1 ← O.strausLoop00 { start := 0#usize, «end» := n } nafs lookup_tables i t
     let r1 ← O.cAsProjective t1
     ok (cont (iter1, r1))
 
@@ -132,71 +129,79 @@ private theorem strausLoop00_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec)
     (hD : ∀ m < n.val, ∀ e : ℕ, e < 256 → (nafs.val[m]!)[e]!.val ≠ 0 →
       (nafs.val[m]!)[e]!.val % 2 = 1 ∧ 2 * |(nafs.val[m]!)[e]!.val| < 2 ^ 5)
     (hk : k.val ≤ n.val) (ht : O.cOnCurve t) (htb : O.cBnd t) :
-    O.strausLoop00 nafs lookup_tables i t n k ⦃ (r : O.C) => O.cOnCurve r ∧ O.cBnd r ∧
+    O.strausLoop00 { start := k, «end» := n } nafs lookup_tables i t
+      ⦃ (r : O.C) => O.cOnCurve r ∧ O.cBnd r ∧
         O.cToPoint r = O.cToPoint t + ∑ m ∈ Finset.Ico k.val n.val,
           (nafs.val[m]!)[i.val]!.val • P m ⦄ := by
   unfold strausLoop00
-  apply loop.spec_decr_nat (measure := fun (_, k') => n.val - k'.val)
-    (inv := fun (t', k') => k.val ≤ k'.val ∧ k'.val ≤ n.val ∧ O.cOnCurve t' ∧ O.cBnd t' ∧
-      O.cToPoint t' = O.cToPoint t + ∑ m ∈ Finset.Ico k.val k'.val,
+  apply loop.spec_decr_nat (measure := fun (it, _) => n.val - it.start.val)
+    (inv := fun (it, t') => it.end = n ∧ k.val ≤ it.start.val ∧
+      it.start.val ≤ n.val ∧ O.cOnCurve t' ∧ O.cBnd t' ∧
+      O.cToPoint t' = O.cToPoint t + ∑ m ∈ Finset.Ico k.val it.start.val,
         (nafs.val[m]!)[i.val]!.val • P m)
-  · rintro ⟨t', k'⟩ ⟨hkk, hkn, ht'on, ht'b, ht'p⟩
+  · rintro ⟨⟨k', e⟩, t'⟩ ⟨he, hkk, hkn, ht'on, ht'b, ht'p⟩
+    dsimp only at he
+    subst e
     unfold strausLoop00Body
     by_cases hlt : k' < n
-    · simp only [hlt, ite_true]
+    · step with core.iter.range.IteratorRange.next_Usize_some_spec
+        as ⟨o, it1, ho, hk1, he1⟩
+      subst ho
       have hm : k'.val < n.val := hlt
       obtain ⟨hrep, hb⟩ := hT k'.val hm
       step as ⟨a, ha⟩
       rw [← getElem!_pos] at ha
+      step as ⟨tab, htab⟩
+      rw [← getElem!_pos] at htab
       step as ⟨d, hd⟩
       rw [show lift (core.cmp.impls.OrdI8.cmp d 0#i8) = ok (compare d.val 0) from rfl, bind_ok]
-      apply spec_bind (Pₘ := fun t1 => O.cOnCurve t1 ∧
-        O.cToPoint t1 = O.cToPoint t' + d.val • P k'.val ∧ O.cBnd t1)
-      · rcases lt_trichotomy d.val 0 with hneg | hzero | hpos
-        · rw [(compare_lt_iff_lt).mpr hneg]
-          simp only
-          step with hasE t' ht'b ht'on as ⟨ep, hepon, hep, hepb⟩
-          step as ⟨tab, htab⟩
-          rw [← getElem!_pos] at htab
-          have hdk := naf_digit_abs (w := 5) (by norm_num)
-            (hD k'.val hm i.val hi (by rw [← ha, ← hd]; omega))
-          rw [← ha, ← hd, abs_of_neg hneg] at hdk
-          step as ⟨i1, hi1⟩
-          step with IScalar.hcast_inBounds_spec as ⟨i2, hi2⟩
-          step with window.NafLookupTable5.select_spec (P := P k'.val) _ tab i2
-            (htab ▸ hb) (htab ▸ hrep) ⟨by omega, by omega⟩ as ⟨q, hqon, hq, hqb⟩
-          step with hsubN ep q hepb hqb hepon hqon as ⟨t1, ht1on, ht1p, ht1b⟩
-          refine ⟨ht1on, ?_, ht1b⟩
-          rw [ht1p, hep, show O.nToPoint q = PointRepr.toPoint q from rfl, hq]
-          exact sub_nsmul_eq _ _ _ _ (by omega)
-        · rw [(compare_eq_iff_eq).mpr hzero]
-          simp only [WP.spec_ok]
-          rw [hzero, zero_smul, add_zero]
-          exact ⟨ht'on, rfl, ht'b⟩
-        · rw [(compare_gt_iff_gt).mpr hpos]
-          simp only
-          step with hasE t' ht'b ht'on as ⟨ep, hepon, hep, hepb⟩
-          step as ⟨tab, htab⟩
-          rw [← getElem!_pos] at htab
-          have hdk := naf_digit_abs (w := 5) (by norm_num)
-            (hD k'.val hm i.val hi (by rw [← ha, ← hd]; omega))
-          rw [← ha, ← hd, abs_of_pos hpos] at hdk
-          step with IScalar.hcast_inBounds_spec as ⟨i1, hi1⟩
-          step with window.NafLookupTable5.select_spec (P := P k'.val) _ tab i1
-            (htab ▸ hb) (htab ▸ hrep) ⟨by omega, by omega⟩ as ⟨q, hqon, hq, hqb⟩
-          step with haddN ep q hepb hqb hepon hqon as ⟨t1, ht1on, ht1p, ht1b⟩
-          refine ⟨ht1on, ?_, ht1b⟩
-          rw [ht1p, hep, show O.nToPoint q = PointRepr.toPoint q from rfl, hq]
-          exact add_nsmul_eq _ _ _ _ (by omega)
-      · rintro t1 ⟨ht1on, ht1p, ht1b⟩
-        step as ⟨k1, hk1⟩
-        refine ⟨by scalar_tac, by scalar_tac, ht1on, ht1b, ?_, by scalar_tac⟩
-        rw [ht1p, ht'p, show k1.val = k'.val + 1 by scalar_tac, Finset.sum_Ico_succ_top hkk,
-          add_assoc, hd, ha]
-    · simp only [hlt, ite_false, WP.spec_ok]
+      have hfinish (t1 : O.C) (ht1on : O.cOnCurve t1)
+          (ht1p : O.cToPoint t1 = O.cToPoint t' + d.val • P k'.val) (ht1b : O.cBnd t1) :
+          it1.end = n ∧ k.val ≤ it1.start.val ∧ it1.start.val ≤ n.val ∧
+          O.cOnCurve t1 ∧ O.cBnd t1 ∧
+          O.cToPoint t1 = O.cToPoint t + ∑ m ∈ Finset.Ico k.val it1.start.val,
+            (nafs.val[m]!)[i.val]!.val • P m ∧ n.val - it1.start.val < n.val - k'.val := by
+        refine ⟨he1, by scalar_tac, by scalar_tac, ht1on, ht1b, ?_, by scalar_tac⟩
+        rw [ht1p, ht'p, show it1.start.val = k'.val + 1 by scalar_tac,
+          Finset.sum_Ico_succ_top hkk, add_assoc, hd, ha]
+      rcases lt_trichotomy d.val 0 with hneg | hzero | hpos
+      · rw [(compare_lt_iff_lt).mpr hneg]
+        simp only
+        step with hasE t' ht'b ht'on as ⟨ep, hepon, hep, hepb⟩
+        have hdk := naf_digit_abs (w := 5) (by norm_num)
+          (hD k'.val hm i.val hi (by rw [← ha, ← hd]; omega))
+        rw [← ha, ← hd, abs_of_neg hneg] at hdk
+        step as ⟨i1, hi1⟩
+        step with IScalar.hcast_inBounds_spec as ⟨i2, hi2⟩
+        step with window.NafLookupTable5.select_spec (P := P k'.val) _ tab i2
+          (htab ▸ hb) (htab ▸ hrep) ⟨by omega, by omega⟩ as ⟨q, hqon, hq, hqb⟩
+        step with hsubN ep q hepb hqb hepon hqon as ⟨t1, ht1on, ht1p, ht1b⟩
+        refine hfinish t1 ht1on ?_ ht1b
+        rw [ht1p, hep, show O.nToPoint q = PointRepr.toPoint q from rfl, hq]
+        exact sub_nsmul_eq _ _ _ _ (by omega)
+      · rw [(compare_eq_iff_eq).mpr hzero]
+        simp only [WP.spec_ok]
+        exact hfinish t' ht'on (by rw [hzero, zero_smul, add_zero]) ht'b
+      · rw [(compare_gt_iff_gt).mpr hpos]
+        simp only
+        step with hasE t' ht'b ht'on as ⟨ep, hepon, hep, hepb⟩
+        have hdk := naf_digit_abs (w := 5) (by norm_num)
+          (hD k'.val hm i.val hi (by rw [← ha, ← hd]; omega))
+        rw [← ha, ← hd, abs_of_pos hpos] at hdk
+        step with IScalar.hcast_inBounds_spec as ⟨i1, hi1⟩
+        step with window.NafLookupTable5.select_spec (P := P k'.val) _ tab i1
+          (htab ▸ hb) (htab ▸ hrep) ⟨by omega, by omega⟩ as ⟨q, hqon, hq, hqb⟩
+        step with haddN ep q hepb hqb hepon hqon as ⟨t1, ht1on, ht1p, ht1b⟩
+        refine hfinish t1 ht1on ?_ ht1b
+        rw [ht1p, hep, show O.nToPoint q = PointRepr.toPoint q from rfl, hq]
+        exact add_nsmul_eq _ _ _ _ (by omega)
+    · step with core.iter.range.IteratorRange.next_Usize_none_spec as ⟨o, it1, ho, hit1⟩
+      subst ho
+      simp only [WP.spec_ok]
       have : k'.val = n.val := by scalar_tac
       exact ⟨ht'on, ht'b, this ▸ ht'p⟩
-  · exact ⟨le_refl _, hk, ht, htb, by rw [Finset.Ico_self, Finset.sum_empty, add_zero]⟩
+  · exact ⟨rfl, le_refl _, hk, ht, htb,
+      by rw [Finset.Ico_self, Finset.sum_empty, add_zero]⟩
 
 /-- The outer loop: after the digit positions `e, …, 255`, the accumulator represents
 `∑_{m < n} nafTail d_m e • P_m`. -/

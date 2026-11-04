@@ -23,6 +23,7 @@ import Proofs.Field.InvertBatchAlloc
 import Proofs.Field.IsNegative
 import Proofs.Helpers.Coords
 import Proofs.Helpers.Collect
+import Proofs.Helpers.Iterator
 import Proofs.Helpers.RistrettoCompress
 import Proofs.Helpers.StepSpecs
 import Proofs.Helpers.ToField
@@ -278,23 +279,25 @@ private theorem forall₂_getElem! {α β : Type} [Inhabited α] [Inhabited β] 
   exact hR k hk (hlen ▸ hk)
 
 /-- The collecting loop: one state per point. -/
-private theorem states_loop_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It RistrettoPoint.«x86_64-tables»)
-    (it : It) (ps : List RistrettoPoint.«x86_64-tables») (hit : iterInst.Yields it ps)
+private theorem states_loop_spec {I It : Type}
+    (pointsInst :
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«x86_64-tables» It)
+    (it : It) (ps : List RistrettoPoint.«x86_64-tables»)
+    (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52) (out : alloc.vec.Vec BatchCompressState)
     (hlen : out.length + ps.length ≤ Usize.max) :
-    states_loop iterInst it out ⦃ (v : alloc.vec.Vec BatchCompressState) =>
+    double_and_compress_batch_loop0 pointsInst it out ⦃ (v : alloc.vec.Vec BatchCompressState) =>
       ∃ sts, v.val = out.val ++ sts ∧ List.Forall₂ StateOf ps sts ⦄ := by
   induction hit generalizing out with
   | nil hnext =>
-    unfold states_loop loop states_loop.body
+    unfold double_and_compress_batch_loop0 loop double_and_compress_batch_loop0.body
     step with hnext as ⟨q, hq⟩
     obtain ⟨o, it1⟩ := q
     simp only at hq
     subst hq
     simp
   | @cons it it' P ps' hnext _ ih =>
-    unfold states_loop loop states_loop.body
+    unfold double_and_compress_batch_loop0 loop double_and_compress_batch_loop0.body
     step with hnext as ⟨q, ho, hit⟩
     obtain ⟨o, it1⟩ := q
     simp only at ho hit
@@ -322,14 +325,16 @@ private theorem efgh_spec (st : BatchCompressState) (h1 : st.eg.LimbsLt 52)
   exact ⟨toField_mul_of_mod hr, hrb⟩
 
 /-- `states`: one state per point. -/
-private theorem states_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It RistrettoPoint.«x86_64-tables»)
-    (it : It) (ps : List RistrettoPoint.«x86_64-tables») (hit : iterInst.Yields it ps)
+private theorem states_spec {I It : Type}
+    (pointsInst :
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«x86_64-tables» It)
+    (it : It) (ps : List RistrettoPoint.«x86_64-tables»)
+    (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52) (hlen : ps.length ≤ Usize.max) :
-    states iterInst it ⦃ (v : alloc.vec.Vec BatchCompressState) =>
+    double_and_compress_batch_loop0 pointsInst it (alloc.vec.Vec.new _)
+      ⦃ (v : alloc.vec.Vec BatchCompressState) =>
       List.Forall₂ StateOf ps v.val ⦄ := by
-  unfold states
-  apply spec_mono (states_loop_spec iterInst it ps hit hps (alloc.vec.Vec.new _)
+  apply spec_mono (states_loop_spec pointsInst it ps hit hps (alloc.vec.Vec.new _)
     (by simpa using hlen))
   rintro v ⟨zs, hv, hzs⟩
   rw [hv]
@@ -383,23 +388,25 @@ private theorem forall₂_getElem! {α β : Type} [Inhabited α] [Inhabited β] 
   exact hR k hk (hlen ▸ hk)
 
 /-- The collecting loop: one state per point. -/
-private theorem states_loop_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It RistrettoPoint.«i686-tables»)
-    (it : It) (ps : List RistrettoPoint.«i686-tables») (hit : iterInst.Yields it ps)
+private theorem states_loop_spec {I It : Type}
+    (pointsInst :
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«i686-tables» It)
+    (it : It) (ps : List RistrettoPoint.«i686-tables»)
+    (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26) (out : alloc.vec.Vec BatchCompressState)
     (hlen : out.length + ps.length ≤ Usize.max) :
-    states_loop iterInst it out ⦃ (v : alloc.vec.Vec BatchCompressState) =>
+    double_and_compress_batch_loop0 pointsInst it out ⦃ (v : alloc.vec.Vec BatchCompressState) =>
       ∃ sts, v.val = out.val ++ sts ∧ List.Forall₂ StateOf ps sts ⦄ := by
   induction hit generalizing out with
   | nil hnext =>
-    unfold states_loop loop states_loop.body
+    unfold double_and_compress_batch_loop0 loop double_and_compress_batch_loop0.body
     step with hnext as ⟨q, hq⟩
     obtain ⟨o, it1⟩ := q
     simp only at hq
     subst hq
     simp
   | @cons it it' P ps' hnext _ ih =>
-    unfold states_loop loop states_loop.body
+    unfold double_and_compress_batch_loop0 loop double_and_compress_batch_loop0.body
     step with hnext as ⟨q, ho, hit⟩
     obtain ⟨o, it1⟩ := q
     simp only at ho hit
@@ -427,14 +434,16 @@ private theorem efgh_spec (st : BatchCompressState) (h1 : st.eg.LimbsLt 26)
   exact ⟨toField_mul_of_mod hr, hrb⟩
 
 /-- `states`: one state per point. -/
-private theorem states_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It RistrettoPoint.«i686-tables»)
-    (it : It) (ps : List RistrettoPoint.«i686-tables») (hit : iterInst.Yields it ps)
+private theorem states_spec {I It : Type}
+    (pointsInst :
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«i686-tables» It)
+    (it : It) (ps : List RistrettoPoint.«i686-tables»)
+    (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26) (hlen : ps.length ≤ Usize.max) :
-    states iterInst it ⦃ (v : alloc.vec.Vec BatchCompressState) =>
+    double_and_compress_batch_loop0 pointsInst it (alloc.vec.Vec.new _)
+      ⦃ (v : alloc.vec.Vec BatchCompressState) =>
       List.Forall₂ StateOf ps v.val ⦄ := by
-  unfold states
-  apply spec_mono (states_loop_spec iterInst it ps hit hps (alloc.vec.Vec.new _)
+  apply spec_mono (states_loop_spec pointsInst it ps hit hps (alloc.vec.Vec.new _)
     (by simpa using hlen))
   rintro v ⟨zs, hv, hzs⟩
   rw [hv]
@@ -452,48 +461,64 @@ open scoped Helpers.IndexStep in
 /-- The first loop: the products `e g · f h` of the states. -/
 private theorem loop0_spec (states : alloc.vec.Vec double_and_compress_batch.BatchCompressState)
     (hst : ∀ k < states.length, (states[k]!).eg.LimbsLt 52 ∧ (states[k]!).fh.LimbsLt 52)
-    (invs : alloc.vec.Vec FieldElement51) (i : Usize) (hi : i.val ≤ states.length)
-    (hlen : invs.length = i.val)
-    (hinvs : ∀ k < i.val, invs[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
+    (invs : alloc.vec.Vec FieldElement51) (i : ℕ) (hi : i ≤ states.length)
+    (hlen : invs.length = i)
+    (hinvs : ∀ k < i, invs[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
       (invs[k]!).LimbsLt 52) :
-    double_and_compress_batch_loop0 states invs i ⦃ (r : alloc.vec.Vec FieldElement51) =>
+    double_and_compress_batch_loop1 { slice := states.deref, i } invs
+      ⦃ (r : alloc.vec.Vec FieldElement51) =>
       r.length = states.length ∧ ∀ k < states.length,
         r[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
           (r[k]!).LimbsLt 52 ⦄ := by
-  unfold double_and_compress_batch_loop0
-  apply loop.spec_decr_nat (measure := fun (_, i') => states.length - i'.val)
-    (inv := fun (z, i') => i'.val ≤ states.length ∧ z.length = i'.val ∧ ∀ k < i'.val,
-      z[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧ (z[k]!).LimbsLt 52)
-  · rintro ⟨z, i'⟩ ⟨hi', hl, hz⟩
-    unfold double_and_compress_batch_loop0.body
-    by_cases hlt : i'.val < states.length
-    · have hlt' : i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_true]
-      step as ⟨bcs, hbcs⟩
-      replace hbcs : bcs = states[i'.val]! := by
-        rw [hbcs, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos]
-      obtain ⟨h1, h2⟩ := hst i'.val hlt
-      rw [← hbcs] at h1 h2
-      step with efgh_spec bcs h1 h2 as ⟨fe, hfe, hfeb⟩
+  unfold double_and_compress_batch_loop1
+  apply loop.spec_decr_nat (measure := fun (it, _) => states.length - it.i)
+    (inv := fun (it, z) => it.slice = states.deref ∧ it.i ≤ states.length ∧
+      z.length = it.i ∧ ∀ k < it.i,
+      z[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
+        (z[k]!).LimbsLt 52)
+  · rintro ⟨it, z⟩ ⟨hs, hi', hl, hz⟩
+    unfold double_and_compress_batch_loop1.body
+    have hsval : it.slice.val = states.val := by rw [hs]; exact Slice.from_val _ _
+    by_cases hlt : it.i < states.length
+    · have hnext : core.slice.iter.IteratorSliceIter.next it
+          ⦃ o it1 => o = some (states[it.i]!) ∧
+            it1 = { slice := it.slice, i := it.i + 1 } ⦄ := by
+        have h := Curve25519Dalek.EdwardsOps.sliceNextSome it.slice it.i
+          (by simpa [hsval] using hlt)
+        apply spec_mono h
+        rintro ⟨o, it1⟩ ⟨ho, hit⟩
+        refine ⟨?_, hit⟩
+        rw [ho, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos states.val it.i hlt]
+        congr 1
+        have hslt : it.i < it.slice.val.length := by simpa [hsval] using hlt
+        change it.slice.val[it.i] = states.val[it.i]
+        simp only [hsval]
+      step with hnext as ⟨o, it1, ho, hit1⟩
+      subst ho hit1
+      obtain ⟨h1, h2⟩ := hst it.i hlt
+      step with efgh_spec _ h1 h2 as ⟨fe, hfe, hfeb⟩
       step as ⟨z1, hz1⟩
-      step as ⟨i1, hi1⟩
-      refine ⟨by scalar_tac, by rw [alloc.vec.Vec.length_of_val_eq_append hz1, hl, hi1], ?_,
-        by scalar_tac⟩
-      rw [hi1, ← hl]
-      exact alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
-        x.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧ x.LimbsLt 52)
-        hz1 (hl ▸ hz) (by rw [hl, ← hbcs]; exact ⟨hfe, hfeb⟩)
-    · have hlt' : ¬ i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_false, WP.spec_ok]
-      have hin : i'.val = states.length := by omega
+      refine ⟨hs, by omega, ?_, ?_, by omega⟩
+      · rw [alloc.vec.Vec.length_of_val_eq_append hz1, hl]
+      · rw [← hl]
+        exact alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
+          x.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧ x.LimbsLt 52)
+          hz1 (hl ▸ hz) (by rw [hl]; exact ⟨hfe, hfeb⟩)
+    · have hnext : core.slice.iter.IteratorSliceIter.next it
+          ⦃ o it1 => o = none ∧ it1 = it ⦄ := by
+        have h := Curve25519Dalek.EdwardsOps.sliceNextNone it.slice it.i
+          (by simpa [hsval] using Nat.le_of_not_gt hlt)
+        simpa using h
+      step with hnext as ⟨o, it1, ho, hit1⟩
+      subst ho
+      simp only [WP.spec_ok]
+      have hin : it.i = states.length := by omega
       exact ⟨hl.trans hin, hin ▸ hz⟩
-  · exact ⟨hi, hlen, hinvs⟩
+  · exact ⟨rfl, hi, hlen, hinvs⟩
 
 set_option linter.hashCommand false in
-#decompose double_and_compress_batch_loop1.body loop1_body_eq
-  afterLets (branch 0 (letRange 2 23)) => compressState
+#decompose double_and_compress_batch_loop2.body loop1_body_eq
+  afterLets (branch 1 (letRange 2 23)) => compressState
 
 /-- The encoding step of `double_and_compress_batch`'s second loop: the bytes of `2 P` from the
 state of `P` and the inverse of `e g · f h`. -/
@@ -533,53 +558,59 @@ private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.Bat
     (out : alloc.vec.Vec CompressedRistretto) (i : Usize) (hi : i.val ≤ states.length)
     (hlen : out.length = i.val)
     (hout : ∀ k < i.val, out[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) :
-    double_and_compress_batch_loop1 states invs out i ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
+    double_and_compress_batch_loop2 { start := i, «end» := states.len } states invs out
+      ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
       r.length = states.length ∧
         ∀ k < states.length, r[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint) ⦄ := by
   have hpslen : ps.length = states.length := by
     rw [hsts.length_eq]
-  unfold double_and_compress_batch_loop1
-  apply loop.spec_decr_nat (measure := fun (_, i') => states.length - i'.val)
-    (inv := fun (o, i') => i'.val ≤ states.length ∧ o.length = i'.val ∧ ∀ k < i'.val,
+  unfold double_and_compress_batch_loop2
+  apply loop.spec_decr_nat (measure := fun (it, _) => states.length - it.start.val)
+    (inv := fun (it, o) => it.end = states.len ∧ it.start.val ≤ states.length ∧
+      o.length = it.start.val ∧ ∀ k < it.start.val,
       o[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint))
-  · rintro ⟨o, i'⟩ ⟨hi', hl, ho⟩
+  · rintro ⟨it, o⟩ ⟨hend, hi', hl, ho⟩
     dsimp only
     rw [loop1_body_eq]
-    by_cases hlt : i'.val < states.length
-    · have hlt' : i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_true]
+    by_cases hlt : it.start.val < states.length
+    · have hlt' : it.start.val < it.end.val := by
+        rw [hend, alloc.vec.Vec.len_val]; exact hlt
+      step with core.iter.range.IteratorRange.next_Usize_some_spec it hlt'
+        as ⟨opt, it1, hopt, hstart1, hend1⟩
+      subst hopt
       step as ⟨st, hst⟩
-      replace hst : st = states[i'.val]! := by
+      replace hst : st = states[it.start.val]! := by
         rw [hst, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos]
       step as ⟨inv, hinv⟩
-      replace hinv : inv = invs[i'.val]! := by
+      replace hinv : inv = invs[it.start.val]! := by
         rw [hinv, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos]
-      obtain ⟨Inv, Invb⟩ := hinvs i'.val hlt
+      obtain ⟨Inv, Invb⟩ := hinvs it.start.val hlt
       rw [← hst, ← hinv] at Inv
       rw [← hinv] at Invb
       rw [alloc.vec.Vec.getElem!_Nat_eq] at hst
-      have hPmem : ps[i'.val]! ∈ ps := by
-        rw [getElem!_pos ps i'.val (hpslen ▸ hlt)]
+      have hPmem : ps[it.start.val]! ∈ ps := by
+        rw [getElem!_pos ps it.start.val (hpslen ▸ hlt)]
         exact List.getElem_mem _
-      have hS := forall₂_getElem! hsts i'.val (hpslen ▸ hlt)
+      have hS := forall₂_getElem! hsts it.start.val (hpslen ▸ hlt)
       rw [← hst] at hS
       step with compressState_spec _ (hon _ hPmem) st hS inv Inv Invb as ⟨bytes, hbytes⟩
       step as ⟨o1, ho1⟩
-      step as ⟨i1, hi1⟩
-      refine ⟨by scalar_tac, by rw [alloc.vec.Vec.length_of_val_eq_append ho1, hl, hi1], ?_,
-        by scalar_tac⟩
-      rw [hi1, ← hl]
+      refine ⟨hend1.trans hend, by scalar_tac,
+        by rw [alloc.vec.Vec.length_of_val_eq_append ho1, hl, hstart1], ?_, by scalar_tac⟩
+      rw [hstart1, ← hl]
       refine alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
         x.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) ho1 (hl ▸ ho) ?_
       rw [hl]
       exact hbytes
-    · have hlt' : ¬ i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_false, WP.spec_ok]
-      have hin : i'.val = states.length := by omega
+    · have hge : it.end.val ≤ it.start.val := by
+        rw [hend, alloc.vec.Vec.len_val]; omega
+      step with core.iter.range.IteratorRange.next_Usize_none_spec it hge
+        as ⟨opt, it1, hopt, hit1⟩
+      subst hopt
+      simp only [WP.spec_ok]
+      have hin : it.start.val = states.length := by omega
       exact ⟨hl.trans hin, hin ▸ ho⟩
-  · exact ⟨hi, hlen, hout⟩
+  · exact ⟨rfl, hi, hlen, hout⟩
 
 /-- `RistrettoPoint::double_and_compress_batch`: entry `i` is RFC 9496's encoding of `2 P_i` for
 the points `P_i` the input yields; limbs `< 2^52`. -/
@@ -597,14 +628,16 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause0_IntoIter) => pointsInst.iteratorInst.Yields it ps ⦄ := hpoints
   step with hpoints' as ⟨it, hit⟩
-  step with states_spec _ it ps hit (fun P hP => (hps P hP).1) hlen as ⟨states, hsts⟩
+  step with states_spec pointsInst it ps hit (fun P hP => (hps P hP).1) hlen as ⟨states, hsts⟩
   have hpslen : ps.length = states.length := hsts.length_eq
   have hst : ∀ k < states.length, (states[k]!).eg.LimbsLt 52 ∧ (states[k]!).fh.LimbsLt 52 :=
     fun k hk => by
       have h := forall₂_getElem! hsts k (hpslen ▸ hk)
       rw [alloc.vec.Vec.getElem!_Nat_eq]
       exact ⟨h.2.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.2⟩
-  step with loop0_spec states hst (alloc.vec.Vec.with_capacity FieldElement51 states.len) 0#usize
+  simp only [SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter,
+    core.slice.Slice.iter, bind_ok]
+  step with loop0_spec states hst (alloc.vec.Vec.with_capacity FieldElement51 states.len) 0
     (by simp) (by rfl) (fun k hk => absurd hk (by simp)) as ⟨invs1, hinvs1len, hinvs1⟩
   simp only [alloc.vec.Vec.index_mut, pure]
   have hsb : ∀ k < invs1.slice.length, (invs1.slice[k]!).LimbsLt 54 := fun k hk => by
@@ -639,48 +672,64 @@ open scoped Helpers.IndexStep in
 /-- The first loop: the products `e g · f h` of the states. -/
 private theorem loop0_spec (states : alloc.vec.Vec double_and_compress_batch.BatchCompressState)
     (hst : ∀ k < states.length, (states[k]!).eg.LimbsLt 26 ∧ (states[k]!).fh.LimbsLt 26)
-    (invs : alloc.vec.Vec FieldElement2625) (i : Usize) (hi : i.val ≤ states.length)
-    (hlen : invs.length = i.val)
-    (hinvs : ∀ k < i.val, invs[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
+    (invs : alloc.vec.Vec FieldElement2625) (i : ℕ) (hi : i ≤ states.length)
+    (hlen : invs.length = i)
+    (hinvs : ∀ k < i, invs[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
       (invs[k]!).LimbsLt 26) :
-    double_and_compress_batch_loop0 states invs i ⦃ (r : alloc.vec.Vec FieldElement2625) =>
+    double_and_compress_batch_loop1 { slice := states.deref, i } invs
+      ⦃ (r : alloc.vec.Vec FieldElement2625) =>
       r.length = states.length ∧ ∀ k < states.length,
         r[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
           (r[k]!).LimbsLt 26 ⦄ := by
-  unfold double_and_compress_batch_loop0
-  apply loop.spec_decr_nat (measure := fun (_, i') => states.length - i'.val)
-    (inv := fun (z, i') => i'.val ≤ states.length ∧ z.length = i'.val ∧ ∀ k < i'.val,
-      z[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧ (z[k]!).LimbsLt 26)
-  · rintro ⟨z, i'⟩ ⟨hi', hl, hz⟩
-    unfold double_and_compress_batch_loop0.body
-    by_cases hlt : i'.val < states.length
-    · have hlt' : i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_true]
-      step as ⟨bcs, hbcs⟩
-      replace hbcs : bcs = states[i'.val]! := by
-        rw [hbcs, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos]
-      obtain ⟨h1, h2⟩ := hst i'.val hlt
-      rw [← hbcs] at h1 h2
-      step with efgh_spec bcs h1 h2 as ⟨fe, hfe, hfeb⟩
+  unfold double_and_compress_batch_loop1
+  apply loop.spec_decr_nat (measure := fun (it, _) => states.length - it.i)
+    (inv := fun (it, z) => it.slice = states.deref ∧ it.i ≤ states.length ∧
+      z.length = it.i ∧ ∀ k < it.i,
+      z[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
+        (z[k]!).LimbsLt 26)
+  · rintro ⟨it, z⟩ ⟨hs, hi', hl, hz⟩
+    unfold double_and_compress_batch_loop1.body
+    have hsval : it.slice.val = states.val := by rw [hs]; exact Slice.from_val _ _
+    by_cases hlt : it.i < states.length
+    · have hnext : core.slice.iter.IteratorSliceIter.next it
+          ⦃ o it1 => o = some (states[it.i]!) ∧
+            it1 = { slice := it.slice, i := it.i + 1 } ⦄ := by
+        have h := Curve25519Dalek.EdwardsOps.sliceNextSome it.slice it.i
+          (by simpa [hsval] using hlt)
+        apply spec_mono h
+        rintro ⟨o, it1⟩ ⟨ho, hit⟩
+        refine ⟨?_, hit⟩
+        rw [ho, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos states.val it.i hlt]
+        congr 1
+        have hslt : it.i < it.slice.val.length := by simpa [hsval] using hlt
+        change it.slice.val[it.i] = states.val[it.i]
+        simp only [hsval]
+      step with hnext as ⟨o, it1, ho, hit1⟩
+      subst ho hit1
+      obtain ⟨h1, h2⟩ := hst it.i hlt
+      step with efgh_spec _ h1 h2 as ⟨fe, hfe, hfeb⟩
       step as ⟨z1, hz1⟩
-      step as ⟨i1, hi1⟩
-      refine ⟨by scalar_tac, by rw [alloc.vec.Vec.length_of_val_eq_append hz1, hl, hi1], ?_,
-        by scalar_tac⟩
-      rw [hi1, ← hl]
-      exact alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
-        x.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧ x.LimbsLt 26)
-        hz1 (hl ▸ hz) (by rw [hl, ← hbcs]; exact ⟨hfe, hfeb⟩)
-    · have hlt' : ¬ i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_false, WP.spec_ok]
-      have hin : i'.val = states.length := by omega
+      refine ⟨hs, by omega, ?_, ?_, by omega⟩
+      · rw [alloc.vec.Vec.length_of_val_eq_append hz1, hl]
+      · rw [← hl]
+        exact alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
+          x.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧ x.LimbsLt 26)
+          hz1 (hl ▸ hz) (by rw [hl]; exact ⟨hfe, hfeb⟩)
+    · have hnext : core.slice.iter.IteratorSliceIter.next it
+          ⦃ o it1 => o = none ∧ it1 = it ⦄ := by
+        have h := Curve25519Dalek.EdwardsOps.sliceNextNone it.slice it.i
+          (by simpa [hsval] using Nat.le_of_not_gt hlt)
+        simpa using h
+      step with hnext as ⟨o, it1, ho, hit1⟩
+      subst ho
+      simp only [WP.spec_ok]
+      have hin : it.i = states.length := by omega
       exact ⟨hl.trans hin, hin ▸ hz⟩
-  · exact ⟨hi, hlen, hinvs⟩
+  · exact ⟨rfl, hi, hlen, hinvs⟩
 
 set_option linter.hashCommand false in
-#decompose double_and_compress_batch_loop1.body loop1_body_eq
-  afterLets (branch 0 (letRange 2 23)) => compressState
+#decompose double_and_compress_batch_loop2.body loop1_body_eq
+  afterLets (branch 1 (letRange 2 23)) => compressState
 
 /-- The encoding step of `double_and_compress_batch`'s second loop: the bytes of `2 P` from the
 state of `P` and the inverse of `e g · f h`. -/
@@ -720,53 +769,59 @@ private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.Bat
     (out : alloc.vec.Vec CompressedRistretto) (i : Usize) (hi : i.val ≤ states.length)
     (hlen : out.length = i.val)
     (hout : ∀ k < i.val, out[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) :
-    double_and_compress_batch_loop1 states invs out i ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
+    double_and_compress_batch_loop2 { start := i, «end» := states.len } states invs out
+      ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
       r.length = states.length ∧
         ∀ k < states.length, r[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint) ⦄ := by
   have hpslen : ps.length = states.length := by
     rw [hsts.length_eq]
-  unfold double_and_compress_batch_loop1
-  apply loop.spec_decr_nat (measure := fun (_, i') => states.length - i'.val)
-    (inv := fun (o, i') => i'.val ≤ states.length ∧ o.length = i'.val ∧ ∀ k < i'.val,
+  unfold double_and_compress_batch_loop2
+  apply loop.spec_decr_nat (measure := fun (it, _) => states.length - it.start.val)
+    (inv := fun (it, o) => it.end = states.len ∧ it.start.val ≤ states.length ∧
+      o.length = it.start.val ∧ ∀ k < it.start.val,
       o[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint))
-  · rintro ⟨o, i'⟩ ⟨hi', hl, ho⟩
+  · rintro ⟨it, o⟩ ⟨hend, hi', hl, ho⟩
     dsimp only
     rw [loop1_body_eq]
-    by_cases hlt : i'.val < states.length
-    · have hlt' : i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_true]
+    by_cases hlt : it.start.val < states.length
+    · have hlt' : it.start.val < it.end.val := by
+        rw [hend, alloc.vec.Vec.len_val]; exact hlt
+      step with core.iter.range.IteratorRange.next_Usize_some_spec it hlt'
+        as ⟨opt, it1, hopt, hstart1, hend1⟩
+      subst hopt
       step as ⟨st, hst⟩
-      replace hst : st = states[i'.val]! := by
+      replace hst : st = states[it.start.val]! := by
         rw [hst, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos]
       step as ⟨inv, hinv⟩
-      replace hinv : inv = invs[i'.val]! := by
+      replace hinv : inv = invs[it.start.val]! := by
         rw [hinv, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos]
-      obtain ⟨Inv, Invb⟩ := hinvs i'.val hlt
+      obtain ⟨Inv, Invb⟩ := hinvs it.start.val hlt
       rw [← hst, ← hinv] at Inv
       rw [← hinv] at Invb
       rw [alloc.vec.Vec.getElem!_Nat_eq] at hst
-      have hPmem : ps[i'.val]! ∈ ps := by
-        rw [getElem!_pos ps i'.val (hpslen ▸ hlt)]
+      have hPmem : ps[it.start.val]! ∈ ps := by
+        rw [getElem!_pos ps it.start.val (hpslen ▸ hlt)]
         exact List.getElem_mem _
-      have hS := forall₂_getElem! hsts i'.val (hpslen ▸ hlt)
+      have hS := forall₂_getElem! hsts it.start.val (hpslen ▸ hlt)
       rw [← hst] at hS
       step with compressState_spec _ (hon _ hPmem) st hS inv Inv Invb as ⟨bytes, hbytes⟩
       step as ⟨o1, ho1⟩
-      step as ⟨i1, hi1⟩
-      refine ⟨by scalar_tac, by rw [alloc.vec.Vec.length_of_val_eq_append ho1, hl, hi1], ?_,
-        by scalar_tac⟩
-      rw [hi1, ← hl]
+      refine ⟨hend1.trans hend, by scalar_tac,
+        by rw [alloc.vec.Vec.length_of_val_eq_append ho1, hl, hstart1], ?_, by scalar_tac⟩
+      rw [hstart1, ← hl]
       refine alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
         x.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) ho1 (hl ▸ ho) ?_
       rw [hl]
       exact hbytes
-    · have hlt' : ¬ i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_false, WP.spec_ok]
-      have hin : i'.val = states.length := by omega
+    · have hge : it.end.val ≤ it.start.val := by
+        rw [hend, alloc.vec.Vec.len_val]; omega
+      step with core.iter.range.IteratorRange.next_Usize_none_spec it hge
+        as ⟨opt, it1, hopt, hit1⟩
+      subst hopt
+      simp only [WP.spec_ok]
+      have hin : it.start.val = states.length := by omega
       exact ⟨hl.trans hin, hin ▸ ho⟩
-  · exact ⟨hi, hlen, hout⟩
+  · exact ⟨rfl, hi, hlen, hout⟩
 
 /-- `RistrettoPoint::double_and_compress_batch`: entry `i` is RFC 9496's encoding of `2 P_i` for
 the points `P_i` the input yields; limbs `< 2^26`. -/
@@ -784,14 +839,16 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause0_IntoIter) => pointsInst.iteratorInst.Yields it ps ⦄ := hpoints
   step with hpoints' as ⟨it, hit⟩
-  step with states_spec _ it ps hit (fun P hP => (hps P hP).1) hlen as ⟨states, hsts⟩
+  step with states_spec pointsInst it ps hit (fun P hP => (hps P hP).1) hlen as ⟨states, hsts⟩
   have hpslen : ps.length = states.length := hsts.length_eq
   have hst : ∀ k < states.length, (states[k]!).eg.LimbsLt 26 ∧ (states[k]!).fh.LimbsLt 26 :=
     fun k hk => by
       have h := forall₂_getElem! hsts k (hpslen ▸ hk)
       rw [alloc.vec.Vec.getElem!_Nat_eq]
       exact ⟨h.2.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.2⟩
-  step with loop0_spec states hst (alloc.vec.Vec.with_capacity FieldElement2625 states.len) 0#usize
+  simp only [SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter,
+    core.slice.Slice.iter, bind_ok]
+  step with loop0_spec states hst (alloc.vec.Vec.with_capacity FieldElement2625 states.len) 0
     (by simp) (by rfl) (fun k hk => absurd hk (by simp)) as ⟨invs1, hinvs1len, hinvs1⟩
   simp only [alloc.vec.Vec.index_mut, pure]
   have hsb : ∀ k < invs1.slice.length, (invs1.slice[k]!).LimbsLt 27 := fun k hk => by
@@ -862,23 +919,25 @@ private theorem forall₂_getElem! {α β : Type} [Inhabited α] [Inhabited β] 
   exact hR k hk (hlen ▸ hk)
 
 /-- The collecting loop: one state per point. -/
-private theorem states_loop_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It RistrettoPoint.«x86_64-no-tables»)
-    (it : It) (ps : List RistrettoPoint.«x86_64-no-tables») (hit : iterInst.Yields it ps)
+private theorem states_loop_spec {I It : Type}
+    (pointsInst :
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«x86_64-no-tables» It)
+    (it : It) (ps : List RistrettoPoint.«x86_64-no-tables»)
+    (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52) (out : alloc.vec.Vec BatchCompressState)
     (hlen : out.length + ps.length ≤ Usize.max) :
-    states_loop iterInst it out ⦃ (v : alloc.vec.Vec BatchCompressState) =>
+    double_and_compress_batch_loop0 pointsInst it out ⦃ (v : alloc.vec.Vec BatchCompressState) =>
       ∃ sts, v.val = out.val ++ sts ∧ List.Forall₂ StateOf ps sts ⦄ := by
   induction hit generalizing out with
   | nil hnext =>
-    unfold states_loop loop states_loop.body
+    unfold double_and_compress_batch_loop0 loop double_and_compress_batch_loop0.body
     step with hnext as ⟨q, hq⟩
     obtain ⟨o, it1⟩ := q
     simp only at hq
     subst hq
     simp
   | @cons it it' P ps' hnext _ ih =>
-    unfold states_loop loop states_loop.body
+    unfold double_and_compress_batch_loop0 loop double_and_compress_batch_loop0.body
     step with hnext as ⟨q, ho, hit⟩
     obtain ⟨o, it1⟩ := q
     simp only at ho hit
@@ -906,14 +965,16 @@ private theorem efgh_spec (st : BatchCompressState) (h1 : st.eg.LimbsLt 52)
   exact ⟨toField_mul_of_mod hr, hrb⟩
 
 /-- `states`: one state per point. -/
-private theorem states_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It RistrettoPoint.«x86_64-no-tables»)
-    (it : It) (ps : List RistrettoPoint.«x86_64-no-tables») (hit : iterInst.Yields it ps)
+private theorem states_spec {I It : Type}
+    (pointsInst :
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«x86_64-no-tables» It)
+    (it : It) (ps : List RistrettoPoint.«x86_64-no-tables»)
+    (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52) (hlen : ps.length ≤ Usize.max) :
-    states iterInst it ⦃ (v : alloc.vec.Vec BatchCompressState) =>
+    double_and_compress_batch_loop0 pointsInst it (alloc.vec.Vec.new _)
+      ⦃ (v : alloc.vec.Vec BatchCompressState) =>
       List.Forall₂ StateOf ps v.val ⦄ := by
-  unfold states
-  apply spec_mono (states_loop_spec iterInst it ps hit hps (alloc.vec.Vec.new _)
+  apply spec_mono (states_loop_spec pointsInst it ps hit hps (alloc.vec.Vec.new _)
     (by simpa using hlen))
   rintro v ⟨zs, hv, hzs⟩
   rw [hv]
@@ -967,23 +1028,25 @@ private theorem forall₂_getElem! {α β : Type} [Inhabited α] [Inhabited β] 
   exact hR k hk (hlen ▸ hk)
 
 /-- The collecting loop: one state per point. -/
-private theorem states_loop_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It RistrettoPoint.«i686-no-tables»)
-    (it : It) (ps : List RistrettoPoint.«i686-no-tables») (hit : iterInst.Yields it ps)
+private theorem states_loop_spec {I It : Type}
+    (pointsInst :
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«i686-no-tables» It)
+    (it : It) (ps : List RistrettoPoint.«i686-no-tables»)
+    (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26) (out : alloc.vec.Vec BatchCompressState)
     (hlen : out.length + ps.length ≤ Usize.max) :
-    states_loop iterInst it out ⦃ (v : alloc.vec.Vec BatchCompressState) =>
+    double_and_compress_batch_loop0 pointsInst it out ⦃ (v : alloc.vec.Vec BatchCompressState) =>
       ∃ sts, v.val = out.val ++ sts ∧ List.Forall₂ StateOf ps sts ⦄ := by
   induction hit generalizing out with
   | nil hnext =>
-    unfold states_loop loop states_loop.body
+    unfold double_and_compress_batch_loop0 loop double_and_compress_batch_loop0.body
     step with hnext as ⟨q, hq⟩
     obtain ⟨o, it1⟩ := q
     simp only at hq
     subst hq
     simp
   | @cons it it' P ps' hnext _ ih =>
-    unfold states_loop loop states_loop.body
+    unfold double_and_compress_batch_loop0 loop double_and_compress_batch_loop0.body
     step with hnext as ⟨q, ho, hit⟩
     obtain ⟨o, it1⟩ := q
     simp only at ho hit
@@ -1011,14 +1074,16 @@ private theorem efgh_spec (st : BatchCompressState) (h1 : st.eg.LimbsLt 26)
   exact ⟨toField_mul_of_mod hr, hrb⟩
 
 /-- `states`: one state per point. -/
-private theorem states_spec {It : Type}
-    (iterInst : core.iter.traits.iterator.Iterator It RistrettoPoint.«i686-no-tables»)
-    (it : It) (ps : List RistrettoPoint.«i686-no-tables») (hit : iterInst.Yields it ps)
+private theorem states_spec {I It : Type}
+    (pointsInst :
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«i686-no-tables» It)
+    (it : It) (ps : List RistrettoPoint.«i686-no-tables»)
+    (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26) (hlen : ps.length ≤ Usize.max) :
-    states iterInst it ⦃ (v : alloc.vec.Vec BatchCompressState) =>
+    double_and_compress_batch_loop0 pointsInst it (alloc.vec.Vec.new _)
+      ⦃ (v : alloc.vec.Vec BatchCompressState) =>
       List.Forall₂ StateOf ps v.val ⦄ := by
-  unfold states
-  apply spec_mono (states_loop_spec iterInst it ps hit hps (alloc.vec.Vec.new _)
+  apply spec_mono (states_loop_spec pointsInst it ps hit hps (alloc.vec.Vec.new _)
     (by simpa using hlen))
   rintro v ⟨zs, hv, hzs⟩
   rw [hv]
@@ -1036,48 +1101,64 @@ open scoped Helpers.IndexStep in
 /-- The first loop: the products `e g · f h` of the states. -/
 private theorem loop0_spec (states : alloc.vec.Vec double_and_compress_batch.BatchCompressState)
     (hst : ∀ k < states.length, (states[k]!).eg.LimbsLt 52 ∧ (states[k]!).fh.LimbsLt 52)
-    (invs : alloc.vec.Vec FieldElement51) (i : Usize) (hi : i.val ≤ states.length)
-    (hlen : invs.length = i.val)
-    (hinvs : ∀ k < i.val, invs[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
+    (invs : alloc.vec.Vec FieldElement51) (i : ℕ) (hi : i ≤ states.length)
+    (hlen : invs.length = i)
+    (hinvs : ∀ k < i, invs[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
       (invs[k]!).LimbsLt 52) :
-    double_and_compress_batch_loop0 states invs i ⦃ (r : alloc.vec.Vec FieldElement51) =>
+    double_and_compress_batch_loop1 { slice := states.deref, i } invs
+      ⦃ (r : alloc.vec.Vec FieldElement51) =>
       r.length = states.length ∧ ∀ k < states.length,
         r[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
           (r[k]!).LimbsLt 52 ⦄ := by
-  unfold double_and_compress_batch_loop0
-  apply loop.spec_decr_nat (measure := fun (_, i') => states.length - i'.val)
-    (inv := fun (z, i') => i'.val ≤ states.length ∧ z.length = i'.val ∧ ∀ k < i'.val,
-      z[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧ (z[k]!).LimbsLt 52)
-  · rintro ⟨z, i'⟩ ⟨hi', hl, hz⟩
-    unfold double_and_compress_batch_loop0.body
-    by_cases hlt : i'.val < states.length
-    · have hlt' : i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_true]
-      step as ⟨bcs, hbcs⟩
-      replace hbcs : bcs = states[i'.val]! := by
-        rw [hbcs, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos]
-      obtain ⟨h1, h2⟩ := hst i'.val hlt
-      rw [← hbcs] at h1 h2
-      step with efgh_spec bcs h1 h2 as ⟨fe, hfe, hfeb⟩
+  unfold double_and_compress_batch_loop1
+  apply loop.spec_decr_nat (measure := fun (it, _) => states.length - it.i)
+    (inv := fun (it, z) => it.slice = states.deref ∧ it.i ≤ states.length ∧
+      z.length = it.i ∧ ∀ k < it.i,
+      z[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
+        (z[k]!).LimbsLt 52)
+  · rintro ⟨it, z⟩ ⟨hs, hi', hl, hz⟩
+    unfold double_and_compress_batch_loop1.body
+    have hsval : it.slice.val = states.val := by rw [hs]; exact Slice.from_val _ _
+    by_cases hlt : it.i < states.length
+    · have hnext : core.slice.iter.IteratorSliceIter.next it
+          ⦃ o it1 => o = some (states[it.i]!) ∧
+            it1 = { slice := it.slice, i := it.i + 1 } ⦄ := by
+        have h := Curve25519Dalek.EdwardsOps.sliceNextSome it.slice it.i
+          (by simpa [hsval] using hlt)
+        apply spec_mono h
+        rintro ⟨o, it1⟩ ⟨ho, hit⟩
+        refine ⟨?_, hit⟩
+        rw [ho, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos states.val it.i hlt]
+        congr 1
+        have hslt : it.i < it.slice.val.length := by simpa [hsval] using hlt
+        change it.slice.val[it.i] = states.val[it.i]
+        simp only [hsval]
+      step with hnext as ⟨o, it1, ho, hit1⟩
+      subst ho hit1
+      obtain ⟨h1, h2⟩ := hst it.i hlt
+      step with efgh_spec _ h1 h2 as ⟨fe, hfe, hfeb⟩
       step as ⟨z1, hz1⟩
-      step as ⟨i1, hi1⟩
-      refine ⟨by scalar_tac, by rw [alloc.vec.Vec.length_of_val_eq_append hz1, hl, hi1], ?_,
-        by scalar_tac⟩
-      rw [hi1, ← hl]
-      exact alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
-        x.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧ x.LimbsLt 52)
-        hz1 (hl ▸ hz) (by rw [hl, ← hbcs]; exact ⟨hfe, hfeb⟩)
-    · have hlt' : ¬ i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_false, WP.spec_ok]
-      have hin : i'.val = states.length := by omega
+      refine ⟨hs, by omega, ?_, ?_, by omega⟩
+      · rw [alloc.vec.Vec.length_of_val_eq_append hz1, hl]
+      · rw [← hl]
+        exact alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
+          x.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧ x.LimbsLt 52)
+          hz1 (hl ▸ hz) (by rw [hl]; exact ⟨hfe, hfeb⟩)
+    · have hnext : core.slice.iter.IteratorSliceIter.next it
+          ⦃ o it1 => o = none ∧ it1 = it ⦄ := by
+        have h := Curve25519Dalek.EdwardsOps.sliceNextNone it.slice it.i
+          (by simpa [hsval] using Nat.le_of_not_gt hlt)
+        simpa using h
+      step with hnext as ⟨o, it1, ho, hit1⟩
+      subst ho
+      simp only [WP.spec_ok]
+      have hin : it.i = states.length := by omega
       exact ⟨hl.trans hin, hin ▸ hz⟩
-  · exact ⟨hi, hlen, hinvs⟩
+  · exact ⟨rfl, hi, hlen, hinvs⟩
 
 set_option linter.hashCommand false in
-#decompose double_and_compress_batch_loop1.body loop1_body_eq
-  afterLets (branch 0 (letRange 2 23)) => compressState
+#decompose double_and_compress_batch_loop2.body loop1_body_eq
+  afterLets (branch 1 (letRange 2 23)) => compressState
 
 /-- The encoding step of `double_and_compress_batch`'s second loop: the bytes of `2 P` from the
 state of `P` and the inverse of `e g · f h`. -/
@@ -1117,53 +1198,59 @@ private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.Bat
     (out : alloc.vec.Vec CompressedRistretto) (i : Usize) (hi : i.val ≤ states.length)
     (hlen : out.length = i.val)
     (hout : ∀ k < i.val, out[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) :
-    double_and_compress_batch_loop1 states invs out i ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
+    double_and_compress_batch_loop2 { start := i, «end» := states.len } states invs out
+      ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
       r.length = states.length ∧
         ∀ k < states.length, r[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint) ⦄ := by
   have hpslen : ps.length = states.length := by
     rw [hsts.length_eq]
-  unfold double_and_compress_batch_loop1
-  apply loop.spec_decr_nat (measure := fun (_, i') => states.length - i'.val)
-    (inv := fun (o, i') => i'.val ≤ states.length ∧ o.length = i'.val ∧ ∀ k < i'.val,
+  unfold double_and_compress_batch_loop2
+  apply loop.spec_decr_nat (measure := fun (it, _) => states.length - it.start.val)
+    (inv := fun (it, o) => it.end = states.len ∧ it.start.val ≤ states.length ∧
+      o.length = it.start.val ∧ ∀ k < it.start.val,
       o[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint))
-  · rintro ⟨o, i'⟩ ⟨hi', hl, ho⟩
+  · rintro ⟨it, o⟩ ⟨hend, hi', hl, ho⟩
     dsimp only
     rw [loop1_body_eq]
-    by_cases hlt : i'.val < states.length
-    · have hlt' : i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_true]
+    by_cases hlt : it.start.val < states.length
+    · have hlt' : it.start.val < it.end.val := by
+        rw [hend, alloc.vec.Vec.len_val]; exact hlt
+      step with core.iter.range.IteratorRange.next_Usize_some_spec it hlt'
+        as ⟨opt, it1, hopt, hstart1, hend1⟩
+      subst hopt
       step as ⟨st, hst⟩
-      replace hst : st = states[i'.val]! := by
+      replace hst : st = states[it.start.val]! := by
         rw [hst, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos]
       step as ⟨inv, hinv⟩
-      replace hinv : inv = invs[i'.val]! := by
+      replace hinv : inv = invs[it.start.val]! := by
         rw [hinv, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos]
-      obtain ⟨Inv, Invb⟩ := hinvs i'.val hlt
+      obtain ⟨Inv, Invb⟩ := hinvs it.start.val hlt
       rw [← hst, ← hinv] at Inv
       rw [← hinv] at Invb
       rw [alloc.vec.Vec.getElem!_Nat_eq] at hst
-      have hPmem : ps[i'.val]! ∈ ps := by
-        rw [getElem!_pos ps i'.val (hpslen ▸ hlt)]
+      have hPmem : ps[it.start.val]! ∈ ps := by
+        rw [getElem!_pos ps it.start.val (hpslen ▸ hlt)]
         exact List.getElem_mem _
-      have hS := forall₂_getElem! hsts i'.val (hpslen ▸ hlt)
+      have hS := forall₂_getElem! hsts it.start.val (hpslen ▸ hlt)
       rw [← hst] at hS
       step with compressState_spec _ (hon _ hPmem) st hS inv Inv Invb as ⟨bytes, hbytes⟩
       step as ⟨o1, ho1⟩
-      step as ⟨i1, hi1⟩
-      refine ⟨by scalar_tac, by rw [alloc.vec.Vec.length_of_val_eq_append ho1, hl, hi1], ?_,
-        by scalar_tac⟩
-      rw [hi1, ← hl]
+      refine ⟨hend1.trans hend, by scalar_tac,
+        by rw [alloc.vec.Vec.length_of_val_eq_append ho1, hl, hstart1], ?_, by scalar_tac⟩
+      rw [hstart1, ← hl]
       refine alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
         x.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) ho1 (hl ▸ ho) ?_
       rw [hl]
       exact hbytes
-    · have hlt' : ¬ i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_false, WP.spec_ok]
-      have hin : i'.val = states.length := by omega
+    · have hge : it.end.val ≤ it.start.val := by
+        rw [hend, alloc.vec.Vec.len_val]; omega
+      step with core.iter.range.IteratorRange.next_Usize_none_spec it hge
+        as ⟨opt, it1, hopt, hit1⟩
+      subst hopt
+      simp only [WP.spec_ok]
+      have hin : it.start.val = states.length := by omega
       exact ⟨hl.trans hin, hin ▸ ho⟩
-  · exact ⟨hi, hlen, hout⟩
+  · exact ⟨rfl, hi, hlen, hout⟩
 
 /-- `RistrettoPoint::double_and_compress_batch`: entry `i` is RFC 9496's encoding of `2 P_i` for
 the points `P_i` the input yields; limbs `< 2^52`. -/
@@ -1181,14 +1268,16 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause0_IntoIter) => pointsInst.iteratorInst.Yields it ps ⦄ := hpoints
   step with hpoints' as ⟨it, hit⟩
-  step with states_spec _ it ps hit (fun P hP => (hps P hP).1) hlen as ⟨states, hsts⟩
+  step with states_spec pointsInst it ps hit (fun P hP => (hps P hP).1) hlen as ⟨states, hsts⟩
   have hpslen : ps.length = states.length := hsts.length_eq
   have hst : ∀ k < states.length, (states[k]!).eg.LimbsLt 52 ∧ (states[k]!).fh.LimbsLt 52 :=
     fun k hk => by
       have h := forall₂_getElem! hsts k (hpslen ▸ hk)
       rw [alloc.vec.Vec.getElem!_Nat_eq]
       exact ⟨h.2.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.2⟩
-  step with loop0_spec states hst (alloc.vec.Vec.with_capacity FieldElement51 states.len) 0#usize
+  simp only [SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter,
+    core.slice.Slice.iter, bind_ok]
+  step with loop0_spec states hst (alloc.vec.Vec.with_capacity FieldElement51 states.len) 0
     (by simp) (by rfl) (fun k hk => absurd hk (by simp)) as ⟨invs1, hinvs1len, hinvs1⟩
   simp only [alloc.vec.Vec.index_mut, pure]
   have hsb : ∀ k < invs1.slice.length, (invs1.slice[k]!).LimbsLt 54 := fun k hk => by
@@ -1223,48 +1312,64 @@ open scoped Helpers.IndexStep in
 /-- The first loop: the products `e g · f h` of the states. -/
 private theorem loop0_spec (states : alloc.vec.Vec double_and_compress_batch.BatchCompressState)
     (hst : ∀ k < states.length, (states[k]!).eg.LimbsLt 26 ∧ (states[k]!).fh.LimbsLt 26)
-    (invs : alloc.vec.Vec FieldElement2625) (i : Usize) (hi : i.val ≤ states.length)
-    (hlen : invs.length = i.val)
-    (hinvs : ∀ k < i.val, invs[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
+    (invs : alloc.vec.Vec FieldElement2625) (i : ℕ) (hi : i ≤ states.length)
+    (hlen : invs.length = i)
+    (hinvs : ∀ k < i, invs[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
       (invs[k]!).LimbsLt 26) :
-    double_and_compress_batch_loop0 states invs i ⦃ (r : alloc.vec.Vec FieldElement2625) =>
+    double_and_compress_batch_loop1 { slice := states.deref, i } invs
+      ⦃ (r : alloc.vec.Vec FieldElement2625) =>
       r.length = states.length ∧ ∀ k < states.length,
         r[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
           (r[k]!).LimbsLt 26 ⦄ := by
-  unfold double_and_compress_batch_loop0
-  apply loop.spec_decr_nat (measure := fun (_, i') => states.length - i'.val)
-    (inv := fun (z, i') => i'.val ≤ states.length ∧ z.length = i'.val ∧ ∀ k < i'.val,
-      z[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧ (z[k]!).LimbsLt 26)
-  · rintro ⟨z, i'⟩ ⟨hi', hl, hz⟩
-    unfold double_and_compress_batch_loop0.body
-    by_cases hlt : i'.val < states.length
-    · have hlt' : i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_true]
-      step as ⟨bcs, hbcs⟩
-      replace hbcs : bcs = states[i'.val]! := by
-        rw [hbcs, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos]
-      obtain ⟨h1, h2⟩ := hst i'.val hlt
-      rw [← hbcs] at h1 h2
-      step with efgh_spec bcs h1 h2 as ⟨fe, hfe, hfeb⟩
+  unfold double_and_compress_batch_loop1
+  apply loop.spec_decr_nat (measure := fun (it, _) => states.length - it.i)
+    (inv := fun (it, z) => it.slice = states.deref ∧ it.i ≤ states.length ∧
+      z.length = it.i ∧ ∀ k < it.i,
+      z[k]!.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧
+        (z[k]!).LimbsLt 26)
+  · rintro ⟨it, z⟩ ⟨hs, hi', hl, hz⟩
+    unfold double_and_compress_batch_loop1.body
+    have hsval : it.slice.val = states.val := by rw [hs]; exact Slice.from_val _ _
+    by_cases hlt : it.i < states.length
+    · have hnext : core.slice.iter.IteratorSliceIter.next it
+          ⦃ o it1 => o = some (states[it.i]!) ∧
+            it1 = { slice := it.slice, i := it.i + 1 } ⦄ := by
+        have h := Curve25519Dalek.EdwardsOps.sliceNextSome it.slice it.i
+          (by simpa [hsval] using hlt)
+        apply spec_mono h
+        rintro ⟨o, it1⟩ ⟨ho, hit⟩
+        refine ⟨?_, hit⟩
+        rw [ho, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos states.val it.i hlt]
+        congr 1
+        have hslt : it.i < it.slice.val.length := by simpa [hsval] using hlt
+        change it.slice.val[it.i] = states.val[it.i]
+        simp only [hsval]
+      step with hnext as ⟨o, it1, ho, hit1⟩
+      subst ho hit1
+      obtain ⟨h1, h2⟩ := hst it.i hlt
+      step with efgh_spec _ h1 h2 as ⟨fe, hfe, hfeb⟩
       step as ⟨z1, hz1⟩
-      step as ⟨i1, hi1⟩
-      refine ⟨by scalar_tac, by rw [alloc.vec.Vec.length_of_val_eq_append hz1, hl, hi1], ?_,
-        by scalar_tac⟩
-      rw [hi1, ← hl]
-      exact alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
-        x.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧ x.LimbsLt 26)
-        hz1 (hl ▸ hz) (by rw [hl, ← hbcs]; exact ⟨hfe, hfeb⟩)
-    · have hlt' : ¬ i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_false, WP.spec_ok]
-      have hin : i'.val = states.length := by omega
+      refine ⟨hs, by omega, ?_, ?_, by omega⟩
+      · rw [alloc.vec.Vec.length_of_val_eq_append hz1, hl]
+      · rw [← hl]
+        exact alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
+          x.toField = (states[k]!).eg.toField * (states[k]!).fh.toField ∧ x.LimbsLt 26)
+          hz1 (hl ▸ hz) (by rw [hl]; exact ⟨hfe, hfeb⟩)
+    · have hnext : core.slice.iter.IteratorSliceIter.next it
+          ⦃ o it1 => o = none ∧ it1 = it ⦄ := by
+        have h := Curve25519Dalek.EdwardsOps.sliceNextNone it.slice it.i
+          (by simpa [hsval] using Nat.le_of_not_gt hlt)
+        simpa using h
+      step with hnext as ⟨o, it1, ho, hit1⟩
+      subst ho
+      simp only [WP.spec_ok]
+      have hin : it.i = states.length := by omega
       exact ⟨hl.trans hin, hin ▸ hz⟩
-  · exact ⟨hi, hlen, hinvs⟩
+  · exact ⟨rfl, hi, hlen, hinvs⟩
 
 set_option linter.hashCommand false in
-#decompose double_and_compress_batch_loop1.body loop1_body_eq
-  afterLets (branch 0 (letRange 2 23)) => compressState
+#decompose double_and_compress_batch_loop2.body loop1_body_eq
+  afterLets (branch 1 (letRange 2 23)) => compressState
 
 /-- The encoding step of `double_and_compress_batch`'s second loop: the bytes of `2 P` from the
 state of `P` and the inverse of `e g · f h`. -/
@@ -1304,53 +1409,59 @@ private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.Bat
     (out : alloc.vec.Vec CompressedRistretto) (i : Usize) (hi : i.val ≤ states.length)
     (hlen : out.length = i.val)
     (hout : ∀ k < i.val, out[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) :
-    double_and_compress_batch_loop1 states invs out i ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
+    double_and_compress_batch_loop2 { start := i, «end» := states.len } states invs out
+      ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
       r.length = states.length ∧
         ∀ k < states.length, r[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint) ⦄ := by
   have hpslen : ps.length = states.length := by
     rw [hsts.length_eq]
-  unfold double_and_compress_batch_loop1
-  apply loop.spec_decr_nat (measure := fun (_, i') => states.length - i'.val)
-    (inv := fun (o, i') => i'.val ≤ states.length ∧ o.length = i'.val ∧ ∀ k < i'.val,
+  unfold double_and_compress_batch_loop2
+  apply loop.spec_decr_nat (measure := fun (it, _) => states.length - it.start.val)
+    (inv := fun (it, o) => it.end = states.len ∧ it.start.val ≤ states.length ∧
+      o.length = it.start.val ∧ ∀ k < it.start.val,
       o[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint))
-  · rintro ⟨o, i'⟩ ⟨hi', hl, ho⟩
+  · rintro ⟨it, o⟩ ⟨hend, hi', hl, ho⟩
     dsimp only
     rw [loop1_body_eq]
-    by_cases hlt : i'.val < states.length
-    · have hlt' : i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_true]
+    by_cases hlt : it.start.val < states.length
+    · have hlt' : it.start.val < it.end.val := by
+        rw [hend, alloc.vec.Vec.len_val]; exact hlt
+      step with core.iter.range.IteratorRange.next_Usize_some_spec it hlt'
+        as ⟨opt, it1, hopt, hstart1, hend1⟩
+      subst hopt
       step as ⟨st, hst⟩
-      replace hst : st = states[i'.val]! := by
+      replace hst : st = states[it.start.val]! := by
         rw [hst, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos]
       step as ⟨inv, hinv⟩
-      replace hinv : inv = invs[i'.val]! := by
+      replace hinv : inv = invs[it.start.val]! := by
         rw [hinv, alloc.vec.Vec.getElem!_Nat_eq, getElem!_pos]
-      obtain ⟨Inv, Invb⟩ := hinvs i'.val hlt
+      obtain ⟨Inv, Invb⟩ := hinvs it.start.val hlt
       rw [← hst, ← hinv] at Inv
       rw [← hinv] at Invb
       rw [alloc.vec.Vec.getElem!_Nat_eq] at hst
-      have hPmem : ps[i'.val]! ∈ ps := by
-        rw [getElem!_pos ps i'.val (hpslen ▸ hlt)]
+      have hPmem : ps[it.start.val]! ∈ ps := by
+        rw [getElem!_pos ps it.start.val (hpslen ▸ hlt)]
         exact List.getElem_mem _
-      have hS := forall₂_getElem! hsts i'.val (hpslen ▸ hlt)
+      have hS := forall₂_getElem! hsts it.start.val (hpslen ▸ hlt)
       rw [← hst] at hS
       step with compressState_spec _ (hon _ hPmem) st hS inv Inv Invb as ⟨bytes, hbytes⟩
       step as ⟨o1, ho1⟩
-      step as ⟨i1, hi1⟩
-      refine ⟨by scalar_tac, by rw [alloc.vec.Vec.length_of_val_eq_append ho1, hl, hi1], ?_,
-        by scalar_tac⟩
-      rw [hi1, ← hl]
+      refine ⟨hend1.trans hend, by scalar_tac,
+        by rw [alloc.vec.Vec.length_of_val_eq_append ho1, hl, hstart1], ?_, by scalar_tac⟩
+      rw [hstart1, ← hl]
       refine alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
         x.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) ho1 (hl ▸ ho) ?_
       rw [hl]
       exact hbytes
-    · have hlt' : ¬ i' < states.len := by
-        rw [UScalar.lt_equiv, alloc.vec.Vec.len_val]; exact hlt
-      simp only [hlt', ite_false, WP.spec_ok]
-      have hin : i'.val = states.length := by omega
+    · have hge : it.end.val ≤ it.start.val := by
+        rw [hend, alloc.vec.Vec.len_val]; omega
+      step with core.iter.range.IteratorRange.next_Usize_none_spec it hge
+        as ⟨opt, it1, hopt, hit1⟩
+      subst hopt
+      simp only [WP.spec_ok]
+      have hin : it.start.val = states.length := by omega
       exact ⟨hl.trans hin, hin ▸ ho⟩
-  · exact ⟨hi, hlen, hout⟩
+  · exact ⟨rfl, hi, hlen, hout⟩
 
 /-- `RistrettoPoint::double_and_compress_batch`: entry `i` is RFC 9496's encoding of `2 P_i` for
 the points `P_i` the input yields; limbs `< 2^26`. -/
@@ -1368,14 +1479,16 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause0_IntoIter) => pointsInst.iteratorInst.Yields it ps ⦄ := hpoints
   step with hpoints' as ⟨it, hit⟩
-  step with states_spec _ it ps hit (fun P hP => (hps P hP).1) hlen as ⟨states, hsts⟩
+  step with states_spec pointsInst it ps hit (fun P hP => (hps P hP).1) hlen as ⟨states, hsts⟩
   have hpslen : ps.length = states.length := hsts.length_eq
   have hst : ∀ k < states.length, (states[k]!).eg.LimbsLt 26 ∧ (states[k]!).fh.LimbsLt 26 :=
     fun k hk => by
       have h := forall₂_getElem! hsts k (hpslen ▸ hk)
       rw [alloc.vec.Vec.getElem!_Nat_eq]
       exact ⟨h.2.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.2⟩
-  step with loop0_spec states hst (alloc.vec.Vec.with_capacity FieldElement2625 states.len) 0#usize
+  simp only [SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter,
+    core.slice.Slice.iter, bind_ok]
+  step with loop0_spec states hst (alloc.vec.Vec.with_capacity FieldElement2625 states.len) 0
     (by simp) (by rfl) (fun k hk => absurd hk (by simp)) as ⟨invs1, hinvs1len, hinvs1⟩
   simp only [alloc.vec.Vec.index_mut, pure]
   have hsb : ∀ k < invs1.slice.length, (invs1.slice[k]!).LimbsLt 27 := fun k hk => by

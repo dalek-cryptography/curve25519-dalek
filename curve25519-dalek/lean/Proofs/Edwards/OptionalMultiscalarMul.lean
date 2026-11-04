@@ -24,7 +24,6 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 namespace Curve25519Dalek.edwards.EdwardsPoint.«x86_64-tables».Insts
 namespace «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-tables»
 
-open «VartimeMultiscalarMulEdwardsPointx86_64-tablesEdwardsPointx86_64-tables» in
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `EdwardsPoint`: `none` iff some point
 is `none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the
 patched `assert_eq!`; Straus below `190` points, Pippenger from `190` on; unreduced scalars
@@ -55,15 +54,9 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause2_IntoIter) => pointsInst.iteratorInst.Yields it ops ⦄ := hpoints
   step with hscalars' as ⟨it, hit⟩
-  unfold optional_multiscalar_mul.collect optional_multiscalar_mul.collect_loop
-  apply spec_bind (collect.collectLoop_spec _ it xs hit (alloc.vec.Vec.new _) (by simpa using hxs))
-  intro vs hvs
-  replace hvs : vs.val = xs := by rw [hvs]; rfl
+  step with collect.fromIter_spec _ it xs hit hxs as ⟨vs, hvs⟩
   step with hpoints' as ⟨it1, hit1⟩
-  apply spec_bind (collect.collectLoop_spec _ it1 ops hit1 (alloc.vec.Vec.new _)
-    (by simpa using hops))
-  intro vp hvp
-  replace hvp : vp.val = ops := by rw [hvp]; rfl
+  step with collect.fromIter_spec _ it1 ops hit1 hops as ⟨vp, hvp⟩
   step
   have hys : (core.iter.traits.collect.IntoIteratorVec Clause0_Item).Yields vs xs :=
     hvs ▸ core.iter.traits.collect.IntoIteratorVec_yields vs
@@ -86,7 +79,6 @@ end Curve25519Dalek.edwards.EdwardsPoint.«x86_64-tables».Insts
 namespace Curve25519Dalek.edwards.EdwardsPoint.«i686-tables».Insts
 namespace «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-tables»
 
-open «VartimeMultiscalarMulEdwardsPointi686-tablesEdwardsPointi686-tables» in
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `EdwardsPoint`: `none` iff some point
 is `none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the
 patched `assert_eq!`; Straus below `190` points, Pippenger from `190` on; unreduced scalars
@@ -117,15 +109,9 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause2_IntoIter) => pointsInst.iteratorInst.Yields it ops ⦄ := hpoints
   step with hscalars' as ⟨it, hit⟩
-  unfold optional_multiscalar_mul.collect optional_multiscalar_mul.collect_loop
-  apply spec_bind (collect.collectLoop_spec _ it xs hit (alloc.vec.Vec.new _) (by simpa using hxs))
-  intro vs hvs
-  replace hvs : vs.val = xs := by rw [hvs]; rfl
+  step with collect.fromIter_spec _ it xs hit hxs as ⟨vs, hvs⟩
   step with hpoints' as ⟨it1, hit1⟩
-  apply spec_bind (collect.collectLoop_spec _ it1 ops hit1 (alloc.vec.Vec.new _)
-    (by simpa using hops))
-  intro vp hvp
-  replace hvp : vp.val = ops := by rw [hvp]; rfl
+  step with collect.fromIter_spec _ it1 ops hit1 hops as ⟨vp, hvp⟩
   step
   have hys : (core.iter.traits.collect.IntoIteratorVec Clause0_Item).Yields vs xs :=
     hvs ▸ core.iter.traits.collect.IntoIteratorVec_yields vs
@@ -148,7 +134,6 @@ end Curve25519Dalek.edwards.EdwardsPoint.«i686-tables».Insts
 namespace Curve25519Dalek.edwards.EdwardsPoint.«x86_64-no-tables».Insts
 namespace «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-no-tables»
 
-open «VartimeMultiscalarMulEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables» in
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `EdwardsPoint`: `none` iff some point
 is `none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the
 patched `assert_eq!`; Straus below `190` points, Pippenger from `190` on; unreduced scalars
@@ -179,15 +164,9 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause2_IntoIter) => pointsInst.iteratorInst.Yields it ops ⦄ := hpoints
   step with hscalars' as ⟨it, hit⟩
-  unfold optional_multiscalar_mul.collect optional_multiscalar_mul.collect_loop
-  apply spec_bind (collect.collectLoop_spec _ it xs hit (alloc.vec.Vec.new _) (by simpa using hxs))
-  intro vs hvs
-  replace hvs : vs.val = xs := by rw [hvs]; rfl
+  step with collect.fromIter_spec _ it xs hit hxs as ⟨vs, hvs⟩
   step with hpoints' as ⟨it1, hit1⟩
-  apply spec_bind (collect.collectLoop_spec _ it1 ops hit1 (alloc.vec.Vec.new _)
-    (by simpa using hops))
-  intro vp hvp
-  replace hvp : vp.val = ops := by rw [hvp]; rfl
+  step with collect.fromIter_spec _ it1 ops hit1 hops as ⟨vp, hvp⟩
   step
   have hys : (core.iter.traits.collect.IntoIteratorVec Clause0_Item).Yields vs xs :=
     hvs ▸ core.iter.traits.collect.IntoIteratorVec_yields vs
@@ -211,7 +190,6 @@ end Curve25519Dalek.edwards.EdwardsPoint.«x86_64-no-tables».Insts
 namespace Curve25519Dalek.edwards.EdwardsPoint.«i686-no-tables».Insts
 namespace «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-no-tables»
 
-open «VartimeMultiscalarMulEdwardsPointi686-no-tablesEdwardsPointi686-no-tables» in
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `EdwardsPoint`: `none` iff some point
 is `none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the
 patched `assert_eq!`; Straus below `190` points, Pippenger from `190` on; unreduced scalars
@@ -242,15 +220,9 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause2_IntoIter) => pointsInst.iteratorInst.Yields it ops ⦄ := hpoints
   step with hscalars' as ⟨it, hit⟩
-  unfold optional_multiscalar_mul.collect optional_multiscalar_mul.collect_loop
-  apply spec_bind (collect.collectLoop_spec _ it xs hit (alloc.vec.Vec.new _) (by simpa using hxs))
-  intro vs hvs
-  replace hvs : vs.val = xs := by rw [hvs]; rfl
+  step with collect.fromIter_spec _ it xs hit hxs as ⟨vs, hvs⟩
   step with hpoints' as ⟨it1, hit1⟩
-  apply spec_bind (collect.collectLoop_spec _ it1 ops hit1 (alloc.vec.Vec.new _)
-    (by simpa using hops))
-  intro vp hvp
-  replace hvp : vp.val = ops := by rw [hvp]; rfl
+  step with collect.fromIter_spec _ it1 ops hit1 hops as ⟨vp, hvp⟩
   step
   have hys : (core.iter.traits.collect.IntoIteratorVec Clause0_Item).Yields vs xs :=
     hvs ▸ core.iter.traits.collect.IntoIteratorVec_yields vs

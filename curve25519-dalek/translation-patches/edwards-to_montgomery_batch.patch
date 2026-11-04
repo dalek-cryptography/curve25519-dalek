@@ -1,15 +1,15 @@
 Translation patch: EdwardsPoint::to_montgomery_batch
 
-Change: `map`/`collect` and `zip` become index loops.
+Change: `map`/`collect` and `zip` become `for` loops.
 Why: Aeneas only models `Iterator::next` (aeneas#1057).
 Behaviour: identical.
-Relies on: `invert_batch_alloc` takes `&mut [FieldElement]`, so it keeps the length `n`.
+Relies on: `invert_batch_alloc` takes `&mut [FieldElement]`, so it preserves `denominators.len() == eds.len()`.
 
 diff --git a/curve25519-dalek/src/edwards.rs b/curve25519-dalek/src/edwards.rs
 index 2a75012..5b2a9ef 100644
 --- a/curve25519-dalek/src/edwards.rs
 +++ b/curve25519-dalek/src/edwards.rs
-@@ -592,23 +592,31 @@ pub fn to_montgomery(&self) -> MontgomeryPoint {
+@@ -592,23 +592,28 @@ pub fn to_montgomery(&self) -> MontgomeryPoint {
      /// Converts a large batch of points to Edwards at once. This has the same
      /// behavior on identity elements as [`Self::to_montgomery`].
      #[cfg(feature = "alloc")]
@@ -20,25 +20,20 @@ index 2a75012..5b2a9ef 100644
  
          // Compute the denominators in a batch
 -        let mut denominators = eds.iter().map(|p| &p.Z - &p.Y).collect::<Vec<_>>();
-+        let n = eds.len();
-+        let mut denominators = Vec::with_capacity(n);
-+        let mut i = 0;
-+        while i < n {
-+            denominators.push(&eds[i].Z - &eds[i].Y);
-+            i += 1;
++        let mut denominators = Vec::with_capacity(eds.len());
++        for p in eds {
++            denominators.push(&p.Z - &p.Y);
 +        }
          FieldElement::invert_batch_alloc(&mut denominators);
  
          // Now compute the Montgomery u coordinate for every point
--        let mut ret = Vec::with_capacity(eds.len());
+         let mut ret = Vec::with_capacity(eds.len());
 -        for (ed, d) in eds.iter().zip(denominators.iter()) {
--            let u = &(&ed.Z + &ed.Y) * d;
-+        let mut ret = Vec::with_capacity(n);
-+        let mut i = 0;
-+        while i < n {
-+            let u = &(&eds[i].Z + &eds[i].Y) * &denominators[i];
++        for i in 0..eds.len() {
++            let ed = &eds[i];
++            let d = &denominators[i];
+             let u = &(&ed.Z + &ed.Y) * d;
              ret.push(MontgomeryPoint(u.to_bytes()));
-+            i += 1;
          }
  
          ret

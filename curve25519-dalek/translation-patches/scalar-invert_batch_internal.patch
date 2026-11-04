@@ -1,6 +1,6 @@
 Translation patch: Scalar::invert_batch_internal
 
-Change: both `zip` passes (the second reversed) become index loops.
+Change: both `zip` passes (the second reversed) become range loops with indexed borrows.
 Why: Aeneas fails on borrows through `iter_mut().rev().zip(..)` (InterpBorrowsCore).
 Behaviour: identical.
 Relies on: the only callers (`invert_batch`, `invert_batch_alloc`) pass `scratch.len() == inputs.len()`.
@@ -9,7 +9,7 @@ diff --git a/curve25519-dalek/src/scalar.rs b/curve25519-dalek/src/scalar.rs
 index c417780..47d4398 100644
 --- a/curve25519-dalek/src/scalar.rs
 +++ b/curve25519-dalek/src/scalar.rs
-@@ -813,47 +813,52 @@ pub fn invert_batch_alloc(inputs: &mut [Scalar]) -> Scalar {
+@@ -813,47 +813,51 @@ pub fn invert_batch_alloc(inputs: &mut [Scalar]) -> Scalar {
      fn invert_batch_internal(inputs: &mut [Scalar], scratch: &mut [UnpackedScalar]) -> Scalar {
          // This code is essentially identical to the FieldElement
          // implementation, and is documented there.  Unfortunately,
@@ -24,20 +24,16 @@ index c417780..47d4398 100644
          // Pass through the input vector, recording the previous
          // products in the scratch space
 -        for (input, scratch) in inputs.iter_mut().zip(scratch.iter_mut()) {
--            *scratch = acc;
-+        let n = inputs.len();
-+        let mut i = 0;
-+        while i < n {
-+            scratch[i] = acc;
++        for i in 0..inputs.len() {
++            let input = &mut inputs[i];
++            let scratch = &mut scratch[i];
+             *scratch = acc;
  
              // Avoid unnecessary Montgomery multiplication in second pass by
              // keeping inputs in Montgomery form
--            let tmp = input.unpack().as_montgomery();
--            *input = tmp.pack();
-+            let tmp = inputs[i].unpack().as_montgomery();
-+            inputs[i] = tmp.pack();
+             let tmp = input.unpack().as_montgomery();
+             *input = tmp.pack();
              acc = UnpackedScalar::montgomery_mul(&acc, &tmp);
-+            i += 1;
          }
  
          // acc is nonzero iff all inputs are nonzero
@@ -52,13 +48,11 @@ index c417780..47d4398 100644
          // Pass through the vector backwards to compute the inverses
          // in place
 -        for (input, scratch) in inputs.iter_mut().rev().zip(scratch.iter().rev()) {
--            let tmp = UnpackedScalar::montgomery_mul(&acc, &input.unpack());
--            *input = UnpackedScalar::montgomery_mul(&acc, scratch).pack();
-+        let mut k = n;
-+        while k > 0 {
-+            k -= 1;
-+            let tmp = UnpackedScalar::montgomery_mul(&acc, &inputs[k].unpack());
-+            inputs[k] = UnpackedScalar::montgomery_mul(&acc, &scratch[k]).pack();
++        for k in (0..inputs.len()).rev() {
++            let input = &mut inputs[k];
++            let scratch = &scratch[k];
+             let tmp = UnpackedScalar::montgomery_mul(&acc, &input.unpack());
+             *input = UnpackedScalar::montgomery_mul(&acc, scratch).pack();
              acc = tmp;
          }
  

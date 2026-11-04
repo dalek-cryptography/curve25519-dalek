@@ -16,6 +16,35 @@ range. -/
 
 open Aeneas Aeneas.Std Aeneas.Std.WP
 
+namespace Curve25519Dalek.EdwardsOps
+
+theorem sliceNextSome {T : Type} (s : Slice T) (i : ℕ) (hi : i < s.val.length) :
+    core.slice.iter.IteratorSliceIter.next { slice := s, i := i }
+      ⦃ (o : Option T) (it : core.slice.iter.Iter T) =>
+        o = some s.val[i] ∧ it = { slice := s, i := i + 1 } ⦄ := by
+  unfold core.slice.iter.IteratorSliceIter.next
+  split
+  · simp only [WP.spec_ok]
+    exact ⟨rfl, rfl⟩
+  · rename_i h
+    simp only [Slice.len_val] at h
+    change ¬i < s.val.length at h
+    omega
+
+theorem sliceNextNone {T : Type} (s : Slice T) (i : ℕ) (hi : s.val.length ≤ i) :
+    core.slice.iter.IteratorSliceIter.next { slice := s, i := i }
+      ⦃ (o : Option T) (it : core.slice.iter.Iter T) =>
+        o = none ∧ it = { slice := s, i := i } ⦄ := by
+  unfold core.slice.iter.IteratorSliceIter.next
+  split
+  · rename_i h
+    simp only [Slice.len_val] at h
+    change i < s.val.length at h
+    omega
+  · simp
+
+end Curve25519Dalek.EdwardsOps
+
 namespace Aeneas.Std.core.iter.adapters.rev.Rev
 
 /-- `next` on a reversed `Usize` range that is not empty yields its last element. -/

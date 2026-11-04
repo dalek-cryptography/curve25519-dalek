@@ -1,6 +1,6 @@
 Translation patch: FieldElement::internal_invert_batch
 
-Change: both `zip` passes (the second reversed) become index loops; `&acc * scratch` is bound to `prod` first (pure).
+Change: both `zip` passes (the second reversed) become range loops with indexed borrows.
 Why: Aeneas fails on borrows through `iter_mut().rev().zip(..)` (InterpBorrowsCore).
 Behaviour: identical.
 Relies on: the only callers (`invert_batch`, `invert_batch_alloc`) pass `scratch.len() == inputs.len()`.
@@ -9,7 +9,7 @@ diff --git a/curve25519-dalek/src/field.rs b/curve25519-dalek/src/field.rs
 index 8924166..4c7263e 100644
 --- a/curve25519-dalek/src/field.rs
 +++ b/curve25519-dalek/src/field.rs
-@@ -232,51 +232,57 @@ pub(crate) fn invert_batch_alloc(inputs: &mut [FieldElement]) {
+@@ -232,51 +232,55 @@ pub(crate) fn invert_batch_alloc(inputs: &mut [FieldElement]) {
      /// Given a slice of pub(crate)lic `FieldElements`, replace each with its inverse. `scratch` can
      /// contain anything, so long as its length is the same as `inputs`.
      ///
@@ -30,15 +30,12 @@ index 8924166..4c7263e 100644
          // Pass through the input vector, recording the previous
          // products in the scratch space
 -        for (input, scratch) in inputs.iter().zip(scratch.iter_mut()) {
--            *scratch = acc;
-+        let n = inputs.len();
-+        let mut i = 0;
-+        while i < n {
-+            scratch[i] = acc;
++        for i in 0..inputs.len() {
++            let input = &inputs[i];
++            let scratch = &mut scratch[i];
+             *scratch = acc;
              // acc <- acc * input, but skipping zeros (constant-time)
--            acc.conditional_assign(&(&acc * input), !input.is_zero());
-+            acc.conditional_assign(&(&acc * &inputs[i]), !inputs[i].is_zero());
-+            i += 1;
+             acc.conditional_assign(&(&acc * input), !input.is_zero());
          }
  
          // acc is nonzero because we skipped zeros in inputs
@@ -50,18 +47,14 @@ index 8924166..4c7263e 100644
          // Pass through the vector backwards to compute the inverses
          // in place
 -        for (input, scratch) in inputs.iter_mut().rev().zip(scratch.iter_mut().rev()) {
--            let tmp = &acc * input;
-+        let mut k = n;
-+        while k > 0 {
-+            k -= 1;
-+            let tmp = &acc * &inputs[k];
++        for k in (0..inputs.len()).rev() {
++            let input = &mut inputs[k];
++            let scratch = &mut scratch[k];
+             let tmp = &acc * input;
              // input <- acc * scratch, then acc <- tmp
              // Again, we skip zeros in a constant-time way
--            let nz = !input.is_zero();
--            input.conditional_assign(&(&acc * scratch), nz);
-+            let nz = !inputs[k].is_zero();
-+            let prod = &acc * &scratch[k];
-+            inputs[k].conditional_assign(&prod, nz);
+             let nz = !input.is_zero();
+             input.conditional_assign(&(&acc * scratch), nz);
              acc.conditional_assign(&tmp, nz);
          }
      }

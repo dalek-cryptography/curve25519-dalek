@@ -1,15 +1,15 @@
 Translation patch: <HalfWidthScalar as TryFrom<Scalar>>::try_from
 
-Change: `bytes[16..].iter().all(|&b| b == 0)` becomes a loop over 16..32 returning `Err(())` at the first nonzero byte.
+Change: `bytes[16..].iter().all(|&b| b == 0)` becomes a `for` loop over `bytes[16..]` returning `Err(())` at the first nonzero byte.
 Why: Aeneas doesn't model `Iter::all`.
 Behaviour: identical.
-Relies on: `Scalar::bytes` is `[u8; 32]`.
+Relies on: `Scalar::bytes` has at least 16 bytes, so `bytes[16..]` is in bounds.
 
 diff --git a/curve25519-dalek/src/scalar.rs b/curve25519-dalek/src/scalar.rs
 index c417780..f0e2199 100644
 --- a/curve25519-dalek/src/scalar.rs
 +++ b/curve25519-dalek/src/scalar.rs
-@@ -1429,11 +1429,14 @@ impl TryFrom<Scalar> for HalfWidthScalar {
+@@ -1429,11 +1429,12 @@ impl TryFrom<Scalar> for HalfWidthScalar {
      /// Attempt to view `scalar` as a `HalfWidthScalar`. Returns `Ok` if `value` is less
      /// than \\( 2^{128} \\)
      fn try_from(value: Scalar) -> Result<Self, Self::Error> {
@@ -17,14 +17,12 @@ index c417780..f0e2199 100644
 -            Ok(Self(value))
 -        } else {
 -            Err(())
-+        let mut i = 16;
-+        while i < 32 {
-+            if value.bytes[i] != 0 {
++        for byte in value.bytes[16..].iter() {
++            if *byte != 0 {
 +                return Err(());
 +            }
-+            i += 1;
          }
 +        Ok(Self(value))
      }
  }
- 
+

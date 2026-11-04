@@ -1,6 +1,6 @@
 Translation patch: <Scalar as Sum<T>>::sum
 
-Change: `iter.fold(..)` becomes a `while let Some(item) = iter.next()` loop.
+Change: `iter.fold(..)` becomes a `for` loop.
 Why: Aeneas only models `Iterator::next` (aeneas#1057).
 Behaviour: identical for iterators whose `fold` agrees with `next` (all std/lawful iterators): the default `fold` is exactly this loop.
 
@@ -12,14 +12,13 @@ index c417780..662f7ea 100644
  where
      T: Borrow<Scalar>,
  {
--    fn sum<I>(iter: I) -> Self
-+    fn sum<I>(mut iter: I) -> Self
+     fn sum<I>(iter: I) -> Self
      where
          I: Iterator<Item = T>,
      {
 -        iter.fold(Scalar::ZERO, |acc, item| acc + item.borrow())
 +        let mut acc = Scalar::ZERO;
-+        while let Some(item) = iter.next() {
++        for item in iter {
 +            acc = acc + item.borrow();
 +        }
 +        acc

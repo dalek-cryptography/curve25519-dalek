@@ -4,6 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Aeneas.Std.Alloc.Vec
+public import Aeneas.Std.Alloc.Vec.IntoIter
+import all Aeneas.Std.Alloc.Vec.IntoIter
 public import Aeneas.Std.Core.CoreOption
 public import Defs.Iterator
 import Aeneas.Tactic.Step.StepStar
@@ -29,6 +31,38 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP ControlFlow
 namespace Curve25519Dalek.collect
 
 variable {It T Y Z : Type}
+
+/-- The `Vec::from_iter` model accumulates the yielded items in reverse order. -/
+private theorem iterToList_spec (iterInst : core.iter.traits.iterator.Iterator It T)
+    (it : It) (xs : List T) (hit : iterInst.Yields it xs) (acc : List T) :
+    alloc.vec.FromIteratorVec.iterToList iterInst it acc
+      ⦃ r => r = acc.reverse ++ xs ⦄ := by
+  induction hit generalizing acc with
+  | nil hnext =>
+    rw [alloc.vec.FromIteratorVec.iterToList.eq_def]
+    step with hnext as ⟨o, it1, ho⟩
+    subst ho
+    simp
+  | cons hnext _ ih =>
+    rw [alloc.vec.FromIteratorVec.iterToList.eq_def]
+    step with hnext as ⟨o, it1, ho, hit⟩
+    subst ho hit
+    apply spec_mono (ih (_ :: acc))
+    intro r hr
+    simpa [List.reverse_cons, List.append_assoc] using hr
+
+/-- `Vec::from_iter` preserves the finite sequence yielded by an iterator. -/
+theorem fromIter_spec (iterInst : core.iter.traits.iterator.Iterator It T)
+    (it : It) (xs : List T) (hit : iterInst.Yields it xs) (hlen : xs.length ≤ Usize.max) :
+    alloc.vec.FromIteratorVec.from_iter
+      (core.iter.traits.collect.IntoIterator.Blanket iterInst) it
+      ⦃ (r : alloc.vec.Vec T) => r.val = xs ⦄ := by
+  unfold alloc.vec.FromIteratorVec.from_iter
+  simp only [core.iter.traits.collect.IntoIterator.Blanket.into_iter, bind_ok]
+  step with iterToList_spec iterInst it xs hit [] as ⟨l, hl⟩
+  simp only [List.reverse_nil, List.nil_append] at hl
+  subst hl
+  simp [hlen, WP.spec_ok, alloc.vec.Vec.from_val]
 
 /-- Push each item of the iterator. -/
 @[expose] def collectBody (iterInst : core.iter.traits.iterator.Iterator It T) (it : It)

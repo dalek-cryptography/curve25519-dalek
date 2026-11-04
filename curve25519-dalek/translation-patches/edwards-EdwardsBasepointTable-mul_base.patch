@@ -1,15 +1,14 @@
 Translation patch: impl_basepoint_table! mul_base (all EdwardsBasepointTable radixes)
 
-Change: `(0..$adds).filter(odd/even)` becomes `while` loops with step 2; parameter `scalar` renamed to `s`.
+Change: `(0..$adds).filter(odd/even)` becomes `(1/0..$adds).step_by(2)`; parameter `scalar` renamed to `s`.
 Why: Aeneas only models `Iterator::next` (aeneas#1057). The rename: a variable named `scalar` clashes with the `scalar` module in Lean (aeneas#1098).
 Behaviour: identical.
-Relies on: `$adds` is a literal (64/52/43/37/33), so `i += 2` cannot overflow.
 
 diff --git a/curve25519-dalek/src/edwards.rs b/curve25519-dalek/src/edwards.rs
 index 1120e8f..39aaeab 100644
 --- a/curve25519-dalek/src/edwards.rs
 +++ b/curve25519-dalek/src/edwards.rs
-@@ -1189,61 +1189,65 @@ fn basepoint(&self) -> $point {
+@@ -1189,61 +1189,61 @@ fn basepoint(&self) -> $point {
              /// The computation uses Pippeneger's algorithm, as described for the
              /// specific case of radix-16 on page 13 of the Ed25519 paper.
              ///
@@ -61,19 +60,15 @@ index 1120e8f..39aaeab 100644
                  let mut P = <$point>::identity();
  
 -                for i in (0..$adds).filter(|x| x % 2 == 1) {
-+                let mut i = 1;
-+                while i < $adds {
++                for i in (1..$adds).step_by(2) {
                      P = (&P + &tables[i / 2].select(a[i])).as_extended();
-+                    i += 2;
                  }
  
                  P = P.mul_by_pow_2($radix);
  
 -                for i in (0..$adds).filter(|x| x % 2 == 0) {
-+                let mut i = 0;
-+                while i < $adds {
++                for i in (0..$adds).step_by(2) {
                      P = (&P + &tables[i / 2].select(a[i])).as_extended();
-+                    i += 2;
                  }
  
                  P

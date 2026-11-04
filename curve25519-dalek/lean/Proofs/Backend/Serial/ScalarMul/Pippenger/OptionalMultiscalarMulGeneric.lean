@@ -153,49 +153,56 @@ noncomputable def column (sp : alloc.vec.Vec ((Array I8 64#usize) × O.N))
   ∑ k ∈ Finset.range sp.length, ((sp.val[k]!).1[e]!.val : ℤ) • P k
 
 /-- `optional_multiscalar_mul_loop0.body` over the point operations. -/
-@[expose] def pippengerLoop0Body (buckets_count : Usize) (buckets : alloc.vec.Vec O.E)
-    (b : Usize) : Result (ControlFlow ((alloc.vec.Vec O.E) × Usize) (alloc.vec.Vec O.E)) := do
-  if b < buckets_count
-  then
+@[expose] def pippengerLoop0Body (iter : core.ops.range.Range Usize)
+    (buckets : alloc.vec.Vec O.E) :
+    Result (ControlFlow ((core.ops.range.Range Usize) × (alloc.vec.Vec O.E))
+      (alloc.vec.Vec O.E)) := do
+  let (o, iter1) ← core.iter.range.IteratorRange.next core.iter.range.StepUsize iter
+  match o with
+  | none => ok (done buckets)
+  | some _ =>
     let ep ← O.identity
     let buckets1 ← alloc.vec.Vec.push buckets ep
-    let b1 ← b + 1#usize
-    ok (cont (buckets1, b1))
-  else ok (done buckets)
+    ok (cont (iter1, buckets1))
 
 /-- `optional_multiscalar_mul_loop0` over the point operations. -/
 @[expose] def pippengerLoop0 (buckets_count : Usize) (buckets : alloc.vec.Vec O.E) (b : Usize) :
     Result (alloc.vec.Vec O.E) := do
-  loop (fun (buckets1, b1) => O.pippengerLoop0Body buckets_count buckets1 b1) (buckets, b)
+  loop (fun (iter1, buckets1) => O.pippengerLoop0Body iter1 buckets1)
+    ({ start := b, «end» := buckets_count }, buckets)
 
 /-- `optional_multiscalar_mul_loop1_loop0.body` over the point operations. -/
-@[expose] def pippengerLoop10Body (buckets_count : Usize) (buckets : alloc.vec.Vec O.E)
-    (b : Usize) : Result (ControlFlow ((alloc.vec.Vec O.E) × Usize) (alloc.vec.Vec O.E)) := do
-  if b < buckets_count
-  then
-    let ep ← O.identity
+@[expose] def pippengerLoop10Body (iter : core.ops.range.Range Usize)
+    (buckets : alloc.vec.Vec O.E) :
+    Result (ControlFlow ((core.ops.range.Range Usize) × (alloc.vec.Vec O.E))
+      (alloc.vec.Vec O.E)) := do
+  let (o, iter1) ← core.iter.range.IteratorRange.next core.iter.range.StepUsize iter
+  match o with
+  | none => ok (done buckets)
+  | some b =>
     let (_, index_mut_back) ←
       alloc.vec.Vec.index_mut (core.slice.index.SliceIndexUsizeSlice O.E) buckets b
-    let b1 ← b + 1#usize
+    let ep ← O.identity
     let buckets1 := index_mut_back ep
-    ok (cont (buckets1, b1))
-  else ok (done buckets)
+    ok (cont (iter1, buckets1))
 
 /-- `optional_multiscalar_mul_loop1_loop0` over the point operations. -/
 @[expose] def pippengerLoop10 (buckets_count : Usize) (buckets : alloc.vec.Vec O.E) (b : Usize) :
     Result (alloc.vec.Vec O.E) := do
-  loop (fun (buckets1, b1) => O.pippengerLoop10Body buckets_count buckets1 b1) (buckets, b)
+  loop (fun (iter1, buckets1) => O.pippengerLoop10Body iter1 buckets1)
+    ({ start := b, «end» := buckets_count }, buckets)
 
 /-- `optional_multiscalar_mul_loop1_loop1.body` over the point operations. -/
-@[expose] def pippengerLoop11Body (scalars_points : alloc.vec.Vec ((Array I8 64#usize) × O.N))
-    (digit_index : Usize) (buckets : alloc.vec.Vec O.E) (si : Usize) :
-    Result (ControlFlow ((alloc.vec.Vec O.E) × Usize) (alloc.vec.Vec O.E)) := do
-  let i := alloc.vec.Vec.len scalars_points
-  if si < i
-  then
-    let (digits, pt) ←
-      alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice ((Array I8 64#usize) × O.N))
-        scalars_points si
+@[expose] def pippengerLoop11Body (digit_index : Usize)
+    (iter : core.slice.iter.Iter ((Array I8 64#usize) × O.N))
+    (buckets : alloc.vec.Vec O.E) :
+    Result (ControlFlow ((core.slice.iter.Iter ((Array I8 64#usize) × O.N)) ×
+      (alloc.vec.Vec O.E)) (alloc.vec.Vec O.E)) := do
+  let (o, iter1) ← core.slice.iter.IteratorSliceIter.next iter
+  match o with
+  | none => ok (done buckets)
+  | some p =>
+    let (digits, pt) := p
     let i1 ← Array.index_usize digits digit_index
     let digit ← lift (IScalar.cast .I16 i1)
     let o ← lift (core.cmp.impls.OrdI16.cmp digit 0#i16)
@@ -223,46 +230,51 @@ noncomputable def column (sp : alloc.vec.Vec ((Array I8 64#usize) × O.N))
         let (_, index_mut_back) ←
           alloc.vec.Vec.index_mut (core.slice.index.SliceIndexUsizeSlice O.E) buckets b
         ok (index_mut_back ep1)
-    let si1 ← si + 1#usize
-    ok (cont (buckets1, si1))
-  else ok (done buckets)
+    ok (cont (iter1, buckets1))
 
 /-- `optional_multiscalar_mul_loop1_loop1` over the point operations. -/
 @[expose] def pippengerLoop11 (scalars_points : alloc.vec.Vec ((Array I8 64#usize) × O.N))
     (buckets : alloc.vec.Vec O.E) (digit_index : Usize) (si : Usize) :
     Result (alloc.vec.Vec O.E) := do
-  loop (fun (buckets1, si1) => O.pippengerLoop11Body scalars_points digit_index buckets1 si1)
-    (buckets, si)
+  loop (fun (iter1, buckets1) => O.pippengerLoop11Body digit_index iter1 buckets1)
+    ({ slice := alloc.vec.Vec.deref scalars_points, i := si.val }, buckets)
 
 /-- `optional_multiscalar_mul_loop1_loop2.body` over the point operations. -/
 @[expose] def pippengerLoop12Body (buckets : alloc.vec.Vec O.E)
-    (buckets_intermediate_sum : O.E) (buckets_sum : O.E) (i : Usize) :
-    Result (ControlFlow (O.E × O.E × Usize) O.E) := do
-  if i > 0#usize
-  then
-    let i1 ← i - 1#usize
+    (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
+    (buckets_intermediate_sum : O.E) (buckets_sum : O.E) :
+    Result (ControlFlow ((core.iter.adapters.rev.Rev (core.ops.range.Range Usize)) × O.E × O.E)
+      O.E) := do
+  let (o, iter1) ← core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.next
+    (core.ops.range.Range.Insts.DoubleEndedIterator core.iter.range.StepUsize) iter
+  match o with
+  | none => ok (done buckets_sum)
+  | some i1 =>
     let ep ← alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice O.E) buckets i1
     let buckets_intermediate_sum1 ← O.addAssign buckets_intermediate_sum ep
     let buckets_sum1 ← O.addAssign buckets_sum buckets_intermediate_sum1
-    ok (cont (buckets_intermediate_sum1, buckets_sum1, i1))
-  else ok (done buckets_sum)
+    ok (cont (iter1, buckets_intermediate_sum1, buckets_sum1))
 
 /-- `optional_multiscalar_mul_loop1_loop2` over the point operations. -/
 @[expose] def pippengerLoop12 (buckets : alloc.vec.Vec O.E) (buckets_intermediate_sum : O.E)
     (buckets_sum : O.E) (i : Usize) : Result O.E := do
   loop
-    (fun (buckets_intermediate_sum1, buckets_sum1, i1) =>
-      O.pippengerLoop12Body buckets buckets_intermediate_sum1 buckets_sum1 i1)
-    (buckets_intermediate_sum, buckets_sum, i)
+    (fun (iter1, buckets_intermediate_sum1, buckets_sum1) =>
+      O.pippengerLoop12Body buckets iter1 buckets_intermediate_sum1 buckets_sum1)
+    ({ iter := { start := 0#usize, «end» := i } }, buckets_intermediate_sum, buckets_sum)
 
 /-- `optional_multiscalar_mul_loop1.body` over the point operations. -/
 @[expose] def pippengerLoop1Body (w : Usize) (buckets_count : Usize)
     (scalars_points : alloc.vec.Vec ((Array I8 64#usize) × O.N))
-    (buckets : alloc.vec.Vec O.E) (total : Option O.E) (digit_index : Usize) :
-    Result (ControlFlow ((alloc.vec.Vec O.E) × (Option O.E) × Usize) (Option O.E)) := do
-  if digit_index > 0#usize
-  then
-    let digit_index1 ← digit_index - 1#usize
+    (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
+    (buckets : alloc.vec.Vec O.E) (total : Option O.E) :
+    Result (ControlFlow ((core.iter.adapters.rev.Rev (core.ops.range.Range Usize)) ×
+      (alloc.vec.Vec O.E) × (Option O.E)) (Option O.E)) := do
+  let (o, iter1) ← core.iter.adapters.rev.Rev.Insts.CoreIterTraitsIteratorIterator.next
+    (core.ops.range.Range.Insts.DoubleEndedIterator core.iter.range.StepUsize) iter
+  match o with
+  | none => ok (done total)
+  | some digit_index1 =>
     let buckets1 ← O.pippengerLoop10 buckets_count buckets 0#usize
     let buckets2 ← O.pippengerLoop11 scalars_points buckets1 digit_index1 0#usize
     let i ← buckets_count - 1#usize
@@ -271,13 +283,12 @@ noncomputable def column (sp : alloc.vec.Vec ((Array I8 64#usize) × O.N))
     let buckets_sum ← alloc.vec.Vec.index (core.slice.index.SliceIndexUsizeSlice O.E) buckets2 i
     let buckets_sum1 ← O.pippengerLoop12 buckets2 buckets_intermediate_sum buckets_sum i
     match total with
-    | none => ok (cont (buckets2, some buckets_sum1, digit_index1))
+    | none => ok (cont (iter1, buckets2, some buckets_sum1))
     | some total1 =>
       let i1 ← lift (UScalar.cast .U32 w)
       let ep ← O.mulByPow2 total1 i1
       let buckets_sum2 ← O.add ep buckets_sum1
-      ok (cont (buckets2, some buckets_sum2, digit_index1))
-  else ok (done total)
+      ok (cont (iter1, buckets2, some buckets_sum2))
 
 /-- `optional_multiscalar_mul_loop1` over the point operations. -/
 @[expose] def pippengerLoop1 (w : Usize) (buckets_count : Usize)
@@ -285,9 +296,9 @@ noncomputable def column (sp : alloc.vec.Vec ((Array I8 64#usize) × O.N))
     (buckets : alloc.vec.Vec O.E) (total : Option O.E) (digit_index : Usize) :
     Result (Option O.E) := do
   loop
-    (fun (buckets1, total1, digit_index1) =>
-      O.pippengerLoop1Body w buckets_count scalars_points buckets1 total1 digit_index1)
-    (buckets, total, digit_index)
+    (fun (iter1, buckets1, total1) =>
+      O.pippengerLoop1Body w buckets_count scalars_points iter1 buckets1 total1)
+    ({ iter := { start := 0#usize, «end» := digit_index } }, buckets, total)
 
 /-- The first loop: `buckets_count` identities. -/
 private theorem pippengerLoop0_spec (hid : O.IdentitySpec) (bc : Usize)
@@ -297,26 +308,31 @@ private theorem pippengerLoop0_spec (hid : O.IdentitySpec) (bc : Usize)
       O.toPoint buckets.val[j]! = 0) :
     O.pippengerLoop0 bc buckets b ⦃ (r : alloc.vec.Vec O.E) => O.BucketsOK r bc.val ⦄ := by
   unfold pippengerLoop0
-  apply loop.spec_decr_nat (measure := fun (_, b') => bc.val - b'.val)
-    (inv := fun (v, b') => b'.val ≤ bc.val ∧ v.length = b'.val ∧
-      ∀ j < b'.val, O.OnCurve v.val[j]! ∧ O.Bnd v.val[j]! ∧ O.toPoint v.val[j]! = 0)
-  · rintro ⟨v, b'⟩ ⟨hb', hl, hv⟩
+  apply loop.spec_decr_nat (measure := fun (it, _) => bc.val - it.start.val)
+    (inv := fun (it, v) => it.end = bc ∧ it.start.val ≤ bc.val ∧ v.length = it.start.val ∧
+      ∀ j < it.start.val, O.OnCurve v.val[j]! ∧ O.Bnd v.val[j]! ∧ O.toPoint v.val[j]! = 0)
+  · rintro ⟨⟨b', e⟩, v⟩ ⟨he, hb', hl, hv⟩
+    dsimp only at he
+    subst e
     unfold pippengerLoop0Body
     by_cases hlt : b' < bc
-    · simp only [hlt, ite_true]
+    · step with core.iter.range.IteratorRange.next_Usize_some_spec
+        as ⟨o, it1, ho, hb1, he1⟩
+      subst ho
       apply spec_bind hid
       rintro e ⟨heon, he, heb⟩
       step as ⟨v1, hv1⟩
-      step as ⟨b1, hb1⟩
-      refine ⟨by scalar_tac, by rw [alloc.vec.Vec.length_of_val_eq_append hv1, hl, hb1], ?_,
+      refine ⟨he1, by scalar_tac, by rw [alloc.vec.Vec.length_of_val_eq_append hv1, hl, hb1], ?_,
         by scalar_tac⟩
       rw [hb1, ← hl]
       exact alloc.vec.Vec.forall_lt_of_val_eq_append
         (P := fun _ x => O.OnCurve x ∧ O.Bnd x ∧ O.toPoint x = 0) hv1 (hl ▸ hv) ⟨heon, heb, he⟩
-    · simp only [hlt, ite_false, WP.spec_ok]
+    · step with core.iter.range.IteratorRange.next_Usize_none_spec as ⟨o, it1, ho, hit1⟩
+      subst ho
+      simp only [WP.spec_ok]
       have : b'.val = bc.val := by scalar_tac
       exact ⟨this ▸ hl, fun j hj => ⟨(hv j (this ▸ hj)).1, (hv j (this ▸ hj)).2.1⟩⟩
-  · exact ⟨hb, hlen, hbk⟩
+  · exact ⟨rfl, hb, hlen, hbk⟩
 
 /-- The reset loop: every bucket becomes the identity. -/
 private theorem pippengerLoop10_spec (hid : O.IdentitySpec) (bc : Usize)
@@ -326,20 +342,24 @@ private theorem pippengerLoop10_spec (hid : O.IdentitySpec) (bc : Usize)
     O.pippengerLoop10 bc buckets b ⦃ (r : alloc.vec.Vec O.E) =>
         O.BucketsOK r bc.val ∧ ∀ j < bc.val, O.toPoint r.val[j]! = 0 ⦄ := by
   unfold pippengerLoop10
-  apply loop.spec_decr_nat (measure := fun (_, b') => bc.val - b'.val)
-    (inv := fun (v, b') => b'.val ≤ bc.val ∧ O.BucketsOK v bc.val ∧
-      ∀ j < b'.val, O.toPoint v.val[j]! = 0)
-  · rintro ⟨v, b'⟩ ⟨hb', ⟨hl, hv⟩, hvz⟩
+  apply loop.spec_decr_nat (measure := fun (it, _) => bc.val - it.start.val)
+    (inv := fun (it, v) => it.end = bc ∧ it.start.val ≤ bc.val ∧ O.BucketsOK v bc.val ∧
+      ∀ j < it.start.val, O.toPoint v.val[j]! = 0)
+  · rintro ⟨⟨b', e⟩, v⟩ ⟨he, hb', ⟨hl, hv⟩, hvz⟩
+    dsimp only at he
+    subst e
     unfold pippengerLoop10Body
     by_cases hlt : b' < bc
-    · simp only [hlt, ite_true]
+    · step with core.iter.range.IteratorRange.next_Usize_some_spec
+        as ⟨o, it1, ho, hb1, he1⟩
+      subst ho
+      step as ⟨x, back, hx, hback⟩
       apply spec_bind hid
       rintro e ⟨heon, he, heb⟩
-      step as ⟨x, back, hx, hback⟩
-      step as ⟨b1, hb1⟩
       have hbl : b'.val < v.val.length := by
         rw [show v.val.length = v.length from rfl, hl]; scalar_tac
-      refine ⟨by scalar_tac, ⟨?_, fun j hj => ?_⟩, fun j hj => ?_, by scalar_tac⟩
+      rw [WP.spec_ok]
+      refine ⟨he1, by scalar_tac, ⟨?_, fun j hj => ?_⟩, fun j hj => ?_, by scalar_tac⟩
       · rw [hback, alloc.vec.Vec.set_length, hl]
       · rw [hback, alloc.vec.Vec.set_val_eq]
         rcases eq_or_ne j b'.val with rfl | hne
@@ -349,10 +369,12 @@ private theorem pippengerLoop10_spec (hid : O.IdentitySpec) (bc : Usize)
         rcases eq_or_ne j b'.val with rfl | hne
         · rw [getElem!_set_eq' _ _ _ hbl]; exact he
         · rw [getElem!_set_ne' _ _ _ _ hne]; exact hvz j (by scalar_tac)
-    · simp only [hlt, ite_false, WP.spec_ok]
+    · step with core.iter.range.IteratorRange.next_Usize_none_spec as ⟨o, it1, ho, hit1⟩
+      subst ho
+      simp only [WP.spec_ok]
       have : b'.val = bc.val := by scalar_tac
       exact ⟨⟨hl, hv⟩, fun j hj => hvz j (this ▸ hj)⟩
-  · exact ⟨hb, hok, hz⟩
+  · exact ⟨rfl, hb, hok, hz⟩
 
 /-- The running sums: `buckets_sum` ends as `∑_b (b + 1) • bucket_b`. -/
 private theorem pippengerLoop12_spec (hadda : O.AddAssignSpec) (buckets : alloc.vec.Vec O.E)
@@ -365,17 +387,21 @@ private theorem pippengerLoop12_spec (hadda : O.AddAssignSpec) (buckets : alloc.
     O.pippengerLoop12 buckets inter sum i ⦃ (r : O.E) => O.OnCurve r ∧ O.Bnd r ∧
         O.toPoint r = wsum O.toPoint buckets.val bc ⦄ := by
   unfold pippengerLoop12
-  apply loop.spec_decr_nat (measure := fun (_, _, i') => i'.val)
-    (inv := fun (it, sm, i') => i'.val < bc ∧
+  apply loop.spec_decr_nat (measure := fun (ri, _, _) => ri.iter.end.val)
+    (inv := fun (ri, it, sm) => ri.iter.start = 0#usize ∧ ri.iter.end.val < bc ∧
       O.OnCurve it ∧ O.Bnd it ∧
-        O.toPoint it = ∑ b ∈ Finset.Ico i'.val bc, O.toPoint buckets.val[b]! ∧
+        O.toPoint it = ∑ b ∈ Finset.Ico ri.iter.end.val bc, O.toPoint buckets.val[b]! ∧
       O.OnCurve sm ∧ O.Bnd sm ∧
-        O.toPoint sm = ∑ b ∈ Finset.Ico i'.val bc, (b - i'.val + 1) • O.toPoint buckets.val[b]!)
-  · rintro ⟨it, sm, i'⟩ ⟨hi', hiton, hitb, hitp, hsmon, hsmb, hsmp⟩
+        O.toPoint sm = ∑ b ∈ Finset.Ico ri.iter.end.val bc,
+          (b - ri.iter.end.val + 1) • O.toPoint buckets.val[b]!)
+  · rintro ⟨⟨⟨start, i'⟩⟩, it, sm⟩ ⟨hst, hi', hiton, hitb, hitp, hsmon, hsmb, hsmp⟩
+    dsimp only at hst
+    subst start
     unfold pippengerLoop12Body
     by_cases hpos : i' > 0#usize
-    · simp only [hpos, ite_true]
-      step as ⟨i1, hi1⟩
+    · step with core.iter.adapters.rev.Rev.next_Usize_some_spec
+        as ⟨o, ri1, i1, ho, hii, hstart, hend⟩
+      subst ho
       have hi1b : i1.val < bc := by scalar_tac
       step as ⟨ep, hep⟩
       rw [← getElem!_pos] at hep
@@ -383,20 +409,23 @@ private theorem pippengerLoop12_spec (hadda : O.AddAssignSpec) (buckets : alloc.
       rw [← hep] at hepon hepb
       step with hadda it ep hitb hepb hiton hepon as ⟨it1, hit1on, hit1, hit1b⟩
       step with hadda sm it1 hsmb hit1b hsmon hit1on as ⟨sm1, hsm1on, hsm1, hsm1b⟩
-      have hii : i'.val = i1.val + 1 := by scalar_tac
+      have hii' : i'.val = i1.val + 1 := hii.symm
       have hsum1 : ∑ b ∈ Finset.Ico i1.val bc, O.toPoint buckets.val[b]! =
           ∑ b ∈ Finset.Ico i'.val bc, O.toPoint buckets.val[b]! + O.toPoint ep := by
-        rw [Finset.sum_eq_sum_Ico_succ_bot hi1b, hii, hep, add_comm]
-      refine ⟨hi1b, hit1on, hit1b, by rw [hit1, hitp, hsum1], hsm1on, hsm1b, ?_,
-        by rw [hii]; exact Nat.lt_succ_self _⟩
-      rw [hsm1, hit1, hsmp, hitp, ← hsum1, hii]
+        rw [Finset.sum_eq_sum_Ico_succ_bot hi1b, hii', hep, add_comm]
+      simp only [hend]
+      refine ⟨hstart, hi1b, hit1on, hit1b, by rw [hit1, hitp, hsum1], hsm1on, hsm1b, ?_,
+        by rw [hii']; exact Nat.lt_succ_self _⟩
+      rw [hsm1, hit1, hsmp, hitp, ← hsum1, hii']
       exact running_sum_step (fun b => O.toPoint buckets.val[b]!) i1.val bc hi1b
-    · simp only [hpos, ite_false, WP.spec_ok]
+    · step with core.iter.adapters.rev.Rev.next_Usize_none_spec as ⟨o, ri1, ho⟩
+      subst ho
+      simp only [WP.spec_ok]
       have h0 : i'.val = 0 := by scalar_tac
       refine ⟨hsmon, hsmb, ?_⟩
       rw [hsmp, h0, wsum, Finset.range_eq_Ico]
       exact Finset.sum_congr rfl fun b _ => by rw [Nat.sub_zero]
-  · exact ⟨hi, hinter.1, hinter.2.1, hinter.2.2, hsum.1, hsum.2.1, hsum.2.2⟩
+  · exact ⟨rfl, hi, hinter.1, hinter.2.1, hinter.2.2, hsum.1, hsum.2.1, hsum.2.2⟩
 
 open scoped Helpers.IndexStep in
 /-- The accumulation loop: point `k` (from `si` on) is added to bucket `d_k[e] - 1`, or subtracted
@@ -414,27 +443,36 @@ private theorem pippengerLoop11_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec)
     O.pippengerLoop11 sp buckets e si ⦃ (r : alloc.vec.Vec O.E) => O.BucketsOK r bc ∧
         wsum O.toPoint r.val bc = wsum O.toPoint buckets.val bc +
           ∑ k ∈ Finset.Ico si.val sp.length, (sp.val[k]!).1[e.val]!.val • P k ⦄ := by
+  have hsplen : (alloc.vec.Vec.deref sp).val = sp.val := Slice.from_val _ _
   unfold pippengerLoop11
-  apply loop.spec_decr_nat (measure := fun (_, si') => sp.length - si'.val)
-    (inv := fun (v, si') => si.val ≤ si'.val ∧ si'.val ≤ sp.length ∧ O.BucketsOK v bc ∧
+  apply loop.spec_decr_nat (measure := fun (it, _) => sp.length - it.i)
+    (inv := fun (it, v) => it.slice = alloc.vec.Vec.deref sp ∧ si.val ≤ it.i ∧ it.i ≤ sp.length ∧
+      O.BucketsOK v bc ∧
       wsum O.toPoint v.val bc = wsum O.toPoint buckets.val bc +
-          ∑ k ∈ Finset.Ico si.val si'.val, (sp.val[k]!).1[e.val]!.val • P k)
-  · rintro ⟨v, si'⟩ ⟨hss, hsl, ⟨hvl, hv⟩, hw⟩
+          ∑ k ∈ Finset.Ico si.val it.i, (sp.val[k]!).1[e.val]!.val • P k)
+  · rintro ⟨⟨slice, si'⟩, v⟩ ⟨hslice, hss, hsl, ⟨hvl, hv⟩, hw⟩
+    dsimp only at hslice
+    subst slice
+    dsimp only at hss hsl hw
     unfold pippengerLoop11Body
-    by_cases hlt : si'.val < sp.length
-    · have hlt' : si' < alloc.vec.Vec.len sp := by scalar_tac
-      simp only [hlt', ite_true]
-      step as ⟨digits, pt, hdp⟩
-      rw [← getElem!_pos] at hdp
-      obtain ⟨hpton, hptb, hptp⟩ := hsp si'.val hlt
-      obtain ⟨hdl, hdu⟩ := hdig si'.val hlt
+    by_cases hlt : si' < sp.length
+    · step with sliceNextSome (alloc.vec.Vec.deref sp) si' (by simpa only [hsplen] using hlt)
+        as ⟨o, it1, ho, hi1⟩
+      subst ho hi1
+      rw [← getElem!_pos (alloc.vec.Vec.deref sp).val si'
+        (by simpa only [hsplen] using hlt), hsplen]
+      generalize hdp : sp.val[si']! = pair
+      obtain ⟨digits, pt⟩ := pair
+      replace hdp : (digits, pt) = sp.val[si']! := hdp.symm
+      obtain ⟨hpton, hptb, hptp⟩ := hsp si' hlt
+      obtain ⟨hdl, hdu⟩ := hdig si' hlt
       rw [← hdp] at hpton hptb hptp hdl hdu
       simp only at hpton hptb hptp hdl hdu
       step as ⟨d8, hd8⟩
       step with IScalar.cast_inBounds_spec as ⟨d, hd⟩
       rw [show lift (core.cmp.impls.OrdI16.cmp d 0#i16) = ok (compare d.val 0) from rfl, bind_ok]
       apply spec_bind (Pₘ := fun v1 => O.BucketsOK v1 bc ∧
-        wsum O.toPoint v1.val bc = wsum O.toPoint v.val bc + d.val • P si'.val)
+        wsum O.toPoint v1.val bc = wsum O.toPoint v.val bc + d.val • P si')
       · rcases lt_trichotomy d.val 0 with hneg | hzero | hpos
         · rw [(compare_lt_iff_lt).mpr hneg]
           simp only
@@ -494,15 +532,18 @@ private theorem pippengerLoop11_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec)
             push_cast
             omega
       · rintro v1 ⟨hok1, hw1⟩
-        step as ⟨si1, hsi1⟩
-        refine ⟨by scalar_tac, by scalar_tac, hok1, ?_, by scalar_tac⟩
-        rw [hw1, hw, show si1.val = si'.val + 1 by scalar_tac, Finset.sum_Ico_succ_top hss,
+        rw [WP.spec_ok]
+        dsimp only
+        refine ⟨rfl, by omega, by omega, hok1, ?_, by omega⟩
+        rw [hw1, hw, Finset.sum_Ico_succ_top hss,
           add_assoc, hd, hd8, ← hdp]
-    · have hge : ¬ si' < alloc.vec.Vec.len sp := by scalar_tac
-      simp only [hge, ite_false, WP.spec_ok]
-      have : si'.val = sp.length := by scalar_tac
+    · step with sliceNextNone (alloc.vec.Vec.deref sp) si'
+        (by simpa only [hsplen] using Nat.le_of_not_lt hlt) as ⟨o, it1, ho, hi1⟩
+      subst ho hi1
+      simp only [WP.spec_ok]
+      have : si' = sp.length := by scalar_tac
       exact ⟨⟨hvl, hv⟩, this ▸ hw⟩
-  · exact ⟨le_refl _, hsi, hok, by rw [Finset.Ico_self, Finset.sum_empty, add_zero]⟩
+  · exact ⟨rfl, le_refl _, hsi, hok, by rw [Finset.Ico_self, Finset.sum_empty, add_zero]⟩
 
 open scoped Helpers.IndexStep in
 /-- The outer loop over the digit positions, from the top: the total is
@@ -528,17 +569,23 @@ private theorem pippengerLoop1_spec (hid : O.IdentitySpec) (hadd : O.AddSpec)
         ∀ T, r = some T → O.OnCurve T ∧ O.Bnd T ∧
           O.toPoint T = ∑ j ∈ Finset.range dc, 2 ^ (w.val * j) • O.column sp P j ⦄ := by
   unfold pippengerLoop1
-  apply loop.spec_decr_nat (measure := fun (_, _, d) => d.val)
-    (inv := fun (v, t, d) => O.BucketsOK v bc.val ∧ d.val ≤ dc ∧ (t = none ↔ d.val = dc) ∧
+  apply loop.spec_decr_nat (measure := fun (ri, _, _) => ri.iter.end.val)
+    (inv := fun (ri, v, t) => ri.iter.start = 0#usize ∧
+      O.BucketsOK v bc.val ∧ ri.iter.end.val ≤ dc ∧ (t = none ↔ ri.iter.end.val = dc) ∧
       ∀ T, t = some T → O.OnCurve T ∧ O.Bnd T ∧
-        O.toPoint T = ∑ j ∈ Finset.range (dc - d.val), 2 ^ (w.val * j) • O.column sp P (d.val + j))
-  · rintro ⟨v, t, d⟩ ⟨hv, hd, htn, hts⟩
+        O.toPoint T = ∑ j ∈ Finset.range (dc - ri.iter.end.val),
+          2 ^ (w.val * j) • O.column sp P (ri.iter.end.val + j))
+  · rintro ⟨⟨⟨start, d⟩⟩, v, t⟩ ⟨hst, hv, hd, htn, hts⟩
+    dsimp only at hst
+    subst start
     unfold pippengerLoop1Body
     by_cases hpos : d > 0#usize
-    · simp only [hpos, ite_true]
-      step as ⟨d1, hd1⟩
+    · step with core.iter.adapters.rev.Rev.next_Usize_some_spec
+        as ⟨o, ri1, d1, ho, hdd, hstart, hend⟩
+      subst ho
+      have hd1 : d1.val = d.val - 1 := by omega
       have hdpos : 0 < d.val := hpos
-      have hdd : d.val = d1.val + 1 := by rw [hd1]; exact (Nat.sub_add_cancel hdpos).symm
+      have hdd' : d.val = d1.val + 1 := hdd.symm
       have hd1lt : d1.val < dc := by
         rw [hd1]; exact lt_of_lt_of_le (Nat.sub_lt hdpos Nat.one_pos) hd
       have hd164 : d1.val < 64 := lt_of_lt_of_le hd1lt hdc
@@ -574,12 +621,13 @@ private theorem pippengerLoop1_spec (hid : O.IdentitySpec) (hadd : O.AddSpec)
       · have hdc' : d.val = dc := htn.mp rfl
         dsimp only
         rw [WP.spec_ok]
-        refine ⟨hv2, Nat.le_of_lt hd1lt,
+        simp only [hend]
+        refine ⟨hstart, hv2, Nat.le_of_lt hd1lt,
           ⟨fun h => (by cases h), fun h => absurd h (Nat.ne_of_lt hd1lt)⟩,
-          fun T' hT' => ?_, by rw [hdd]; exact Nat.lt_succ_self _⟩
+          fun T' hT' => ?_, by rw [hdd']; exact Nat.lt_succ_self _⟩
         obtain rfl : c = T' := Option.some.inj hT'
         refine ⟨hcon, hcb, ?_⟩
-        rw [hcol, show dc - d1.val = 1 by rw [← hdc', hdd, Nat.add_sub_cancel_left],
+        rw [hcol, show dc - d1.val = 1 by rw [← hdc', hdd', Nat.add_sub_cancel_left],
           Finset.sum_range_one, mul_zero, pow_zero, one_smul, add_zero]
       · obtain ⟨hTon, hTb, hT⟩ := hts T rfl
         have hdc' : d.val ≠ dc := fun h => by cases htn.mpr h
@@ -590,28 +638,31 @@ private theorem pippengerLoop1_spec (hid : O.IdentitySpec) (hadd : O.AddSpec)
           exact Nat.mod_eq_of_lt (lt_of_le_of_lt hw.2 (by decide))
         step with hmul T k hTb hTon (by rw [hkw]; exact hw.1) as ⟨T2, hT2on, hT2, hT2b⟩
         step with hadd T2 c hT2b hcb hT2on hcon as ⟨T3, hT3on, hT3, hT3b⟩
-        refine ⟨hv2, Nat.le_of_lt hd1lt,
+        simp only [hend]
+        refine ⟨hstart, hv2, Nat.le_of_lt hd1lt,
           ⟨fun h => (by cases h), fun h => absurd h (Nat.ne_of_lt hd1lt)⟩,
-          fun T' hT' => ?_, by rw [hdd]; exact Nat.lt_succ_self _⟩
+          fun T' hT' => ?_, by rw [hdd']; exact Nat.lt_succ_self _⟩
         obtain rfl : T3 = T' := Option.some.inj hT'
         refine ⟨hT3on, hT3b, ?_⟩
         have hdcd : dc - d1.val = (dc - d.val) + 1 := by
-          rw [hdd, Nat.sub_add_eq]
+          rw [hdd', Nat.sub_add_eq]
           exact (Nat.sub_add_cancel (Nat.sub_pos_of_lt hd1lt)).symm
         rw [hT3, hT2, hT, hcol, hkw, hdcd, Finset.sum_range_succ', Finset.smul_sum]
         rw [mul_zero, pow_zero, one_smul, add_zero]
         congr 1
         refine Finset.sum_congr rfl fun j _ => ?_
-        rw [smul_smul, ← pow_add, hdd, show w.val + w.val * j = w.val * (j + 1) by ring,
+        rw [smul_smul, ← pow_add, hdd', show w.val + w.val * j = w.val * (j + 1) by ring,
           show d1.val + 1 + j = d1.val + (j + 1) by ring]
-    · simp only [hpos, ite_false, WP.spec_ok]
+    · step with core.iter.adapters.rev.Rev.next_Usize_none_spec as ⟨o, ri1, ho⟩
+      subst ho
+      simp only [WP.spec_ok]
       have h0 : d.val = 0 := by scalar_tac
       refine ⟨by rw [htn, h0]; exact eq_comm, fun T hT => ?_⟩
       obtain ⟨hTon, hTb, hT'⟩ := hts T hT
       refine ⟨hTon, hTb, ?_⟩
       rw [hT', h0, Nat.sub_zero]
       exact Finset.sum_congr rfl fun j _ => by rw [zero_add]
-  · exact ⟨hok, hdi, hnone, hsome⟩
+  · exact ⟨rfl, hok, hdi, hnone, hsome⟩
 
 /-- The pairs collected by `scalars_points`, up to `m`: digits of `ss[j]` and the projective Niels
 form of the point `ops[j] = some P`. -/
@@ -666,8 +717,8 @@ def PairsOK (w : ℕ) (ss : List scalar.Scalar) (ops : List (Option O.E))
     (pointsInst : core.iter.traits.collect.IntoIterator J (Option O.E) IntoIter2)
     (scalars : I) (points : J) : Result (Option O.E) := do
   let t ← scalarsInst.into_iter scalars
-  let scalars1 ← loop (fun ((it1, out1) : IntoIter × alloc.vec.Vec Item) =>
-    collect.collectBody scalarsInst.iteratorInst it1 out1) (t, alloc.vec.Vec.new Item)
+  let scalars1 ← alloc.vec.FromIteratorVec.from_iter
+    (core.iter.traits.collect.IntoIterator.Blanket scalarsInst.iteratorInst) t
   let size := alloc.vec.Vec.len scalars1
   let w ←
     if size < 500#usize
@@ -835,9 +886,7 @@ theorem pippengerMain_spec (hid : O.IdentitySpec) (hadd : O.AddSpec)
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause2_IntoIter) => pointsInst.iteratorInst.Yields it ops ⦄ := hpoints
   step with hscalars' as ⟨it, hit⟩
-  apply spec_bind (collect.collectLoop_spec _ it xs hit (alloc.vec.Vec.new _) (by simpa using hxs))
-  intro vs hvs
-  replace hvs : vs.val = xs := by rw [hvs]; rfl
+  step with collect.fromIter_spec _ it xs hit hxs as ⟨vs, hvs⟩
   apply spec_bind (Pₘ := fun (w : Usize) => 6 ≤ w.val ∧ w.val ≤ 8)
   · split_ifs <;> rw [WP.spec_ok] <;> decide
   intro w hw

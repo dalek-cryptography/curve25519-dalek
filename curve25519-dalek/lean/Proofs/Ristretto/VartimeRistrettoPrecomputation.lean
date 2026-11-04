@@ -88,28 +88,33 @@ set_option linter.style.longLine true
 
 /-- The collecting loop of `optional_mixed_multiscalar_mul` pushes the optional points
 unchanged. -/
-private theorem extended_points_loop_spec {It : Type}
-    (iterInst :
-      core.iter.traits.iterator.Iterator It (Option ristretto.RistrettoPoint.«x86_64-tables»))
+private theorem extended_points_loop_spec {I J K S SI D DI It : Type}
+    (staticInst : core.iter.traits.collect.IntoIterator I S SI)
+    (borrowStatic : core.borrow.Borrow S scalar.Scalar)
+    (dynamicInst : core.iter.traits.collect.IntoIterator J D DI)
+    (borrowDynamic : core.borrow.Borrow D scalar.Scalar)
+    (pointsInst : core.iter.traits.collect.IntoIterator K
+      (Option ristretto.RistrettoPoint.«x86_64-tables») It)
     (it : It) (qops : List (Option ristretto.RistrettoPoint.«x86_64-tables»))
-    (hit : iterInst.Yields it qops)
+    (hit : pointsInst.iteratorInst.Yields it qops)
     (out : alloc.vec.Vec (Option edwards.EdwardsPoint.«x86_64-tables»))
     (hlen : out.length + qops.length ≤ Usize.max) :
-    optional_mixed_multiscalar_mul.extended_points_loop iterInst it out
+    optional_mixed_multiscalar_mul_loop staticInst borrowStatic dynamicInst borrowDynamic
+      pointsInst it out
       ⦃ (r : alloc.vec.Vec (Option edwards.EdwardsPoint.«x86_64-tables»)) =>
         r.val = out.val ++ qops ⦄ := by
   induction hit generalizing out with
   | nil hnext =>
-    unfold optional_mixed_multiscalar_mul.extended_points_loop loop
-      optional_mixed_multiscalar_mul.extended_points_loop.body
+    unfold optional_mixed_multiscalar_mul_loop loop
+      optional_mixed_multiscalar_mul_loop.body
     step with hnext as ⟨q, hq⟩
     obtain ⟨o, it1⟩ := q
     simp only at hq
     subst hq
     simp
   | cons hnext _ ih =>
-    unfold optional_mixed_multiscalar_mul.extended_points_loop loop
-      optional_mixed_multiscalar_mul.extended_points_loop.body
+    unfold optional_mixed_multiscalar_mul_loop loop
+      optional_mixed_multiscalar_mul_loop.body
     step with hnext as ⟨q, ho, hit⟩
     obtain ⟨o, it1⟩ := q
     simp only at ho hit
@@ -171,7 +176,7 @@ theorem optional_mixed_multiscalar_mul_spec
       ⦃ (it : Clause4_IntoIter) => dynamicPointsInst.iteratorInst.Yields it qops ⦄ :=
     hdynamic_points
   step with h3 as ⟨it, hit⟩
-  step with extended_points_loop_spec _ it qops hit (alloc.vec.Vec.new _)
+  step with extended_points_loop_spec _ _ _ _ _ it qops hit (alloc.vec.Vec.new _)
     (by simpa using hqops) as ⟨v, hv⟩
   replace hv : v.val = qops := by rw [hv]; rfl
   step with
@@ -253,28 +258,33 @@ set_option linter.style.longLine true
 
 /-- The collecting loop of `optional_mixed_multiscalar_mul` pushes the optional points
 unchanged. -/
-private theorem extended_points_loop_spec {It : Type}
-    (iterInst :
-      core.iter.traits.iterator.Iterator It (Option ristretto.RistrettoPoint.«i686-tables»))
+private theorem extended_points_loop_spec {I J K S SI D DI It : Type}
+    (staticInst : core.iter.traits.collect.IntoIterator I S SI)
+    (borrowStatic : core.borrow.Borrow S scalar.Scalar)
+    (dynamicInst : core.iter.traits.collect.IntoIterator J D DI)
+    (borrowDynamic : core.borrow.Borrow D scalar.Scalar)
+    (pointsInst : core.iter.traits.collect.IntoIterator K
+      (Option ristretto.RistrettoPoint.«i686-tables») It)
     (it : It) (qops : List (Option ristretto.RistrettoPoint.«i686-tables»))
-    (hit : iterInst.Yields it qops)
+    (hit : pointsInst.iteratorInst.Yields it qops)
     (out : alloc.vec.Vec (Option edwards.EdwardsPoint.«i686-tables»))
     (hlen : out.length + qops.length ≤ Usize.max) :
-    optional_mixed_multiscalar_mul.extended_points_loop iterInst it out
+    optional_mixed_multiscalar_mul_loop staticInst borrowStatic dynamicInst borrowDynamic
+      pointsInst it out
       ⦃ (r : alloc.vec.Vec (Option edwards.EdwardsPoint.«i686-tables»)) =>
         r.val = out.val ++ qops ⦄ := by
   induction hit generalizing out with
   | nil hnext =>
-    unfold optional_mixed_multiscalar_mul.extended_points_loop loop
-      optional_mixed_multiscalar_mul.extended_points_loop.body
+    unfold optional_mixed_multiscalar_mul_loop loop
+      optional_mixed_multiscalar_mul_loop.body
     step with hnext as ⟨q, hq⟩
     obtain ⟨o, it1⟩ := q
     simp only at hq
     subst hq
     simp
   | cons hnext _ ih =>
-    unfold optional_mixed_multiscalar_mul.extended_points_loop loop
-      optional_mixed_multiscalar_mul.extended_points_loop.body
+    unfold optional_mixed_multiscalar_mul_loop loop
+      optional_mixed_multiscalar_mul_loop.body
     step with hnext as ⟨q, ho, hit⟩
     obtain ⟨o, it1⟩ := q
     simp only at ho hit
@@ -336,7 +346,7 @@ theorem optional_mixed_multiscalar_mul_spec
       ⦃ (it : Clause4_IntoIter) => dynamicPointsInst.iteratorInst.Yields it qops ⦄ :=
     hdynamic_points
   step with h3 as ⟨it, hit⟩
-  step with extended_points_loop_spec _ it qops hit (alloc.vec.Vec.new _)
+  step with extended_points_loop_spec _ _ _ _ _ it qops hit (alloc.vec.Vec.new _)
     (by simpa using hqops) as ⟨v, hv⟩
   replace hv : v.val = qops := by rw [hv]; rfl
   step with
@@ -418,28 +428,33 @@ set_option linter.style.longLine true
 
 /-- The collecting loop of `optional_mixed_multiscalar_mul` pushes the optional points
 unchanged. -/
-private theorem extended_points_loop_spec {It : Type}
-    (iterInst :
-      core.iter.traits.iterator.Iterator It (Option ristretto.RistrettoPoint.«x86_64-no-tables»))
+private theorem extended_points_loop_spec {I J K S SI D DI It : Type}
+    (staticInst : core.iter.traits.collect.IntoIterator I S SI)
+    (borrowStatic : core.borrow.Borrow S scalar.Scalar)
+    (dynamicInst : core.iter.traits.collect.IntoIterator J D DI)
+    (borrowDynamic : core.borrow.Borrow D scalar.Scalar)
+    (pointsInst : core.iter.traits.collect.IntoIterator K
+      (Option ristretto.RistrettoPoint.«x86_64-no-tables») It)
     (it : It) (qops : List (Option ristretto.RistrettoPoint.«x86_64-no-tables»))
-    (hit : iterInst.Yields it qops)
+    (hit : pointsInst.iteratorInst.Yields it qops)
     (out : alloc.vec.Vec (Option edwards.EdwardsPoint.«x86_64-no-tables»))
     (hlen : out.length + qops.length ≤ Usize.max) :
-    optional_mixed_multiscalar_mul.extended_points_loop iterInst it out
+    optional_mixed_multiscalar_mul_loop staticInst borrowStatic dynamicInst borrowDynamic
+      pointsInst it out
       ⦃ (r : alloc.vec.Vec (Option edwards.EdwardsPoint.«x86_64-no-tables»)) =>
         r.val = out.val ++ qops ⦄ := by
   induction hit generalizing out with
   | nil hnext =>
-    unfold optional_mixed_multiscalar_mul.extended_points_loop loop
-      optional_mixed_multiscalar_mul.extended_points_loop.body
+    unfold optional_mixed_multiscalar_mul_loop loop
+      optional_mixed_multiscalar_mul_loop.body
     step with hnext as ⟨q, hq⟩
     obtain ⟨o, it1⟩ := q
     simp only at hq
     subst hq
     simp
   | cons hnext _ ih =>
-    unfold optional_mixed_multiscalar_mul.extended_points_loop loop
-      optional_mixed_multiscalar_mul.extended_points_loop.body
+    unfold optional_mixed_multiscalar_mul_loop loop
+      optional_mixed_multiscalar_mul_loop.body
     step with hnext as ⟨q, ho, hit⟩
     obtain ⟨o, it1⟩ := q
     simp only at ho hit
@@ -501,7 +516,7 @@ theorem optional_mixed_multiscalar_mul_spec
       ⦃ (it : Clause4_IntoIter) => dynamicPointsInst.iteratorInst.Yields it qops ⦄ :=
     hdynamic_points
   step with h3 as ⟨it, hit⟩
-  step with extended_points_loop_spec _ it qops hit (alloc.vec.Vec.new _)
+  step with extended_points_loop_spec _ _ _ _ _ it qops hit (alloc.vec.Vec.new _)
     (by simpa using hqops) as ⟨v, hv⟩
   replace hv : v.val = qops := by rw [hv]; rfl
   step with
@@ -583,28 +598,33 @@ set_option linter.style.longLine true
 
 /-- The collecting loop of `optional_mixed_multiscalar_mul` pushes the optional points
 unchanged. -/
-private theorem extended_points_loop_spec {It : Type}
-    (iterInst :
-      core.iter.traits.iterator.Iterator It (Option ristretto.RistrettoPoint.«i686-no-tables»))
+private theorem extended_points_loop_spec {I J K S SI D DI It : Type}
+    (staticInst : core.iter.traits.collect.IntoIterator I S SI)
+    (borrowStatic : core.borrow.Borrow S scalar.Scalar)
+    (dynamicInst : core.iter.traits.collect.IntoIterator J D DI)
+    (borrowDynamic : core.borrow.Borrow D scalar.Scalar)
+    (pointsInst : core.iter.traits.collect.IntoIterator K
+      (Option ristretto.RistrettoPoint.«i686-no-tables») It)
     (it : It) (qops : List (Option ristretto.RistrettoPoint.«i686-no-tables»))
-    (hit : iterInst.Yields it qops)
+    (hit : pointsInst.iteratorInst.Yields it qops)
     (out : alloc.vec.Vec (Option edwards.EdwardsPoint.«i686-no-tables»))
     (hlen : out.length + qops.length ≤ Usize.max) :
-    optional_mixed_multiscalar_mul.extended_points_loop iterInst it out
+    optional_mixed_multiscalar_mul_loop staticInst borrowStatic dynamicInst borrowDynamic
+      pointsInst it out
       ⦃ (r : alloc.vec.Vec (Option edwards.EdwardsPoint.«i686-no-tables»)) =>
         r.val = out.val ++ qops ⦄ := by
   induction hit generalizing out with
   | nil hnext =>
-    unfold optional_mixed_multiscalar_mul.extended_points_loop loop
-      optional_mixed_multiscalar_mul.extended_points_loop.body
+    unfold optional_mixed_multiscalar_mul_loop loop
+      optional_mixed_multiscalar_mul_loop.body
     step with hnext as ⟨q, hq⟩
     obtain ⟨o, it1⟩ := q
     simp only at hq
     subst hq
     simp
   | cons hnext _ ih =>
-    unfold optional_mixed_multiscalar_mul.extended_points_loop loop
-      optional_mixed_multiscalar_mul.extended_points_loop.body
+    unfold optional_mixed_multiscalar_mul_loop loop
+      optional_mixed_multiscalar_mul_loop.body
     step with hnext as ⟨q, ho, hit⟩
     obtain ⟨o, it1⟩ := q
     simp only at ho hit
@@ -666,7 +686,7 @@ theorem optional_mixed_multiscalar_mul_spec
       ⦃ (it : Clause4_IntoIter) => dynamicPointsInst.iteratorInst.Yields it qops ⦄ :=
     hdynamic_points
   step with h3 as ⟨it, hit⟩
-  step with extended_points_loop_spec _ it qops hit (alloc.vec.Vec.new _)
+  step with extended_points_loop_spec _ _ _ _ _ it qops hit (alloc.vec.Vec.new _)
     (by simpa using hqops) as ⟨v, hv⟩
   replace hv : v.val = qops := by rw [hv]; rfl
   step with

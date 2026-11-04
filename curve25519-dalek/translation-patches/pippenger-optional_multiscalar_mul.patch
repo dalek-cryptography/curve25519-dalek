@@ -1,19 +1,19 @@
 Translation patch: <Pippenger as VartimeMultiscalarMul>::optional_multiscalar_mul
 
 Change: scalars are collected first and `size = scalars.len()` replaces `size_hint().0`; the
-scalar/point `zip` becomes a helper; the lazy column iterator + `fold` and the inner loops
-become index loops accumulating `total` (highest column first, as `fold` did).
-Why: Aeneas only models `Iterator::next` (aeneas#1057). Loops over a generic `IntoIterator` don't extract, hence the nested `It: Iterator` helper.
+scalar/point `zip` becomes a helper with an explicit `next` loop; the lazy column iterator + `fold` becomes a reversed
+range loop accumulating `total` (highest column first, as `fold` did).
+Why: Aeneas only models `Iterator::next` (aeneas#1057).
 Behaviour: same result, not identical: the window width uses the exact length (equal for exact-size
 inputs; any width gives the same result); scalars are read before points; an unbounded scalar
-iterator with finite points no longer terminates (unreachable: the only caller requires equal
-exact-size inputs).
+iterator with finite points no longer terminates (with edwards-optional_multiscalar_mul.patch
+applied, the caller collects both inputs and checks their actual lengths first).
 
 diff --git a/curve25519-dalek/src/backend/serial/scalar_mul/pippenger.rs b/curve25519-dalek/src/backend/serial/scalar_mul/pippenger.rs
 index a5469b8..5bdd137 100644
 --- a/curve25519-dalek/src/backend/serial/scalar_mul/pippenger.rs
 +++ b/curve25519-dalek/src/backend/serial/scalar_mul/pippenger.rs
-@@ -67,97 +67,139 @@ impl VartimeMultiscalarMul for Pippenger {
+@@ -67,97 +67,119 @@ impl VartimeMultiscalarMul for Pippenger {
      fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
      where
          I: IntoIterator,
@@ -21,18 +21,7 @@ index a5469b8..5bdd137 100644
          J: IntoIterator<Item = Option<EdwardsPoint>>,
      {
          use crate::traits::Identity;
- 
--        let mut scalars = scalars.into_iter();
--        let size = scalars.by_ref().size_hint().0;
 +        use crate::backend::serial::curve_models::ProjectiveNielsPoint;
-+
-+        fn collect<It: Iterator>(mut it: It) -> Vec<It::Item> {
-+            let mut out = Vec::new();
-+            while let Some(x) = it.next() {
-+                out.push(x);
-+            }
-+            out
-+        }
 +
 +        fn scalars_points<S, It>(
 +            scalars: &[S],
@@ -56,8 +45,10 @@ index a5469b8..5bdd137 100644
 +            }
 +            Some(out)
 +        }
-+
-+        let scalars = collect(scalars.into_iter());
+ 
+-        let mut scalars = scalars.into_iter();
+-        let size = scalars.by_ref().size_hint().0;
++        let scalars = Vec::from_iter(scalars.into_iter());
 +        let size = scalars.len();
  
          // Digit width in bits. As digit width grows,
@@ -97,36 +88,26 @@ index a5469b8..5bdd137 100644
 -        let mut buckets: Vec<_> = (0..buckets_count)
 -            .map(|_| EdwardsPoint::identity())
 -            .collect();
-+        let mut buckets: Vec<EdwardsPoint> = Vec::new();
-+        let mut b = 0;
-+        while b < buckets_count {
++        let mut buckets = vec![];
++        for _ in 0..buckets_count {
 +            buckets.push(EdwardsPoint::identity());
-+            b += 1;
 +        }
-+
-+        let mut total: Option<EdwardsPoint> = None;
-+        let mut digit_index = digits_count;
-+        while digit_index > 0 {
-+            digit_index -= 1;
  
 -        let mut columns = (0..digits_count).rev().map(|digit_index| {
++        let mut total: Option<EdwardsPoint> = None;
++        for digit_index in (0..digits_count).rev() {
              // Clear the buckets when processing another digit.
 -            for bucket in &mut buckets {
--                *bucket = EdwardsPoint::identity();
-+            let mut b = 0;
-+            while b < buckets_count {
-+                buckets[b] = EdwardsPoint::identity();
-+                b += 1;
++            for b in 0..buckets_count {
++                let bucket = &mut buckets[b];
+                 *bucket = EdwardsPoint::identity();
              }
  
              // Iterate over pairs of (point, scalar)
              // and add/sub the point to the corresponding bucket.
              // Note: if we add support for precomputed lookup tables,
              // we'll be adding/subtracting point premultiplied by `digits[i]` to buckets[0].
--            for (digits, pt) in scalars_points.iter() {
-+            let mut si = 0;
-+            while si < scalars_points.len() {
-+                let (digits, pt) = &scalars_points[si];
+             for (digits, pt) in scalars_points.iter() {
                  // Widen digit so that we don't run into edge cases when w=8.
                  let digit = digits[digit_index] as i16;
                  match digit.cmp(&0) {
@@ -140,7 +121,6 @@ index a5469b8..5bdd137 100644
                      }
                      Ordering::Equal => {}
                  }
-+                si += 1;
              }
  
              // Add the buckets applying the multiplication factor to each bucket.
@@ -153,10 +133,7 @@ index a5469b8..5bdd137 100644
              //   C B A   Sum = C + (C+B) + (C+B+A)
              let mut buckets_intermediate_sum = buckets[buckets_count - 1];
              let mut buckets_sum = buckets[buckets_count - 1];
--            for i in (0..(buckets_count - 1)).rev() {
-+            let mut i = buckets_count - 1;
-+            while i > 0 {
-+                i -= 1;
+             for i in (0..(buckets_count - 1)).rev() {
                  buckets_intermediate_sum += buckets[i];
                  buckets_sum += buckets_intermediate_sum;
              }

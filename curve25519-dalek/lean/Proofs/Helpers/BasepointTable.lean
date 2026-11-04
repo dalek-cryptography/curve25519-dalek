@@ -109,14 +109,21 @@ open «Shared0EdwardsPointi686-tables».Insts
 open «CoreOpsArithAddSharedAAffineNielsPointi686-tablesCompletedPointi686-tables»
   (add_spec_point)
 
-/-- The loop body of `BasepointTable::mul_base` (both loops): for `i < adds`, add the digit
-`a[i]` selected from row `i / 2`, then `i := i + 2`. -/
-@[expose] def mulBaseLoopBody (adds : Usize)
+/-- The loop body of `BasepointTable::mul_base` (both loops): take the next index from the
+`step_by(2)` iterator and add the digit `a[i]` selected from row `i / 2`. -/
+@[expose] def mulBaseLoopBody (_adds : Usize)
     (sel : Tab → I8 → Result AffineNielsPoint.«i686-tables») (a : Array I8 64#usize)
-    (tables : Array Tab 32#usize) (P : EdwardsPoint.«i686-tables») (i : Usize) :
-    Result (ControlFlow (EdwardsPoint.«i686-tables» × Usize) EdwardsPoint.«i686-tables») := do
-  if i < adds
-  then
+    (tables : Array Tab 32#usize)
+    (iter : core.iter.adapters.step_by.StepBy (core.ops.range.Range Usize))
+    (P : EdwardsPoint.«i686-tables») :
+    Result (ControlFlow
+      ((core.iter.adapters.step_by.StepBy (core.ops.range.Range Usize)) ×
+        EdwardsPoint.«i686-tables») EdwardsPoint.«i686-tables») := do
+  let (o, iter1) ← core.iter.adapters.step_by.IteratorStepBy.next
+    (core.iter.traits.iterator.IteratorRange core.iter.range.StepUsize) iter
+  match o with
+  | none => ok (done P)
+  | some i =>
     let i1 ← i / 2#usize
     let lt ← Array.index_usize tables i1
     let i2 ← Array.index_usize a i
@@ -124,9 +131,7 @@ open «CoreOpsArithAddSharedAAffineNielsPointi686-tablesCompletedPointi686-table
     let cp ←
       «CoreOpsArithAddSharedAAffineNielsPointi686-tablesCompletedPointi686-tables».add P anp
     let P1 ← «CompletedPointi686-tables».as_extended cp
-    let i3 ← i + 2#usize
-    ok (cont (P1, i3))
-  else ok (done P)
+    ok (cont (iter1, P1))
 
 private theorem zsmul_nsmul (x : ℤ) (n : ℕ) (B : curve25519.edwards.Point) :
     x • n • B = (x * n) • B := by
@@ -156,40 +161,68 @@ theorem mulBaseLoop_spec (adds : Usize) (hadds : adds.val ≤ 64)
     (hsel : ∀ i < adds.val, sel tables[i / 2]! a[i]! ⦃ (q : AffineNielsPoint.«i686-tables») =>
       q.OnCurve ∧ q.toPoint = a[i]!.val • 2 ^ (2 * w * (i / 2)) • B ∧ q.LimbsLt 27 ⦄)
     (hz : ∀ j : ℕ, j < 64 → adds.val ≤ j → a[j]!.val = 0) (i0 : Usize) (hi0 : i0.val < 2)
+    (hi0adds : i0.val ≤ adds.val)
     (P : EdwardsPoint.«i686-tables») (hP : P.LimbsLt 26) (hon : P.OnCurve) :
-    loop (fun ((P1, i1) : EdwardsPoint.«i686-tables» × Usize) =>
-        mulBaseLoopBody adds sel a tables P1 i1) (P, i0)
+    loop (fun ((it, P1) :
+        (core.iter.adapters.step_by.StepBy (core.ops.range.Range Usize)) ×
+          EdwardsPoint.«i686-tables») => mulBaseLoopBody adds sel a tables it P1)
+      ({ iter := { start := i0, «end» := adds }, step_by := 2#usize }, P)
       ⦃ (r : EdwardsPoint.«i686-tables») => r.OnCurve ∧
         r.toPoint = P.toPoint +
           (∑ k ∈ Finset.range 32, a[i0.val + 2 * k]!.val * 2 ^ (2 * w * k)) • B ∧
         r.LimbsLt 26 ⦄ := by
-  apply loop.spec_decr_nat (measure := fun (_, i) => adds.val + 2 - i.val)
-    (inv := fun (Q, i) => i.val % 2 = i0.val ∧ i0.val ≤ i.val ∧ i.val ≤ adds.val + 1 ∧
-      Q.OnCurve ∧ Q.LimbsLt 26 ∧ Q.toPoint = P.toPoint +
-        (∑ k ∈ Finset.range (i.val / 2), a[i0.val + 2 * k]!.val * 2 ^ (2 * w * k)) • B)
-  · rintro ⟨Q, i⟩ ⟨hpar, hge, hle, hQon, hQb, hQp⟩
+  apply loop.spec_decr_nat (measure := fun (it, _) => adds.val - it.iter.start.val)
+    (inv := fun (it, Q) => it.step_by = 2#usize ∧ it.iter.end = adds ∧
+      ∃ m, m ≤ 32 ∧ it.iter.start.val = min (i0.val + 2 * m) adds.val ∧
+        Q.OnCurve ∧ Q.LimbsLt 26 ∧ Q.toPoint = P.toPoint +
+          (∑ k ∈ Finset.range m, a[i0.val + 2 * k]!.val * 2 ^ (2 * w * k)) • B)
+  · rintro ⟨it, Q⟩ ⟨hstep, hend, m, hm, hidx, hQon, hQb, hQp⟩
     unfold mulBaseLoopBody
-    by_cases hlt : i < adds
-    · simp only [hlt, ite_true]
-      have hi2 : i0.val + 2 * (i.val / 2) = i.val := by omega
+    step with core.iter.adapters.step_by.IteratorStepBy.next_Range_Usize_spec
+      as ⟨o, it1, hnext, hend1, hstep1⟩
+    by_cases hlt : it.iter.start.val < it.iter.end.val
+    · rw [ite_eq_left hlt] at hnext
+      obtain ⟨ho, hstart1⟩ := hnext
+      subst ho
+      let i := it.iter.start
+      have hi : i.val = i0.val + 2 * m := by
+        dsimp only [i]
+        rw [hend] at hlt
+        omega
+      have hilt : i.val < adds.val := by simpa [i, hend] using hlt
+      have hi2 : i0.val + 2 * m = i.val := hi.symm
       step as ⟨i1, hi1⟩
       step as ⟨lt, hlt'⟩
       step as ⟨d, hd⟩
-      have hsel' := hsel i.val (by scalar_tac)
+      have hsel' := hsel i.val hilt
       rw [← hi1, ← hlt', ← hd] at hsel'
       step with hsel' as ⟨q, hqon, hq, hqb⟩
       step with add_spec_point Q q hQb hqb hQon hqon as ⟨c, hcon, hc, hcb⟩
       step with «CompletedPointi686-tables».as_extended_spec_point as ⟨Q1, hQ1on, hQ1, hQ1b⟩
-      step as ⟨i3, hi3⟩
-      refine ⟨by scalar_tac, by scalar_tac, by scalar_tac, hQ1on, hQ1b, ?_, by scalar_tac⟩
-      rw [hQ1, hc, hQp, hq, zsmul_nsmul, show i3.val / 2 = i.val / 2 + 1 by scalar_tac,
-        Finset.sum_range_succ, hi2, add_smul, add_assoc, hd, hi1, Nat.cast_pow, Nat.cast_ofNat]
-    · simp only [hlt, ite_false, WP.spec_ok]
+      refine ⟨hstep1.trans hstep, hend1.trans hend, ⟨m + 1, by omega, ?_,
+        hQ1on, hQ1b, ?_⟩, ?_⟩
+      · rw [hstart1, hstep, hend]
+        change min (it.iter.start.val + 2) adds.val = min (i0.val + 2 * (m + 1)) adds.val
+        congr 1
+        change i.val + 2 = i0.val + 2 * (m + 1)
+        omega
+      · rw [hQ1, hc, hQp, hq, zsmul_nsmul, Finset.sum_range_succ,
+          hi2, add_smul, add_assoc, hd, hi1,
+          show i.val / 2 = m by omega, Nat.cast_pow, Nat.cast_ofNat]
+      · rw [hstart1, hstep, hend]
+        change adds.val - min (it.iter.start.val + 2) adds.val < adds.val - it.iter.start.val
+        rw [hend] at hlt
+        omega
+    · rw [ite_eq_right hlt] at hnext
+      obtain ⟨ho, _⟩ := hnext
+      subst ho
+      simp only [WP.spec_ok]
       refine ⟨hQon, ?_, hQb⟩
-      rw [hQp, sum_range_eq_of_zero a i0.val (i.val / 2) w adds.val (by scalar_tac)
-        (by scalar_tac) hi0 hz]
-  · refine ⟨Nat.mod_eq_of_lt hi0, le_refl _, by scalar_tac, hon, hP, ?_⟩
-    rw [show i0.val / 2 = 0 by omega, Finset.sum_range_zero, zero_smul, add_zero]
+      rw [hQp, sum_range_eq_of_zero a i0.val m w adds.val (by rw [hend] at hlt; omega)
+        hm hi0 hz]
+  · refine ⟨rfl, rfl, 0, by omega, ?_, hon, hP, ?_⟩
+    · simp only [Nat.mul_zero, Nat.add_zero, Nat.min_eq_left hi0adds]
+    · rw [Finset.sum_range_zero, zero_smul, add_zero]
 
 end i686
 
@@ -269,14 +302,21 @@ open «Shared0EdwardsPointx86_64-tables».Insts
 open «CoreOpsArithAddSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables»
   (add_spec_point)
 
-/-- The loop body of `BasepointTable::mul_base` (both loops): for `i < adds`, add the digit
-`a[i]` selected from row `i / 2`, then `i := i + 2`. -/
-@[expose] def mulBaseLoopBody (adds : Usize)
+/-- The loop body of `BasepointTable::mul_base` (both loops): take the next index from the
+`step_by(2)` iterator and add the digit `a[i]` selected from row `i / 2`. -/
+@[expose] def mulBaseLoopBody (_adds : Usize)
     (sel : Tab → I8 → Result AffineNielsPoint.«x86_64-tables») (a : Array I8 64#usize)
-    (tables : Array Tab 32#usize) (P : EdwardsPoint.«x86_64-tables») (i : Usize) :
-    Result (ControlFlow (EdwardsPoint.«x86_64-tables» × Usize) EdwardsPoint.«x86_64-tables») := do
-  if i < adds
-  then
+    (tables : Array Tab 32#usize)
+    (iter : core.iter.adapters.step_by.StepBy (core.ops.range.Range Usize))
+    (P : EdwardsPoint.«x86_64-tables») :
+    Result (ControlFlow
+      ((core.iter.adapters.step_by.StepBy (core.ops.range.Range Usize)) ×
+        EdwardsPoint.«x86_64-tables») EdwardsPoint.«x86_64-tables») := do
+  let (o, iter1) ← core.iter.adapters.step_by.IteratorStepBy.next
+    (core.iter.traits.iterator.IteratorRange core.iter.range.StepUsize) iter
+  match o with
+  | none => ok (done P)
+  | some i =>
     let i1 ← i / 2#usize
     let lt ← Array.index_usize tables i1
     let i2 ← Array.index_usize a i
@@ -284,9 +324,7 @@ open «CoreOpsArithAddSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-t
     let cp ←
       «CoreOpsArithAddSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables».add P anp
     let P1 ← «CompletedPointx86_64-tables».as_extended cp
-    let i3 ← i + 2#usize
-    ok (cont (P1, i3))
-  else ok (done P)
+    ok (cont (iter1, P1))
 
 private theorem zsmul_nsmul (x : ℤ) (n : ℕ) (B : curve25519.edwards.Point) :
     x • n • B = (x * n) • B := by
@@ -316,40 +354,68 @@ theorem mulBaseLoop_spec (adds : Usize) (hadds : adds.val ≤ 64)
     (hsel : ∀ i < adds.val, sel tables[i / 2]! a[i]! ⦃ (q : AffineNielsPoint.«x86_64-tables») =>
       q.OnCurve ∧ q.toPoint = a[i]!.val • 2 ^ (2 * w * (i / 2)) • B ∧ q.LimbsLt 54 ⦄)
     (hz : ∀ j : ℕ, j < 64 → adds.val ≤ j → a[j]!.val = 0) (i0 : Usize) (hi0 : i0.val < 2)
+    (hi0adds : i0.val ≤ adds.val)
     (P : EdwardsPoint.«x86_64-tables») (hP : P.LimbsLt 52) (hon : P.OnCurve) :
-    loop (fun ((P1, i1) : EdwardsPoint.«x86_64-tables» × Usize) =>
-        mulBaseLoopBody adds sel a tables P1 i1) (P, i0)
+    loop (fun ((it, P1) :
+        (core.iter.adapters.step_by.StepBy (core.ops.range.Range Usize)) ×
+          EdwardsPoint.«x86_64-tables») => mulBaseLoopBody adds sel a tables it P1)
+      ({ iter := { start := i0, «end» := adds }, step_by := 2#usize }, P)
       ⦃ (r : EdwardsPoint.«x86_64-tables») => r.OnCurve ∧
         r.toPoint = P.toPoint +
           (∑ k ∈ Finset.range 32, a[i0.val + 2 * k]!.val * 2 ^ (2 * w * k)) • B ∧
         r.LimbsLt 52 ⦄ := by
-  apply loop.spec_decr_nat (measure := fun (_, i) => adds.val + 2 - i.val)
-    (inv := fun (Q, i) => i.val % 2 = i0.val ∧ i0.val ≤ i.val ∧ i.val ≤ adds.val + 1 ∧
-      Q.OnCurve ∧ Q.LimbsLt 52 ∧ Q.toPoint = P.toPoint +
-        (∑ k ∈ Finset.range (i.val / 2), a[i0.val + 2 * k]!.val * 2 ^ (2 * w * k)) • B)
-  · rintro ⟨Q, i⟩ ⟨hpar, hge, hle, hQon, hQb, hQp⟩
+  apply loop.spec_decr_nat (measure := fun (it, _) => adds.val - it.iter.start.val)
+    (inv := fun (it, Q) => it.step_by = 2#usize ∧ it.iter.end = adds ∧
+      ∃ m, m ≤ 32 ∧ it.iter.start.val = min (i0.val + 2 * m) adds.val ∧
+        Q.OnCurve ∧ Q.LimbsLt 52 ∧ Q.toPoint = P.toPoint +
+          (∑ k ∈ Finset.range m, a[i0.val + 2 * k]!.val * 2 ^ (2 * w * k)) • B)
+  · rintro ⟨it, Q⟩ ⟨hstep, hend, m, hm, hidx, hQon, hQb, hQp⟩
     unfold mulBaseLoopBody
-    by_cases hlt : i < adds
-    · simp only [hlt, ite_true]
-      have hi2 : i0.val + 2 * (i.val / 2) = i.val := by omega
+    step with core.iter.adapters.step_by.IteratorStepBy.next_Range_Usize_spec
+      as ⟨o, it1, hnext, hend1, hstep1⟩
+    by_cases hlt : it.iter.start.val < it.iter.end.val
+    · rw [ite_eq_left hlt] at hnext
+      obtain ⟨ho, hstart1⟩ := hnext
+      subst ho
+      let i := it.iter.start
+      have hi : i.val = i0.val + 2 * m := by
+        dsimp only [i]
+        rw [hend] at hlt
+        omega
+      have hilt : i.val < adds.val := by simpa [i, hend] using hlt
+      have hi2 : i0.val + 2 * m = i.val := hi.symm
       step as ⟨i1, hi1⟩
       step as ⟨lt, hlt'⟩
       step as ⟨d, hd⟩
-      have hsel' := hsel i.val (by scalar_tac)
+      have hsel' := hsel i.val hilt
       rw [← hi1, ← hlt', ← hd] at hsel'
       step with hsel' as ⟨q, hqon, hq, hqb⟩
       step with add_spec_point Q q hQb hqb hQon hqon as ⟨c, hcon, hc, hcb⟩
       step with «CompletedPointx86_64-tables».as_extended_spec_point as ⟨Q1, hQ1on, hQ1, hQ1b⟩
-      step as ⟨i3, hi3⟩
-      refine ⟨by scalar_tac, by scalar_tac, by scalar_tac, hQ1on, hQ1b, ?_, by scalar_tac⟩
-      rw [hQ1, hc, hQp, hq, zsmul_nsmul, show i3.val / 2 = i.val / 2 + 1 by scalar_tac,
-        Finset.sum_range_succ, hi2, add_smul, add_assoc, hd, hi1, Nat.cast_pow, Nat.cast_ofNat]
-    · simp only [hlt, ite_false, WP.spec_ok]
+      refine ⟨hstep1.trans hstep, hend1.trans hend, ⟨m + 1, by omega, ?_,
+        hQ1on, hQ1b, ?_⟩, ?_⟩
+      · rw [hstart1, hstep, hend]
+        change min (it.iter.start.val + 2) adds.val = min (i0.val + 2 * (m + 1)) adds.val
+        congr 1
+        change i.val + 2 = i0.val + 2 * (m + 1)
+        omega
+      · rw [hQ1, hc, hQp, hq, zsmul_nsmul, Finset.sum_range_succ,
+          hi2, add_smul, add_assoc, hd, hi1,
+          show i.val / 2 = m by omega, Nat.cast_pow, Nat.cast_ofNat]
+      · rw [hstart1, hstep, hend]
+        change adds.val - min (it.iter.start.val + 2) adds.val < adds.val - it.iter.start.val
+        rw [hend] at hlt
+        omega
+    · rw [ite_eq_right hlt] at hnext
+      obtain ⟨ho, _⟩ := hnext
+      subst ho
+      simp only [WP.spec_ok]
       refine ⟨hQon, ?_, hQb⟩
-      rw [hQp, sum_range_eq_of_zero a i0.val (i.val / 2) w adds.val (by scalar_tac)
-        (by scalar_tac) hi0 hz]
-  · refine ⟨Nat.mod_eq_of_lt hi0, le_refl _, by scalar_tac, hon, hP, ?_⟩
-    rw [show i0.val / 2 = 0 by omega, Finset.sum_range_zero, zero_smul, add_zero]
+      rw [hQp, sum_range_eq_of_zero a i0.val m w adds.val (by rw [hend] at hlt; omega)
+        hm hi0 hz]
+  · refine ⟨rfl, rfl, 0, by omega, ?_, hon, hP, ?_⟩
+    · simp only [Nat.mul_zero, Nat.add_zero, Nat.min_eq_left hi0adds]
+    · rw [Finset.sum_range_zero, zero_smul, add_zero]
 
 private theorem sum_range_two_mul (f : ℕ → ℤ) (n : ℕ) :
     ∑ i ∈ Finset.range (2 * n), f i = ∑ k ∈ Finset.range n, (f (2 * k) + f (1 + 2 * k)) := by

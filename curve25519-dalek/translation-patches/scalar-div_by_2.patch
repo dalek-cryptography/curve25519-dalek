@@ -1,0 +1,31 @@
+Translation patch: Scalar::div_by_2
+
+Change: rename local `scalar` to `unpacked`.
+Why: a variable named `scalar` clashes with the `scalar` module in Lean (aeneas#1098).
+Behaviour: identical.
+
+diff --git a/curve25519-dalek/src/scalar.rs b/curve25519-dalek/src/scalar.rs
+index c417780..2d96dfe 100644
+--- a/curve25519-dalek/src/scalar.rs
++++ b/curve25519-dalek/src/scalar.rs
+@@ -859,16 +859,16 @@ fn invert_batch_internal(inputs: &mut [Scalar], scratch: &mut [UnpackedScalar])
+     /// Compute `b` such that `b + b = a mod modulus`.
+     pub fn div_by_2(&self) -> Self {
+         // We are looking for such `b` that `b + b = a mod modulus`.
+         // Two possibilities:
+         // - if `a` is even, we can just divide by 2;
+         // - if `a` is odd, we divide `(a + modulus)` by 2.
+         let is_odd = Choice::from(self.as_bytes()[0] & 1);
+-        let mut scalar = self.unpack();
+-        scalar.conditional_add_l(is_odd);
++        let mut unpacked = self.unpack();
++        unpacked.conditional_add_l(is_odd);
+ 
+-        let carry = scalar.shr1_assign();
++        let carry = unpacked.shr1_assign();
+         debug_assert_eq!(carry, 0);
+ 
+-        scalar.pack()
++        unpacked.pack()
+     }
+ 

@@ -9,3 +9,11 @@ build*.txt
 *.bak
 
 *.s
+
+# Charon / Aeneas / Lean verification tooling.
+.aeneas/
+.lake/
+.llbc/
+FunsExternal_Template.lean
+TypesExternal_Template.lean
+

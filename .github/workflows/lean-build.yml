@@ -1,0 +1,135 @@
+name: Lean build
+
+# Build all Lean libraries and run the linter.
+
+on:
+  push:
+    branches: [ '**' ]
+    paths: &paths
+      - 'curve25519-dalek/lean/**'
+      - 'Curve25519/**'
+      - 'Curve25519.lean'
+      - 'Curve25519Fast/**'
+      - 'Curve25519Fast.lean'
+      - 'Curve25519Test/**'
+      - 'Curve25519Test.lean'
+      - 'Subtle/**'
+      - 'Subtle.lean'
+      - 'Zeroize/**'
+      - 'Zeroize.lean'
+      - 'lakefile.toml'
+      - 'lake-manifest.json'
+      - 'lean-toolchain'
+      - '.github/workflows/lean-build.yml'
+  pull_request:
+    branches: [ '**' ]
+    paths: *paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ELAN_VERSION: v4.2.4
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      # elan at a pinned release
+      - name: Install elan
+        run: |
+          curl -sSfL -o elan.tar.gz \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VERSION}/elan-x86_64-unknown-linux-gnu.tar.gz"
+          tar xzf elan.tar.gz
+          ./elan-init -y --default-toolchain none
+          rm elan-init elan.tar.gz
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      # Cache: project build, and the Aeneas and EllipticCurve packages (built here). Mathlib and its
+      # dependencies come from Mathlib's cache.
+      - name: Restore build cache
+        id: cache
+        uses: actions/cache/restore@v6.1.0
+        with:
+          path: &cache-paths |
+            .lake/build
+            .lake/packages/aeneas
+            .lake/packages/EllipticCurve
+          key: &cache-key lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-${{ github.ref_name }}-
+            lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-
+            lean-build-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Mathlib cache
+        run: lake exe cache get
+
+      # Not strict: Lake logs warnings.
+      - name: Aeneas
+        run: lake build Aeneas
+
+      # Strict: warnings are errors.
+      - name: Build
+        id: build
+        run: lake build --wfail
+
+      # Not a default target. Rebuilt only when it changes (about 2.5 min, mostly RFC 7748's
+      # 1,000,000-iteration test, run natively by `native_decide`).
+      - name: Build tests
+        run: lake build --wfail Curve25519Test
+
+      # Saved even when the build fails: Lake rebuilds only what changed.
+      - name: Save build cache
+        if: ${{ !cancelled() && steps.cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6.1.0
+        with:
+          path: *cache-paths
+          key: *cache-key
+
+      # Keep only the newest build cache of this branch or pull request
+      - name: Delete superseded build caches
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEY: lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-${{ github.ref_name }}-${{ github.sha }}
+        run: |
+          gh cache list --ref "$GITHUB_REF" --key lean-build- --limit 100 --json id,key \
+            --jq 'if any(.[]; .key == env.KEY) then .[] | select(.key != env.KEY) | .id else empty end' |
+            xargs -r -n1 gh cache delete
+
+      - name: Lint Subtle
+        if: ${{ !cancelled() }}
+        run: lake exe runLinter Subtle
+      - name: Lint Zeroize
+        if: ${{ !cancelled() }}
+        run: lake exe runLinter Zeroize
+      - name: Lint Curve25519
+        if: ${{ !cancelled() }}
+        run: lake exe runLinter Curve25519
+      - name: Lint Defs
+        if: ${{ !cancelled() }}
+        run: lake exe runLinter Defs
+      - name: Lint Specs
+        if: ${{ !cancelled() }}
+        run: lake exe runLinter Specs
+      - name: Lint Proofs
+        if: ${{ !cancelled() }}
+        run: lake exe runLinter Proofs
+      - name: Lint Curve25519Fast
+        if: ${{ !cancelled() }}
+        run: lake exe runLinter Curve25519Fast
+      - name: Lint Curve25519Test
+        if: ${{ !cancelled() }}
+        run: lake exe runLinter Curve25519Test

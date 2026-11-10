@@ -1,0 +1,118 @@
+Translation patch: <Straus as MultiscalarMul>::multiscalar_mul
+
+Change: `map`/`collect` become `for` loops; the `zip` becomes a range loop to the shorter length.
+Why: Aeneas only models `Iterator::next` (aeneas#1057).
+Behaviour: identical. Non-functional: the digits `Vec` grows by `push`, so freed buffers holding secret digits are not zeroized.
+Relies on: `as_radix_16` returns `[i8; 64]`.
+
+diff --git a/curve25519-dalek/src/backend/serial/scalar_mul/straus.rs b/curve25519-dalek/src/backend/serial/scalar_mul/straus.rs
+index a20e393..3da961d 100644
+--- a/curve25519-dalek/src/backend/serial/scalar_mul/straus.rs
++++ b/curve25519-dalek/src/backend/serial/scalar_mul/straus.rs
+@@ -52,94 +52,96 @@ impl MultiscalarMul for Straus {
+     /// Constant-time Straus using a fixed window of size \\(4\\).
+     ///
+     /// Our goal is to compute
+     /// \\[
+     /// Q = s_1 P_1 + \cdots + s_n P_n.
+     /// \\]
+     ///
+     /// For each point \\( P_i \\), precompute a lookup table of
+     /// \\[
+     /// P_i, 2P_i, 3P_i, 4P_i, 5P_i, 6P_i, 7P_i, 8P_i.
+     /// \\]
+     ///
+     /// For each scalar \\( s_i \\), compute its radix-\\(2^4\\)
+     /// signed digits \\( s_{i,j} \\), i.e.,
+     /// \\[
+     ///    s_i = s_{i,0} + s_{i,1} 16^1 + ... + s_{i,63} 16^{63},
+     /// \\]
+     /// with \\( -8 \leq s_{i,j} < 8 \\).  Since \\( 0 \leq |s_{i,j}|
+     /// \leq 8 \\), we can retrieve \\( s_{i,j} P_i \\) from the
+     /// lookup table with a conditional negation: using signed
+     /// digits halves the required table size.
+     ///
+     /// Then as in the single-base fixed window case, we have
+     /// \\[
+     /// \begin{aligned}
+     /// s_i P_i &= P_i (s_{i,0} +     s_{i,1} 16^1 + \cdots +     s_{i,63} 16^{63})   \\\\
+     /// s_i P_i &= P_i s_{i,0} + P_i s_{i,1} 16^1 + \cdots + P_i s_{i,63} 16^{63}     \\\\
+     /// s_i P_i &= P_i s_{i,0} + 16(P_i s_{i,1} + 16( \cdots +16P_i s_{i,63})\cdots )
+     /// \end{aligned}
+     /// \\]
+     /// so each \\( s_i P_i \\) can be computed by alternately adding
+     /// a precomputed multiple \\( P_i s_{i,j} \\) of \\( P_i \\) and
+     /// repeatedly doubling.
+     ///
+     /// Now consider the two-dimensional sum
+     /// \\[
+     /// \begin{aligned}
+     /// s\_1 P\_1 &=& P\_1 s\_{1,0} &+& 16 (P\_1 s\_{1,1} &+& 16 ( \cdots &+& 16 P\_1 s\_{1,63}&) \cdots ) \\\\
+     ///     +     & &      +        & &      +            & &             & &     +            &           \\\\
+     /// s\_2 P\_2 &=& P\_2 s\_{2,0} &+& 16 (P\_2 s\_{2,1} &+& 16 ( \cdots &+& 16 P\_2 s\_{2,63}&) \cdots ) \\\\
+     ///     +     & &      +        & &      +            & &             & &     +            &           \\\\
+     /// \vdots    & &  \vdots       & &   \vdots          & &             & &  \vdots          &           \\\\
+     ///     +     & &      +        & &      +            & &             & &     +            &           \\\\
+     /// s\_n P\_n &=& P\_n s\_{n,0} &+& 16 (P\_n s\_{n,1} &+& 16 ( \cdots &+& 16 P\_n s\_{n,63}&) \cdots )
+     /// \end{aligned}
+     /// \\]
+     /// The sum of the left-hand column is the result \\( Q \\); by
+     /// computing the two-dimensional sum on the right column-wise,
+     /// top-to-bottom, then right-to-left, we need to multiply by \\(
+     /// 16\\) only once per column, sharing the doublings across all
+     /// of the input points.
+     fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+     where
+         I: IntoIterator,
+         I::Item: Borrow<Scalar>,
+         J: IntoIterator,
+         J::Item: Borrow<EdwardsPoint>,
+     {
+         use crate::backend::serial::curve_models::ProjectiveNielsPoint;
+         use crate::traits::Identity;
+         use crate::window::LookupTable;
+ 
+-        let lookup_tables: Vec<_> = points
+-            .into_iter()
+-            .map(|point| LookupTable::<ProjectiveNielsPoint>::from(point.borrow()))
+-            .collect();
++        let mut lookup_tables = vec![];
++        for point in points {
++            lookup_tables.push(LookupTable::<ProjectiveNielsPoint>::from(point.borrow()));
++        }
+ 
+         // This puts the scalar digits into a heap-allocated Vec.
+         // To ensure that these are erased, pass ownership of the Vec into a
+         // Zeroizing wrapper.
+         #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
+-        let mut scalar_digits: Vec<_> = scalars
+-            .into_iter()
+-            .map(|s| s.borrow().as_radix_16())
+-            .collect();
++        let mut scalar_digits = vec![];
++        for s in scalars {
++            scalar_digits.push(s.borrow().as_radix_16());
++        }
+ 
+         let mut Q = EdwardsPoint::identity();
+         for j in (0..64).rev() {
+             Q = Q.mul_by_pow_2(4);
+-            let it = scalar_digits.iter().zip(lookup_tables.iter());
++            let n = scalar_digits.len().min(lookup_tables.len());
+-            for (s_i, lookup_table_i) in it {
++            for i in 0..n {
++                let s_i = &scalar_digits[i];
++                let lookup_table_i = &lookup_tables[i];
+                 // R_i = s_{i,j} * P_i
+                 let R_i = lookup_table_i.select(s_i[j]);
+                 // Q = Q + R_i
+                 Q = (&Q + &R_i).as_extended();
+             }
+         }
+ 
+         #[cfg(feature = "zeroize")]
+         zeroize::Zeroize::zeroize(&mut scalar_digits);
+ 
+         Q
+     }
+ }

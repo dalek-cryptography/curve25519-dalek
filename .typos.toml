@@ -2,7 +2,8 @@
 extend-exclude = [
     ".git/",
     "*.svg",
-    "TESTVECTORS"
+    "TESTVECTORS",
+    "*.lean",
 ]
 
 [default]
@@ -17,3 +18,4 @@ extend-ignore-re = [
 "Ono" = "Ono" # Surname
 "Tung" = "Tung" # Name
 "Monts" = "Monts" # Abbreviation for Montgomery
+"Thm" = "Thm" # Abbreviation for theorem

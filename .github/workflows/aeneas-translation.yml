@@ -1,0 +1,73 @@
+name: Aeneas translation
+
+# Re-run the Charon + Aeneas translation and check that the committed Lean files are current.
+
+on:
+  push:
+    branches: [ '**' ]
+    paths: &paths
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'curve25519-dalek/Cargo.toml'
+      - 'curve25519-dalek/build.rs'
+      - 'curve25519-dalek/src/**'
+      - 'curve25519-dalek/translation-patches/**'
+      - 'curve25519-dalek/lean/Curve25519Dalek/**'
+      - 'curve25519-dalek/lean/translation.json'
+      - 'scripts/aeneas-*.sh'
+      - 'lakefile.toml'
+      - 'lean-toolchain'
+      - '.github/workflows/aeneas-translation.yml'
+  pull_request:
+    branches: [ '**' ]
+    paths: *paths
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  translation-is-current:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Read pinned Aeneas release
+        id: aeneas
+        run: echo "tag=$(awk -F'"' '/^\[/{name=""} /^name = /{name=$2} /^rev = / && name=="aeneas"{print $2}' lakefile.toml)" >> "$GITHUB_OUTPUT"
+
+      # Binaries + the nightly (with rustc-dev) charon-driver needs; changes only with the pin.
+      # Restore and save are split so the cache is saved even when the freshness check fails.
+      - name: Restore Aeneas toolchain
+        id: cache
+        uses: actions/cache/restore@v6.1.0
+        with:
+          path: &toolchain-paths |
+            .aeneas
+            ~/.rustup/toolchains/nightly-*
+            ~/.rustup/update-hashes/nightly-*
+          key: &toolchain-key aeneas-${{ runner.os }}-${{ runner.arch }}-${{ steps.aeneas.outputs.tag }}
+
+      - run: ./scripts/aeneas-install.sh
+
+      - name: Save Aeneas toolchain
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6.1.0
+        with:
+          path: *toolchain-paths
+          key: *toolchain-key
+
+      - run: ./scripts/aeneas-translate.sh
+
+      - name: Check committed translation is current
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git status --short
+            git diff | head -200
+            echo "::error::Committed translation is stale: run ./scripts/aeneas-translate.sh and commit the result."
+            exit 1
+          fi

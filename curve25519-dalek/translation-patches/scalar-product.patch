@@ -1,0 +1,27 @@
+Translation patch: <Scalar as Product<T>>::product
+
+Change: `iter.fold(..)` becomes a `for` loop.
+Why: Aeneas only models `Iterator::next` (aeneas#1057).
+Behaviour: identical for iterators whose `fold` agrees with `next` (all std/lawful iterators): the default `fold` is exactly this loop.
+
+diff --git a/curve25519-dalek/src/scalar.rs b/curve25519-dalek/src/scalar.rs
+index c417780..99e9364 100644
+--- a/curve25519-dalek/src/scalar.rs
++++ b/curve25519-dalek/src/scalar.rs
+@@ -457,11 +457,15 @@ impl<T> Product<T> for Scalar
+ where
+     T: Borrow<Scalar>,
+ {
+     fn product<I>(iter: I) -> Self
+     where
+         I: Iterator<Item = T>,
+     {
+-        iter.fold(Scalar::ONE, |acc, item| acc * item.borrow())
++        let mut acc = Scalar::ONE;
++        for item in iter {
++            acc = acc * item.borrow();
++        }
++        acc
+     }
+ }
+ 

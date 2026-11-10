@@ -29,9 +29,6 @@ theorem is_negative_spec (self : FieldElement51) :
   step as ⟨i, hi⟩
   step as ⟨i1, hi1, hi1bv⟩
   step as ⟨c, hcv, hc⟩
-  · refine (subtle.Choice.isValid_iff i1).mpr ?_
-    rw [hi1, UScalar.val_and]
-    exact Nat.and_le_right
   refine ⟨hcv, ?_⟩
   rw [hc, hi1, UScalar.val_and]
   change i.val &&& 1 = _
@@ -52,9 +49,6 @@ theorem is_negative_spec (self : FieldElement2625) :
   step as ⟨i, hi⟩
   step as ⟨i1, hi1, hi1bv⟩
   step as ⟨c, hcv, hc⟩
-  · refine (subtle.Choice.isValid_iff i1).mpr ?_
-    rw [hi1, UScalar.val_and]
-    exact Nat.and_le_right
   refine ⟨hcv, ?_⟩
   rw [hc, hi1, UScalar.val_and]
   change i.val &&& 1 = _

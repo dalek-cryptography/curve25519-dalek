@@ -23,7 +23,7 @@ rev = "4015c7cfab714640e77500bdbde6e64face3fbaa"
 name = "aeneas"
 git = "https://github.com/AeneasVerif/aeneas.git"
 subDir = "backends/lean"
-rev = "nightly-2026.10.30-de16f3c"
+rev = "nightly-2026.11.10-0d21a9e"
 
 # Hand-written library for the `subtle` crate.
 [[lean_lib]]

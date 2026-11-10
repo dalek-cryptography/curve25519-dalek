@@ -135,7 +135,7 @@ recall from_slice_spec (bytes : Slice U8) :
       | .Ok c => bytes.length = 32 ∧ ∀ i < 32, c[i]! = bytes[i]!
       | .Err _ => bytes.length ≠ 32 ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms from_slice_spec
 
 end Curve25519Dalek.ristretto.CompressedRistretto
@@ -151,7 +151,7 @@ recall «x86_64-tables».decompress_spec (self : CompressedRistretto) :
       r.map edwards.EdwardsPoint.«x86_64-tables».toPoint = Ristretto.decodeRep self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms «x86_64-tables».decompress_spec
 
 
@@ -176,7 +176,7 @@ recall «x86_64-no-tables».decompress_spec (self : CompressedRistretto) :
       r.map edwards.EdwardsPoint.«x86_64-no-tables».toPoint = Ristretto.decodeRep self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in
 #print axioms «x86_64-no-tables».decompress_spec
 
@@ -232,7 +232,7 @@ recall try_from_spec (slice : Slice U8) :
       | .Ok c => slice.length = 32 ∧ ∀ i < 32, c[i]! = slice[i]!
       | .Err _ => slice.length ≠ 32 ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms try_from_spec
 
 end Insts.CoreConvertTryFromShared0SliceU8TryFromSliceError
@@ -247,7 +247,7 @@ recall compress_spec (self : RistrettoPoint.«x86_64-tables») (hself : self.IsB
     compress self ⦃ (r : CompressedRistretto) =>
       r.toVector = Ristretto.encodeRep self.toPoint ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms compress_spec
 
 end «RistrettoPointx86_64-tables»
@@ -275,7 +275,7 @@ recall compress_spec (self : RistrettoPoint.«x86_64-no-tables») (hself : self.
     compress self ⦃ (r : CompressedRistretto) =>
       r.toVector = Ristretto.encodeRep self.toPoint ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms compress_spec
 
 end «RistrettoPointx86_64-no-tables»
@@ -310,7 +310,7 @@ recall double_and_compress_batch_spec {I Clause0_IntoIter : Type}
       r.length = ps.length ∧
         ∀ i < ps.length, r[i]!.toVector = Ristretto.encodeRep (2 • (ps[i]!).toPoint) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.alloc, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.alloc, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms double_and_compress_batch_spec
 
 end «RistrettoPointx86_64-tables»
@@ -352,7 +352,7 @@ recall double_and_compress_batch_spec {I Clause0_IntoIter : Type}
       r.length = ps.length ∧
         ∀ i < ps.length, r[i]!.toVector = Ristretto.encodeRep (2 • (ps[i]!).toPoint) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.alloc, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.alloc, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms double_and_compress_batch_spec
 
 end «RistrettoPointx86_64-no-tables»
@@ -388,7 +388,7 @@ recall from_uniform_bytes_spec (bytes : Array U8 64#usize) :
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep bytes.toVector ∧
         r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms from_uniform_bytes_spec
 
 end «RistrettoPointx86_64-tables»
@@ -418,7 +418,7 @@ recall from_uniform_bytes_spec (bytes : Array U8 64#usize) :
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep bytes.toVector ∧
         r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms from_uniform_bytes_spec
 
 end «RistrettoPointx86_64-no-tables»
@@ -677,7 +677,7 @@ recall add_spec (self other : ristretto.RistrettoPoint.«x86_64-tables»)
     add self other ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + other.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms add_spec
 
 end «CoreOpsArithAddSharedARistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
@@ -711,7 +711,7 @@ recall add_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
     add self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms add_spec
 
 end «CoreOpsArithAddSharedBRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
@@ -745,7 +745,7 @@ recall add_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
     add self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms add_spec
 
 end «CoreOpsArithAddRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
@@ -779,7 +779,7 @@ recall add_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
     add self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms add_spec
 
 end «CoreOpsArithAddRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
@@ -813,7 +813,7 @@ recall add_spec (self other : ristretto.RistrettoPoint.«x86_64-no-tables»)
     add self other ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + other.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms add_spec
 
 end «CoreOpsArithAddSharedARistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
@@ -847,7 +847,7 @@ recall add_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
     add self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms add_spec
 
 end «CoreOpsArithAddSharedBRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
@@ -881,7 +881,7 @@ recall add_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
     add self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms add_spec
 
 end «CoreOpsArithAddRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
@@ -915,7 +915,7 @@ recall add_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
     add self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms add_spec
 
 end «CoreOpsArithAddRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
@@ -949,7 +949,7 @@ recall add_assign_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
     add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms add_assign_spec
 
 end «CoreOpsArithAddAssignShared0RistrettoPointx86_64-tables»
@@ -983,7 +983,7 @@ recall add_assign_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
     add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms add_assign_spec
 
 end «CoreOpsArithAddAssignRistrettoPointx86_64-tables»
@@ -1017,7 +1017,7 @@ recall add_assign_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»
     add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms add_assign_spec
 
 end «CoreOpsArithAddAssignShared0RistrettoPointx86_64-no-tables»
@@ -1051,7 +1051,7 @@ recall add_assign_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»
     add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms add_assign_spec
 
 end «CoreOpsArithAddAssignRistrettoPointx86_64-no-tables»
@@ -1085,7 +1085,7 @@ recall sub_spec (self other : ristretto.RistrettoPoint.«x86_64-tables»)
     sub self other ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sub_spec
 
 end «CoreOpsArithSubSharedARistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
@@ -1119,7 +1119,7 @@ recall sub_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
     sub self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sub_spec
 
 end «CoreOpsArithSubSharedBRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
@@ -1153,7 +1153,7 @@ recall sub_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
     sub self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sub_spec
 
 end «CoreOpsArithSubRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
@@ -1187,7 +1187,7 @@ recall sub_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
     sub self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sub_spec
 
 end «CoreOpsArithSubRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
@@ -1221,7 +1221,7 @@ recall sub_spec (self other : ristretto.RistrettoPoint.«x86_64-no-tables»)
     sub self other ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sub_spec
 
 end «CoreOpsArithSubSharedARistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
@@ -1255,7 +1255,7 @@ recall sub_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
     sub self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sub_spec
 
 end «CoreOpsArithSubSharedBRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
@@ -1289,7 +1289,7 @@ recall sub_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
     sub self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sub_spec
 
 end «CoreOpsArithSubRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
@@ -1323,7 +1323,7 @@ recall sub_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
     sub self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sub_spec
 
 end «CoreOpsArithSubRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
@@ -1357,7 +1357,7 @@ recall sub_assign_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
     sub_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sub_assign_spec
 
 end «CoreOpsArithSubAssignShared0RistrettoPointx86_64-tables»
@@ -1391,7 +1391,7 @@ recall sub_assign_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
     sub_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sub_assign_spec
 
 end «CoreOpsArithSubAssignRistrettoPointx86_64-tables»
@@ -1425,7 +1425,7 @@ recall sub_assign_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»
     sub_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sub_assign_spec
 
 end «CoreOpsArithSubAssignShared0RistrettoPointx86_64-no-tables»
@@ -1459,7 +1459,7 @@ recall sub_assign_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»
     sub_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sub_assign_spec
 
 end «CoreOpsArithSubAssignRistrettoPointx86_64-no-tables»
@@ -1495,7 +1495,7 @@ recall sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.�
     sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sum_spec
 
 end CoreIterTraitsAccumSum
@@ -1533,7 +1533,7 @@ recall sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.�
     sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms sum_spec
 
 end CoreIterTraitsAccumSum
@@ -1567,7 +1567,7 @@ recall neg_spec (self : ristretto.RistrettoPoint.«x86_64-tables») (hself : sel
     neg self ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms neg_spec
 
 end «Shared0RistrettoPointx86_64-tables».Insts.«CoreOpsArithNegRistrettoPointx86_64-tables»
@@ -1596,7 +1596,7 @@ recall neg_spec (self : ristretto.RistrettoPoint.«x86_64-tables») (hself : sel
     neg self ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms neg_spec
 
 end «CoreOpsArithNegRistrettoPointx86_64-tables»
@@ -1628,7 +1628,7 @@ recall neg_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables») (hself : 
     neg self ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms neg_spec
 
 end «CoreOpsArithNegRistrettoPointx86_64-no-tables»
@@ -1660,7 +1660,7 @@ recall neg_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables») (hself : 
     neg self ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms neg_spec
 
 end «CoreOpsArithNegRistrettoPointx86_64-no-tables»
@@ -1692,7 +1692,7 @@ recall mul_assign_spec (self : ristretto.RistrettoPoint.«x86_64-tables»)
     mul_assign self scalar ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_assign_spec
 
 end ristretto.RistrettoPoint.«x86_64-tables».Insts.CoreOpsArithMulAssignSharedAScalar
@@ -1706,7 +1706,7 @@ recall mul_assign_spec (self : ristretto.RistrettoPoint.«i686-tables»)
     mul_assign self scalar ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_assign_spec
 
 end ristretto.RistrettoPoint.«i686-tables».Insts.CoreOpsArithMulAssignSharedAScalar
@@ -1722,7 +1722,7 @@ recall mul_assign_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables»)
     mul_assign self scalar ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_assign_spec
 
 end ristretto.RistrettoPoint.«x86_64-no-tables».Insts.CoreOpsArithMulAssignSharedAScalar
@@ -1736,7 +1736,7 @@ recall mul_assign_spec (self : ristretto.RistrettoPoint.«i686-no-tables»)
     mul_assign self scalar ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_assign_spec
 
 end ristretto.RistrettoPoint.«i686-no-tables».Insts.CoreOpsArithMulAssignSharedAScalar
@@ -1752,7 +1752,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«x86_64-tables») (scalar : sc
     mul self scalar ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedAScalarRistrettoPointx86_64-tables»
@@ -1767,7 +1767,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«i686-tables») (scalar : scal
     mul self scalar ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedAScalarRistrettoPointi686-tables»
@@ -1784,7 +1784,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«x86_64-tables») (rhs : scala
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedBScalarRistrettoPointx86_64-tables»
@@ -1799,7 +1799,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«i686-tables») (rhs : scalar.
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedBScalarRistrettoPointi686-tables»
@@ -1816,7 +1816,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«x86_64-tables») (rhs : scala
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulScalarRistrettoPointx86_64-tables»
@@ -1831,7 +1831,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«i686-tables») (rhs : scalar.
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulScalarRistrettoPointi686-tables»
@@ -1848,7 +1848,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«x86_64-tables») (rhs : scala
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulScalarRistrettoPointx86_64-tables»
@@ -1863,7 +1863,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«i686-tables») (rhs : scalar.
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulScalarRistrettoPointi686-tables»
@@ -1880,7 +1880,7 @@ recall mul_spec (self : scalar.Scalar) (point : ristretto.RistrettoPoint.«x86_6
     mul self point ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • point.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedARistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
@@ -1893,7 +1893,7 @@ recall mul_spec (self : scalar.Scalar) (point : ristretto.RistrettoPoint.«i686-
     mul self point ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • point.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedARistrettoPointi686-tablesRistrettoPointi686-tables»
@@ -1910,7 +1910,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«x86_64-
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedBRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
@@ -1923,7 +1923,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«i686-ta
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedBRistrettoPointi686-tablesRistrettoPointi686-tables»
@@ -1940,7 +1940,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«x86_64-
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
@@ -1953,7 +1953,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«i686-ta
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulRistrettoPointi686-tablesRistrettoPointi686-tables»
@@ -1970,7 +1970,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«x86_64-
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
@@ -1983,7 +1983,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«i686-ta
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulRistrettoPointi686-tablesRistrettoPointi686-tables»
@@ -2000,7 +2000,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables») (scalar :
     mul self scalar ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedAScalarRistrettoPointx86_64-no-tables»
@@ -2015,7 +2015,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«i686-no-tables») (scalar : s
     mul self scalar ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedAScalarRistrettoPointi686-no-tables»
@@ -2032,7 +2032,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables») (rhs : sc
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedBScalarRistrettoPointx86_64-no-tables»
@@ -2047,7 +2047,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«i686-no-tables») (rhs : scal
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedBScalarRistrettoPointi686-no-tables»
@@ -2064,7 +2064,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables») (rhs : sc
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulScalarRistrettoPointx86_64-no-tables»
@@ -2079,7 +2079,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«i686-no-tables») (rhs : scal
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulScalarRistrettoPointi686-no-tables»
@@ -2096,7 +2096,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables») (rhs : sc
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulScalarRistrettoPointx86_64-no-tables»
@@ -2111,7 +2111,7 @@ recall mul_spec (self : ristretto.RistrettoPoint.«i686-no-tables») (rhs : scal
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulScalarRistrettoPointi686-no-tables»
@@ -2128,7 +2128,7 @@ recall mul_spec (self : scalar.Scalar) (point : ristretto.RistrettoPoint.«x86_6
     mul self point ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • point.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedARistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
@@ -2141,7 +2141,7 @@ recall mul_spec (self : scalar.Scalar) (point : ristretto.RistrettoPoint.«i686-
     mul self point ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • point.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedARistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
@@ -2158,7 +2158,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«x86_64-
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedBRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
@@ -2171,7 +2171,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«i686-no
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedBRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
@@ -2188,7 +2188,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«x86_64-
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
@@ -2201,7 +2201,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«i686-no
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
@@ -2218,7 +2218,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«x86_64-
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
@@ -2231,7 +2231,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«i686-no
     mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
@@ -2247,7 +2247,7 @@ recall mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255)
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
         r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_base_spec
 
 end «RistrettoPointx86_64-tables»
@@ -2260,7 +2260,7 @@ recall mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255)
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
         r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_base_spec
 
 end «RistrettoPointi686-tables»
@@ -2275,7 +2275,7 @@ recall mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255)
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
         r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_base_spec
 
 end «RistrettoPointx86_64-no-tables»
@@ -2288,7 +2288,7 @@ recall mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255)
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
         r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_base_spec
 
 end «RistrettoPointi686-no-tables»
@@ -2303,7 +2303,7 @@ recall mul_assign_spec (self : ristretto.RistrettoPoint.«x86_64-tables») (rhs 
     mul_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_assign_spec
 
 end ristretto.RistrettoPoint.«x86_64-tables».Insts.CoreOpsArithMulAssignScalar
@@ -2316,7 +2316,7 @@ recall mul_assign_spec (self : ristretto.RistrettoPoint.«i686-tables») (rhs : 
     mul_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_assign_spec
 
 end ristretto.RistrettoPoint.«i686-tables».Insts.CoreOpsArithMulAssignScalar
@@ -2331,7 +2331,7 @@ recall mul_assign_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables») (r
     mul_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_assign_spec
 
 end ristretto.RistrettoPoint.«x86_64-no-tables».Insts.CoreOpsArithMulAssignScalar
@@ -2344,7 +2344,7 @@ recall mul_assign_spec (self : ristretto.RistrettoPoint.«i686-no-tables») (rhs
     mul_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_assign_spec
 
 end ristretto.RistrettoPoint.«i686-no-tables».Insts.CoreOpsArithMulAssignScalar
@@ -2379,7 +2379,7 @@ recall multiscalar_mul_spec
       ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms multiscalar_mul_spec
 
 end «Curve25519_dalekTraitsMultiscalarMulRistrettoPointx86_64-tables»
@@ -2414,7 +2414,7 @@ recall multiscalar_mul_spec
       ⦃ (r : ristretto.RistrettoPoint.«i686-tables») => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms multiscalar_mul_spec
 
 end «Curve25519_dalekTraitsMultiscalarMulRistrettoPointi686-tables»
@@ -2449,7 +2449,7 @@ recall multiscalar_mul_spec
       ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms multiscalar_mul_spec
 
 end «Curve25519_dalekTraitsMultiscalarMulRistrettoPointx86_64-no-tables»
@@ -2484,7 +2484,7 @@ recall multiscalar_mul_spec
       ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms multiscalar_mul_spec
 
 end «Curve25519_dalekTraitsMultiscalarMulRistrettoPointi686-no-tables»
@@ -2517,7 +2517,7 @@ recall optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2_
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms optional_multiscalar_mul_spec
 
 end «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointx86_64-tables»
@@ -2550,7 +2550,7 @@ recall optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2_
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms optional_multiscalar_mul_spec
 
 end «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointi686-tables»
@@ -2583,7 +2583,7 @@ recall optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2_
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms optional_multiscalar_mul_spec
 
 end «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointx86_64-no-tables»
@@ -2616,7 +2616,7 @@ recall optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2_
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms optional_multiscalar_mul_spec
 
 end «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointi686-no-tables»
@@ -2643,7 +2643,7 @@ recall new_spec {I Clause0_Item Clause0_IntoIter : Type}
       ⦃ (r : VartimeRistrettoPrecomputation.«x86_64-tables») =>
         r.IsValid ∧ r.points = ps.map (·.toPoint) ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms new_spec
 
 
@@ -2661,7 +2661,7 @@ there are no static points. -/
 recall is_empty_spec (self : VartimeRistrettoPrecomputation.«x86_64-tables») :
     is_empty self ⦃ (r : Bool) => r = true ↔ self.points = [] ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.alloc] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms is_empty_spec
 
 
@@ -2703,7 +2703,7 @@ recall optional_mixed_multiscalar_mul_spec
             (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds qs).sum ∧
           R.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in
 #print axioms optional_mixed_multiscalar_mul_spec
 
@@ -2731,7 +2731,7 @@ recall new_spec {I Clause0_Item Clause0_IntoIter : Type}
       ⦃ (r : VartimeRistrettoPrecomputation.«i686-tables») =>
         r.IsValid ∧ r.points = ps.map (·.toPoint) ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms new_spec
 
 
@@ -2749,7 +2749,7 @@ there are no static points. -/
 recall is_empty_spec (self : VartimeRistrettoPrecomputation.«i686-tables») :
     is_empty self ⦃ (r : Bool) => r = true ↔ self.points = [] ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.alloc] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms is_empty_spec
 
 
@@ -2791,7 +2791,7 @@ recall optional_mixed_multiscalar_mul_spec
             (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds qs).sum ∧
           R.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in
 #print axioms optional_mixed_multiscalar_mul_spec
 
@@ -2819,7 +2819,7 @@ recall new_spec {I Clause0_Item Clause0_IntoIter : Type}
       ⦃ (r : VartimeRistrettoPrecomputation.«x86_64-no-tables») =>
         r.IsValid ∧ r.points = ps.map (·.toPoint) ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms new_spec
 
 
@@ -2837,7 +2837,7 @@ there are no static points. -/
 recall is_empty_spec (self : VartimeRistrettoPrecomputation.«x86_64-no-tables») :
     is_empty self ⦃ (r : Bool) => r = true ↔ self.points = [] ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.alloc] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms is_empty_spec
 
 
@@ -2879,7 +2879,7 @@ recall optional_mixed_multiscalar_mul_spec
             (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds qs).sum ∧
           R.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in
 #print axioms optional_mixed_multiscalar_mul_spec
 
@@ -2907,7 +2907,7 @@ recall new_spec {I Clause0_Item Clause0_IntoIter : Type}
       ⦃ (r : VartimeRistrettoPrecomputation.«i686-no-tables») =>
         r.IsValid ∧ r.points = ps.map (·.toPoint) ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms new_spec
 
 
@@ -2925,7 +2925,7 @@ there are no static points. -/
 recall is_empty_spec (self : VartimeRistrettoPrecomputation.«i686-no-tables») :
     is_empty self ⦃ (r : Bool) => r = true ↔ self.points = [] ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.alloc] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms is_empty_spec
 
 
@@ -2967,7 +2967,7 @@ recall optional_mixed_multiscalar_mul_spec
             (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds qs).sum ∧
           R.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in
 #print axioms optional_mixed_multiscalar_mul_spec
 
@@ -2986,7 +2986,7 @@ recall vartime_double_scalar_mul_basepoint_spec (a : scalar.Scalar)
     vartime_double_scalar_mul_basepoint a A b ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in
 #print axioms vartime_double_scalar_mul_basepoint_spec
 
@@ -3003,7 +3003,7 @@ recall vartime_double_scalar_mul_basepoint_spec (a : scalar.Scalar)
     vartime_double_scalar_mul_basepoint a A b ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in
 #print axioms vartime_double_scalar_mul_basepoint_spec
 
@@ -3022,7 +3022,7 @@ recall vartime_double_scalar_mul_basepoint_spec (a : scalar.Scalar)
     vartime_double_scalar_mul_basepoint a A b ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in
 #print axioms vartime_double_scalar_mul_basepoint_spec
 
@@ -3039,7 +3039,7 @@ recall vartime_double_scalar_mul_basepoint_spec (a : scalar.Scalar)
     vartime_double_scalar_mul_basepoint a A b ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in
 #print axioms vartime_double_scalar_mul_basepoint_spec
 
@@ -3058,7 +3058,7 @@ recall mul_spec (self : ristretto.RistrettoBasepointTable.«x86_64-tables»)
     mul self scalar ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.point ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedBScalarRistrettoPointx86_64-tables»
@@ -3075,7 +3075,7 @@ recall mul_spec (self : ristretto.RistrettoBasepointTable.«i686-tables»)
     mul self scalar ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.point ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedBScalarRistrettoPointi686-tables»
@@ -3094,7 +3094,7 @@ recall mul_spec (self : scalar.Scalar)
     mul self basepoint_table ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • basepoint_table.point ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedARistrettoBasepointTablex86_64-tablesRistrettoPointx86_64-tables»
@@ -3109,7 +3109,7 @@ recall mul_spec (self : scalar.Scalar)
     mul self basepoint_table ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • basepoint_table.point ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end «CoreOpsArithMulSharedARistrettoBasepointTablei686-tablesRistrettoPointi686-tables»
@@ -3125,7 +3125,7 @@ recall create_spec (basepoint : ristretto.RistrettoPoint.«x86_64-tables»)
     create basepoint ⦃ (r : ristretto.RistrettoBasepointTable.«x86_64-tables») =>
       r.IsTable ∧ r.point = basepoint.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms create_spec
 
 
@@ -3135,7 +3135,7 @@ recall basepoint_spec (self : ristretto.RistrettoBasepointTable.«x86_64-tables�
     basepoint self ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.point ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms basepoint_spec
 
 end ristretto.«RistrettoBasepointTablex86_64-tables»
@@ -3148,7 +3148,7 @@ recall create_spec (basepoint : ristretto.RistrettoPoint.«i686-tables»)
     create basepoint ⦃ (r : ristretto.RistrettoBasepointTable.«i686-tables») =>
       r.IsTable ∧ r.point = basepoint.toPoint ∧ r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core] -/
+/-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms create_spec
 
 
@@ -3300,7 +3300,7 @@ recall map_to_curve_spec (bytes : Array U8 32#usize) :
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep bytes.toVector ∧
         r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms map_to_curve_spec
 
 end «RistrettoPointx86_64-tables»
@@ -3330,7 +3330,7 @@ recall map_to_curve_spec (bytes : Array U8 32#usize) :
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep bytes.toVector ∧
         r.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms map_to_curve_spec
 
 end «RistrettoPointx86_64-no-tables»

@@ -25,14 +25,6 @@ noncomputable section
 
 namespace Curve25519Dalek
 
-/-- Trait implementation: [core::borrow::{impl core::borrow::Borrow<T> for T}]
-    Source: '/rustc/library/core/src/borrow.rs', lines 212:0-212:37
-    Name pattern: [core::borrow::Borrow<@T, @T>] -/
-@[reducible, rust_trait_impl "core::borrow::Borrow<@T, @T>"]
-def core.borrow.Borrow.Blanket (T : Type _) : core.borrow.Borrow T T := {
-  borrow := core.borrow.Borrow.Blanket.borrow
-}
-
 /-- Trait implementation: [core::default::{impl core::default::Default for bool}]
     Source: '/rustc/library/core/src/default.rs', lines 154:8-154:33; this code is generated from a macro invocation at: '/rustc/library/core/src/default.rs', lines 165:0-165:69
     Name pattern: [core::default::Default<bool>] -/
@@ -9623,7 +9615,7 @@ def
   :
   Result Bool
   := do
-  alloc.vec.Vec.is_empty alloc.alloc.Global self.static_lookup_tables
+  alloc.vec.Vec.is_empty self.static_lookup_tables
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::x86_64-tables> for curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::x86_64-tables}::len]:
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs', lines 51:4-53:5
@@ -10615,7 +10607,7 @@ def
   :
   Result Bool
   := do
-  alloc.vec.Vec.is_empty alloc.alloc.Global self.static_lookup_tables
+  alloc.vec.Vec.is_empty self.static_lookup_tables
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::x86_64-no-tables> for curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::x86_64-no-tables}::len]:
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs', lines 51:4-53:5
@@ -11494,7 +11486,7 @@ def
   :
   Result Bool
   := do
-  alloc.vec.Vec.is_empty alloc.alloc.Global self.static_lookup_tables
+  alloc.vec.Vec.is_empty self.static_lookup_tables
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::i686-tables> for curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::i686-tables}::len]:
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs', lines 51:4-53:5
@@ -12488,7 +12480,7 @@ def
   :
   Result Bool
   := do
-  alloc.vec.Vec.is_empty alloc.alloc.Global self.static_lookup_tables
+  alloc.vec.Vec.is_empty self.static_lookup_tables
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::i686-no-tables> for curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::i686-no-tables}::len]:
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs', lines 51:4-53:5
@@ -17414,7 +17406,7 @@ def backend.serial.scalar_mul.vartime_double_base.mul.«x86_64-tables_loop0»
     (iter, i)
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_double_base::mul::x86_64-tables]: loop body 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-62:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-59:5
     Visibility: public -/
 @[rust_loop_body]
 def
@@ -17428,7 +17420,7 @@ def
   (r : backend.serial.curve_models.ProjectivePoint.«x86_64-tables») :
   Result (ControlFlow (Std.Usize ×
     backend.serial.curve_models.ProjectivePoint.«x86_64-tables»)
-    edwards.EdwardsPoint.«x86_64-tables»)
+    backend.serial.curve_models.ProjectivePoint.«x86_64-tables»)
   := do
   let t ←
     backend.serial.curve_models.«ProjectivePointx86_64-tables».double r
@@ -17496,16 +17488,12 @@ def
     backend.serial.curve_models.«CompletedPointx86_64-tables».as_projective
       t2
   if i = 0#usize
-  then
-    let ep ←
-      backend.serial.curve_models.«ProjectivePointx86_64-tables».as_extended
-        r1
-    ok (done ep)
+  then ok (done r1)
   else let i1 ← i - 1#usize
        ok (cont (i1, r1))
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_double_base::mul::x86_64-tables]: loop 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-62:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-59:5
     Visibility: public -/
 @[rust_loop]
 def backend.serial.scalar_mul.vartime_double_base.mul.«x86_64-tables_loop1»
@@ -17516,7 +17504,7 @@ def backend.serial.scalar_mul.vartime_double_base.mul.«x86_64-tables_loop1»
   (table_B : window.NafLookupTable8
   backend.serial.curve_models.AffineNielsPoint.«x86_64-tables»)
   (r : backend.serial.curve_models.ProjectivePoint.«x86_64-tables») :
-  Result edwards.EdwardsPoint.«x86_64-tables»
+  Result backend.serial.curve_models.ProjectivePoint.«x86_64-tables»
   := do
   loop
     (fun (i1, r1) =>
@@ -17548,8 +17536,10 @@ def backend.serial.scalar_mul.vartime_double_base.mul.«x86_64-tables»
   let nlt ← backend.serial.u64.constants.AFFINE_ODD_MULTIPLES_OF_BASEPOINT
   let r ←
     backend.serial.curve_models.ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity
-  backend.serial.scalar_mul.vartime_double_base.mul.«x86_64-tables_loop1»
-    a_naf b_naf i table_A nlt r
+  let r1 ←
+    backend.serial.scalar_mul.vartime_double_base.mul.«x86_64-tables_loop1»
+      a_naf b_naf i table_A nlt r
+  backend.serial.curve_models.«ProjectivePointx86_64-tables».as_extended r1
 
 /-- [curve25519_dalek::backend::serial::u64::constants::ED25519_BASEPOINT_POINT::x86_64-no-tables]
     Source: 'curve25519-dalek/src/backend/serial/u64/constants.rs', lines 163:0-186:2
@@ -17626,7 +17616,7 @@ def
     (iter, i)
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_double_base::mul::x86_64-no-tables]: loop body 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-62:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-59:5
     Visibility: public -/
 @[rust_loop_body]
 def
@@ -17640,7 +17630,7 @@ def
   (r : backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables») :
   Result (ControlFlow (Std.Usize ×
     backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables»)
-    edwards.EdwardsPoint.«x86_64-no-tables»)
+    backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables»)
   := do
   let t ←
     backend.serial.curve_models.«ProjectivePointx86_64-no-tables».double r
@@ -17708,16 +17698,12 @@ def
     backend.serial.curve_models.«CompletedPointx86_64-no-tables».as_projective
       t2
   if i = 0#usize
-  then
-    let ep ←
-      backend.serial.curve_models.«ProjectivePointx86_64-no-tables».as_extended
-        r1
-    ok (done ep)
+  then ok (done r1)
   else let i1 ← i - 1#usize
        ok (cont (i1, r1))
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_double_base::mul::x86_64-no-tables]: loop 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-62:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-59:5
     Visibility: public -/
 @[rust_loop]
 def
@@ -17729,7 +17715,7 @@ def
   (table_B : window.NafLookupTable5
   backend.serial.curve_models.ProjectiveNielsPoint.«x86_64-no-tables»)
   (r : backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables») :
-  Result edwards.EdwardsPoint.«x86_64-no-tables»
+  Result backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables»
   := do
   loop
     (fun (i1, r1) =>
@@ -17765,8 +17751,11 @@ def backend.serial.scalar_mul.vartime_double_base.mul.«x86_64-no-tables»
       ep
   let r ←
     backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity
-  backend.serial.scalar_mul.vartime_double_base.mul.«x86_64-no-tables_loop1»
-    a_naf b_naf i table_A table_B r
+  let r1 ←
+    backend.serial.scalar_mul.vartime_double_base.mul.«x86_64-no-tables_loop1»
+      a_naf b_naf i table_A table_B r
+  backend.serial.curve_models.«ProjectivePointx86_64-no-tables».as_extended
+    r1
 
 /-- [curve25519_dalek::backend::serial::u32::constants::AFFINE_ODD_MULTIPLES_OF_BASEPOINT]
     Source: 'curve25519-dalek/src/backend/serial/u32/constants.rs', lines 3954:0-4852:7 -/
@@ -19041,7 +19030,7 @@ def backend.serial.scalar_mul.vartime_double_base.mul.«i686-tables_loop0»
     (iter, i)
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_double_base::mul::i686-tables]: loop body 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-62:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-59:5
     Visibility: public -/
 @[rust_loop_body]
 def
@@ -19054,7 +19043,7 @@ def
   (r : backend.serial.curve_models.ProjectivePoint.«i686-tables») :
   Result (ControlFlow (Std.Usize ×
     backend.serial.curve_models.ProjectivePoint.«i686-tables»)
-    edwards.EdwardsPoint.«i686-tables»)
+    backend.serial.curve_models.ProjectivePoint.«i686-tables»)
   := do
   let t ← backend.serial.curve_models.«ProjectivePointi686-tables».double r
   let digit ← Array.index_usize a_naf i
@@ -19118,15 +19107,12 @@ def
   let r1 ←
     backend.serial.curve_models.«CompletedPointi686-tables».as_projective t2
   if i = 0#usize
-  then
-    let ep ←
-      backend.serial.curve_models.«ProjectivePointi686-tables».as_extended r1
-    ok (done ep)
+  then ok (done r1)
   else let i1 ← i - 1#usize
        ok (cont (i1, r1))
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_double_base::mul::i686-tables]: loop 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-62:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-59:5
     Visibility: public -/
 @[rust_loop]
 def backend.serial.scalar_mul.vartime_double_base.mul.«i686-tables_loop1»
@@ -19137,7 +19123,7 @@ def backend.serial.scalar_mul.vartime_double_base.mul.«i686-tables_loop1»
   (table_B : window.NafLookupTable8
   backend.serial.curve_models.AffineNielsPoint.«i686-tables»)
   (r : backend.serial.curve_models.ProjectivePoint.«i686-tables») :
-  Result edwards.EdwardsPoint.«i686-tables»
+  Result backend.serial.curve_models.ProjectivePoint.«i686-tables»
   := do
   loop
     (fun (i1, r1) =>
@@ -19169,8 +19155,10 @@ def backend.serial.scalar_mul.vartime_double_base.mul.«i686-tables»
   let nlt ← backend.serial.u32.constants.AFFINE_ODD_MULTIPLES_OF_BASEPOINT
   let r ←
     backend.serial.curve_models.ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity
-  backend.serial.scalar_mul.vartime_double_base.mul.«i686-tables_loop1» a_naf
-    b_naf i table_A nlt r
+  let r1 ←
+    backend.serial.scalar_mul.vartime_double_base.mul.«i686-tables_loop1»
+      a_naf b_naf i table_A nlt r
+  backend.serial.curve_models.«ProjectivePointi686-tables».as_extended r1
 
 /-- [curve25519_dalek::backend::serial::u32::constants::ED25519_BASEPOINT_POINT::i686-no-tables]
     Source: 'curve25519-dalek/src/backend/serial/u32/constants.rs', lines 123:0-137:2
@@ -19248,7 +19236,7 @@ def backend.serial.scalar_mul.vartime_double_base.mul.«i686-no-tables_loop0»
     (iter, i)
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_double_base::mul::i686-no-tables]: loop body 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-62:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-59:5
     Visibility: public -/
 @[rust_loop_body]
 def
@@ -19262,7 +19250,7 @@ def
   (r : backend.serial.curve_models.ProjectivePoint.«i686-no-tables») :
   Result (ControlFlow (Std.Usize ×
     backend.serial.curve_models.ProjectivePoint.«i686-no-tables»)
-    edwards.EdwardsPoint.«i686-no-tables»)
+    backend.serial.curve_models.ProjectivePoint.«i686-no-tables»)
   := do
   let t ←
     backend.serial.curve_models.«ProjectivePointi686-no-tables».double r
@@ -19330,16 +19318,12 @@ def
     backend.serial.curve_models.«CompletedPointi686-no-tables».as_projective
       t2
   if i = 0#usize
-  then
-    let ep ←
-      backend.serial.curve_models.«ProjectivePointi686-no-tables».as_extended
-        r1
-    ok (done ep)
+  then ok (done r1)
   else let i1 ← i - 1#usize
        ok (cont (i1, r1))
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_double_base::mul::i686-no-tables]: loop 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-62:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs', lines 47:4-59:5
     Visibility: public -/
 @[rust_loop]
 def backend.serial.scalar_mul.vartime_double_base.mul.«i686-no-tables_loop1»
@@ -19350,7 +19334,7 @@ def backend.serial.scalar_mul.vartime_double_base.mul.«i686-no-tables_loop1»
   (table_B : window.NafLookupTable5
   backend.serial.curve_models.ProjectiveNielsPoint.«i686-no-tables»)
   (r : backend.serial.curve_models.ProjectivePoint.«i686-no-tables») :
-  Result edwards.EdwardsPoint.«i686-no-tables»
+  Result backend.serial.curve_models.ProjectivePoint.«i686-no-tables»
   := do
   loop
     (fun (i1, r1) =>
@@ -19386,8 +19370,10 @@ def backend.serial.scalar_mul.vartime_double_base.mul.«i686-no-tables»
       ep
   let r ←
     backend.serial.curve_models.ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity
-  backend.serial.scalar_mul.vartime_double_base.mul.«i686-no-tables_loop1»
-    a_naf b_naf i table_A table_B r
+  let r1 ←
+    backend.serial.scalar_mul.vartime_double_base.mul.«i686-no-tables_loop1»
+      a_naf b_naf i table_A table_B r
+  backend.serial.curve_models.«ProjectivePointi686-no-tables».as_extended r1
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::scalar::HalfWidthScalar}::from_bytes]: loop body 0:
     Source: 'curve25519-dalek/src/scalar.rs', lines 1458:8-1461:9
@@ -19736,7 +19722,7 @@ def
     (iter, i)
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_triple_base::mul_128_128_256::x86_64-tables]: loop body 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-110:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-107:5
     Visibility: public -/
 @[rust_loop_body]
 def
@@ -19755,7 +19741,7 @@ def
   (r : backend.serial.curve_models.ProjectivePoint.«x86_64-tables») :
   Result (ControlFlow (Std.Usize ×
     backend.serial.curve_models.ProjectivePoint.«x86_64-tables»)
-    edwards.EdwardsPoint.«x86_64-tables»)
+    backend.serial.curve_models.ProjectivePoint.«x86_64-tables»)
   := do
   let t ←
     backend.serial.curve_models.«ProjectivePointx86_64-tables».double r
@@ -19883,16 +19869,12 @@ def
     backend.serial.curve_models.«CompletedPointx86_64-tables».as_projective
       t4
   if i = 0#usize
-  then
-    let ep ←
-      backend.serial.curve_models.«ProjectivePointx86_64-tables».as_extended
-        r1
-    ok (done ep)
+  then ok (done r1)
   else let i1 ← i - 1#usize
        ok (cont (i1, r1))
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_triple_base::mul_128_128_256::x86_64-tables]: loop 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-110:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-107:5
     Visibility: public -/
 @[rust_loop]
 def
@@ -19909,7 +19891,7 @@ def
   (table_B_128 : window.NafLookupTable5
   backend.serial.curve_models.ProjectiveNielsPoint.«x86_64-tables»)
   (r : backend.serial.curve_models.ProjectivePoint.«x86_64-tables») :
-  Result edwards.EdwardsPoint.«x86_64-tables»
+  Result backend.serial.curve_models.ProjectivePoint.«x86_64-tables»
   := do
   loop
     (fun (i1, r1) =>
@@ -19954,8 +19936,10 @@ def
     backend.serial.u64.constants.AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128
   let r ←
     backend.serial.curve_models.ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity
-  backend.serial.scalar_mul.vartime_triple_base.mul_128_128_256.«x86_64-tables_loop1»
-    a1_naf a2_naf b_lo_naf b_hi_naf i table_A1 table_A2 nlt nlt1 r
+  let r1 ←
+    backend.serial.scalar_mul.vartime_triple_base.mul_128_128_256.«x86_64-tables_loop1»
+      a1_naf a2_naf b_lo_naf b_hi_naf i table_A1 table_A2 nlt nlt1 r
+  backend.serial.curve_models.«ProjectivePointx86_64-tables».as_extended r1
 
 /-- [curve25519_dalek::backend::serial::u64::constants::ED25519_BASEPOINT_128_POINT::x86_64-no-tables]
     Source: 'curve25519-dalek/src/backend/serial/u64/constants.rs', lines 189:0-218:2
@@ -20046,7 +20030,7 @@ def
     (iter, i)
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_triple_base::mul_128_128_256::x86_64-no-tables]: loop body 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-110:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-107:5
     Visibility: public -/
 @[rust_loop_body]
 def
@@ -20065,7 +20049,7 @@ def
   (r : backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables») :
   Result (ControlFlow (Std.Usize ×
     backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables»)
-    edwards.EdwardsPoint.«x86_64-no-tables»)
+    backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables»)
   := do
   let t ←
     backend.serial.curve_models.«ProjectivePointx86_64-no-tables».double r
@@ -20193,16 +20177,12 @@ def
     backend.serial.curve_models.«CompletedPointx86_64-no-tables».as_projective
       t4
   if i = 0#usize
-  then
-    let ep ←
-      backend.serial.curve_models.«ProjectivePointx86_64-no-tables».as_extended
-        r1
-    ok (done ep)
+  then ok (done r1)
   else let i1 ← i - 1#usize
        ok (cont (i1, r1))
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_triple_base::mul_128_128_256::x86_64-no-tables]: loop 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-110:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-107:5
     Visibility: public -/
 @[rust_loop]
 def
@@ -20219,7 +20199,7 @@ def
   (table_B_128 : window.NafLookupTable5
   backend.serial.curve_models.ProjectiveNielsPoint.«x86_64-no-tables»)
   (r : backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables») :
-  Result edwards.EdwardsPoint.«x86_64-no-tables»
+  Result backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables»
   := do
   loop
     (fun (i1, r1) =>
@@ -20272,8 +20252,11 @@ def
       ep1
   let r ←
     backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity
-  backend.serial.scalar_mul.vartime_triple_base.mul_128_128_256.«x86_64-no-tables_loop1»
-    a1_naf a2_naf b_lo_naf b_hi_naf i table_A1 table_A2 table_B table_B_128 r
+  let r1 ←
+    backend.serial.scalar_mul.vartime_triple_base.mul_128_128_256.«x86_64-no-tables_loop1»
+      a1_naf a2_naf b_lo_naf b_hi_naf i table_A1 table_A2 table_B table_B_128 r
+  backend.serial.curve_models.«ProjectivePointx86_64-no-tables».as_extended
+    r1
 
 /-- [curve25519_dalek::backend::serial::u32::constants::AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128]
     Source: 'curve25519-dalek/src/backend/serial/u32/constants.rs', lines 4858:0-5004:7 -/
@@ -20543,7 +20526,7 @@ def
     (iter, i)
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_triple_base::mul_128_128_256::i686-tables]: loop body 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-110:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-107:5
     Visibility: public -/
 @[rust_loop_body]
 def
@@ -20562,7 +20545,7 @@ def
   (r : backend.serial.curve_models.ProjectivePoint.«i686-tables») :
   Result (ControlFlow (Std.Usize ×
     backend.serial.curve_models.ProjectivePoint.«i686-tables»)
-    edwards.EdwardsPoint.«i686-tables»)
+    backend.serial.curve_models.ProjectivePoint.«i686-tables»)
   := do
   let t ← backend.serial.curve_models.«ProjectivePointi686-tables».double r
   let digit ← Array.index_usize a1_naf i
@@ -20686,15 +20669,12 @@ def
   let r1 ←
     backend.serial.curve_models.«CompletedPointi686-tables».as_projective t4
   if i = 0#usize
-  then
-    let ep ←
-      backend.serial.curve_models.«ProjectivePointi686-tables».as_extended r1
-    ok (done ep)
+  then ok (done r1)
   else let i1 ← i - 1#usize
        ok (cont (i1, r1))
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_triple_base::mul_128_128_256::i686-tables]: loop 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-110:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-107:5
     Visibility: public -/
 @[rust_loop]
 def
@@ -20711,7 +20691,7 @@ def
   (table_B_128 : window.NafLookupTable5
   backend.serial.curve_models.ProjectiveNielsPoint.«i686-tables»)
   (r : backend.serial.curve_models.ProjectivePoint.«i686-tables») :
-  Result edwards.EdwardsPoint.«i686-tables»
+  Result backend.serial.curve_models.ProjectivePoint.«i686-tables»
   := do
   loop
     (fun (i1, r1) =>
@@ -20756,8 +20736,10 @@ def
     backend.serial.u32.constants.AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128
   let r ←
     backend.serial.curve_models.ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity
-  backend.serial.scalar_mul.vartime_triple_base.mul_128_128_256.«i686-tables_loop1»
-    a1_naf a2_naf b_lo_naf b_hi_naf i table_A1 table_A2 nlt nlt1 r
+  let r1 ←
+    backend.serial.scalar_mul.vartime_triple_base.mul_128_128_256.«i686-tables_loop1»
+      a1_naf a2_naf b_lo_naf b_hi_naf i table_A1 table_A2 nlt nlt1 r
+  backend.serial.curve_models.«ProjectivePointi686-tables».as_extended r1
 
 /-- [curve25519_dalek::backend::serial::u32::constants::ED25519_BASEPOINT_128_POINT::i686-no-tables]
     Source: 'curve25519-dalek/src/backend/serial/u32/constants.rs', lines 140:0-157:2
@@ -20847,7 +20829,7 @@ def
     (iter, i)
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_triple_base::mul_128_128_256::i686-no-tables]: loop body 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-110:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-107:5
     Visibility: public -/
 @[rust_loop_body]
 def
@@ -20866,7 +20848,7 @@ def
   (r : backend.serial.curve_models.ProjectivePoint.«i686-no-tables») :
   Result (ControlFlow (Std.Usize ×
     backend.serial.curve_models.ProjectivePoint.«i686-no-tables»)
-    edwards.EdwardsPoint.«i686-no-tables»)
+    backend.serial.curve_models.ProjectivePoint.«i686-no-tables»)
   := do
   let t ←
     backend.serial.curve_models.«ProjectivePointi686-no-tables».double r
@@ -20994,16 +20976,12 @@ def
     backend.serial.curve_models.«CompletedPointi686-no-tables».as_projective
       t4
   if i = 0#usize
-  then
-    let ep ←
-      backend.serial.curve_models.«ProjectivePointi686-no-tables».as_extended
-        r1
-    ok (done ep)
+  then ok (done r1)
   else let i1 ← i - 1#usize
        ok (cont (i1, r1))
 
 /-- [curve25519_dalek::backend::serial::scalar_mul::vartime_triple_base::mul_128_128_256::i686-no-tables]: loop 1:
-    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-110:1
+    Source: 'curve25519-dalek/src/backend/serial/scalar_mul/vartime_triple_base.rs', lines 92:4-107:5
     Visibility: public -/
 @[rust_loop]
 def
@@ -21020,7 +20998,7 @@ def
   (table_B_128 : window.NafLookupTable5
   backend.serial.curve_models.ProjectiveNielsPoint.«i686-no-tables»)
   (r : backend.serial.curve_models.ProjectivePoint.«i686-no-tables») :
-  Result edwards.EdwardsPoint.«i686-no-tables»
+  Result backend.serial.curve_models.ProjectivePoint.«i686-no-tables»
   := do
   loop
     (fun (i1, r1) =>
@@ -21072,8 +21050,10 @@ def
       ep1
   let r ←
     backend.serial.curve_models.ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity
-  backend.serial.scalar_mul.vartime_triple_base.mul_128_128_256.«i686-no-tables_loop1»
-    a1_naf a2_naf b_lo_naf b_hi_naf i table_A1 table_A2 table_B table_B_128 r
+  let r1 ←
+    backend.serial.scalar_mul.vartime_triple_base.mul_128_128_256.«i686-no-tables_loop1»
+      a1_naf a2_naf b_lo_naf b_hi_naf i table_A1 table_A2 table_B table_B_128 r
+  backend.serial.curve_models.«ProjectivePointi686-no-tables».as_extended r1
 
 /-- [curve25519_dalek::backend::serial::u32::constants::MINUS_ONE]
     Source: 'curve25519-dalek/src/backend/serial/u32/constants.rs', lines 28:0-31:3 -/

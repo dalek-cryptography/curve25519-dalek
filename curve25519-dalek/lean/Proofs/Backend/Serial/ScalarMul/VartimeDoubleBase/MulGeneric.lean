@@ -129,7 +129,7 @@ variable (O : EdwardsOps)
 @[expose] def vdbLoop1TBody (a_naf b_naf : Array I8 256#usize)
     (table_A : window.NafLookupTable5 O.N) (table_B : window.NafLookupTable8 O.An) (i : Usize)
     (r : O.Pr) :
-    Result (ControlFlow (Usize × O.Pr) O.E) := do
+    Result (ControlFlow (Usize × O.Pr) O.Pr) := do
   let t ← O.pDouble r
   let digit ← Array.index_usize a_naf i
   let o ← lift (core.cmp.impls.OrdI8.cmp digit 0#i8)
@@ -169,23 +169,21 @@ variable (O : EdwardsOps)
       O.addA ep anp
   let r1 ← O.cAsProjective t2
   if i = 0#usize
-  then
-    let ep ← O.pAsExtended r1
-    ok (done ep)
+  then ok (done r1)
   else let i1 ← i - 1#usize
        ok (cont (i1, r1))
 
 /-- `mul_loop1` over the point operations (vdbLoop1T). -/
 @[expose] def vdbLoop1T (a_naf b_naf : Array I8 256#usize) (i : Usize)
     (table_A : window.NafLookupTable5 O.N) (table_B : window.NafLookupTable8 O.An) (r : O.Pr) :
-    Result O.E := do
+    Result O.Pr := do
   loop (fun (i1, r1) => O.vdbLoop1TBody a_naf b_naf table_A table_B i1 r1) (i, r)
 
 /-- `mul_loop1.body` over the point operations (vdbLoop1N). -/
 @[expose] def vdbLoop1NBody (a_naf b_naf : Array I8 256#usize)
     (table_A : window.NafLookupTable5 O.N) (table_B : window.NafLookupTable5 O.N) (i : Usize)
     (r : O.Pr) :
-    Result (ControlFlow (Usize × O.Pr) O.E) := do
+    Result (ControlFlow (Usize × O.Pr) O.Pr) := do
   let t ← O.pDouble r
   let digit ← Array.index_usize a_naf i
   let o ← lift (core.cmp.impls.OrdI8.cmp digit 0#i8)
@@ -225,16 +223,14 @@ variable (O : EdwardsOps)
       O.addN ep anp
   let r1 ← O.cAsProjective t2
   if i = 0#usize
-  then
-    let ep ← O.pAsExtended r1
-    ok (done ep)
+  then ok (done r1)
   else let i1 ← i - 1#usize
        ok (cont (i1, r1))
 
 /-- `mul_loop1` over the point operations (vdbLoop1N). -/
 @[expose] def vdbLoop1N (a_naf b_naf : Array I8 256#usize) (i : Usize)
     (table_A : window.NafLookupTable5 O.N) (table_B : window.NafLookupTable5 O.N) (r : O.Pr) :
-    Result O.E := do
+    Result O.Pr := do
   loop (fun (i1, r1) => O.vdbLoop1NBody a_naf b_naf table_A table_B i1 r1) (i, r)
 
 open scoped Helpers.IndexStep in
@@ -242,7 +238,7 @@ open scoped Helpers.IndexStep in
 `nafTail a i • A + nafTail b i • B`. -/
 theorem vdbLoop1T_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec) (haddA : O.AddASpec)
     (hsubA : O.SubASpec) (hasE : O.AsExtendedSpec)
-    (hdbl : O.PDoubleSpec) (hasP : O.CAsProjectiveSpec) (hpasE : O.PAsExtendedSpec)
+    (hdbl : O.PDoubleSpec) (hasP : O.CAsProjectiveSpec)
     (a_naf b_naf : Array I8 256#usize) (i : Usize)
     (table_A : window.NafLookupTable5 O.N) (table_B : window.NafLookupTable8 O.An)
     (r : O.Pr) (A B : curve25519.edwards.Point)
@@ -254,8 +250,8 @@ theorem vdbLoop1T_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec) (haddA : O.AddA
       2 * |b_naf[k]!.val| < 2 ^ 8)
     (hi : i.val < 256) (hr : O.pOnCurve r) (hrb : O.pBnd r)
     (hrp : O.pToPoint r = nafTail a_naf (i.val + 1) • A + nafTail b_naf (i.val + 1) • B) :
-    O.vdbLoop1T a_naf b_naf i table_A table_B r ⦃ (res : O.E) => O.OnCurve res ∧
-        O.toPoint res = nafTail a_naf 0 • A + nafTail b_naf 0 • B ∧ O.Bnd res ⦄ := by
+    O.vdbLoop1T a_naf b_naf i table_A table_B r ⦃ (res : O.Pr) => O.pOnCurve res ∧
+        O.pToPoint res = nafTail a_naf 0 • A + nafTail b_naf 0 • B ∧ O.pBnd res ⦄ := by
   unfold vdbLoop1T
   apply loop.spec_decr_nat (measure := fun (j, _) => j.val)
     (inv := fun (j, q) => j.val < 256 ∧ O.pOnCurve q ∧ O.pBnd q ∧
@@ -337,10 +333,10 @@ theorem vdbLoop1T_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec) (haddA : O.AddA
     have hval : O.pToPoint r1 = nafTail a_naf j.val • A + nafTail b_naf j.val • B := by
       rw [hr1p, ht2p, ht1p, htp, hqp, horner_step, nafTail_eq _ _ hj, nafTail_eq _ _ hj, ← hd, ← he]
     split
-    · step with hpasE r1 hr1b hr1on as ⟨res, hreson, hresp, hresb⟩
-      have hj0 : j.val = 0 := by scalar_tac
-      refine ⟨hreson, ?_, hresb⟩
-      rw [hresp, hval, hj0]
+    · have hj0 : j.val = 0 := by scalar_tac
+      simp only [WP.spec_ok]
+      refine ⟨hr1on, ?_, hr1b⟩
+      rw [hval, hj0]
     · step as ⟨j1, hj1⟩
       have hj1' : j1.val + 1 = j.val := by scalar_tac
       refine ⟨by scalar_tac, hr1on, hr1b, ?_, by scalar_tac⟩
@@ -351,7 +347,7 @@ open scoped Helpers.IndexStep in
 /-- The second loop of `mul`: after the digits `i, …, 255`, the accumulator represents
 `nafTail a i • A + nafTail b i • B`. -/
 theorem vdbLoop1N_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec) (hasE : O.AsExtendedSpec)
-    (hdbl : O.PDoubleSpec) (hasP : O.CAsProjectiveSpec) (hpasE : O.PAsExtendedSpec)
+    (hdbl : O.PDoubleSpec) (hasP : O.CAsProjectiveSpec)
     (a_naf b_naf : Array I8 256#usize) (i : Usize)
     (table_A : window.NafLookupTable5 O.N) (table_B : window.NafLookupTable5 O.N)
     (r : O.Pr) (A B : curve25519.edwards.Point)
@@ -363,8 +359,8 @@ theorem vdbLoop1N_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec) (hasE : O.AsExt
       2 * |b_naf[k]!.val| < 2 ^ 5)
     (hi : i.val < 256) (hr : O.pOnCurve r) (hrb : O.pBnd r)
     (hrp : O.pToPoint r = nafTail a_naf (i.val + 1) • A + nafTail b_naf (i.val + 1) • B) :
-    O.vdbLoop1N a_naf b_naf i table_A table_B r ⦃ (res : O.E) => O.OnCurve res ∧
-        O.toPoint res = nafTail a_naf 0 • A + nafTail b_naf 0 • B ∧ O.Bnd res ⦄ := by
+    O.vdbLoop1N a_naf b_naf i table_A table_B r ⦃ (res : O.Pr) => O.pOnCurve res ∧
+        O.pToPoint res = nafTail a_naf 0 • A + nafTail b_naf 0 • B ∧ O.pBnd res ⦄ := by
   unfold vdbLoop1N
   apply loop.spec_decr_nat (measure := fun (j, _) => j.val)
     (inv := fun (j, q) => j.val < 256 ∧ O.pOnCurve q ∧ O.pBnd q ∧
@@ -446,10 +442,10 @@ theorem vdbLoop1N_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec) (hasE : O.AsExt
     have hval : O.pToPoint r1 = nafTail a_naf j.val • A + nafTail b_naf j.val • B := by
       rw [hr1p, ht2p, ht1p, htp, hqp, horner_step, nafTail_eq _ _ hj, nafTail_eq _ _ hj, ← hd, ← he]
     split
-    · step with hpasE r1 hr1b hr1on as ⟨res, hreson, hresp, hresb⟩
-      have hj0 : j.val = 0 := by scalar_tac
-      refine ⟨hreson, ?_, hresb⟩
-      rw [hresp, hval, hj0]
+    · have hj0 : j.val = 0 := by scalar_tac
+      simp only [WP.spec_ok]
+      refine ⟨hr1on, ?_, hr1b⟩
+      rw [hval, hj0]
     · step as ⟨j1, hj1⟩
       have hj1' : j1.val + 1 = j.val := by scalar_tac
       refine ⟨by scalar_tac, hr1on, hr1b, ?_, by scalar_tac⟩

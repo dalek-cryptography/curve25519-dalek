@@ -21,14 +21,6 @@ set_option maxRecDepth 2048
 
 namespace Curve25519Dalek
 
-/-- Trait declaration: [core::borrow::Borrow]
-    Source: '/rustc/library/core/src/borrow.rs', lines 158:0-158:40
-    Name pattern: [core::borrow::Borrow]
-    Visibility: public -/
-@[rust_trait "core::borrow::Borrow"]
-structure core.borrow.Borrow (Self : Type _) (Borrowed : Type _) where
-  borrow : Self → Result Borrowed
-
 /-- Trait declaration: [core::ops::arith::Add]
     Source: '/rustc/library/core/src/ops/arith.rs', lines 76:0-76:31
     Name pattern: [core::ops::arith::Add]

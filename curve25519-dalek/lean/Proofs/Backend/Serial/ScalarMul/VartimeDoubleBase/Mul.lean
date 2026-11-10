@@ -98,14 +98,14 @@ private theorem mul_loop1_spec (a_naf b_naf : Array I8 256#usize) (i : Usize)
     (hi : i.val < 256) (hr : r.OnCurve) (hrb : r.LimbsLt 52)
     (hrp : r.toPoint = nafTail a_naf (i.val + 1) • A + nafTail b_naf (i.val + 1) • B) :
     mul.«x86_64-tables_loop1» a_naf b_naf i table_A table_B r
-      ⦃ (res : edwards.EdwardsPoint.«x86_64-tables») => res.OnCurve ∧
+      ⦃ (res : ProjectivePoint.«x86_64-tables») => res.OnCurve ∧
         res.toPoint = nafTail a_naf 0 • A + nafTail b_naf 0 • B ∧ res.LimbsLt 52 ⦄ := by
   rw [mul_loop1_eq]
   exact EdwardsOps.X86Tables.vdbLoop1T_spec
     EdwardsOps.X86Tables.addN_spec EdwardsOps.X86Tables.subN_spec EdwardsOps.X86Tables.addA_spec
     EdwardsOps.X86Tables.subA_spec EdwardsOps.X86Tables.asExtended_spec
     EdwardsOps.X86Tables.pDouble_spec EdwardsOps.X86Tables.cAsProjective_spec
-    EdwardsOps.X86Tables.pAsExtended_spec a_naf b_naf i table_A table_B r A B hA hAb hB hBb ha hb hi
+    a_naf b_naf i table_A table_B r A B hA hAb hB hBb ha hb hi
     hr hrb hrp
 
 open window.«NafLookupTable5ProjectiveNielsPointx86_64-tables».Insts in
@@ -137,8 +137,9 @@ theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«x86_64-tables»
   step with mul_loop1_spec a_naf b_naf i tA tB r A.toPoint basepoint htA htAb htB htBb
     (fun k hk h => hadig k hk h) (fun k hk h => hbdig k hk h) hi hron hrb hr'
     as ⟨res, hreson, hresp, hresb⟩
-  refine ⟨hreson, ?_, hresb⟩
-  rw [hresp, nafTail_zero, nafTail_zero, haval, hbval, natCast_zsmul, natCast_zsmul]
+  step with «ProjectivePointx86_64-tables».as_extended_spec res hresb hreson as ⟨e, heon, hep, heb⟩
+  refine ⟨heon, ?_, heb⟩
+  rw [hep, hresp, nafTail_zero, nafTail_zero, haval, hbval, natCast_zsmul, natCast_zsmul]
 
 end «x86_64-tables»
 
@@ -197,14 +198,14 @@ private theorem mul_loop1_spec (a_naf b_naf : Array I8 256#usize) (i : Usize)
     (hi : i.val < 256) (hr : r.OnCurve) (hrb : r.LimbsLt 26)
     (hrp : r.toPoint = nafTail a_naf (i.val + 1) • A + nafTail b_naf (i.val + 1) • B) :
     mul.«i686-tables_loop1» a_naf b_naf i table_A table_B r
-      ⦃ (res : edwards.EdwardsPoint.«i686-tables») => res.OnCurve ∧
+      ⦃ (res : ProjectivePoint.«i686-tables») => res.OnCurve ∧
         res.toPoint = nafTail a_naf 0 • A + nafTail b_naf 0 • B ∧ res.LimbsLt 26 ⦄ := by
   rw [mul_loop1_eq]
   exact EdwardsOps.I686Tables.vdbLoop1T_spec
     EdwardsOps.I686Tables.addN_spec EdwardsOps.I686Tables.subN_spec EdwardsOps.I686Tables.addA_spec
     EdwardsOps.I686Tables.subA_spec EdwardsOps.I686Tables.asExtended_spec
     EdwardsOps.I686Tables.pDouble_spec EdwardsOps.I686Tables.cAsProjective_spec
-    EdwardsOps.I686Tables.pAsExtended_spec a_naf b_naf i table_A table_B r A B hA hAb hB hBb ha hb
+    a_naf b_naf i table_A table_B r A B hA hAb hB hBb ha hb
     hi hr hrb hrp
 
 open window.«NafLookupTable5ProjectiveNielsPointi686-tables».Insts in
@@ -236,8 +237,9 @@ theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«i686-tables»)
   step with mul_loop1_spec a_naf b_naf i tA tB r A.toPoint basepoint htA htAb htB htBb
     (fun k hk h => hadig k hk h) (fun k hk h => hbdig k hk h) hi hron hrb hr'
     as ⟨res, hreson, hresp, hresb⟩
-  refine ⟨hreson, ?_, hresb⟩
-  rw [hresp, nafTail_zero, nafTail_zero, haval, hbval, natCast_zsmul, natCast_zsmul]
+  step with «ProjectivePointi686-tables».as_extended_spec res hresb hreson as ⟨e, heon, hep, heb⟩
+  refine ⟨heon, ?_, heb⟩
+  rw [hep, hresp, nafTail_zero, nafTail_zero, haval, hbval, natCast_zsmul, natCast_zsmul]
 
 end «i686-tables»
 
@@ -295,13 +297,13 @@ private theorem mul_loop1_spec (a_naf b_naf : Array I8 256#usize) (i : Usize)
     (hi : i.val < 256) (hr : r.OnCurve) (hrb : r.LimbsLt 52)
     (hrp : r.toPoint = nafTail a_naf (i.val + 1) • A + nafTail b_naf (i.val + 1) • B) :
     mul.«x86_64-no-tables_loop1» a_naf b_naf i table_A table_B r
-      ⦃ (res : edwards.EdwardsPoint.«x86_64-no-tables») => res.OnCurve ∧
+      ⦃ (res : ProjectivePoint.«x86_64-no-tables») => res.OnCurve ∧
         res.toPoint = nafTail a_naf 0 • A + nafTail b_naf 0 • B ∧ res.LimbsLt 52 ⦄ := by
   rw [mul_loop1_eq]
   exact EdwardsOps.X86NoTables.vdbLoop1N_spec
     EdwardsOps.X86NoTables.addN_spec EdwardsOps.X86NoTables.subN_spec
     EdwardsOps.X86NoTables.asExtended_spec EdwardsOps.X86NoTables.pDouble_spec
-    EdwardsOps.X86NoTables.cAsProjective_spec EdwardsOps.X86NoTables.pAsExtended_spec a_naf b_naf i
+    EdwardsOps.X86NoTables.cAsProjective_spec a_naf b_naf i
     table_A table_B r A B hA hAb hB hBb ha hb hi hr hrb hrp
 
 open window.«NafLookupTable5ProjectiveNielsPointx86_64-no-tables».Insts in
@@ -337,8 +339,10 @@ theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«x86_64-no-table
   step with mul_loop1_spec a_naf b_naf i tA tB r A.toPoint bp.toPoint htA htAb htB htBb
     (fun k hk h => hadig k hk h) (fun k hk h => hbdig k hk h) hi hron hrb hr'
     as ⟨res, hreson, hresp, hresb⟩
-  refine ⟨hreson, ?_, hresb⟩
-  rw [hresp, nafTail_zero, nafTail_zero, haval, hbval, hbp, natCast_zsmul, natCast_zsmul]
+  step with «ProjectivePointx86_64-no-tables».as_extended_spec res hresb hreson
+    as ⟨e, heon, hep, heb⟩
+  refine ⟨heon, ?_, heb⟩
+  rw [hep, hresp, nafTail_zero, nafTail_zero, haval, hbval, hbp, natCast_zsmul, natCast_zsmul]
 
 end «x86_64-no-tables»
 
@@ -396,13 +400,13 @@ private theorem mul_loop1_spec (a_naf b_naf : Array I8 256#usize) (i : Usize)
     (hi : i.val < 256) (hr : r.OnCurve) (hrb : r.LimbsLt 26)
     (hrp : r.toPoint = nafTail a_naf (i.val + 1) • A + nafTail b_naf (i.val + 1) • B) :
     mul.«i686-no-tables_loop1» a_naf b_naf i table_A table_B r
-      ⦃ (res : edwards.EdwardsPoint.«i686-no-tables») => res.OnCurve ∧
+      ⦃ (res : ProjectivePoint.«i686-no-tables») => res.OnCurve ∧
         res.toPoint = nafTail a_naf 0 • A + nafTail b_naf 0 • B ∧ res.LimbsLt 26 ⦄ := by
   rw [mul_loop1_eq]
   exact EdwardsOps.I686NoTables.vdbLoop1N_spec
     EdwardsOps.I686NoTables.addN_spec EdwardsOps.I686NoTables.subN_spec
     EdwardsOps.I686NoTables.asExtended_spec EdwardsOps.I686NoTables.pDouble_spec
-    EdwardsOps.I686NoTables.cAsProjective_spec EdwardsOps.I686NoTables.pAsExtended_spec a_naf b_naf
+    EdwardsOps.I686NoTables.cAsProjective_spec a_naf b_naf
     i table_A table_B r A B hA hAb hB hBb ha hb hi hr hrb hrp
 
 open window.«NafLookupTable5ProjectiveNielsPointi686-no-tables».Insts in
@@ -438,8 +442,10 @@ theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«i686-no-tables�
   step with mul_loop1_spec a_naf b_naf i tA tB r A.toPoint bp.toPoint htA htAb htB htBb
     (fun k hk h => hadig k hk h) (fun k hk h => hbdig k hk h) hi hron hrb hr'
     as ⟨res, hreson, hresp, hresb⟩
-  refine ⟨hreson, ?_, hresb⟩
-  rw [hresp, nafTail_zero, nafTail_zero, haval, hbval, hbp, natCast_zsmul, natCast_zsmul]
+  step with «ProjectivePointi686-no-tables».as_extended_spec res hresb hreson
+    as ⟨e, heon, hep, heb⟩
+  refine ⟨heon, ?_, heb⟩
+  rw [hep, hresp, nafTail_zero, nafTail_zero, haval, hbval, hbp, natCast_zsmul, natCast_zsmul]
 
 end «i686-no-tables»
 

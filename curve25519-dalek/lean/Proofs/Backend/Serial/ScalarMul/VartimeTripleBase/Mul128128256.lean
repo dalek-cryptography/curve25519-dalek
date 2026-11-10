@@ -121,7 +121,7 @@ private theorem loop1_spec (a₁ a₂ c₁ c₂ : Array I8 256#usize) (i : Usize
     (hrp : r.toPoint = nafTail a₁ (i.val + 1) • P₁ + nafTail a₂ (i.val + 1) • P₂ +
       nafTail c₁ (i.val + 1) • P₃ + nafTail c₂ (i.val + 1) • P₄) :
     mul_128_128_256.«x86_64-tables_loop1» a₁ a₂ c₁ c₂ i table_A1 table_A2 table_B table_B_128 r
-      ⦃ (res : edwards.EdwardsPoint.«x86_64-tables») => res.OnCurve ∧
+      ⦃ (res : ProjectivePoint.«x86_64-tables») => res.OnCurve ∧
         res.toPoint =
           nafTail a₁ 0 • P₁ + nafTail a₂ 0 • P₂ + nafTail c₁ 0 • P₃ + nafTail c₂ 0 • P₄ ∧
         res.LimbsLt 52 ⦄ := by
@@ -130,7 +130,7 @@ private theorem loop1_spec (a₁ a₂ c₁ c₂ : Array I8 256#usize) (i : Usize
     EdwardsOps.X86Tables.addN_spec EdwardsOps.X86Tables.subN_spec EdwardsOps.X86Tables.addA_spec
     EdwardsOps.X86Tables.subA_spec EdwardsOps.X86Tables.asExtended_spec
     EdwardsOps.X86Tables.pDouble_spec EdwardsOps.X86Tables.cAsProjective_spec
-    EdwardsOps.X86Tables.pAsExtended_spec a₁ a₂ c₁ c₂ i table_A1 table_A2 table_B table_B_128 r P₁
+    a₁ a₂ c₁ c₂ i table_A1 table_A2 table_B table_B_128 r P₁
     P₂ P₃ P₄ h₁ h₁b h₂ h₂b h₃ h₃b h₄ h₄b ha₁ ha₂ hc₁ hc₂ hi hr hrb hrp
 
 open scoped Helpers.IndexStep in
@@ -186,8 +186,10 @@ theorem mul_128_128_256_spec (a1 : scalar.HalfWidthScalar)
       (2 ^ 128 • basepoint) htA1 htA1b htA2 htA2b htB htBb htB' htB'b hd1 hd2 hd3 hd4
       (by omega) hron hrb hr'
     as ⟨res, hreson, hresp, hresb⟩
-  refine ⟨hreson, ?_, hresb⟩
-  rw [hresp, nafTail_zero, nafTail_zero, nafTail_zero, nafTail_zero, hv1, hv2, hv3, hv4,
+  step with «ProjectivePointx86_64-tables».as_extended_spec res hresb hreson
+    as ⟨e, heon, hep, heb⟩
+  refine ⟨heon, ?_, heb⟩
+  rw [hep, hresp, nafTail_zero, nafTail_zero, nafTail_zero, nafTail_zero, hv1, hv2, hv3, hv4,
     natCast_zsmul, natCast_zsmul, natCast_zsmul, natCast_zsmul, add_assoc,
     split_smul _ _ _ hsplit]
 
@@ -266,7 +268,7 @@ private theorem loop1_spec (a₁ a₂ c₁ c₂ : Array I8 256#usize) (i : Usize
     (hrp : r.toPoint = nafTail a₁ (i.val + 1) • P₁ + nafTail a₂ (i.val + 1) • P₂ +
       nafTail c₁ (i.val + 1) • P₃ + nafTail c₂ (i.val + 1) • P₄) :
     mul_128_128_256.«i686-tables_loop1» a₁ a₂ c₁ c₂ i table_A1 table_A2 table_B table_B_128 r
-      ⦃ (res : edwards.EdwardsPoint.«i686-tables») => res.OnCurve ∧
+      ⦃ (res : ProjectivePoint.«i686-tables») => res.OnCurve ∧
         res.toPoint =
           nafTail a₁ 0 • P₁ + nafTail a₂ 0 • P₂ + nafTail c₁ 0 • P₃ + nafTail c₂ 0 • P₄ ∧
         res.LimbsLt 26 ⦄ := by
@@ -275,7 +277,7 @@ private theorem loop1_spec (a₁ a₂ c₁ c₂ : Array I8 256#usize) (i : Usize
     EdwardsOps.I686Tables.addN_spec EdwardsOps.I686Tables.subN_spec EdwardsOps.I686Tables.addA_spec
     EdwardsOps.I686Tables.subA_spec EdwardsOps.I686Tables.asExtended_spec
     EdwardsOps.I686Tables.pDouble_spec EdwardsOps.I686Tables.cAsProjective_spec
-    EdwardsOps.I686Tables.pAsExtended_spec a₁ a₂ c₁ c₂ i table_A1 table_A2 table_B table_B_128 r P₁
+    a₁ a₂ c₁ c₂ i table_A1 table_A2 table_B table_B_128 r P₁
     P₂ P₃ P₄ h₁ h₁b h₂ h₂b h₃ h₃b h₄ h₄b ha₁ ha₂ hc₁ hc₂ hi hr hrb hrp
 
 open scoped Helpers.IndexStep in
@@ -331,8 +333,10 @@ theorem mul_128_128_256_spec (a1 : scalar.HalfWidthScalar)
       (2 ^ 128 • basepoint) htA1 htA1b htA2 htA2b htB htBb htB' htB'b hd1 hd2 hd3 hd4
       (by omega) hron hrb hr'
     as ⟨res, hreson, hresp, hresb⟩
-  refine ⟨hreson, ?_, hresb⟩
-  rw [hresp, nafTail_zero, nafTail_zero, nafTail_zero, nafTail_zero, hv1, hv2, hv3, hv4,
+  step with «ProjectivePointi686-tables».as_extended_spec res hresb hreson
+    as ⟨e, heon, hep, heb⟩
+  refine ⟨heon, ?_, heb⟩
+  rw [hep, hresp, nafTail_zero, nafTail_zero, nafTail_zero, nafTail_zero, hv1, hv2, hv3, hv4,
     natCast_zsmul, natCast_zsmul, natCast_zsmul, natCast_zsmul, add_assoc,
     split_smul _ _ _ hsplit]
 
@@ -407,7 +411,7 @@ private theorem loop1_spec (a₁ a₂ c₁ c₂ : Array I8 256#usize) (i : Usize
     (hrp : r.toPoint = nafTail a₁ (i.val + 1) • P₁ + nafTail a₂ (i.val + 1) • P₂ +
       nafTail c₁ (i.val + 1) • P₃ + nafTail c₂ (i.val + 1) • P₄) :
     mul_128_128_256.«x86_64-no-tables_loop1» a₁ a₂ c₁ c₂ i table_A1 table_A2 table_B table_B_128 r
-      ⦃ (res : edwards.EdwardsPoint.«x86_64-no-tables») => res.OnCurve ∧
+      ⦃ (res : ProjectivePoint.«x86_64-no-tables») => res.OnCurve ∧
         res.toPoint =
           nafTail a₁ 0 • P₁ + nafTail a₂ 0 • P₂ + nafTail c₁ 0 • P₃ + nafTail c₂ 0 • P₄ ∧
         res.LimbsLt 52 ⦄ := by
@@ -415,7 +419,7 @@ private theorem loop1_spec (a₁ a₂ c₁ c₂ : Array I8 256#usize) (i : Usize
   exact EdwardsOps.X86NoTables.vtbLoop1N_spec
     EdwardsOps.X86NoTables.addN_spec EdwardsOps.X86NoTables.subN_spec
     EdwardsOps.X86NoTables.asExtended_spec EdwardsOps.X86NoTables.pDouble_spec
-    EdwardsOps.X86NoTables.cAsProjective_spec EdwardsOps.X86NoTables.pAsExtended_spec a₁ a₂ c₁ c₂ i
+    EdwardsOps.X86NoTables.cAsProjective_spec a₁ a₂ c₁ c₂ i
     table_A1 table_A2 table_B table_B_128 r P₁ P₂ P₃ P₄ h₁ h₁b h₂ h₂b h₃ h₃b h₄ h₄b ha₁ ha₂ hc₁ hc₂
     hi hr hrb hrp
 
@@ -477,8 +481,10 @@ theorem mul_128_128_256_spec (a1 : scalar.HalfWidthScalar)
       (2 ^ 128 • basepoint) htA1 htA1b htA2 htA2b htB htBb htB' htB'b hd1 hd2 hd3 hd4
       (by omega) hron hrb hr'
     as ⟨res, hreson, hresp, hresb⟩
-  refine ⟨hreson, ?_, hresb⟩
-  rw [hresp, nafTail_zero, nafTail_zero, nafTail_zero, nafTail_zero, hv1, hv2, hv3, hv4,
+  step with «ProjectivePointx86_64-no-tables».as_extended_spec res hresb hreson
+    as ⟨e, heon, hep, heb⟩
+  refine ⟨heon, ?_, heb⟩
+  rw [hep, hresp, nafTail_zero, nafTail_zero, nafTail_zero, nafTail_zero, hv1, hv2, hv3, hv4,
     natCast_zsmul, natCast_zsmul, natCast_zsmul, natCast_zsmul, add_assoc,
     split_smul _ _ _ hsplit]
 
@@ -553,7 +559,7 @@ private theorem loop1_spec (a₁ a₂ c₁ c₂ : Array I8 256#usize) (i : Usize
     (hrp : r.toPoint = nafTail a₁ (i.val + 1) • P₁ + nafTail a₂ (i.val + 1) • P₂ +
       nafTail c₁ (i.val + 1) • P₃ + nafTail c₂ (i.val + 1) • P₄) :
     mul_128_128_256.«i686-no-tables_loop1» a₁ a₂ c₁ c₂ i table_A1 table_A2 table_B table_B_128 r
-      ⦃ (res : edwards.EdwardsPoint.«i686-no-tables») => res.OnCurve ∧
+      ⦃ (res : ProjectivePoint.«i686-no-tables») => res.OnCurve ∧
         res.toPoint =
           nafTail a₁ 0 • P₁ + nafTail a₂ 0 • P₂ + nafTail c₁ 0 • P₃ + nafTail c₂ 0 • P₄ ∧
         res.LimbsLt 26 ⦄ := by
@@ -561,7 +567,7 @@ private theorem loop1_spec (a₁ a₂ c₁ c₂ : Array I8 256#usize) (i : Usize
   exact EdwardsOps.I686NoTables.vtbLoop1N_spec
     EdwardsOps.I686NoTables.addN_spec EdwardsOps.I686NoTables.subN_spec
     EdwardsOps.I686NoTables.asExtended_spec EdwardsOps.I686NoTables.pDouble_spec
-    EdwardsOps.I686NoTables.cAsProjective_spec EdwardsOps.I686NoTables.pAsExtended_spec a₁ a₂ c₁ c₂
+    EdwardsOps.I686NoTables.cAsProjective_spec a₁ a₂ c₁ c₂
     i table_A1 table_A2 table_B table_B_128 r P₁ P₂ P₃ P₄ h₁ h₁b h₂ h₂b h₃ h₃b h₄ h₄b ha₁ ha₂ hc₁
     hc₂ hi hr hrb hrp
 
@@ -623,8 +629,10 @@ theorem mul_128_128_256_spec (a1 : scalar.HalfWidthScalar)
       (2 ^ 128 • basepoint) htA1 htA1b htA2 htA2b htB htBb htB' htB'b hd1 hd2 hd3 hd4
       (by omega) hron hrb hr'
     as ⟨res, hreson, hresp, hresb⟩
-  refine ⟨hreson, ?_, hresb⟩
-  rw [hresp, nafTail_zero, nafTail_zero, nafTail_zero, nafTail_zero, hv1, hv2, hv3, hv4,
+  step with «ProjectivePointi686-no-tables».as_extended_spec res hresb hreson
+    as ⟨e, heon, hep, heb⟩
+  refine ⟨heon, ?_, heb⟩
+  rw [hep, hresp, nafTail_zero, nafTail_zero, nafTail_zero, nafTail_zero, hv1, hv2, hv3, hv4,
     natCast_zsmul, natCast_zsmul, natCast_zsmul, natCast_zsmul, add_assoc,
     split_smul _ _ _ hsplit]
 

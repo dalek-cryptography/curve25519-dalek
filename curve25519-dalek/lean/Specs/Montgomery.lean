@@ -137,7 +137,7 @@ recall mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255)
     mul_base scalar ⦃ (r : MontgomeryPoint) =>
       r.toVector = encodeUCoordinate (scalar.asNat • montgomeryBasepoint).u ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_base_spec
 
 /-- `MontgomeryPoint::mul_clamped`: RFC 7748 `X25519(bytes, self)`. The properties of `X25519`
@@ -148,7 +148,7 @@ recall mul_clamped_spec (self : MontgomeryPoint) (bytes : Array U8 32#usize) :
     mul_clamped self bytes ⦃ (r : MontgomeryPoint) =>
       r.toVector = X25519 bytes.toVector self.toVector ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_clamped_spec
 
 /-- `MontgomeryPoint::mul_base_clamped`: RFC 7748 `X25519(bytes, 9)`. The properties of `X25519`
@@ -157,7 +157,7 @@ recall mul_base_clamped_spec (bytes : Array U8 32#usize) :
     mul_base_clamped bytes ⦃ (r : MontgomeryPoint) =>
       r.toVector = X25519 bytes.toVector (encodeUCoordinate 9) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_base_clamped_spec
 
 /-- `MontgomeryPoint::mul_bits_be`: the RFC 7748 ladder over the bits `bs` the iterator yields,
@@ -170,7 +170,7 @@ recall mul_bits_be_spec {T0 : Type} (inst : core.iter.traits.iterator.Iterator T
     mul_bits_be inst self bits ⦃ (r : MontgomeryPoint) =>
       r.toVector = encodeUCoordinate (montgomery.ladderBits bs (decodeUCoordinate self.toVector)) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_bits_be_spec
 
 /-- `MontgomeryPoint::as_bytes`: the 32 bytes themselves. -/
@@ -204,7 +204,7 @@ recall to_edwards_spec (self : MontgomeryPoint) (sign : U8) :
                 (UInt8.ofNat sign.val <<< 7)))) ∧
         ∀ q, r = some q → q.OnCurve ∧ q.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms to_edwards_spec
 
 end «x86_64-tables»
@@ -248,7 +248,7 @@ recall to_edwards_spec (self : MontgomeryPoint) (sign : U8) :
                 (UInt8.ofNat sign.val <<< 7)))) ∧
         ∀ q, r = some q → q.OnCurve ∧ q.IsBounded ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms to_edwards_spec
 
 end «x86_64-no-tables»
@@ -285,7 +285,7 @@ recall mul_assign_spec (self : MontgomeryPoint) (rhs : scalar.Scalar) :
       r.toVector = encodeUCoordinate
           (montgomery.ladder 255 (rhs.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_assign_spec
 
 end Curve25519Dalek.montgomery.MontgomeryPoint.Insts.CoreOpsArithMulAssignScalar
@@ -299,7 +299,7 @@ recall mul_spec (self : montgomery.MontgomeryPoint) (rhs : scalar.Scalar) :
       r.toVector = encodeUCoordinate
           (montgomery.ladder 255 (rhs.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end CoreOpsArithMulSharedBScalarMontgomeryPoint
@@ -313,7 +313,7 @@ recall mul_spec (self : montgomery.MontgomeryPoint) (rhs : scalar.Scalar) :
       r.toVector = encodeUCoordinate
           (montgomery.ladder 255 (rhs.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end Curve25519Dalek.SharedAMontgomeryPoint.Insts.CoreOpsArithMulScalarMontgomeryPoint
@@ -326,7 +326,7 @@ recall mul_spec (self : montgomery.MontgomeryPoint) (rhs : scalar.Scalar) :
       r.toVector = encodeUCoordinate
           (montgomery.ladder 255 (rhs.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end Curve25519Dalek.montgomery.MontgomeryPoint.Insts.CoreOpsArithMulScalarMontgomeryPoint
@@ -339,7 +339,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : montgomery.MontgomeryPoint) :
       r.toVector = encodeUCoordinate
           (montgomery.ladder 255 (self.asNat % 2 ^ 255) (decodeUCoordinate rhs.toVector)) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end Curve25519Dalek.scalar.Scalar.Insts.CoreOpsArithMulSharedBMontgomeryPointMontgomeryPoint
@@ -352,7 +352,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : montgomery.MontgomeryPoint) :
       r.toVector = encodeUCoordinate
           (montgomery.ladder 255 (self.asNat % 2 ^ 255) (decodeUCoordinate rhs.toVector)) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end Curve25519Dalek.SharedAScalar.Insts.CoreOpsArithMulMontgomeryPointMontgomeryPoint
@@ -365,7 +365,7 @@ recall mul_spec (self : scalar.Scalar) (rhs : montgomery.MontgomeryPoint) :
       r.toVector = encodeUCoordinate
           (montgomery.ladder 255 (self.asNat % 2 ^ 255) (decodeUCoordinate rhs.toVector)) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end Curve25519Dalek.scalar.Scalar.Insts.CoreOpsArithMulMontgomeryPointMontgomeryPoint
@@ -380,7 +380,7 @@ recall mul_spec (self : montgomery.MontgomeryPoint) (scalar : scalar.Scalar) :
       r.toVector = encodeUCoordinate
           (montgomery.ladder 255 (scalar.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end Curve25519Dalek.Shared1MontgomeryPoint.Insts.CoreOpsArithMulShared0ScalarMontgomeryPoint
@@ -393,7 +393,7 @@ recall mul_assign_spec (self : MontgomeryPoint) (scalar : scalar.Scalar) :
       r.toVector = encodeUCoordinate
           (montgomery.ladder 255 (scalar.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_assign_spec
 
 end Curve25519Dalek.montgomery.MontgomeryPoint.Insts.CoreOpsArithMulAssignShared0Scalar
@@ -406,7 +406,7 @@ recall mul_spec (self : scalar.Scalar) (point : montgomery.MontgomeryPoint) :
       r.toVector = encodeUCoordinate
           (montgomery.ladder 255 (self.asNat % 2 ^ 255) (decodeUCoordinate point.toVector)) ⦄
 
-/-- [propext, Classical.choice, Quot.sound, RustAx.core, RustAx.subtle, RustAx.zeroize] -/
+/-- [propext, Classical.choice, Quot.sound, RustAx.subtle, RustAx.zeroize] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms mul_spec
 
 end Curve25519Dalek.Shared1Scalar.Insts.CoreOpsArithMulShared0MontgomeryPointMontgomeryPoint

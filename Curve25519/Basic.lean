@@ -144,8 +144,8 @@ theorem mod_p_of_lt {x : ℕ} (hx : x < 2 ^ 255) :
   have h := p_add_nineteen
   split_ifs with hx'
   · exact Nat.mod_eq_of_lt (by grind)
-  · rw [Nat.mod_eq_sub_mod (by grind), Nat.mod_eq_of_lt (by grind)]
-    grind
+  · rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+    omega
 
 /-- `A = 486662`. -/
 theorem A_def : A = 486662 := by

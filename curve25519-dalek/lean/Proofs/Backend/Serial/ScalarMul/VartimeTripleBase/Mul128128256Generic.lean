@@ -212,7 +212,7 @@ variable (O : EdwardsOps)
 @[expose] def vtbLoop1TBody (a1_naf a2_naf b_lo_naf b_hi_naf : Array I8 256#usize)
     (table_A1 table_A2 : window.NafLookupTable5 O.N) (table_B : window.NafLookupTable8 O.An)
     (table_B_128 : window.NafLookupTable5 O.N) (i : Usize) (r : O.Pr) :
-    Result (ControlFlow (Usize × O.Pr) O.E) := do
+    Result (ControlFlow (Usize × O.Pr) O.Pr) := do
   let t ← O.pDouble r
   let digit ← Array.index_usize a1_naf i
   let o ← lift (core.cmp.impls.OrdI8.cmp digit 0#i8)
@@ -288,16 +288,14 @@ variable (O : EdwardsOps)
       O.addN ep pnp
   let r1 ← O.cAsProjective t4
   if i = 0#usize
-  then
-    let ep ← O.pAsExtended r1
-    ok (done ep)
+  then ok (done r1)
   else let i1 ← i - 1#usize
        ok (cont (i1, r1))
 
 /-- `mul_128_128_256_loop1` over the point operations (vtbLoop1T). -/
 @[expose] def vtbLoop1T (a1_naf a2_naf b_lo_naf b_hi_naf : Array I8 256#usize) (i : Usize)
     (table_A1 table_A2 : window.NafLookupTable5 O.N) (table_B : window.NafLookupTable8 O.An)
-    (table_B_128 : window.NafLookupTable5 O.N) (r : O.Pr) : Result O.E := do
+    (table_B_128 : window.NafLookupTable5 O.N) (r : O.Pr) : Result O.Pr := do
   loop (fun (i1, r1) =>
     O.vtbLoop1TBody a1_naf a2_naf b_lo_naf b_hi_naf table_A1 table_A2 table_B table_B_128 i1 r1)
     (i, r)
@@ -306,7 +304,7 @@ variable (O : EdwardsOps)
 @[expose] def vtbLoop1NBody (a1_naf a2_naf b_lo_naf b_hi_naf : Array I8 256#usize)
     (table_A1 table_A2 : window.NafLookupTable5 O.N) (table_B : window.NafLookupTable5 O.N)
     (table_B_128 : window.NafLookupTable5 O.N) (i : Usize) (r : O.Pr) :
-    Result (ControlFlow (Usize × O.Pr) O.E) := do
+    Result (ControlFlow (Usize × O.Pr) O.Pr) := do
   let t ← O.pDouble r
   let digit ← Array.index_usize a1_naf i
   let o ← lift (core.cmp.impls.OrdI8.cmp digit 0#i8)
@@ -382,16 +380,14 @@ variable (O : EdwardsOps)
       O.addN ep pnp
   let r1 ← O.cAsProjective t4
   if i = 0#usize
-  then
-    let ep ← O.pAsExtended r1
-    ok (done ep)
+  then ok (done r1)
   else let i1 ← i - 1#usize
        ok (cont (i1, r1))
 
 /-- `mul_128_128_256_loop1` over the point operations (vtbLoop1N). -/
 @[expose] def vtbLoop1N (a1_naf a2_naf b_lo_naf b_hi_naf : Array I8 256#usize) (i : Usize)
     (table_A1 table_A2 : window.NafLookupTable5 O.N) (table_B : window.NafLookupTable5 O.N)
-    (table_B_128 : window.NafLookupTable5 O.N) (r : O.Pr) : Result O.E := do
+    (table_B_128 : window.NafLookupTable5 O.N) (r : O.Pr) : Result O.Pr := do
   loop (fun (i1, r1) =>
     O.vtbLoop1NBody a1_naf a2_naf b_lo_naf b_hi_naf table_A1 table_A2 table_B table_B_128 i1 r1)
     (i, r)
@@ -505,7 +501,7 @@ open scoped Helpers.IndexStep in
 `∑ nafTail dₖ i • Pₖ` over the four recodings and points. -/
 theorem vtbLoop1T_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec) (haddA : O.AddASpec)
     (hsubA : O.SubASpec) (hasE : O.AsExtendedSpec)
-    (hdbl : O.PDoubleSpec) (hasP : O.CAsProjectiveSpec) (hpasE : O.PAsExtendedSpec)
+    (hdbl : O.PDoubleSpec) (hasP : O.CAsProjectiveSpec)
     (a₁ a₂ c₁ c₂ : Array I8 256#usize) (i : Usize)
     (table_A1 table_A2 : window.NafLookupTable5 O.N) (table_B : window.NafLookupTable8 O.An)
     (table_B_128 : window.NafLookupTable5 O.N)
@@ -518,10 +514,10 @@ theorem vtbLoop1T_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec) (haddA : O.AddA
     (hi : i.val < 256) (hr : O.pOnCurve r) (hrb : O.pBnd r)
     (hrp : O.pToPoint r = nafTail a₁ (i.val + 1) • P₁ + nafTail a₂ (i.val + 1) • P₂ +
       nafTail c₁ (i.val + 1) • P₃ + nafTail c₂ (i.val + 1) • P₄) :
-    O.vtbLoop1T a₁ a₂ c₁ c₂ i table_A1 table_A2 table_B table_B_128 r ⦃ (res : O.E) =>
-        O.OnCurve res ∧ O.toPoint res =
+    O.vtbLoop1T a₁ a₂ c₁ c₂ i table_A1 table_A2 table_B table_B_128 r ⦃ (res : O.Pr) =>
+        O.pOnCurve res ∧ O.pToPoint res =
           nafTail a₁ 0 • P₁ + nafTail a₂ 0 • P₂ + nafTail c₁ 0 • P₃ + nafTail c₂ 0 • P₄ ∧
-        O.Bnd res ⦄ := by
+        O.pBnd res ⦄ := by
   unfold vtbLoop1T
   apply loop.spec_decr_nat (measure := fun (j, _) => j.val)
     (inv := fun (j, q) => j.val < 256 ∧ O.pOnCurve q ∧ O.pBnd q ∧
@@ -556,10 +552,10 @@ theorem vtbLoop1T_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec) (haddA : O.AddA
       rw [hr1p, ht₄p, ht₃p, ht₂p, ht₁p, htp, hqp, horner_step, nafTail_eq _ _ hj,
         nafTail_eq _ _ hj, nafTail_eq _ _ hj, nafTail_eq _ _ hj, ← hd₁, ← hd₂, ← hd₃, ← hd₄]
     split
-    · step with hpasE r1 hr1b hr1on as ⟨res, hreson, hresp, hresb⟩
-      have hj0 : j.val = 0 := by scalar_tac
-      refine ⟨hreson, ?_, hresb⟩
-      rw [hresp, hval, hj0]
+    · have hj0 : j.val = 0 := by scalar_tac
+      simp only [WP.spec_ok]
+      refine ⟨hr1on, ?_, hr1b⟩
+      rw [hval, hj0]
     · step as ⟨j1, hj1⟩
       have hj1' : j1.val + 1 = j.val := by scalar_tac
       refine ⟨by scalar_tac, hr1on, hr1b, ?_, by scalar_tac⟩
@@ -570,7 +566,7 @@ open scoped Helpers.IndexStep in
 /-- The second loop of `mul_128_128_256`: after the digits `i, …, 255`, the accumulator represents
 `∑ nafTail dₖ i • Pₖ` over the four recodings and points. -/
 theorem vtbLoop1N_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec) (hasE : O.AsExtendedSpec)
-    (hdbl : O.PDoubleSpec) (hasP : O.CAsProjectiveSpec) (hpasE : O.PAsExtendedSpec)
+    (hdbl : O.PDoubleSpec) (hasP : O.CAsProjectiveSpec)
     (a₁ a₂ c₁ c₂ : Array I8 256#usize) (i : Usize)
     (table_A1 table_A2 : window.NafLookupTable5 O.N) (table_B : window.NafLookupTable5 O.N)
     (table_B_128 : window.NafLookupTable5 O.N)
@@ -583,10 +579,10 @@ theorem vtbLoop1N_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec) (hasE : O.AsExt
     (hi : i.val < 256) (hr : O.pOnCurve r) (hrb : O.pBnd r)
     (hrp : O.pToPoint r = nafTail a₁ (i.val + 1) • P₁ + nafTail a₂ (i.val + 1) • P₂ +
       nafTail c₁ (i.val + 1) • P₃ + nafTail c₂ (i.val + 1) • P₄) :
-    O.vtbLoop1N a₁ a₂ c₁ c₂ i table_A1 table_A2 table_B table_B_128 r ⦃ (res : O.E) =>
-        O.OnCurve res ∧ O.toPoint res =
+    O.vtbLoop1N a₁ a₂ c₁ c₂ i table_A1 table_A2 table_B table_B_128 r ⦃ (res : O.Pr) =>
+        O.pOnCurve res ∧ O.pToPoint res =
           nafTail a₁ 0 • P₁ + nafTail a₂ 0 • P₂ + nafTail c₁ 0 • P₃ + nafTail c₂ 0 • P₄ ∧
-        O.Bnd res ⦄ := by
+        O.pBnd res ⦄ := by
   unfold vtbLoop1N
   apply loop.spec_decr_nat (measure := fun (j, _) => j.val)
     (inv := fun (j, q) => j.val < 256 ∧ O.pOnCurve q ∧ O.pBnd q ∧
@@ -621,10 +617,10 @@ theorem vtbLoop1N_spec (haddN : O.AddNSpec) (hsubN : O.SubNSpec) (hasE : O.AsExt
       rw [hr1p, ht₄p, ht₃p, ht₂p, ht₁p, htp, hqp, horner_step, nafTail_eq _ _ hj,
         nafTail_eq _ _ hj, nafTail_eq _ _ hj, nafTail_eq _ _ hj, ← hd₁, ← hd₂, ← hd₃, ← hd₄]
     split
-    · step with hpasE r1 hr1b hr1on as ⟨res, hreson, hresp, hresb⟩
-      have hj0 : j.val = 0 := by scalar_tac
-      refine ⟨hreson, ?_, hresb⟩
-      rw [hresp, hval, hj0]
+    · have hj0 : j.val = 0 := by scalar_tac
+      simp only [WP.spec_ok]
+      refine ⟨hr1on, ?_, hr1b⟩
+      rw [hval, hj0]
     · step as ⟨j1, hj1⟩
       have hj1' : j1.val + 1 = j.val := by scalar_tac
       refine ⟨by scalar_tac, hr1on, hr1b, ?_, by scalar_tac⟩

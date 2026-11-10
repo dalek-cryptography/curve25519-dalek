@@ -161,7 +161,7 @@ private theorem to_bytes.pack_spec (limbs : Array U64 5#usize)
       List.map_cons, List.map_nil, Nat.ofDigits_cons, Nat.ofDigits_nil]
     simp only [*, UScalar.cast_val_eq, UScalar.val_or, UScalarTy.U8_numBits_eq]
     exact to_bytes.bytes_eq _ _ _ _ _ h0 h1 h2 h3 h4
-  · rw [Array.getElem!_Nat_set_eq _ _ _ _ ⟨by simp, by simp⟩]
+  · rw [Array.getElem!_Nat_set_eq _ _ _ _ ⟨by simp, by rw [Array.length, Array.length_eq]; decide⟩]
     simp only [*, UScalar.cast_val_eq, UScalarTy.U8_numBits_eq, Nat.shiftRight_eq_div_pow]
     exact (Nat.mod_le _ _).trans_lt (Nat.div_lt_of_lt_mul (h4.trans_eq (by norm_num)))
 
@@ -260,13 +260,6 @@ private theorem canonical_mod (x : ℕ) (hx : x < 2 * p) :
       Nat.mod_eq_of_lt (by scalar_tac),
       Nat.add_mod_left, Nat.mod_eq_of_lt hy]
 
-/-- The final check of `to_bytes`: the top bit of the last byte is clear. -/
-private theorem and_128_eq_zero {x y : U8} (hy : y.val = (x &&& 128#u8).val)
-    (hx : x.val < 2 ^ 7) : y = 0#u8 := by
-  apply UScalar.eq_of_val_eq
-  rw [hy, UScalar.val_and]
-  exact Nat.and_two_pow_eq_zero_of_lt hx
-
 open scoped Helpers.IndexStep Helpers.UpdateStep in
 @[step]
 theorem to_bytes_spec (self : FieldElement51) :
@@ -281,7 +274,5 @@ theorem to_bytes_spec (self : FieldElement51) :
     rw [hq, ← Nat.lt_succ_iff, Nat.div_lt_iff_lt_mul (by positivity)]
     scalar_tac
   step*
-  · apply and_128_eq_zero (by assumption)
-    simp only [*]
-  · simp only [*, canonical_mod _ hfe_lt]
+  simp only [*, canonical_mod _ hfe_lt]
 end Curve25519Dalek.backend.serial.u64.field.FieldElement51

@@ -6,6 +6,7 @@ module
 public import Curve25519Dalek.Funs
 public import Defs.Montgomery
 public import Subtle.Contract
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `ConditionallySelectable for MontgomeryPoint` -/

@@ -3,9 +3,10 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import Proofs.Helpers.Represents
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
-public import Defs.Iterator
+public import ToAeneas.Iterator
 public import Defs.Scalar
 public import Defs.ScalarMul
 import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.OptionalMixedMultiscalarMul
@@ -31,10 +32,10 @@ theorem optional_mixed_multiscalar_mul_spec
     (dynamicPointsInst : core.iter.traits.collect.IntoIterator K
       (Option edwards.EdwardsPoint.«x86_64-tables») Clause4_IntoIter)
     (self : VartimePrecomputedStraus.«x86_64-tables») (static_scalars : I) (dynamic_scalars : J)
-    (dynamic_points : K) (ps : List curve25519.edwards.Point) (xs : List Clause0_Item)
+    (dynamic_points : K) (xs : List Clause0_Item)
     (ss : List scalar.Scalar) (ys : List Clause2_Item) (ds : List scalar.Scalar)
     (qops : List (Option edwards.EdwardsPoint.«x86_64-tables»))
-    (hself : self.Represents ps) (hself_b : self.LimbsLt 54)
+    (hself : self.IsValid) (hself_b : self.LimbsLt 54)
     (hstatic_scalars : staticScalarsInst.Yields static_scalars xs)
     (hdynamic_scalars : dynamicScalarsInst.Yields dynamic_scalars ys)
     (hdynamic_points : dynamicPointsInst.Yields dynamic_points qops)
@@ -45,19 +46,20 @@ theorem optional_mixed_multiscalar_mul_spec
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hds : ∀ s ∈ ds, s.asNat < 2 ^ 255)
     (hqs : ∀ Q, some Q ∈ qops → Q.LimbsLt 52 ∧ Q.OnCurve)
     (hxs : xs.length ≤ Usize.max) (hys : ys.length ≤ Usize.max)
-    (hqops : qops.length ≤ Usize.max) (hstatic : ss.length ≤ ps.length)
+    (hqops : qops.length ≤ Usize.max) (hstatic : none ∉ qops → ss.length ≤ self.points.length)
     (hdynamic : none ∉ qops → ds.length = qops.length) :
     optional_mixed_multiscalar_mul staticScalarsInst borrowStaticInst dynamicScalarsInst
       borrowDynamicInst dynamicPointsInst self static_scalars dynamic_scalars dynamic_points
       ⦃ (r : Option edwards.EdwardsPoint.«x86_64-tables») => (r = none ↔ none ∈ qops) ∧
         ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
-          (List.zipWith (fun s P => s.asNat • P) ss ps).sum +
+          (List.zipWith (fun s P => s.asNat • P) ss self.points).sum +
             (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds (qops.filterMap id)).sum ∧
           R.LimbsLt 52 ⦄ := by
   rcases self with ⟨inner⟩
   unfold optional_mixed_multiscalar_mul
   exact serial_spec
-    _ _ _ _ _ inner _ _ _ ps xs ss ys ds qops hself hself_b hstatic_scalars hdynamic_scalars
+    _ _ _ _ _ inner _ _ _ _ xs ss ys ds qops ((inner.represents_iff _).mpr ⟨hself, rfl⟩) hself_b
+        hstatic_scalars hdynamic_scalars
     hdynamic_points hborrow_static hborrow_dynamic hss hds hqs hxs hys hqops hstatic hdynamic
 
 end «VartimePrecomputedStrausx86_64-tables»
@@ -78,10 +80,10 @@ theorem optional_mixed_multiscalar_mul_spec
     (dynamicPointsInst : core.iter.traits.collect.IntoIterator K
       (Option edwards.EdwardsPoint.«i686-tables») Clause4_IntoIter)
     (self : VartimePrecomputedStraus.«i686-tables») (static_scalars : I) (dynamic_scalars : J)
-    (dynamic_points : K) (ps : List curve25519.edwards.Point) (xs : List Clause0_Item)
+    (dynamic_points : K) (xs : List Clause0_Item)
     (ss : List scalar.Scalar) (ys : List Clause2_Item) (ds : List scalar.Scalar)
     (qops : List (Option edwards.EdwardsPoint.«i686-tables»))
-    (hself : self.Represents ps) (hself_b : self.LimbsLt 27)
+    (hself : self.IsValid) (hself_b : self.LimbsLt 27)
     (hstatic_scalars : staticScalarsInst.Yields static_scalars xs)
     (hdynamic_scalars : dynamicScalarsInst.Yields dynamic_scalars ys)
     (hdynamic_points : dynamicPointsInst.Yields dynamic_points qops)
@@ -92,19 +94,20 @@ theorem optional_mixed_multiscalar_mul_spec
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hds : ∀ s ∈ ds, s.asNat < 2 ^ 255)
     (hqs : ∀ Q, some Q ∈ qops → Q.LimbsLt 26 ∧ Q.OnCurve)
     (hxs : xs.length ≤ Usize.max) (hys : ys.length ≤ Usize.max)
-    (hqops : qops.length ≤ Usize.max) (hstatic : ss.length ≤ ps.length)
+    (hqops : qops.length ≤ Usize.max) (hstatic : none ∉ qops → ss.length ≤ self.points.length)
     (hdynamic : none ∉ qops → ds.length = qops.length) :
     optional_mixed_multiscalar_mul staticScalarsInst borrowStaticInst dynamicScalarsInst
       borrowDynamicInst dynamicPointsInst self static_scalars dynamic_scalars dynamic_points
       ⦃ (r : Option edwards.EdwardsPoint.«i686-tables») => (r = none ↔ none ∈ qops) ∧
         ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
-          (List.zipWith (fun s P => s.asNat • P) ss ps).sum +
+          (List.zipWith (fun s P => s.asNat • P) ss self.points).sum +
             (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds (qops.filterMap id)).sum ∧
           R.LimbsLt 26 ⦄ := by
   rcases self with ⟨inner⟩
   unfold optional_mixed_multiscalar_mul
   exact serial_spec
-    _ _ _ _ _ inner _ _ _ ps xs ss ys ds qops hself hself_b hstatic_scalars hdynamic_scalars
+    _ _ _ _ _ inner _ _ _ _ xs ss ys ds qops ((inner.represents_iff _).mpr ⟨hself, rfl⟩) hself_b
+        hstatic_scalars hdynamic_scalars
     hdynamic_points hborrow_static hborrow_dynamic hss hds hqs hxs hys hqops hstatic hdynamic
 
 end «VartimePrecomputedStrausi686-tables»
@@ -125,10 +128,10 @@ theorem optional_mixed_multiscalar_mul_spec
     (dynamicPointsInst : core.iter.traits.collect.IntoIterator K
       (Option edwards.EdwardsPoint.«x86_64-no-tables») Clause4_IntoIter)
     (self : VartimePrecomputedStraus.«x86_64-no-tables») (static_scalars : I) (dynamic_scalars : J)
-    (dynamic_points : K) (ps : List curve25519.edwards.Point) (xs : List Clause0_Item)
+    (dynamic_points : K) (xs : List Clause0_Item)
     (ss : List scalar.Scalar) (ys : List Clause2_Item) (ds : List scalar.Scalar)
     (qops : List (Option edwards.EdwardsPoint.«x86_64-no-tables»))
-    (hself : self.Represents ps) (hself_b : self.LimbsLt 54)
+    (hself : self.IsValid) (hself_b : self.LimbsLt 54)
     (hstatic_scalars : staticScalarsInst.Yields static_scalars xs)
     (hdynamic_scalars : dynamicScalarsInst.Yields dynamic_scalars ys)
     (hdynamic_points : dynamicPointsInst.Yields dynamic_points qops)
@@ -139,19 +142,20 @@ theorem optional_mixed_multiscalar_mul_spec
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hds : ∀ s ∈ ds, s.asNat < 2 ^ 255)
     (hqs : ∀ Q, some Q ∈ qops → Q.LimbsLt 52 ∧ Q.OnCurve)
     (hxs : xs.length ≤ Usize.max) (hys : ys.length ≤ Usize.max)
-    (hqops : qops.length ≤ Usize.max) (hstatic : ss.length ≤ ps.length)
+    (hqops : qops.length ≤ Usize.max) (hstatic : none ∉ qops → ss.length ≤ self.points.length)
     (hdynamic : none ∉ qops → ds.length = qops.length) :
     optional_mixed_multiscalar_mul staticScalarsInst borrowStaticInst dynamicScalarsInst
       borrowDynamicInst dynamicPointsInst self static_scalars dynamic_scalars dynamic_points
       ⦃ (r : Option edwards.EdwardsPoint.«x86_64-no-tables») => (r = none ↔ none ∈ qops) ∧
         ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
-          (List.zipWith (fun s P => s.asNat • P) ss ps).sum +
+          (List.zipWith (fun s P => s.asNat • P) ss self.points).sum +
             (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds (qops.filterMap id)).sum ∧
           R.LimbsLt 52 ⦄ := by
   rcases self with ⟨inner⟩
   unfold optional_mixed_multiscalar_mul
   exact serial_spec
-    _ _ _ _ _ inner _ _ _ ps xs ss ys ds qops hself hself_b hstatic_scalars hdynamic_scalars
+    _ _ _ _ _ inner _ _ _ _ xs ss ys ds qops ((inner.represents_iff _).mpr ⟨hself, rfl⟩) hself_b
+        hstatic_scalars hdynamic_scalars
     hdynamic_points hborrow_static hborrow_dynamic hss hds hqs hxs hys hqops hstatic hdynamic
 
 end «VartimePrecomputedStrausx86_64-no-tables»
@@ -172,10 +176,10 @@ theorem optional_mixed_multiscalar_mul_spec
     (dynamicPointsInst : core.iter.traits.collect.IntoIterator K
       (Option edwards.EdwardsPoint.«i686-no-tables») Clause4_IntoIter)
     (self : VartimePrecomputedStraus.«i686-no-tables») (static_scalars : I) (dynamic_scalars : J)
-    (dynamic_points : K) (ps : List curve25519.edwards.Point) (xs : List Clause0_Item)
+    (dynamic_points : K) (xs : List Clause0_Item)
     (ss : List scalar.Scalar) (ys : List Clause2_Item) (ds : List scalar.Scalar)
     (qops : List (Option edwards.EdwardsPoint.«i686-no-tables»))
-    (hself : self.Represents ps) (hself_b : self.LimbsLt 27)
+    (hself : self.IsValid) (hself_b : self.LimbsLt 27)
     (hstatic_scalars : staticScalarsInst.Yields static_scalars xs)
     (hdynamic_scalars : dynamicScalarsInst.Yields dynamic_scalars ys)
     (hdynamic_points : dynamicPointsInst.Yields dynamic_points qops)
@@ -186,19 +190,20 @@ theorem optional_mixed_multiscalar_mul_spec
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hds : ∀ s ∈ ds, s.asNat < 2 ^ 255)
     (hqs : ∀ Q, some Q ∈ qops → Q.LimbsLt 26 ∧ Q.OnCurve)
     (hxs : xs.length ≤ Usize.max) (hys : ys.length ≤ Usize.max)
-    (hqops : qops.length ≤ Usize.max) (hstatic : ss.length ≤ ps.length)
+    (hqops : qops.length ≤ Usize.max) (hstatic : none ∉ qops → ss.length ≤ self.points.length)
     (hdynamic : none ∉ qops → ds.length = qops.length) :
     optional_mixed_multiscalar_mul staticScalarsInst borrowStaticInst dynamicScalarsInst
       borrowDynamicInst dynamicPointsInst self static_scalars dynamic_scalars dynamic_points
       ⦃ (r : Option edwards.EdwardsPoint.«i686-no-tables») => (r = none ↔ none ∈ qops) ∧
         ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
-          (List.zipWith (fun s P => s.asNat • P) ss ps).sum +
+          (List.zipWith (fun s P => s.asNat • P) ss self.points).sum +
             (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds (qops.filterMap id)).sum ∧
           R.LimbsLt 26 ⦄ := by
   rcases self with ⟨inner⟩
   unfold optional_mixed_multiscalar_mul
   exact serial_spec
-    _ _ _ _ _ inner _ _ _ ps xs ss ys ds qops hself hself_b hstatic_scalars hdynamic_scalars
+    _ _ _ _ _ inner _ _ _ _ xs ss ys ds qops ((inner.represents_iff _).mpr ⟨hself, rfl⟩) hself_b
+        hstatic_scalars hdynamic_scalars
     hdynamic_points hborrow_static hborrow_dynamic hss hds hqs hxs hys hqops hstatic hdynamic
 
 end «VartimePrecomputedStrausi686-no-tables»

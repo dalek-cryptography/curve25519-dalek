@@ -71,7 +71,7 @@ theorem is_valid_eq (self : ProjectivePoint.«x86_64-tables») :
 /-- `ValidityCheck for ProjectivePoint`: the homogeneous curve equation
 `(Y² - X²) Z² = Z⁴ + d X² Y²` (it does not check `Z ≠ 0`); limbs `< 2^52`. -/
 @[step]
-theorem is_valid_spec (self : ProjectivePoint.«x86_64-tables») (hself : self.LimbsLt 52) :
+theorem is_valid_homogeneous (self : ProjectivePoint.«x86_64-tables») (hself : self.LimbsLt 52) :
     is_valid self ⦃ (b : Bool) =>
       b = true ↔ (self.Y.toField ^ 2 - self.X.toField ^ 2) * self.Z.toField ^ 2 =
         self.Z.toField ^ 4 + d * self.X.toField ^ 2 * self.Y.toField ^ 2 ⦄ := by
@@ -82,10 +82,10 @@ theorem is_valid_spec (self : ProjectivePoint.«x86_64-tables») (hself : self.L
     Backend.U64.eq_spec Backend.U64.edwardsD_spec _ _ _ h1 h2 h3
 
 /-- `ValidityCheck for ProjectivePoint` with `Z ≠ 0`: `OnCurve`. -/
-theorem is_valid_spec_point (self : ProjectivePoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem is_valid_spec (self : ProjectivePoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hZ : self.Z.toField ≠ 0) :
     is_valid self ⦃ (b : Bool) => b = true ↔ self.OnCurve ⦄ :=
-  spec_mono (is_valid_spec self hself) fun b hb => by
+  spec_mono (is_valid_homogeneous self hself) fun b hb => by
     rw [hb, ProjectivePoint.«x86_64-tables».onCurve_iff_homogeneous, a_def, and_iff_right hZ]
     constructor <;> intro h <;> linear_combination h
 
@@ -100,7 +100,7 @@ theorem is_valid_eq (self : ProjectivePoint.«i686-tables») :
 /-- `ValidityCheck for ProjectivePoint`: the homogeneous curve equation
 `(Y² - X²) Z² = Z⁴ + d X² Y²` (it does not check `Z ≠ 0`); limbs `< 2^26`. -/
 @[step]
-theorem is_valid_spec (self : ProjectivePoint.«i686-tables») (hself : self.LimbsLt 26) :
+theorem is_valid_homogeneous (self : ProjectivePoint.«i686-tables») (hself : self.LimbsLt 26) :
     is_valid self ⦃ (b : Bool) =>
       b = true ↔ (self.Y.toField ^ 2 - self.X.toField ^ 2) * self.Z.toField ^ 2 =
         self.Z.toField ^ 4 + d * self.X.toField ^ 2 * self.Y.toField ^ 2 ⦄ := by
@@ -111,10 +111,10 @@ theorem is_valid_spec (self : ProjectivePoint.«i686-tables») (hself : self.Lim
     Backend.U32.eq_spec Backend.U32.edwardsD_spec _ _ _ h1 h2 h3
 
 /-- `ValidityCheck for ProjectivePoint` with `Z ≠ 0`: `OnCurve`. -/
-theorem is_valid_spec_point (self : ProjectivePoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem is_valid_spec (self : ProjectivePoint.«i686-tables») (hself : self.LimbsLt 26)
     (hZ : self.Z.toField ≠ 0) :
     is_valid self ⦃ (b : Bool) => b = true ↔ self.OnCurve ⦄ :=
-  spec_mono (is_valid_spec self hself) fun b hb => by
+  spec_mono (is_valid_homogeneous self hself) fun b hb => by
     rw [hb, ProjectivePoint.«i686-tables».onCurve_iff_homogeneous, a_def, and_iff_right hZ]
     constructor <;> intro h <;> linear_combination h
 
@@ -129,7 +129,7 @@ theorem is_valid_eq (self : ProjectivePoint.«x86_64-no-tables») :
 /-- `ValidityCheck for ProjectivePoint`: the homogeneous curve equation
 `(Y² - X²) Z² = Z⁴ + d X² Y²` (it does not check `Z ≠ 0`); limbs `< 2^52`. -/
 @[step]
-theorem is_valid_spec (self : ProjectivePoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
+theorem is_valid_homogeneous (self : ProjectivePoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
     is_valid self ⦃ (b : Bool) =>
       b = true ↔ (self.Y.toField ^ 2 - self.X.toField ^ 2) * self.Z.toField ^ 2 =
         self.Z.toField ^ 4 + d * self.X.toField ^ 2 * self.Y.toField ^ 2 ⦄ := by
@@ -140,10 +140,10 @@ theorem is_valid_spec (self : ProjectivePoint.«x86_64-no-tables») (hself : sel
     Backend.U64.eq_spec Backend.U64.edwardsD_spec _ _ _ h1 h2 h3
 
 /-- `ValidityCheck for ProjectivePoint` with `Z ≠ 0`: `OnCurve`. -/
-theorem is_valid_spec_point (self : ProjectivePoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem is_valid_spec (self : ProjectivePoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hZ : self.Z.toField ≠ 0) :
     is_valid self ⦃ (b : Bool) => b = true ↔ self.OnCurve ⦄ :=
-  spec_mono (is_valid_spec self hself) fun b hb => by
+  spec_mono (is_valid_homogeneous self hself) fun b hb => by
     rw [hb, ProjectivePoint.«x86_64-no-tables».onCurve_iff_homogeneous, a_def, and_iff_right hZ]
     constructor <;> intro h <;> linear_combination h
 
@@ -158,7 +158,7 @@ theorem is_valid_eq (self : ProjectivePoint.«i686-no-tables») :
 /-- `ValidityCheck for ProjectivePoint`: the homogeneous curve equation
 `(Y² - X²) Z² = Z⁴ + d X² Y²` (it does not check `Z ≠ 0`); limbs `< 2^26`. -/
 @[step]
-theorem is_valid_spec (self : ProjectivePoint.«i686-no-tables») (hself : self.LimbsLt 26) :
+theorem is_valid_homogeneous (self : ProjectivePoint.«i686-no-tables») (hself : self.LimbsLt 26) :
     is_valid self ⦃ (b : Bool) =>
       b = true ↔ (self.Y.toField ^ 2 - self.X.toField ^ 2) * self.Z.toField ^ 2 =
         self.Z.toField ^ 4 + d * self.X.toField ^ 2 * self.Y.toField ^ 2 ⦄ := by
@@ -169,10 +169,10 @@ theorem is_valid_spec (self : ProjectivePoint.«i686-no-tables») (hself : self.
     Backend.U32.eq_spec Backend.U32.edwardsD_spec _ _ _ h1 h2 h3
 
 /-- `ValidityCheck for ProjectivePoint` with `Z ≠ 0`: `OnCurve`. -/
-theorem is_valid_spec_point (self : ProjectivePoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem is_valid_spec (self : ProjectivePoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hZ : self.Z.toField ≠ 0) :
     is_valid self ⦃ (b : Bool) => b = true ↔ self.OnCurve ⦄ :=
-  spec_mono (is_valid_spec self hself) fun b hb => by
+  spec_mono (is_valid_homogeneous self hself) fun b hb => by
     rw [hb, ProjectivePoint.«i686-no-tables».onCurve_iff_homogeneous, a_def, and_iff_right hZ]
     constructor <;> intro h <;> linear_combination h
 

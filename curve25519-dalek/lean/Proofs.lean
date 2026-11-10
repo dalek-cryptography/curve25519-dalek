@@ -259,6 +259,7 @@ public import Proofs.Helpers.AsNat
 public import Proofs.Helpers.BasepointTable
 public import Proofs.Helpers.Bitwise
 public import Proofs.Helpers.Bytes
+public import Proofs.Helpers.ByteValues
 public import Proofs.Helpers.Cmp
 public import Proofs.Helpers.Collect
 public import Proofs.Helpers.Coords

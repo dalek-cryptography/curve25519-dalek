@@ -27,7 +27,8 @@ namespace «CoreOpsArithNegProjectiveNielsPointx86_64-tables»
 
 /-- `Neg for &ProjectiveNielsPoint`: swap `Y + X` and `Y - X`, negate `T2d`; limbs `< 2^54`. -/
 @[step]
-theorem neg_spec (self : ProjectiveNielsPoint.«x86_64-tables») (hself : self.LimbsLt 54) :
+theorem neg_toProjectiveNiels (self : ProjectiveNielsPoint.«x86_64-tables») (hself : self.LimbsLt
+    54) :
     neg self ⦃ (r : ProjectiveNielsPoint.«x86_64-tables») =>
       r.toProjectiveNiels = self.toProjectiveNiels.neg ∧ r.LimbsLt 54 ⦄ := by
   obtain ⟨hYpX, hYmX, hZ, hT2d⟩ := hself
@@ -39,11 +40,11 @@ theorem neg_spec (self : ProjectiveNielsPoint.«x86_64-tables») (hself : self.L
   · exact ⟨hYmX, hYpX, hZ, limbs_lt_of_le (by decide) hT2d'_lt⟩
 
 /-- `Neg for &ProjectiveNielsPoint` negates the represented point. -/
-theorem neg_spec_point (self : ProjectiveNielsPoint.«x86_64-tables») (hself : self.LimbsLt 54)
+theorem neg_spec (self : ProjectiveNielsPoint.«x86_64-tables») (hself : self.LimbsLt 54)
     (hon : self.OnCurve) :
     neg self ⦃ (r : ProjectiveNielsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 54 ⦄ :=
-  spec_mono (neg_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (neg_toProjectiveNiels self hself) fun r ⟨hr, hb⟩ => by
     rw [ProjectiveNielsPoint.«x86_64-tables».onCurve_iff,
       ProjectiveNielsPoint.«x86_64-tables».toPoint_def, hr,
       ProjectiveNielsPoint.«x86_64-tables».toPoint_def]
@@ -60,7 +61,8 @@ namespace «CoreOpsArithNegProjectiveNielsPointi686-tables»
 
 /-- `Neg for &ProjectiveNielsPoint`: swap `Y + X` and `Y - X`, negate `T2d`; limbs `< 2^27`. -/
 @[step]
-theorem neg_spec (self : ProjectiveNielsPoint.«i686-tables») (hself : self.LimbsLt 27) :
+theorem neg_toProjectiveNiels (self : ProjectiveNielsPoint.«i686-tables») (hself : self.LimbsLt 27)
+    :
     neg self ⦃ (r : ProjectiveNielsPoint.«i686-tables») =>
       r.toProjectiveNiels = self.toProjectiveNiels.neg ∧ r.LimbsLt 27 ⦄ := by
   obtain ⟨hYpX, hYmX, hZ, hT2d⟩ := hself
@@ -72,11 +74,11 @@ theorem neg_spec (self : ProjectiveNielsPoint.«i686-tables») (hself : self.Lim
   · exact ⟨hYmX, hYpX, hZ, limbs_lt_of_le (by decide) hT2d'_lt⟩
 
 /-- `Neg for &ProjectiveNielsPoint` negates the represented point. -/
-theorem neg_spec_point (self : ProjectiveNielsPoint.«i686-tables») (hself : self.LimbsLt 27)
+theorem neg_spec (self : ProjectiveNielsPoint.«i686-tables») (hself : self.LimbsLt 27)
     (hon : self.OnCurve) :
     neg self ⦃ (r : ProjectiveNielsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 27 ⦄ :=
-  spec_mono (neg_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (neg_toProjectiveNiels self hself) fun r ⟨hr, hb⟩ => by
     rw [ProjectiveNielsPoint.«i686-tables».onCurve_iff,
       ProjectiveNielsPoint.«i686-tables».toPoint_def, hr,
       ProjectiveNielsPoint.«i686-tables».toPoint_def]
@@ -93,7 +95,8 @@ namespace «CoreOpsArithNegProjectiveNielsPointx86_64-no-tables»
 
 /-- `Neg for &ProjectiveNielsPoint`: swap `Y + X` and `Y - X`, negate `T2d`; limbs `< 2^54`. -/
 @[step]
-theorem neg_spec (self : ProjectiveNielsPoint.«x86_64-no-tables») (hself : self.LimbsLt 54) :
+theorem neg_toProjectiveNiels (self : ProjectiveNielsPoint.«x86_64-no-tables») (hself :
+    self.LimbsLt 54) :
     neg self ⦃ (r : ProjectiveNielsPoint.«x86_64-no-tables») =>
       r.toProjectiveNiels = self.toProjectiveNiels.neg ∧ r.LimbsLt 54 ⦄ := by
   obtain ⟨hYpX, hYmX, hZ, hT2d⟩ := hself
@@ -105,11 +108,11 @@ theorem neg_spec (self : ProjectiveNielsPoint.«x86_64-no-tables») (hself : sel
   · exact ⟨hYmX, hYpX, hZ, limbs_lt_of_le (by decide) hT2d'_lt⟩
 
 /-- `Neg for &ProjectiveNielsPoint` negates the represented point. -/
-theorem neg_spec_point (self : ProjectiveNielsPoint.«x86_64-no-tables») (hself : self.LimbsLt 54)
+theorem neg_spec (self : ProjectiveNielsPoint.«x86_64-no-tables») (hself : self.LimbsLt 54)
     (hon : self.OnCurve) :
     neg self ⦃ (r : ProjectiveNielsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 54 ⦄ :=
-  spec_mono (neg_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (neg_toProjectiveNiels self hself) fun r ⟨hr, hb⟩ => by
     rw [ProjectiveNielsPoint.«x86_64-no-tables».onCurve_iff,
       ProjectiveNielsPoint.«x86_64-no-tables».toPoint_def, hr,
       ProjectiveNielsPoint.«x86_64-no-tables».toPoint_def]
@@ -126,7 +129,8 @@ namespace «CoreOpsArithNegProjectiveNielsPointi686-no-tables»
 
 /-- `Neg for &ProjectiveNielsPoint`: swap `Y + X` and `Y - X`, negate `T2d`; limbs `< 2^27`. -/
 @[step]
-theorem neg_spec (self : ProjectiveNielsPoint.«i686-no-tables») (hself : self.LimbsLt 27) :
+theorem neg_toProjectiveNiels (self : ProjectiveNielsPoint.«i686-no-tables») (hself : self.LimbsLt
+    27) :
     neg self ⦃ (r : ProjectiveNielsPoint.«i686-no-tables») =>
       r.toProjectiveNiels = self.toProjectiveNiels.neg ∧ r.LimbsLt 27 ⦄ := by
   obtain ⟨hYpX, hYmX, hZ, hT2d⟩ := hself
@@ -138,11 +142,11 @@ theorem neg_spec (self : ProjectiveNielsPoint.«i686-no-tables») (hself : self.
   · exact ⟨hYmX, hYpX, hZ, limbs_lt_of_le (by decide) hT2d'_lt⟩
 
 /-- `Neg for &ProjectiveNielsPoint` negates the represented point. -/
-theorem neg_spec_point (self : ProjectiveNielsPoint.«i686-no-tables») (hself : self.LimbsLt 27)
+theorem neg_spec (self : ProjectiveNielsPoint.«i686-no-tables») (hself : self.LimbsLt 27)
     (hon : self.OnCurve) :
     neg self ⦃ (r : ProjectiveNielsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 27 ⦄ :=
-  spec_mono (neg_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (neg_toProjectiveNiels self hself) fun r ⟨hr, hb⟩ => by
     rw [ProjectiveNielsPoint.«i686-no-tables».onCurve_iff,
       ProjectiveNielsPoint.«i686-no-tables».toPoint_def, hr,
       ProjectiveNielsPoint.«i686-no-tables».toPoint_def]

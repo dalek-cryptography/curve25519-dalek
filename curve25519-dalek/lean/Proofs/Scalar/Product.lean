@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import Defs.Iterator
+public import ToAeneas.Iterator
 public import Defs.Scalar
 import Proofs.Scalar.Mul
 import Proofs.Scalar.One

@@ -26,7 +26,7 @@ theorem identity_spec :
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ := by
   unfold identity
   step with
-    edwards.EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+    edwards.EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, h1, h2, h3⟩
   exact ⟨h1, by rw [h2]; exact Even.zero, h2, h3⟩
 
@@ -41,7 +41,7 @@ theorem identity_spec :
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ := by
   unfold identity
   step with
-    edwards.EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+    edwards.EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, h1, h2, h3⟩
   exact ⟨h1, by rw [h2]; exact Even.zero, h2, h3⟩
 
@@ -82,7 +82,7 @@ theorem identity_spec :
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ := by
   unfold identity
   step with
-    edwards.EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+    edwards.EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, h1, h2, h3⟩
   exact ⟨h1, by rw [h2]; exact Even.zero, h2, h3⟩
 
@@ -97,7 +97,7 @@ theorem identity_spec :
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ := by
   unfold identity
   step with
-    edwards.EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+    edwards.EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, h1, h2, h3⟩
   exact ⟨h1, by rw [h2]; exact Even.zero, h2, h3⟩
 

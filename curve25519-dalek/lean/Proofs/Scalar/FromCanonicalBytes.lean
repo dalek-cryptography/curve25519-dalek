@@ -11,6 +11,7 @@ import Proofs.Helpers.Array
 import Proofs.Helpers.Scalar
 import Proofs.Scalar.IsCanonical
 import Subtle.Lemmas
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

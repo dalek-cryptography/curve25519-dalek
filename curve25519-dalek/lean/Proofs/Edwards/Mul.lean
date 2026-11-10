@@ -22,7 +22,7 @@ namespace Curve25519Dalek
 namespace «Shared0EdwardsPointx86_64-tables».Insts
 namespace «CoreOpsArithMulSharedAScalarEdwardsPointx86_64-tables»
 
-/-- `Mul<&Scalar> for &EdwardsPoint`: `scalar • P` (unreduced, `< 2^255`); limbs `< 2^52`. -/
+/-- `Mul<&Scalar> for &EdwardsPoint`: `scalar • self` (unreduced, `< 2^255`); limbs `< 2^52`. -/
 @[step]
 theorem mul_spec (self : edwards.EdwardsPoint.«x86_64-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
@@ -37,7 +37,7 @@ end «Shared0EdwardsPointx86_64-tables».Insts
 namespace «Shared0EdwardsPointi686-tables».Insts
 namespace «CoreOpsArithMulSharedAScalarEdwardsPointi686-tables»
 
-/-- `Mul<&Scalar> for &EdwardsPoint`: `scalar • P` (unreduced, `< 2^255`); limbs `< 2^26`. -/
+/-- `Mul<&Scalar> for &EdwardsPoint`: `scalar • self` (unreduced, `< 2^255`); limbs `< 2^26`. -/
 @[step]
 theorem mul_spec (self : edwards.EdwardsPoint.«i686-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
@@ -254,7 +254,7 @@ end SharedAScalar.Insts
 namespace «Shared0EdwardsPointx86_64-no-tables».Insts
 namespace «CoreOpsArithMulSharedAScalarEdwardsPointx86_64-no-tables»
 
-/-- `Mul<&Scalar> for &EdwardsPoint`: `scalar • P` (unreduced, `< 2^255`); limbs `< 2^52`. -/
+/-- `Mul<&Scalar> for &EdwardsPoint`: `scalar • self` (unreduced, `< 2^255`); limbs `< 2^52`. -/
 @[step]
 theorem mul_spec (self : edwards.EdwardsPoint.«x86_64-no-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
@@ -269,7 +269,7 @@ end «Shared0EdwardsPointx86_64-no-tables».Insts
 namespace «Shared0EdwardsPointi686-no-tables».Insts
 namespace «CoreOpsArithMulSharedAScalarEdwardsPointi686-no-tables»
 
-/-- `Mul<&Scalar> for &EdwardsPoint`: `scalar • P` (unreduced, `< 2^255`); limbs `< 2^26`. -/
+/-- `Mul<&Scalar> for &EdwardsPoint`: `scalar • self` (unreduced, `< 2^255`); limbs `< 2^26`. -/
 @[step]
 theorem mul_spec (self : edwards.EdwardsPoint.«i686-no-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :

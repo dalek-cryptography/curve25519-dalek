@@ -16,6 +16,7 @@ import Proofs.Helpers.AsNat
 import Proofs.Helpers.StepSpecs
 public import Curve25519.Basic
 import Proofs.Helpers.Montgomery
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

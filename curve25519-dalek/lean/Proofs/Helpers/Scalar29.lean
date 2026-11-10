@@ -9,6 +9,7 @@ public import Curve25519.Basic
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.Bitwise
 public import Aeneas
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # Lemmas shared by the proofs of `backend/serial/u32/scalar.rs`

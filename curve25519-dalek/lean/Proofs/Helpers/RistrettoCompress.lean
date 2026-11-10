@@ -11,8 +11,8 @@ public section
 /-! # The Ristretto encoding on projective coordinates
 
 `RistrettoPoint::compress` evaluates RFC 9496 §4.3.2 on the extended coordinates `(X : Y : Z : T)`
-of a point, not on `(x, y, 1, x y)` as `encodeRep` does. `compressProj X Y Z T` is that
-computation; `compressProj_eq_encodeRep` shows that it does not depend on the representative.
+of a point, not on `(x, y, 1, x y)` as `encodeRepNat` does. `compressProj X Y Z T` is that
+computation; `compressProj_eq_encodeRepNat` shows that it does not depend on the representative.
 Scaling the coordinates by `Z` scales the inverse square root by `± 1 / Z³` (`λ⁶` is a square), so
 every quantity of the encoding except the last factor depends only on its square, and the result
 changes by a sign, which the final absolute value removes. -/
@@ -75,12 +75,12 @@ field element. -/
   (den * (Z - Y'')).abs
 
 /-- **`compress` does not depend on the representative**: on extended coordinates of `P`
-(`Z ≠ 0`, `X Y = Z T`, `x = X / Z`, `y = Y / Z`) it is `encodeRep P`, for either square root
+(`Z ≠ 0`, `X Y = Z T`, `x = X / Z`, `y = Y / Z`) it is `encodeRepNat P`, for either square root
 `c` of `1 / (a - d)`. -/
-theorem compressProj_eq_encodeRep (P : edwards.Point) {c X Y Z T : ZMod p}
+theorem compressProj_eq_encodeRepNat (P : edwards.Point) {c X Y Z T : ZMod p}
     (hc : c ^ 2 = (invsqrtAMinusD : ZMod p) ^ 2) (hZ : Z ≠ 0) (hT : X * Y = Z * T)
     (hx : P.x = X / Z) (hy : P.y = Y / Z) :
-    (compressProj c X Y Z T).val = encodeRep P := by
+    (compressProj c X Y Z T).val = encodeRepNat P := by
   have hX : X = Z * P.x := by rw [hx]; field_simp
   have hY : Y = Z * P.y := by rw [hy]; field_simp
   have hT' : T = Z * (P.x * P.y) := by
@@ -88,7 +88,7 @@ theorem compressProj_eq_encodeRep (P : edwards.Point) {c X Y Z T : ZMod p}
     rw [← hT, hX, hY]
     ring
   subst hX hY hT'
-  rw [encodeRep_eq]
+  rw [encodeRepNat_eq]
   generalize P.x = x
   generalize P.y = y
   dsimp only [compressProj]
@@ -218,11 +218,11 @@ theorem doubleCompress_eq_compressProj {c e f g h : ZMod p} (hc : c ^ 2 * (a - d
 /-- **`double_and_compress_batch` on one point is the encoding of its double**: from the extended
 coordinates `(X : Y : Z : T)` of `P` (`Z ≠ 0`, `X Y = Z T`), with `e = X (Y + Y)`,
 `f = Z² + T² d`, `g = Y² + X²`, `h = Z² - T² d` as the code forms them. -/
-theorem doubleCompress_eq_encodeRep (P : edwards.Point) {c X Y Z T : ZMod p}
+theorem doubleCompress_eq_encodeRepNat (P : edwards.Point) {c X Y Z T : ZMod p}
     (hc : c ^ 2 * (a - d) = 1) (hZ : Z ≠ 0) (hT : X * Y = Z * T) (hx : P.x = X / Z)
     (hy : P.y = Y / Z) :
     (doubleCompress c (X * (Y + Y)) (Z ^ 2 + T ^ 2 * d) (Y ^ 2 + X ^ 2) (Z ^ 2 - T ^ 2 * d)).val =
-      encodeRep (2 • P) := by
+      encodeRepNat (2 • P) := by
   have hX : X = Z * P.x := by rw [hx]; field_simp
   have hY : Y = Z * P.y := by rw [hy]; field_simp
   have hT' : T = Z * (P.x * P.y) := by
@@ -254,7 +254,7 @@ theorem doubleCompress_eq_encodeRep (P : edwards.Point) {c X Y Z T : ZMod p}
       (a - d) * (Z * x * (Z * y + Z * y)) ^ 2 := by
     rw [a_def]
     linear_combination (-Z ^ 4 * (1 + d * x ^ 2 * y ^ 2 + y ^ 2 - x ^ 2)) * heq
-  rw [doubleCompress_eq_compressProj hc hcurve, compressProj_eq_encodeRep Q hc'
+  rw [doubleCompress_eq_compressProj hc hcurve, compressProj_eq_encodeRepNat Q hc'
     (mul_ne_zero (by rw [hf]; exact mul_ne_zero hZ2 hd1) (by rw [hh]; exact mul_ne_zero hZ2 hd2))
     (by ring)]
   · rw [hQx, hf, hh, div_eq_div_iff hd1 (mul_ne_zero (mul_ne_zero hZ2 hd1) (mul_ne_zero hZ2 hd2))]

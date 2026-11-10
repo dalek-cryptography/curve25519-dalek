@@ -9,6 +9,7 @@ public import Defs.FieldElement51
 import Proofs.Backend.Serial.U64.Field.FromLimbs
 public import Curve25519.Basic
 import Proofs.Helpers.Radix
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP

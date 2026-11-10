@@ -15,7 +15,7 @@ namespace Curve25519Dalek
 
 namespace edwards.EdwardsPoint.«x86_64-tables».Insts.CoreOpsArithMulAssignSharedAScalar
 
-/-- `MulAssign<&Scalar> for EdwardsPoint`: as `Mul`, `scalar • P` (unreduced, `< 2^255`). -/
+/-- `MulAssign<&Scalar> for EdwardsPoint`: as `Mul`, `scalar • self` (unreduced, `< 2^255`). -/
 @[step]
 theorem mul_assign_spec (self : edwards.EdwardsPoint.«x86_64-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
@@ -28,7 +28,7 @@ end edwards.EdwardsPoint.«x86_64-tables».Insts.CoreOpsArithMulAssignSharedASca
 
 namespace edwards.EdwardsPoint.«i686-tables».Insts.CoreOpsArithMulAssignSharedAScalar
 
-/-- `MulAssign<&Scalar> for EdwardsPoint`: as `Mul`, `scalar • P` (unreduced, `< 2^255`). -/
+/-- `MulAssign<&Scalar> for EdwardsPoint`: as `Mul`, `scalar • self` (unreduced, `< 2^255`). -/
 @[step]
 theorem mul_assign_spec (self : edwards.EdwardsPoint.«i686-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
@@ -67,7 +67,7 @@ end edwards.EdwardsPoint.«i686-tables».Insts.CoreOpsArithMulAssignScalar
 
 namespace edwards.EdwardsPoint.«x86_64-no-tables».Insts.CoreOpsArithMulAssignSharedAScalar
 
-/-- `MulAssign<&Scalar> for EdwardsPoint`: as `Mul`, `scalar • P` (unreduced, `< 2^255`). -/
+/-- `MulAssign<&Scalar> for EdwardsPoint`: as `Mul`, `scalar • self` (unreduced, `< 2^255`). -/
 @[step]
 theorem mul_assign_spec (self : edwards.EdwardsPoint.«x86_64-no-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
@@ -80,7 +80,7 @@ end edwards.EdwardsPoint.«x86_64-no-tables».Insts.CoreOpsArithMulAssignSharedA
 
 namespace edwards.EdwardsPoint.«i686-no-tables».Insts.CoreOpsArithMulAssignSharedAScalar
 
-/-- `MulAssign<&Scalar> for EdwardsPoint`: as `Mul`, `scalar • P` (unreduced, `< 2^255`). -/
+/-- `MulAssign<&Scalar> for EdwardsPoint`: as `Mul`, `scalar • self` (unreduced, `< 2^255`). -/
 @[step]
 theorem mul_assign_spec (self : edwards.EdwardsPoint.«i686-no-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :

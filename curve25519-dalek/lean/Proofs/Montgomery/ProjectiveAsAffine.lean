@@ -13,6 +13,7 @@ import Proofs.Helpers.ToField
 import Proofs.Backend.Serial.U32.Field.Mul
 import Proofs.Backend.Serial.U32.Field.ToBytes
 import Proofs.Helpers.ToField2625
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `ProjectivePoint::as_affine` (Montgomery) -/

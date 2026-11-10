@@ -8,6 +8,7 @@ public import Defs.Scalar
 import Proofs.Helpers.AsNat
 public import Curve25519.Basic
 import Proofs.Helpers.Montgomery
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # Lemmas shared by the proofs of `src/scalar.rs`

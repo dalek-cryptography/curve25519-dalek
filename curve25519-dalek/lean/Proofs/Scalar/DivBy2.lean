@@ -21,6 +21,7 @@ import Proofs.Backend.Serial.U32.Scalar.ConditionalAddL
 import Proofs.Backend.Serial.U32.Scalar.Shr1Assign
 import Proofs.Scalar.Scalar29Pack
 import Subtle.Lemmas
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

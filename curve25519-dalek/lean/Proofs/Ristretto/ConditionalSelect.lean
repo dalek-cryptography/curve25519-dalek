@@ -60,7 +60,7 @@ theorem zeroize_spec (self : ristretto.RistrettoPoint.«x86_64-tables») :
     zeroize self ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ := by
   unfold zeroize
-  step with edwards.EdwardsPoint.«x86_64-tables».Insts.ZeroizeZeroize.zeroize_spec_point
+  step with edwards.EdwardsPoint.«x86_64-tables».Insts.ZeroizeZeroize.zeroize_spec
     self as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
@@ -74,7 +74,7 @@ theorem zeroize_spec (self : ristretto.RistrettoPoint.«i686-tables») :
     zeroize self ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ := by
   unfold zeroize
-  step with edwards.EdwardsPoint.«i686-tables».Insts.ZeroizeZeroize.zeroize_spec_point
+  step with edwards.EdwardsPoint.«i686-tables».Insts.ZeroizeZeroize.zeroize_spec
     self as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
@@ -124,7 +124,7 @@ theorem zeroize_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables») :
     zeroize self ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ := by
   unfold zeroize
-  step with edwards.EdwardsPoint.«x86_64-no-tables».Insts.ZeroizeZeroize.zeroize_spec_point
+  step with edwards.EdwardsPoint.«x86_64-no-tables».Insts.ZeroizeZeroize.zeroize_spec
     self as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
@@ -138,7 +138,7 @@ theorem zeroize_spec (self : ristretto.RistrettoPoint.«i686-no-tables») :
     zeroize self ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ := by
   unfold zeroize
-  step with edwards.EdwardsPoint.«i686-no-tables».Insts.ZeroizeZeroize.zeroize_spec_point
+  step with edwards.EdwardsPoint.«i686-no-tables».Insts.ZeroizeZeroize.zeroize_spec
     self as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 

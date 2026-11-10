@@ -9,6 +9,7 @@ public import Defs.Scalar52
 public import Defs.FieldElement51
 public import Defs.Scalar
 import Proofs.Helpers.Montgomery
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

@@ -41,6 +41,7 @@ import Proofs.Helpers.ToField2625
 public import Proofs.Field.Invsqrt
 import Proofs.Helpers.Backend.U32.Bytes
 import Proofs.Helpers.Backend.U64.Bytes
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `CompressedRistretto::decompress`
@@ -84,7 +85,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 private theorem candidate_facts {s : ZMod p} (h : (sqrtRatioM1 1 (dW s)).1 = true) :
     edwards.Equation (dX s) (dY s) ∧ dY s = (1 - s ^ 2) / (1 + s ^ 2) := by
   have hr : dW s * dR s ^ 2 = 1 := sqrtRatioM1_one_of_fst h
-  refine ⟨Ristretto.decodeRep_equation s (dR s) hr, ?_⟩
+  refine ⟨Ristretto.decodeRepNat_equation s (dR s) hr, ?_⟩
   have hu2 : dU2 s ≠ 0 := fun h0 => by
     unfold dW at hr
     rw [h0] at hr
@@ -535,8 +536,9 @@ even (a ristretto255 representative) and has limbs `< 2^52`. -/
 @[step]
 theorem «x86_64-tables».decompress_spec (self : CompressedRistretto) :
     decompress.«x86_64-tables» self ⦃ (r : Option RistrettoPoint.«x86_64-tables») =>
-      r.map edwards.EdwardsPoint.«x86_64-tables».toPoint = Ristretto.decodeRep self.asNat ∧
+      r.map edwards.EdwardsPoint.«x86_64-tables».toPoint = Ristretto.decodeRep self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.LimbsLt 52 ⦄ := by
+  simp only [Curve25519Dalek.ristretto.CompressedRistretto.decodeRep_toVector]
   unfold decompress.«x86_64-tables»
   step with decompress.«x86_64-tables».step_1_spec
     as ⟨c1, c2, s, hc1v, hc1, hc2v, hc2, hsf, hsb⟩
@@ -579,9 +581,9 @@ theorem «x86_64-tables».decompress_spec (self : CompressedRistretto) :
       simp only [hb1', Bool.false_eq_true, ite_false, WP.spec_ok]
       obtain ⟨heq, hy⟩ := candidate_facts hgood2.1
       obtain ⟨hon, hpx, hpy⟩ := decompress.«x86_64-tables».onCurve_and_toPoint heq hres
-      have hdec : Ristretto.decodeRep self.asNat =
+      have hdec : Ristretto.decodeRepNat self.asNat =
           some (edwards.EdwardsPoint.«x86_64-tables».toPoint res) := by
-        rw [Ristretto.decodeRep_eq_some_iff]
+        rw [Ristretto.decodeRepNat_eq_some_iff]
         refine ⟨hgood1.1, by rw [← hs']; exact hgood1.2, by rw [hpy, hy], ?_, ?_, ?_⟩
         · rw [hpx]
           exact ZMod.not_isNeg_abs _
@@ -590,11 +592,11 @@ theorem «x86_64-tables».decompress_spec (self : CompressedRistretto) :
         · rw [hpy]
           exact hgood2.2.2
       refine ⟨by rw [Option.map_some, hdec], fun q hq =>
-        Option.some.inj hq ▸ ⟨hon, Ristretto.even_decodeRep hdec, hresb⟩⟩
+        Option.some.inj hq ▸ ⟨hon, Ristretto.even_decodeRepNat hdec, hresb⟩⟩
     · have hb1' : b1 = true := hb1iff.mpr hgood2
       simp only [hb1', ite_true, WP.spec_ok]
       refine ⟨?_, fun q hq => by cases hq⟩
-      rw [Option.map_none, eq_comm, Ristretto.decodeRep_eq_none_iff]
+      rw [Option.map_none, eq_comm, Ristretto.decodeRepNat_eq_none_iff]
       right; right
       rw [not_and_or, not_and_or, not_not, not_not] at hgood2
       rcases hgood2 with h | h | h
@@ -604,7 +606,7 @@ theorem «x86_64-tables».decompress_spec (self : CompressedRistretto) :
   · have hb' : b = true := hbiff.mpr hgood1
     simp only [hb', ite_true, WP.spec_ok]
     refine ⟨?_, fun q hq => by cases hq⟩
-    rw [Option.map_none, eq_comm, Ristretto.decodeRep_eq_none_iff]
+    rw [Option.map_none, eq_comm, Ristretto.decodeRepNat_eq_none_iff]
     rw [not_and_or, not_not] at hgood1
     rcases hgood1 with h | h
     · exact Or.inl (not_lt.mp h)
@@ -621,8 +623,9 @@ even (a ristretto255 representative) and has limbs `< 2^26`. -/
 @[step]
 theorem «i686-tables».decompress_spec (self : CompressedRistretto) :
     decompress.«i686-tables» self ⦃ (r : Option RistrettoPoint.«i686-tables») =>
-      r.map edwards.EdwardsPoint.«i686-tables».toPoint = Ristretto.decodeRep self.asNat ∧
+      r.map edwards.EdwardsPoint.«i686-tables».toPoint = Ristretto.decodeRep self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.LimbsLt 26 ⦄ := by
+  simp only [Curve25519Dalek.ristretto.CompressedRistretto.decodeRep_toVector]
   unfold decompress.«i686-tables»
   step with decompress.«i686-tables».step_1_spec
     as ⟨c1, c2, s, hc1v, hc1, hc2v, hc2, hsf, hsb⟩
@@ -665,9 +668,9 @@ theorem «i686-tables».decompress_spec (self : CompressedRistretto) :
       simp only [hb1', Bool.false_eq_true, ite_false, WP.spec_ok]
       obtain ⟨heq, hy⟩ := candidate_facts hgood2.1
       obtain ⟨hon, hpx, hpy⟩ := decompress.«i686-tables».onCurve_and_toPoint heq hres
-      have hdec : Ristretto.decodeRep self.asNat =
+      have hdec : Ristretto.decodeRepNat self.asNat =
           some (edwards.EdwardsPoint.«i686-tables».toPoint res) := by
-        rw [Ristretto.decodeRep_eq_some_iff]
+        rw [Ristretto.decodeRepNat_eq_some_iff]
         refine ⟨hgood1.1, by rw [← hs']; exact hgood1.2, by rw [hpy, hy], ?_, ?_, ?_⟩
         · rw [hpx]
           exact ZMod.not_isNeg_abs _
@@ -676,11 +679,11 @@ theorem «i686-tables».decompress_spec (self : CompressedRistretto) :
         · rw [hpy]
           exact hgood2.2.2
       refine ⟨by rw [Option.map_some, hdec], fun q hq =>
-        Option.some.inj hq ▸ ⟨hon, Ristretto.even_decodeRep hdec, hresb⟩⟩
+        Option.some.inj hq ▸ ⟨hon, Ristretto.even_decodeRepNat hdec, hresb⟩⟩
     · have hb1' : b1 = true := hb1iff.mpr hgood2
       simp only [hb1', ite_true, WP.spec_ok]
       refine ⟨?_, fun q hq => by cases hq⟩
-      rw [Option.map_none, eq_comm, Ristretto.decodeRep_eq_none_iff]
+      rw [Option.map_none, eq_comm, Ristretto.decodeRepNat_eq_none_iff]
       right; right
       rw [not_and_or, not_and_or, not_not, not_not] at hgood2
       rcases hgood2 with h | h | h
@@ -690,7 +693,7 @@ theorem «i686-tables».decompress_spec (self : CompressedRistretto) :
   · have hb' : b = true := hbiff.mpr hgood1
     simp only [hb', ite_true, WP.spec_ok]
     refine ⟨?_, fun q hq => by cases hq⟩
-    rw [Option.map_none, eq_comm, Ristretto.decodeRep_eq_none_iff]
+    rw [Option.map_none, eq_comm, Ristretto.decodeRepNat_eq_none_iff]
     rw [not_and_or, not_not] at hgood1
     rcases hgood1 with h | h
     · exact Or.inl (not_lt.mp h)
@@ -708,8 +711,9 @@ even (a ristretto255 representative) and has limbs `< 2^52`. -/
 @[step]
 theorem «x86_64-no-tables».decompress_spec (self : CompressedRistretto) :
     decompress.«x86_64-no-tables» self ⦃ (r : Option RistrettoPoint.«x86_64-no-tables») =>
-      r.map edwards.EdwardsPoint.«x86_64-no-tables».toPoint = Ristretto.decodeRep self.asNat ∧
+      r.map edwards.EdwardsPoint.«x86_64-no-tables».toPoint = Ristretto.decodeRep self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.LimbsLt 52 ⦄ := by
+  simp only [Curve25519Dalek.ristretto.CompressedRistretto.decodeRep_toVector]
   unfold decompress.«x86_64-no-tables»
   step with decompress.«x86_64-no-tables».step_1_spec
     as ⟨c1, c2, s, hc1v, hc1, hc2v, hc2, hsf, hsb⟩
@@ -752,9 +756,9 @@ theorem «x86_64-no-tables».decompress_spec (self : CompressedRistretto) :
       simp only [hb1', Bool.false_eq_true, ite_false, WP.spec_ok]
       obtain ⟨heq, hy⟩ := candidate_facts hgood2.1
       obtain ⟨hon, hpx, hpy⟩ := decompress.«x86_64-no-tables».onCurve_and_toPoint heq hres
-      have hdec : Ristretto.decodeRep self.asNat =
+      have hdec : Ristretto.decodeRepNat self.asNat =
           some (edwards.EdwardsPoint.«x86_64-no-tables».toPoint res) := by
-        rw [Ristretto.decodeRep_eq_some_iff]
+        rw [Ristretto.decodeRepNat_eq_some_iff]
         refine ⟨hgood1.1, by rw [← hs']; exact hgood1.2, by rw [hpy, hy], ?_, ?_, ?_⟩
         · rw [hpx]
           exact ZMod.not_isNeg_abs _
@@ -763,11 +767,11 @@ theorem «x86_64-no-tables».decompress_spec (self : CompressedRistretto) :
         · rw [hpy]
           exact hgood2.2.2
       refine ⟨by rw [Option.map_some, hdec], fun q hq =>
-        Option.some.inj hq ▸ ⟨hon, Ristretto.even_decodeRep hdec, hresb⟩⟩
+        Option.some.inj hq ▸ ⟨hon, Ristretto.even_decodeRepNat hdec, hresb⟩⟩
     · have hb1' : b1 = true := hb1iff.mpr hgood2
       simp only [hb1', ite_true, WP.spec_ok]
       refine ⟨?_, fun q hq => by cases hq⟩
-      rw [Option.map_none, eq_comm, Ristretto.decodeRep_eq_none_iff]
+      rw [Option.map_none, eq_comm, Ristretto.decodeRepNat_eq_none_iff]
       right; right
       rw [not_and_or, not_and_or, not_not, not_not] at hgood2
       rcases hgood2 with h | h | h
@@ -777,7 +781,7 @@ theorem «x86_64-no-tables».decompress_spec (self : CompressedRistretto) :
   · have hb' : b = true := hbiff.mpr hgood1
     simp only [hb', ite_true, WP.spec_ok]
     refine ⟨?_, fun q hq => by cases hq⟩
-    rw [Option.map_none, eq_comm, Ristretto.decodeRep_eq_none_iff]
+    rw [Option.map_none, eq_comm, Ristretto.decodeRepNat_eq_none_iff]
     rw [not_and_or, not_not] at hgood1
     rcases hgood1 with h | h
     · exact Or.inl (not_lt.mp h)
@@ -794,8 +798,9 @@ even (a ristretto255 representative) and has limbs `< 2^26`. -/
 @[step]
 theorem «i686-no-tables».decompress_spec (self : CompressedRistretto) :
     decompress.«i686-no-tables» self ⦃ (r : Option RistrettoPoint.«i686-no-tables») =>
-      r.map edwards.EdwardsPoint.«i686-no-tables».toPoint = Ristretto.decodeRep self.asNat ∧
+      r.map edwards.EdwardsPoint.«i686-no-tables».toPoint = Ristretto.decodeRep self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.LimbsLt 26 ⦄ := by
+  simp only [Curve25519Dalek.ristretto.CompressedRistretto.decodeRep_toVector]
   unfold decompress.«i686-no-tables»
   step with decompress.«i686-no-tables».step_1_spec
     as ⟨c1, c2, s, hc1v, hc1, hc2v, hc2, hsf, hsb⟩
@@ -838,9 +843,9 @@ theorem «i686-no-tables».decompress_spec (self : CompressedRistretto) :
       simp only [hb1', Bool.false_eq_true, ite_false, WP.spec_ok]
       obtain ⟨heq, hy⟩ := candidate_facts hgood2.1
       obtain ⟨hon, hpx, hpy⟩ := decompress.«i686-no-tables».onCurve_and_toPoint heq hres
-      have hdec : Ristretto.decodeRep self.asNat =
+      have hdec : Ristretto.decodeRepNat self.asNat =
           some (edwards.EdwardsPoint.«i686-no-tables».toPoint res) := by
-        rw [Ristretto.decodeRep_eq_some_iff]
+        rw [Ristretto.decodeRepNat_eq_some_iff]
         refine ⟨hgood1.1, by rw [← hs']; exact hgood1.2, by rw [hpy, hy], ?_, ?_, ?_⟩
         · rw [hpx]
           exact ZMod.not_isNeg_abs _
@@ -849,11 +854,11 @@ theorem «i686-no-tables».decompress_spec (self : CompressedRistretto) :
         · rw [hpy]
           exact hgood2.2.2
       refine ⟨by rw [Option.map_some, hdec], fun q hq =>
-        Option.some.inj hq ▸ ⟨hon, Ristretto.even_decodeRep hdec, hresb⟩⟩
+        Option.some.inj hq ▸ ⟨hon, Ristretto.even_decodeRepNat hdec, hresb⟩⟩
     · have hb1' : b1 = true := hb1iff.mpr hgood2
       simp only [hb1', ite_true, WP.spec_ok]
       refine ⟨?_, fun q hq => by cases hq⟩
-      rw [Option.map_none, eq_comm, Ristretto.decodeRep_eq_none_iff]
+      rw [Option.map_none, eq_comm, Ristretto.decodeRepNat_eq_none_iff]
       right; right
       rw [not_and_or, not_and_or, not_not, not_not] at hgood2
       rcases hgood2 with h | h | h
@@ -863,7 +868,7 @@ theorem «i686-no-tables».decompress_spec (self : CompressedRistretto) :
   · have hb' : b = true := hbiff.mpr hgood1
     simp only [hb', ite_true, WP.spec_ok]
     refine ⟨?_, fun q hq => by cases hq⟩
-    rw [Option.map_none, eq_comm, Ristretto.decodeRep_eq_none_iff]
+    rw [Option.map_none, eq_comm, Ristretto.decodeRepNat_eq_none_iff]
     rw [not_and_or, not_not] at hgood1
     rcases hgood1 with h | h
     · exact Or.inl (not_lt.mp h)

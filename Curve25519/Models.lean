@@ -25,6 +25,6 @@ cryptographic encodings:
 * `Field.Sign`: the sign `ZMod.IsNeg` (odd canonical representative) and `ZMod.abs`;
 * `TwistedEdwards.Coords`: the Niels coordinates (`toPoint`, `OnCurve`);
 * `TwistedEdwards.Formulas`: the mixed additions with Niels points;
-* `TwistedEdwards.Encoding`: the RFC 8032 encoding of points (`encode`, `decode`);
+* `TwistedEdwards.Encoding`: the RFC 8032 encoding of points (`encodeNat`, `decodeNat`);
 * `TwistedEdwards.Decaf`: the relation `Rel` of Decaf/Ristretto (difference in the 4-torsion),
   in coordinates. -/

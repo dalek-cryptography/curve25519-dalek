@@ -3,9 +3,10 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import Proofs.Helpers.Represents
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
-public import Defs.Iterator
+public import ToAeneas.Iterator
 public import Defs.Scalar
 public import Defs.ScalarMul
 import Proofs.Backend.VartimePrecomputedStrausNew
@@ -27,15 +28,15 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
     (hborrow : List.Forall₂
       (fun y P => borrowInst.borrow y ⦃ (P' : edwards.EdwardsPoint.«x86_64-tables») => P' = P ⦄) ys
           ps)
-    (hps : ∀ P ∈ ps, P.LimbsLt 52 ∧ P.OnCurve) (hys : ys.length ≤ Usize.max) :
+    (hps : ∀ P ∈ ps, P.LimbsLt 52)
+    (hps_on : ∀ P ∈ ps, P.OnCurve) (hys : ys.length ≤ Usize.max) :
     new pointsInst borrowInst static_points
       ⦃ (r : VartimeEdwardsPrecomputation.«x86_64-tables») =>
-        r.Represents (ps.map (·.toPoint)) ∧ r.LimbsLt 54 ⦄ := by
+        r.IsValid ∧ r.points = ps.map (·.toPoint) ∧ r.LimbsLt 54 ⦄ := by
   unfold new
   step with backend.«VartimePrecomputedStrausx86_64-tables».new_spec _ _ _ ys ps hstatic_points
-      hborrow
-    hps hys as ⟨v, hv, hvb⟩
-  exact ⟨hv, hvb⟩
+    hborrow (fun P hP => ⟨hps P hP, hps_on P hP⟩) hys as ⟨v, hv, hpts, hvb⟩
+  exact ⟨hv, hpts, hvb⟩
 
 end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-tables»
 end Curve25519Dalek.edwards.VartimeEdwardsPrecomputation.«x86_64-tables».Insts
@@ -54,15 +55,15 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
     (hborrow : List.Forall₂
       (fun y P => borrowInst.borrow y ⦃ (P' : edwards.EdwardsPoint.«i686-tables») => P' = P ⦄) ys
           ps)
-    (hps : ∀ P ∈ ps, P.LimbsLt 26 ∧ P.OnCurve) (hys : ys.length ≤ Usize.max) :
+    (hps : ∀ P ∈ ps, P.LimbsLt 26)
+    (hps_on : ∀ P ∈ ps, P.OnCurve) (hys : ys.length ≤ Usize.max) :
     new pointsInst borrowInst static_points
       ⦃ (r : VartimeEdwardsPrecomputation.«i686-tables») =>
-        r.Represents (ps.map (·.toPoint)) ∧ r.LimbsLt 27 ⦄ := by
+        r.IsValid ∧ r.points = ps.map (·.toPoint) ∧ r.LimbsLt 27 ⦄ := by
   unfold new
   step with backend.«VartimePrecomputedStrausi686-tables».new_spec _ _ _ ys ps hstatic_points
-      hborrow
-    hps hys as ⟨v, hv, hvb⟩
-  exact ⟨hv, hvb⟩
+    hborrow (fun P hP => ⟨hps P hP, hps_on P hP⟩) hys as ⟨v, hv, hpts, hvb⟩
+  exact ⟨hv, hpts, hvb⟩
 
 end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-tables»
 end Curve25519Dalek.edwards.VartimeEdwardsPrecomputation.«i686-tables».Insts
@@ -81,15 +82,15 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
     (hborrow : List.Forall₂
       (fun y P => borrowInst.borrow y ⦃ (P' : edwards.EdwardsPoint.«x86_64-no-tables») => P' = P ⦄)
           ys ps)
-    (hps : ∀ P ∈ ps, P.LimbsLt 52 ∧ P.OnCurve) (hys : ys.length ≤ Usize.max) :
+    (hps : ∀ P ∈ ps, P.LimbsLt 52)
+    (hps_on : ∀ P ∈ ps, P.OnCurve) (hys : ys.length ≤ Usize.max) :
     new pointsInst borrowInst static_points
       ⦃ (r : VartimeEdwardsPrecomputation.«x86_64-no-tables») =>
-        r.Represents (ps.map (·.toPoint)) ∧ r.LimbsLt 54 ⦄ := by
+        r.IsValid ∧ r.points = ps.map (·.toPoint) ∧ r.LimbsLt 54 ⦄ := by
   unfold new
   step with backend.«VartimePrecomputedStrausx86_64-no-tables».new_spec _ _ _ ys ps hstatic_points
-      hborrow
-    hps hys as ⟨v, hv, hvb⟩
-  exact ⟨hv, hvb⟩
+    hborrow (fun P hP => ⟨hps P hP, hps_on P hP⟩) hys as ⟨v, hv, hpts, hvb⟩
+  exact ⟨hv, hpts, hvb⟩
 
 end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-no-tables»
 end Curve25519Dalek.edwards.VartimeEdwardsPrecomputation.«x86_64-no-tables».Insts
@@ -108,15 +109,15 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
     (hborrow : List.Forall₂
       (fun y P => borrowInst.borrow y ⦃ (P' : edwards.EdwardsPoint.«i686-no-tables») => P' = P ⦄)
           ys ps)
-    (hps : ∀ P ∈ ps, P.LimbsLt 26 ∧ P.OnCurve) (hys : ys.length ≤ Usize.max) :
+    (hps : ∀ P ∈ ps, P.LimbsLt 26)
+    (hps_on : ∀ P ∈ ps, P.OnCurve) (hys : ys.length ≤ Usize.max) :
     new pointsInst borrowInst static_points
       ⦃ (r : VartimeEdwardsPrecomputation.«i686-no-tables») =>
-        r.Represents (ps.map (·.toPoint)) ∧ r.LimbsLt 27 ⦄ := by
+        r.IsValid ∧ r.points = ps.map (·.toPoint) ∧ r.LimbsLt 27 ⦄ := by
   unfold new
   step with backend.«VartimePrecomputedStrausi686-no-tables».new_spec _ _ _ ys ps hstatic_points
-      hborrow
-    hps hys as ⟨v, hv, hvb⟩
-  exact ⟨hv, hvb⟩
+    hborrow (fun P hP => ⟨hps P hP, hps_on P hP⟩) hys as ⟨v, hv, hpts, hvb⟩
+  exact ⟨hv, hpts, hvb⟩
 
 end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-no-tables»
 end Curve25519Dalek.edwards.VartimeEdwardsPrecomputation.«i686-no-tables».Insts

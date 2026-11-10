@@ -3,6 +3,7 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import Proofs.Helpers.Represents
 public import Curve25519.Edwards.Basepoint
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
@@ -52,13 +53,13 @@ namespace Curve25519Dalek.backend.serial.scalar_mul.vartime_triple_base
 section
 open «Shared0EdwardsPointx86_64-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
-  renaming add → add_pn, add_spec_point → add_pn_spec_point
+  renaming add → add_pn, add_spec → add_pn_spec
 open «CoreOpsArithSubSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
-  renaming sub → sub_pn, sub_spec_point → sub_pn_spec_point
+  renaming sub → sub_pn, sub_spec → sub_pn_spec
 open «CoreOpsArithAddSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables»
-  renaming add → add_an, add_spec_point → add_an_spec_point
+  renaming add → add_an, add_spec → add_an_spec
 open «CoreOpsArithSubSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables»
-  renaming sub → sub_an, sub_spec_point → sub_an_spec_point
+  renaming sub → sub_an, sub_spec → sub_an_spec
 open window.«NafLookupTable5ProjectiveNielsPointx86_64-tables».Insts
 open «CoreConvertFromSharedAEdwardsPointx86_64-tables» renaming from_spec → naf5_from_spec
 open ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity
@@ -173,7 +174,7 @@ theorem mul_128_128_256_spec (a1 : scalar.HalfWidthScalar)
   step with backend.serial.u64.constants.AFFINE_ODD_MULTIPLES_OF_BASEPOINT_spec as ⟨tB, htB, htBb⟩
   step with backend.serial.u64.constants.AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128_spec
     as ⟨tB', htB', htB'b⟩
-  step with identity_spec_point as ⟨r, hron, hrp, hrb⟩
+  step with identity_spec as ⟨r, hron, hrp, hrb⟩
   have hr' : r.toPoint = nafTail n1 (i.val + 1) • A1.toPoint + nafTail n2 (i.val + 1) • A2.toPoint +
       nafTail n3 (i.val + 1) • basepoint + nafTail n4 (i.val + 1) • (2 ^ 128 • basepoint) := by
     rw [hrp, nafTail_eq_zero _ _ fun k hk hk' => (hz k hk hk').1,
@@ -197,13 +198,13 @@ end
 section
 open «Shared0EdwardsPointi686-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointi686-tablesCompletedPointi686-tables»
-  renaming add → add_pn, add_spec_point → add_pn_spec_point
+  renaming add → add_pn, add_spec → add_pn_spec
 open «CoreOpsArithSubSharedAProjectiveNielsPointi686-tablesCompletedPointi686-tables»
-  renaming sub → sub_pn, sub_spec_point → sub_pn_spec_point
+  renaming sub → sub_pn, sub_spec → sub_pn_spec
 open «CoreOpsArithAddSharedAAffineNielsPointi686-tablesCompletedPointi686-tables»
-  renaming add → add_an, add_spec_point → add_an_spec_point
+  renaming add → add_an, add_spec → add_an_spec
 open «CoreOpsArithSubSharedAAffineNielsPointi686-tablesCompletedPointi686-tables»
-  renaming sub → sub_an, sub_spec_point → sub_an_spec_point
+  renaming sub → sub_an, sub_spec → sub_an_spec
 open window.«NafLookupTable5ProjectiveNielsPointi686-tables».Insts
 open «CoreConvertFromSharedAEdwardsPointi686-tables» renaming from_spec → naf5_from_spec
 open ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity
@@ -318,7 +319,7 @@ theorem mul_128_128_256_spec (a1 : scalar.HalfWidthScalar)
   step with backend.serial.u32.constants.AFFINE_ODD_MULTIPLES_OF_BASEPOINT_spec as ⟨tB, htB, htBb⟩
   step with backend.serial.u32.constants.AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128_spec
     as ⟨tB', htB', htB'b⟩
-  step with identity_spec_point as ⟨r, hron, hrp, hrb⟩
+  step with identity_spec as ⟨r, hron, hrp, hrb⟩
   have hr' : r.toPoint = nafTail n1 (i.val + 1) • A1.toPoint + nafTail n2 (i.val + 1) • A2.toPoint +
       nafTail n3 (i.val + 1) • basepoint + nafTail n4 (i.val + 1) • (2 ^ 128 • basepoint) := by
     rw [hrp, nafTail_eq_zero _ _ fun k hk hk' => (hz k hk hk').1,
@@ -342,9 +343,9 @@ end
 section
 open «Shared0EdwardsPointx86_64-no-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
-  renaming add → add_pn, add_spec_point → add_pn_spec_point
+  renaming add → add_pn, add_spec → add_pn_spec
 open «CoreOpsArithSubSharedAProjectiveNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
-  renaming sub → sub_pn, sub_spec_point → sub_pn_spec_point
+  renaming sub → sub_pn, sub_spec → sub_pn_spec
 open window.«NafLookupTable5ProjectiveNielsPointx86_64-no-tables».Insts
 open «CoreConvertFromSharedAEdwardsPointx86_64-no-tables» renaming from_spec → naf5_from_spec
 open ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity
@@ -456,7 +457,7 @@ theorem mul_128_128_256_spec (a1 : scalar.HalfWidthScalar)
     as ⟨i, hi, hz⟩
   step with naf5_from_spec A1 hA1 hA1_on as ⟨tA1, htA1, htA1b⟩
   step with naf5_from_spec A2 hA2 hA2_on as ⟨tA2, htA2, htA2b⟩
-  step with backend.serial.u64.constants.«x86_64-no-tables».ED25519_BASEPOINT_POINT_spec_point
+  step with backend.serial.u64.constants.«x86_64-no-tables».ED25519_BASEPOINT_POINT_spec
     as ⟨bp, hbp_on, hbp, hbpb⟩
   step with naf5_from_spec bp hbpb hbp_on as ⟨tB, htB, htBb⟩
   step with backend.serial.u64.constants.«x86_64-no-tables».ED25519_BASEPOINT_128_POINT_spec
@@ -464,7 +465,7 @@ theorem mul_128_128_256_spec (a1 : scalar.HalfWidthScalar)
   step with naf5_from_spec bp' hbp'b hbp'_on as ⟨tB', htB', htB'b⟩
   rw [hbp] at htB
   rw [hbp'] at htB'
-  step with identity_spec_point as ⟨r, hron, hrp, hrb⟩
+  step with identity_spec as ⟨r, hron, hrp, hrb⟩
   have hr' : r.toPoint = nafTail n1 (i.val + 1) • A1.toPoint + nafTail n2 (i.val + 1) • A2.toPoint +
       nafTail n3 (i.val + 1) • basepoint + nafTail n4 (i.val + 1) • (2 ^ 128 • basepoint) := by
     rw [hrp, nafTail_eq_zero _ _ fun k hk hk' => (hz k hk hk').1,
@@ -488,9 +489,9 @@ end
 section
 open «Shared0EdwardsPointi686-no-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointi686-no-tablesCompletedPointi686-no-tables»
-  renaming add → add_pn, add_spec_point → add_pn_spec_point
+  renaming add → add_pn, add_spec → add_pn_spec
 open «CoreOpsArithSubSharedAProjectiveNielsPointi686-no-tablesCompletedPointi686-no-tables»
-  renaming sub → sub_pn, sub_spec_point → sub_pn_spec_point
+  renaming sub → sub_pn, sub_spec → sub_pn_spec
 open window.«NafLookupTable5ProjectiveNielsPointi686-no-tables».Insts
 open «CoreConvertFromSharedAEdwardsPointi686-no-tables» renaming from_spec → naf5_from_spec
 open ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity
@@ -602,7 +603,7 @@ theorem mul_128_128_256_spec (a1 : scalar.HalfWidthScalar)
     as ⟨i, hi, hz⟩
   step with naf5_from_spec A1 hA1 hA1_on as ⟨tA1, htA1, htA1b⟩
   step with naf5_from_spec A2 hA2 hA2_on as ⟨tA2, htA2, htA2b⟩
-  step with backend.serial.u32.constants.«i686-no-tables».ED25519_BASEPOINT_POINT_spec_point
+  step with backend.serial.u32.constants.«i686-no-tables».ED25519_BASEPOINT_POINT_spec
     as ⟨bp, hbp_on, hbp, hbpb⟩
   step with naf5_from_spec bp hbpb hbp_on as ⟨tB, htB, htBb⟩
   step with backend.serial.u32.constants.«i686-no-tables».ED25519_BASEPOINT_128_POINT_spec
@@ -610,7 +611,7 @@ theorem mul_128_128_256_spec (a1 : scalar.HalfWidthScalar)
   step with naf5_from_spec bp' hbp'b hbp'_on as ⟨tB', htB', htB'b⟩
   rw [hbp] at htB
   rw [hbp'] at htB'
-  step with identity_spec_point as ⟨r, hron, hrp, hrb⟩
+  step with identity_spec as ⟨r, hron, hrp, hrb⟩
   have hr' : r.toPoint = nafTail n1 (i.val + 1) • A1.toPoint + nafTail n2 (i.val + 1) • A2.toPoint +
       nafTail n3 (i.val + 1) • basepoint + nafTail n4 (i.val + 1) • (2 ^ 128 • basepoint) := by
     rw [hrp, nafTail_eq_zero _ _ fun k hk hk' => (hz k hk hk').1,

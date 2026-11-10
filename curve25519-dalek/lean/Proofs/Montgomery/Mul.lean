@@ -24,6 +24,7 @@ import Zeroize.Instances
 import Proofs.Backend.Serial.U32.Field.FromBytes
 import Proofs.Backend.Serial.U32.Field.One
 import Proofs.Helpers.ToField2625
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `Mul<&Scalar> for &MontgomeryPoint`
@@ -249,11 +250,13 @@ private theorem mul.«i686-tables_loop_spec» (bytes : Array U8 32#usize)
 open scoped Helpers.IndexStep in
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 /-- `Mul<&Scalar> for &MontgomeryPoint`: the RFC 7748 ladder on the low `255` bits of the
-scalar, encoded canonically. -/
+scalar, encoded canonically. The ladder computes `u(n • Q)` on the curve or its twist
+(`MontgomeryModel.ladder_eq_xMul`). -/
 @[step]
 theorem mul.«x86_64-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
     mul.«x86_64-tables» self s ⦃ (r : MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (s.asNat % 2 ^ 255) self.u) ⦄ := by
+      r.asNat = encodeU
+          (montgomery.ladder 255 (s.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
   unfold mul.«x86_64-tables»
   step as ⟨bytes, hbytes⟩
   step as ⟨u, hu, hu_lt⟩
@@ -283,8 +286,8 @@ theorem mul.«x86_64-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) 
     · exact ⟨limbs_lt_of_le (by decide) hy0.1, limbs_lt_of_le (by decide) hy0.2⟩
     · exact ⟨limbs_lt_of_le (by decide) hy1.1, limbs_lt_of_le (by decide) hy1.2⟩
   step with «ProjectivePointx86_64-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
-  rw [hr, MontgomeryModel.ladder, MontgomeryModel.XZ.ladder, ladderXZ_mod, MontgomeryPoint.u_def,
-    decodeU]
+  rw [hr, MontgomeryModel.ladder, MontgomeryModel.XZ.ladder, ladderXZ_mod,
+    MontgomeryPoint.decodeUCoordinate_toVector, decodeU]
   congr 2
   have hu' : u.toField = ((self.asNat % 2 ^ 255 : ℕ) : ZMod p) := by
     rw [toField_def, hu, MontgomeryPoint.asNat_def]
@@ -297,11 +300,13 @@ theorem mul.«x86_64-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) 
 open scoped Helpers.IndexStep in
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
 /-- `Mul<&Scalar> for &MontgomeryPoint`: the RFC 7748 ladder on the low `255` bits of the
-scalar, encoded canonically. -/
+scalar, encoded canonically. The ladder computes `u(n • Q)` on the curve or its twist
+(`MontgomeryModel.ladder_eq_xMul`). -/
 @[step]
 theorem mul.«i686-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
     mul.«i686-tables» self s ⦃ (r : MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (s.asNat % 2 ^ 255) self.u) ⦄ := by
+      r.asNat = encodeU
+          (montgomery.ladder 255 (s.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
   unfold mul.«i686-tables»
   step as ⟨bytes, hbytes⟩
   step as ⟨u, hu, hu_lt⟩
@@ -331,8 +336,8 @@ theorem mul.«i686-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
     · exact ⟨limbs_lt_of_le (by decide) hy0.1, limbs_lt_of_le (by decide) hy0.2⟩
     · exact ⟨limbs_lt_of_le (by decide) hy1.1, limbs_lt_of_le (by decide) hy1.2⟩
   step with «ProjectivePointi686-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
-  rw [hr, MontgomeryModel.ladder, MontgomeryModel.XZ.ladder, ladderXZ_mod, MontgomeryPoint.u_def,
-    decodeU]
+  rw [hr, MontgomeryModel.ladder, MontgomeryModel.XZ.ladder, ladderXZ_mod,
+    MontgomeryPoint.decodeUCoordinate_toVector, decodeU]
   congr 2
   have hu' : u.toField = ((self.asNat % 2 ^ 255 : ℕ) : ZMod p) := by
     rw [toField_def, MontgomeryPoint.asNat_def]
@@ -392,11 +397,13 @@ private theorem mul.«i686-no-tables_loop_spec» (bytes : Array U8 32#usize)
 open scoped Helpers.IndexStep in
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 /-- `Mul<&Scalar> for &MontgomeryPoint`: the RFC 7748 ladder on the low `255` bits of the
-scalar, encoded canonically. -/
+scalar, encoded canonically. The ladder computes `u(n • Q)` on the curve or its twist
+(`MontgomeryModel.ladder_eq_xMul`). -/
 @[step]
 theorem mul.«x86_64-no-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
     mul.«x86_64-no-tables» self s ⦃ (r : MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (s.asNat % 2 ^ 255) self.u) ⦄ := by
+      r.asNat = encodeU
+          (montgomery.ladder 255 (s.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
   unfold mul.«x86_64-no-tables»
   step as ⟨bytes, hbytes⟩
   step as ⟨u, hu, hu_lt⟩
@@ -426,8 +433,8 @@ theorem mul.«x86_64-no-tables_spec» (self : MontgomeryPoint) (s : scalar.Scala
     · exact ⟨limbs_lt_of_le (by decide) hy0.1, limbs_lt_of_le (by decide) hy0.2⟩
     · exact ⟨limbs_lt_of_le (by decide) hy1.1, limbs_lt_of_le (by decide) hy1.2⟩
   step with «ProjectivePointx86_64-no-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
-  rw [hr, MontgomeryModel.ladder, MontgomeryModel.XZ.ladder, ladderXZ_mod, MontgomeryPoint.u_def,
-    decodeU]
+  rw [hr, MontgomeryModel.ladder, MontgomeryModel.XZ.ladder, ladderXZ_mod,
+    MontgomeryPoint.decodeUCoordinate_toVector, decodeU]
   congr 2
   have hu' : u.toField = ((self.asNat % 2 ^ 255 : ℕ) : ZMod p) := by
     rw [toField_def, hu, MontgomeryPoint.asNat_def]
@@ -440,11 +447,13 @@ theorem mul.«x86_64-no-tables_spec» (self : MontgomeryPoint) (s : scalar.Scala
 open scoped Helpers.IndexStep in
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
 /-- `Mul<&Scalar> for &MontgomeryPoint`: the RFC 7748 ladder on the low `255` bits of the
-scalar, encoded canonically. -/
+scalar, encoded canonically. The ladder computes `u(n • Q)` on the curve or its twist
+(`MontgomeryModel.ladder_eq_xMul`). -/
 @[step]
 theorem mul.«i686-no-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
     mul.«i686-no-tables» self s ⦃ (r : MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (s.asNat % 2 ^ 255) self.u) ⦄ := by
+      r.asNat = encodeU
+          (montgomery.ladder 255 (s.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
   unfold mul.«i686-no-tables»
   step as ⟨bytes, hbytes⟩
   step as ⟨u, hu, hu_lt⟩
@@ -474,8 +483,8 @@ theorem mul.«i686-no-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar)
     · exact ⟨limbs_lt_of_le (by decide) hy0.1, limbs_lt_of_le (by decide) hy0.2⟩
     · exact ⟨limbs_lt_of_le (by decide) hy1.1, limbs_lt_of_le (by decide) hy1.2⟩
   step with «ProjectivePointi686-no-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
-  rw [hr, MontgomeryModel.ladder, MontgomeryModel.XZ.ladder, ladderXZ_mod, MontgomeryPoint.u_def,
-    decodeU]
+  rw [hr, MontgomeryModel.ladder, MontgomeryModel.XZ.ladder, ladderXZ_mod,
+    MontgomeryPoint.decodeUCoordinate_toVector, decodeU]
   congr 2
   have hu' : u.toField = ((self.asNat % 2 ^ 255 : ℕ) : ZMod p) := by
     rw [toField_def, MontgomeryPoint.asNat_def]
@@ -496,21 +505,24 @@ namespace Shared1MontgomeryPoint.Insts.CoreOpsArithMulShared0ScalarMontgomeryPoi
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 /-- `Mul<&Scalar> for &MontgomeryPoint`: the RFC 7748 ladder on the low `255` bits of the
-scalar, encoded canonically (x86_64 targets). -/
+scalar, encoded canonically. The ladder computes `u(n • Q)` on the curve or its twist
+(`MontgomeryModel.ladder_eq_xMul`). -/
 @[step]
-theorem mul_spec (self : montgomery.MontgomeryPoint) (s : scalar.Scalar) :
-    mul self s ⦃ (r : montgomery.MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (s.asNat % 2 ^ 255) self.u) ⦄ := by
+theorem mul_spec (self : montgomery.MontgomeryPoint) (scalar : scalar.Scalar) :
+    mul self scalar ⦃ (r : montgomery.MontgomeryPoint) =>
+      r.toVector = encodeUCoordinate
+          (montgomery.ladder 255 (scalar.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
+  simp only [Curve25519Dalek.montgomery.MontgomeryPoint.toVector_eq_encodeUCoordinate_iff]
   unfold mul
   exact dispatch_all_spec
     (montgomery.MulShared1MontgomeryPointShared0ScalarMontgomeryPoint.mul.«x86_64-tables_spec» self
-        s)
+        scalar)
     (montgomery.MulShared1MontgomeryPointShared0ScalarMontgomeryPoint.mul.«x86_64-no-tables_spec»
-        self s)
+        self scalar)
     (montgomery.MulShared1MontgomeryPointShared0ScalarMontgomeryPoint.mul.«i686-tables_spec» self
-        s)
+        scalar)
     (montgomery.MulShared1MontgomeryPointShared0ScalarMontgomeryPoint.mul.«i686-no-tables_spec»
-        self s)
+        self scalar)
 
 end Shared1MontgomeryPoint.Insts.CoreOpsArithMulShared0ScalarMontgomeryPoint
 
@@ -521,7 +533,8 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 @[step]
 theorem mul_spec (self : montgomery.MontgomeryPoint) (rhs : scalar.Scalar) :
     mul self rhs ⦃ (r : montgomery.MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (rhs.asNat % 2 ^ 255) self.u) ⦄ := by
+      r.toVector = encodeUCoordinate
+          (montgomery.ladder 255 (rhs.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
   unfold mul
   exact Shared1MontgomeryPoint.Insts.CoreOpsArithMulShared0ScalarMontgomeryPoint.mul_spec self rhs
      
@@ -535,7 +548,8 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 @[step]
 theorem mul_spec (self : montgomery.MontgomeryPoint) (rhs : scalar.Scalar) :
     mul self rhs ⦃ (r : montgomery.MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (rhs.asNat % 2 ^ 255) self.u) ⦄ := by
+      r.toVector = encodeUCoordinate
+          (montgomery.ladder 255 (rhs.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
   unfold mul
   exact Shared1MontgomeryPoint.Insts.CoreOpsArithMulShared0ScalarMontgomeryPoint.mul_spec self rhs
      
@@ -549,7 +563,8 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 @[step]
 theorem mul_spec (self : montgomery.MontgomeryPoint) (rhs : scalar.Scalar) :
     mul self rhs ⦃ (r : montgomery.MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (rhs.asNat % 2 ^ 255) self.u) ⦄ := by
+      r.toVector = encodeUCoordinate
+          (montgomery.ladder 255 (rhs.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
   unfold mul
   exact Shared1MontgomeryPoint.Insts.CoreOpsArithMulShared0ScalarMontgomeryPoint.mul_spec self rhs
      
@@ -563,7 +578,8 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 @[step]
 theorem mul_spec (self : scalar.Scalar) (point : montgomery.MontgomeryPoint) :
     mul self point ⦃ (r : montgomery.MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (self.asNat % 2 ^ 255) point.u) ⦄ := by
+      r.toVector = encodeUCoordinate
+          (montgomery.ladder 255 (self.asNat % 2 ^ 255) (decodeUCoordinate point.toVector)) ⦄ := by
   unfold mul
   exact Shared1MontgomeryPoint.Insts.CoreOpsArithMulShared0ScalarMontgomeryPoint.mul_spec point self
      
@@ -577,7 +593,8 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 @[step]
 theorem mul_spec (self : scalar.Scalar) (rhs : montgomery.MontgomeryPoint) :
     mul self rhs ⦃ (r : montgomery.MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (self.asNat % 2 ^ 255) rhs.u) ⦄ := by
+      r.toVector = encodeUCoordinate
+          (montgomery.ladder 255 (self.asNat % 2 ^ 255) (decodeUCoordinate rhs.toVector)) ⦄ := by
   unfold mul
   exact Shared1Scalar.Insts.CoreOpsArithMulShared0MontgomeryPointMontgomeryPoint.mul_spec self rhs
      
@@ -591,7 +608,8 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 @[step]
 theorem mul_spec (self : scalar.Scalar) (rhs : montgomery.MontgomeryPoint) :
     mul self rhs ⦃ (r : montgomery.MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (self.asNat % 2 ^ 255) rhs.u) ⦄ := by
+      r.toVector = encodeUCoordinate
+          (montgomery.ladder 255 (self.asNat % 2 ^ 255) (decodeUCoordinate rhs.toVector)) ⦄ := by
   unfold mul
   exact Shared1Scalar.Insts.CoreOpsArithMulShared0MontgomeryPointMontgomeryPoint.mul_spec self rhs
      
@@ -605,7 +623,8 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 @[step]
 theorem mul_spec (self : scalar.Scalar) (rhs : montgomery.MontgomeryPoint) :
     mul self rhs ⦃ (r : montgomery.MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (self.asNat % 2 ^ 255) rhs.u) ⦄ := by
+      r.toVector = encodeUCoordinate
+          (montgomery.ladder 255 (self.asNat % 2 ^ 255) (decodeUCoordinate rhs.toVector)) ⦄ := by
   unfold mul
   exact Shared1Scalar.Insts.CoreOpsArithMulShared0MontgomeryPointMontgomeryPoint.mul_spec self rhs
      

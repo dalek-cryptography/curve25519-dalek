@@ -3,6 +3,7 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import Proofs.Helpers.Represents
 public import Curve25519.Edwards.Basic
 public import Defs.Window
 public import Aeneas
@@ -16,7 +17,7 @@ ProjectiveNielsPoint`, `CompletedPoint::as_extended`, …) whose types differ pe
 An `EdwardsOps` bundles the point types (`E` extended, `N` projective Niels, `C` completed), their
 model maps (`OnCurve`, `toPoint`) and limb bounds, and the operations as `Result` functions; the
 operations' specs are propositions (`AddSpec`, …), stated exactly as the configurations'
-`*_spec_point` theorems, which prove them (`Proofs/Helpers/EdwardsOps/Instances.lean`).
+point-level `*_spec` theorems, which prove them (`Proofs/Helpers/EdwardsOps/Instances.lean`).
 
 A loop then has a generic counterpart (same body, point calls through the interface) with a
 generic spec, proved once; the translated loop of each configuration is `rfl`-equal to the

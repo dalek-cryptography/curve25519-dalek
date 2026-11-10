@@ -6,6 +6,7 @@ module
 public import Curve25519Dalek.Funs
 public import Defs.Scalar
 import Proofs.Scalar.One
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
@@ -15,7 +16,8 @@ open Curve25519Dalek.backend.serial.u64.scalar (montgomeryRadix)
 namespace Curve25519Dalek.scalar.HalfWidthScalar
 
 theorem ONE_spec :
-    ONE.asNat = 1 := by
-  simp [HalfWidthScalar.asNat_def, ONE, Scalar.ONE_spec]
+    ONE.asNat < 2 ^ 128 ∧ ONE.asNat = 1 := by
+  have h : ONE.asNat = 1 := by simp [HalfWidthScalar.asNat_def, ONE, Scalar.ONE_spec]
+  exact ⟨by rw [h]; norm_num, h⟩
 
 end Curve25519Dalek.scalar.HalfWidthScalar

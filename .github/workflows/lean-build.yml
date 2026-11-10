@@ -9,6 +9,10 @@ on:
       - 'curve25519-dalek/lean/**'
       - 'Curve25519/**'
       - 'Curve25519.lean'
+      - 'Curve25519Fast/**'
+      - 'Curve25519Fast.lean'
+      - 'Curve25519Test/**'
+      - 'Curve25519Test.lean'
       - 'Subtle/**'
       - 'Subtle.lean'
       - 'Zeroize/**'
@@ -80,6 +84,11 @@ jobs:
         id: build
         run: lake build --wfail
 
+      # Not a default target. Rebuilt only when it changes (about 2.5 min, mostly RFC 7748's
+      # 1,000,000-iteration test, run natively by `native_decide`).
+      - name: Build tests
+        run: lake build --wfail Curve25519Test
+
       # Saved even when the build fails: Lake rebuilds only what changed.
       - name: Save build cache
         if: ${{ !cancelled() && steps.cache.outputs.cache-hit != 'true' }}
@@ -118,3 +127,9 @@ jobs:
       - name: Lint Proofs
         if: ${{ !cancelled() }}
         run: lake exe runLinter Proofs
+      - name: Lint Curve25519Fast
+        if: ${{ !cancelled() }}
+        run: lake exe runLinter Curve25519Fast
+      - name: Lint Curve25519Test
+        if: ${{ !cancelled() }}
+        run: lake exe runLinter Curve25519Test

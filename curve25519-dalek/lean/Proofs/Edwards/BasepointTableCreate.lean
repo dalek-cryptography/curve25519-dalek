@@ -3,6 +3,7 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import Proofs.Helpers.Represents
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
 import Proofs.Backend.Serial.CurveModels.AffineNielsDefault
@@ -29,13 +30,15 @@ open window.«LookupTableAffineNielsPointx86_64-tables».Insts in
 /-- `BasepointTable::create` (radix `2^4`): row `i` is the lookup table of
 `2^(8 i) • basepoint`; limbs `< 2^52` in, `< 2^54` out. -/
 @[step]
-theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables») (hbasepoint : basepoint.LimbsLt 52)
+theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables»)
+    (hbasepoint : basepoint.LimbsLt 52)
     (hon : basepoint.OnCurve) :
     create basepoint ⦃ (r : EdwardsBasepointTable.«x86_64-tables») =>
-      r.Represents basepoint.toPoint ∧ r.LimbsLt 54 ⦄ := by
+      r.IsTable ∧ r.point = basepoint.toPoint ∧ r.LimbsLt 54 ⦄ := by
   unfold create
   unfold window.LookupTable.Insts.CoreDefaultDefault.default
-  step with AffineNielsPoint.«x86_64-tables».Insts.CoreDefaultDefault.default_spec as ⟨d, hd⟩
+  step with AffineNielsPoint.«x86_64-tables».Insts.CoreDefaultDefault.default_toAffineNiels
+    as ⟨d, hd⟩
   have h := basepointTable.createLoop_spec
     «CoreConvertFromSharedAEdwardsPointx86_64-tables».«from»
     (fun t P => t.Represents P) (fun t => t.LimbsLt 54)
@@ -45,7 +48,7 @@ theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables») (hbasepoint : b
   apply spec_bind h
   intro a ha
   simp only [WP.spec_ok]
-  refine ⟨fun i hi => ?_, fun i hi => (ha i hi).2⟩
+  refine isTable_and_of_rows (fun i hi => ?_) fun i hi => (ha i hi).2
   rw [show 8 * i = 2 * 4 * i by ring]
   exact (ha i hi).1
 
@@ -59,13 +62,14 @@ open window.«LookupTableAffineNielsPointi686-tables».Insts in
 /-- `BasepointTable::create` (radix `2^4`): row `i` is the lookup table of
 `2^(8 i) • basepoint`; limbs `< 2^26` in, `< 2^27` out. -/
 @[step]
-theorem create_spec (basepoint : EdwardsPoint.«i686-tables») (hbasepoint : basepoint.LimbsLt 26)
+theorem create_spec (basepoint : EdwardsPoint.«i686-tables»)
+    (hbasepoint : basepoint.LimbsLt 26)
     (hon : basepoint.OnCurve) :
     create basepoint ⦃ (r : EdwardsBasepointTable.«i686-tables») =>
-      r.Represents basepoint.toPoint ∧ r.LimbsLt 27 ⦄ := by
+      r.IsTable ∧ r.point = basepoint.toPoint ∧ r.LimbsLt 27 ⦄ := by
   unfold create
   unfold window.LookupTable.Insts.CoreDefaultDefault.default
-  step with AffineNielsPoint.«i686-tables».Insts.CoreDefaultDefault.default_spec as ⟨d, hd⟩
+  step with AffineNielsPoint.«i686-tables».Insts.CoreDefaultDefault.default_toAffineNiels as ⟨d, hd⟩
   have h := basepointTable.i686.createLoop_spec
     «CoreConvertFromSharedAEdwardsPointi686-tables».«from»
     (fun t P => t.Represents P) (fun t => t.LimbsLt 27)
@@ -75,7 +79,7 @@ theorem create_spec (basepoint : EdwardsPoint.«i686-tables») (hbasepoint : bas
   apply spec_bind h
   intro a ha
   simp only [WP.spec_ok]
-  refine ⟨fun i hi => ?_, fun i hi => (ha i hi).2⟩
+  refine isTable_and_of_rows (fun i hi => ?_) fun i hi => (ha i hi).2
   rw [show 8 * i = 2 * 4 * i by ring]
   exact (ha i hi).1
 
@@ -89,13 +93,15 @@ open window.«LookupTableRadix32AffineNielsPointx86_64-tables».Insts in
 /-- `BasepointTable::create` (radix `2^5`): row `i` is the lookup table of
 `2^(10 i) • basepoint`; limbs `< 2^52` in, `< 2^54` out. -/
 @[step]
-theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables») (hbasepoint : basepoint.LimbsLt 52)
+theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables»)
+    (hbasepoint : basepoint.LimbsLt 52)
     (hon : basepoint.OnCurve) :
     create basepoint ⦃ (r : EdwardsBasepointTableRadix32.«x86_64-tables») =>
-      r.Represents basepoint.toPoint ∧ r.LimbsLt 54 ⦄ := by
+      r.IsTable ∧ r.point = basepoint.toPoint ∧ r.LimbsLt 54 ⦄ := by
   unfold create
   unfold window.LookupTableRadix32.Insts.CoreDefaultDefault.default
-  step with AffineNielsPoint.«x86_64-tables».Insts.CoreDefaultDefault.default_spec as ⟨d, hd⟩
+  step with AffineNielsPoint.«x86_64-tables».Insts.CoreDefaultDefault.default_toAffineNiels
+    as ⟨d, hd⟩
   have h := basepointTable.createLoop_spec
     «CoreConvertFromSharedAEdwardsPointx86_64-tables».«from»
     (fun t P => t.Represents P) (fun t => t.LimbsLt 54)
@@ -105,7 +111,7 @@ theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables») (hbasepoint : b
   apply spec_bind h
   intro a ha
   simp only [WP.spec_ok]
-  refine ⟨fun i hi => ?_, fun i hi => (ha i hi).2⟩
+  refine isTable_and_of_rows (fun i hi => ?_) fun i hi => (ha i hi).2
   rw [show 10 * i = 2 * 5 * i by ring]
   exact (ha i hi).1
 
@@ -119,13 +125,14 @@ open window.«LookupTableRadix32AffineNielsPointi686-tables».Insts in
 /-- `BasepointTable::create` (radix `2^5`): row `i` is the lookup table of
 `2^(10 i) • basepoint`; limbs `< 2^26` in, `< 2^27` out. -/
 @[step]
-theorem create_spec (basepoint : EdwardsPoint.«i686-tables») (hbasepoint : basepoint.LimbsLt 26)
+theorem create_spec (basepoint : EdwardsPoint.«i686-tables»)
+    (hbasepoint : basepoint.LimbsLt 26)
     (hon : basepoint.OnCurve) :
     create basepoint ⦃ (r : EdwardsBasepointTableRadix32.«i686-tables») =>
-      r.Represents basepoint.toPoint ∧ r.LimbsLt 27 ⦄ := by
+      r.IsTable ∧ r.point = basepoint.toPoint ∧ r.LimbsLt 27 ⦄ := by
   unfold create
   unfold window.LookupTableRadix32.Insts.CoreDefaultDefault.default
-  step with AffineNielsPoint.«i686-tables».Insts.CoreDefaultDefault.default_spec as ⟨d, hd⟩
+  step with AffineNielsPoint.«i686-tables».Insts.CoreDefaultDefault.default_toAffineNiels as ⟨d, hd⟩
   have h := basepointTable.i686.createLoop_spec
     «CoreConvertFromSharedAEdwardsPointi686-tables».«from»
     (fun t P => t.Represents P) (fun t => t.LimbsLt 27)
@@ -135,7 +142,7 @@ theorem create_spec (basepoint : EdwardsPoint.«i686-tables») (hbasepoint : bas
   apply spec_bind h
   intro a ha
   simp only [WP.spec_ok]
-  refine ⟨fun i hi => ?_, fun i hi => (ha i hi).2⟩
+  refine isTable_and_of_rows (fun i hi => ?_) fun i hi => (ha i hi).2
   rw [show 10 * i = 2 * 5 * i by ring]
   exact (ha i hi).1
 
@@ -149,13 +156,15 @@ open window.«LookupTableRadix64AffineNielsPointx86_64-tables».Insts in
 /-- `BasepointTable::create` (radix `2^6`): row `i` is the lookup table of
 `2^(12 i) • basepoint`; limbs `< 2^52` in, `< 2^54` out. -/
 @[step]
-theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables») (hbasepoint : basepoint.LimbsLt 52)
+theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables»)
+    (hbasepoint : basepoint.LimbsLt 52)
     (hon : basepoint.OnCurve) :
     create basepoint ⦃ (r : EdwardsBasepointTableRadix64.«x86_64-tables») =>
-      r.Represents basepoint.toPoint ∧ r.LimbsLt 54 ⦄ := by
+      r.IsTable ∧ r.point = basepoint.toPoint ∧ r.LimbsLt 54 ⦄ := by
   unfold create
   unfold window.LookupTableRadix64.Insts.CoreDefaultDefault.default
-  step with AffineNielsPoint.«x86_64-tables».Insts.CoreDefaultDefault.default_spec as ⟨d, hd⟩
+  step with AffineNielsPoint.«x86_64-tables».Insts.CoreDefaultDefault.default_toAffineNiels
+    as ⟨d, hd⟩
   have h := basepointTable.createLoop_spec
     «CoreConvertFromSharedAEdwardsPointx86_64-tables».«from»
     (fun t P => t.Represents P) (fun t => t.LimbsLt 54)
@@ -165,7 +174,7 @@ theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables») (hbasepoint : b
   apply spec_bind h
   intro a ha
   simp only [WP.spec_ok]
-  refine ⟨fun i hi => ?_, fun i hi => (ha i hi).2⟩
+  refine isTable_and_of_rows (fun i hi => ?_) fun i hi => (ha i hi).2
   rw [show 12 * i = 2 * 6 * i by ring]
   exact (ha i hi).1
 
@@ -179,13 +188,14 @@ open window.«LookupTableRadix64AffineNielsPointi686-tables».Insts in
 /-- `BasepointTable::create` (radix `2^6`): row `i` is the lookup table of
 `2^(12 i) • basepoint`; limbs `< 2^26` in, `< 2^27` out. -/
 @[step]
-theorem create_spec (basepoint : EdwardsPoint.«i686-tables») (hbasepoint : basepoint.LimbsLt 26)
+theorem create_spec (basepoint : EdwardsPoint.«i686-tables»)
+    (hbasepoint : basepoint.LimbsLt 26)
     (hon : basepoint.OnCurve) :
     create basepoint ⦃ (r : EdwardsBasepointTableRadix64.«i686-tables») =>
-      r.Represents basepoint.toPoint ∧ r.LimbsLt 27 ⦄ := by
+      r.IsTable ∧ r.point = basepoint.toPoint ∧ r.LimbsLt 27 ⦄ := by
   unfold create
   unfold window.LookupTableRadix64.Insts.CoreDefaultDefault.default
-  step with AffineNielsPoint.«i686-tables».Insts.CoreDefaultDefault.default_spec as ⟨d, hd⟩
+  step with AffineNielsPoint.«i686-tables».Insts.CoreDefaultDefault.default_toAffineNiels as ⟨d, hd⟩
   have h := basepointTable.i686.createLoop_spec
     «CoreConvertFromSharedAEdwardsPointi686-tables».«from»
     (fun t P => t.Represents P) (fun t => t.LimbsLt 27)
@@ -195,7 +205,7 @@ theorem create_spec (basepoint : EdwardsPoint.«i686-tables») (hbasepoint : bas
   apply spec_bind h
   intro a ha
   simp only [WP.spec_ok]
-  refine ⟨fun i hi => ?_, fun i hi => (ha i hi).2⟩
+  refine isTable_and_of_rows (fun i hi => ?_) fun i hi => (ha i hi).2
   rw [show 12 * i = 2 * 6 * i by ring]
   exact (ha i hi).1
 
@@ -209,13 +219,15 @@ open window.«LookupTableRadix128AffineNielsPointx86_64-tables».Insts in
 /-- `BasepointTable::create` (radix `2^7`): row `i` is the lookup table of
 `2^(14 i) • basepoint`; limbs `< 2^52` in, `< 2^54` out. -/
 @[step]
-theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables») (hbasepoint : basepoint.LimbsLt 52)
+theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables»)
+    (hbasepoint : basepoint.LimbsLt 52)
     (hon : basepoint.OnCurve) :
     create basepoint ⦃ (r : EdwardsBasepointTableRadix128.«x86_64-tables») =>
-      r.Represents basepoint.toPoint ∧ r.LimbsLt 54 ⦄ := by
+      r.IsTable ∧ r.point = basepoint.toPoint ∧ r.LimbsLt 54 ⦄ := by
   unfold create
   unfold window.LookupTableRadix128.Insts.CoreDefaultDefault.default
-  step with AffineNielsPoint.«x86_64-tables».Insts.CoreDefaultDefault.default_spec as ⟨d, hd⟩
+  step with AffineNielsPoint.«x86_64-tables».Insts.CoreDefaultDefault.default_toAffineNiels
+    as ⟨d, hd⟩
   have h := basepointTable.createLoop_spec
     «CoreConvertFromSharedAEdwardsPointx86_64-tables».«from»
     (fun t P => t.Represents P) (fun t => t.LimbsLt 54)
@@ -225,7 +237,7 @@ theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables») (hbasepoint : b
   apply spec_bind h
   intro a ha
   simp only [WP.spec_ok]
-  refine ⟨fun i hi => ?_, fun i hi => (ha i hi).2⟩
+  refine isTable_and_of_rows (fun i hi => ?_) fun i hi => (ha i hi).2
   rw [show 14 * i = 2 * 7 * i by ring]
   exact (ha i hi).1
 
@@ -239,13 +251,14 @@ open window.«LookupTableRadix128AffineNielsPointi686-tables».Insts in
 /-- `BasepointTable::create` (radix `2^7`): row `i` is the lookup table of
 `2^(14 i) • basepoint`; limbs `< 2^26` in, `< 2^27` out. -/
 @[step]
-theorem create_spec (basepoint : EdwardsPoint.«i686-tables») (hbasepoint : basepoint.LimbsLt 26)
+theorem create_spec (basepoint : EdwardsPoint.«i686-tables»)
+    (hbasepoint : basepoint.LimbsLt 26)
     (hon : basepoint.OnCurve) :
     create basepoint ⦃ (r : EdwardsBasepointTableRadix128.«i686-tables») =>
-      r.Represents basepoint.toPoint ∧ r.LimbsLt 27 ⦄ := by
+      r.IsTable ∧ r.point = basepoint.toPoint ∧ r.LimbsLt 27 ⦄ := by
   unfold create
   unfold window.LookupTableRadix128.Insts.CoreDefaultDefault.default
-  step with AffineNielsPoint.«i686-tables».Insts.CoreDefaultDefault.default_spec as ⟨d, hd⟩
+  step with AffineNielsPoint.«i686-tables».Insts.CoreDefaultDefault.default_toAffineNiels as ⟨d, hd⟩
   have h := basepointTable.i686.createLoop_spec
     «CoreConvertFromSharedAEdwardsPointi686-tables».«from»
     (fun t P => t.Represents P) (fun t => t.LimbsLt 27)
@@ -255,7 +268,7 @@ theorem create_spec (basepoint : EdwardsPoint.«i686-tables») (hbasepoint : bas
   apply spec_bind h
   intro a ha
   simp only [WP.spec_ok]
-  refine ⟨fun i hi => ?_, fun i hi => (ha i hi).2⟩
+  refine isTable_and_of_rows (fun i hi => ?_) fun i hi => (ha i hi).2
   rw [show 14 * i = 2 * 7 * i by ring]
   exact (ha i hi).1
 
@@ -269,13 +282,15 @@ open window.«LookupTableRadix256AffineNielsPointx86_64-tables».Insts in
 /-- `BasepointTable::create` (radix `2^8`): row `i` is the lookup table of
 `2^(16 i) • basepoint`; limbs `< 2^52` in, `< 2^54` out. -/
 @[step]
-theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables») (hbasepoint : basepoint.LimbsLt 52)
+theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables»)
+    (hbasepoint : basepoint.LimbsLt 52)
     (hon : basepoint.OnCurve) :
     create basepoint ⦃ (r : EdwardsBasepointTableRadix256.«x86_64-tables») =>
-      r.Represents basepoint.toPoint ∧ r.LimbsLt 54 ⦄ := by
+      r.IsTable ∧ r.point = basepoint.toPoint ∧ r.LimbsLt 54 ⦄ := by
   unfold create
   unfold window.LookupTableRadix256.Insts.CoreDefaultDefault.default
-  step with AffineNielsPoint.«x86_64-tables».Insts.CoreDefaultDefault.default_spec as ⟨d, hd⟩
+  step with AffineNielsPoint.«x86_64-tables».Insts.CoreDefaultDefault.default_toAffineNiels
+    as ⟨d, hd⟩
   have h := basepointTable.createLoop_spec
     «CoreConvertFromSharedAEdwardsPointx86_64-tables».«from»
     (fun t P => t.Represents P) (fun t => t.LimbsLt 54)
@@ -285,7 +300,7 @@ theorem create_spec (basepoint : EdwardsPoint.«x86_64-tables») (hbasepoint : b
   apply spec_bind h
   intro a ha
   simp only [WP.spec_ok]
-  refine ⟨fun i hi => ?_, fun i hi => (ha i hi).2⟩
+  refine isTable_and_of_rows (fun i hi => ?_) fun i hi => (ha i hi).2
   rw [show 16 * i = 2 * 8 * i by ring]
   exact (ha i hi).1
 
@@ -299,13 +314,14 @@ open window.«LookupTableRadix256AffineNielsPointi686-tables».Insts in
 /-- `BasepointTable::create` (radix `2^8`): row `i` is the lookup table of
 `2^(16 i) • basepoint`; limbs `< 2^26` in, `< 2^27` out. -/
 @[step]
-theorem create_spec (basepoint : EdwardsPoint.«i686-tables») (hbasepoint : basepoint.LimbsLt 26)
+theorem create_spec (basepoint : EdwardsPoint.«i686-tables»)
+    (hbasepoint : basepoint.LimbsLt 26)
     (hon : basepoint.OnCurve) :
     create basepoint ⦃ (r : EdwardsBasepointTableRadix256.«i686-tables») =>
-      r.Represents basepoint.toPoint ∧ r.LimbsLt 27 ⦄ := by
+      r.IsTable ∧ r.point = basepoint.toPoint ∧ r.LimbsLt 27 ⦄ := by
   unfold create
   unfold window.LookupTableRadix256.Insts.CoreDefaultDefault.default
-  step with AffineNielsPoint.«i686-tables».Insts.CoreDefaultDefault.default_spec as ⟨d, hd⟩
+  step with AffineNielsPoint.«i686-tables».Insts.CoreDefaultDefault.default_toAffineNiels as ⟨d, hd⟩
   have h := basepointTable.i686.createLoop_spec
     «CoreConvertFromSharedAEdwardsPointi686-tables».«from»
     (fun t P => t.Represents P) (fun t => t.LimbsLt 27)
@@ -315,7 +331,7 @@ theorem create_spec (basepoint : EdwardsPoint.«i686-tables») (hbasepoint : bas
   apply spec_bind h
   intro a ha
   simp only [WP.spec_ok]
-  refine ⟨fun i hi => ?_, fun i hi => (ha i hi).2⟩
+  refine isTable_and_of_rows (fun i hi => ?_) fun i hi => (ha i hi).2
   rw [show 16 * i = 2 * 8 * i by ring]
   exact (ha i hi).1
 

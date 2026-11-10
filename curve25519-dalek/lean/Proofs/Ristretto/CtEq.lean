@@ -42,8 +42,8 @@ the represented points (`X₁ Y₂ = Y₁ X₂` or `X₁ X₂ = Y₁ Y₂`); lim
 @[step]
 theorem ct_eq_spec (self other : RistrettoPoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 52) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    ct_eq self other ⦃ (c : subtle.Choice) =>
-      c.IsValid ∧ (c = 1#u8 ↔ curve25519.edwards.Rel self.toPoint other.toPoint) ⦄ := by
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ curve25519.edwards.Rel self.toPoint other.toPoint) ⦄ := by
   have hZ := ((onCurve_iff_equation self).mp hself_on).1
   have hZ' := ((onCurve_iff_equation other).mp hother_on).1
   obtain ⟨hX, hY, -, _⟩ := hself
@@ -78,8 +78,8 @@ the represented points (`X₁ Y₂ = Y₁ X₂` or `X₁ X₂ = Y₁ Y₂`); lim
 @[step]
 theorem ct_eq_spec (self other : RistrettoPoint.«i686-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 26) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    ct_eq self other ⦃ (c : subtle.Choice) =>
-      c.IsValid ∧ (c = 1#u8 ↔ curve25519.edwards.Rel self.toPoint other.toPoint) ⦄ := by
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ curve25519.edwards.Rel self.toPoint other.toPoint) ⦄ := by
   have hZ := ((onCurve_iff_equation self).mp hself_on).1
   have hZ' := ((onCurve_iff_equation other).mp hother_on).1
   obtain ⟨hX, hY, -, _⟩ := hself
@@ -114,8 +114,8 @@ namespace «CoreCmpPartialEqRistrettoPointx86_64-tables»
 @[step]
 theorem eq_spec (self other : RistrettoPoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 52) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    eq self other ⦃ (b : Bool) =>
-      b = true ↔ curve25519.edwards.Rel self.toPoint other.toPoint ⦄ := by
+    eq self other ⦃ (r : Bool) =>
+      r = true ↔ curve25519.edwards.Rel self.toPoint other.toPoint ⦄ := by
   unfold eq
   step as ⟨c, hcv, hc⟩
   step as ⟨b, hb⟩
@@ -135,8 +135,8 @@ namespace «CoreCmpPartialEqRistrettoPointi686-tables»
 @[step]
 theorem eq_spec (self other : RistrettoPoint.«i686-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 26) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    eq self other ⦃ (b : Bool) =>
-      b = true ↔ curve25519.edwards.Rel self.toPoint other.toPoint ⦄ := by
+    eq self other ⦃ (r : Bool) =>
+      r = true ↔ curve25519.edwards.Rel self.toPoint other.toPoint ⦄ := by
   unfold eq
   step as ⟨c, hcv, hc⟩
   step as ⟨b, hb⟩
@@ -156,8 +156,8 @@ the represented points (`X₁ Y₂ = Y₁ X₂` or `X₁ X₂ = Y₁ Y₂`); lim
 @[step]
 theorem ct_eq_spec (self other : RistrettoPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 52) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    ct_eq self other ⦃ (c : subtle.Choice) =>
-      c.IsValid ∧ (c = 1#u8 ↔ curve25519.edwards.Rel self.toPoint other.toPoint) ⦄ := by
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ curve25519.edwards.Rel self.toPoint other.toPoint) ⦄ := by
   have hZ := ((onCurve_iff_equation self).mp hself_on).1
   have hZ' := ((onCurve_iff_equation other).mp hother_on).1
   obtain ⟨hX, hY, -, _⟩ := hself
@@ -192,8 +192,8 @@ the represented points (`X₁ Y₂ = Y₁ X₂` or `X₁ X₂ = Y₁ Y₂`); lim
 @[step]
 theorem ct_eq_spec (self other : RistrettoPoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 26) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    ct_eq self other ⦃ (c : subtle.Choice) =>
-      c.IsValid ∧ (c = 1#u8 ↔ curve25519.edwards.Rel self.toPoint other.toPoint) ⦄ := by
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ curve25519.edwards.Rel self.toPoint other.toPoint) ⦄ := by
   have hZ := ((onCurve_iff_equation self).mp hself_on).1
   have hZ' := ((onCurve_iff_equation other).mp hother_on).1
   obtain ⟨hX, hY, -, _⟩ := hself
@@ -228,8 +228,8 @@ namespace «CoreCmpPartialEqRistrettoPointx86_64-no-tables»
 @[step]
 theorem eq_spec (self other : RistrettoPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 52) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    eq self other ⦃ (b : Bool) =>
-      b = true ↔ curve25519.edwards.Rel self.toPoint other.toPoint ⦄ := by
+    eq self other ⦃ (r : Bool) =>
+      r = true ↔ curve25519.edwards.Rel self.toPoint other.toPoint ⦄ := by
   unfold eq
   step as ⟨c, hcv, hc⟩
   step as ⟨b, hb⟩
@@ -249,8 +249,8 @@ namespace «CoreCmpPartialEqRistrettoPointi686-no-tables»
 @[step]
 theorem eq_spec (self other : RistrettoPoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 26) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    eq self other ⦃ (b : Bool) =>
-      b = true ↔ curve25519.edwards.Rel self.toPoint other.toPoint ⦄ := by
+    eq self other ⦃ (r : Bool) =>
+      r = true ↔ curve25519.edwards.Rel self.toPoint other.toPoint ⦄ := by
   unfold eq
   step as ⟨c, hcv, hc⟩
   step as ⟨b, hb⟩

@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import Defs.Iterator
+public import ToAeneas.Iterator
 public import Defs.Scalar
 public import Subtle
 import Proofs.Scalar.Add
@@ -54,11 +54,13 @@ public section
 Spec summary: the items of `scalar.rs` in the crate's public API, with their spec statements, each
 restated with `recall` from the theorem proved in `Proofs/Scalar/`, and the axioms that proof
 depends on. Items appear in the order of `scalar.rs`. Items outside the public API (`reduce`,
-`as_radix_16`, …) are proved in
-`Proofs/` but not restated here.
+`as_radix_16`, …) are proved in `Proofs/` but not restated here.
+
+A `HalfWidthScalar` is a `Scalar` whose value is below `2^128`. The Lean type does not carry the
+bound: its constructors state it and its consumers assume it.
 
 Definitions used: `Scalar.asNat`, `HalfWidthScalar.asNat` (`Defs/Scalar.lean`), `Array.asNat`
-(`Defs/Array.lean`), `Iterator.Yields` (`Defs/Iterator.lean`), `L` (`Curve25519/Basic.lean`),
+(`Defs/Array.lean`), `Iterator.Yields` (`ToAeneas/Iterator.lean`), `L` (`Curve25519/Basic.lean`),
 `subtle.Choice.IsValid`, `subtle.CtOption` (`Subtle/`).
 
 Not specified: derived `Clone`/`Copy` impls. Not translated: `Debug`, `Hash`, `from_bits`, `random`,
@@ -108,8 +110,8 @@ namespace Curve25519Dalek.scalar.Scalar.Insts.CoreCmpPartialEqScalar
 
 /-- `PartialEq::eq`: equality of the byte encodings. -/
 recall eq_spec (self other : Scalar) :
-    eq self other ⦃ (b : Bool) =>
-      (b = true ↔ self = other) ⦄
+    eq self other ⦃ (r : Bool) =>
+      (r = true ↔ self = other) ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms eq_spec
@@ -120,8 +122,8 @@ namespace Curve25519Dalek.scalar.Scalar.Insts.SubtleConstantTimeEq
 
 /-- `ConstantTimeEq::ct_eq`: `1` iff the byte encodings are equal. -/
 recall ct_eq_spec (self other : Scalar) :
-    ct_eq self other ⦃ (c : subtle.Choice) =>
-      c.IsValid ∧ (self = other → c = 1#u8) ∧ (self ≠ other → c = 0#u8) ⦄
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (self = other → r = 1#u8) ∧ (self ≠ other → r = 0#u8) ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms ct_eq_spec
@@ -617,7 +619,7 @@ namespace Curve25519Dalek.scalar
 /-- `clamp_integer`: clears the low 3 bits and bit 255, sets bit 254. -/
 recall clamp_integer_spec (bytes : Array U8 32#usize) :
     clamp_integer bytes ⦃ (r : Array U8 32#usize) =>
-      r.asNat 8 + bytes.asNat 8 % 8 = 2 ^ 254 + bytes.asNat 8 % 2 ^ 254 ⦄
+      r.asNat 8 = 2 ^ 254 + 8 * (bytes.asNat 8 % 2 ^ 254 / 8) ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms clamp_integer_spec
@@ -629,7 +631,7 @@ namespace Curve25519Dalek.scalar.HalfWidthScalar.Insts.CoreDefaultDefault
 /-- `Default::default` (derived): the scalar `0`. -/
 recall default_spec :
     default ⦃ (r : HalfWidthScalar) =>
-      r.asNat = 0 ⦄
+      r.asNat < 2 ^ 128 ∧ r.asNat = 0 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms default_spec
@@ -640,8 +642,8 @@ namespace Curve25519Dalek.scalar.HalfWidthScalar.Insts.CoreCmpPartialEqHalfWidth
 
 /-- `PartialEq::eq` (derived): equality. -/
 recall eq_spec (self other : HalfWidthScalar) :
-    eq self other ⦃ (b : Bool) =>
-      (b = true ↔ self = other) ⦄
+    eq self other ⦃ (r : Bool) =>
+      (r = true ↔ self = other) ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms eq_spec
@@ -664,7 +666,7 @@ namespace Curve25519Dalek.scalar.HalfWidthScalar
 
 /-- `HalfWidthScalar::ZERO`: `0`. -/
 recall ZERO_spec :
-    ZERO.asNat = 0
+    ZERO.asNat < 2 ^ 128 ∧ ZERO.asNat = 0
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms ZERO_spec
@@ -675,7 +677,7 @@ namespace Curve25519Dalek.scalar.HalfWidthScalar
 
 /-- `HalfWidthScalar::ONE`: `1`. -/
 recall ONE_spec :
-    ONE.asNat = 1
+    ONE.asNat < 2 ^ 128 ∧ ONE.asNat = 1
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms ONE_spec
@@ -687,7 +689,7 @@ namespace Curve25519Dalek.scalar.HalfWidthScalar
 /-- `HalfWidthScalar::from_bytes`: the 128-bit little-endian value. -/
 recall from_bytes_spec (bytes : Array U8 16#usize) :
     from_bytes bytes ⦃ (r : HalfWidthScalar) =>
-      r.asNat = bytes.asNat 8 ⦄
+      r.asNat < 2 ^ 128 ∧ r.asNat = bytes.asNat 8 ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms from_bytes_spec
@@ -708,10 +710,10 @@ end Curve25519Dalek.scalar.HalfWidthScalar
 
 namespace Curve25519Dalek.scalar.HalfWidthScalar
 
-/-- `HalfWidthScalar::to_bytes`: the low 16 bytes. -/
-recall to_bytes_spec (self : HalfWidthScalar) :
+/-- `HalfWidthScalar::to_bytes`: the 128-bit little-endian encoding. -/
+recall to_bytes_spec (self : HalfWidthScalar) (hself : self.asNat < 2 ^ 128) :
     to_bytes self ⦃ (r : Array U8 16#usize) =>
-      r.asNat 8 = self.asNat % 2 ^ 128 ⦄
+      r.asNat 8 = self.asNat ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms to_bytes_spec
@@ -735,7 +737,7 @@ namespace Curve25519Dalek.scalar.HalfWidthScalar.Insts.CoreConvertFromU8
 /-- `From<u8> for HalfWidthScalar`: the value of `x`. -/
 recall from_spec (x : U8) :
     «from» x ⦃ (r : HalfWidthScalar) =>
-      r.asNat = x.val ⦄
+      r.asNat < 2 ^ 128 ∧ r.asNat = x.val ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms from_spec
@@ -747,7 +749,7 @@ namespace Curve25519Dalek.scalar.HalfWidthScalar.Insts.CoreConvertFromU16
 /-- `From<u16> for HalfWidthScalar`: the value of `x`. -/
 recall from_spec (x : U16) :
     «from» x ⦃ (r : HalfWidthScalar) =>
-      r.asNat = x.val ⦄
+      r.asNat < 2 ^ 128 ∧ r.asNat = x.val ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms from_spec
@@ -759,7 +761,7 @@ namespace Curve25519Dalek.scalar.HalfWidthScalar.Insts.CoreConvertFromU32
 /-- `From<u32> for HalfWidthScalar`: the value of `x`. -/
 recall from_spec (x : U32) :
     «from» x ⦃ (r : HalfWidthScalar) =>
-      r.asNat = x.val ⦄
+      r.asNat < 2 ^ 128 ∧ r.asNat = x.val ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms from_spec
@@ -771,7 +773,7 @@ namespace Curve25519Dalek.scalar.HalfWidthScalar.Insts.CoreConvertFromU64
 /-- `From<u64> for HalfWidthScalar`: the value of `x`. -/
 recall from_spec (x : U64) :
     «from» x ⦃ (r : HalfWidthScalar) =>
-      r.asNat = x.val ⦄
+      r.asNat < 2 ^ 128 ∧ r.asNat = x.val ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms from_spec
@@ -783,7 +785,7 @@ namespace Curve25519Dalek.scalar.HalfWidthScalar.Insts.CoreConvertFromU128
 /-- `From<u128> for HalfWidthScalar`: the value of `x`. -/
 recall from_spec (x : U128) :
     «from» x ⦃ (r : HalfWidthScalar) =>
-      r.asNat = x.val ⦄
+      r.asNat < 2 ^ 128 ∧ r.asNat = x.val ⦄
 
 /-- [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms from_spec

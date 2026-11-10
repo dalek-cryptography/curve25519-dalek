@@ -60,7 +60,7 @@ theorem mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255
     mul_base scalar ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • basepoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul_base
-  step with backend.serial.u64.constants.«x86_64-no-tables».ED25519_BASEPOINT_POINT_spec_point
+  step with backend.serial.u64.constants.«x86_64-no-tables».ED25519_BASEPOINT_POINT_spec
     as ⟨ep, hepon, hep, hepb⟩
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hep ▸ hr, hrb⟩
@@ -76,7 +76,7 @@ theorem mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255
     mul_base scalar ⦃ (r : EdwardsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • basepoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul_base
-  step with backend.serial.u32.constants.«i686-no-tables».ED25519_BASEPOINT_POINT_spec_point
+  step with backend.serial.u32.constants.«i686-no-tables».ED25519_BASEPOINT_POINT_spec
     as ⟨ep, hepon, hep, hepb⟩
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hep ▸ hr, hrb⟩

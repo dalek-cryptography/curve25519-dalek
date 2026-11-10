@@ -9,6 +9,7 @@ public import Curve25519.Edwards.Encoding
 import Proofs.Helpers.Array
 import Proofs.Helpers.AsNat
 import Zeroize.Instances
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
@@ -17,7 +18,7 @@ namespace Curve25519Dalek.edwards.CompressedEdwardsY.Insts.ZeroizeZeroize
 
 /-- `Zeroize for CompressedEdwardsY`: reset to the identity `[1, 0, …, 0]`, value `1`. -/
 @[step]
-theorem zeroize_spec (self : CompressedEdwardsY) :
+theorem zeroize_asNat (self : CompressedEdwardsY) :
     zeroize self ⦃ (r : CompressedEdwardsY) => r.asNat = 1 ⦄ := by
   unfold zeroize
   step as ⟨a, ha⟩
@@ -33,8 +34,9 @@ theorem zeroize_spec (self : CompressedEdwardsY) :
   simpa [h0, Array.getElem!_repeat 0#u8 (show 0 < (32#usize).val by decide)] using h
 
 /-- `Zeroize for CompressedEdwardsY` leaves the encoding of the neutral element. -/
-theorem zeroize_spec_point (self : CompressedEdwardsY) :
-    zeroize self ⦃ (r : CompressedEdwardsY) => r.asNat = encode 0 ⦄ :=
-  spec_mono (zeroize_spec self) fun r hr => by rw [hr, encode_zero]
+theorem zeroize_spec (self : CompressedEdwardsY) :
+    zeroize self ⦃ (r : CompressedEdwardsY) => r.toVector = encode 0 ⦄ := by
+  simp only [Curve25519Dalek.edwards.CompressedEdwardsY.toVector_eq_encode_iff]
+  exact spec_mono (zeroize_asNat self) fun r hr => by rw [hr, encodeNat_zero]
 
 end Curve25519Dalek.edwards.CompressedEdwardsY.Insts.ZeroizeZeroize

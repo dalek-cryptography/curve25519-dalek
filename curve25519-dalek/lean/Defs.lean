@@ -4,7 +4,7 @@ public import Defs.CurveModels
 public import Defs.Edwards
 public import Defs.FieldElement2625
 public import Defs.FieldElement51
-public import Defs.Iterator
+public import ToAeneas.Iterator
 public import Defs.Montgomery
 public import Defs.Ristretto
 public import Defs.Scalar
@@ -12,6 +12,7 @@ public import Defs.Scalar29
 public import Defs.Scalar52
 public import Defs.ScalarMul
 public import Defs.Window
+public import ToAeneas.Array
 
 /-! # Definitions for the specs of curve25519-dalek
 

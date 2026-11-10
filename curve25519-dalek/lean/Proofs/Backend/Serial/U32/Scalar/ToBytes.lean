@@ -10,6 +10,7 @@ public import Curve25519.Basic
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.Scalar29
 import Proofs.Helpers.Array
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `Scalar29::to_bytes`

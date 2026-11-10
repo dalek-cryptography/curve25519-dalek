@@ -10,64 +10,184 @@ public section
 /-! # The RFC 7748 test vectors for X25519 (not audited)
 
 Kernel evaluations (`decide +kernel`) of the 255-step Montgomery ladder on the test vectors of
-RFC 7748 §5.2 and §6.1, as little-endian numbers: a regression test of `x25519`. The ladder is
+RFC 7748 §5.2 and §6.1, as little-endian numbers: a regression test of `x25519Nat`; then the
+same vectors on byte strings, as the RFC writes them, for `X25519`. The ladder is
 run in projective form (`XZ.ladderXZ`, no field inversion) and its result `(U : W)` is checked
 against the expected coordinate `e` as `U = e W ∧ W ≠ 0`, since the kernel cannot evaluate the
 inverse in `ZMod p`; `Curve25519.Basic` is imported with `import all` so that the kernel can
-unfold `p`. -/
+unfold `p`. The iterated test after 1,000 and 1,000,000 iterations, too slow for the kernel, is in
+`Curve25519Test.X25519Iterated`. -/
 
 namespace curve25519.Proofs
 
 open MontgomeryModel
 
-/-- `x25519 k u = e` from a kernel check of the projective ladder result. -/
-private theorem x25519_eq_of_ladderXZ {k u e : ℕ}
+/-- `x25519Nat k u = e` from a kernel check of the projective ladder result. -/
+private theorem x25519Nat_eq_of_ladderXZ {k u e : ℕ}
     (h : (XZ.ladderXZ 121665 255 (clamp k) (decodeU u)).U =
         (e : ZMod p) * (XZ.ladderXZ 121665 255 (clamp k) (decodeU u)).W ∧
       (XZ.ladderXZ 121665 255 (clamp k) (decodeU u)).W ≠ 0) (he : e < p) :
-    x25519 k u = e := by
-  unfold x25519 MontgomeryModel.ladder XZ.ladder
+    x25519Nat k u = e := by
+  unfold x25519Nat MontgomeryModel.ladder XZ.ladder
   rw [montgomery_a24_eq, XZ.toU, h.1, mul_div_assoc, div_self h.2, mul_one]
   exact ZMod.val_natCast_of_lt he
 
 /-- RFC 7748 §5.2, first vector: scalar `a546e36b…`, `u` `e6db6867…`, output `c3da5537…`. -/
-theorem x25519_vector₁ :
-    x25519 88925887110773138616681052956207043583107764937498542285260013040410376226469
+theorem x25519Nat_vector₁ :
+    x25519Nat 88925887110773138616681052956207043583107764937498542285260013040410376226469
         34426434033919594451155107781188821651316167215306631574996226621102155684838 =
       37325765543539916631701301279660700968428932651319597985674090122993663859395 :=
-  x25519_eq_of_ladderXZ (by decide +kernel) (by rw [p_eq_numeral]; decide)
+  x25519Nat_eq_of_ladderXZ (by decide +kernel) (by rw [p_eq_numeral]; decide)
 
 /-- RFC 7748 §5.2, second vector: scalar `4b66e9d4…`, `u` `e5210f12…`, output `95cbde94…`. -/
-theorem x25519_vector₂ :
-    x25519 6208869506345768410841466502331656783811117849709423753404619313487976949323
+theorem x25519Nat_vector₂ :
+    x25519Nat 6208869506345768410841466502331656783811117849709423753404619313487976949323
         66779901969842027605876251890954603246052331132842480964984187926304357556709 =
       39566196721700740701373067725336211924689549479508623342842086701180565506965 :=
-  x25519_eq_of_ladderXZ (by decide +kernel) (by rw [p_eq_numeral]; decide)
+  x25519Nat_eq_of_ladderXZ (by decide +kernel) (by rw [p_eq_numeral]; decide)
 
 /-- RFC 7748 §6.1: Alice's public key `X25519(a, 9)` for `a = 77076d0a…` is `8520f009…`. -/
-theorem x25519_alice_public :
-    x25519 19076158533740022697853188432810029468508100820210985396154491514718125885303 9 =
+theorem x25519Nat_alice_public :
+    x25519Nat 19076158533740022697853188432810029468508100820210985396154491514718125885303 9 =
       48084050389777770101701157326923977117307187144965043058462938058489685090437 :=
-  x25519_eq_of_ladderXZ (by decide +kernel) (by rw [p_eq_numeral]; decide)
+  x25519Nat_eq_of_ladderXZ (by decide +kernel) (by rw [p_eq_numeral]; decide)
 
 /-- RFC 7748 §5.2, the iterated test after one iteration: `X25519(9, 9)` is `422c8e7a…`. -/
-theorem x25519_one_iteration :
-    x25519 9 9 =
+theorem x25519Nat_one_iteration :
+    x25519Nat 9 9 =
       54815864700279561125610391355931320566748822376190344121911385527384361806914 :=
-  x25519_eq_of_ladderXZ (by decide +kernel) (by rw [p_eq_numeral]; decide)
+  x25519Nat_eq_of_ladderXZ (by decide +kernel) (by rw [p_eq_numeral]; decide)
 
 /-- RFC 7748 §6.1: Bob's public key `X25519(b, 9)` for `b = 5dab087e…` is `de9edb7d…`. -/
-theorem x25519_bob_public :
-    x25519 106690238676031959364154629127743819238817784511314751294525304279539011595101 9 =
+theorem x25519Nat_bob_public :
+    x25519Nat 106690238676031959364154629127743819238817784511314751294525304279539011595101 9 =
       35809631094079244041211258971985475468665640815735853089228998203411133079262 :=
-  x25519_eq_of_ladderXZ (by decide +kernel) (by rw [p_eq_numeral]; decide)
+  x25519Nat_eq_of_ladderXZ (by decide +kernel) (by rw [p_eq_numeral]; decide)
 
 /-- RFC 7748 §6.1: the shared secret `X25519(a, X25519(b, 9))` is `4a5d9d5b…` (Alice's side;
 RFC 7748 gives the same value for Bob's side `X25519(b, X25519(a, 9))`, not checked here). -/
-theorem x25519_shared_secret :
-    x25519 19076158533740022697853188432810029468508100820210985396154491514718125885303
+theorem x25519Nat_shared_secret :
+    x25519Nat 19076158533740022697853188432810029468508100820210985396154491514718125885303
         35809631094079244041211258971985475468665640815735853089228998203411133079262 =
       29893438142586401087946310744922998080771935139441267052026283852717044358474 :=
-  x25519_eq_of_ladderXZ (by decide +kernel) (by rw [p_eq_numeral]; decide)
+  x25519Nat_eq_of_ladderXZ (by decide +kernel) (by rw [p_eq_numeral]; decide)
+
+/-! ### The vectors on bytes
+
+The same vectors as byte strings, as RFC 7748 writes them: `X25519` on `Vector UInt8 32` is
+`x25519Nat` on the little-endian values (`X25519_eq_x25519Nat`), and the values of the bytes are
+kernel evaluations. -/
+
+/-- A byte-level vector from the value-level one. -/
+private theorem X25519_of_x25519Nat {k u o : Vector UInt8 32} {K U O : ℕ}
+    (hk : decodeLittleEndian k = K) (hu : decodeLittleEndian u = U) (h : x25519Nat K U = O)
+    (ho : encodeLittleEndian 32 O = o) : X25519 k u = o := by
+  rw [X25519_eq_x25519Nat, hk, hu, h, ho]
+
+/-- RFC 7748 §5.2, first vector, on bytes. -/
+theorem X25519_vector₁ :
+    X25519
+      #v[0xa5, 0x46, 0xe3, 0x6b, 0xf0, 0x52, 0x7c, 0x9d,
+         0x3b, 0x16, 0x15, 0x4b, 0x82, 0x46, 0x5e, 0xdd,
+         0x62, 0x14, 0x4c, 0x0a, 0xc1, 0xfc, 0x5a, 0x18,
+         0x50, 0x6a, 0x22, 0x44, 0xba, 0x44, 0x9a, 0xc4]
+      #v[0xe6, 0xdb, 0x68, 0x67, 0x58, 0x30, 0x30, 0xdb,
+         0x35, 0x94, 0xc1, 0xa4, 0x24, 0xb1, 0x5f, 0x7c,
+         0x72, 0x66, 0x24, 0xec, 0x26, 0xb3, 0x35, 0x3b,
+         0x10, 0xa9, 0x03, 0xa6, 0xd0, 0xab, 0x1c, 0x4c] =
+      #v[0xc3, 0xda, 0x55, 0x37, 0x9d, 0xe9, 0xc6, 0x90,
+         0x8e, 0x94, 0xea, 0x4d, 0xf2, 0x8d, 0x08, 0x4f,
+         0x32, 0xec, 0xcf, 0x03, 0x49, 0x1c, 0x71, 0xf7,
+         0x54, 0xb4, 0x07, 0x55, 0x77, 0xa2, 0x85, 0x52] :=
+  X25519_of_x25519Nat (by decide +kernel) (by decide +kernel) x25519Nat_vector₁ (by decide +kernel)
+
+/-- RFC 7748 §5.2, second vector, on bytes. -/
+theorem X25519_vector₂ :
+    X25519
+      #v[0x4b, 0x66, 0xe9, 0xd4, 0xd1, 0xb4, 0x67, 0x3c,
+         0x5a, 0xd2, 0x26, 0x91, 0x95, 0x7d, 0x6a, 0xf5,
+         0xc1, 0x1b, 0x64, 0x21, 0xe0, 0xea, 0x01, 0xd4,
+         0x2c, 0xa4, 0x16, 0x9e, 0x79, 0x18, 0xba, 0x0d]
+      #v[0xe5, 0x21, 0x0f, 0x12, 0x78, 0x68, 0x11, 0xd3,
+         0xf4, 0xb7, 0x95, 0x9d, 0x05, 0x38, 0xae, 0x2c,
+         0x31, 0xdb, 0xe7, 0x10, 0x6f, 0xc0, 0x3c, 0x3e,
+         0xfc, 0x4c, 0xd5, 0x49, 0xc7, 0x15, 0xa4, 0x93] =
+      #v[0x95, 0xcb, 0xde, 0x94, 0x76, 0xe8, 0x90, 0x7d,
+         0x7a, 0xad, 0xe4, 0x5c, 0xb4, 0xb8, 0x73, 0xf8,
+         0x8b, 0x59, 0x5a, 0x68, 0x79, 0x9f, 0xa1, 0x52,
+         0xe6, 0xf8, 0xf7, 0x64, 0x7a, 0xac, 0x79, 0x57] :=
+  X25519_of_x25519Nat (by decide +kernel) (by decide +kernel) x25519Nat_vector₂ (by decide +kernel)
+
+/-- RFC 7748 §5.2, the iterated test after one iteration, on bytes: `X25519(9, 9)`. -/
+theorem X25519_one_iteration :
+    X25519
+      #v[0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+      #v[0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] =
+      #v[0x42, 0x2c, 0x8e, 0x7a, 0x62, 0x27, 0xd7, 0xbc,
+         0xa1, 0x35, 0x0b, 0x3e, 0x2b, 0xb7, 0x27, 0x9f,
+         0x78, 0x97, 0xb8, 0x7b, 0xb6, 0x85, 0x4b, 0x78,
+         0x3c, 0x60, 0xe8, 0x03, 0x11, 0xae, 0x30, 0x79] :=
+  X25519_of_x25519Nat (by decide +kernel) (by decide +kernel) x25519Nat_one_iteration
+      (by decide +kernel)
+
+/-- RFC 7748 §6.1, Alice's public key `X25519(a, 9)`, on bytes. -/
+theorem X25519_alice_public :
+    X25519
+      #v[0x77, 0x07, 0x6d, 0x0a, 0x73, 0x18, 0xa5, 0x7d,
+         0x3c, 0x16, 0xc1, 0x72, 0x51, 0xb2, 0x66, 0x45,
+         0xdf, 0x4c, 0x2f, 0x87, 0xeb, 0xc0, 0x99, 0x2a,
+         0xb1, 0x77, 0xfb, 0xa5, 0x1d, 0xb9, 0x2c, 0x2a]
+      #v[0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] =
+      #v[0x85, 0x20, 0xf0, 0x09, 0x89, 0x30, 0xa7, 0x54,
+         0x74, 0x8b, 0x7d, 0xdc, 0xb4, 0x3e, 0xf7, 0x5a,
+         0x0d, 0xbf, 0x3a, 0x0d, 0x26, 0x38, 0x1a, 0xf4,
+         0xeb, 0xa4, 0xa9, 0x8e, 0xaa, 0x9b, 0x4e, 0x6a] :=
+  X25519_of_x25519Nat (by decide +kernel) (by decide +kernel) x25519Nat_alice_public
+      (by decide +kernel)
+
+/-- RFC 7748 §6.1, Bob's public key `X25519(b, 9)`, on bytes. -/
+theorem X25519_bob_public :
+    X25519
+      #v[0x5d, 0xab, 0x08, 0x7e, 0x62, 0x4a, 0x8a, 0x4b,
+         0x79, 0xe1, 0x7f, 0x8b, 0x83, 0x80, 0x0e, 0xe6,
+         0x6f, 0x3b, 0xb1, 0x29, 0x26, 0x18, 0xb6, 0xfd,
+         0x1c, 0x2f, 0x8b, 0x27, 0xff, 0x88, 0xe0, 0xeb]
+      #v[0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] =
+      #v[0xde, 0x9e, 0xdb, 0x7d, 0x7b, 0x7d, 0xc1, 0xb4,
+         0xd3, 0x5b, 0x61, 0xc2, 0xec, 0xe4, 0x35, 0x37,
+         0x3f, 0x83, 0x43, 0xc8, 0x5b, 0x78, 0x67, 0x4d,
+         0xad, 0xfc, 0x7e, 0x14, 0x6f, 0x88, 0x2b, 0x4f] :=
+  X25519_of_x25519Nat (by decide +kernel) (by decide +kernel) x25519Nat_bob_public
+      (by decide +kernel)
+
+/-- RFC 7748 §6.1, the shared secret `X25519(a, X25519(b, 9))`, on bytes. -/
+theorem X25519_shared_secret :
+    X25519
+      #v[0x77, 0x07, 0x6d, 0x0a, 0x73, 0x18, 0xa5, 0x7d,
+         0x3c, 0x16, 0xc1, 0x72, 0x51, 0xb2, 0x66, 0x45,
+         0xdf, 0x4c, 0x2f, 0x87, 0xeb, 0xc0, 0x99, 0x2a,
+         0xb1, 0x77, 0xfb, 0xa5, 0x1d, 0xb9, 0x2c, 0x2a]
+      #v[0xde, 0x9e, 0xdb, 0x7d, 0x7b, 0x7d, 0xc1, 0xb4,
+         0xd3, 0x5b, 0x61, 0xc2, 0xec, 0xe4, 0x35, 0x37,
+         0x3f, 0x83, 0x43, 0xc8, 0x5b, 0x78, 0x67, 0x4d,
+         0xad, 0xfc, 0x7e, 0x14, 0x6f, 0x88, 0x2b, 0x4f] =
+      #v[0x4a, 0x5d, 0x9d, 0x5b, 0xa4, 0xce, 0x2d, 0xe1,
+         0x72, 0x8e, 0x3b, 0xf4, 0x80, 0x35, 0x0f, 0x25,
+         0xe0, 0x7e, 0x21, 0xc9, 0x47, 0xd1, 0x9e, 0x33,
+         0x76, 0xf0, 0x9b, 0x3c, 0x1e, 0x16, 0x17, 0x42] :=
+  X25519_of_x25519Nat (by decide +kernel) (by decide +kernel) x25519Nat_shared_secret
+      (by decide +kernel)
 
 end curve25519.Proofs

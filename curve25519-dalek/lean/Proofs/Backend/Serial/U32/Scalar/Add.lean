@@ -18,6 +18,7 @@ import Subtle
 import Proofs.Helpers.StepSpecs
 import Mathlib.Tactic.ReduceModChar
 import Proofs.Helpers.Bitwise
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

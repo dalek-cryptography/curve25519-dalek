@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
-public import Defs.Iterator
+public import ToAeneas.Iterator
 import Proofs.Ristretto.Add
 import Proofs.Ristretto.Identity
 public section

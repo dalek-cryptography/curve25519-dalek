@@ -30,7 +30,7 @@ theorem sub_spec (self other : ristretto.RistrettoPoint.«x86_64-tables»)
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold sub
   step with
-    Insts.«CoreOpsArithSubEdwardsPointx86_64-tablesEdwardsPointx86_64-tables».sub_spec_point
+    Insts.«CoreOpsArithSubEdwardsPointx86_64-tablesEdwardsPointx86_64-tables».sub_spec
     self other hself hother hself_on hother_on as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
@@ -50,7 +50,7 @@ theorem sub_spec (self other : ristretto.RistrettoPoint.«i686-tables»)
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold sub
   step with
-    Insts.«CoreOpsArithSubEdwardsPointi686-tablesEdwardsPointi686-tables».sub_spec_point
+    Insts.«CoreOpsArithSubEdwardsPointi686-tablesEdwardsPointi686-tables».sub_spec
     self other hself hother hself_on hother_on as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
@@ -172,7 +172,7 @@ theorem sub_spec (self other : ristretto.RistrettoPoint.«x86_64-no-tables»)
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold sub
   step with
-    Insts.«CoreOpsArithSubEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».sub_spec_point
+    Insts.«CoreOpsArithSubEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».sub_spec
     self other hself hother hself_on hother_on as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
@@ -192,7 +192,7 @@ theorem sub_spec (self other : ristretto.RistrettoPoint.«i686-no-tables»)
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold sub
   step with
-    Insts.«CoreOpsArithSubEdwardsPointi686-no-tablesEdwardsPointi686-no-tables».sub_spec_point
+    Insts.«CoreOpsArithSubEdwardsPointi686-no-tablesEdwardsPointi686-no-tables».sub_spec
     self other hself hother hself_on hother_on as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 

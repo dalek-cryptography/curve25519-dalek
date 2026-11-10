@@ -54,7 +54,7 @@ theorem as_extended_eq (self : ProjectivePoint.«x86_64-tables») :
 
 /-- `ProjectivePoint::as_extended`: `(X Z : Y Z : Z² : X Y)`, limbs `< 2^52`. -/
 @[step]
-theorem as_extended_spec (self : ProjectivePoint.«x86_64-tables») (hself : self.LimbsLt 52) :
+theorem as_extended_toExtended (self : ProjectivePoint.«x86_64-tables») (hself : self.LimbsLt 52) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
       r.toExtended = self.toProjective.toExtended ∧ r.LimbsLt 52 ⦄ := by
   obtain ⟨h1, h2, h3⟩ := hself
@@ -66,11 +66,11 @@ theorem as_extended_spec (self : ProjectivePoint.«x86_64-tables») (hself : sel
     ProjectivePoint.«x86_64-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `ProjectivePoint::as_extended` represents the same point. -/
-theorem as_extended_spec_point (self : ProjectivePoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem as_extended_spec (self : ProjectivePoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (as_extended_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
     rw [edwards.EdwardsPoint.«x86_64-tables».onCurve_iff,
       edwards.EdwardsPoint.«x86_64-tables».toPoint_def, hr,
       ProjectivePoint.«x86_64-tables».toPoint_def]
@@ -87,7 +87,7 @@ theorem as_extended_eq (self : ProjectivePoint.«i686-tables») :
 
 /-- `ProjectivePoint::as_extended`: `(X Z : Y Z : Z² : X Y)`, limbs `< 2^26`. -/
 @[step]
-theorem as_extended_spec (self : ProjectivePoint.«i686-tables») (hself : self.LimbsLt 26) :
+theorem as_extended_toExtended (self : ProjectivePoint.«i686-tables») (hself : self.LimbsLt 26) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
       r.toExtended = self.toProjective.toExtended ∧ r.LimbsLt 26 ⦄ := by
   obtain ⟨h1, h2, h3⟩ := hself
@@ -99,11 +99,11 @@ theorem as_extended_spec (self : ProjectivePoint.«i686-tables») (hself : self.
     ProjectivePoint.«i686-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `ProjectivePoint::as_extended` represents the same point. -/
-theorem as_extended_spec_point (self : ProjectivePoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem as_extended_spec (self : ProjectivePoint.«i686-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (as_extended_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
     rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff,
       edwards.EdwardsPoint.«i686-tables».toPoint_def, hr,
       ProjectivePoint.«i686-tables».toPoint_def]
@@ -120,7 +120,8 @@ theorem as_extended_eq (self : ProjectivePoint.«x86_64-no-tables») :
 
 /-- `ProjectivePoint::as_extended`: `(X Z : Y Z : Z² : X Y)`, limbs `< 2^52`. -/
 @[step]
-theorem as_extended_spec (self : ProjectivePoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
+theorem as_extended_toExtended (self : ProjectivePoint.«x86_64-no-tables») (hself : self.LimbsLt
+    52) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
       r.toExtended = self.toProjective.toExtended ∧ r.LimbsLt 52 ⦄ := by
   obtain ⟨h1, h2, h3⟩ := hself
@@ -132,11 +133,11 @@ theorem as_extended_spec (self : ProjectivePoint.«x86_64-no-tables») (hself : 
     ProjectivePoint.«x86_64-no-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `ProjectivePoint::as_extended` represents the same point. -/
-theorem as_extended_spec_point (self : ProjectivePoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem as_extended_spec (self : ProjectivePoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (as_extended_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
     rw [edwards.EdwardsPoint.«x86_64-no-tables».onCurve_iff,
       edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def, hr,
       ProjectivePoint.«x86_64-no-tables».toPoint_def]
@@ -153,7 +154,7 @@ theorem as_extended_eq (self : ProjectivePoint.«i686-no-tables») :
 
 /-- `ProjectivePoint::as_extended`: `(X Z : Y Z : Z² : X Y)`, limbs `< 2^26`. -/
 @[step]
-theorem as_extended_spec (self : ProjectivePoint.«i686-no-tables») (hself : self.LimbsLt 26) :
+theorem as_extended_toExtended (self : ProjectivePoint.«i686-no-tables») (hself : self.LimbsLt 26) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
       r.toExtended = self.toProjective.toExtended ∧ r.LimbsLt 26 ⦄ := by
   obtain ⟨h1, h2, h3⟩ := hself
@@ -165,11 +166,11 @@ theorem as_extended_spec (self : ProjectivePoint.«i686-no-tables») (hself : se
     ProjectivePoint.«i686-no-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `ProjectivePoint::as_extended` represents the same point. -/
-theorem as_extended_spec_point (self : ProjectivePoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem as_extended_spec (self : ProjectivePoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (as_extended_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
     rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff,
       edwards.EdwardsPoint.«i686-no-tables».toPoint_def, hr,
       ProjectivePoint.«i686-no-tables».toPoint_def]

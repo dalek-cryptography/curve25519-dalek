@@ -74,6 +74,18 @@ opaque core.result.Result.map
 opaque alloc.vec.Vec.is_empty
   {T : Type} (A : Type) : alloc.vec.Vec T → Result Bool
 
+/-- [alloc::vec::{impl core::iter::traits::collect::IntoIterator<&'a T, core::slice::iter::Iter<'a,
+    T>> for &'a alloc::vec::Vec<T>}::into_iter]:
+    Source: '/rustc/library/alloc/src/vec/mod.rs', lines 4088:4-4088:40
+    Name pattern: [alloc::vec::{core::iter::traits::collect::IntoIterator<&'a
+    alloc::vec::Vec<@T>, &'a @T, core::slice::iter::Iter<'a, @T>>}::into_iter]
+    Visibility: public -/
+@[rust_fun
+  "alloc::vec::{core::iter::traits::collect::IntoIterator<&'a alloc::vec::Vec<@T>, &'a @T, \
+    core::slice::iter::Iter<'a, @T>>}::into_iter"]
+opaque SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter
+  {T : Type} (A : Type) : alloc.vec.Vec T → Result (core.slice.iter.Iter T)
+
 /-- [core::borrow::{impl core::borrow::Borrow<T> for T}::borrow]:
     Source: '/rustc/library/core/src/borrow.rs', lines 214:4-214:26
     Name pattern: [core::borrow::{core::borrow::Borrow<@T, @T>}::borrow]
@@ -137,6 +149,16 @@ def alloc.vec.Vec.is_empty.Contract : Prop :=
   ∀ {T : Type} (A : Type) (v : alloc.vec.Vec T),
     alloc.vec.Vec.is_empty A v ⦃ (b : Bool) => b = decide (v.length = 0) ⦄
 
+/-- `<&Vec<T> as IntoIterator>::into_iter` (alloc/src/vec/mod.rs,
+`impl<'a, T, A: Allocator> IntoIterator for &'a Vec<T, A>`): "Creates an iterator from a value."
+Body: `self.iter()`, the slice iterator over the vector's elements, starting at index `0`; never
+fails. `A` is the allocator type parameter. -/
+@[nolint defsWithUnderscore]
+def SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter.Contract : Prop :=
+  ∀ {T : Type} (A : Type) (v : alloc.vec.Vec T),
+    SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter A v ⦃
+      (it : core.slice.iter.Iter T) => it = ⟨v.deref, 0⟩ ⦄
+
 /-- `<T as Borrow<T>>::borrow` (core/src/borrow.rs, `impl<T: ?Sized> Borrow<T> for T`): "Immutably
 borrows from an owned value." Body: `self`; never fails. -/
 @[nolint defsWithUnderscore]
@@ -160,6 +182,8 @@ axiom RustAx.core : core.Contract
 above. -/
 structure alloc.Contract : Prop where
   vec_is_empty : alloc.vec.Vec.is_empty.Contract
+  sharedVec_into_iter :
+    SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter.Contract
 
 /-- The single trusted assumption about `alloc`: its functions meet their contracts. -/
 axiom RustAx.alloc : alloc.Contract
@@ -214,10 +238,11 @@ theorem alloc.vec.Vec.is_empty_spec {T : Type} (A : Type) (v : alloc.vec.Vec T) 
     alloc.vec.Vec.is_empty A v ⦃ (b : Bool) => b = decide (v.length = 0) ⦄ :=
   RustAx.alloc.vec_is_empty A v
 
-/-- Iterating over a shared vector uses its slice iterator. -/
-@[rust_fun
-  "alloc::vec::{core::iter::traits::collect::IntoIterator<&'a alloc::vec::Vec<@T>, &'a @T, \
-    core::slice::iter::Iter<'a, @T>>}::into_iter"]
-def SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter
-    {T : Type} (_A : Type) (v : alloc.vec.Vec T) : Result (core.slice.iter.Iter T) :=
-  core.slice.Slice.iter v.deref
+/-- `SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter` meets its contract
+(`RustAx.alloc`). -/
+@[step]
+theorem SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter_spec {T : Type}
+    (A : Type) (v : alloc.vec.Vec T) :
+    SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter A v ⦃
+      (it : core.slice.iter.Iter T) => it = ⟨v.deref, 0⟩ ⦄ :=
+  RustAx.alloc.sharedVec_into_iter A v

@@ -10,6 +10,7 @@ import Proofs.Helpers.AsNat
 import Proofs.Helpers.Bitwise
 public import Curve25519.Basic
 import Proofs.Helpers.Montgomery
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # Lemmas shared by the proofs of `backend/serial/u64/scalar.rs`

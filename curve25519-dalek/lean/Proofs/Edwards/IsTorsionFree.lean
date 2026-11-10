@@ -16,12 +16,12 @@ namespace Curve25519Dalek.edwards
 
 namespace «EdwardsPointx86_64-tables»
 
-/-- `EdwardsPoint::is_torsion_free`: `L • P = 0` (multiplication by the unreduced
+/-- `EdwardsPoint::is_torsion_free`: `L • self = 0` (multiplication by the unreduced
 `BASEPOINT_ORDER`); limbs `< 2^52`. -/
 @[step]
 theorem is_torsion_free_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
-    is_torsion_free self ⦃ (b : Bool) => b = true ↔ L • self.toPoint = 0 ⦄ := by
+    is_torsion_free self ⦃ (r : Bool) => r = true ↔ L • self.toPoint = 0 ⦄ := by
   unfold is_torsion_free
   have hL : constants.BASEPOINT_ORDER.asNat < 2 ^ 255 := by
     rw [constants.BASEPOINT_ORDER_spec]; exact L_lt_two_pow_253.trans (by norm_num)
@@ -33,12 +33,12 @@ end «EdwardsPointx86_64-tables»
 
 namespace «EdwardsPointi686-tables»
 
-/-- `EdwardsPoint::is_torsion_free`: `L • P = 0` (multiplication by the unreduced
+/-- `EdwardsPoint::is_torsion_free`: `L • self = 0` (multiplication by the unreduced
 `BASEPOINT_ORDER`); limbs `< 2^26`. -/
 @[step]
 theorem is_torsion_free_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
-    is_torsion_free self ⦃ (b : Bool) => b = true ↔ L • self.toPoint = 0 ⦄ := by
+    is_torsion_free self ⦃ (r : Bool) => r = true ↔ L • self.toPoint = 0 ⦄ := by
   unfold is_torsion_free
   have hL : constants.BASEPOINT_ORDER.asNat < 2 ^ 255 := by
     rw [constants.BASEPOINT_ORDER_spec]; exact L_lt_two_pow_253.trans (by norm_num)
@@ -50,12 +50,12 @@ end «EdwardsPointi686-tables»
 
 namespace «EdwardsPointx86_64-no-tables»
 
-/-- `EdwardsPoint::is_torsion_free`: `L • P = 0` (multiplication by the unreduced
+/-- `EdwardsPoint::is_torsion_free`: `L • self = 0` (multiplication by the unreduced
 `BASEPOINT_ORDER`); limbs `< 2^52`. -/
 @[step]
 theorem is_torsion_free_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
-    is_torsion_free self ⦃ (b : Bool) => b = true ↔ L • self.toPoint = 0 ⦄ := by
+    is_torsion_free self ⦃ (r : Bool) => r = true ↔ L • self.toPoint = 0 ⦄ := by
   unfold is_torsion_free
   have hL : constants.BASEPOINT_ORDER.asNat < 2 ^ 255 := by
     rw [constants.BASEPOINT_ORDER_spec]; exact L_lt_two_pow_253.trans (by norm_num)
@@ -67,12 +67,12 @@ end «EdwardsPointx86_64-no-tables»
 
 namespace «EdwardsPointi686-no-tables»
 
-/-- `EdwardsPoint::is_torsion_free`: `L • P = 0` (multiplication by the unreduced
+/-- `EdwardsPoint::is_torsion_free`: `L • self = 0` (multiplication by the unreduced
 `BASEPOINT_ORDER`); limbs `< 2^26`. -/
 @[step]
 theorem is_torsion_free_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
-    is_torsion_free self ⦃ (b : Bool) => b = true ↔ L • self.toPoint = 0 ⦄ := by
+    is_torsion_free self ⦃ (r : Bool) => r = true ↔ L • self.toPoint = 0 ⦄ := by
   unfold is_torsion_free
   have hL : constants.BASEPOINT_ORDER.asNat < 2 ^ 255 := by
     rw [constants.BASEPOINT_ORDER_spec]; exact L_lt_two_pow_253.trans (by norm_num)

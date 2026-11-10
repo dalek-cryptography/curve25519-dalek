@@ -32,7 +32,8 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 /-- `EdwardsPoint::as_projective_niels`: `(Y + X : Y - X : Z : T (2 d))`; limbs `< 2^52` in,
 `< 2^54` out. -/
 @[step]
-theorem as_projective_niels_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52) :
+theorem as_projective_niels_toProjectiveNiels (self : EdwardsPoint.«x86_64-tables») (hself :
+    self.LimbsLt 52) :
     as_projective_niels self ⦃ (r : ProjectiveNielsPoint.«x86_64-tables») =>
       r.toProjectiveNiels = self.toExtended.toProjectiveNiels ∧ r.LimbsLt 54 ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
@@ -51,11 +52,11 @@ theorem as_projective_niels_spec (self : EdwardsPoint.«x86_64-tables») (hself 
       limbs_lt_of_le (by decide) hT2d_lt⟩
 
 /-- `EdwardsPoint::as_projective_niels` represents the same point. -/
-theorem as_projective_niels_spec_point (self : EdwardsPoint.«x86_64-tables»)
+theorem as_projective_niels_spec (self : EdwardsPoint.«x86_64-tables»)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) :
     as_projective_niels self ⦃ (r : ProjectiveNielsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 54 ⦄ :=
-  spec_mono (as_projective_niels_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_projective_niels_toProjectiveNiels self hself) fun r ⟨hr, hb⟩ => by
     rw [ProjectiveNielsPoint.«x86_64-tables».onCurve_iff,
       ProjectiveNielsPoint.«x86_64-tables».toPoint_def, hr,
       EdwardsPoint.«x86_64-tables».toPoint_def]
@@ -71,7 +72,8 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 /-- `EdwardsPoint::as_projective_niels`: `(Y + X : Y - X : Z : T (2 d))`; limbs `< 2^26` in,
 `< 2^27` out. -/
 @[step]
-theorem as_projective_niels_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26) :
+theorem as_projective_niels_toProjectiveNiels (self : EdwardsPoint.«i686-tables») (hself :
+    self.LimbsLt 26) :
     as_projective_niels self ⦃ (r : ProjectiveNielsPoint.«i686-tables») =>
       r.toProjectiveNiels = self.toExtended.toProjectiveNiels ∧ r.LimbsLt 27 ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
@@ -90,11 +92,11 @@ theorem as_projective_niels_spec (self : EdwardsPoint.«i686-tables») (hself : 
       limbs_lt_of_le (by decide) hT2d_lt⟩
 
 /-- `EdwardsPoint::as_projective_niels` represents the same point. -/
-theorem as_projective_niels_spec_point (self : EdwardsPoint.«i686-tables»)
+theorem as_projective_niels_spec (self : EdwardsPoint.«i686-tables»)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) :
     as_projective_niels self ⦃ (r : ProjectiveNielsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 27 ⦄ :=
-  spec_mono (as_projective_niels_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_projective_niels_toProjectiveNiels self hself) fun r ⟨hr, hb⟩ => by
     rw [ProjectiveNielsPoint.«i686-tables».onCurve_iff,
       ProjectiveNielsPoint.«i686-tables».toPoint_def, hr,
       EdwardsPoint.«i686-tables».toPoint_def]
@@ -110,7 +112,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 /-- `EdwardsPoint::as_projective_niels`: `(Y + X : Y - X : Z : T (2 d))`; limbs `< 2^52` in,
 `< 2^54` out. -/
 @[step]
-theorem as_projective_niels_spec (self : EdwardsPoint.«x86_64-no-tables»)
+theorem as_projective_niels_toProjectiveNiels (self : EdwardsPoint.«x86_64-no-tables»)
     (hself : self.LimbsLt 52) :
     as_projective_niels self ⦃ (r : ProjectiveNielsPoint.«x86_64-no-tables») =>
       r.toProjectiveNiels = self.toExtended.toProjectiveNiels ∧ r.LimbsLt 54 ⦄ := by
@@ -130,11 +132,11 @@ theorem as_projective_niels_spec (self : EdwardsPoint.«x86_64-no-tables»)
       limbs_lt_of_le (by decide) hT2d_lt⟩
 
 /-- `EdwardsPoint::as_projective_niels` represents the same point. -/
-theorem as_projective_niels_spec_point (self : EdwardsPoint.«x86_64-no-tables»)
+theorem as_projective_niels_spec (self : EdwardsPoint.«x86_64-no-tables»)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) :
     as_projective_niels self ⦃ (r : ProjectiveNielsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 54 ⦄ :=
-  spec_mono (as_projective_niels_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_projective_niels_toProjectiveNiels self hself) fun r ⟨hr, hb⟩ => by
     rw [ProjectiveNielsPoint.«x86_64-no-tables».onCurve_iff,
       ProjectiveNielsPoint.«x86_64-no-tables».toPoint_def, hr,
       EdwardsPoint.«x86_64-no-tables».toPoint_def]
@@ -150,7 +152,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 /-- `EdwardsPoint::as_projective_niels`: `(Y + X : Y - X : Z : T (2 d))`; limbs `< 2^26` in,
 `< 2^27` out. -/
 @[step]
-theorem as_projective_niels_spec (self : EdwardsPoint.«i686-no-tables»)
+theorem as_projective_niels_toProjectiveNiels (self : EdwardsPoint.«i686-no-tables»)
     (hself : self.LimbsLt 26) :
     as_projective_niels self ⦃ (r : ProjectiveNielsPoint.«i686-no-tables») =>
       r.toProjectiveNiels = self.toExtended.toProjectiveNiels ∧ r.LimbsLt 27 ⦄ := by
@@ -170,11 +172,11 @@ theorem as_projective_niels_spec (self : EdwardsPoint.«i686-no-tables»)
       limbs_lt_of_le (by decide) hT2d_lt⟩
 
 /-- `EdwardsPoint::as_projective_niels` represents the same point. -/
-theorem as_projective_niels_spec_point (self : EdwardsPoint.«i686-no-tables»)
+theorem as_projective_niels_spec (self : EdwardsPoint.«i686-no-tables»)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) :
     as_projective_niels self ⦃ (r : ProjectiveNielsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 27 ⦄ :=
-  spec_mono (as_projective_niels_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_projective_niels_toProjectiveNiels self hself) fun r ⟨hr, hb⟩ => by
     rw [ProjectiveNielsPoint.«i686-no-tables».onCurve_iff,
       ProjectiveNielsPoint.«i686-no-tables».toPoint_def, hr,
       EdwardsPoint.«i686-no-tables».toPoint_def]

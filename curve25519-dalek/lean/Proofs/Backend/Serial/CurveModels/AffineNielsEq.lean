@@ -25,7 +25,7 @@ namespace «CoreCmpPartialEqAffineNielsPointx86_64-tables»
 
 /-- `PartialEq for AffineNielsPoint` (derived): the three coordinates agree modulo `p`. -/
 @[step]
-theorem eq_spec (self other : AffineNielsPoint.«x86_64-tables») :
+theorem eq_toAffineNiels (self other : AffineNielsPoint.«x86_64-tables») :
     eq self other ⦃ (b : Bool) =>
       b = true ↔ self.toAffineNiels = other.toAffineNiels ⦄ := by
   unfold eq
@@ -34,10 +34,10 @@ theorem eq_spec (self other : AffineNielsPoint.«x86_64-tables») :
   step*
 
 /-- `PartialEq for AffineNielsPoint` on points: equality of the represented points. -/
-theorem eq_spec_point (self other : AffineNielsPoint.«x86_64-tables») (hself : self.OnCurve)
+theorem eq_spec (self other : AffineNielsPoint.«x86_64-tables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
     eq self other ⦃ (b : Bool) => b = true ↔ self.toPoint = other.toPoint ⦄ :=
-  spec_mono (eq_spec self other) fun b hb => by
+  spec_mono (eq_toAffineNiels self other) fun b hb => by
     rw [hb, AffineNielsPoint.«x86_64-tables».toPoint_def,
       AffineNielsPoint.«x86_64-tables».toPoint_def]
     exact (AffineNiels.toPoint_inj hself hother).symm
@@ -53,7 +53,7 @@ namespace «CoreCmpPartialEqAffineNielsPointi686-tables»
 
 /-- `PartialEq for AffineNielsPoint` (derived): the three coordinates agree modulo `p`. -/
 @[step]
-theorem eq_spec (self other : AffineNielsPoint.«i686-tables») :
+theorem eq_toAffineNiels (self other : AffineNielsPoint.«i686-tables») :
     eq self other ⦃ (b : Bool) =>
       b = true ↔ self.toAffineNiels = other.toAffineNiels ⦄ := by
   unfold eq
@@ -62,10 +62,10 @@ theorem eq_spec (self other : AffineNielsPoint.«i686-tables») :
   step*
 
 /-- `PartialEq for AffineNielsPoint` on points: equality of the represented points. -/
-theorem eq_spec_point (self other : AffineNielsPoint.«i686-tables») (hself : self.OnCurve)
+theorem eq_spec (self other : AffineNielsPoint.«i686-tables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
     eq self other ⦃ (b : Bool) => b = true ↔ self.toPoint = other.toPoint ⦄ :=
-  spec_mono (eq_spec self other) fun b hb => by
+  spec_mono (eq_toAffineNiels self other) fun b hb => by
     rw [hb, AffineNielsPoint.«i686-tables».toPoint_def,
       AffineNielsPoint.«i686-tables».toPoint_def]
     exact (AffineNiels.toPoint_inj hself hother).symm
@@ -81,7 +81,7 @@ namespace «CoreCmpPartialEqAffineNielsPointx86_64-no-tables»
 
 /-- `PartialEq for AffineNielsPoint` (derived): the three coordinates agree modulo `p`. -/
 @[step]
-theorem eq_spec (self other : AffineNielsPoint.«x86_64-no-tables») :
+theorem eq_toAffineNiels (self other : AffineNielsPoint.«x86_64-no-tables») :
     eq self other ⦃ (b : Bool) =>
       b = true ↔ self.toAffineNiels = other.toAffineNiels ⦄ := by
   unfold eq
@@ -90,10 +90,10 @@ theorem eq_spec (self other : AffineNielsPoint.«x86_64-no-tables») :
   step*
 
 /-- `PartialEq for AffineNielsPoint` on points: equality of the represented points. -/
-theorem eq_spec_point (self other : AffineNielsPoint.«x86_64-no-tables») (hself : self.OnCurve)
+theorem eq_spec (self other : AffineNielsPoint.«x86_64-no-tables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
     eq self other ⦃ (b : Bool) => b = true ↔ self.toPoint = other.toPoint ⦄ :=
-  spec_mono (eq_spec self other) fun b hb => by
+  spec_mono (eq_toAffineNiels self other) fun b hb => by
     rw [hb, AffineNielsPoint.«x86_64-no-tables».toPoint_def,
       AffineNielsPoint.«x86_64-no-tables».toPoint_def]
     exact (AffineNiels.toPoint_inj hself hother).symm
@@ -109,7 +109,7 @@ namespace «CoreCmpPartialEqAffineNielsPointi686-no-tables»
 
 /-- `PartialEq for AffineNielsPoint` (derived): the three coordinates agree modulo `p`. -/
 @[step]
-theorem eq_spec (self other : AffineNielsPoint.«i686-no-tables») :
+theorem eq_toAffineNiels (self other : AffineNielsPoint.«i686-no-tables») :
     eq self other ⦃ (b : Bool) =>
       b = true ↔ self.toAffineNiels = other.toAffineNiels ⦄ := by
   unfold eq
@@ -118,10 +118,10 @@ theorem eq_spec (self other : AffineNielsPoint.«i686-no-tables») :
   step*
 
 /-- `PartialEq for AffineNielsPoint` on points: equality of the represented points. -/
-theorem eq_spec_point (self other : AffineNielsPoint.«i686-no-tables») (hself : self.OnCurve)
+theorem eq_spec (self other : AffineNielsPoint.«i686-no-tables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
     eq self other ⦃ (b : Bool) => b = true ↔ self.toPoint = other.toPoint ⦄ :=
-  spec_mono (eq_spec self other) fun b hb => by
+  spec_mono (eq_toAffineNiels self other) fun b hb => by
     rw [hb, AffineNielsPoint.«i686-no-tables».toPoint_def,
       AffineNielsPoint.«i686-no-tables».toPoint_def]
     exact (AffineNiels.toPoint_inj hself hother).symm

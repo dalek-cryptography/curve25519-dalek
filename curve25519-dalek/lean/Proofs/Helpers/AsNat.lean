@@ -6,6 +6,7 @@ module
 public import Defs.Array
 public import Aeneas.Std.Scalar.Notations
 import Aeneas.Tactic.Step.Step
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # Lemmas about `Array.asNat`

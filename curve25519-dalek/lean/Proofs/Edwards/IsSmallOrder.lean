@@ -20,11 +20,11 @@ namespace «EdwardsPointx86_64-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-/-- `EdwardsPoint::is_small_order`: `8 • P = 0`; limbs `< 2^52`. -/
+/-- `EdwardsPoint::is_small_order`: `8 • self = 0`; limbs `< 2^52`. -/
 @[step]
 theorem is_small_order_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
-    is_small_order self ⦃ (b : Bool) => b = true ↔ 8 • self.toPoint = 0 ⦄ := by
+    is_small_order self ⦃ (r : Bool) => r = true ↔ 8 • self.toPoint = 0 ⦄ := by
   unfold is_small_order
   step as ⟨ep, hepon, hep, hepb⟩
   step as ⟨b, hb⟩
@@ -36,11 +36,11 @@ namespace «EdwardsPointi686-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-/-- `EdwardsPoint::is_small_order`: `8 • P = 0`; limbs `< 2^26`. -/
+/-- `EdwardsPoint::is_small_order`: `8 • self = 0`; limbs `< 2^26`. -/
 @[step]
 theorem is_small_order_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
-    is_small_order self ⦃ (b : Bool) => b = true ↔ 8 • self.toPoint = 0 ⦄ := by
+    is_small_order self ⦃ (r : Bool) => r = true ↔ 8 • self.toPoint = 0 ⦄ := by
   unfold is_small_order
   step as ⟨ep, hepon, hep, hepb⟩
   step as ⟨b, hb⟩
@@ -52,11 +52,11 @@ namespace «EdwardsPointx86_64-no-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-/-- `EdwardsPoint::is_small_order`: `8 • P = 0`; limbs `< 2^52`. -/
+/-- `EdwardsPoint::is_small_order`: `8 • self = 0`; limbs `< 2^52`. -/
 @[step]
 theorem is_small_order_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
-    is_small_order self ⦃ (b : Bool) => b = true ↔ 8 • self.toPoint = 0 ⦄ := by
+    is_small_order self ⦃ (r : Bool) => r = true ↔ 8 • self.toPoint = 0 ⦄ := by
   unfold is_small_order
   step as ⟨ep, hepon, hep, hepb⟩
   step as ⟨b, hb⟩
@@ -68,11 +68,11 @@ namespace «EdwardsPointi686-no-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-/-- `EdwardsPoint::is_small_order`: `8 • P = 0`; limbs `< 2^26`. -/
+/-- `EdwardsPoint::is_small_order`: `8 • self = 0`; limbs `< 2^26`. -/
 @[step]
 theorem is_small_order_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
-    is_small_order self ⦃ (b : Bool) => b = true ↔ 8 • self.toPoint = 0 ⦄ := by
+    is_small_order self ⦃ (r : Bool) => r = true ↔ 8 • self.toPoint = 0 ⦄ := by
   unfold is_small_order
   step as ⟨ep, hepon, hep, hepb⟩
   step as ⟨b, hb⟩

@@ -56,7 +56,7 @@ theorem even_iff_four_mul_L_nsmul (P : edwards.Point) : Even P ↔ (4 * L) • P
     obtain ⟨⟨i, n⟩, hq, -⟩ := exists_unique_decomposition P
     dsimp only at hq
     have hL := L_mod_two
-    rw [hq, smul_add, eightTorsion_apply, smul_smul, smul_smul,
+    rw [hq, smul_add, smul_smul, smul_smul,
       show 4 * L * (n : ℕ) = 4 * n * L by ring, mul_smul (4 * (n : ℕ)) L, L_nsmul_basepoint,
       smul_zero, add_zero, ← addOrderOf_dvd_iff_nsmul_eq_zero, addOrderOf_torsion8,
       mul_assoc] at h
@@ -68,7 +68,7 @@ theorem even_iff_four_mul_L_nsmul (P : edwards.Point) : Even P ↔ (4 * L) • P
     obtain ⟨j, hj⟩ := hi
     have h2L : 2 * ((L + 1) / 2) = L + 1 := by omega
     refine ⟨j • torsion8 + ((L + 1) / 2 * n) • basepoint, ?_⟩
-    rw [hq, eightTorsion_apply, hj, ← two_nsmul, smul_add, smul_smul, smul_smul,
+    rw [hq, hj, ← two_nsmul, smul_add, smul_smul, smul_smul,
       show 2 * ((L + 1) / 2 * (n : ℕ)) = n + n * L by rw [← mul_assoc, h2L]; ring, add_smul,
       mul_smul (n : ℕ) L, L_nsmul_basepoint, smul_zero, add_zero]
 

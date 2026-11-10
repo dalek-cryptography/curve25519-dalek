@@ -13,6 +13,7 @@ import Proofs.Backend.Serial.U64.Field.Reduce
 import Proofs.Helpers.Limbs
 import Proofs.Helpers.StepSpecs
 public import Curve25519.Basic
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

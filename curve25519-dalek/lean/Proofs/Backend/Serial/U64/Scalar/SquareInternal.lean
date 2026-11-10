@@ -15,6 +15,7 @@ import Subtle
 import Proofs.Helpers.StepSpecs
 public import Mathlib.Tactic.Linarith
 import Proofs.Helpers.Array
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

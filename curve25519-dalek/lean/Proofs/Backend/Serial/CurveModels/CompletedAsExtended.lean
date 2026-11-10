@@ -54,7 +54,7 @@ theorem as_extended_eq (self : CompletedPoint.«x86_64-tables») :
 
 /-- `CompletedPoint::as_extended`: `(X T : Y Z : Z T : X Y)`, limbs `< 2^52`. -/
 @[step]
-theorem as_extended_spec (self : CompletedPoint.«x86_64-tables») (hself : self.LimbsLt 54) :
+theorem as_extended_toExtended (self : CompletedPoint.«x86_64-tables») (hself : self.LimbsLt 54) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
       r.toExtended = self.toCompleted.toExtended ∧ r.LimbsLt 52 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
@@ -66,11 +66,11 @@ theorem as_extended_spec (self : CompletedPoint.«x86_64-tables») (hself : self
     CompletedPoint.«x86_64-tables».toCompleted_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `CompletedPoint::as_extended` represents the same point. -/
-theorem as_extended_spec_point (self : CompletedPoint.«x86_64-tables») (hself : self.LimbsLt 54)
+theorem as_extended_spec (self : CompletedPoint.«x86_64-tables») (hself : self.LimbsLt 54)
     (hon : self.OnCurve) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (as_extended_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
     rw [edwards.EdwardsPoint.«x86_64-tables».onCurve_iff,
       edwards.EdwardsPoint.«x86_64-tables».toPoint_def, hr,
       CompletedPoint.«x86_64-tables».toPoint_def]
@@ -87,7 +87,7 @@ theorem as_extended_eq (self : CompletedPoint.«i686-tables») :
 
 /-- `CompletedPoint::as_extended`: `(X T : Y Z : Z T : X Y)`, limbs `< 2^26`. -/
 @[step]
-theorem as_extended_spec (self : CompletedPoint.«i686-tables») (hself : self.MulBounded) :
+theorem as_extended_toExtended (self : CompletedPoint.«i686-tables») (hself : self.MulBounded) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
       r.toExtended = self.toCompleted.toExtended ∧ r.LimbsLt 26 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
@@ -99,11 +99,11 @@ theorem as_extended_spec (self : CompletedPoint.«i686-tables») (hself : self.M
     CompletedPoint.«i686-tables».toCompleted_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `CompletedPoint::as_extended` represents the same point. -/
-theorem as_extended_spec_point (self : CompletedPoint.«i686-tables») (hself : self.MulBounded)
+theorem as_extended_spec (self : CompletedPoint.«i686-tables») (hself : self.MulBounded)
     (hon : self.OnCurve) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (as_extended_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
     rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff,
       edwards.EdwardsPoint.«i686-tables».toPoint_def, hr,
       CompletedPoint.«i686-tables».toPoint_def]
@@ -120,7 +120,8 @@ theorem as_extended_eq (self : CompletedPoint.«x86_64-no-tables») :
 
 /-- `CompletedPoint::as_extended`: `(X T : Y Z : Z T : X Y)`, limbs `< 2^52`. -/
 @[step]
-theorem as_extended_spec (self : CompletedPoint.«x86_64-no-tables») (hself : self.LimbsLt 54) :
+theorem as_extended_toExtended (self : CompletedPoint.«x86_64-no-tables») (hself : self.LimbsLt 54)
+    :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
       r.toExtended = self.toCompleted.toExtended ∧ r.LimbsLt 52 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
@@ -132,11 +133,11 @@ theorem as_extended_spec (self : CompletedPoint.«x86_64-no-tables») (hself : s
     CompletedPoint.«x86_64-no-tables».toCompleted_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `CompletedPoint::as_extended` represents the same point. -/
-theorem as_extended_spec_point (self : CompletedPoint.«x86_64-no-tables») (hself : self.LimbsLt 54)
+theorem as_extended_spec (self : CompletedPoint.«x86_64-no-tables») (hself : self.LimbsLt 54)
     (hon : self.OnCurve) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (as_extended_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
     rw [edwards.EdwardsPoint.«x86_64-no-tables».onCurve_iff,
       edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def, hr,
       CompletedPoint.«x86_64-no-tables».toPoint_def]
@@ -153,7 +154,7 @@ theorem as_extended_eq (self : CompletedPoint.«i686-no-tables») :
 
 /-- `CompletedPoint::as_extended`: `(X T : Y Z : Z T : X Y)`, limbs `< 2^26`. -/
 @[step]
-theorem as_extended_spec (self : CompletedPoint.«i686-no-tables») (hself : self.MulBounded) :
+theorem as_extended_toExtended (self : CompletedPoint.«i686-no-tables») (hself : self.MulBounded) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
       r.toExtended = self.toCompleted.toExtended ∧ r.LimbsLt 26 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
@@ -165,11 +166,11 @@ theorem as_extended_spec (self : CompletedPoint.«i686-no-tables») (hself : sel
     CompletedPoint.«i686-no-tables».toCompleted_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `CompletedPoint::as_extended` represents the same point. -/
-theorem as_extended_spec_point (self : CompletedPoint.«i686-no-tables») (hself : self.MulBounded)
+theorem as_extended_spec (self : CompletedPoint.«i686-no-tables») (hself : self.MulBounded)
     (hon : self.OnCurve) :
     as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (as_extended_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
     rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff,
       edwards.EdwardsPoint.«i686-no-tables».toPoint_def, hr,
       CompletedPoint.«i686-no-tables».toPoint_def]

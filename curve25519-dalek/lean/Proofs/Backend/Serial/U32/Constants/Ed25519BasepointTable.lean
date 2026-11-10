@@ -3,6 +3,7 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import Proofs.Helpers.Represents
 public import Curve25519.Edwards.Basepoint
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
@@ -74,9 +75,9 @@ is the lookup table of `2^(8 i) • B`); limbs `< 2^27`. -/
 theorem ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN_spec :
     ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN
       ⦃ (r : edwards.EdwardsBasepointTable.«i686-tables») =>
-        r.Represents basepoint ∧ r.LimbsLt 27 ⦄ := by
+        r.IsTable ∧ r.point = basepoint ∧ r.LimbsLt 27 ⦄ := by
   rw [inner_eq, spec_ok]
-  constructor
+  refine edwards.EdwardsBasepointTable.«i686-tables».isTable_and_of_rows ?_ ?_
   · intro i hi j hj
     rw [mkTable_get tableLimbs_length hi hj]
     have h := checkTable_sound onCurve_basepointExt table_check (by rw [tableLimbs_length]) i hi
@@ -93,7 +94,7 @@ table of `2^(8 i) • B`); limbs `< 2^27`. -/
 @[step]
 theorem ED25519_BASEPOINT_TABLE_spec :
     ED25519_BASEPOINT_TABLE ⦃ (r : edwards.EdwardsBasepointTable.«i686-tables») =>
-      r.Represents basepoint ∧ r.LimbsLt 27 ⦄ := by
+      r.IsTable ∧ r.point = basepoint ∧ r.LimbsLt 27 ⦄ := by
   unfold ED25519_BASEPOINT_TABLE
   exact ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN_spec
 

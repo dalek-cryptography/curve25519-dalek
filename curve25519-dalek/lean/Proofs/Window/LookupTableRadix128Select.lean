@@ -3,6 +3,7 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import Proofs.Helpers.Represents
 public import Curve25519Dalek.Funs
 public import Defs.Window
 import Proofs.Backend.Serial.CurveModels.AffineNielsConditionalAssign
@@ -44,9 +45,9 @@ theorem select_spec (self : LookupTableRadix128 ProjectiveNielsPoint.«x86_64-ta
   window.select_spec (-64)#i8 64#i16 65#usize (by decide) (by decide) (by decide) (by decide)
     Curve25519_dalekTraitsIdentity SubtleConditionallySelectable
     «CoreOpsArithNegProjectiveNielsPointx86_64-tables»
-    Curve25519_dalekTraitsIdentity.identity_spec_point
+    Curve25519_dalekTraitsIdentity.identity_spec
     SubtleConditionallySelectable.conditional_assign_spec
-    «CoreOpsArithNegProjectiveNielsPointx86_64-tables».neg_spec_point
+    «CoreOpsArithNegProjectiveNielsPointx86_64-tables».neg_spec
     self P hself hP x hx
 
 end «LookupTableRadix128ProjectiveNielsPointx86_64-tables»
@@ -73,9 +74,9 @@ theorem select_spec (self : LookupTableRadix128 ProjectiveNielsPoint.«i686-tabl
   window.select_spec (-64)#i8 64#i16 65#usize (by decide) (by decide) (by decide) (by decide)
     Curve25519_dalekTraitsIdentity SubtleConditionallySelectable
     «CoreOpsArithNegProjectiveNielsPointi686-tables»
-    Curve25519_dalekTraitsIdentity.identity_spec_point
+    Curve25519_dalekTraitsIdentity.identity_spec
     SubtleConditionallySelectable.conditional_assign_spec
-    «CoreOpsArithNegProjectiveNielsPointi686-tables».neg_spec_point
+    «CoreOpsArithNegProjectiveNielsPointi686-tables».neg_spec
     self P hself hP x hx
 
 end «LookupTableRadix128ProjectiveNielsPointi686-tables»
@@ -102,9 +103,9 @@ theorem select_spec (self : LookupTableRadix128 AffineNielsPoint.«x86_64-tables
   window.select_spec (-64)#i8 64#i16 65#usize (by decide) (by decide) (by decide) (by decide)
     Curve25519_dalekTraitsIdentity SubtleConditionallySelectable
     «CoreOpsArithNegAffineNielsPointx86_64-tables»
-    Curve25519_dalekTraitsIdentity.identity_spec_point
+    Curve25519_dalekTraitsIdentity.identity_spec
     SubtleConditionallySelectable.conditional_assign_spec
-    «CoreOpsArithNegAffineNielsPointx86_64-tables».neg_spec_point
+    «CoreOpsArithNegAffineNielsPointx86_64-tables».neg_spec
     self P hself hP x hx
 
 end «LookupTableRadix128AffineNielsPointx86_64-tables»
@@ -131,9 +132,9 @@ theorem select_spec (self : LookupTableRadix128 AffineNielsPoint.«i686-tables»
   window.select_spec (-64)#i8 64#i16 65#usize (by decide) (by decide) (by decide) (by decide)
     Curve25519_dalekTraitsIdentity SubtleConditionallySelectable
     «CoreOpsArithNegAffineNielsPointi686-tables»
-    Curve25519_dalekTraitsIdentity.identity_spec_point
+    Curve25519_dalekTraitsIdentity.identity_spec
     SubtleConditionallySelectable.conditional_assign_spec
-    «CoreOpsArithNegAffineNielsPointi686-tables».neg_spec_point
+    «CoreOpsArithNegAffineNielsPointi686-tables».neg_spec
     self P hself hP x hx
 
 end «LookupTableRadix128AffineNielsPointi686-tables»

@@ -32,8 +32,9 @@ theorem mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
         r.LimbsLt 52 ⦄ := by
   unfold mul_base
-  step with constants.«x86_64-tables».RISTRETTO_BASEPOINT_TABLE_spec as ⟨t, ht, htb⟩
+  step with constants.«x86_64-tables».RISTRETTO_BASEPOINT_TABLE_spec as ⟨t, ht, htp, htb⟩
   step as ⟨r, h1, h2, h3⟩
+  rw [htp] at h2
   exact ⟨h1, by rw [h2]; exact even_basepoint.nsmul_right _, h2, h3⟩
 
 end «RistrettoPointx86_64-tables»
@@ -48,8 +49,9 @@ theorem mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
         r.LimbsLt 26 ⦄ := by
   unfold mul_base
-  step with constants.«i686-tables».RISTRETTO_BASEPOINT_TABLE_spec as ⟨t, ht, htb⟩
+  step with constants.«i686-tables».RISTRETTO_BASEPOINT_TABLE_spec as ⟨t, ht, htp, htb⟩
   step as ⟨r, h1, h2, h3⟩
+  rw [htp] at h2
   exact ⟨h1, by rw [h2]; exact even_basepoint.nsmul_right _, h2, h3⟩
 
 end «RistrettoPointi686-tables»

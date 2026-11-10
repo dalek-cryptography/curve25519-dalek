@@ -59,7 +59,7 @@ instance instIsCompleteEdwards : edwards.IsComplete where
 /-! ### The Montgomery model -/
 
 /-- The Montgomery model `v² = u³ + A u² + u` of curve25519. -/
-noncomputable def montgomery : MontgomeryModel (ZMod p) := ⟨(A : ZMod p), 1⟩
+def montgomery : MontgomeryModel (ZMod p) := ⟨(A : ZMod p), 1⟩
 
 theorem montgomery_def : montgomery = ⟨(A : ZMod p), 1⟩ := by
   unfold montgomery

@@ -37,7 +37,7 @@ private theorem clamp_arith {X R A B S x0 x31 c0 c31 d31 : ℕ} (hx0 : x0 < 2 ^ 
     (hR : R + 2 ^ (8 * 31) * c31 = B + 2 ^ (8 * 31) * d31)
     (hX0 : X % 2 ^ (8 * 1) = 2 ^ (8 * 0) * x0) (hX : X = S + 2 ^ (8 * 31) * x31)
     (hS : S < 2 ^ (8 * 31)) :
-    R + X % 8 = 2 ^ 254 + X % 2 ^ 254 := by
+    R = 2 ^ 254 + 8 * (X % 2 ^ 254 / 8) := by
   have e0 := and_248_add x0 hx0
   have e31 := and_127_or_64 x31 hx31
   subst hc0 hc31 hd31
@@ -47,7 +47,7 @@ private theorem clamp_arith {X R A B S x0 x31 c0 c31 d31 : ℕ} (hx0 : x0 < 2 ^ 
 @[step]
 theorem clamp_integer_spec (bytes : Array U8 32#usize) :
     clamp_integer bytes ⦃ (r : Array U8 32#usize) =>
-      r.asNat 8 + bytes.asNat 8 % 8 = 2 ^ 254 + bytes.asNat 8 % 2 ^ 254 ⦄ := by
+      r.asNat 8 = 2 ^ 254 + 8 * (bytes.asNat 8 % 2 ^ 254 / 8) ⦄ := by
   unfold clamp_integer
   step with Array.index_usize_getElem!_spec as ⟨x0, hx0⟩
   step as ⟨c0, hc0, hc0bv⟩

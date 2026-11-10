@@ -21,8 +21,8 @@ namespace Curve25519Dalek.scalar.Scalar.Insts.SubtleConstantTimeEq
 
 @[step]
 theorem ct_eq_spec (self other : Scalar) :
-    ct_eq self other ⦃ (c : subtle.Choice) =>
-      c.IsValid ∧ (self = other → c = 1#u8) ∧ (self ≠ other → c = 0#u8) ⦄ := by
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (self = other → r = 1#u8) ∧ (self ≠ other → r = 0#u8) ⦄ := by
   unfold ct_eq
   step as ⟨s, hs⟩
   step as ⟨s1, hs1⟩

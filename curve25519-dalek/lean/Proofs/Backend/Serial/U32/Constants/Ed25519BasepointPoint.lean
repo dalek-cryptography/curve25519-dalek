@@ -28,7 +28,7 @@ namespace «i686-tables»
 /-- `ED25519_BASEPOINT_POINT`: the extended coordinates `(x : y : 1 : x y)` of the basepoint;
 limbs `< 2^26`. -/
 @[step]
-theorem ED25519_BASEPOINT_POINT_spec :
+theorem ED25519_BASEPOINT_POINT_toExtended :
     ED25519_BASEPOINT_POINT.«i686-tables» ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
       r.toExtended = basepoint.toExtended ∧ r.LimbsLt 26 ⦄ := by
   unfold ED25519_BASEPOINT_POINT.«i686-tables»
@@ -54,10 +54,10 @@ theorem ED25519_BASEPOINT_POINT_spec :
     decide
 
 /-- `ED25519_BASEPOINT_POINT` represents the basepoint. -/
-theorem ED25519_BASEPOINT_POINT_spec_point :
+theorem ED25519_BASEPOINT_POINT_spec :
     ED25519_BASEPOINT_POINT.«i686-tables» ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = basepoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono ED25519_BASEPOINT_POINT_spec fun r ⟨hr, hb⟩ => by
+  spec_mono ED25519_BASEPOINT_POINT_toExtended fun r ⟨hr, hb⟩ => by
     rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff,
       edwards.EdwardsPoint.«i686-tables».toPoint_def, hr]
     exact ⟨Point.onCurve_toExtended _, Point.toPoint_toExtended _, hb⟩
@@ -69,7 +69,7 @@ namespace «i686-no-tables»
 /-- `ED25519_BASEPOINT_POINT`: the extended coordinates `(x : y : 1 : x y)` of the basepoint;
 limbs `< 2^26`. -/
 @[step]
-theorem ED25519_BASEPOINT_POINT_spec :
+theorem ED25519_BASEPOINT_POINT_toExtended :
     ED25519_BASEPOINT_POINT.«i686-no-tables» ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
       r.toExtended = basepoint.toExtended ∧ r.LimbsLt 26 ⦄ := by
   unfold ED25519_BASEPOINT_POINT.«i686-no-tables»
@@ -95,10 +95,10 @@ theorem ED25519_BASEPOINT_POINT_spec :
     decide
 
 /-- `ED25519_BASEPOINT_POINT` represents the basepoint. -/
-theorem ED25519_BASEPOINT_POINT_spec_point :
+theorem ED25519_BASEPOINT_POINT_spec :
     ED25519_BASEPOINT_POINT.«i686-no-tables» ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = basepoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono ED25519_BASEPOINT_POINT_spec fun r ⟨hr, hb⟩ => by
+  spec_mono ED25519_BASEPOINT_POINT_toExtended fun r ⟨hr, hb⟩ => by
     rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff,
       edwards.EdwardsPoint.«i686-no-tables».toPoint_def, hr]
     exact ⟨Point.onCurve_toExtended _, Point.toPoint_toExtended _, hb⟩

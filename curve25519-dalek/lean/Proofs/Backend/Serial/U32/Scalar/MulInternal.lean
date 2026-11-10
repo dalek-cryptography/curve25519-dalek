@@ -15,6 +15,7 @@ import Proofs.Helpers.Scalar29
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Ring
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `Scalar29::mul_internal`

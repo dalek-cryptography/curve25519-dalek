@@ -6,6 +6,7 @@ module
 public import Defs.FieldElement51
 public import Defs.Scalar52
 import Proofs.Helpers.AsNat
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # Lemmas shared by the proofs of the u64 backend

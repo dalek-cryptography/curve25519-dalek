@@ -5,12 +5,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
-public import Defs.Iterator
+public import ToAeneas.Iterator
 public import Defs.Scalar
 import Proofs.Backend.PippengerOptionalMultiscalarMul
 import Proofs.Backend.StrausOptionalMultiscalarMul
 import Proofs.Helpers.Collect
 import Proofs.Helpers.Iterator
+import Proofs.Helpers.Optional
 public section
 
 /-! # `VartimeMultiscalarMul for EdwardsPoint`
@@ -40,14 +41,17 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
-    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 52 ∧ P.OnCurve)
-    (hxs : xs.length ≤ Usize.max) (hops : ops.length ≤ Usize.max)
+    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 52)
+    (hps_on : ∀ P, some P ∈ ops → P.OnCurve)
+    (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option edwards.EdwardsPoint.«x86_64-tables») => (r = none ↔ none ∈ ops) ∧
-        ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
-          (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧
+      ⦃ (r : Option edwards.EdwardsPoint.«x86_64-tables») => (none ∈ ops → r = none) ∧
+        ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
+          (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 52 ⦄ := by
+  have hops : ops.length ≤ Usize.max := hlen ▸ hxs
+  apply spec_some_of_filterMap
   unfold optional_multiscalar_mul
   have hscalars' : scalarsInst.into_iter scalars
       ⦃ (it : Clause0_IntoIter) => scalarsInst.iteratorInst.Yields it xs ⦄ := hscalars
@@ -65,10 +69,10 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     hvp ▸ core.iter.traits.collect.IntoIteratorVec_yields vp
   split
   · exact backend.«x86_64-tables».straus_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss hys hyp
-      hborrow_scalars hss hps hxs hops
+      hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs hops
   · apply spec_mono
       (backend.«x86_64-tables».pippenger_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss
-      hys hyp hborrow_scalars hss hps hxs)
+      hys hyp hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs)
     rintro r ⟨hnone, hsome⟩
     rw [List.take_of_length_le (by rw [← hborrow_scalars.length_eq, hlen])] at hnone
     exact ⟨hnone, hsome⟩
@@ -95,14 +99,17 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
-    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 26 ∧ P.OnCurve)
-    (hxs : xs.length ≤ Usize.max) (hops : ops.length ≤ Usize.max)
+    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 26)
+    (hps_on : ∀ P, some P ∈ ops → P.OnCurve)
+    (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option edwards.EdwardsPoint.«i686-tables») => (r = none ↔ none ∈ ops) ∧
-        ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
-          (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧
+      ⦃ (r : Option edwards.EdwardsPoint.«i686-tables») => (none ∈ ops → r = none) ∧
+        ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
+          (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 26 ⦄ := by
+  have hops : ops.length ≤ Usize.max := hlen ▸ hxs
+  apply spec_some_of_filterMap
   unfold optional_multiscalar_mul
   have hscalars' : scalarsInst.into_iter scalars
       ⦃ (it : Clause0_IntoIter) => scalarsInst.iteratorInst.Yields it xs ⦄ := hscalars
@@ -120,10 +127,10 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     hvp ▸ core.iter.traits.collect.IntoIteratorVec_yields vp
   split
   · exact backend.«i686-tables».straus_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss hys hyp
-      hborrow_scalars hss hps hxs hops
+      hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs hops
   · apply spec_mono
       (backend.«i686-tables».pippenger_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss
-      hys hyp hborrow_scalars hss hps hxs)
+      hys hyp hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs)
     rintro r ⟨hnone, hsome⟩
     rw [List.take_of_length_le (by rw [← hborrow_scalars.length_eq, hlen])] at hnone
     exact ⟨hnone, hsome⟩
@@ -150,14 +157,17 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
-    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 52 ∧ P.OnCurve)
-    (hxs : xs.length ≤ Usize.max) (hops : ops.length ≤ Usize.max)
+    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 52)
+    (hps_on : ∀ P, some P ∈ ops → P.OnCurve)
+    (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option edwards.EdwardsPoint.«x86_64-no-tables») => (r = none ↔ none ∈ ops) ∧
-        ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
-          (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧
+      ⦃ (r : Option edwards.EdwardsPoint.«x86_64-no-tables») => (none ∈ ops → r = none) ∧
+        ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
+          (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 52 ⦄ := by
+  have hops : ops.length ≤ Usize.max := hlen ▸ hxs
+  apply spec_some_of_filterMap
   unfold optional_multiscalar_mul
   have hscalars' : scalarsInst.into_iter scalars
       ⦃ (it : Clause0_IntoIter) => scalarsInst.iteratorInst.Yields it xs ⦄ := hscalars
@@ -176,10 +186,10 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   split
   · exact backend.«x86_64-no-tables».straus_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss hys
       hyp
-      hborrow_scalars hss hps hxs hops
+      hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs hops
   · apply spec_mono
       (backend.«x86_64-no-tables».pippenger_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss
-      hys hyp hborrow_scalars hss hps hxs)
+      hys hyp hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs)
     rintro r ⟨hnone, hsome⟩
     rw [List.take_of_length_le (by rw [← hborrow_scalars.length_eq, hlen])] at hnone
     exact ⟨hnone, hsome⟩
@@ -206,14 +216,17 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
-    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 26 ∧ P.OnCurve)
-    (hxs : xs.length ≤ Usize.max) (hops : ops.length ≤ Usize.max)
+    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 26)
+    (hps_on : ∀ P, some P ∈ ops → P.OnCurve)
+    (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option edwards.EdwardsPoint.«i686-no-tables») => (r = none ↔ none ∈ ops) ∧
-        ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
-          (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧
+      ⦃ (r : Option edwards.EdwardsPoint.«i686-no-tables») => (none ∈ ops → r = none) ∧
+        ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
+          (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 26 ⦄ := by
+  have hops : ops.length ≤ Usize.max := hlen ▸ hxs
+  apply spec_some_of_filterMap
   unfold optional_multiscalar_mul
   have hscalars' : scalarsInst.into_iter scalars
       ⦃ (it : Clause0_IntoIter) => scalarsInst.iteratorInst.Yields it xs ⦄ := hscalars
@@ -232,10 +245,10 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   split
   · exact backend.«i686-no-tables».straus_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss hys
       hyp
-      hborrow_scalars hss hps hxs hops
+      hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs hops
   · apply spec_mono
       (backend.«i686-no-tables».pippenger_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss
-      hys hyp hborrow_scalars hss hps hxs)
+      hys hyp hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs)
     rintro r ⟨hnone, hsome⟩
     rw [List.take_of_length_le (by rw [← hborrow_scalars.length_eq, hlen])] at hnone
     exact ⟨hnone, hsome⟩

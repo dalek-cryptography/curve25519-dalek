@@ -14,6 +14,7 @@ public import Curve25519.Basic
 import Subtle
 import Proofs.Helpers.StepSpecs
 import Proofs.Helpers.Array
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

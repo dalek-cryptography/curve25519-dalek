@@ -21,7 +21,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `PartialEq for AffinePoint`: both coordinates agree modulo `p`. -/
 @[step]
-theorem eq_spec (self other : AffinePoint.«x86_64-tables») :
+theorem eq_coords (self other : AffinePoint.«x86_64-tables») :
     eq self other ⦃ (b : Bool) =>
       b = true ↔ self.x.toField = other.x.toField ∧ self.y.toField = other.y.toField ⦄ := by
   unfold eq
@@ -31,10 +31,10 @@ theorem eq_spec (self other : AffinePoint.«x86_64-tables») :
   rcases hcv with rfl | rfl <;> decide
 
 /-- `PartialEq for AffinePoint` on points: equality of the represented points. -/
-theorem eq_spec_point (self other : AffinePoint.«x86_64-tables») (hself : self.OnCurve)
+theorem eq_spec (self other : AffinePoint.«x86_64-tables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
-    eq self other ⦃ (b : Bool) => b = true ↔ self.toPoint = other.toPoint ⦄ :=
-  spec_mono (eq_spec self other) fun _ hb => by
+    eq self other ⦃ (r : Bool) => r = true ↔ self.toPoint = other.toPoint ⦄ :=
+  spec_mono (eq_coords self other) fun _ hb => by
     rw [AffinePoint.«x86_64-tables».toPoint_eq_mk hself,
       AffinePoint.«x86_64-tables».toPoint_eq_mk hother, Point.ext_iff]
     exact hb
@@ -47,7 +47,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `PartialEq for AffinePoint`: both coordinates agree modulo `p`. -/
 @[step]
-theorem eq_spec (self other : AffinePoint.«i686-tables») :
+theorem eq_coords (self other : AffinePoint.«i686-tables») :
     eq self other ⦃ (b : Bool) =>
       b = true ↔ self.x.toField = other.x.toField ∧ self.y.toField = other.y.toField ⦄ := by
   unfold eq
@@ -57,10 +57,10 @@ theorem eq_spec (self other : AffinePoint.«i686-tables») :
   rcases hcv with rfl | rfl <;> decide
 
 /-- `PartialEq for AffinePoint` on points: equality of the represented points. -/
-theorem eq_spec_point (self other : AffinePoint.«i686-tables») (hself : self.OnCurve)
+theorem eq_spec (self other : AffinePoint.«i686-tables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
-    eq self other ⦃ (b : Bool) => b = true ↔ self.toPoint = other.toPoint ⦄ :=
-  spec_mono (eq_spec self other) fun _ hb => by
+    eq self other ⦃ (r : Bool) => r = true ↔ self.toPoint = other.toPoint ⦄ :=
+  spec_mono (eq_coords self other) fun _ hb => by
     rw [AffinePoint.«i686-tables».toPoint_eq_mk hself,
       AffinePoint.«i686-tables».toPoint_eq_mk hother, Point.ext_iff]
     exact hb
@@ -73,7 +73,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `PartialEq for AffinePoint`: both coordinates agree modulo `p`. -/
 @[step]
-theorem eq_spec (self other : AffinePoint.«x86_64-no-tables») :
+theorem eq_coords (self other : AffinePoint.«x86_64-no-tables») :
     eq self other ⦃ (b : Bool) =>
       b = true ↔ self.x.toField = other.x.toField ∧ self.y.toField = other.y.toField ⦄ := by
   unfold eq
@@ -83,10 +83,10 @@ theorem eq_spec (self other : AffinePoint.«x86_64-no-tables») :
   rcases hcv with rfl | rfl <;> decide
 
 /-- `PartialEq for AffinePoint` on points: equality of the represented points. -/
-theorem eq_spec_point (self other : AffinePoint.«x86_64-no-tables») (hself : self.OnCurve)
+theorem eq_spec (self other : AffinePoint.«x86_64-no-tables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
-    eq self other ⦃ (b : Bool) => b = true ↔ self.toPoint = other.toPoint ⦄ :=
-  spec_mono (eq_spec self other) fun _ hb => by
+    eq self other ⦃ (r : Bool) => r = true ↔ self.toPoint = other.toPoint ⦄ :=
+  spec_mono (eq_coords self other) fun _ hb => by
     rw [AffinePoint.«x86_64-no-tables».toPoint_eq_mk hself,
       AffinePoint.«x86_64-no-tables».toPoint_eq_mk hother, Point.ext_iff]
     exact hb
@@ -99,7 +99,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `PartialEq for AffinePoint`: both coordinates agree modulo `p`. -/
 @[step]
-theorem eq_spec (self other : AffinePoint.«i686-no-tables») :
+theorem eq_coords (self other : AffinePoint.«i686-no-tables») :
     eq self other ⦃ (b : Bool) =>
       b = true ↔ self.x.toField = other.x.toField ∧ self.y.toField = other.y.toField ⦄ := by
   unfold eq
@@ -109,10 +109,10 @@ theorem eq_spec (self other : AffinePoint.«i686-no-tables») :
   rcases hcv with rfl | rfl <;> decide
 
 /-- `PartialEq for AffinePoint` on points: equality of the represented points. -/
-theorem eq_spec_point (self other : AffinePoint.«i686-no-tables») (hself : self.OnCurve)
+theorem eq_spec (self other : AffinePoint.«i686-no-tables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
-    eq self other ⦃ (b : Bool) => b = true ↔ self.toPoint = other.toPoint ⦄ :=
-  spec_mono (eq_spec self other) fun _ hb => by
+    eq self other ⦃ (r : Bool) => r = true ↔ self.toPoint = other.toPoint ⦄ :=
+  spec_mono (eq_coords self other) fun _ hb => by
     rw [AffinePoint.«i686-no-tables».toPoint_eq_mk hself,
       AffinePoint.«i686-no-tables».toPoint_eq_mk hother, Point.ext_iff]
     exact hb

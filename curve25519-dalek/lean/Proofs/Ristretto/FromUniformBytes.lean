@@ -34,8 +34,9 @@ limbs `< 2^52`. -/
 @[step]
 theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«x86_64-tables») =>
-      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep bytes.toVector ∧
         r.LimbsLt 52 ⦄ := by
+  simp only [Aeneas.Std.Array.fromUniformRep_toVector]
   unfold from_uniform_bytes
   step*
   have hlen : bytes.val.length = 64 := bytes.property
@@ -51,9 +52,9 @@ theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     (by rw [hA, hB, List.take_append_drop])
   obtain ⟨-, h2⟩ := Array.asNat_append_eq bytes (to_slice_mut_back s2) (to_slice_mut_back1 s5)
     (by rw [hA, hB, List.take_append_drop])
-  refine (fun h => ⟨r_post, by rw [h]; exact Ristretto.even_fromUniformRep _, h, r_post2⟩) ?_
+  refine (fun h => ⟨r_post, by rw [h]; exact Ristretto.even_fromUniformRepNat _, h, r_post2⟩) ?_
   rw [r_post1, R_1_post1, R_2_post1, toField_eq_decodeU_of_asNat_eq r_1_post,
-    toField_eq_decodeU_of_asNat_eq r_2_post, h1, h2, Ristretto.fromUniformRep_def]
+    toField_eq_decodeU_of_asNat_eq r_2_post, h1, h2, Ristretto.fromUniformRepNat_def]
   rfl
 
 end «RistrettoPointx86_64-tables»
@@ -68,8 +69,9 @@ limbs `< 2^26`. -/
 @[step]
 theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«i686-tables») =>
-      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep bytes.toVector ∧
         r.LimbsLt 26 ⦄ := by
+  simp only [Aeneas.Std.Array.fromUniformRep_toVector]
   unfold from_uniform_bytes
   step*
   have hlen : bytes.val.length = 64 := bytes.property
@@ -85,9 +87,9 @@ theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     (by rw [hA, hB, List.take_append_drop])
   obtain ⟨-, h2⟩ := Array.asNat_append_eq bytes (to_slice_mut_back s2) (to_slice_mut_back1 s5)
     (by rw [hA, hB, List.take_append_drop])
-  refine (fun h => ⟨r_post, by rw [h]; exact Ristretto.even_fromUniformRep _, h, r_post2⟩) ?_
+  refine (fun h => ⟨r_post, by rw [h]; exact Ristretto.even_fromUniformRepNat _, h, r_post2⟩) ?_
   rw [r_post1, R_1_post1, R_2_post1, toField_eq_decodeU_of_mod r_1_post,
-    toField_eq_decodeU_of_mod r_2_post, h1, h2, Ristretto.fromUniformRep_def]
+    toField_eq_decodeU_of_mod r_2_post, h1, h2, Ristretto.fromUniformRepNat_def]
   rfl
 
 end «RistrettoPointi686-tables»
@@ -102,8 +104,9 @@ limbs `< 2^52`. -/
 @[step]
 theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep bytes.toVector ∧
         r.LimbsLt 52 ⦄ := by
+  simp only [Aeneas.Std.Array.fromUniformRep_toVector]
   unfold from_uniform_bytes
   step*
   have hlen : bytes.val.length = 64 := bytes.property
@@ -119,9 +122,9 @@ theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     (by rw [hA, hB, List.take_append_drop])
   obtain ⟨-, h2⟩ := Array.asNat_append_eq bytes (to_slice_mut_back s2) (to_slice_mut_back1 s5)
     (by rw [hA, hB, List.take_append_drop])
-  refine (fun h => ⟨r_post, by rw [h]; exact Ristretto.even_fromUniformRep _, h, r_post2⟩) ?_
+  refine (fun h => ⟨r_post, by rw [h]; exact Ristretto.even_fromUniformRepNat _, h, r_post2⟩) ?_
   rw [r_post1, R_1_post1, R_2_post1, toField_eq_decodeU_of_asNat_eq r_1_post,
-    toField_eq_decodeU_of_asNat_eq r_2_post, h1, h2, Ristretto.fromUniformRep_def]
+    toField_eq_decodeU_of_asNat_eq r_2_post, h1, h2, Ristretto.fromUniformRepNat_def]
   rfl
 
 end «RistrettoPointx86_64-no-tables»
@@ -136,8 +139,9 @@ limbs `< 2^26`. -/
 @[step]
 theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«i686-no-tables») =>
-      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep (bytes.asNat 8) ∧
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep bytes.toVector ∧
         r.LimbsLt 26 ⦄ := by
+  simp only [Aeneas.Std.Array.fromUniformRep_toVector]
   unfold from_uniform_bytes
   step*
   have hlen : bytes.val.length = 64 := bytes.property
@@ -153,9 +157,9 @@ theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     (by rw [hA, hB, List.take_append_drop])
   obtain ⟨-, h2⟩ := Array.asNat_append_eq bytes (to_slice_mut_back s2) (to_slice_mut_back1 s5)
     (by rw [hA, hB, List.take_append_drop])
-  refine (fun h => ⟨r_post, by rw [h]; exact Ristretto.even_fromUniformRep _, h, r_post2⟩) ?_
+  refine (fun h => ⟨r_post, by rw [h]; exact Ristretto.even_fromUniformRepNat _, h, r_post2⟩) ?_
   rw [r_post1, R_1_post1, R_2_post1, toField_eq_decodeU_of_mod r_1_post,
-    toField_eq_decodeU_of_mod r_2_post, h1, h2, Ristretto.fromUniformRep_def]
+    toField_eq_decodeU_of_mod r_2_post, h1, h2, Ristretto.fromUniformRepNat_def]
   rfl
 
 end «RistrettoPointi686-no-tables»

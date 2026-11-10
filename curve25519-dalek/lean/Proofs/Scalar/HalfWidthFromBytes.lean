@@ -11,6 +11,7 @@ import Proofs.Helpers.Array
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.StepSpecs
 import Subtle
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
@@ -67,13 +68,17 @@ private theorem from_bytes_loop_spec (bytes : Array U8 16#usize) (s_bytes : Arra
 @[step]
 theorem from_bytes_spec (bytes : Array U8 16#usize) :
     from_bytes bytes ⦃ (r : HalfWidthScalar) =>
-      r.asNat = bytes.asNat 8 ⦄ := by
+      r.asNat < 2 ^ 128 ∧ r.asNat = bytes.asNat 8 ⦄ := by
   unfold from_bytes
   step with from_bytes_loop_spec as ⟨r, hlo, hhi⟩
   · intro j _ hj
     rw [Array.getElem!_Nat_eq, Array.repeat_val, List.getElem!_replicate _ (by simpa using hj)]
-  · rw [HalfWidthScalar.asNat_def, Scalar.asNat_def]
-    exact Array.asNat_eq_of_prefix 8 r bytes (by simp)
-      (fun j hj => by rw [hlo j hj]) (fun j hj hj32 => by rw [hhi j hj hj32]; rfl)
+  · have h : HalfWidthScalar.asNat { bytes := r } = bytes.asNat 8 := by
+      rw [HalfWidthScalar.asNat_def, Scalar.asNat_def]
+      exact Array.asNat_eq_of_prefix 8 r bytes (by simp)
+        (fun j hj => by rw [hlo j hj]) (fun j hj hj32 => by rw [hhi j hj hj32]; rfl)
+    refine ⟨?_, h⟩
+    rw [h]
+    exact Array.asNat_lt 8 bytes fun j _ => (bytes[j]!).hBounds
 
 end Curve25519Dalek.scalar.HalfWidthScalar

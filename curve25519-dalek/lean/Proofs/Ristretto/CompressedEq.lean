@@ -6,6 +6,7 @@ module
 public import Curve25519Dalek.Funs
 public import Defs.Ristretto
 import Proofs.Ristretto.CompressedCtEq
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `PartialEq for CompressedRistretto` -/
@@ -17,7 +18,7 @@ namespace Curve25519Dalek.ristretto.CompressedRistretto.Insts.CoreCmpPartialEqCo
 /-- `PartialEq for CompressedRistretto`: byte equality. -/
 @[step]
 theorem eq_spec (self other : CompressedRistretto) :
-    eq self other ⦃ (b : Bool) => b = true ↔ self = other ⦄ := by
+    eq self other ⦃ (r : Bool) => r = true ↔ self = other ⦄ := by
   unfold eq
   step as ⟨c, hcv, hc⟩
   step as ⟨b, hb⟩

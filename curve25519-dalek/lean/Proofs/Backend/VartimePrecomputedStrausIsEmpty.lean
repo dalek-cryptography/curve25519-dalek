@@ -3,9 +3,10 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import Proofs.Helpers.Represents
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
-public import Defs.Iterator
+public import ToAeneas.Iterator
 public import Defs.Scalar
 public import Defs.ScalarMul
 import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.IsEmpty
@@ -22,13 +23,12 @@ open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-
   is_empty_spec → serial_is_empty_spec in
 /-- `VartimePrecomputedStraus::is_empty` (backend): whether there are no static points. -/
 @[step]
-theorem is_empty_spec (self : VartimePrecomputedStraus.«x86_64-tables»)
-    (ps : List curve25519.edwards.Point)
-    (hself : self.Represents ps) :
-    is_empty self ⦃ (r : Bool) => r = decide (ps = []) ⦄ := by
+theorem is_empty_spec (self : VartimePrecomputedStraus.«x86_64-tables») :
+    is_empty self ⦃ (r : Bool) => r = decide (self.points = []) ⦄ := by
   rcases self with ⟨inner⟩
   unfold is_empty
-  exact serial_is_empty_spec inner ps hself
+  exact spec_mono (serial_is_empty_spec inner) fun r h => by
+    simp only [h, VartimePrecomputedStraus.«x86_64-tables».points, List.map_eq_nil_iff]
 
 end «VartimePrecomputedStrausx86_64-tables»
 
@@ -39,13 +39,12 @@ open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-ta
   is_empty_spec → serial_is_empty_spec in
 /-- `VartimePrecomputedStraus::is_empty` (backend): whether there are no static points. -/
 @[step]
-theorem is_empty_spec (self : VartimePrecomputedStraus.«i686-tables»)
-    (ps : List curve25519.edwards.Point)
-    (hself : self.Represents ps) :
-    is_empty self ⦃ (r : Bool) => r = decide (ps = []) ⦄ := by
+theorem is_empty_spec (self : VartimePrecomputedStraus.«i686-tables») :
+    is_empty self ⦃ (r : Bool) => r = decide (self.points = []) ⦄ := by
   rcases self with ⟨inner⟩
   unfold is_empty
-  exact serial_is_empty_spec inner ps hself
+  exact spec_mono (serial_is_empty_spec inner) fun r h => by
+    simp only [h, VartimePrecomputedStraus.«i686-tables».points, List.map_eq_nil_iff]
 
 end «VartimePrecomputedStrausi686-tables»
 
@@ -56,13 +55,12 @@ open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-
   is_empty_spec → serial_is_empty_spec in
 /-- `VartimePrecomputedStraus::is_empty` (backend): whether there are no static points. -/
 @[step]
-theorem is_empty_spec (self : VartimePrecomputedStraus.«x86_64-no-tables»)
-    (ps : List curve25519.edwards.Point)
-    (hself : self.Represents ps) :
-    is_empty self ⦃ (r : Bool) => r = decide (ps = []) ⦄ := by
+theorem is_empty_spec (self : VartimePrecomputedStraus.«x86_64-no-tables») :
+    is_empty self ⦃ (r : Bool) => r = decide (self.points = []) ⦄ := by
   rcases self with ⟨inner⟩
   unfold is_empty
-  exact serial_is_empty_spec inner ps hself
+  exact spec_mono (serial_is_empty_spec inner) fun r h => by
+    simp only [h, VartimePrecomputedStraus.«x86_64-no-tables».points, List.map_eq_nil_iff]
 
 end «VartimePrecomputedStrausx86_64-no-tables»
 
@@ -73,13 +71,12 @@ open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-no
   is_empty_spec → serial_is_empty_spec in
 /-- `VartimePrecomputedStraus::is_empty` (backend): whether there are no static points. -/
 @[step]
-theorem is_empty_spec (self : VartimePrecomputedStraus.«i686-no-tables»)
-    (ps : List curve25519.edwards.Point)
-    (hself : self.Represents ps) :
-    is_empty self ⦃ (r : Bool) => r = decide (ps = []) ⦄ := by
+theorem is_empty_spec (self : VartimePrecomputedStraus.«i686-no-tables») :
+    is_empty self ⦃ (r : Bool) => r = decide (self.points = []) ⦄ := by
   rcases self with ⟨inner⟩
   unfold is_empty
-  exact serial_is_empty_spec inner ps hself
+  exact spec_mono (serial_is_empty_spec inner) fun r h => by
+    simp only [h, VartimePrecomputedStraus.«i686-no-tables».points, List.map_eq_nil_iff]
 
 end «VartimePrecomputedStrausi686-no-tables»
 

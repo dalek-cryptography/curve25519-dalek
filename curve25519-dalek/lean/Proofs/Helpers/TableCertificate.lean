@@ -10,6 +10,7 @@ public import Curve25519.Proofs.Edwards.Certs
 import Proofs.Helpers.Coords
 import Proofs.Helpers.ToField
 import Mathlib.Tactic.LinearCombination
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # Certifying the precomputed tables

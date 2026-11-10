@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP
@@ -15,8 +16,9 @@ namespace Curve25519Dalek.edwards.CompressedEdwardsY
 @[step]
 theorem from_slice_spec (bytes : Slice U8) :
     from_slice bytes ⦃ (r : core.result.Result CompressedEdwardsY core.array.TryFromSliceError) =>
-      (bytes.length = 32 → ∃ a : CompressedEdwardsY, r = .Ok a ∧ a.val = bytes.val) ∧
-      (bytes.length ≠ 32 → r = .Err ()) ⦄ := by
+      match r with
+      | .Ok c => bytes.length = 32 ∧ ∀ i < 32, c[i]! = bytes[i]!
+      | .Err _ => bytes.length ≠ 32 ⦄ := by
   unfold from_slice
   step as ⟨r0, hr0⟩
   step with core.result.Result.map_spec
@@ -28,10 +30,13 @@ theorem from_slice_spec (bytes : Slice U8) :
     simp only [P.Insts.CoreOpsFunctionFnOnceTupleArrayU832CompressedEdwardsY.call_once,
       CompressedEdwardsY.constructor] at hy
     have hay : a = y := Result.ok_injective hy
-    refine ⟨fun _ => ⟨a, by rw [hr, hay], hval⟩, fun hne => absurd ?_ hne⟩
-    rw [Slice.length, ← hval, Array.length_eq]
-    rfl
-  · exact ⟨fun h => absurd h hr0, fun _ => herr e rfl⟩
+    rw [hr, ← hay]
+    refine ⟨?_, fun i _ => ?_⟩
+    · rw [Slice.length, ← hval, Array.length_eq]
+      rfl
+    · rw [Array.getElem!_Nat_eq, Slice.getElem!_Nat_eq, hval]
+  · rw [herr e rfl]
+    exact hr0
 
 namespace Insts.CoreConvertTryFromShared0SliceU8TryFromSliceError
 
@@ -39,8 +44,9 @@ namespace Insts.CoreConvertTryFromShared0SliceU8TryFromSliceError
 @[step]
 theorem try_from_spec (slice : Slice U8) :
     try_from slice ⦃ (r : core.result.Result CompressedEdwardsY core.array.TryFromSliceError) =>
-      (slice.length = 32 → ∃ a : CompressedEdwardsY, r = .Ok a ∧ a.val = slice.val) ∧
-      (slice.length ≠ 32 → r = .Err ()) ⦄ := by
+      match r with
+      | .Ok c => slice.length = 32 ∧ ∀ i < 32, c[i]! = slice[i]!
+      | .Err _ => slice.length ≠ 32 ⦄ := by
   unfold try_from
   step*
 

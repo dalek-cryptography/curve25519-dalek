@@ -15,7 +15,7 @@ The algebra of RFC 9496 §4.3.1 (decoding) and §4.3.2 (encoding), stated for fi
 with explicit hypotheses in place of the square roots: for decoding, `W r² = 1` where
 `W = v u2²`, `u1 = 1 - s²`, `u2 = 1 + s²`, `v = -(d u1²) - u2²`; for encoding, `W I² = 1` where
 `W = (1 + y)(1 - y)(x y)²`. The results are instantiated by `Curve25519.Ristretto.Encoding.Defs`
-(the on-curve proof of `decodeRep`) and `Curve25519.Ristretto.Encoding` (the round trips). -/
+(the on-curve proof of `decodeRepNat`) and `Curve25519.Ristretto.Encoding` (the round trips). -/
 
 namespace curve25519.Proofs
 
@@ -41,7 +41,7 @@ theorem one_sub_d_sq_ne_zero : 1 - d ^ 2 ≠ 0 := by
 /-! ### Decoding (RFC 9496 §4.3.1) -/
 
 /-- `v = -(d u1²) - u2² ≠ 0`: a zero would make `-d` a square (or `2 = 0`). -/
-theorem decode_v_ne_zero (s : ZMod p) : -(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2 ≠ 0 := by
+theorem decodeNat_v_ne_zero (s : ZMod p) : -(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2 ≠ 0 := by
   intro h
   by_cases h1 : 1 - s ^ 2 = 0
   · have h2 : (1 + s ^ 2) ^ 2 = 0 := by rw [h1] at h; linear_combination -h
@@ -54,7 +54,7 @@ theorem decode_v_ne_zero (s : ZMod p) : -(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2
     linear_combination h
 
 /-- `u2 = 1 + s² ≠ 0` when `W r² = 1`. -/
-theorem decode_u2_ne_zero (s r : ZMod p)
+theorem decodeNat_u2_ne_zero (s r : ZMod p)
     (hr : (-(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2) * (1 + s ^ 2) ^ 2 * r ^ 2 = 1) :
     1 + s ^ 2 ≠ 0 := by
   intro h
@@ -62,15 +62,15 @@ theorem decode_u2_ne_zero (s r : ZMod p)
   exact one_ne_zero (by linear_combination -hr)
 
 /-- The decoded `y = u1 (r (r u2) v)` is `u1 / u2`. -/
-theorem decode_y_eq (s r : ZMod p)
+theorem decodeNat_y_eq (s r : ZMod p)
     (hr : (-(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2) * (1 + s ^ 2) ^ 2 * r ^ 2 = 1) :
     (1 - s ^ 2) * (r * (r * (1 + s ^ 2)) * (-(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2)) =
       (1 - s ^ 2) / (1 + s ^ 2) := by
-  rw [eq_div_iff (decode_u2_ne_zero s r hr)]
+  rw [eq_div_iff (decodeNat_u2_ne_zero s r hr)]
   linear_combination (1 - s ^ 2) * hr
 
 /-- The decoded `x = |2 s (r u2)|` has `x² v = 4 s²`. -/
-theorem decode_x_sq_mul_v (s r : ZMod p)
+theorem decodeNat_x_sq_mul_v (s r : ZMod p)
     (hr : (-(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2) * (1 + s ^ 2) ^ 2 * r ^ 2 = 1) :
     (2 * s * (r * (1 + s ^ 2))).abs ^ 2 * (-(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2) =
       4 * s ^ 2 := by
@@ -78,18 +78,18 @@ theorem decode_x_sq_mul_v (s r : ZMod p)
   linear_combination (4 * s ^ 2) * hr
 
 /-- The decoded point is on the model. -/
-theorem decode_equation (s r : ZMod p)
+theorem decodeNat_equation (s r : ZMod p)
     (hr : (-(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2) * (1 + s ^ 2) ^ 2 * r ^ 2 = 1) :
     edwards.Equation (2 * s * (r * (1 + s ^ 2))).abs
       ((1 - s ^ 2) * (r * (r * (1 + s ^ 2)) * (-(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2))) := by
-  have hv := decode_v_ne_zero s
-  have hu2 := decode_u2_ne_zero s r hr
+  have hv := decodeNat_v_ne_zero s
+  have hu2 := decodeNat_u2_ne_zero s r hr
   have hx : (2 * s * (r * (1 + s ^ 2))).abs ^ 2 =
       4 * s ^ 2 / (-(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2) := by
     rw [eq_div_iff hv]
-    exact decode_x_sq_mul_v s r hr
+    exact decodeNat_x_sq_mul_v s r hr
   unfold Equation
-  rw [edwards_a_eq_neg_one, edwards_d, decode_y_eq s r hr, hx]
+  rw [edwards_a_eq_neg_one, edwards_d, decodeNat_y_eq s r hr, hx]
   field_simp
   ring
 

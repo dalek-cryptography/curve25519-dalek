@@ -10,6 +10,7 @@ import all Curve25519.Basic
 import Proofs.Backend.Serial.U64.Field.FromLimbs
 import Proofs.Helpers.Coords
 import Proofs.Helpers.TableCertificate
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `ED25519_BASEPOINT_128_POINT`

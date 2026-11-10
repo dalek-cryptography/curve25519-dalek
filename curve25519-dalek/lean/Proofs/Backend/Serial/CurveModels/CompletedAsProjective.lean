@@ -52,7 +52,8 @@ theorem as_projective_eq (self : CompletedPoint.«x86_64-tables») :
 
 /-- `CompletedPoint::as_projective`: `(X T : Y Z : Z T)`, limbs `< 2^52`. -/
 @[step]
-theorem as_projective_spec (self : CompletedPoint.«x86_64-tables») (hself : self.LimbsLt 54) :
+theorem as_projective_toProjective (self : CompletedPoint.«x86_64-tables») (hself : self.LimbsLt
+    54) :
     as_projective self ⦃ (r : ProjectivePoint.«x86_64-tables») =>
       r.toProjective = self.toCompleted.toProjective ∧ r.LimbsLt 52 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
@@ -64,11 +65,11 @@ theorem as_projective_spec (self : CompletedPoint.«x86_64-tables») (hself : se
     CompletedPoint.«x86_64-tables».toCompleted_def]; exact h, ha, hb, hc⟩
 
 /-- `CompletedPoint::as_projective` represents the same point. -/
-theorem as_projective_spec_point (self : CompletedPoint.«x86_64-tables») (hself : self.LimbsLt 54)
+theorem as_projective_spec (self : CompletedPoint.«x86_64-tables») (hself : self.LimbsLt 54)
     (hon : self.OnCurve) :
     as_projective self ⦃ (r : ProjectivePoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (as_projective_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_projective_toProjective self hself) fun r ⟨hr, hb⟩ => by
     rw [ProjectivePoint.«x86_64-tables».onCurve_iff,
       ProjectivePoint.«x86_64-tables».toPoint_def, hr,
       CompletedPoint.«x86_64-tables».toPoint_def]
@@ -85,7 +86,7 @@ theorem as_projective_eq (self : CompletedPoint.«i686-tables») :
 
 /-- `CompletedPoint::as_projective`: `(X T : Y Z : Z T)`, limbs `< 2^26`. -/
 @[step]
-theorem as_projective_spec (self : CompletedPoint.«i686-tables») (hself : self.MulBounded) :
+theorem as_projective_toProjective (self : CompletedPoint.«i686-tables») (hself : self.MulBounded) :
     as_projective self ⦃ (r : ProjectivePoint.«i686-tables») =>
       r.toProjective = self.toCompleted.toProjective ∧ r.LimbsLt 26 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
@@ -97,11 +98,11 @@ theorem as_projective_spec (self : CompletedPoint.«i686-tables») (hself : self
     CompletedPoint.«i686-tables».toCompleted_def]; exact h, ha, hb, hc⟩
 
 /-- `CompletedPoint::as_projective` represents the same point. -/
-theorem as_projective_spec_point (self : CompletedPoint.«i686-tables») (hself : self.MulBounded)
+theorem as_projective_spec (self : CompletedPoint.«i686-tables») (hself : self.MulBounded)
     (hon : self.OnCurve) :
     as_projective self ⦃ (r : ProjectivePoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (as_projective_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_projective_toProjective self hself) fun r ⟨hr, hb⟩ => by
     rw [ProjectivePoint.«i686-tables».onCurve_iff,
       ProjectivePoint.«i686-tables».toPoint_def, hr,
       CompletedPoint.«i686-tables».toPoint_def]
@@ -118,7 +119,8 @@ theorem as_projective_eq (self : CompletedPoint.«x86_64-no-tables») :
 
 /-- `CompletedPoint::as_projective`: `(X T : Y Z : Z T)`, limbs `< 2^52`. -/
 @[step]
-theorem as_projective_spec (self : CompletedPoint.«x86_64-no-tables») (hself : self.LimbsLt 54) :
+theorem as_projective_toProjective (self : CompletedPoint.«x86_64-no-tables») (hself : self.LimbsLt
+    54) :
     as_projective self ⦃ (r : ProjectivePoint.«x86_64-no-tables») =>
       r.toProjective = self.toCompleted.toProjective ∧ r.LimbsLt 52 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
@@ -130,12 +132,12 @@ theorem as_projective_spec (self : CompletedPoint.«x86_64-no-tables») (hself :
     CompletedPoint.«x86_64-no-tables».toCompleted_def]; exact h, ha, hb, hc⟩
 
 /-- `CompletedPoint::as_projective` represents the same point. -/
-theorem as_projective_spec_point (self : CompletedPoint.«x86_64-no-tables»)
+theorem as_projective_spec (self : CompletedPoint.«x86_64-no-tables»)
     (hself : self.LimbsLt 54)
     (hon : self.OnCurve) :
     as_projective self ⦃ (r : ProjectivePoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (as_projective_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_projective_toProjective self hself) fun r ⟨hr, hb⟩ => by
     rw [ProjectivePoint.«x86_64-no-tables».onCurve_iff,
       ProjectivePoint.«x86_64-no-tables».toPoint_def, hr,
       CompletedPoint.«x86_64-no-tables».toPoint_def]
@@ -152,7 +154,8 @@ theorem as_projective_eq (self : CompletedPoint.«i686-no-tables») :
 
 /-- `CompletedPoint::as_projective`: `(X T : Y Z : Z T)`, limbs `< 2^26`. -/
 @[step]
-theorem as_projective_spec (self : CompletedPoint.«i686-no-tables») (hself : self.MulBounded) :
+theorem as_projective_toProjective (self : CompletedPoint.«i686-no-tables») (hself :
+    self.MulBounded) :
     as_projective self ⦃ (r : ProjectivePoint.«i686-no-tables») =>
       r.toProjective = self.toCompleted.toProjective ∧ r.LimbsLt 26 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
@@ -164,12 +167,12 @@ theorem as_projective_spec (self : CompletedPoint.«i686-no-tables») (hself : s
     CompletedPoint.«i686-no-tables».toCompleted_def]; exact h, ha, hb, hc⟩
 
 /-- `CompletedPoint::as_projective` represents the same point. -/
-theorem as_projective_spec_point (self : CompletedPoint.«i686-no-tables»)
+theorem as_projective_spec (self : CompletedPoint.«i686-no-tables»)
     (hself : self.MulBounded)
     (hon : self.OnCurve) :
     as_projective self ⦃ (r : ProjectivePoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (as_projective_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (as_projective_toProjective self hself) fun r ⟨hr, hb⟩ => by
     rw [ProjectivePoint.«i686-no-tables».onCurve_iff,
       ProjectivePoint.«i686-no-tables».toPoint_def, hr,
       CompletedPoint.«i686-no-tables».toPoint_def]

@@ -10,6 +10,7 @@ public import Defs.Scalar
 import Proofs.Edwards.MulBase
 import Proofs.Edwards.ToMontgomery
 import Proofs.Helpers.Target
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `MontgomeryPoint::mul_base`
@@ -32,7 +33,8 @@ theorem mul_base.«x86_64-tables_spec» (scalar : scalar.Scalar) (hscalar : scal
       r.asNat = encodeU (scalar.asNat • montgomeryBasepoint).u ⦄ := by
   unfold mul_base.«x86_64-tables»
   step as ⟨ep, hep_on, hep, hep_lt⟩
-  step with edwards.«EdwardsPointx86_64-tables».to_montgomery_spec_point ep hep_lt hep_on as ⟨r, hr⟩
+  step with edwards.«EdwardsPointx86_64-tables».to_montgomery_spec ep hep_lt hep_on as ⟨r, hr⟩
+  rw [MontgomeryPoint.toVector_eq_encodeUCoordinate_iff] at hr
   rw [hr, hep, map_nsmul, montgomeryBasepoint_def]
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
@@ -44,7 +46,8 @@ theorem mul_base.«i686-tables_spec» (scalar : scalar.Scalar) (hscalar : scalar
       r.asNat = encodeU (scalar.asNat • montgomeryBasepoint).u ⦄ := by
   unfold mul_base.«i686-tables»
   step as ⟨ep, hep_on, hep, hep_lt⟩
-  step with edwards.«EdwardsPointi686-tables».to_montgomery_spec_point ep hep_lt hep_on as ⟨r, hr⟩
+  step with edwards.«EdwardsPointi686-tables».to_montgomery_spec ep hep_lt hep_on as ⟨r, hr⟩
+  rw [MontgomeryPoint.toVector_eq_encodeUCoordinate_iff] at hr
   rw [hr, hep, map_nsmul, montgomeryBasepoint_def]
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
@@ -57,8 +60,9 @@ theorem mul_base.«x86_64-no-tables_spec» (scalar : scalar.Scalar) (hscalar : s
       r.asNat = encodeU (scalar.asNat • montgomeryBasepoint).u ⦄ := by
   unfold mul_base.«x86_64-no-tables»
   step as ⟨ep, hep_on, hep, hep_lt⟩
-  step with edwards.«EdwardsPointx86_64-no-tables».to_montgomery_spec_point ep hep_lt hep_on as ⟨r,
+  step with edwards.«EdwardsPointx86_64-no-tables».to_montgomery_spec ep hep_lt hep_on as ⟨r,
       hr⟩
+  rw [MontgomeryPoint.toVector_eq_encodeUCoordinate_iff] at hr
   rw [hr, hep, map_nsmul, montgomeryBasepoint_def]
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
@@ -71,17 +75,19 @@ theorem mul_base.«i686-no-tables_spec» (scalar : scalar.Scalar) (hscalar : sca
       r.asNat = encodeU (scalar.asNat • montgomeryBasepoint).u ⦄ := by
   unfold mul_base.«i686-no-tables»
   step as ⟨ep, hep_on, hep, hep_lt⟩
-  step with edwards.«EdwardsPointi686-no-tables».to_montgomery_spec_point ep hep_lt hep_on as ⟨r,
+  step with edwards.«EdwardsPointi686-no-tables».to_montgomery_spec ep hep_lt hep_on as ⟨r,
       hr⟩
+  rw [MontgomeryPoint.toVector_eq_encodeUCoordinate_iff] at hr
   rw [hr, hep, map_nsmul, montgomeryBasepoint_def]
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 /-- `MontgomeryPoint::mul_base`: the `u`-coordinate of `scalar • B` on the Montgomery model
-(unreduced, `< 2^255`), encoded canonically (x86_64 targets). -/
+(unreduced, `< 2^255`), encoded canonically. -/
 @[step]
 theorem mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255) :
     mul_base scalar ⦃ (r : MontgomeryPoint) =>
-      r.asNat = encodeU (scalar.asNat • montgomeryBasepoint).u ⦄ := by
+      r.toVector = encodeUCoordinate (scalar.asNat • montgomeryBasepoint).u ⦄ := by
+  simp only [Curve25519Dalek.montgomery.MontgomeryPoint.toVector_eq_encodeUCoordinate_iff]
   unfold mul_base
   exact dispatch_all_spec
     (mul_base.«x86_64-tables_spec» scalar hscalar)

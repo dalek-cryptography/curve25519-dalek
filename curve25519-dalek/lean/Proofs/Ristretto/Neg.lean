@@ -28,7 +28,7 @@ theorem neg_spec (self : ristretto.RistrettoPoint.«x86_64-tables») (hself : se
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold neg
   step with
-    Insts.«CoreOpsArithNegEdwardsPointx86_64-tables».neg_spec_point
+    Insts.«CoreOpsArithNegEdwardsPointx86_64-tables».neg_spec
     self hself hon as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
@@ -45,7 +45,7 @@ theorem neg_spec (self : ristretto.RistrettoPoint.«i686-tables») (hself : self
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold neg
   step with
-    Insts.«CoreOpsArithNegEdwardsPointi686-tables».neg_spec_point
+    Insts.«CoreOpsArithNegEdwardsPointi686-tables».neg_spec
     self hself hon as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
@@ -95,7 +95,7 @@ theorem neg_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables») (hself :
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold neg
   step with
-    Insts.«CoreOpsArithNegEdwardsPointx86_64-no-tables».neg_spec_point
+    Insts.«CoreOpsArithNegEdwardsPointx86_64-no-tables».neg_spec
     self hself hon as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
@@ -114,7 +114,7 @@ theorem neg_spec (self : ristretto.RistrettoPoint.«i686-no-tables») (hself : s
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold neg
   step with
-    Insts.«CoreOpsArithNegEdwardsPointi686-no-tables».neg_spec_point
+    Insts.«CoreOpsArithNegEdwardsPointi686-no-tables».neg_spec
     self hself hon as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 

@@ -19,7 +19,8 @@ namespace Curve25519Dalek.edwards
 namespace «EdwardsPointx86_64-tables»
 
 /-- `EdwardsPoint::vartime_triple_scalar_mul_basepoint`: `a1 • A1 + a2 • A2 + b • B` for the
-basepoint `B` (`a1, a2 < 2^128`, the `HalfWidthScalar` invariant); limbs `< 2^52`. -/
+basepoint `B` (`a1, a2 < 2^128`, the `HalfWidthScalar` invariant; any `b`, which the code splits
+into two `128`-bit halves); limbs `< 2^52`. -/
 @[step]
 theorem vartime_triple_scalar_mul_basepoint_spec (a1 : scalar.HalfWidthScalar)
     (A1 : EdwardsPoint.«x86_64-tables») (a2 : scalar.HalfWidthScalar)
@@ -38,7 +39,8 @@ end «EdwardsPointx86_64-tables»
 namespace «EdwardsPointi686-tables»
 
 /-- `EdwardsPoint::vartime_triple_scalar_mul_basepoint`: `a1 • A1 + a2 • A2 + b • B` for the
-basepoint `B` (`a1, a2 < 2^128`, the `HalfWidthScalar` invariant); limbs `< 2^26`. -/
+basepoint `B` (`a1, a2 < 2^128`, the `HalfWidthScalar` invariant; any `b`, which the code splits
+into two `128`-bit halves); limbs `< 2^26`. -/
 @[step]
 theorem vartime_triple_scalar_mul_basepoint_spec (a1 : scalar.HalfWidthScalar)
     (A1 : EdwardsPoint.«i686-tables») (a2 : scalar.HalfWidthScalar)
@@ -57,7 +59,8 @@ end «EdwardsPointi686-tables»
 namespace «EdwardsPointx86_64-no-tables»
 
 /-- `EdwardsPoint::vartime_triple_scalar_mul_basepoint`: `a1 • A1 + a2 • A2 + b • B` for the
-basepoint `B` (`a1, a2 < 2^128`, the `HalfWidthScalar` invariant); limbs `< 2^52`. -/
+basepoint `B` (`a1, a2 < 2^128`, the `HalfWidthScalar` invariant; any `b`, which the code splits
+into two `128`-bit halves); limbs `< 2^52`. -/
 @[step]
 theorem vartime_triple_scalar_mul_basepoint_spec (a1 : scalar.HalfWidthScalar)
     (A1 : EdwardsPoint.«x86_64-no-tables») (a2 : scalar.HalfWidthScalar)
@@ -76,7 +79,8 @@ end «EdwardsPointx86_64-no-tables»
 namespace «EdwardsPointi686-no-tables»
 
 /-- `EdwardsPoint::vartime_triple_scalar_mul_basepoint`: `a1 • A1 + a2 • A2 + b • B` for the
-basepoint `B` (`a1, a2 < 2^128`, the `HalfWidthScalar` invariant); limbs `< 2^26`. -/
+basepoint `B` (`a1, a2 < 2^128`, the `HalfWidthScalar` invariant; any `b`, which the code splits
+into two `128`-bit halves); limbs `< 2^26`. -/
 @[step]
 theorem vartime_triple_scalar_mul_basepoint_spec (a1 : scalar.HalfWidthScalar)
     (A1 : EdwardsPoint.«i686-no-tables») (a2 : scalar.HalfWidthScalar)

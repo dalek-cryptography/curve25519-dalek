@@ -78,7 +78,7 @@ theorem sub_eq (self : edwards.EdwardsPoint.«x86_64-tables»)
 /-- `Sub<&ProjectiveNielsPoint> for &EdwardsPoint`: the mixed formula
 `Extended.subProjectiveNiels`; limbs `< 2^52` and `< 2^54` in, `< 2^54` out. -/
 @[step]
-theorem sub_spec (self : edwards.EdwardsPoint.«x86_64-tables»)
+theorem sub_toCompleted (self : edwards.EdwardsPoint.«x86_64-tables»)
     (other : ProjectiveNielsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 54) :
     sub self other ⦃ (r : CompletedPoint.«x86_64-tables») =>
@@ -96,12 +96,12 @@ theorem sub_spec (self : edwards.EdwardsPoint.«x86_64-tables»)
     ProjectiveNielsPoint.«x86_64-tables».toProjectiveNiels_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `Sub<&ProjectiveNielsPoint> for &EdwardsPoint` subtracts the represented points. -/
-theorem sub_spec_point (self : edwards.EdwardsPoint.«x86_64-tables»)
+theorem sub_spec (self : edwards.EdwardsPoint.«x86_64-tables»)
     (other : ProjectiveNielsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 54) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
     sub self other ⦃ (r : CompletedPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 54 ⦄ :=
-  spec_mono (sub_spec self other hself hother) fun r ⟨hr, hb⟩ => by
+  spec_mono (sub_toCompleted self other hself hother) fun r ⟨hr, hb⟩ => by
     rw [CompletedPoint.«x86_64-tables».onCurve_iff,
       CompletedPoint.«x86_64-tables».toPoint_def, hr,
       edwards.EdwardsPoint.«x86_64-tables».toPoint_def,
@@ -125,7 +125,7 @@ theorem sub_eq (self : edwards.EdwardsPoint.«i686-tables»)
 /-- `Sub<&ProjectiveNielsPoint> for &EdwardsPoint`: the mixed formula
 `Extended.subProjectiveNiels`; limbs `< 2^26` and `< 2^27` in, `< 3 · 2^26` out. -/
 @[step]
-theorem sub_spec (self : edwards.EdwardsPoint.«i686-tables»)
+theorem sub_toCompleted (self : edwards.EdwardsPoint.«i686-tables»)
     (other : ProjectiveNielsPoint.«i686-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 27) :
     sub self other ⦃ (r : CompletedPoint.«i686-tables») =>
@@ -143,12 +143,12 @@ theorem sub_spec (self : edwards.EdwardsPoint.«i686-tables»)
     ProjectiveNielsPoint.«i686-tables».toProjectiveNiels_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `Sub<&ProjectiveNielsPoint> for &EdwardsPoint` subtracts the represented points. -/
-theorem sub_spec_point (self : edwards.EdwardsPoint.«i686-tables»)
+theorem sub_spec (self : edwards.EdwardsPoint.«i686-tables»)
     (other : ProjectiveNielsPoint.«i686-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 27) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
     sub self other ⦃ (r : CompletedPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.MulBounded ⦄ :=
-  spec_mono (sub_spec self other hself hother) fun r ⟨hr, hb⟩ => by
+  spec_mono (sub_toCompleted self other hself hother) fun r ⟨hr, hb⟩ => by
     rw [CompletedPoint.«i686-tables».onCurve_iff,
       CompletedPoint.«i686-tables».toPoint_def, hr,
       edwards.EdwardsPoint.«i686-tables».toPoint_def,
@@ -172,7 +172,7 @@ theorem sub_eq (self : edwards.EdwardsPoint.«x86_64-no-tables»)
 /-- `Sub<&ProjectiveNielsPoint> for &EdwardsPoint`: the mixed formula
 `Extended.subProjectiveNiels`; limbs `< 2^52` and `< 2^54` in, `< 2^54` out. -/
 @[step]
-theorem sub_spec (self : edwards.EdwardsPoint.«x86_64-no-tables»)
+theorem sub_toCompleted (self : edwards.EdwardsPoint.«x86_64-no-tables»)
     (other : ProjectiveNielsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 54) :
     sub self other ⦃ (r : CompletedPoint.«x86_64-no-tables») =>
@@ -190,12 +190,12 @@ theorem sub_spec (self : edwards.EdwardsPoint.«x86_64-no-tables»)
     ProjectiveNielsPoint.«x86_64-no-tables».toProjectiveNiels_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `Sub<&ProjectiveNielsPoint> for &EdwardsPoint` subtracts the represented points. -/
-theorem sub_spec_point (self : edwards.EdwardsPoint.«x86_64-no-tables»)
+theorem sub_spec (self : edwards.EdwardsPoint.«x86_64-no-tables»)
     (other : ProjectiveNielsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 54) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
     sub self other ⦃ (r : CompletedPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 54 ⦄ :=
-  spec_mono (sub_spec self other hself hother) fun r ⟨hr, hb⟩ => by
+  spec_mono (sub_toCompleted self other hself hother) fun r ⟨hr, hb⟩ => by
     rw [CompletedPoint.«x86_64-no-tables».onCurve_iff,
       CompletedPoint.«x86_64-no-tables».toPoint_def, hr,
       edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def,
@@ -219,7 +219,7 @@ theorem sub_eq (self : edwards.EdwardsPoint.«i686-no-tables»)
 /-- `Sub<&ProjectiveNielsPoint> for &EdwardsPoint`: the mixed formula
 `Extended.subProjectiveNiels`; limbs `< 2^26` and `< 2^27` in, `< 3 · 2^26` out. -/
 @[step]
-theorem sub_spec (self : edwards.EdwardsPoint.«i686-no-tables»)
+theorem sub_toCompleted (self : edwards.EdwardsPoint.«i686-no-tables»)
     (other : ProjectiveNielsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 27) :
     sub self other ⦃ (r : CompletedPoint.«i686-no-tables») =>
@@ -237,12 +237,12 @@ theorem sub_spec (self : edwards.EdwardsPoint.«i686-no-tables»)
     ProjectiveNielsPoint.«i686-no-tables».toProjectiveNiels_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `Sub<&ProjectiveNielsPoint> for &EdwardsPoint` subtracts the represented points. -/
-theorem sub_spec_point (self : edwards.EdwardsPoint.«i686-no-tables»)
+theorem sub_spec (self : edwards.EdwardsPoint.«i686-no-tables»)
     (other : ProjectiveNielsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 27) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
     sub self other ⦃ (r : CompletedPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.MulBounded ⦄ :=
-  spec_mono (sub_spec self other hself hother) fun r ⟨hr, hb⟩ => by
+  spec_mono (sub_toCompleted self other hself hother) fun r ⟨hr, hb⟩ => by
     rw [CompletedPoint.«i686-no-tables».onCurve_iff,
       CompletedPoint.«i686-no-tables».toPoint_def, hr,
       edwards.EdwardsPoint.«i686-no-tables».toPoint_def,

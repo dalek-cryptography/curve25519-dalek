@@ -14,7 +14,7 @@ public section
 
 /-! # `EIGHT_TORSION`
 
-Entry `i` is the point `eightTorsion i = i • torsion8` of `curve25519` in the extended coordinates
+Entry `i` is the point `i • torsion8` of `curve25519` in the extended coordinates
 `(x : y : 1 : x y)`; the limbs are compared with the coordinates of
 `Curve25519/Edwards/Torsion.lean` as numbers. -/
 
@@ -27,12 +27,13 @@ namespace Curve25519Dalek.backend.serial.u32.constants
 namespace «i686-tables»
 
 /-- `EIGHT_TORSION`: entry `i` has the extended coordinates `(x : y : 1 : x y)` of
-`eightTorsion i = i • torsion8`; limbs `< 2^26`. -/
+`i • torsion8`; limbs `< 2^26`. -/
 @[step]
-theorem EIGHT_TORSION_spec :
+theorem EIGHT_TORSION_toExtended :
     EIGHT_TORSION.«i686-tables»
       ⦃ (r : Array edwards.EdwardsPoint.«i686-tables» 8#usize) =>
-      ∀ i : Fin 8, r[i.val]!.toExtended = (eightTorsion i).toExtended ∧ r[i.val]!.LimbsLt 26 ⦄ := by
+      ∀ i : Fin 8, r[i.val]!.toExtended = ((i : ℕ) • torsion8).toExtended ∧
+        r[i.val]!.LimbsLt 26 ⦄ := by
   unfold EIGHT_TORSION.«i686-tables» EIGHT_TORSION_INNER_DOC_HIDDEN.«i686-tables»
   step as ⟨f0, h0⟩
   step as ⟨f1, h1⟩
@@ -103,47 +104,47 @@ theorem EIGHT_TORSION_spec :
   have b16 : f16.LimbsLt 26 := by rw [h16]; decide
   have b17 : f17.LimbsLt 26 := by rw [h17]; decide
   have e0 : (⟨f0, f1, f1, f2⟩ : edwards.EdwardsPoint.«i686-tables»).toExtended =
-      (eightTorsion 0).toExtended := by
-    rw [edwards.EdwardsPoint.«i686-tables».toExtended_def, Point.toExtended, eightTorsion_zero,
+      (0 • torsion8).toExtended := by
+    rw [edwards.EdwardsPoint.«i686-tables».toExtended_def, Point.toExtended, zero_nsmul,
       zero_x, zero_y, hz f2 h2, hz f0 h0, toField_eq_one_of_asNat f1n]
     rw [zero_mul]
   have e1 : (⟨f3, f4, f1, f5⟩ : edwards.EdwardsPoint.«i686-tables»).toExtended =
-      (eightTorsion 1).toExtended := by
-    rw [edwards.EdwardsPoint.«i686-tables».toExtended_def, Point.toExtended, eightTorsion_one,
+      (1 • torsion8).toExtended := by
+    rw [edwards.EdwardsPoint.«i686-tables».toExtended_def, Point.toExtended, one_nsmul,
       torsion8_x_eq, torsion8_y_eq, toField_mul_of_mod hT5, toField_eq_ofNat_of_asNat f3n,
       toField_eq_ofNat_of_asNat f4n, toField_eq_one_of_asNat f1n]
   have e2 : (⟨f6, f7, f1, f8⟩ : edwards.EdwardsPoint.«i686-tables»).toExtended =
-      (eightTorsion 2).toExtended := by
+      (2 • torsion8).toExtended := by
     rw [edwards.EdwardsPoint.«i686-tables».toExtended_def, Point.toExtended,
-      eightTorsion_two_x_eq, eightTorsion_two_y_eq, hz f8 h8, toField_eq_ofNat_of_asNat f6n,
+      two_nsmul_torsion8_x_eq, two_nsmul_torsion8_y_eq, hz f8 h8, toField_eq_ofNat_of_asNat f6n,
       hz f7 h7, toField_eq_one_of_asNat f1n]
     rw [mul_zero]
   have e3 : (⟨f3, f9, f1, f10⟩ : edwards.EdwardsPoint.«i686-tables»).toExtended =
-      (eightTorsion 3).toExtended := by
+      (3 • torsion8).toExtended := by
     rw [edwards.EdwardsPoint.«i686-tables».toExtended_def, Point.toExtended,
-      eightTorsion_three_x_eq, eightTorsion_three_y_eq, toField_mul_of_mod hT10,
+      three_nsmul_torsion8_x_eq, three_nsmul_torsion8_y_eq, toField_mul_of_mod hT10,
       toField_eq_ofNat_of_asNat f3n, toField_eq_ofNat_of_asNat f9n, toField_eq_one_of_asNat f1n]
   have e4 : (⟨f11, f12, f1, f13⟩ : edwards.EdwardsPoint.«i686-tables»).toExtended =
-      (eightTorsion 4).toExtended := by
+      (4 • torsion8).toExtended := by
     rw [edwards.EdwardsPoint.«i686-tables».toExtended_def, Point.toExtended,
-      eightTorsion_four_x_eq, eightTorsion_four_y_eq, hz f13 h13, hz f11 h11,
+      four_nsmul_torsion8_x_eq, four_nsmul_torsion8_y_eq, hz f13 h13, hz f11 h11,
       toField_eq_ofNat_of_asNat f12n, toField_eq_one_of_asNat f1n]
     rw [zero_mul]
   have e5 : (⟨f14, f9, f1, f5⟩ : edwards.EdwardsPoint.«i686-tables»).toExtended =
-      (eightTorsion 5).toExtended := by
+      (5 • torsion8).toExtended := by
     rw [edwards.EdwardsPoint.«i686-tables».toExtended_def, Point.toExtended,
-      eightTorsion_five_x_eq, eightTorsion_five_y_eq, toField_mul_of_mod hT5',
+      five_nsmul_torsion8_x_eq, five_nsmul_torsion8_y_eq, toField_mul_of_mod hT5',
       toField_eq_ofNat_of_asNat f14n, toField_eq_ofNat_of_asNat f9n, toField_eq_one_of_asNat f1n]
   have e6 : (⟨f15, f16, f1, f17⟩ : edwards.EdwardsPoint.«i686-tables»).toExtended =
-      (eightTorsion 6).toExtended := by
+      (6 • torsion8).toExtended := by
     rw [edwards.EdwardsPoint.«i686-tables».toExtended_def, Point.toExtended,
-      eightTorsion_six_x_eq, eightTorsion_six_y_eq, hz f17 h17, toField_eq_ofNat_of_asNat f15n,
+      six_nsmul_torsion8_x_eq, six_nsmul_torsion8_y_eq, hz f17 h17, toField_eq_ofNat_of_asNat f15n,
       hz f16 h16, toField_eq_one_of_asNat f1n]
     rw [mul_zero]
   have e7 : (⟨f14, f4, f1, f10⟩ : edwards.EdwardsPoint.«i686-tables»).toExtended =
-      (eightTorsion 7).toExtended := by
+      (7 • torsion8).toExtended := by
     rw [edwards.EdwardsPoint.«i686-tables».toExtended_def, Point.toExtended,
-      eightTorsion_seven_x_eq, eightTorsion_seven_y_eq, toField_mul_of_mod hT10',
+      seven_nsmul_torsion8_x_eq, seven_nsmul_torsion8_y_eq, toField_mul_of_mod hT10',
       toField_eq_ofNat_of_asNat f14n, toField_eq_ofNat_of_asNat f4n, toField_eq_one_of_asNat f1n]
   intro i
   fin_cases i
@@ -156,13 +157,13 @@ theorem EIGHT_TORSION_spec :
   · exact ⟨e6, b15, b16, b1, b17⟩
   · exact ⟨e7, b14, b4, b1, b10⟩
 
-/-- `EIGHT_TORSION`: entry `i` represents `eightTorsion i = i • torsion8`. -/
-theorem EIGHT_TORSION_spec_point :
+/-- `EIGHT_TORSION`: entry `i` represents `i • torsion8`. -/
+theorem EIGHT_TORSION_spec :
     EIGHT_TORSION.«i686-tables»
       ⦃ (r : Array edwards.EdwardsPoint.«i686-tables» 8#usize) =>
-      ∀ i : Fin 8, r[i.val]!.OnCurve ∧ r[i.val]!.toPoint = eightTorsion i ∧
+      ∀ i : Fin 8, r[i.val]!.OnCurve ∧ r[i.val]!.toPoint = (i : ℕ) • torsion8 ∧
         r[i.val]!.LimbsLt 26 ⦄ :=
-  spec_mono EIGHT_TORSION_spec fun r h i => by
+  spec_mono EIGHT_TORSION_toExtended fun r h i => by
     obtain ⟨hr, hb⟩ := h i
     rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff,
       edwards.EdwardsPoint.«i686-tables».toPoint_def, hr]
@@ -173,12 +174,13 @@ end «i686-tables»
 namespace «i686-no-tables»
 
 /-- `EIGHT_TORSION`: entry `i` has the extended coordinates `(x : y : 1 : x y)` of
-`eightTorsion i = i • torsion8`; limbs `< 2^26`. -/
+`i • torsion8`; limbs `< 2^26`. -/
 @[step]
-theorem EIGHT_TORSION_spec :
+theorem EIGHT_TORSION_toExtended :
     EIGHT_TORSION.«i686-no-tables»
       ⦃ (r : Array edwards.EdwardsPoint.«i686-no-tables» 8#usize) =>
-      ∀ i : Fin 8, r[i.val]!.toExtended = (eightTorsion i).toExtended ∧ r[i.val]!.LimbsLt 26 ⦄ := by
+      ∀ i : Fin 8, r[i.val]!.toExtended = ((i : ℕ) • torsion8).toExtended ∧
+        r[i.val]!.LimbsLt 26 ⦄ := by
   unfold EIGHT_TORSION.«i686-no-tables» EIGHT_TORSION_INNER_DOC_HIDDEN.«i686-no-tables»
   step as ⟨f0, h0⟩
   step as ⟨f1, h1⟩
@@ -249,47 +251,47 @@ theorem EIGHT_TORSION_spec :
   have b16 : f16.LimbsLt 26 := by rw [h16]; decide
   have b17 : f17.LimbsLt 26 := by rw [h17]; decide
   have e0 : (⟨f0, f1, f1, f2⟩ : edwards.EdwardsPoint.«i686-no-tables»).toExtended =
-      (eightTorsion 0).toExtended := by
-    rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def, Point.toExtended, eightTorsion_zero,
+      (0 • torsion8).toExtended := by
+    rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def, Point.toExtended, zero_nsmul,
       zero_x, zero_y, hz f2 h2, hz f0 h0, toField_eq_one_of_asNat f1n]
     rw [zero_mul]
   have e1 : (⟨f3, f4, f1, f5⟩ : edwards.EdwardsPoint.«i686-no-tables»).toExtended =
-      (eightTorsion 1).toExtended := by
-    rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def, Point.toExtended, eightTorsion_one,
+      (1 • torsion8).toExtended := by
+    rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def, Point.toExtended, one_nsmul,
       torsion8_x_eq, torsion8_y_eq, toField_mul_of_mod hT5, toField_eq_ofNat_of_asNat f3n,
       toField_eq_ofNat_of_asNat f4n, toField_eq_one_of_asNat f1n]
   have e2 : (⟨f6, f7, f1, f8⟩ : edwards.EdwardsPoint.«i686-no-tables»).toExtended =
-      (eightTorsion 2).toExtended := by
+      (2 • torsion8).toExtended := by
     rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def, Point.toExtended,
-      eightTorsion_two_x_eq, eightTorsion_two_y_eq, hz f8 h8, toField_eq_ofNat_of_asNat f6n,
+      two_nsmul_torsion8_x_eq, two_nsmul_torsion8_y_eq, hz f8 h8, toField_eq_ofNat_of_asNat f6n,
       hz f7 h7, toField_eq_one_of_asNat f1n]
     rw [mul_zero]
   have e3 : (⟨f3, f9, f1, f10⟩ : edwards.EdwardsPoint.«i686-no-tables»).toExtended =
-      (eightTorsion 3).toExtended := by
+      (3 • torsion8).toExtended := by
     rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def, Point.toExtended,
-      eightTorsion_three_x_eq, eightTorsion_three_y_eq, toField_mul_of_mod hT10,
+      three_nsmul_torsion8_x_eq, three_nsmul_torsion8_y_eq, toField_mul_of_mod hT10,
       toField_eq_ofNat_of_asNat f3n, toField_eq_ofNat_of_asNat f9n, toField_eq_one_of_asNat f1n]
   have e4 : (⟨f11, f12, f1, f13⟩ : edwards.EdwardsPoint.«i686-no-tables»).toExtended =
-      (eightTorsion 4).toExtended := by
+      (4 • torsion8).toExtended := by
     rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def, Point.toExtended,
-      eightTorsion_four_x_eq, eightTorsion_four_y_eq, hz f13 h13, hz f11 h11,
+      four_nsmul_torsion8_x_eq, four_nsmul_torsion8_y_eq, hz f13 h13, hz f11 h11,
       toField_eq_ofNat_of_asNat f12n, toField_eq_one_of_asNat f1n]
     rw [zero_mul]
   have e5 : (⟨f14, f9, f1, f5⟩ : edwards.EdwardsPoint.«i686-no-tables»).toExtended =
-      (eightTorsion 5).toExtended := by
+      (5 • torsion8).toExtended := by
     rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def, Point.toExtended,
-      eightTorsion_five_x_eq, eightTorsion_five_y_eq, toField_mul_of_mod hT5',
+      five_nsmul_torsion8_x_eq, five_nsmul_torsion8_y_eq, toField_mul_of_mod hT5',
       toField_eq_ofNat_of_asNat f14n, toField_eq_ofNat_of_asNat f9n, toField_eq_one_of_asNat f1n]
   have e6 : (⟨f15, f16, f1, f17⟩ : edwards.EdwardsPoint.«i686-no-tables»).toExtended =
-      (eightTorsion 6).toExtended := by
+      (6 • torsion8).toExtended := by
     rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def, Point.toExtended,
-      eightTorsion_six_x_eq, eightTorsion_six_y_eq, hz f17 h17, toField_eq_ofNat_of_asNat f15n,
+      six_nsmul_torsion8_x_eq, six_nsmul_torsion8_y_eq, hz f17 h17, toField_eq_ofNat_of_asNat f15n,
       hz f16 h16, toField_eq_one_of_asNat f1n]
     rw [mul_zero]
   have e7 : (⟨f14, f4, f1, f10⟩ : edwards.EdwardsPoint.«i686-no-tables»).toExtended =
-      (eightTorsion 7).toExtended := by
+      (7 • torsion8).toExtended := by
     rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def, Point.toExtended,
-      eightTorsion_seven_x_eq, eightTorsion_seven_y_eq, toField_mul_of_mod hT10',
+      seven_nsmul_torsion8_x_eq, seven_nsmul_torsion8_y_eq, toField_mul_of_mod hT10',
       toField_eq_ofNat_of_asNat f14n, toField_eq_ofNat_of_asNat f4n, toField_eq_one_of_asNat f1n]
   intro i
   fin_cases i
@@ -302,13 +304,13 @@ theorem EIGHT_TORSION_spec :
   · exact ⟨e6, b15, b16, b1, b17⟩
   · exact ⟨e7, b14, b4, b1, b10⟩
 
-/-- `EIGHT_TORSION`: entry `i` represents `eightTorsion i = i • torsion8`. -/
-theorem EIGHT_TORSION_spec_point :
+/-- `EIGHT_TORSION`: entry `i` represents `i • torsion8`. -/
+theorem EIGHT_TORSION_spec :
     EIGHT_TORSION.«i686-no-tables»
       ⦃ (r : Array edwards.EdwardsPoint.«i686-no-tables» 8#usize) =>
-      ∀ i : Fin 8, r[i.val]!.OnCurve ∧ r[i.val]!.toPoint = eightTorsion i ∧
+      ∀ i : Fin 8, r[i.val]!.OnCurve ∧ r[i.val]!.toPoint = (i : ℕ) • torsion8 ∧
         r[i.val]!.LimbsLt 26 ⦄ :=
-  spec_mono EIGHT_TORSION_spec fun r h i => by
+  spec_mono EIGHT_TORSION_toExtended fun r h i => by
     obtain ⟨hr, hb⟩ := h i
     rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff,
       edwards.EdwardsPoint.«i686-no-tables».toPoint_def, hr]

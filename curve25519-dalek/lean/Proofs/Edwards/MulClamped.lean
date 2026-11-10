@@ -8,6 +8,7 @@ public import Curve25519Dalek.Funs
 public import Defs.Edwards
 import Proofs.Edwards.Mul
 import Proofs.Scalar.ClampInteger
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
@@ -16,13 +17,14 @@ namespace Curve25519Dalek.edwards
 
 namespace «EdwardsPointx86_64-tables»
 
-/-- `EdwardsPoint::mul_clamped`: `clamp bytes • P`, with RFC 7748's clamping of the
+/-- `EdwardsPoint::mul_clamped`: `clamp bytes • self`, with RFC 7748's clamping of the
 little-endian value of `bytes`; limbs `< 2^52`. -/
 @[step]
 theorem mul_clamped_spec (self : EdwardsPoint.«x86_64-tables») (bytes : Array U8 32#usize)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) :
     mul_clamped self bytes ⦃ (r : EdwardsPoint.«x86_64-tables») =>
-      r.OnCurve ∧ r.toPoint = clamp (bytes.asNat 8) • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
+      r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
+  simp only [Aeneas.Std.Array.decodeScalar25519_toVector]
   unfold mul_clamped
   step as ⟨a, ha⟩
   have hca : ({ bytes := a } : scalar.Scalar).asNat = clamp (bytes.asNat 8) := by
@@ -38,13 +40,14 @@ end «EdwardsPointx86_64-tables»
 
 namespace «EdwardsPointi686-tables»
 
-/-- `EdwardsPoint::mul_clamped`: `clamp bytes • P`, with RFC 7748's clamping of the
+/-- `EdwardsPoint::mul_clamped`: `clamp bytes • self`, with RFC 7748's clamping of the
 little-endian value of `bytes`; limbs `< 2^26`. -/
 @[step]
 theorem mul_clamped_spec (self : EdwardsPoint.«i686-tables») (bytes : Array U8 32#usize)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) :
     mul_clamped self bytes ⦃ (r : EdwardsPoint.«i686-tables») =>
-      r.OnCurve ∧ r.toPoint = clamp (bytes.asNat 8) • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
+      r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
+  simp only [Aeneas.Std.Array.decodeScalar25519_toVector]
   unfold mul_clamped
   step as ⟨a, ha⟩
   have hca : ({ bytes := a } : scalar.Scalar).asNat = clamp (bytes.asNat 8) := by
@@ -60,13 +63,14 @@ end «EdwardsPointi686-tables»
 
 namespace «EdwardsPointx86_64-no-tables»
 
-/-- `EdwardsPoint::mul_clamped`: `clamp bytes • P`, with RFC 7748's clamping of the
+/-- `EdwardsPoint::mul_clamped`: `clamp bytes • self`, with RFC 7748's clamping of the
 little-endian value of `bytes`; limbs `< 2^52`. -/
 @[step]
 theorem mul_clamped_spec (self : EdwardsPoint.«x86_64-no-tables») (bytes : Array U8 32#usize)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) :
     mul_clamped self bytes ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ r.toPoint = clamp (bytes.asNat 8) • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
+      r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
+  simp only [Aeneas.Std.Array.decodeScalar25519_toVector]
   unfold mul_clamped
   step as ⟨a, ha⟩
   have hca : ({ bytes := a } : scalar.Scalar).asNat = clamp (bytes.asNat 8) := by
@@ -82,13 +86,14 @@ end «EdwardsPointx86_64-no-tables»
 
 namespace «EdwardsPointi686-no-tables»
 
-/-- `EdwardsPoint::mul_clamped`: `clamp bytes • P`, with RFC 7748's clamping of the
+/-- `EdwardsPoint::mul_clamped`: `clamp bytes • self`, with RFC 7748's clamping of the
 little-endian value of `bytes`; limbs `< 2^26`. -/
 @[step]
 theorem mul_clamped_spec (self : EdwardsPoint.«i686-no-tables») (bytes : Array U8 32#usize)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) :
     mul_clamped self bytes ⦃ (r : EdwardsPoint.«i686-no-tables») =>
-      r.OnCurve ∧ r.toPoint = clamp (bytes.asNat 8) • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
+      r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
+  simp only [Aeneas.Std.Array.decodeScalar25519_toVector]
   unfold mul_clamped
   step as ⟨a, ha⟩
   have hca : ({ bytes := a } : scalar.Scalar).asNat = clamp (bytes.asNat 8) := by

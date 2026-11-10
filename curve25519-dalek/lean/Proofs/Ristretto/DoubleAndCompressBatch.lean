@@ -6,7 +6,7 @@ module
 public import Curve25519Dalek.Funs
 public import Curve25519.Ristretto.Encoding
 public import Defs.Edwards
-public import Defs.Iterator
+public import ToAeneas.Iterator
 public import Defs.Ristretto
 import Proofs.Backend.Serial.U64.Constants.EdwardsD
 import Proofs.Backend.Serial.U64.Constants.InvsqrtAMinusD
@@ -43,6 +43,7 @@ import Proofs.Helpers.ToField2625
 public import Proofs.Field.Invsqrt
 import Proofs.Helpers.Backend.U32.Bytes
 import Proofs.Helpers.Backend.U64.Bytes
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `RistrettoPoint::double_and_compress_batch`
@@ -50,7 +51,7 @@ public section
 The patched code collects a `BatchCompressState` per point (the doubling quantities
 `e, f, g, h` and the products `e g`, `f h`), inverts the products `e g · f h` in one batch, and
 encodes each doubled point from its state and inverse
-(`RistrettoCompress.doubleCompress_eq_encodeRep`). -/
+(`RistrettoCompress.doubleCompress_eq_encodeRepNat`). -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 open Curve25519Dalek.backend.serial.u64.field (FieldElement51)
@@ -149,8 +150,8 @@ theorem compressStateBody_spec (hsub : B.SubSpec) (hmul : B.MulSpec) (hneg : B.N
     (Sfh : B.toField fh = B.toField f * B.toField h) (Seb : B.SqIn e) (Sfb : B.SqIn f)
     (Sgb : B.SqIn g) (Shb : B.SqIn h) (Segb : B.Red eg) (Sfhb : B.Red fh)
     (Inv : B.toField inv = (B.toField eg * B.toField fh)⁻¹) (Invb : B.Red inv) :
-    B.compressStateBody e f g h eg fh inv ⦃ (bytes : ristretto.CompressedRistretto) =>
-      bytes.asNat = Ristretto.encodeRep (2 • (⟨X, Y, Z, T⟩ : edwards.Extended).toPoint) ⦄ := by
+    B.compressStateBody e f g h eg fh inv ⦃ (r : ristretto.CompressedRistretto) =>
+      r.asNat = Ristretto.encodeRepNat (2 • (⟨X, Y, Z, T⟩ : edwards.Extended).toPoint) ⦄ := by
   have hx : (⟨X, Y, Z, T⟩ : edwards.Extended).toPoint.x = X / Z :=
     TwistedEdwardsModel.Extended.toPoint_x hP
   have hy : (⟨X, Y, Z, T⟩ : edwards.Extended).toPoint.y = Y / Z :=
@@ -223,7 +224,7 @@ theorem compressStateBody_spec (hsub : B.SubSpec) (hmul : B.MulSpec) (hneg : B.N
     eq_ite_of_choice hsnv (eq_one_iff_isNeg hsn) (fun h => by rw [hs10 h])
       (fun h => (hs11 h).1)
   rw [ristretto.CompressedRistretto.asNat_def, hbytes, S1,
-    ← RistrettoCompress.doubleCompress_eq_encodeRep _ C hZ0 hXYZT hx hy, ← Se, ← Sf, ← Sg,
+    ← RistrettoCompress.doubleCompress_eq_encodeRepNat _ C hZ0 hXYZT hx hy, ← Se, ← Sf, ← Sg,
     ← Sh]
   congr 1
   dsimp only [RistrettoCompress.doubleCompress]
@@ -534,7 +535,7 @@ private theorem compressState_spec (P : RistrettoPoint.«x86_64-tables») (hP : 
     (st : BatchCompressState) (hst : StateOf P st) (inv : FieldElement51)
     (Inv : inv.toField = (st.eg.toField * st.fh.toField)⁻¹) (Invb : inv.LimbsLt 52) :
     compressState st inv ⦃ (bytes : CompressedRistretto) =>
-      bytes.asNat = Ristretto.encodeRep (2 • P.toPoint) ⦄ := by
+      bytes.asNat = Ristretto.encodeRepNat (2 • P.toPoint) ⦄ := by
   obtain ⟨Se, Sf, Sg, Sh, Seg, Sfh, Seb, Sfb, Sgb, Shb, Segb, Sfhb⟩ := hst
   rw [edwards.EdwardsPoint.«x86_64-tables».onCurve_iff,
     edwards.EdwardsPoint.«x86_64-tables».toExtended_def] at hP
@@ -557,18 +558,18 @@ private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.Bat
     (hinvlen : invs.length = states.length)
     (out : alloc.vec.Vec CompressedRistretto) (i : Usize) (hi : i.val ≤ states.length)
     (hlen : out.length = i.val)
-    (hout : ∀ k < i.val, out[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) :
+    (hout : ∀ k < i.val, out[k]!.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint)) :
     double_and_compress_batch_loop2 { start := i, «end» := states.len } states invs out
       ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
       r.length = states.length ∧
-        ∀ k < states.length, r[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint) ⦄ := by
+        ∀ k < states.length, r[k]!.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint) ⦄ := by
   have hpslen : ps.length = states.length := by
     rw [hsts.length_eq]
   unfold double_and_compress_batch_loop2
   apply loop.spec_decr_nat (measure := fun (it, _) => states.length - it.start.val)
     (inv := fun (it, o) => it.end = states.len ∧ it.start.val ≤ states.length ∧
       o.length = it.start.val ∧ ∀ k < it.start.val,
-      o[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint))
+      o[k]!.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint))
   · rintro ⟨it, o⟩ ⟨hend, hi', hl, ho⟩
     dsimp only
     rw [loop1_body_eq]
@@ -599,7 +600,7 @@ private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.Bat
         by rw [alloc.vec.Vec.length_of_val_eq_append ho1, hl, hstart1], ?_, by scalar_tac⟩
       rw [hstart1, ← hl]
       refine alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
-        x.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) ho1 (hl ▸ ho) ?_
+        x.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint)) ho1 (hl ▸ ho) ?_
       rw [hl]
       exact hbytes
     · have hge : it.end.val ≤ it.start.val := by
@@ -620,10 +621,13 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
       core.iter.traits.collect.IntoIterator I RistrettoPoint.«x86_64-tables» Clause0_IntoIter)
     (points : I) (ps : List RistrettoPoint.«x86_64-tables»)
     (hpoints : pointsInst.Yields points ps)
-    (hps : ∀ P ∈ ps, P.LimbsLt 52 ∧ P.OnCurve) (hlen : ps.length ≤ Usize.max) :
+    (hps : ∀ P ∈ ps, P.LimbsLt 52)
+    (hps_on : ∀ P ∈ ps, P.OnCurve) (hlen : ps.length ≤ Usize.max) :
     double_and_compress_batch pointsInst points ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
       r.length = ps.length ∧
-        ∀ i < ps.length, r[i]!.asNat = Ristretto.encodeRep (2 • (ps[i]!).toPoint) ⦄ := by
+        ∀ i < ps.length, r[i]!.toVector = Ristretto.encodeRep (2 • (ps[i]!).toPoint) ⦄ := by
+  simp only [Curve25519Dalek.ristretto.CompressedRistretto.toVector_eq_encodeRep_iff]
+  have hps : ∀ P ∈ ps, P.LimbsLt 52 ∧ P.OnCurve := fun P hP => ⟨hps P hP, hps_on P hP⟩
   unfold double_and_compress_batch
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause0_IntoIter) => pointsInst.iteratorInst.Yields it ps ⦄ := hpoints
@@ -635,8 +639,9 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
       have h := forall₂_getElem! hsts k (hpslen ▸ hk)
       rw [alloc.vec.Vec.getElem!_Nat_eq]
       exact ⟨h.2.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.2⟩
-  simp only [SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter,
-    core.slice.Slice.iter, bind_ok]
+  step with SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter_spec
+    as ⟨it2, hit2⟩
+  subst hit2
   step with loop0_spec states hst (alloc.vec.Vec.with_capacity FieldElement51 states.len) 0
     (by simp) (by rfl) (fun k hk => absurd hk (by simp)) as ⟨invs1, hinvs1len, hinvs1⟩
   simp only [alloc.vec.Vec.index_mut, pure]
@@ -745,7 +750,7 @@ private theorem compressState_spec (P : RistrettoPoint.«i686-tables») (hP : P.
     (st : BatchCompressState) (hst : StateOf P st) (inv : FieldElement2625)
     (Inv : inv.toField = (st.eg.toField * st.fh.toField)⁻¹) (Invb : inv.LimbsLt 26) :
     compressState st inv ⦃ (bytes : CompressedRistretto) =>
-      bytes.asNat = Ristretto.encodeRep (2 • P.toPoint) ⦄ := by
+      bytes.asNat = Ristretto.encodeRepNat (2 • P.toPoint) ⦄ := by
   obtain ⟨Se, Sf, Sg, Sh, Seg, Sfh, Seb, Sfb, Sgb, Shb, Segb, Sfhb⟩ := hst
   rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff,
     edwards.EdwardsPoint.«i686-tables».toExtended_def] at hP
@@ -768,18 +773,18 @@ private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.Bat
     (hinvlen : invs.length = states.length)
     (out : alloc.vec.Vec CompressedRistretto) (i : Usize) (hi : i.val ≤ states.length)
     (hlen : out.length = i.val)
-    (hout : ∀ k < i.val, out[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) :
+    (hout : ∀ k < i.val, out[k]!.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint)) :
     double_and_compress_batch_loop2 { start := i, «end» := states.len } states invs out
       ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
       r.length = states.length ∧
-        ∀ k < states.length, r[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint) ⦄ := by
+        ∀ k < states.length, r[k]!.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint) ⦄ := by
   have hpslen : ps.length = states.length := by
     rw [hsts.length_eq]
   unfold double_and_compress_batch_loop2
   apply loop.spec_decr_nat (measure := fun (it, _) => states.length - it.start.val)
     (inv := fun (it, o) => it.end = states.len ∧ it.start.val ≤ states.length ∧
       o.length = it.start.val ∧ ∀ k < it.start.val,
-      o[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint))
+      o[k]!.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint))
   · rintro ⟨it, o⟩ ⟨hend, hi', hl, ho⟩
     dsimp only
     rw [loop1_body_eq]
@@ -810,7 +815,7 @@ private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.Bat
         by rw [alloc.vec.Vec.length_of_val_eq_append ho1, hl, hstart1], ?_, by scalar_tac⟩
       rw [hstart1, ← hl]
       refine alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
-        x.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) ho1 (hl ▸ ho) ?_
+        x.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint)) ho1 (hl ▸ ho) ?_
       rw [hl]
       exact hbytes
     · have hge : it.end.val ≤ it.start.val := by
@@ -831,10 +836,13 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
       core.iter.traits.collect.IntoIterator I RistrettoPoint.«i686-tables» Clause0_IntoIter)
     (points : I) (ps : List RistrettoPoint.«i686-tables»)
     (hpoints : pointsInst.Yields points ps)
-    (hps : ∀ P ∈ ps, P.LimbsLt 26 ∧ P.OnCurve) (hlen : ps.length ≤ Usize.max) :
+    (hps : ∀ P ∈ ps, P.LimbsLt 26)
+    (hps_on : ∀ P ∈ ps, P.OnCurve) (hlen : ps.length ≤ Usize.max) :
     double_and_compress_batch pointsInst points ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
       r.length = ps.length ∧
-        ∀ i < ps.length, r[i]!.asNat = Ristretto.encodeRep (2 • (ps[i]!).toPoint) ⦄ := by
+        ∀ i < ps.length, r[i]!.toVector = Ristretto.encodeRep (2 • (ps[i]!).toPoint) ⦄ := by
+  simp only [Curve25519Dalek.ristretto.CompressedRistretto.toVector_eq_encodeRep_iff]
+  have hps : ∀ P ∈ ps, P.LimbsLt 26 ∧ P.OnCurve := fun P hP => ⟨hps P hP, hps_on P hP⟩
   unfold double_and_compress_batch
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause0_IntoIter) => pointsInst.iteratorInst.Yields it ps ⦄ := hpoints
@@ -846,8 +854,9 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
       have h := forall₂_getElem! hsts k (hpslen ▸ hk)
       rw [alloc.vec.Vec.getElem!_Nat_eq]
       exact ⟨h.2.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.2⟩
-  simp only [SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter,
-    core.slice.Slice.iter, bind_ok]
+  step with SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter_spec
+    as ⟨it2, hit2⟩
+  subst hit2
   step with loop0_spec states hst (alloc.vec.Vec.with_capacity FieldElement2625 states.len) 0
     (by simp) (by rfl) (fun k hk => absurd hk (by simp)) as ⟨invs1, hinvs1len, hinvs1⟩
   simp only [alloc.vec.Vec.index_mut, pure]
@@ -1174,7 +1183,7 @@ private theorem compressState_spec (P : RistrettoPoint.«x86_64-no-tables») (hP
     (st : BatchCompressState) (hst : StateOf P st) (inv : FieldElement51)
     (Inv : inv.toField = (st.eg.toField * st.fh.toField)⁻¹) (Invb : inv.LimbsLt 52) :
     compressState st inv ⦃ (bytes : CompressedRistretto) =>
-      bytes.asNat = Ristretto.encodeRep (2 • P.toPoint) ⦄ := by
+      bytes.asNat = Ristretto.encodeRepNat (2 • P.toPoint) ⦄ := by
   obtain ⟨Se, Sf, Sg, Sh, Seg, Sfh, Seb, Sfb, Sgb, Shb, Segb, Sfhb⟩ := hst
   rw [edwards.EdwardsPoint.«x86_64-no-tables».onCurve_iff,
     edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def] at hP
@@ -1197,18 +1206,18 @@ private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.Bat
     (hinvlen : invs.length = states.length)
     (out : alloc.vec.Vec CompressedRistretto) (i : Usize) (hi : i.val ≤ states.length)
     (hlen : out.length = i.val)
-    (hout : ∀ k < i.val, out[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) :
+    (hout : ∀ k < i.val, out[k]!.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint)) :
     double_and_compress_batch_loop2 { start := i, «end» := states.len } states invs out
       ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
       r.length = states.length ∧
-        ∀ k < states.length, r[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint) ⦄ := by
+        ∀ k < states.length, r[k]!.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint) ⦄ := by
   have hpslen : ps.length = states.length := by
     rw [hsts.length_eq]
   unfold double_and_compress_batch_loop2
   apply loop.spec_decr_nat (measure := fun (it, _) => states.length - it.start.val)
     (inv := fun (it, o) => it.end = states.len ∧ it.start.val ≤ states.length ∧
       o.length = it.start.val ∧ ∀ k < it.start.val,
-      o[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint))
+      o[k]!.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint))
   · rintro ⟨it, o⟩ ⟨hend, hi', hl, ho⟩
     dsimp only
     rw [loop1_body_eq]
@@ -1239,7 +1248,7 @@ private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.Bat
         by rw [alloc.vec.Vec.length_of_val_eq_append ho1, hl, hstart1], ?_, by scalar_tac⟩
       rw [hstart1, ← hl]
       refine alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
-        x.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) ho1 (hl ▸ ho) ?_
+        x.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint)) ho1 (hl ▸ ho) ?_
       rw [hl]
       exact hbytes
     · have hge : it.end.val ≤ it.start.val := by
@@ -1260,10 +1269,13 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
       core.iter.traits.collect.IntoIterator I RistrettoPoint.«x86_64-no-tables» Clause0_IntoIter)
     (points : I) (ps : List RistrettoPoint.«x86_64-no-tables»)
     (hpoints : pointsInst.Yields points ps)
-    (hps : ∀ P ∈ ps, P.LimbsLt 52 ∧ P.OnCurve) (hlen : ps.length ≤ Usize.max) :
+    (hps : ∀ P ∈ ps, P.LimbsLt 52)
+    (hps_on : ∀ P ∈ ps, P.OnCurve) (hlen : ps.length ≤ Usize.max) :
     double_and_compress_batch pointsInst points ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
       r.length = ps.length ∧
-        ∀ i < ps.length, r[i]!.asNat = Ristretto.encodeRep (2 • (ps[i]!).toPoint) ⦄ := by
+        ∀ i < ps.length, r[i]!.toVector = Ristretto.encodeRep (2 • (ps[i]!).toPoint) ⦄ := by
+  simp only [Curve25519Dalek.ristretto.CompressedRistretto.toVector_eq_encodeRep_iff]
+  have hps : ∀ P ∈ ps, P.LimbsLt 52 ∧ P.OnCurve := fun P hP => ⟨hps P hP, hps_on P hP⟩
   unfold double_and_compress_batch
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause0_IntoIter) => pointsInst.iteratorInst.Yields it ps ⦄ := hpoints
@@ -1275,8 +1287,9 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
       have h := forall₂_getElem! hsts k (hpslen ▸ hk)
       rw [alloc.vec.Vec.getElem!_Nat_eq]
       exact ⟨h.2.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.2⟩
-  simp only [SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter,
-    core.slice.Slice.iter, bind_ok]
+  step with SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter_spec
+    as ⟨it2, hit2⟩
+  subst hit2
   step with loop0_spec states hst (alloc.vec.Vec.with_capacity FieldElement51 states.len) 0
     (by simp) (by rfl) (fun k hk => absurd hk (by simp)) as ⟨invs1, hinvs1len, hinvs1⟩
   simp only [alloc.vec.Vec.index_mut, pure]
@@ -1385,7 +1398,7 @@ private theorem compressState_spec (P : RistrettoPoint.«i686-no-tables») (hP :
     (st : BatchCompressState) (hst : StateOf P st) (inv : FieldElement2625)
     (Inv : inv.toField = (st.eg.toField * st.fh.toField)⁻¹) (Invb : inv.LimbsLt 26) :
     compressState st inv ⦃ (bytes : CompressedRistretto) =>
-      bytes.asNat = Ristretto.encodeRep (2 • P.toPoint) ⦄ := by
+      bytes.asNat = Ristretto.encodeRepNat (2 • P.toPoint) ⦄ := by
   obtain ⟨Se, Sf, Sg, Sh, Seg, Sfh, Seb, Sfb, Sgb, Shb, Segb, Sfhb⟩ := hst
   rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff,
     edwards.EdwardsPoint.«i686-no-tables».toExtended_def] at hP
@@ -1408,18 +1421,18 @@ private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.Bat
     (hinvlen : invs.length = states.length)
     (out : alloc.vec.Vec CompressedRistretto) (i : Usize) (hi : i.val ≤ states.length)
     (hlen : out.length = i.val)
-    (hout : ∀ k < i.val, out[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) :
+    (hout : ∀ k < i.val, out[k]!.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint)) :
     double_and_compress_batch_loop2 { start := i, «end» := states.len } states invs out
       ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
       r.length = states.length ∧
-        ∀ k < states.length, r[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint) ⦄ := by
+        ∀ k < states.length, r[k]!.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint) ⦄ := by
   have hpslen : ps.length = states.length := by
     rw [hsts.length_eq]
   unfold double_and_compress_batch_loop2
   apply loop.spec_decr_nat (measure := fun (it, _) => states.length - it.start.val)
     (inv := fun (it, o) => it.end = states.len ∧ it.start.val ≤ states.length ∧
       o.length = it.start.val ∧ ∀ k < it.start.val,
-      o[k]!.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint))
+      o[k]!.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint))
   · rintro ⟨it, o⟩ ⟨hend, hi', hl, ho⟩
     dsimp only
     rw [loop1_body_eq]
@@ -1450,7 +1463,7 @@ private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.Bat
         by rw [alloc.vec.Vec.length_of_val_eq_append ho1, hl, hstart1], ?_, by scalar_tac⟩
       rw [hstart1, ← hl]
       refine alloc.vec.Vec.forall_lt_of_val_eq_append (P := fun k x =>
-        x.asNat = Ristretto.encodeRep (2 • (ps[k]!).toPoint)) ho1 (hl ▸ ho) ?_
+        x.asNat = Ristretto.encodeRepNat (2 • (ps[k]!).toPoint)) ho1 (hl ▸ ho) ?_
       rw [hl]
       exact hbytes
     · have hge : it.end.val ≤ it.start.val := by
@@ -1471,10 +1484,13 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
       core.iter.traits.collect.IntoIterator I RistrettoPoint.«i686-no-tables» Clause0_IntoIter)
     (points : I) (ps : List RistrettoPoint.«i686-no-tables»)
     (hpoints : pointsInst.Yields points ps)
-    (hps : ∀ P ∈ ps, P.LimbsLt 26 ∧ P.OnCurve) (hlen : ps.length ≤ Usize.max) :
+    (hps : ∀ P ∈ ps, P.LimbsLt 26)
+    (hps_on : ∀ P ∈ ps, P.OnCurve) (hlen : ps.length ≤ Usize.max) :
     double_and_compress_batch pointsInst points ⦃ (r : alloc.vec.Vec CompressedRistretto) =>
       r.length = ps.length ∧
-        ∀ i < ps.length, r[i]!.asNat = Ristretto.encodeRep (2 • (ps[i]!).toPoint) ⦄ := by
+        ∀ i < ps.length, r[i]!.toVector = Ristretto.encodeRep (2 • (ps[i]!).toPoint) ⦄ := by
+  simp only [Curve25519Dalek.ristretto.CompressedRistretto.toVector_eq_encodeRep_iff]
+  have hps : ∀ P ∈ ps, P.LimbsLt 26 ∧ P.OnCurve := fun P hP => ⟨hps P hP, hps_on P hP⟩
   unfold double_and_compress_batch
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause0_IntoIter) => pointsInst.iteratorInst.Yields it ps ⦄ := hpoints
@@ -1486,8 +1502,9 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
       have h := forall₂_getElem! hsts k (hpslen ▸ hk)
       rw [alloc.vec.Vec.getElem!_Nat_eq]
       exact ⟨h.2.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.2⟩
-  simp only [SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter,
-    core.slice.Slice.iter, bind_ok]
+  step with SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter_spec
+    as ⟨it2, hit2⟩
+  subst hit2
   step with loop0_spec states hst (alloc.vec.Vec.with_capacity FieldElement2625 states.len) 0
     (by simp) (by rfl) (fun k hk => absurd hk (by simp)) as ⟨invs1, hinvs1len, hinvs1⟩
   simp only [alloc.vec.Vec.index_mut, pure]

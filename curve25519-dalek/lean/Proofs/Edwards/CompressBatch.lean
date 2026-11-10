@@ -15,6 +15,7 @@ import Proofs.Helpers.StepSpecs
 import Proofs.Helpers.ToField
 import Proofs.Backend.Serial.U32.Field.Mul
 import Proofs.Helpers.ToField2625
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `EdwardsPoint::compress_batch`
@@ -69,7 +70,7 @@ private theorem compress_batch.closure_1.call_mut_spec {N : Usize}
 /-- `EdwardsPoint::compress_batch`: entry `i` is the canonical `y = Y / Z` of point `i` with the
 sign of `x = X / Z` in bit `255`; limbs `< 2^52`. -/
 @[step]
-theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«x86_64-tables» N)
+theorem compress_batch_asNat {N : Usize} (inputs : Array EdwardsPoint.«x86_64-tables» N)
     (hinputs : ∀ i < N.val, inputs[i]!.LimbsLt 52) :
     compress_batch inputs ⦃ (r : Array CompressedEdwardsY N) =>
       ∀ i < N.val, r[i]!.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
@@ -101,13 +102,14 @@ theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«x86_64-ta
     exact compress_batch.closure.call_mut_spec inputs i hi
 
 /-- `EdwardsPoint::compress_batch`: entry `i` is RFC 8032's encoding of point `i`. -/
-theorem compress_batch_spec_point {N : Usize} (inputs : Array EdwardsPoint.«x86_64-tables» N)
+theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«x86_64-tables» N)
     (hinputs : ∀ i < N.val, inputs[i]!.LimbsLt 52) (hinputs_on : ∀ i < N.val, inputs[i]!.OnCurve) :
     compress_batch inputs ⦃ (r : Array CompressedEdwardsY N) =>
-      ∀ i < N.val, r[i]!.asNat = curve25519.encode inputs[i]!.toPoint ⦄ :=
-  spec_mono (compress_batch_spec inputs hinputs) fun r hr i hi => by
-    rw [hr i hi, encode_eq, EdwardsPoint.«x86_64-tables».toPoint_x (hinputs_on i hi),
-      EdwardsPoint.«x86_64-tables».toPoint_y (hinputs_on i hi)]
+      ∀ i < N.val, r[i]!.toVector = curve25519.encode inputs[i]!.toPoint ⦄ := by
+  simp only [Curve25519Dalek.edwards.CompressedEdwardsY.toVector_eq_encode_iff]
+  exact spec_mono (compress_batch_asNat inputs hinputs) fun r hr i hi => by
+      rw [hr i hi, encodeNat_eq, EdwardsPoint.«x86_64-tables».toPoint_x (hinputs_on i hi),
+        EdwardsPoint.«x86_64-tables».toPoint_y (hinputs_on i hi)]
 
 end «EdwardsPointx86_64-tables»
 
@@ -152,7 +154,7 @@ private theorem compress_batch.closure_1.call_mut_spec {N : Usize}
 /-- `EdwardsPoint::compress_batch`: entry `i` is the canonical `y = Y / Z` of point `i` with the
 sign of `x = X / Z` in bit `255`; limbs `< 2^26`. -/
 @[step]
-theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«i686-tables» N)
+theorem compress_batch_asNat {N : Usize} (inputs : Array EdwardsPoint.«i686-tables» N)
     (hinputs : ∀ i < N.val, inputs[i]!.LimbsLt 26) :
     compress_batch inputs ⦃ (r : Array CompressedEdwardsY N) =>
       ∀ i < N.val, r[i]!.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
@@ -184,13 +186,14 @@ theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«i686-tabl
     exact compress_batch.closure.call_mut_spec inputs i hi
 
 /-- `EdwardsPoint::compress_batch`: entry `i` is RFC 8032's encoding of point `i`. -/
-theorem compress_batch_spec_point {N : Usize} (inputs : Array EdwardsPoint.«i686-tables» N)
+theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«i686-tables» N)
     (hinputs : ∀ i < N.val, inputs[i]!.LimbsLt 26) (hinputs_on : ∀ i < N.val, inputs[i]!.OnCurve) :
     compress_batch inputs ⦃ (r : Array CompressedEdwardsY N) =>
-      ∀ i < N.val, r[i]!.asNat = curve25519.encode inputs[i]!.toPoint ⦄ :=
-  spec_mono (compress_batch_spec inputs hinputs) fun r hr i hi => by
-    rw [hr i hi, encode_eq, EdwardsPoint.«i686-tables».toPoint_x (hinputs_on i hi),
-      EdwardsPoint.«i686-tables».toPoint_y (hinputs_on i hi)]
+      ∀ i < N.val, r[i]!.toVector = curve25519.encode inputs[i]!.toPoint ⦄ := by
+  simp only [Curve25519Dalek.edwards.CompressedEdwardsY.toVector_eq_encode_iff]
+  exact spec_mono (compress_batch_asNat inputs hinputs) fun r hr i hi => by
+      rw [hr i hi, encodeNat_eq, EdwardsPoint.«i686-tables».toPoint_x (hinputs_on i hi),
+        EdwardsPoint.«i686-tables».toPoint_y (hinputs_on i hi)]
 
 end «EdwardsPointi686-tables»
 
@@ -235,7 +238,7 @@ private theorem compress_batch.closure_1.call_mut_spec {N : Usize}
 /-- `EdwardsPoint::compress_batch`: entry `i` is the canonical `y = Y / Z` of point `i` with the
 sign of `x = X / Z` in bit `255`; limbs `< 2^52`. -/
 @[step]
-theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«x86_64-no-tables» N)
+theorem compress_batch_asNat {N : Usize} (inputs : Array EdwardsPoint.«x86_64-no-tables» N)
     (hinputs : ∀ i < N.val, inputs[i]!.LimbsLt 52) :
     compress_batch inputs ⦃ (r : Array CompressedEdwardsY N) =>
       ∀ i < N.val, r[i]!.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
@@ -267,13 +270,14 @@ theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«x86_64-no
     exact compress_batch.closure.call_mut_spec inputs i hi
 
 /-- `EdwardsPoint::compress_batch`: entry `i` is RFC 8032's encoding of point `i`. -/
-theorem compress_batch_spec_point {N : Usize} (inputs : Array EdwardsPoint.«x86_64-no-tables» N)
+theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«x86_64-no-tables» N)
     (hinputs : ∀ i < N.val, inputs[i]!.LimbsLt 52) (hinputs_on : ∀ i < N.val, inputs[i]!.OnCurve) :
     compress_batch inputs ⦃ (r : Array CompressedEdwardsY N) =>
-      ∀ i < N.val, r[i]!.asNat = curve25519.encode inputs[i]!.toPoint ⦄ :=
-  spec_mono (compress_batch_spec inputs hinputs) fun r hr i hi => by
-    rw [hr i hi, encode_eq, EdwardsPoint.«x86_64-no-tables».toPoint_x (hinputs_on i hi),
-      EdwardsPoint.«x86_64-no-tables».toPoint_y (hinputs_on i hi)]
+      ∀ i < N.val, r[i]!.toVector = curve25519.encode inputs[i]!.toPoint ⦄ := by
+  simp only [Curve25519Dalek.edwards.CompressedEdwardsY.toVector_eq_encode_iff]
+  exact spec_mono (compress_batch_asNat inputs hinputs) fun r hr i hi => by
+      rw [hr i hi, encodeNat_eq, EdwardsPoint.«x86_64-no-tables».toPoint_x (hinputs_on i hi),
+        EdwardsPoint.«x86_64-no-tables».toPoint_y (hinputs_on i hi)]
 
 end «EdwardsPointx86_64-no-tables»
 
@@ -318,7 +322,7 @@ private theorem compress_batch.closure_1.call_mut_spec {N : Usize}
 /-- `EdwardsPoint::compress_batch`: entry `i` is the canonical `y = Y / Z` of point `i` with the
 sign of `x = X / Z` in bit `255`; limbs `< 2^26`. -/
 @[step]
-theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«i686-no-tables» N)
+theorem compress_batch_asNat {N : Usize} (inputs : Array EdwardsPoint.«i686-no-tables» N)
     (hinputs : ∀ i < N.val, inputs[i]!.LimbsLt 26) :
     compress_batch inputs ⦃ (r : Array CompressedEdwardsY N) =>
       ∀ i < N.val, r[i]!.asNat = (inputs[i]!.Y.toField / inputs[i]!.Z.toField).val +
@@ -350,13 +354,14 @@ theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«i686-no-t
     exact compress_batch.closure.call_mut_spec inputs i hi
 
 /-- `EdwardsPoint::compress_batch`: entry `i` is RFC 8032's encoding of point `i`. -/
-theorem compress_batch_spec_point {N : Usize} (inputs : Array EdwardsPoint.«i686-no-tables» N)
+theorem compress_batch_spec {N : Usize} (inputs : Array EdwardsPoint.«i686-no-tables» N)
     (hinputs : ∀ i < N.val, inputs[i]!.LimbsLt 26) (hinputs_on : ∀ i < N.val, inputs[i]!.OnCurve) :
     compress_batch inputs ⦃ (r : Array CompressedEdwardsY N) =>
-      ∀ i < N.val, r[i]!.asNat = curve25519.encode inputs[i]!.toPoint ⦄ :=
-  spec_mono (compress_batch_spec inputs hinputs) fun r hr i hi => by
-    rw [hr i hi, encode_eq, EdwardsPoint.«i686-no-tables».toPoint_x (hinputs_on i hi),
-      EdwardsPoint.«i686-no-tables».toPoint_y (hinputs_on i hi)]
+      ∀ i < N.val, r[i]!.toVector = curve25519.encode inputs[i]!.toPoint ⦄ := by
+  simp only [Curve25519Dalek.edwards.CompressedEdwardsY.toVector_eq_encode_iff]
+  exact spec_mono (compress_batch_asNat inputs hinputs) fun r hr i hi => by
+      rw [hr i hi, encodeNat_eq, EdwardsPoint.«i686-no-tables».toPoint_x (hinputs_on i hi),
+        EdwardsPoint.«i686-no-tables».toPoint_y (hinputs_on i hi)]
 
 end «EdwardsPointi686-no-tables»
 

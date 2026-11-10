@@ -6,6 +6,7 @@ module
 public import Curve25519Dalek.Funs
 public import Defs.Scalar
 import Proofs.Scalar.Default
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP
@@ -16,10 +17,10 @@ namespace Curve25519Dalek.scalar.HalfWidthScalar.Insts.CoreDefaultDefault
 @[step]
 theorem default_spec :
     default ⦃ (r : HalfWidthScalar) =>
-      r.asNat = 0 ⦄ := by
+      r.asNat < 2 ^ 128 ∧ r.asNat = 0 ⦄ := by
   unfold default
   step as ⟨s, hs⟩
-  rw [scalar.HalfWidthScalar.asNat_def]
-  exact hs
+  have h : HalfWidthScalar.asNat s = 0 := by rw [scalar.HalfWidthScalar.asNat_def]; exact hs
+  exact ⟨by rw [h]; norm_num, h⟩
 
 end Curve25519Dalek.scalar.HalfWidthScalar.Insts.CoreDefaultDefault

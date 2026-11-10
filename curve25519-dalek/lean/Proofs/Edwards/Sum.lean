@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
-public import Defs.Iterator
+public import ToAeneas.Iterator
 import Proofs.Edwards.Add
 import Proofs.Edwards.Identity
 public section
@@ -22,7 +22,7 @@ namespace Curve25519Dalek.edwards.EdwardsPoint.«x86_64-tables».Insts
 namespace CoreIterTraitsAccumSum
 
 open «CoreOpsArithAddSharedBEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
-  (add_spec_point)
+  (add_spec)
 
 /-- The loop of `sum` adds the remaining items to the accumulator. -/
 private theorem sum_loop_spec {T I : Type}
@@ -53,7 +53,7 @@ private theorem sum_loop_spec {T I : Type}
     subst ho hit
     step with hb as ⟨P, hP⟩
     subst hP
-    step with add_spec_point acc P hacc (hps P List.mem_cons_self) hacc_on
+    step with add_spec acc P hacc (hps P List.mem_cons_self) hacc_on
       (hps_on P List.mem_cons_self) as ⟨acc1, hacc1on, hacc1, hacc1b⟩
     apply WP.spec_mono (ih _ hrest (fun Q hQ => hps Q (List.mem_cons_of_mem _ hQ))
       (fun Q hQ => hps_on Q (List.mem_cons_of_mem _ hQ)) acc1 hacc1b hacc1on)
@@ -73,7 +73,7 @@ theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T EdwardsPoint.«
     sum borrowInst iterInst iter ⦃ (r : EdwardsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.LimbsLt 52 ⦄ := by
   unfold sum
-  step with Curve25519_dalekTraitsIdentity.identity_spec_point as ⟨acc, hacc_on, hacc, haccb⟩
+  step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, hacc, haccb⟩
   apply WP.spec_mono (sum_loop_spec borrowInst iterInst iter xs hiter ps hborrow hps hps_on acc
     haccb hacc_on)
   rintro r ⟨hron, hr, hrb⟩
@@ -86,7 +86,7 @@ namespace Curve25519Dalek.edwards.EdwardsPoint.«i686-tables».Insts
 namespace CoreIterTraitsAccumSum
 
 open «CoreOpsArithAddSharedBEdwardsPointi686-tablesEdwardsPointi686-tables»
-  (add_spec_point)
+  (add_spec)
 
 /-- The loop of `sum` adds the remaining items to the accumulator. -/
 private theorem sum_loop_spec {T I : Type}
@@ -117,7 +117,7 @@ private theorem sum_loop_spec {T I : Type}
     subst ho hit
     step with hb as ⟨P, hP⟩
     subst hP
-    step with add_spec_point acc P hacc (hps P List.mem_cons_self) hacc_on
+    step with add_spec acc P hacc (hps P List.mem_cons_self) hacc_on
       (hps_on P List.mem_cons_self) as ⟨acc1, hacc1on, hacc1, hacc1b⟩
     apply WP.spec_mono (ih _ hrest (fun Q hQ => hps Q (List.mem_cons_of_mem _ hQ))
       (fun Q hQ => hps_on Q (List.mem_cons_of_mem _ hQ)) acc1 hacc1b hacc1on)
@@ -137,7 +137,7 @@ theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T EdwardsPoint.«
     sum borrowInst iterInst iter ⦃ (r : EdwardsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.LimbsLt 26 ⦄ := by
   unfold sum
-  step with Curve25519_dalekTraitsIdentity.identity_spec_point as ⟨acc, hacc_on, hacc, haccb⟩
+  step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, hacc, haccb⟩
   apply WP.spec_mono (sum_loop_spec borrowInst iterInst iter xs hiter ps hborrow hps hps_on acc
     haccb hacc_on)
   rintro r ⟨hron, hr, hrb⟩
@@ -150,7 +150,7 @@ namespace Curve25519Dalek.edwards.EdwardsPoint.«x86_64-no-tables».Insts
 namespace CoreIterTraitsAccumSum
 
 open «CoreOpsArithAddSharedBEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
-  (add_spec_point)
+  (add_spec)
 
 /-- The loop of `sum` adds the remaining items to the accumulator. -/
 private theorem sum_loop_spec {T I : Type}
@@ -181,7 +181,7 @@ private theorem sum_loop_spec {T I : Type}
     subst ho hit
     step with hb as ⟨P, hP⟩
     subst hP
-    step with add_spec_point acc P hacc (hps P List.mem_cons_self) hacc_on
+    step with add_spec acc P hacc (hps P List.mem_cons_self) hacc_on
       (hps_on P List.mem_cons_self) as ⟨acc1, hacc1on, hacc1, hacc1b⟩
     apply WP.spec_mono (ih _ hrest (fun Q hQ => hps Q (List.mem_cons_of_mem _ hQ))
       (fun Q hQ => hps_on Q (List.mem_cons_of_mem _ hQ)) acc1 hacc1b hacc1on)
@@ -201,7 +201,7 @@ theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T EdwardsPoint.«
     sum borrowInst iterInst iter ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.LimbsLt 52 ⦄ := by
   unfold sum
-  step with Curve25519_dalekTraitsIdentity.identity_spec_point as ⟨acc, hacc_on, hacc, haccb⟩
+  step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, hacc, haccb⟩
   apply WP.spec_mono (sum_loop_spec borrowInst iterInst iter xs hiter ps hborrow hps hps_on acc
     haccb hacc_on)
   rintro r ⟨hron, hr, hrb⟩
@@ -214,7 +214,7 @@ namespace Curve25519Dalek.edwards.EdwardsPoint.«i686-no-tables».Insts
 namespace CoreIterTraitsAccumSum
 
 open «CoreOpsArithAddSharedBEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
-  (add_spec_point)
+  (add_spec)
 
 /-- The loop of `sum` adds the remaining items to the accumulator. -/
 private theorem sum_loop_spec {T I : Type}
@@ -245,7 +245,7 @@ private theorem sum_loop_spec {T I : Type}
     subst ho hit
     step with hb as ⟨P, hP⟩
     subst hP
-    step with add_spec_point acc P hacc (hps P List.mem_cons_self) hacc_on
+    step with add_spec acc P hacc (hps P List.mem_cons_self) hacc_on
       (hps_on P List.mem_cons_self) as ⟨acc1, hacc1on, hacc1, hacc1b⟩
     apply WP.spec_mono (ih _ hrest (fun Q hQ => hps Q (List.mem_cons_of_mem _ hQ))
       (fun Q hQ => hps_on Q (List.mem_cons_of_mem _ hQ)) acc1 hacc1b hacc1on)
@@ -265,7 +265,7 @@ theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T EdwardsPoint.«
     sum borrowInst iterInst iter ⦃ (r : EdwardsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.LimbsLt 26 ⦄ := by
   unfold sum
-  step with Curve25519_dalekTraitsIdentity.identity_spec_point as ⟨acc, hacc_on, hacc, haccb⟩
+  step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, hacc, haccb⟩
   apply WP.spec_mono (sum_loop_spec borrowInst iterInst iter xs hiter ps hborrow hps hps_on acc
     haccb hacc_on)
   rintro r ⟨hron, hr, hrb⟩

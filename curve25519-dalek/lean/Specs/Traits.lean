@@ -32,10 +32,10 @@ namespace Curve25519Dalek.traits.IsIdentity.Blanket
 /-- `IsIdentity::is_identity`: `true` iff `ct_eq self (identity)` returns `1`. -/
 recall is_identity_spec {T : Type} (ctEqInst : subtle.ConstantTimeEq T)
     (identityInst : traits.Identity T) (self : T) (R : T → Prop) (Q : Prop)
-    (hidentity : identityInst.identity ⦃ (e : T) => R e ⦄)
-    (hct_eq : ∀ e, R e → ctEqInst.ct_eq self e ⦃ (c : subtle.Choice) =>
-      c.IsValid ∧ (c = 1#u8 ↔ Q) ⦄) :
-    is_identity ctEqInst identityInst self ⦃ (b : Bool) => b = true ↔ Q ⦄
+    (hidentity : identityInst.identity ⦃ (r : T) => R r ⦄)
+    (hct_eq : ∀ e, R e → ctEqInst.ct_eq self e ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ Q) ⦄) :
+    is_identity ctEqInst identityInst self ⦃ (r : Bool) => r = true ↔ Q ⦄
 
 /-- [propext, Classical.choice, Quot.sound, RustAx.subtle] -/
 #guard_msgs (whitespace := lax, substring := true) in #print axioms is_identity_spec

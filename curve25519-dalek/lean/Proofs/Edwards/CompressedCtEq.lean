@@ -9,6 +9,7 @@ public import Subtle.Contract
 import Proofs.Edwards.AsBytes
 import Proofs.Helpers.Array
 import Subtle.Instances
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP
@@ -19,7 +20,7 @@ namespace Curve25519Dalek.edwards.CompressedEdwardsY.Insts.SubtleConstantTimeEq
 differ). -/
 @[step]
 theorem ct_eq_spec (self other : CompressedEdwardsY) :
-    ct_eq self other ⦃ (c : subtle.Choice) => c.IsValid ∧ (c = 1#u8 ↔ self = other) ⦄ := by
+    ct_eq self other ⦃ (r : subtle.Choice) => r.IsValid ∧ (r = 1#u8 ↔ self = other) ⦄ := by
   unfold ct_eq
   step as ⟨a, ha⟩
   step as ⟨s, hs⟩

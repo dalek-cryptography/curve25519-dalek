@@ -10,6 +10,7 @@ public import Defs.Scalar52
 import Proofs.Helpers.Array
 import Proofs.Helpers.AsNat
 import Subtle
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

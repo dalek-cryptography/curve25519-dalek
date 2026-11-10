@@ -10,6 +10,7 @@ import Proofs.Backend.Serial.U64.Field.Reduce
 import Proofs.Backend.Serial.U64.Field.SixteenP
 import Proofs.Helpers.AsNat
 public import Curve25519.Basic
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

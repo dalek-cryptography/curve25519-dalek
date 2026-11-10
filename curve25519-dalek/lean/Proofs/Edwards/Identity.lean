@@ -27,7 +27,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `Identity for EdwardsPoint`: `(0 : 1 : 1 : 0)`, limbs `< 2^52`. -/
 @[step]
-theorem identity_spec :
+theorem identity_toExtended :
     identity ⦃ (r : EdwardsPoint.«x86_64-tables») =>
       r.toExtended = Extended.identity ∧ r.LimbsLt 52 ⦄ := by
   unfold identity
@@ -40,10 +40,10 @@ theorem identity_spec :
       limbs_lt_of_le (by decide) hone_lt, limbs_lt_of_le (by decide) hzero_lt⟩
 
 /-- `Identity for EdwardsPoint` represents the neutral element. -/
-theorem identity_spec_point :
+theorem identity_spec :
     identity ⦃ (r : EdwardsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono identity_spec fun r ⟨hr, hb⟩ => by
+  spec_mono identity_toExtended fun r ⟨hr, hb⟩ => by
     rw [EdwardsPoint.«x86_64-tables».onCurve_iff,
       EdwardsPoint.«x86_64-tables».toPoint_def,
       hr]
@@ -57,7 +57,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `Identity for EdwardsPoint`: `(0 : 1 : 1 : 0)`, limbs `< 2^26`. -/
 @[step]
-theorem identity_spec :
+theorem identity_toExtended :
     identity ⦃ (r : EdwardsPoint.«i686-tables») =>
       r.toExtended = Extended.identity ∧ r.LimbsLt 26 ⦄ := by
   unfold identity
@@ -70,10 +70,10 @@ theorem identity_spec :
       limbs_lt_of_le (by decide) hone_lt, limbs_lt_of_le (by decide) hzero_lt⟩
 
 /-- `Identity for EdwardsPoint` represents the neutral element. -/
-theorem identity_spec_point :
+theorem identity_spec :
     identity ⦃ (r : EdwardsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono identity_spec fun r ⟨hr, hb⟩ => by
+  spec_mono identity_toExtended fun r ⟨hr, hb⟩ => by
     rw [EdwardsPoint.«i686-tables».onCurve_iff,
       EdwardsPoint.«i686-tables».toPoint_def,
       hr]
@@ -87,7 +87,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `Identity for EdwardsPoint`: `(0 : 1 : 1 : 0)`, limbs `< 2^52`. -/
 @[step]
-theorem identity_spec :
+theorem identity_toExtended :
     identity ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
       r.toExtended = Extended.identity ∧ r.LimbsLt 52 ⦄ := by
   unfold identity
@@ -100,10 +100,10 @@ theorem identity_spec :
       limbs_lt_of_le (by decide) hone_lt, limbs_lt_of_le (by decide) hzero_lt⟩
 
 /-- `Identity for EdwardsPoint` represents the neutral element. -/
-theorem identity_spec_point :
+theorem identity_spec :
     identity ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono identity_spec fun r ⟨hr, hb⟩ => by
+  spec_mono identity_toExtended fun r ⟨hr, hb⟩ => by
     rw [EdwardsPoint.«x86_64-no-tables».onCurve_iff,
       EdwardsPoint.«x86_64-no-tables».toPoint_def,
       hr]
@@ -117,7 +117,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `Identity for EdwardsPoint`: `(0 : 1 : 1 : 0)`, limbs `< 2^26`. -/
 @[step]
-theorem identity_spec :
+theorem identity_toExtended :
     identity ⦃ (r : EdwardsPoint.«i686-no-tables») =>
       r.toExtended = Extended.identity ∧ r.LimbsLt 26 ⦄ := by
   unfold identity
@@ -130,10 +130,10 @@ theorem identity_spec :
       limbs_lt_of_le (by decide) hone_lt, limbs_lt_of_le (by decide) hzero_lt⟩
 
 /-- `Identity for EdwardsPoint` represents the neutral element. -/
-theorem identity_spec_point :
+theorem identity_spec :
     identity ⦃ (r : EdwardsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono identity_spec fun r ⟨hr, hb⟩ => by
+  spec_mono identity_toExtended fun r ⟨hr, hb⟩ => by
     rw [EdwardsPoint.«i686-no-tables».onCurve_iff,
       EdwardsPoint.«i686-no-tables».toPoint_def,
       hr]

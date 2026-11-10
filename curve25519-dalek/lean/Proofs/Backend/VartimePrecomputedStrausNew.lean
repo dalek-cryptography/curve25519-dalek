@@ -3,9 +3,10 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import Proofs.Helpers.Represents
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
-public import Defs.Iterator
+public import ToAeneas.Iterator
 public import Defs.Scalar
 public import Defs.ScalarMul
 import Proofs.Backend.GetSelectedBackend
@@ -31,13 +32,14 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
           ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52 ∧ P.OnCurve) (hys : ys.length ≤ Usize.max) :
     new pointsInst borrowInst static_points ⦃ (r : VartimePrecomputedStraus.«x86_64-tables») =>
-      r.Represents (ps.map (·.toPoint)) ∧ r.LimbsLt 54 ⦄ := by
+      r.IsValid ∧ r.points = ps.map (·.toPoint) ∧ r.LimbsLt 54 ⦄ := by
   unfold new
   step
   step with
       «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-tables».new_spec
     _ _ _ ys ps hstatic_points hborrow hps hys as ⟨v, hv, hvb⟩
-  exact ⟨hv, hvb⟩
+  obtain ⟨h1, h2⟩ := (v.represents_iff _).mp hv
+  exact ⟨h1, h2, hvb⟩
 
 end «VartimePrecomputedStrausx86_64-tables»
 
@@ -56,13 +58,14 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
           ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26 ∧ P.OnCurve) (hys : ys.length ≤ Usize.max) :
     new pointsInst borrowInst static_points ⦃ (r : VartimePrecomputedStraus.«i686-tables») =>
-      r.Represents (ps.map (·.toPoint)) ∧ r.LimbsLt 27 ⦄ := by
+      r.IsValid ∧ r.points = ps.map (·.toPoint) ∧ r.LimbsLt 27 ⦄ := by
   unfold new
   step
   step with
       «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-tables».new_spec
     _ _ _ ys ps hstatic_points hborrow hps hys as ⟨v, hv, hvb⟩
-  exact ⟨hv, hvb⟩
+  obtain ⟨h1, h2⟩ := (v.represents_iff _).mp hv
+  exact ⟨h1, h2, hvb⟩
 
 end «VartimePrecomputedStrausi686-tables»
 
@@ -81,13 +84,14 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
           ys ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52 ∧ P.OnCurve) (hys : ys.length ≤ Usize.max) :
     new pointsInst borrowInst static_points ⦃ (r : VartimePrecomputedStraus.«x86_64-no-tables») =>
-      r.Represents (ps.map (·.toPoint)) ∧ r.LimbsLt 54 ⦄ := by
+      r.IsValid ∧ r.points = ps.map (·.toPoint) ∧ r.LimbsLt 54 ⦄ := by
   unfold new
   step
   step with
       «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-no-tables».new_spec
     _ _ _ ys ps hstatic_points hborrow hps hys as ⟨v, hv, hvb⟩
-  exact ⟨hv, hvb⟩
+  obtain ⟨h1, h2⟩ := (v.represents_iff _).mp hv
+  exact ⟨h1, h2, hvb⟩
 
 end «VartimePrecomputedStrausx86_64-no-tables»
 
@@ -106,13 +110,14 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
           ys ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26 ∧ P.OnCurve) (hys : ys.length ≤ Usize.max) :
     new pointsInst borrowInst static_points ⦃ (r : VartimePrecomputedStraus.«i686-no-tables») =>
-      r.Represents (ps.map (·.toPoint)) ∧ r.LimbsLt 27 ⦄ := by
+      r.IsValid ∧ r.points = ps.map (·.toPoint) ∧ r.LimbsLt 27 ⦄ := by
   unfold new
   step
   step with
       «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-no-tables».new_spec
     _ _ _ ys ps hstatic_points hborrow hps hys as ⟨v, hv, hvb⟩
-  exact ⟨hv, hvb⟩
+  obtain ⟨h1, h2⟩ := (v.represents_iff _).mp hv
+  exact ⟨h1, h2, hvb⟩
 
 end «VartimePrecomputedStrausi686-no-tables»
 

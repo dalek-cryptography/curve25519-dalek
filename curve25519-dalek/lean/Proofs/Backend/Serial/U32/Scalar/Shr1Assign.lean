@@ -10,6 +10,7 @@ import Proofs.Backend.Serial.U32.Scalar.Index
 import Proofs.Backend.Serial.U32.Scalar.IndexMut
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.Iterator
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

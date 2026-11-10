@@ -10,6 +10,7 @@ public import Defs.Scalar29
 public import Defs.Scalar52
 import Proofs.Backend.Serial.U64.Scalar.FromBytes
 import Proofs.Backend.Serial.U32.Scalar.FromBytes
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

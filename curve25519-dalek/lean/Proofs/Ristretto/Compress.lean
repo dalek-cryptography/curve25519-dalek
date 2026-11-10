@@ -12,13 +12,14 @@ import Proofs.Helpers.RistrettoCompress
 public import Proofs.Field.Invsqrt
 import Proofs.Helpers.Backend.U32.Bytes
 import Proofs.Helpers.Backend.U64.Bytes
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `RistrettoPoint::compress`
 
 The code is RFC 9496 §4.3.2 on the extended coordinates of the representative
-(`RistrettoCompress.compressProj`), which equals `encodeRep` of the represented point
-(`RistrettoCompress.compressProj_eq_encodeRep`). -/
+(`RistrettoCompress.compressProj`), which equals `encodeRepNat` of the represented point
+(`RistrettoCompress.compressProj_eq_encodeRepNat`). -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 open Curve25519Dalek.backend.serial.u64.field (FieldElement51)
@@ -69,7 +70,7 @@ theorem compressBody_spec (hadd : B.AddSpec) (hsub : B.SubSpec) (hmul : B.MulSpe
     (hY : B.Red Y) (hZ : B.Red Z) (hT : B.Red T)
     (hon : (⟨B.toField X, B.toField Y, B.toField Z, B.toField T⟩ : edwards.Extended).OnCurve) :
     B.compressBody X Y Z T ⦃ (r : ristretto.CompressedRistretto) =>
-      r.asNat = Ristretto.encodeRep
+      r.asNat = Ristretto.encodeRepNat
         (⟨B.toField X, B.toField Y, B.toField Z, B.toField T⟩ : edwards.Extended).toPoint ⦄ := by
   have hx : (⟨B.toField X, B.toField Y, B.toField Z, B.toField T⟩ :
       edwards.Extended).toPoint.x = B.toField X / B.toField Z :=
@@ -145,7 +146,7 @@ theorem compressBody_spec (hadd : B.AddSpec) (hsub : B.SubSpec) (hmul : B.MulSpe
     eq_ite_of_choice hsnv (eq_one_iff_isNeg hsn) (fun h => by rw [hs10 h])
       (fun h => (hs11 h).1)
   rw [ristretto.CompressedRistretto.asNat_def, hr, S1,
-    ← RistrettoCompress.compressProj_eq_encodeRep _ Fe6 hZ0 hXYZT hx hy]
+    ← RistrettoCompress.compressProj_eq_encodeRepNat _ Fe6 hZ0 hXYZT hx hy]
   congr 1
   rw [hs, I21sel, hfe9, Y1sel, Ysel, hfe8, Xsel, hench, hfe7, hz, hfe4, hi1', hi2', hiY, hiX,
     Fe5, Inv, hfe3, hfe2, hu1, hu2, Fe, Fe1]
@@ -169,7 +170,8 @@ open edwards.EdwardsPoint.«x86_64-tables» in
 theorem compress_spec (self : RistrettoPoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     compress self ⦃ (r : CompressedRistretto) =>
-      r.asNat = Ristretto.encodeRep self.toPoint ⦄ := by
+      r.toVector = Ristretto.encodeRep self.toPoint ⦄ := by
+  simp only [Curve25519Dalek.ristretto.CompressedRistretto.toVector_eq_encodeRep_iff]
   obtain ⟨hX, hY, hZ, hT⟩ := hself
   rw [edwards.EdwardsPoint.«x86_64-tables».onCurve_iff,
     edwards.EdwardsPoint.«x86_64-tables».toExtended_def] at hon
@@ -197,7 +199,8 @@ open edwards.EdwardsPoint.«i686-tables» in
 theorem compress_spec (self : RistrettoPoint.«i686-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     compress self ⦃ (r : CompressedRistretto) =>
-      r.asNat = Ristretto.encodeRep self.toPoint ⦄ := by
+      r.toVector = Ristretto.encodeRep self.toPoint ⦄ := by
+  simp only [Curve25519Dalek.ristretto.CompressedRistretto.toVector_eq_encodeRep_iff]
   obtain ⟨hX, hY, hZ, hT⟩ := hself
   rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff,
     edwards.EdwardsPoint.«i686-tables».toExtended_def] at hon
@@ -225,7 +228,8 @@ open edwards.EdwardsPoint.«x86_64-no-tables» in
 theorem compress_spec (self : RistrettoPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     compress self ⦃ (r : CompressedRistretto) =>
-      r.asNat = Ristretto.encodeRep self.toPoint ⦄ := by
+      r.toVector = Ristretto.encodeRep self.toPoint ⦄ := by
+  simp only [Curve25519Dalek.ristretto.CompressedRistretto.toVector_eq_encodeRep_iff]
   obtain ⟨hX, hY, hZ, hT⟩ := hself
   rw [edwards.EdwardsPoint.«x86_64-no-tables».onCurve_iff,
     edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def] at hon
@@ -253,7 +257,8 @@ open edwards.EdwardsPoint.«i686-no-tables» in
 theorem compress_spec (self : RistrettoPoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     compress self ⦃ (r : CompressedRistretto) =>
-      r.asNat = Ristretto.encodeRep self.toPoint ⦄ := by
+      r.toVector = Ristretto.encodeRep self.toPoint ⦄ := by
+  simp only [Curve25519Dalek.ristretto.CompressedRistretto.toVector_eq_encodeRep_iff]
   obtain ⟨hX, hY, hZ, hT⟩ := hself
   rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff,
     edwards.EdwardsPoint.«i686-no-tables».toExtended_def] at hon

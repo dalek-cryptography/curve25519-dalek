@@ -20,12 +20,12 @@ statement, for reading) and the uniqueness lemmas `sqrtRatioM1_eq_of_mul_sq_eq`,
 connects to it). Its non-square branch rests on
 `sqrtM1` not being a square (`not_isSquare_sqrtM1`, `p ≡ 5 (mod 8)`).
 
-The representative-level codec, hidden: `decodeRep s` (§4.3.1, the Edwards point encoded by the
-canonical non-negative field element `s < p`, or `none`) and `encodeRep P` (§4.3.2 on the
+The representative-level codec, hidden: `decodeRepNat s` (§4.3.1, the Edwards point encoded by the
+canonical non-negative field element `s < p`, or `none`) and `encodeRepNat P` (§4.3.2 on the
 extended representative `(x, y, 1, x y)` of a point, a natural number below `p`). Their
-properties, in particular the round trips and the invariance of `encodeRep` on the classes of
+properties, in particular the round trips and the invariance of `encodeRepNat` on the classes of
 `edwards.Rel`, are in `Curve25519.Ristretto.Encoding`. The field identities behind the on-curve
-proof of `decodeRep` are in `Curve25519.Proofs.Ristretto.Algebra` (not audited). -/
+proof of `decodeRepNat` are in `Curve25519.Proofs.Ristretto.Algebra` (not audited). -/
 
 namespace curve25519
 
@@ -193,18 +193,18 @@ namespace Ristretto
 /-- The decoded point is on the model: for `s` and the root `r` with `v u2² r² = 1`
 (`u1 = 1 - s²`, `u2 = 1 + s²`, `v = -(d u1²) - u2²`), the point `(|2 s (r u2)|, u1 (r (r u2) v))`
 satisfies the equation of `edwards`. -/
-theorem decodeRep_equation (s r : ZMod p)
+theorem decodeRepNat_equation (s r : ZMod p)
     (hr : (-(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2) * (1 + s ^ 2) ^ 2 * r ^ 2 = 1) :
     edwards.Equation (2 * s * (r * (1 + s ^ 2))).abs
       ((1 - s ^ 2) * (r * (r * (1 + s ^ 2)) * (-(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2))) :=
-  Proofs.decode_equation s r hr
+  Proofs.decodeNat_equation s r hr
 
 /-- RFC 9496 §4.3.1, the decoding of a representative: `none` unless `s < p` and `s` is
 non-negative; then with `u1 = 1 - s²`, `u2 = 1 + s²`, `v = -(d u1²) - u2²`,
 `(wasSquare, r) = SQRT_RATIO_M1(1, v u2²)`, `x = |2 s r u2|`, `y = u1 r (r u2) v`: `none` if
 `¬ wasSquare`, `x y` is negative or `y = 0`, else `some (x, y)`. Hidden; see
-`decodeRep_eq_some_iff`, `decodeRep_eq_none_iff` in `Curve25519.Ristretto.Encoding`. -/
-noncomputable def decodeRep (s : ℕ) : Option edwards.Point :=
+`decodeRepNat_eq_some_iff`, `decodeRepNat_eq_none_iff` in `Curve25519.Ristretto.Encoding`. -/
+noncomputable def decodeRepNat (s : ℕ) : Option edwards.Point :=
   if s < p ∧ ¬ (s : ZMod p).IsNeg then
     let s' : ZMod p := s
     let u1 := 1 - s' ^ 2
@@ -216,7 +216,7 @@ noncomputable def decodeRep (s : ℕ) : Option edwards.Point :=
     let x := (2 * s' * denX).abs
     let y := u1 * denY
     if h : (sqrtRatioM1 1 (v * u2 ^ 2)).1 = true ∧ ¬ (x * y).IsNeg ∧ y ≠ 0 then
-      some ⟨x, y, decodeRep_equation s' r (sqrtRatioM1_one_of_fst h.1)⟩
+      some ⟨x, y, decodeRepNat_equation s' r (sqrtRatioM1_one_of_fst h.1)⟩
     else none
   else none
 
@@ -226,8 +226,8 @@ noncomputable def decodeRep (s : ℕ) : Option edwards.Point :=
 `zInv = den1 den2 t`, `rotate = IS_NEGATIVE(t zInv)`; `(x', y', denInv) = (y √-1, x √-1,
 den1 · INVSQRT_A_MINUS_D)` if `rotate` else `(x, y, den2)`; `y'' = -y'` if `x' zInv` is negative
 else `y'`; the result is `|denInv (1 - y'')|` as a natural number below `p`. Hidden; see
-`encodeRep_eq`. -/
-noncomputable def encodeRep (P : edwards.Point) : ℕ :=
+`encodeRepNat_eq`. -/
+noncomputable def encodeRepNat (P : edwards.Point) : ℕ :=
   let x := P.x
   let y := P.y
   let t := x * y
@@ -247,8 +247,8 @@ noncomputable def encodeRep (P : edwards.Point) : ℕ :=
   let y'' := if (x' * zInv).IsNeg then -y' else y'
   (denInv * (1 - y'')).abs.val
 
-/-- `encodeRep P`, RFC 9496 §4.3.2 spelled out. -/
-theorem encodeRep_eq (P : edwards.Point) : encodeRep P =
+/-- `encodeRepNat P`, RFC 9496 §4.3.2 spelled out. -/
+theorem encodeRepNat_eq (P : edwards.Point) : encodeRepNat P =
     let x := P.x
     let y := P.y
     let t := x * y
@@ -267,7 +267,7 @@ theorem encodeRep_eq (P : edwards.Point) : encodeRep P =
     let denInv := if rotate then enchanted else den2
     let y'' := if (x' * zInv).IsNeg then -y' else y'
     (denInv * (1 - y'')).abs.val := by
-  unfold encodeRep
+  unfold encodeRepNat
   rfl
 
 end Ristretto

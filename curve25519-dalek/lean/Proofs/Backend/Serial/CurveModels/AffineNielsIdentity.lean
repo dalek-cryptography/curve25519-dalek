@@ -26,7 +26,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `Identity for AffineNielsPoint`: `(1, 1, 0)`, limbs `< 2^54`. -/
 @[step]
-theorem identity_spec :
+theorem identity_toAffineNiels :
     identity ⦃ (r : AffineNielsPoint.«x86_64-tables») =>
       r.toAffineNiels = AffineNiels.identity ∧ r.LimbsLt 54 ⦄ := by
   unfold identity
@@ -39,10 +39,10 @@ theorem identity_spec :
       limbs_lt_of_le (by decide) hzero_lt⟩
 
 /-- `Identity for AffineNielsPoint` represents the neutral element. -/
-theorem identity_spec_point :
+theorem identity_spec :
     identity ⦃ (r : AffineNielsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 54 ⦄ :=
-  spec_mono identity_spec fun r ⟨hr, hb⟩ => by
+  spec_mono identity_toAffineNiels fun r ⟨hr, hb⟩ => by
     rw [AffineNielsPoint.«x86_64-tables».onCurve_iff,
       AffineNielsPoint.«x86_64-tables».toPoint_def, hr]
     exact ⟨AffineNiels.onCurve_identity, AffineNiels.toPoint_identity, hb⟩
@@ -55,7 +55,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `Identity for AffineNielsPoint`: `(1, 1, 0)`, limbs `< 2^27`. -/
 @[step]
-theorem identity_spec :
+theorem identity_toAffineNiels :
     identity ⦃ (r : AffineNielsPoint.«i686-tables») =>
       r.toAffineNiels = AffineNiels.identity ∧ r.LimbsLt 27 ⦄ := by
   unfold identity
@@ -68,10 +68,10 @@ theorem identity_spec :
       limbs_lt_of_le (by decide) hzero_lt⟩
 
 /-- `Identity for AffineNielsPoint` represents the neutral element. -/
-theorem identity_spec_point :
+theorem identity_spec :
     identity ⦃ (r : AffineNielsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 27 ⦄ :=
-  spec_mono identity_spec fun r ⟨hr, hb⟩ => by
+  spec_mono identity_toAffineNiels fun r ⟨hr, hb⟩ => by
     rw [AffineNielsPoint.«i686-tables».onCurve_iff,
       AffineNielsPoint.«i686-tables».toPoint_def, hr]
     exact ⟨AffineNiels.onCurve_identity, AffineNiels.toPoint_identity, hb⟩
@@ -84,7 +84,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `Identity for AffineNielsPoint`: `(1, 1, 0)`, limbs `< 2^54`. -/
 @[step]
-theorem identity_spec :
+theorem identity_toAffineNiels :
     identity ⦃ (r : AffineNielsPoint.«x86_64-no-tables») =>
       r.toAffineNiels = AffineNiels.identity ∧ r.LimbsLt 54 ⦄ := by
   unfold identity
@@ -97,10 +97,10 @@ theorem identity_spec :
       limbs_lt_of_le (by decide) hzero_lt⟩
 
 /-- `Identity for AffineNielsPoint` represents the neutral element. -/
-theorem identity_spec_point :
+theorem identity_spec :
     identity ⦃ (r : AffineNielsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 54 ⦄ :=
-  spec_mono identity_spec fun r ⟨hr, hb⟩ => by
+  spec_mono identity_toAffineNiels fun r ⟨hr, hb⟩ => by
     rw [AffineNielsPoint.«x86_64-no-tables».onCurve_iff,
       AffineNielsPoint.«x86_64-no-tables».toPoint_def, hr]
     exact ⟨AffineNiels.onCurve_identity, AffineNiels.toPoint_identity, hb⟩
@@ -113,7 +113,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `Identity for AffineNielsPoint`: `(1, 1, 0)`, limbs `< 2^27`. -/
 @[step]
-theorem identity_spec :
+theorem identity_toAffineNiels :
     identity ⦃ (r : AffineNielsPoint.«i686-no-tables») =>
       r.toAffineNiels = AffineNiels.identity ∧ r.LimbsLt 27 ⦄ := by
   unfold identity
@@ -126,10 +126,10 @@ theorem identity_spec :
       limbs_lt_of_le (by decide) hzero_lt⟩
 
 /-- `Identity for AffineNielsPoint` represents the neutral element. -/
-theorem identity_spec_point :
+theorem identity_spec :
     identity ⦃ (r : AffineNielsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 27 ⦄ :=
-  spec_mono identity_spec fun r ⟨hr, hb⟩ => by
+  spec_mono identity_toAffineNiels fun r ⟨hr, hb⟩ => by
     rw [AffineNielsPoint.«i686-no-tables».onCurve_iff,
       AffineNielsPoint.«i686-no-tables».toPoint_def, hr]
     exact ⟨AffineNiels.onCurve_identity, AffineNiels.toPoint_identity, hb⟩

@@ -7,6 +7,7 @@ module
 public import Curve25519Dalek.Funs
 public import Defs.Scalar29
 public import Curve25519.Basic
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

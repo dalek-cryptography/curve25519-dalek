@@ -30,7 +30,8 @@ public section
 
 The bounds are those of the point specs: `LimbsLt 52`, `LimbsLt 54`, `LimbsLt 54` on `u64`,
 `LimbsLt 26`, `LimbsLt 27`, `MulBounded` on `u32` (extended, projective Niels, completed). The
-specs are the configurations' `*_spec_point` theorems, stated first as separate theorems (their
+specs are the configurations' point-level `*_spec` theorems, stated first as separate theorems
+    (their
 proofs use privately imported modules), then bundled. -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
@@ -39,9 +40,9 @@ open Curve25519Dalek.backend.serial.curve_models
 section
 open Curve25519Dalek.«Shared0EdwardsPointx86_64-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
-    renaming add → nielsAdd, add_spec_point → nielsAdd_spec
+    renaming add → nielsAdd, add_spec → nielsAdd_spec
 open «CoreOpsArithSubSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
-    renaming sub → nielsSub, sub_spec_point → nielsSub_spec
+    renaming sub → nielsSub, sub_spec → nielsSub_spec
 open Curve25519Dalek.edwards.EdwardsPoint.«x86_64-tables».Insts
 open Curve25519Dalek.window.«NafLookupTable5ProjectiveNielsPointx86_64-tables».Insts
 open Curve25519Dalek.«Shared0ProjectiveNielsPointx86_64-tables».Insts
@@ -50,11 +51,11 @@ open Curve25519Dalek.window.«LookupTableProjectiveNielsPointx86_64-tables».Ins
     renaming «from» → ltFromFn, from_spec → ltFromFn_spec
 set_option linter.style.longLine true
 open «CoreOpsArithAddSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables»
-    renaming add → affineAdd, add_spec_point → affineAdd_spec
+    renaming add → affineAdd, add_spec → affineAdd_spec
 open «CoreOpsArithSubSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables»
-    renaming sub → affineSub, sub_spec_point → affineSub_spec
+    renaming sub → affineSub, sub_spec → affineSub_spec
 open «CoreOpsArithAddEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
-    renaming add → edwardsAdd, add_spec_point → edwardsAdd_spec
+    renaming add → edwardsAdd, add_spec → edwardsAdd_spec
 
 namespace Curve25519Dalek.EdwardsOps
 
@@ -108,13 +109,13 @@ namespace Curve25519Dalek.EdwardsOps
   ltFrom := ltFromFn
 
 theorem X86Tables.identity_spec : X86Tables.IdentitySpec :=
-  edwards.EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+  edwards.EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
 theorem X86Tables.add_spec : X86Tables.AddSpec :=
   edwardsAdd_spec
 
 theorem X86Tables.addAssign_spec : X86Tables.AddAssignSpec :=
-  «CoreOpsArithAddAssignEdwardsPointx86_64-tables».add_assign_spec_point
+  «CoreOpsArithAddAssignEdwardsPointx86_64-tables».add_assign_spec
 
 theorem X86Tables.mulByPow2_spec : X86Tables.MulByPow2Spec :=
   edwards.«EdwardsPointx86_64-tables».mul_by_pow_2_spec
@@ -130,22 +131,22 @@ theorem X86Tables.addA_spec : X86Tables.AddASpec := affineAdd_spec
 theorem X86Tables.subA_spec : X86Tables.SubASpec := affineSub_spec
 
 theorem X86Tables.asExtended_spec : X86Tables.AsExtendedSpec :=
-  «CompletedPointx86_64-tables».as_extended_spec_point
+  «CompletedPointx86_64-tables».as_extended_spec
 
 theorem X86Tables.asProjectiveNiels_spec : X86Tables.AsProjectiveNielsSpec :=
-  edwards.«EdwardsPointx86_64-tables».as_projective_niels_spec_point
+  edwards.«EdwardsPointx86_64-tables».as_projective_niels_spec
 
 theorem X86Tables.pIdentity_spec : X86Tables.PIdentitySpec :=
-  ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+  ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
 theorem X86Tables.pDouble_spec : X86Tables.PDoubleSpec :=
-  «ProjectivePointx86_64-tables».double_spec_point
+  «ProjectivePointx86_64-tables».double_spec
 
 theorem X86Tables.cAsProjective_spec : X86Tables.CAsProjectiveSpec :=
-  «CompletedPointx86_64-tables».as_projective_spec_point
+  «CompletedPointx86_64-tables».as_projective_spec
 
 theorem X86Tables.pAsExtended_spec : X86Tables.PAsExtendedSpec :=
-  «ProjectivePointx86_64-tables».as_extended_spec_point
+  «ProjectivePointx86_64-tables».as_extended_spec
 
 theorem X86Tables.nafTable5_spec : X86Tables.NafTable5Spec :=
   «CoreConvertFromSharedAEdwardsPointx86_64-tables».from_spec
@@ -163,9 +164,9 @@ end
 section
 open Curve25519Dalek.«Shared0EdwardsPointx86_64-no-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
-    renaming add → nielsAdd, add_spec_point → nielsAdd_spec
+    renaming add → nielsAdd, add_spec → nielsAdd_spec
 open «CoreOpsArithSubSharedAProjectiveNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
-    renaming sub → nielsSub, sub_spec_point → nielsSub_spec
+    renaming sub → nielsSub, sub_spec → nielsSub_spec
 open Curve25519Dalek.edwards.EdwardsPoint.«x86_64-no-tables».Insts
 open Curve25519Dalek.window.«NafLookupTable5ProjectiveNielsPointx86_64-no-tables».Insts
 open Curve25519Dalek.«Shared0ProjectiveNielsPointx86_64-no-tables».Insts
@@ -174,11 +175,11 @@ open Curve25519Dalek.window.«LookupTableProjectiveNielsPointx86_64-no-tables».
     renaming «from» → ltFromFn, from_spec → ltFromFn_spec
 set_option linter.style.longLine true
 open «CoreOpsArithAddSharedAAffineNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
-    renaming add → affineAdd, add_spec_point → affineAdd_spec
+    renaming add → affineAdd, add_spec → affineAdd_spec
 open «CoreOpsArithSubSharedAAffineNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
-    renaming sub → affineSub, sub_spec_point → affineSub_spec
+    renaming sub → affineSub, sub_spec → affineSub_spec
 open «CoreOpsArithAddEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
-    renaming add → edwardsAdd, add_spec_point → edwardsAdd_spec
+    renaming add → edwardsAdd, add_spec → edwardsAdd_spec
 
 namespace Curve25519Dalek.EdwardsOps
 
@@ -232,13 +233,13 @@ namespace Curve25519Dalek.EdwardsOps
   ltFrom := ltFromFn
 
 theorem X86NoTables.identity_spec : X86NoTables.IdentitySpec :=
-  edwards.EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+  edwards.EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
 theorem X86NoTables.add_spec : X86NoTables.AddSpec :=
   edwardsAdd_spec
 
 theorem X86NoTables.addAssign_spec : X86NoTables.AddAssignSpec :=
-  «CoreOpsArithAddAssignEdwardsPointx86_64-no-tables».add_assign_spec_point
+  «CoreOpsArithAddAssignEdwardsPointx86_64-no-tables».add_assign_spec
 
 theorem X86NoTables.mulByPow2_spec : X86NoTables.MulByPow2Spec :=
   edwards.«EdwardsPointx86_64-no-tables».mul_by_pow_2_spec
@@ -254,22 +255,22 @@ theorem X86NoTables.addA_spec : X86NoTables.AddASpec := affineAdd_spec
 theorem X86NoTables.subA_spec : X86NoTables.SubASpec := affineSub_spec
 
 theorem X86NoTables.asExtended_spec : X86NoTables.AsExtendedSpec :=
-  «CompletedPointx86_64-no-tables».as_extended_spec_point
+  «CompletedPointx86_64-no-tables».as_extended_spec
 
 theorem X86NoTables.asProjectiveNiels_spec : X86NoTables.AsProjectiveNielsSpec :=
-  edwards.«EdwardsPointx86_64-no-tables».as_projective_niels_spec_point
+  edwards.«EdwardsPointx86_64-no-tables».as_projective_niels_spec
 
 theorem X86NoTables.pIdentity_spec : X86NoTables.PIdentitySpec :=
-  ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+  ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
 theorem X86NoTables.pDouble_spec : X86NoTables.PDoubleSpec :=
-  «ProjectivePointx86_64-no-tables».double_spec_point
+  «ProjectivePointx86_64-no-tables».double_spec
 
 theorem X86NoTables.cAsProjective_spec : X86NoTables.CAsProjectiveSpec :=
-  «CompletedPointx86_64-no-tables».as_projective_spec_point
+  «CompletedPointx86_64-no-tables».as_projective_spec
 
 theorem X86NoTables.pAsExtended_spec : X86NoTables.PAsExtendedSpec :=
-  «ProjectivePointx86_64-no-tables».as_extended_spec_point
+  «ProjectivePointx86_64-no-tables».as_extended_spec
 
 theorem X86NoTables.nafTable5_spec : X86NoTables.NafTable5Spec :=
   «CoreConvertFromSharedAEdwardsPointx86_64-no-tables».from_spec
@@ -287,9 +288,9 @@ end
 section
 open Curve25519Dalek.«Shared0EdwardsPointi686-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointi686-tablesCompletedPointi686-tables»
-    renaming add → nielsAdd, add_spec_point → nielsAdd_spec
+    renaming add → nielsAdd, add_spec → nielsAdd_spec
 open «CoreOpsArithSubSharedAProjectiveNielsPointi686-tablesCompletedPointi686-tables»
-    renaming sub → nielsSub, sub_spec_point → nielsSub_spec
+    renaming sub → nielsSub, sub_spec → nielsSub_spec
 open Curve25519Dalek.edwards.EdwardsPoint.«i686-tables».Insts
 open Curve25519Dalek.window.«NafLookupTable5ProjectiveNielsPointi686-tables».Insts
 open Curve25519Dalek.«Shared0ProjectiveNielsPointi686-tables».Insts
@@ -298,11 +299,11 @@ open Curve25519Dalek.window.«LookupTableProjectiveNielsPointi686-tables».Insts
     renaming «from» → ltFromFn, from_spec → ltFromFn_spec
 set_option linter.style.longLine true
 open «CoreOpsArithAddSharedAAffineNielsPointi686-tablesCompletedPointi686-tables»
-    renaming add → affineAdd, add_spec_point → affineAdd_spec
+    renaming add → affineAdd, add_spec → affineAdd_spec
 open «CoreOpsArithSubSharedAAffineNielsPointi686-tablesCompletedPointi686-tables»
-    renaming sub → affineSub, sub_spec_point → affineSub_spec
+    renaming sub → affineSub, sub_spec → affineSub_spec
 open «CoreOpsArithAddEdwardsPointi686-tablesEdwardsPointi686-tables»
-    renaming add → edwardsAdd, add_spec_point → edwardsAdd_spec
+    renaming add → edwardsAdd, add_spec → edwardsAdd_spec
 
 namespace Curve25519Dalek.EdwardsOps
 
@@ -356,13 +357,13 @@ namespace Curve25519Dalek.EdwardsOps
   ltFrom := ltFromFn
 
 theorem I686Tables.identity_spec : I686Tables.IdentitySpec :=
-  edwards.EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+  edwards.EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
 theorem I686Tables.add_spec : I686Tables.AddSpec :=
   edwardsAdd_spec
 
 theorem I686Tables.addAssign_spec : I686Tables.AddAssignSpec :=
-  «CoreOpsArithAddAssignEdwardsPointi686-tables».add_assign_spec_point
+  «CoreOpsArithAddAssignEdwardsPointi686-tables».add_assign_spec
 
 theorem I686Tables.mulByPow2_spec : I686Tables.MulByPow2Spec :=
   edwards.«EdwardsPointi686-tables».mul_by_pow_2_spec
@@ -378,22 +379,22 @@ theorem I686Tables.addA_spec : I686Tables.AddASpec := affineAdd_spec
 theorem I686Tables.subA_spec : I686Tables.SubASpec := affineSub_spec
 
 theorem I686Tables.asExtended_spec : I686Tables.AsExtendedSpec :=
-  «CompletedPointi686-tables».as_extended_spec_point
+  «CompletedPointi686-tables».as_extended_spec
 
 theorem I686Tables.asProjectiveNiels_spec : I686Tables.AsProjectiveNielsSpec :=
-  edwards.«EdwardsPointi686-tables».as_projective_niels_spec_point
+  edwards.«EdwardsPointi686-tables».as_projective_niels_spec
 
 theorem I686Tables.pIdentity_spec : I686Tables.PIdentitySpec :=
-  ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+  ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
 theorem I686Tables.pDouble_spec : I686Tables.PDoubleSpec :=
-  «ProjectivePointi686-tables».double_spec_point
+  «ProjectivePointi686-tables».double_spec
 
 theorem I686Tables.cAsProjective_spec : I686Tables.CAsProjectiveSpec :=
-  «CompletedPointi686-tables».as_projective_spec_point
+  «CompletedPointi686-tables».as_projective_spec
 
 theorem I686Tables.pAsExtended_spec : I686Tables.PAsExtendedSpec :=
-  «ProjectivePointi686-tables».as_extended_spec_point
+  «ProjectivePointi686-tables».as_extended_spec
 
 theorem I686Tables.nafTable5_spec : I686Tables.NafTable5Spec :=
   «CoreConvertFromSharedAEdwardsPointi686-tables».from_spec
@@ -411,9 +412,9 @@ end
 section
 open Curve25519Dalek.«Shared0EdwardsPointi686-no-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointi686-no-tablesCompletedPointi686-no-tables»
-    renaming add → nielsAdd, add_spec_point → nielsAdd_spec
+    renaming add → nielsAdd, add_spec → nielsAdd_spec
 open «CoreOpsArithSubSharedAProjectiveNielsPointi686-no-tablesCompletedPointi686-no-tables»
-    renaming sub → nielsSub, sub_spec_point → nielsSub_spec
+    renaming sub → nielsSub, sub_spec → nielsSub_spec
 open Curve25519Dalek.edwards.EdwardsPoint.«i686-no-tables».Insts
 open Curve25519Dalek.window.«NafLookupTable5ProjectiveNielsPointi686-no-tables».Insts
 open Curve25519Dalek.«Shared0ProjectiveNielsPointi686-no-tables».Insts
@@ -422,11 +423,11 @@ open Curve25519Dalek.window.«LookupTableProjectiveNielsPointi686-no-tables».In
     renaming «from» → ltFromFn, from_spec → ltFromFn_spec
 set_option linter.style.longLine true
 open «CoreOpsArithAddSharedAAffineNielsPointi686-no-tablesCompletedPointi686-no-tables»
-    renaming add → affineAdd, add_spec_point → affineAdd_spec
+    renaming add → affineAdd, add_spec → affineAdd_spec
 open «CoreOpsArithSubSharedAAffineNielsPointi686-no-tablesCompletedPointi686-no-tables»
-    renaming sub → affineSub, sub_spec_point → affineSub_spec
+    renaming sub → affineSub, sub_spec → affineSub_spec
 open «CoreOpsArithAddEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
-    renaming add → edwardsAdd, add_spec_point → edwardsAdd_spec
+    renaming add → edwardsAdd, add_spec → edwardsAdd_spec
 
 namespace Curve25519Dalek.EdwardsOps
 
@@ -480,13 +481,13 @@ namespace Curve25519Dalek.EdwardsOps
   ltFrom := ltFromFn
 
 theorem I686NoTables.identity_spec : I686NoTables.IdentitySpec :=
-  edwards.EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+  edwards.EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
 theorem I686NoTables.add_spec : I686NoTables.AddSpec :=
   edwardsAdd_spec
 
 theorem I686NoTables.addAssign_spec : I686NoTables.AddAssignSpec :=
-  «CoreOpsArithAddAssignEdwardsPointi686-no-tables».add_assign_spec_point
+  «CoreOpsArithAddAssignEdwardsPointi686-no-tables».add_assign_spec
 
 theorem I686NoTables.mulByPow2_spec : I686NoTables.MulByPow2Spec :=
   edwards.«EdwardsPointi686-no-tables».mul_by_pow_2_spec
@@ -502,22 +503,22 @@ theorem I686NoTables.addA_spec : I686NoTables.AddASpec := affineAdd_spec
 theorem I686NoTables.subA_spec : I686NoTables.SubASpec := affineSub_spec
 
 theorem I686NoTables.asExtended_spec : I686NoTables.AsExtendedSpec :=
-  «CompletedPointi686-no-tables».as_extended_spec_point
+  «CompletedPointi686-no-tables».as_extended_spec
 
 theorem I686NoTables.asProjectiveNiels_spec : I686NoTables.AsProjectiveNielsSpec :=
-  edwards.«EdwardsPointi686-no-tables».as_projective_niels_spec_point
+  edwards.«EdwardsPointi686-no-tables».as_projective_niels_spec
 
 theorem I686NoTables.pIdentity_spec : I686NoTables.PIdentitySpec :=
-  ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+  ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
 theorem I686NoTables.pDouble_spec : I686NoTables.PDoubleSpec :=
-  «ProjectivePointi686-no-tables».double_spec_point
+  «ProjectivePointi686-no-tables».double_spec
 
 theorem I686NoTables.cAsProjective_spec : I686NoTables.CAsProjectiveSpec :=
-  «CompletedPointi686-no-tables».as_projective_spec_point
+  «CompletedPointi686-no-tables».as_projective_spec
 
 theorem I686NoTables.pAsExtended_spec : I686NoTables.PAsExtendedSpec :=
-  «ProjectivePointi686-no-tables».as_extended_spec_point
+  «ProjectivePointi686-no-tables».as_extended_spec
 
 theorem I686NoTables.nafTable5_spec : I686NoTables.NafTable5Spec :=
   «CoreConvertFromSharedAEdwardsPointi686-no-tables».from_spec

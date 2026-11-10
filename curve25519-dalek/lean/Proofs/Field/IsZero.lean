@@ -13,6 +13,7 @@ import Proofs.Helpers.AsNat
 import Subtle.Instances
 import Proofs.Backend.Serial.U32.Field.ToBytes
 public import Curve25519.Basic
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

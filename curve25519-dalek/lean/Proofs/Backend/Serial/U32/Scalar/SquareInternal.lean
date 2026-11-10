@@ -12,6 +12,7 @@ import Proofs.Helpers.AsNat
 import Proofs.Helpers.Scalar29
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Ring
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `Scalar29::square_internal`

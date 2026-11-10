@@ -16,11 +16,12 @@ public import Proofs.Backend.Serial.CurveModels.CompletedAsExtended
 public import Proofs.Field.SqrtRatioI
 import Proofs.Helpers.Backend.U32.Bytes
 import Proofs.Helpers.Backend.U64.Bytes
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # The Ristretto Elligator map (`ristretto/elligator.rs`)
 
-`elligator_ristretto_flavor` is RFC 9496 §4.3.4 `MAP` (`Ristretto.mapRep`) step by step, the
+`elligator_ristretto_flavor` is RFC 9496 §4.3.4 `MAP` (`Ristretto.mapRepField`) step by step, the
 point `(w0 : w2 : w1 : w3)` being formed as a completed point; `map_to_curve` applies it to the
 low `255` bits of the bytes, reduced modulo `p`. -/
 
@@ -82,7 +83,7 @@ theorem elligatorBody_spec (hadd : B.AddSpec) (hsub : B.SubSpec)
     B.elligatorBody mk r_0 ⦃ r => ∃ a b c d, r = mk a b c d ∧
       (⟨B.toField a, B.toField b, B.toField c, B.toField d⟩ : edwards.Extended).OnCurve ∧
       (⟨B.toField a, B.toField b, B.toField c, B.toField d⟩ : edwards.Extended).toPoint =
-        Ristretto.mapRep (B.toField r_0) ∧
+        Ristretto.mapRepField (B.toField r_0) ∧
       B.Red a ∧ B.Red b ∧ B.Red c ∧ B.Red d ⦄ := by
   unfold elligatorBody
   apply spec_bind hm1
@@ -197,8 +198,8 @@ theorem elligatorBody_spec (hadd : B.AddSpec) (hsub : B.SubSpec)
     change _ ∧ _ ∧ _
     dsimp only
     rw [X13, Z15, Y16, T17]
-    exact ⟨Ristretto.mapRep_den_ne_zero _, Ristretto.mapRep_one_add_sq_ne_zero _,
-      Ristretto.mapRep_equation _⟩
+    exact ⟨Ristretto.mapRepField_den_ne_zero _, Ristretto.mapRepField_one_add_sq_ne_zero _,
+      Ristretto.mapRepField_equation _⟩
   apply spec_bind (completedAsExtended_spec B hmul mk fe13 fe16 fe15 fe17
     (B.red_mulIn hfe13b) (B.red_mulIn hfe16b) (B.red_mulIn hfe15b) (B.sum2_mulIn hfe17b))
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
@@ -208,10 +209,10 @@ theorem elligatorBody_spec (hadd : B.AddSpec) (hsub : B.SubSpec)
     exact Completed.onCurve_toExtended hon
   · rw [h, Completed.toPoint_toExtended hon]
     apply Point.ext
-    · rw [Completed.toPoint_x hon, Ristretto.mapRep_x]
+    · rw [Completed.toPoint_x hon, Ristretto.mapRepField_x]
       dsimp only
       rw [X13, Z15]
-    · rw [Completed.toPoint_y hon, Ristretto.mapRep_y]
+    · rw [Completed.toPoint_y hon, Ristretto.mapRepField_y]
       dsimp only
       rw [Y16, T17]
 
@@ -232,7 +233,7 @@ theorem elligator_ristretto_flavor_eq (r_0 : FieldElement51) :
 @[step]
 theorem elligator_ristretto_flavor_spec (r_0 : FieldElement51) (hr_0 : r_0.LimbsLt 54) :
     elligator_ristretto_flavor r_0 ⦃ (r : RistrettoPoint.«x86_64-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.mapRep r_0.toField ∧ r.LimbsLt 52 ⦄ := by
+      r.OnCurve ∧ r.toPoint = Ristretto.mapRepField r_0.toField ∧ r.LimbsLt 52 ⦄ := by
   rw [elligator_ristretto_flavor_eq]
   apply spec_mono (Backend.elligatorBody_spec Backend.U64
     Backend.U64.add_spec Backend.U64.sub_spec Backend.U64.mul_spec Backend.U64.square_spec
@@ -249,17 +250,18 @@ theorem elligator_ristretto_flavor_spec (r_0 : FieldElement51) (hr_0 : r_0.Limbs
       edwards.EdwardsPoint.«x86_64-tables».toExtended_def]
     exact hpt
 
-/-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the low `255` bits of the bytes, reduced
-modulo `p` (`decodeU`): an even point (a ristretto255 representative); limbs `< 2^52`. -/
+/-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the 32 bytes (`Ristretto.mapRep`): an even
+point (a ristretto255 representative); limbs `< 2^52`. -/
 @[step]
 theorem map_to_curve_spec (bytes : Array U8 32#usize) :
     map_to_curve bytes ⦃ (r : RistrettoPoint.«x86_64-tables») =>
-      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep (decodeU (bytes.asNat 8)) ∧
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep bytes.toVector ∧
         r.LimbsLt 52 ⦄ := by
+  simp only [Aeneas.Std.Array.mapRep_toVector]
   unfold map_to_curve
   step as ⟨fe, hfe, hfeb⟩
   step as ⟨r, h1, h2, h3⟩
-  refine (fun h => ⟨h1, by rw [h]; exact Ristretto.even_mapRep _, h, h3⟩) ?_
+  refine (fun h => ⟨h1, by rw [h]; exact Ristretto.even_mapRepField _, h, h3⟩) ?_
   rw [h2, toField_eq_decodeU_of_asNat_eq hfe]
 
 end «RistrettoPointx86_64-tables»
@@ -277,7 +279,7 @@ theorem elligator_ristretto_flavor_eq (r_0 : FieldElement2625) :
 @[step]
 theorem elligator_ristretto_flavor_spec (r_0 : FieldElement2625) (hr_0 : r_0.LimbsLt 27) :
     elligator_ristretto_flavor r_0 ⦃ (r : RistrettoPoint.«i686-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.mapRep r_0.toField ∧ r.LimbsLt 26 ⦄ := by
+      r.OnCurve ∧ r.toPoint = Ristretto.mapRepField r_0.toField ∧ r.LimbsLt 26 ⦄ := by
   rw [elligator_ristretto_flavor_eq]
   apply spec_mono (Backend.elligatorBody_spec Backend.U32
     Backend.U32.add_spec Backend.U32.sub_spec Backend.U32.mul_spec Backend.U32.square_spec
@@ -294,17 +296,18 @@ theorem elligator_ristretto_flavor_spec (r_0 : FieldElement2625) (hr_0 : r_0.Lim
       edwards.EdwardsPoint.«i686-tables».toExtended_def]
     exact hpt
 
-/-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the low `255` bits of the bytes, reduced
-modulo `p` (`decodeU`): an even point (a ristretto255 representative); limbs `< 2^26`. -/
+/-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the 32 bytes (`Ristretto.mapRep`): an even
+point (a ristretto255 representative); limbs `< 2^26`. -/
 @[step]
 theorem map_to_curve_spec (bytes : Array U8 32#usize) :
     map_to_curve bytes ⦃ (r : RistrettoPoint.«i686-tables») =>
-      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep (decodeU (bytes.asNat 8)) ∧
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep bytes.toVector ∧
         r.LimbsLt 26 ⦄ := by
+  simp only [Aeneas.Std.Array.mapRep_toVector]
   unfold map_to_curve
   step as ⟨fe, hfe, hfeb⟩
   step as ⟨r, h1, h2, h3⟩
-  refine (fun h => ⟨h1, by rw [h]; exact Ristretto.even_mapRep _, h, h3⟩) ?_
+  refine (fun h => ⟨h1, by rw [h]; exact Ristretto.even_mapRepField _, h, h3⟩) ?_
   rw [h2, toField_eq_decodeU_of_mod hfe]
 
 end «RistrettoPointi686-tables»
@@ -322,7 +325,7 @@ theorem elligator_ristretto_flavor_eq (r_0 : FieldElement51) :
 @[step]
 theorem elligator_ristretto_flavor_spec (r_0 : FieldElement51) (hr_0 : r_0.LimbsLt 54) :
     elligator_ristretto_flavor r_0 ⦃ (r : RistrettoPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.mapRep r_0.toField ∧ r.LimbsLt 52 ⦄ := by
+      r.OnCurve ∧ r.toPoint = Ristretto.mapRepField r_0.toField ∧ r.LimbsLt 52 ⦄ := by
   rw [elligator_ristretto_flavor_eq]
   apply spec_mono (Backend.elligatorBody_spec Backend.U64
     Backend.U64.add_spec Backend.U64.sub_spec Backend.U64.mul_spec Backend.U64.square_spec
@@ -339,17 +342,18 @@ theorem elligator_ristretto_flavor_spec (r_0 : FieldElement51) (hr_0 : r_0.Limbs
       edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def]
     exact hpt
 
-/-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the low `255` bits of the bytes, reduced
-modulo `p` (`decodeU`): an even point (a ristretto255 representative); limbs `< 2^52`. -/
+/-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the 32 bytes (`Ristretto.mapRep`): an even
+point (a ristretto255 representative); limbs `< 2^52`. -/
 @[step]
 theorem map_to_curve_spec (bytes : Array U8 32#usize) :
     map_to_curve bytes ⦃ (r : RistrettoPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep (decodeU (bytes.asNat 8)) ∧
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep bytes.toVector ∧
         r.LimbsLt 52 ⦄ := by
+  simp only [Aeneas.Std.Array.mapRep_toVector]
   unfold map_to_curve
   step as ⟨fe, hfe, hfeb⟩
   step as ⟨r, h1, h2, h3⟩
-  refine (fun h => ⟨h1, by rw [h]; exact Ristretto.even_mapRep _, h, h3⟩) ?_
+  refine (fun h => ⟨h1, by rw [h]; exact Ristretto.even_mapRepField _, h, h3⟩) ?_
   rw [h2, toField_eq_decodeU_of_asNat_eq hfe]
 
 end «RistrettoPointx86_64-no-tables»
@@ -367,7 +371,7 @@ theorem elligator_ristretto_flavor_eq (r_0 : FieldElement2625) :
 @[step]
 theorem elligator_ristretto_flavor_spec (r_0 : FieldElement2625) (hr_0 : r_0.LimbsLt 27) :
     elligator_ristretto_flavor r_0 ⦃ (r : RistrettoPoint.«i686-no-tables») =>
-      r.OnCurve ∧ r.toPoint = Ristretto.mapRep r_0.toField ∧ r.LimbsLt 26 ⦄ := by
+      r.OnCurve ∧ r.toPoint = Ristretto.mapRepField r_0.toField ∧ r.LimbsLt 26 ⦄ := by
   rw [elligator_ristretto_flavor_eq]
   apply spec_mono (Backend.elligatorBody_spec Backend.U32
     Backend.U32.add_spec Backend.U32.sub_spec Backend.U32.mul_spec Backend.U32.square_spec
@@ -384,17 +388,18 @@ theorem elligator_ristretto_flavor_spec (r_0 : FieldElement2625) (hr_0 : r_0.Lim
       edwards.EdwardsPoint.«i686-no-tables».toExtended_def]
     exact hpt
 
-/-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the low `255` bits of the bytes, reduced
-modulo `p` (`decodeU`): an even point (a ristretto255 representative); limbs `< 2^26`. -/
+/-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the 32 bytes (`Ristretto.mapRep`): an even
+point (a ristretto255 representative); limbs `< 2^26`. -/
 @[step]
 theorem map_to_curve_spec (bytes : Array U8 32#usize) :
     map_to_curve bytes ⦃ (r : RistrettoPoint.«i686-no-tables») =>
-      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep (decodeU (bytes.asNat 8)) ∧
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep bytes.toVector ∧
         r.LimbsLt 26 ⦄ := by
+  simp only [Aeneas.Std.Array.mapRep_toVector]
   unfold map_to_curve
   step as ⟨fe, hfe, hfeb⟩
   step as ⟨r, h1, h2, h3⟩
-  refine (fun h => ⟨h1, by rw [h]; exact Ristretto.even_mapRep _, h, h3⟩) ?_
+  refine (fun h => ⟨h1, by rw [h]; exact Ristretto.even_mapRepField _, h, h3⟩) ?_
   rw [h2, toField_eq_decodeU_of_mod hfe]
 
 end «RistrettoPointi686-no-tables»

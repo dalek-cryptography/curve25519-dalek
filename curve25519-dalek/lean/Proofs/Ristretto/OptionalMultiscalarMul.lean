@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
-public import Defs.Iterator
+public import ToAeneas.Iterator
 public import Defs.Scalar
 import Proofs.Edwards.OptionalMultiscalarMul
 import Proofs.Helpers.Collect
@@ -85,14 +85,16 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
-    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 52 ∧ P.OnCurve)
-    (hxs : xs.length ≤ Usize.max) (hops : ops.length ≤ Usize.max)
+    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 52)
+    (hps_on : ∀ P, some P ∈ ops → P.OnCurve)
+    (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option ristretto.RistrettoPoint.«x86_64-tables») => (r = none ↔ none ∈ ops) ∧
-        ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
-          (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧
+      ⦃ (r : Option ristretto.RistrettoPoint.«x86_64-tables») => (none ∈ ops → r = none) ∧
+        ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
+          (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 52 ⦄ := by
+  have hops : ops.length ≤ Usize.max := hlen ▸ hxs
   unfold optional_multiscalar_mul
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause2_IntoIter) => pointsInst.iteratorInst.Yields it ops ⦄ := hpoints
@@ -103,7 +105,8 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   step with edwards_spec _ _ (core.iter.traits.collect.IntoIteratorVec _) scalars v xs v.val ss
       hscalars
       (core.iter.traits.collect.IntoIteratorVec_yields v) hborrow_scalars hss
-      (by rw [hv]; exact hps) hxs (by rw [hv]; exact hops) (by rw [hv]; exact hlen)
+      (by rw [hv]; exact hps) (by rw [hv]; exact hps_on) hxs
+      (by rw [hv]; exact hlen)
     as ⟨o, hnone, hsome⟩
   rw [hv] at hnone hsome
   refine spec_mono (collect.optionMap_id_spec _ _ ?_ o) ?_
@@ -179,14 +182,16 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
-    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 26 ∧ P.OnCurve)
-    (hxs : xs.length ≤ Usize.max) (hops : ops.length ≤ Usize.max)
+    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 26)
+    (hps_on : ∀ P, some P ∈ ops → P.OnCurve)
+    (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option ristretto.RistrettoPoint.«i686-tables») => (r = none ↔ none ∈ ops) ∧
-        ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
-          (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧
+      ⦃ (r : Option ristretto.RistrettoPoint.«i686-tables») => (none ∈ ops → r = none) ∧
+        ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
+          (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 26 ⦄ := by
+  have hops : ops.length ≤ Usize.max := hlen ▸ hxs
   unfold optional_multiscalar_mul
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause2_IntoIter) => pointsInst.iteratorInst.Yields it ops ⦄ := hpoints
@@ -197,7 +202,8 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   step with edwards_spec _ _ (core.iter.traits.collect.IntoIteratorVec _) scalars v xs v.val ss
       hscalars
       (core.iter.traits.collect.IntoIteratorVec_yields v) hborrow_scalars hss
-      (by rw [hv]; exact hps) hxs (by rw [hv]; exact hops) (by rw [hv]; exact hlen)
+      (by rw [hv]; exact hps) (by rw [hv]; exact hps_on) hxs
+      (by rw [hv]; exact hlen)
     as ⟨o, hnone, hsome⟩
   rw [hv] at hnone hsome
   refine spec_mono (collect.optionMap_id_spec _ _ ?_ o) ?_
@@ -273,14 +279,16 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
-    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 52 ∧ P.OnCurve)
-    (hxs : xs.length ≤ Usize.max) (hops : ops.length ≤ Usize.max)
+    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 52)
+    (hps_on : ∀ P, some P ∈ ops → P.OnCurve)
+    (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option ristretto.RistrettoPoint.«x86_64-no-tables») => (r = none ↔ none ∈ ops) ∧
-        ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
-          (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧
+      ⦃ (r : Option ristretto.RistrettoPoint.«x86_64-no-tables») => (none ∈ ops → r = none) ∧
+        ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
+          (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 52 ⦄ := by
+  have hops : ops.length ≤ Usize.max := hlen ▸ hxs
   unfold optional_multiscalar_mul
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause2_IntoIter) => pointsInst.iteratorInst.Yields it ops ⦄ := hpoints
@@ -291,7 +299,8 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   step with edwards_spec _ _ (core.iter.traits.collect.IntoIteratorVec _) scalars v xs v.val ss
       hscalars
       (core.iter.traits.collect.IntoIteratorVec_yields v) hborrow_scalars hss
-      (by rw [hv]; exact hps) hxs (by rw [hv]; exact hops) (by rw [hv]; exact hlen)
+      (by rw [hv]; exact hps) (by rw [hv]; exact hps_on) hxs
+      (by rw [hv]; exact hlen)
     as ⟨o, hnone, hsome⟩
   rw [hv] at hnone hsome
   refine spec_mono (collect.optionMap_id_spec _ _ ?_ o) ?_
@@ -367,14 +376,16 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
-    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 26 ∧ P.OnCurve)
-    (hxs : xs.length ≤ Usize.max) (hops : ops.length ≤ Usize.max)
+    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 26)
+    (hps_on : ∀ P, some P ∈ ops → P.OnCurve)
+    (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option ristretto.RistrettoPoint.«i686-no-tables») => (r = none ↔ none ∈ ops) ∧
-        ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
-          (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧
+      ⦃ (r : Option ristretto.RistrettoPoint.«i686-no-tables») => (none ∈ ops → r = none) ∧
+        ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
+          (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 26 ⦄ := by
+  have hops : ops.length ≤ Usize.max := hlen ▸ hxs
   unfold optional_multiscalar_mul
   have hpoints' : pointsInst.into_iter points
       ⦃ (it : Clause2_IntoIter) => pointsInst.iteratorInst.Yields it ops ⦄ := hpoints
@@ -385,7 +396,8 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   step with edwards_spec _ _ (core.iter.traits.collect.IntoIteratorVec _) scalars v xs v.val ss
       hscalars
       (core.iter.traits.collect.IntoIteratorVec_yields v) hborrow_scalars hss
-      (by rw [hv]; exact hps) hxs (by rw [hv]; exact hops) (by rw [hv]; exact hlen)
+      (by rw [hv]; exact hps) (by rw [hv]; exact hps_on) hxs
+      (by rw [hv]; exact hlen)
     as ⟨o, hnone, hsome⟩
   rw [hv] at hnone hsome
   refine spec_mono (collect.optionMap_id_spec _ _ ?_ o) ?_

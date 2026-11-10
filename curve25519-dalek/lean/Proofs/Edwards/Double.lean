@@ -25,7 +25,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 /-- `EdwardsPoint::double`: the projective doubling formula, back in extended coordinates;
 limbs `< 2^52`. -/
 @[step]
-theorem double_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52) :
+theorem double_toExtended (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52) :
     double self ⦃ (r : EdwardsPoint.«x86_64-tables») =>
       r.toExtended = self.toExtended.toProjective.double.toExtended ∧ r.LimbsLt 52 ⦄ := by
   unfold double
@@ -35,11 +35,11 @@ theorem double_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsL
   exact ⟨by rw [hr, hcp, hpp], hrb⟩
 
 /-- `EdwardsPoint::double` doubles the represented point. -/
-theorem double_spec_point (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem double_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     double self ⦃ (r : EdwardsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = 2 • self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (double_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (double_toExtended self hself) fun r ⟨hr, hb⟩ => by
     have hon' := Projective.double_onCurve (Extended.onCurve_toProjective hon)
     rw [EdwardsPoint.«x86_64-tables».onCurve_iff,
       EdwardsPoint.«x86_64-tables».toPoint_def,
@@ -58,7 +58,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 /-- `EdwardsPoint::double`: the projective doubling formula, back in extended coordinates;
 limbs `< 2^26`. -/
 @[step]
-theorem double_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26) :
+theorem double_toExtended (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26) :
     double self ⦃ (r : EdwardsPoint.«i686-tables») =>
       r.toExtended = self.toExtended.toProjective.double.toExtended ∧ r.LimbsLt 26 ⦄ := by
   unfold double
@@ -68,11 +68,11 @@ theorem double_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 
   exact ⟨by rw [hr, hcp, hpp], hrb⟩
 
 /-- `EdwardsPoint::double` doubles the represented point. -/
-theorem double_spec_point (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem double_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     double self ⦃ (r : EdwardsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = 2 • self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (double_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (double_toExtended self hself) fun r ⟨hr, hb⟩ => by
     have hon' := Projective.double_onCurve (Extended.onCurve_toProjective hon)
     rw [EdwardsPoint.«i686-tables».onCurve_iff,
       EdwardsPoint.«i686-tables».toPoint_def,
@@ -91,7 +91,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 /-- `EdwardsPoint::double`: the projective doubling formula, back in extended coordinates;
 limbs `< 2^52`. -/
 @[step]
-theorem double_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
+theorem double_toExtended (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
     double self ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
       r.toExtended = self.toExtended.toProjective.double.toExtended ∧ r.LimbsLt 52 ⦄ := by
   unfold double
@@ -101,11 +101,11 @@ theorem double_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.Lim
   exact ⟨by rw [hr, hcp, hpp], hrb⟩
 
 /-- `EdwardsPoint::double` doubles the represented point. -/
-theorem double_spec_point (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem double_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     double self ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = 2 • self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (double_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (double_toExtended self hself) fun r ⟨hr, hb⟩ => by
     have hon' := Projective.double_onCurve (Extended.onCurve_toProjective hon)
     rw [EdwardsPoint.«x86_64-no-tables».onCurve_iff,
       EdwardsPoint.«x86_64-no-tables».toPoint_def,
@@ -124,7 +124,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 /-- `EdwardsPoint::double`: the projective doubling formula, back in extended coordinates;
 limbs `< 2^26`. -/
 @[step]
-theorem double_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26) :
+theorem double_toExtended (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26) :
     double self ⦃ (r : EdwardsPoint.«i686-no-tables») =>
       r.toExtended = self.toExtended.toProjective.double.toExtended ∧ r.LimbsLt 26 ⦄ := by
   unfold double
@@ -134,11 +134,11 @@ theorem double_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.Limbs
   exact ⟨by rw [hr, hcp, hpp], hrb⟩
 
 /-- `EdwardsPoint::double` doubles the represented point. -/
-theorem double_spec_point (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem double_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     double self ⦃ (r : EdwardsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = 2 • self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (double_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (double_toExtended self hself) fun r ⟨hr, hb⟩ => by
     have hon' := Projective.double_onCurve (Extended.onCurve_toProjective hon)
     rw [EdwardsPoint.«i686-no-tables».onCurve_iff,
       EdwardsPoint.«i686-no-tables».toPoint_def,

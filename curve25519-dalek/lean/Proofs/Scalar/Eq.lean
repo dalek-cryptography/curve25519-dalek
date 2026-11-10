@@ -16,8 +16,8 @@ namespace Curve25519Dalek.scalar.Scalar.Insts.CoreCmpPartialEqScalar
 
 @[step]
 theorem eq_spec (self other : Scalar) :
-    eq self other ⦃ (b : Bool) =>
-      (b = true ↔ self = other) ⦄ := by
+    eq self other ⦃ (r : Bool) =>
+      (r = true ↔ self = other) ⦄ := by
   unfold eq
   step as ⟨c, _, hc1, hc0⟩
   step as ⟨b, hb⟩

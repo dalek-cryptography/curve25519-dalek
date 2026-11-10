@@ -107,7 +107,7 @@ theorem createLoop_spec (fromF : EdwardsPoint.«i686-tables» → Result Tab)
 
 open «Shared0EdwardsPointi686-tables».Insts
 open «CoreOpsArithAddSharedAAffineNielsPointi686-tablesCompletedPointi686-tables»
-  (add_spec_point)
+  (add_spec)
 
 /-- The loop body of `BasepointTable::mul_base` (both loops): take the next index from the
 `step_by(2)` iterator and add the digit `a[i]` selected from row `i / 2`. -/
@@ -197,8 +197,8 @@ theorem mulBaseLoop_spec (adds : Usize) (hadds : adds.val ≤ 64)
       have hsel' := hsel i.val hilt
       rw [← hi1, ← hlt', ← hd] at hsel'
       step with hsel' as ⟨q, hqon, hq, hqb⟩
-      step with add_spec_point Q q hQb hqb hQon hqon as ⟨c, hcon, hc, hcb⟩
-      step with «CompletedPointi686-tables».as_extended_spec_point as ⟨Q1, hQ1on, hQ1, hQ1b⟩
+      step with add_spec Q q hQb hqb hQon hqon as ⟨c, hcon, hc, hcb⟩
+      step with «CompletedPointi686-tables».as_extended_spec as ⟨Q1, hQ1on, hQ1, hQ1b⟩
       refine ⟨hstep1.trans hstep, hend1.trans hend, ⟨m + 1, by omega, ?_,
         hQ1on, hQ1b, ?_⟩, ?_⟩
       · rw [hstart1, hstep, hend]
@@ -300,7 +300,7 @@ theorem createLoop_spec (fromF : EdwardsPoint.«x86_64-tables» → Result Tab)
 
 open «Shared0EdwardsPointx86_64-tables».Insts
 open «CoreOpsArithAddSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables»
-  (add_spec_point)
+  (add_spec)
 
 /-- The loop body of `BasepointTable::mul_base` (both loops): take the next index from the
 `step_by(2)` iterator and add the digit `a[i]` selected from row `i / 2`. -/
@@ -390,8 +390,8 @@ theorem mulBaseLoop_spec (adds : Usize) (hadds : adds.val ≤ 64)
       have hsel' := hsel i.val hilt
       rw [← hi1, ← hlt', ← hd] at hsel'
       step with hsel' as ⟨q, hqon, hq, hqb⟩
-      step with add_spec_point Q q hQb hqb hQon hqon as ⟨c, hcon, hc, hcb⟩
-      step with «CompletedPointx86_64-tables».as_extended_spec_point as ⟨Q1, hQ1on, hQ1, hQ1b⟩
+      step with add_spec Q q hQb hqb hQon hqon as ⟨c, hcon, hc, hcb⟩
+      step with «CompletedPointx86_64-tables».as_extended_spec as ⟨Q1, hQ1on, hQ1, hQ1b⟩
       refine ⟨hstep1.trans hstep, hend1.trans hend, ⟨m + 1, by omega, ?_,
         hQ1on, hQ1b, ?_⟩, ?_⟩
       · rw [hstart1, hstep, hend]

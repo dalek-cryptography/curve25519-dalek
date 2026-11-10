@@ -19,7 +19,7 @@ namespace «EdwardsPointx86_64-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-/-- `EdwardsPoint::mul_by_cofactor`: `8 • P`; limbs `< 2^52`. -/
+/-- `EdwardsPoint::mul_by_cofactor`: `8 • self`; limbs `< 2^52`. -/
 @[step]
 theorem mul_by_cofactor_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
@@ -35,7 +35,7 @@ namespace «EdwardsPointi686-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-/-- `EdwardsPoint::mul_by_cofactor`: `8 • P`; limbs `< 2^26`. -/
+/-- `EdwardsPoint::mul_by_cofactor`: `8 • self`; limbs `< 2^26`. -/
 @[step]
 theorem mul_by_cofactor_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
@@ -51,7 +51,7 @@ namespace «EdwardsPointx86_64-no-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-/-- `EdwardsPoint::mul_by_cofactor`: `8 • P`; limbs `< 2^52`. -/
+/-- `EdwardsPoint::mul_by_cofactor`: `8 • self`; limbs `< 2^52`. -/
 @[step]
 theorem mul_by_cofactor_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
@@ -67,7 +67,7 @@ namespace «EdwardsPointi686-no-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-/-- `EdwardsPoint::mul_by_cofactor`: `8 • P`; limbs `< 2^26`. -/
+/-- `EdwardsPoint::mul_by_cofactor`: `8 • self`; limbs `< 2^26`. -/
 @[step]
 theorem mul_by_cofactor_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :

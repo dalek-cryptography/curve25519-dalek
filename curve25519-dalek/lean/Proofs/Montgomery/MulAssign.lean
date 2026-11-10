@@ -8,6 +8,7 @@ public import Curve25519Dalek.Funs
 public import Defs.Montgomery
 public import Defs.Scalar
 import Proofs.Montgomery.Mul
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `MulAssign<&Scalar> for MontgomeryPoint` -/
@@ -24,7 +25,8 @@ namespace CoreOpsArithMulAssignShared0Scalar
 @[step]
 theorem mul_assign_spec (self : MontgomeryPoint) (scalar : scalar.Scalar) :
     mul_assign self scalar ⦃ (r : MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (scalar.asNat % 2 ^ 255) self.u) ⦄ := by
+      r.toVector = encodeUCoordinate
+          (montgomery.ladder 255 (scalar.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
   unfold mul_assign
   exact Shared1MontgomeryPoint.Insts.CoreOpsArithMulShared0ScalarMontgomeryPoint.mul_spec self
       scalar
@@ -38,7 +40,8 @@ namespace CoreOpsArithMulAssignScalar
 @[step]
 theorem mul_assign_spec (self : MontgomeryPoint) (rhs : scalar.Scalar) :
     mul_assign self rhs ⦃ (r : MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladder 255 (rhs.asNat % 2 ^ 255) self.u) ⦄ := by
+      r.toVector = encodeUCoordinate
+          (montgomery.ladder 255 (rhs.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
   unfold mul_assign
   exact CoreOpsArithMulAssignShared0Scalar.mul_assign_spec self rhs
 

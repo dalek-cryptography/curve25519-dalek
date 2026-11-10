@@ -12,6 +12,7 @@ import Proofs.Helpers.AsInt
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.Scalar
 import Proofs.Scalar.Index
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

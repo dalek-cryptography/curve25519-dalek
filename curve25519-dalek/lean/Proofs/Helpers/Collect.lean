@@ -7,7 +7,7 @@ public import Aeneas.Std.Alloc.Vec
 public import Aeneas.Std.Alloc.Vec.IntoIter
 import all Aeneas.Std.Alloc.Vec.IntoIter
 public import Aeneas.Std.Core.CoreOption
-public import Defs.Iterator
+public import ToAeneas.Iterator
 import Aeneas.Tactic.Step.StepStar
 import Proofs.Helpers.Vec
 public section

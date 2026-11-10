@@ -299,7 +299,7 @@ theorem sqrtM1_eq_numeral :
   rfl
 
 /-- `-sqrtM1` as a numeral below `p` (`p - sqrtM1`): the `x`-coordinate of the 4-torsion point
-`eightTorsion 2`. -/
+`2 • torsion8`. -/
 theorem neg_sqrtM1_eq :
     -(sqrtM1 : ZMod p) =
       38214883241950591754978413199355411911188925816896391856984770930832735035197 := by

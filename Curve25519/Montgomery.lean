@@ -23,15 +23,17 @@ directions by `u_edwardsToMontgomery`, `v_edwardsToMontgomery`, `edwardsToMontgo
 
 The Montgomery basepoint `montgomeryBasepoint = edwardsToMontgomery basepoint` is RFC 7748's
 base point `(9, V(P))` (`u_montgomeryBasepoint`, `v_montgomeryBasepoint`) and has order `L`, and
-`x25519 k 9` is the `u`-coordinate of `clamp k • montgomeryBasepoint` (`x25519_basepoint`), i.e.
-of `edwardsToMontgomery (clamp k • basepoint)` (`x25519_basepoint_edwards`); more generally
-`x25519_edwards`.
+`x25519Nat k 9` is the `u`-coordinate of `clamp k • montgomeryBasepoint` (`x25519Nat_basepoint`),
+i.e. of `edwardsToMontgomery (clamp k • basepoint)` (`x25519Nat_basepoint_edwards`); more
+generally `x25519Nat_edwards`. On bytes: `X25519_basepoint`, `X25519_edwards`.
 
 The quadratic twist `montgomeryTwist = montgomery.twist 2` has `4 L'` points with
 `L' = twistL = 2^253 - 55484635554744707071703875581767296995` (`card_twist`, from the generic
 count `MontgomeryModel.card_add_card_twist` and `card_montgomery = 8 L`), and every `u` is the
 `u`-coordinate of a point of `montgomery` or of `montgomeryTwist`
-(`exists_montgomery_point_u_or_twist`). -/
+(`exists_montgomery_point_u_or_twist`). As the decoded scalar is a multiple of the cofactor `8`,
+the output of X25519 is the `u`-coordinate of a point of order dividing `L` on the curve or `L'`
+on the twist (`X25519_eq_u_of_nsmul_eq_zero`). -/
 
 namespace curve25519
 
@@ -148,25 +150,40 @@ theorem v_montgomeryBasepoint : montgomeryBasepoint.v =
 theorem addOrderOf_montgomeryBasepoint : addOrderOf montgomeryBasepoint = L := by
   rw [montgomeryBasepoint_def, AddEquiv.addOrderOf_eq, addOrderOf_basepoint]
 
-/-! ### `x25519` on the basepoint and on Edwards points -/
+/-! ### `x25519Nat` on the basepoint and on Edwards points -/
 
-/-- `x25519 k 9` is the `u`-coordinate of `clamp k • montgomeryBasepoint`. -/
-theorem x25519_basepoint (k : ℕ) : x25519 k 9 = encodeU (clamp k • montgomeryBasepoint).u := by
-  have h := x25519_eq_u_nsmul k montgomeryBasepoint
+/-- `x25519Nat k 9` is the `u`-coordinate of `clamp k • montgomeryBasepoint`. -/
+theorem x25519Nat_basepoint (k : ℕ) : x25519Nat k 9 = encodeU
+    (clamp k • montgomeryBasepoint).u := by
+  have h := x25519Nat_eq_u_nsmul k montgomeryBasepoint
   rwa [u_montgomeryBasepoint, encodeU_nine] at h
 
-/-- `x25519 k 9` is the `u`-coordinate of the image in `montgomery` of `clamp k • basepoint`:
+/-- `x25519Nat k 9` is the `u`-coordinate of the image in `montgomery` of `clamp k • basepoint`:
 the meaning of dalek's `mul_base_clamped` followed by `to_montgomery`. -/
-theorem x25519_basepoint_edwards (k : ℕ) :
-    x25519 k 9 = encodeU (edwardsToMontgomery (clamp k • basepoint)).u := by
-  rw [x25519_basepoint, montgomeryBasepoint_def, map_nsmul]
+theorem x25519Nat_basepoint_edwards (k : ℕ) :
+    x25519Nat k 9 = encodeU (edwardsToMontgomery (clamp k • basepoint)).u := by
+  rw [x25519Nat_basepoint, montgomeryBasepoint_def, map_nsmul]
 
-/-- `x25519` on the `u`-coordinate of the image of an Edwards point `P` is the `u`-coordinate
+/-- `x25519Nat` on the `u`-coordinate of the image of an Edwards point `P` is the `u`-coordinate
 of the image of `clamp k • P`. -/
-theorem x25519_edwards (k : ℕ) (P : edwards.Point) :
-    x25519 k (encodeU (edwardsToMontgomery P).u) =
+theorem x25519Nat_edwards (k : ℕ) (P : edwards.Point) :
+    x25519Nat k (encodeU (edwardsToMontgomery P).u) =
       encodeU (edwardsToMontgomery (clamp k • P)).u := by
-  rw [x25519_eq_u_nsmul, map_nsmul]
+  rw [x25519Nat_eq_u_nsmul, map_nsmul]
+
+/-- `X25519 k` on the coordinate `9` gives the coordinate of
+`decodeScalar25519 k • montgomeryBasepoint`. -/
+theorem X25519_basepoint (k : Vector UInt8 32) :
+    X25519 k (encodeUCoordinate 9) =
+      encodeUCoordinate (decodeScalar25519 k • montgomeryBasepoint).u :=
+  X25519_eq_u_nsmul k _ _ (by rw [decodeUCoordinate_encodeUCoordinate, u_montgomeryBasepoint])
+
+/-- `X25519 k` on the coordinate of the image of an Edwards point `P` gives the coordinate of the
+image of `decodeScalar25519 k • P`. -/
+theorem X25519_edwards (k : Vector UInt8 32) (P : edwards.Point) :
+    X25519 k (encodeUCoordinate (edwardsToMontgomery P).u) =
+      encodeUCoordinate (edwardsToMontgomery (decodeScalar25519 k • P)).u := by
+  rw [X25519_eq_u_nsmul k _ _ (decodeUCoordinate_encodeUCoordinate _).symm, map_nsmul]
 
 /-! ### The twist -/
 
@@ -189,5 +206,31 @@ theorem exists_montgomery_point_u_or_twist (u : ZMod p) :
     (∃ P : montgomery.Point, P.u = u) ∨ ∃ P : montgomeryTwist.Point, P.u = u := by
   rw [montgomeryTwist_def]
   exact exists_point_u_or_twist not_isSquare_two u
+
+/-! ### Small-subgroup safety -/
+
+/-- In a group with `c * N` elements, `N • n • Q = 0` when `n` is a multiple of `c`. -/
+private theorem nsmul_nsmul_eq_zero {G : Type*} [AddCommGroup G] {N c n : ℕ}
+    (hcard : Nat.card G = c * N) (hn : n % c = 0) (Q : G) : N • n • Q = 0 := by
+  obtain ⟨m, rfl⟩ := Nat.dvd_of_mod_eq_zero hn
+  rw [smul_smul, show N * (c * m) = m * Nat.card G by rw [hcard]; ring, ← smul_smul,
+    card_nsmul_eq_zero', smul_zero]
+
+/-- **Small-subgroup safety**: as the decoded scalar is a multiple of the cofactor `8`, the
+output of X25519 is the coordinate of a point of order dividing `L` on the curve, or of a point
+of order dividing `L' = twistL` on the twist (whatever the input: a point of small order
+contributes nothing). -/
+theorem X25519_eq_u_of_nsmul_eq_zero (k u : Vector UInt8 32) :
+    (∃ R : montgomery.Point, L • R = 0 ∧ X25519 k u = encodeUCoordinate R.u) ∨
+      ∃ R : montgomeryTwist.Point, twistL • R = 0 ∧ X25519 k u = encodeUCoordinate R.u := by
+  rcases exists_montgomery_point_u_or_twist (decodeUCoordinate u) with ⟨Q, hQ⟩ | ⟨Q, hQ⟩
+  · exact Or.inl ⟨decodeScalar25519 k • Q,
+      nsmul_nsmul_eq_zero card_montgomery (decodeScalar25519_mod_eight k) Q,
+      X25519_eq_u_nsmul k u Q hQ⟩
+  · have h4 : decodeScalar25519 k % 4 = 0 := by
+      have := decodeScalar25519_mod_eight k
+      omega
+    exact Or.inr ⟨decodeScalar25519 k • Q, nsmul_nsmul_eq_zero card_twist h4 Q,
+      X25519_eq_u_nsmul_twist k u Q hQ⟩
 
 end curve25519

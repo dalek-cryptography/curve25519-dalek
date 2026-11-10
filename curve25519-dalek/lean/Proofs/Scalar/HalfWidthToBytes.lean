@@ -9,6 +9,7 @@ public import Defs.Scalar
 public import Defs.Scalar52
 import Proofs.Helpers.AsNat
 import Subtle
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
@@ -28,9 +29,10 @@ private theorem Aeneas.Std.Array.asNat_mod_of_prefix {ty : UScalarTy} {n m : Usi
 namespace Curve25519Dalek.scalar.HalfWidthScalar
 
 @[step]
-theorem to_bytes_spec (self : HalfWidthScalar) :
+theorem to_bytes_spec (self : HalfWidthScalar) (hself : self.asNat < 2 ^ 128) :
     to_bytes self ⦃ (r : Array U8 16#usize) =>
-      r.asNat 8 = self.asNat % 2 ^ 128 ⦄ := by
+      r.asNat 8 = self.asNat ⦄ := by
+  rw [← Nat.mod_eq_of_lt hself]
   unfold to_bytes
   step as ⟨s, back, hs, hback⟩
   step as ⟨s1, hs1, hs1len⟩

@@ -13,6 +13,7 @@ import Mathlib.Tactic.LinearCombination
 import Proofs.Helpers.Limbs
 import Proofs.Helpers.Array
 import Proofs.Helpers.Bitwise
+public import Proofs.Helpers.ByteValues
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

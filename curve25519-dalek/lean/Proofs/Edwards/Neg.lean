@@ -27,7 +27,7 @@ namespace «CoreOpsArithNegEdwardsPointx86_64-tables»
 
 /-- `Neg for &EdwardsPoint`: `(-X : Y : Z : -T)`, limbs `< 2^52`. -/
 @[step]
-theorem neg_spec (self : edwards.EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52) :
+theorem neg_toExtended (self : edwards.EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52) :
     neg self ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
       r.toExtended = self.toExtended.neg ∧ r.LimbsLt 52 ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
@@ -39,7 +39,7 @@ theorem neg_spec (self : edwards.EdwardsPoint.«x86_64-tables») (hself : self.L
       toField_neg_of_mod hX', toField_neg_of_mod hT']
   · exact ⟨limbs_lt_of_le (by decide) hX'_lt, hY, hZ, limbs_lt_of_le (by decide) hT'_lt⟩
 
-/-- The point-level reading of the postcondition of `neg_spec`. -/
+/-- The point-level reading of the postcondition of `neg_toExtended`. -/
 private theorem point_of_post {self r : edwards.EdwardsPoint.«x86_64-tables»}
     (hon : self.OnCurve) (h : r.toExtended = self.toExtended.neg ∧ r.LimbsLt 52) :
     r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 52 := by
@@ -50,11 +50,11 @@ private theorem point_of_post {self r : edwards.EdwardsPoint.«x86_64-tables»}
   exact ⟨Extended.onCurve_neg hon, Extended.toPoint_neg hon, hb⟩
 
 /-- `Neg for &EdwardsPoint` negates the represented point. -/
-theorem neg_spec_point (self : edwards.EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem neg_spec (self : edwards.EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     neg self ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (neg_spec self hself) fun _ => point_of_post hon
+  spec_mono (neg_toExtended self hself) fun _ => point_of_post hon
 
 end «CoreOpsArithNegEdwardsPointx86_64-tables»
 end «Shared0EdwardsPointx86_64-tables».Insts
@@ -67,7 +67,7 @@ namespace «CoreOpsArithNegEdwardsPointi686-tables»
 
 /-- `Neg for &EdwardsPoint`: `(-X : Y : Z : -T)`, limbs `< 2^26`. -/
 @[step]
-theorem neg_spec (self : edwards.EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26) :
+theorem neg_toExtended (self : edwards.EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26) :
     neg self ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
       r.toExtended = self.toExtended.neg ∧ r.LimbsLt 26 ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
@@ -79,7 +79,7 @@ theorem neg_spec (self : edwards.EdwardsPoint.«i686-tables») (hself : self.Lim
       toField_neg_of_mod hX', toField_neg_of_mod hT']
   · exact ⟨limbs_lt_of_le (by decide) hX'_lt, hY, hZ, limbs_lt_of_le (by decide) hT'_lt⟩
 
-/-- The point-level reading of the postcondition of `neg_spec`. -/
+/-- The point-level reading of the postcondition of `neg_toExtended`. -/
 private theorem point_of_post {self r : edwards.EdwardsPoint.«i686-tables»}
     (hon : self.OnCurve) (h : r.toExtended = self.toExtended.neg ∧ r.LimbsLt 26) :
     r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 26 := by
@@ -90,11 +90,11 @@ private theorem point_of_post {self r : edwards.EdwardsPoint.«i686-tables»}
   exact ⟨Extended.onCurve_neg hon, Extended.toPoint_neg hon, hb⟩
 
 /-- `Neg for &EdwardsPoint` negates the represented point. -/
-theorem neg_spec_point (self : edwards.EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem neg_spec (self : edwards.EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     neg self ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (neg_spec self hself) fun _ => point_of_post hon
+  spec_mono (neg_toExtended self hself) fun _ => point_of_post hon
 
 end «CoreOpsArithNegEdwardsPointi686-tables»
 end «Shared0EdwardsPointi686-tables».Insts
@@ -110,18 +110,18 @@ namespace «CoreOpsArithNegEdwardsPointx86_64-tables»
 
 /-- `Neg for EdwardsPoint` (by value): `(-X : Y : Z : -T)`, limbs `< 2^52`. -/
 @[step]
-theorem neg_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52) :
+theorem neg_toExtended (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52) :
     neg self ⦃ (r : EdwardsPoint.«x86_64-tables») =>
       r.toExtended = self.toExtended.neg ∧ r.LimbsLt 52 ⦄ := by
   unfold neg
   step*
 
 /-- `Neg for EdwardsPoint` (by value) negates the represented point. -/
-theorem neg_spec_point (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem neg_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     neg self ⦃ (r : EdwardsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (neg_spec self hself) fun _ => point_of_post hon
+  spec_mono (neg_toExtended self hself) fun _ => point_of_post hon
 
 end «CoreOpsArithNegEdwardsPointx86_64-tables»
 end edwards.EdwardsPoint.«x86_64-tables».Insts
@@ -136,18 +136,18 @@ namespace «CoreOpsArithNegEdwardsPointi686-tables»
 
 /-- `Neg for EdwardsPoint` (by value): `(-X : Y : Z : -T)`, limbs `< 2^26`. -/
 @[step]
-theorem neg_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26) :
+theorem neg_toExtended (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26) :
     neg self ⦃ (r : EdwardsPoint.«i686-tables») =>
       r.toExtended = self.toExtended.neg ∧ r.LimbsLt 26 ⦄ := by
   unfold neg
   step*
 
 /-- `Neg for EdwardsPoint` (by value) negates the represented point. -/
-theorem neg_spec_point (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem neg_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     neg self ⦃ (r : EdwardsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (neg_spec self hself) fun _ => point_of_post hon
+  spec_mono (neg_toExtended self hself) fun _ => point_of_post hon
 
 end «CoreOpsArithNegEdwardsPointi686-tables»
 end edwards.EdwardsPoint.«i686-tables».Insts
@@ -160,7 +160,7 @@ namespace «CoreOpsArithNegEdwardsPointx86_64-no-tables»
 
 /-- `Neg for &EdwardsPoint`: `(-X : Y : Z : -T)`, limbs `< 2^52`. -/
 @[step]
-theorem neg_spec (self : edwards.EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
+theorem neg_toExtended (self : edwards.EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
     neg self ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
       r.toExtended = self.toExtended.neg ∧ r.LimbsLt 52 ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
@@ -172,7 +172,7 @@ theorem neg_spec (self : edwards.EdwardsPoint.«x86_64-no-tables») (hself : sel
       toField_neg_of_mod hX', toField_neg_of_mod hT']
   · exact ⟨limbs_lt_of_le (by decide) hX'_lt, hY, hZ, limbs_lt_of_le (by decide) hT'_lt⟩
 
-/-- The point-level reading of the postcondition of `neg_spec`. -/
+/-- The point-level reading of the postcondition of `neg_toExtended`. -/
 private theorem point_of_post {self r : edwards.EdwardsPoint.«x86_64-no-tables»}
     (hon : self.OnCurve) (h : r.toExtended = self.toExtended.neg ∧ r.LimbsLt 52) :
     r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 52 := by
@@ -183,11 +183,11 @@ private theorem point_of_post {self r : edwards.EdwardsPoint.«x86_64-no-tables�
   exact ⟨Extended.onCurve_neg hon, Extended.toPoint_neg hon, hb⟩
 
 /-- `Neg for &EdwardsPoint` negates the represented point. -/
-theorem neg_spec_point (self : edwards.EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem neg_spec (self : edwards.EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     neg self ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (neg_spec self hself) fun _ => point_of_post hon
+  spec_mono (neg_toExtended self hself) fun _ => point_of_post hon
 
 end «CoreOpsArithNegEdwardsPointx86_64-no-tables»
 end «Shared0EdwardsPointx86_64-no-tables».Insts
@@ -200,7 +200,7 @@ namespace «CoreOpsArithNegEdwardsPointi686-no-tables»
 
 /-- `Neg for &EdwardsPoint`: `(-X : Y : Z : -T)`, limbs `< 2^26`. -/
 @[step]
-theorem neg_spec (self : edwards.EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26) :
+theorem neg_toExtended (self : edwards.EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26) :
     neg self ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
       r.toExtended = self.toExtended.neg ∧ r.LimbsLt 26 ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
@@ -212,7 +212,7 @@ theorem neg_spec (self : edwards.EdwardsPoint.«i686-no-tables») (hself : self.
       toField_neg_of_mod hX', toField_neg_of_mod hT']
   · exact ⟨limbs_lt_of_le (by decide) hX'_lt, hY, hZ, limbs_lt_of_le (by decide) hT'_lt⟩
 
-/-- The point-level reading of the postcondition of `neg_spec`. -/
+/-- The point-level reading of the postcondition of `neg_toExtended`. -/
 private theorem point_of_post {self r : edwards.EdwardsPoint.«i686-no-tables»}
     (hon : self.OnCurve) (h : r.toExtended = self.toExtended.neg ∧ r.LimbsLt 26) :
     r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 26 := by
@@ -223,11 +223,11 @@ private theorem point_of_post {self r : edwards.EdwardsPoint.«i686-no-tables»}
   exact ⟨Extended.onCurve_neg hon, Extended.toPoint_neg hon, hb⟩
 
 /-- `Neg for &EdwardsPoint` negates the represented point. -/
-theorem neg_spec_point (self : edwards.EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem neg_spec (self : edwards.EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     neg self ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (neg_spec self hself) fun _ => point_of_post hon
+  spec_mono (neg_toExtended self hself) fun _ => point_of_post hon
 
 end «CoreOpsArithNegEdwardsPointi686-no-tables»
 end «Shared0EdwardsPointi686-no-tables».Insts
@@ -243,18 +243,18 @@ namespace «CoreOpsArithNegEdwardsPointx86_64-no-tables»
 
 /-- `Neg for EdwardsPoint` (by value): `(-X : Y : Z : -T)`, limbs `< 2^52`. -/
 @[step]
-theorem neg_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
+theorem neg_toExtended (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
     neg self ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
       r.toExtended = self.toExtended.neg ∧ r.LimbsLt 52 ⦄ := by
   unfold neg
   step*
 
 /-- `Neg for EdwardsPoint` (by value) negates the represented point. -/
-theorem neg_spec_point (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem neg_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     neg self ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (neg_spec self hself) fun _ => point_of_post hon
+  spec_mono (neg_toExtended self hself) fun _ => point_of_post hon
 
 end «CoreOpsArithNegEdwardsPointx86_64-no-tables»
 end edwards.EdwardsPoint.«x86_64-no-tables».Insts
@@ -269,18 +269,18 @@ namespace «CoreOpsArithNegEdwardsPointi686-no-tables»
 
 /-- `Neg for EdwardsPoint` (by value): `(-X : Y : Z : -T)`, limbs `< 2^26`. -/
 @[step]
-theorem neg_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26) :
+theorem neg_toExtended (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26) :
     neg self ⦃ (r : EdwardsPoint.«i686-no-tables») =>
       r.toExtended = self.toExtended.neg ∧ r.LimbsLt 26 ⦄ := by
   unfold neg
   step*
 
 /-- `Neg for EdwardsPoint` (by value) negates the represented point. -/
-theorem neg_spec_point (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem neg_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     neg self ⦃ (r : EdwardsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (neg_spec self hself) fun _ => point_of_post hon
+  spec_mono (neg_toExtended self hself) fun _ => point_of_post hon
 
 end «CoreOpsArithNegEdwardsPointi686-no-tables»
 end edwards.EdwardsPoint.«i686-no-tables».Insts

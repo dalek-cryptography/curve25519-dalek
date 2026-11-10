@@ -28,11 +28,11 @@ theorem is_identity_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.L
     (hon : self.OnCurve) :
     traits.IsIdentity.Blanket.is_identity
       EdwardsPoint.«x86_64-tables».Insts.SubtleConstantTimeEq
-      EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (b : Bool) =>
-      b = true ↔ self.toPoint = 0 ⦄ :=
+      EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (r : Bool) =>
+      r = true ↔ self.toPoint = 0 ⦄ :=
   traits.IsIdentity.Blanket.is_identity_spec _ _ self _ _
-    Insts.Curve25519_dalekTraitsIdentity.identity_spec_point fun e ⟨heon, he, heb⟩ =>
-      spec_mono (Insts.SubtleConstantTimeEq.ct_eq_spec_point self e hself heb hon heon)
+    Insts.Curve25519_dalekTraitsIdentity.identity_spec fun e ⟨heon, he, heb⟩ =>
+      spec_mono (Insts.SubtleConstantTimeEq.ct_eq_spec self e hself heb hon heon)
         fun _ ⟨hcv, hc⟩ => ⟨hcv, he ▸ hc⟩
 
 end EdwardsPoint.«x86_64-tables»
@@ -48,11 +48,11 @@ theorem is_identity_spec (self : EdwardsPoint.«i686-tables») (hself : self.Lim
     (hon : self.OnCurve) :
     traits.IsIdentity.Blanket.is_identity
       EdwardsPoint.«i686-tables».Insts.SubtleConstantTimeEq
-      EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (b : Bool) =>
-      b = true ↔ self.toPoint = 0 ⦄ :=
+      EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (r : Bool) =>
+      r = true ↔ self.toPoint = 0 ⦄ :=
   traits.IsIdentity.Blanket.is_identity_spec _ _ self _ _
-    Insts.Curve25519_dalekTraitsIdentity.identity_spec_point fun e ⟨heon, he, heb⟩ =>
-      spec_mono (Insts.SubtleConstantTimeEq.ct_eq_spec_point self e hself heb hon heon)
+    Insts.Curve25519_dalekTraitsIdentity.identity_spec fun e ⟨heon, he, heb⟩ =>
+      spec_mono (Insts.SubtleConstantTimeEq.ct_eq_spec self e hself heb hon heon)
         fun _ ⟨hcv, hc⟩ => ⟨hcv, he ▸ hc⟩
 
 end EdwardsPoint.«i686-tables»
@@ -68,11 +68,11 @@ theorem is_identity_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : sel
     (hon : self.OnCurve) :
     traits.IsIdentity.Blanket.is_identity
       EdwardsPoint.«x86_64-no-tables».Insts.SubtleConstantTimeEq
-      EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (b : Bool) =>
-      b = true ↔ self.toPoint = 0 ⦄ :=
+      EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (r : Bool) =>
+      r = true ↔ self.toPoint = 0 ⦄ :=
   traits.IsIdentity.Blanket.is_identity_spec _ _ self _ _
-    Insts.Curve25519_dalekTraitsIdentity.identity_spec_point fun e ⟨heon, he, heb⟩ =>
-      spec_mono (Insts.SubtleConstantTimeEq.ct_eq_spec_point self e hself heb hon heon)
+    Insts.Curve25519_dalekTraitsIdentity.identity_spec fun e ⟨heon, he, heb⟩ =>
+      spec_mono (Insts.SubtleConstantTimeEq.ct_eq_spec self e hself heb hon heon)
         fun _ ⟨hcv, hc⟩ => ⟨hcv, he ▸ hc⟩
 
 end EdwardsPoint.«x86_64-no-tables»
@@ -88,11 +88,11 @@ theorem is_identity_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.
     (hon : self.OnCurve) :
     traits.IsIdentity.Blanket.is_identity
       EdwardsPoint.«i686-no-tables».Insts.SubtleConstantTimeEq
-      EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (b : Bool) =>
-      b = true ↔ self.toPoint = 0 ⦄ :=
+      EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (r : Bool) =>
+      r = true ↔ self.toPoint = 0 ⦄ :=
   traits.IsIdentity.Blanket.is_identity_spec _ _ self _ _
-    Insts.Curve25519_dalekTraitsIdentity.identity_spec_point fun e ⟨heon, he, heb⟩ =>
-      spec_mono (Insts.SubtleConstantTimeEq.ct_eq_spec_point self e hself heb hon heon)
+    Insts.Curve25519_dalekTraitsIdentity.identity_spec fun e ⟨heon, he, heb⟩ =>
+      spec_mono (Insts.SubtleConstantTimeEq.ct_eq_spec self e hself heb hon heon)
         fun _ ⟨hcv, hc⟩ => ⟨hcv, he ▸ hc⟩
 
 end EdwardsPoint.«i686-no-tables»

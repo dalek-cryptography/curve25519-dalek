@@ -35,9 +35,9 @@ namespace Curve25519Dalek.backend.serial.scalar_mul.variable_base
 section
 open «Shared0EdwardsPointx86_64-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
-  (add_spec_point)
+  (add_spec)
 open edwards.EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity
-  (identity_spec_point)
+  (identity_spec)
 
 namespace «x86_64-tables»
 
@@ -68,9 +68,9 @@ end
 section
 open «Shared0EdwardsPointi686-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointi686-tablesCompletedPointi686-tables»
-  (add_spec_point)
+  (add_spec)
 open edwards.EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity
-  (identity_spec_point)
+  (identity_spec)
 
 namespace «i686-tables»
 
@@ -101,9 +101,9 @@ end
 section
 open «Shared0EdwardsPointx86_64-no-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
-  (add_spec_point)
+  (add_spec)
 open edwards.EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity
-  (identity_spec_point)
+  (identity_spec)
 
 namespace «x86_64-no-tables»
 
@@ -134,9 +134,9 @@ end
 section
 open «Shared0EdwardsPointi686-no-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointi686-no-tablesCompletedPointi686-no-tables»
-  (add_spec_point)
+  (add_spec)
 open edwards.EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity
-  (identity_spec_point)
+  (identity_spec)
 
 namespace «i686-no-tables»
 

@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Curve25519.X25519
 public import Curve25519Dalek.Funs
-public import Defs.Iterator
+public import ToAeneas.Iterator
 public import Defs.Montgomery
 import Proofs.Backend.Serial.U64.Field.FromBytes
 import Proofs.Backend.Serial.U64.Field.One
@@ -19,14 +19,16 @@ import Zeroize.Instances
 import Proofs.Backend.Serial.U32.Field.FromBytes
 import Proofs.Backend.Serial.U32.Field.One
 import Proofs.Helpers.ToField2625
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `MontgomeryPoint::mul_bits_be`
 
 The Montgomery ladder over the bits an iterator yields, most significant first:
 `u ↦ encodeU (ladderBits bs u)`, RFC 7748 §5's loop body at each bit
-(`MontgomeryModel.ladderBits`; it computes `u(n • Q)` for the integer `n` with these big-endian
-bits, `MontgomeryModel.ladderBits_eq_xMul`). -/
+(`MontgomeryModel.ladderBits`). This is scalar multiplication: on the coordinate of a point `Q`
+of the curve or of its twist, it gives the coordinate of `n • Q` for the integer `n` with these
+big-endian bits (`mul_bits_be_nsmul`, `mul_bits_be_nsmul_twist`). -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 open Curve25519Dalek.backend.serial.u64.field (FieldElement51)
@@ -221,13 +223,15 @@ private theorem mul_bits_be.«i686-tables_loop_spec» {T0 : Type}
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 /-- `MontgomeryPoint::mul_bits_be`: the RFC 7748 ladder over the bits `bs` the iterator yields,
-most significant first, encoded canonically. -/
+most significant first, encoded canonically. This is scalar multiplication: the result is
+`u(n • Q)` for the integer `n` with these bits (`mul_bits_be_nsmul`, `mul_bits_be_nsmul_twist`).
+-/
 @[step]
 theorem mul_bits_be.«x86_64-tables_spec» {T0 : Type} (inst : core.iter.traits.iterator.Iterator T0
     Bool)
     (self : MontgomeryPoint) (bits : T0) (bs : List Bool) (hbits : inst.Yields bits bs) :
     mul_bits_be.«x86_64-tables» inst self bits ⦃ (r : MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladderBits bs self.u) ⦄ := by
+      r.asNat = encodeU (montgomery.ladderBits bs (decodeUCoordinate self.toVector)) ⦄ := by
   unfold mul_bits_be.«x86_64-tables»
   step as ⟨u, hu, hu_lt⟩
   step as ⟨x0, hx0, hx0_lt⟩
@@ -257,7 +261,8 @@ theorem mul_bits_be.«x86_64-tables_spec» {T0 : Type} (inst : core.iter.traits.
     · exact ⟨limbs_lt_of_le (by decide) hy0.1, limbs_lt_of_le (by decide) hy0.2⟩
     · exact ⟨limbs_lt_of_le (by decide) hy1.1, limbs_lt_of_le (by decide) hy1.2⟩
   step with «ProjectivePointx86_64-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
-  rw [hr, MontgomeryModel.ladderBits, MontgomeryModel.XZ.ladderBits, MontgomeryPoint.u_def, decodeU]
+  rw [hr, MontgomeryModel.ladderBits, MontgomeryModel.XZ.ladderBits,
+    MontgomeryPoint.decodeUCoordinate_toVector, decodeU]
   congr 2
   have hu' : u.toField = ((self.asNat % 2 ^ 255 : ℕ) : ZMod p) := by
     rw [toField_def, hu, MontgomeryPoint.asNat_def]
@@ -269,13 +274,15 @@ theorem mul_bits_be.«x86_64-tables_spec» {T0 : Type} (inst : core.iter.traits.
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
 /-- `MontgomeryPoint::mul_bits_be`: the RFC 7748 ladder over the bits `bs` the iterator yields,
-most significant first, encoded canonically. -/
+most significant first, encoded canonically. This is scalar multiplication: the result is
+`u(n • Q)` for the integer `n` with these bits (`mul_bits_be_nsmul`, `mul_bits_be_nsmul_twist`).
+-/
 @[step]
 theorem mul_bits_be.«i686-tables_spec» {T0 : Type} (inst : core.iter.traits.iterator.Iterator T0
     Bool)
     (self : MontgomeryPoint) (bits : T0) (bs : List Bool) (hbits : inst.Yields bits bs) :
     mul_bits_be.«i686-tables» inst self bits ⦃ (r : MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladderBits bs self.u) ⦄ := by
+      r.asNat = encodeU (montgomery.ladderBits bs (decodeUCoordinate self.toVector)) ⦄ := by
   unfold mul_bits_be.«i686-tables»
   step as ⟨u, hu, hu_lt⟩
   step as ⟨x0, hx0, hx0_lt⟩
@@ -305,7 +312,8 @@ theorem mul_bits_be.«i686-tables_spec» {T0 : Type} (inst : core.iter.traits.it
     · exact ⟨limbs_lt_of_le (by decide) hy0.1, limbs_lt_of_le (by decide) hy0.2⟩
     · exact ⟨limbs_lt_of_le (by decide) hy1.1, limbs_lt_of_le (by decide) hy1.2⟩
   step with «ProjectivePointi686-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
-  rw [hr, MontgomeryModel.ladderBits, MontgomeryModel.XZ.ladderBits, MontgomeryPoint.u_def, decodeU]
+  rw [hr, MontgomeryModel.ladderBits, MontgomeryModel.XZ.ladderBits,
+    MontgomeryPoint.decodeUCoordinate_toVector, decodeU]
   congr 2
   have hu' : u.toField = ((self.asNat % 2 ^ 255 : ℕ) : ZMod p) := by
     rw [toField_def, MontgomeryPoint.asNat_def]
@@ -508,13 +516,15 @@ private theorem mul_bits_be.«i686-no-tables_loop_spec» {T0 : Type}
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 /-- `MontgomeryPoint::mul_bits_be`: the RFC 7748 ladder over the bits `bs` the iterator yields,
-most significant first, encoded canonically. -/
+most significant first, encoded canonically. This is scalar multiplication: the result is
+`u(n • Q)` for the integer `n` with these bits (`mul_bits_be_nsmul`, `mul_bits_be_nsmul_twist`).
+-/
 @[step]
 theorem mul_bits_be.«x86_64-no-tables_spec» {T0 : Type} (inst : core.iter.traits.iterator.Iterator
     T0 Bool)
     (self : MontgomeryPoint) (bits : T0) (bs : List Bool) (hbits : inst.Yields bits bs) :
     mul_bits_be.«x86_64-no-tables» inst self bits ⦃ (r : MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladderBits bs self.u) ⦄ := by
+      r.asNat = encodeU (montgomery.ladderBits bs (decodeUCoordinate self.toVector)) ⦄ := by
   unfold mul_bits_be.«x86_64-no-tables»
   step as ⟨u, hu, hu_lt⟩
   step as ⟨x0, hx0, hx0_lt⟩
@@ -544,7 +554,8 @@ theorem mul_bits_be.«x86_64-no-tables_spec» {T0 : Type} (inst : core.iter.trai
     · exact ⟨limbs_lt_of_le (by decide) hy0.1, limbs_lt_of_le (by decide) hy0.2⟩
     · exact ⟨limbs_lt_of_le (by decide) hy1.1, limbs_lt_of_le (by decide) hy1.2⟩
   step with «ProjectivePointx86_64-no-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
-  rw [hr, MontgomeryModel.ladderBits, MontgomeryModel.XZ.ladderBits, MontgomeryPoint.u_def, decodeU]
+  rw [hr, MontgomeryModel.ladderBits, MontgomeryModel.XZ.ladderBits,
+    MontgomeryPoint.decodeUCoordinate_toVector, decodeU]
   congr 2
   have hu' : u.toField = ((self.asNat % 2 ^ 255 : ℕ) : ZMod p) := by
     rw [toField_def, hu, MontgomeryPoint.asNat_def]
@@ -556,13 +567,15 @@ theorem mul_bits_be.«x86_64-no-tables_spec» {T0 : Type} (inst : core.iter.trai
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
 /-- `MontgomeryPoint::mul_bits_be`: the RFC 7748 ladder over the bits `bs` the iterator yields,
-most significant first, encoded canonically. -/
+most significant first, encoded canonically. This is scalar multiplication: the result is
+`u(n • Q)` for the integer `n` with these bits (`mul_bits_be_nsmul`, `mul_bits_be_nsmul_twist`).
+-/
 @[step]
 theorem mul_bits_be.«i686-no-tables_spec» {T0 : Type} (inst : core.iter.traits.iterator.Iterator
     T0 Bool)
     (self : MontgomeryPoint) (bits : T0) (bs : List Bool) (hbits : inst.Yields bits bs) :
     mul_bits_be.«i686-no-tables» inst self bits ⦃ (r : MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladderBits bs self.u) ⦄ := by
+      r.asNat = encodeU (montgomery.ladderBits bs (decodeUCoordinate self.toVector)) ⦄ := by
   unfold mul_bits_be.«i686-no-tables»
   step as ⟨u, hu, hu_lt⟩
   step as ⟨x0, hx0, hx0_lt⟩
@@ -592,7 +605,8 @@ theorem mul_bits_be.«i686-no-tables_spec» {T0 : Type} (inst : core.iter.traits
     · exact ⟨limbs_lt_of_le (by decide) hy0.1, limbs_lt_of_le (by decide) hy0.2⟩
     · exact ⟨limbs_lt_of_le (by decide) hy1.1, limbs_lt_of_le (by decide) hy1.2⟩
   step with «ProjectivePointi686-no-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
-  rw [hr, MontgomeryModel.ladderBits, MontgomeryModel.XZ.ladderBits, MontgomeryPoint.u_def, decodeU]
+  rw [hr, MontgomeryModel.ladderBits, MontgomeryModel.XZ.ladderBits,
+    MontgomeryPoint.decodeUCoordinate_toVector, decodeU]
   congr 2
   have hu' : u.toField = ((self.asNat % 2 ^ 255 : ℕ) : ZMod p) := by
     rw [toField_def, MontgomeryPoint.asNat_def]
@@ -605,17 +619,42 @@ theorem mul_bits_be.«i686-no-tables_spec» {T0 : Type} (inst : core.iter.traits
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 /-- `MontgomeryPoint::mul_bits_be`: the RFC 7748 ladder over the bits `bs` the iterator yields,
-most significant first, encoded canonically (x86_64 targets). -/
+most significant first, encoded canonically. This is scalar multiplication: the result is
+`u(n • Q)` for the integer `n` with these bits (`mul_bits_be_nsmul`, `mul_bits_be_nsmul_twist`).
+-/
 @[step]
 theorem mul_bits_be_spec {T0 : Type} (inst : core.iter.traits.iterator.Iterator T0 Bool)
     (self : MontgomeryPoint) (bits : T0) (bs : List Bool) (hbits : inst.Yields bits bs) :
     mul_bits_be inst self bits ⦃ (r : MontgomeryPoint) =>
-      r.asNat = encodeU (montgomery.ladderBits bs self.u) ⦄ := by
+      r.toVector = encodeUCoordinate
+          (montgomery.ladderBits bs (decodeUCoordinate self.toVector)) ⦄ := by
+  simp only [Curve25519Dalek.montgomery.MontgomeryPoint.toVector_eq_encodeUCoordinate_iff]
   unfold mul_bits_be
   exact dispatch_all_spec
     (mul_bits_be.«x86_64-tables_spec» inst self bits bs hbits)
     (mul_bits_be.«x86_64-no-tables_spec» inst self bits bs hbits)
     (mul_bits_be.«i686-tables_spec» inst self bits bs hbits)
     (mul_bits_be.«i686-no-tables_spec» inst self bits bs hbits)
+
+/-- `mul_bits_be` is scalar multiplication: on the coordinate of a point `Q` of `montgomery`, it
+gives the coordinate of `n • Q`, for the integer `n` with the big-endian bits `bs`. -/
+theorem mul_bits_be_nsmul {T0 : Type} (inst : core.iter.traits.iterator.Iterator T0 Bool)
+    (self : MontgomeryPoint) (bits : T0) (bs : List Bool) (hbits : inst.Yields bits bs)
+    (Q : montgomery.Point) (hQ : Q.u = decodeUCoordinate self.toVector) :
+    mul_bits_be inst self bits ⦃ (r : MontgomeryPoint) =>
+      r.toVector = encodeUCoordinate (Nat.ofDigits 2 (bs.reverse.map Bool.toNat) • Q).u ⦄ :=
+  spec_mono (mul_bits_be_spec inst self bits bs hbits) fun r hr => by
+    rwa [← hQ, montgomery_ladderBits_eq_u_nsmul] at hr
+
+/-- `mul_bits_be` is scalar multiplication on the twist: on the coordinate of a point `Q` of
+`montgomeryTwist`, it gives the coordinate of `n • Q`, for the integer `n` with the big-endian
+bits `bs`. -/
+theorem mul_bits_be_nsmul_twist {T0 : Type} (inst : core.iter.traits.iterator.Iterator T0 Bool)
+    (self : MontgomeryPoint) (bits : T0) (bs : List Bool) (hbits : inst.Yields bits bs)
+    (Q : montgomeryTwist.Point) (hQ : Q.u = decodeUCoordinate self.toVector) :
+    mul_bits_be inst self bits ⦃ (r : MontgomeryPoint) =>
+      r.toVector = encodeUCoordinate (Nat.ofDigits 2 (bs.reverse.map Bool.toNat) • Q).u ⦄ :=
+  spec_mono (mul_bits_be_spec inst self bits bs hbits) fun r hr => by
+    rwa [← hQ, montgomery_ladderBits_eq_u_nsmul_twist] at hr
 
 end Curve25519Dalek.montgomery.MontgomeryPoint

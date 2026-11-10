@@ -28,7 +28,7 @@ theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«x86_
     mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
-  step with edwards.affine.«AffinePointx86_64-tables».to_edwards_spec_point
+  step with edwards.affine.«AffinePointx86_64-tables».to_edwards_spec
     as ⟨ep, hepon, hep, hepb⟩
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hep ▸ hr, hrb⟩
@@ -44,7 +44,7 @@ theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«i686
     mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
-  step with edwards.affine.«AffinePointi686-tables».to_edwards_spec_point
+  step with edwards.affine.«AffinePointi686-tables».to_edwards_spec
     as ⟨ep, hepon, hep, hepb⟩
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hep ▸ hr, hrb⟩
@@ -86,7 +86,7 @@ theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«x86_
     mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
-  step with edwards.affine.«AffinePointx86_64-no-tables».to_edwards_spec_point
+  step with edwards.affine.«AffinePointx86_64-no-tables».to_edwards_spec
     as ⟨ep, hepon, hep, hepb⟩
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hep ▸ hr, hrb⟩
@@ -102,7 +102,7 @@ theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«i686
     mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
-  step with edwards.affine.«AffinePointi686-no-tables».to_edwards_spec_point
+  step with edwards.affine.«AffinePointi686-no-tables».to_edwards_spec
     as ⟨ep, hepon, hep, hepb⟩
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hep ▸ hr, hrb⟩

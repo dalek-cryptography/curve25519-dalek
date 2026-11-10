@@ -92,13 +92,13 @@ namespace Curve25519Dalek
 
 /-! ## Byte-array types -/
 
-@[step] theorem montgomery.MontgomeryPoint.Insts.ZeroizeZeroize.zeroize_spec
+@[step] theorem montgomery.MontgomeryPoint.Insts.ZeroizeZeroize.zeroize_eq
     (p : montgomery.MontgomeryPoint) :
     montgomery.MontgomeryPoint.Insts.ZeroizeZeroize.zeroize p ⦃ r =>
       r = Array.repeat 32#usize 0#u8 ⦄ := by
   unfold montgomery.MontgomeryPoint.Insts.ZeroizeZeroize.zeroize; step*
 
-@[step] theorem ristretto.CompressedRistretto.Insts.ZeroizeZeroize.zeroize_spec
+@[step] theorem ristretto.CompressedRistretto.Insts.ZeroizeZeroize.zeroize_eq
     (p : ristretto.CompressedRistretto) :
     ristretto.CompressedRistretto.Insts.ZeroizeZeroize.zeroize p ⦃ r =>
       r = Array.repeat 32#usize 0#u8 ⦄ := by

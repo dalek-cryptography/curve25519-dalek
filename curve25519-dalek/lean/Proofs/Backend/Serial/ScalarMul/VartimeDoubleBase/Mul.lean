@@ -3,6 +3,7 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import Proofs.Helpers.Represents
 public import Curve25519.Edwards.Basepoint
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
@@ -47,9 +48,9 @@ namespace Curve25519Dalek.backend.serial.scalar_mul.vartime_double_base
 section
 open «Shared0EdwardsPointx86_64-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
-  (add_spec_point)
+  (add_spec)
 open «CoreOpsArithSubSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
-  (sub_spec_point)
+  (sub_spec)
 
 namespace «x86_64-tables»
 
@@ -127,7 +128,7 @@ theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«x86_64-tables»
   step with «CoreConvertFromSharedAEdwardsPointx86_64-tables».from_spec
     as ⟨tA, htA, htAb⟩
   step as ⟨tB, htB, htBb⟩
-  step with ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+  step with ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, hron, hrp, hrb⟩
   have hr' : r.toPoint = nafTail a_naf (i.val + 1) • A.toPoint +
       nafTail b_naf (i.val + 1) • basepoint := by
@@ -146,9 +147,9 @@ end
 section
 open «Shared0EdwardsPointi686-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointi686-tablesCompletedPointi686-tables»
-  (add_spec_point)
+  (add_spec)
 open «CoreOpsArithSubSharedAProjectiveNielsPointi686-tablesCompletedPointi686-tables»
-  (sub_spec_point)
+  (sub_spec)
 
 namespace «i686-tables»
 
@@ -226,7 +227,7 @@ theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«i686-tables»)
   step with «CoreConvertFromSharedAEdwardsPointi686-tables».from_spec
     as ⟨tA, htA, htAb⟩
   step as ⟨tB, htB, htBb⟩
-  step with ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+  step with ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, hron, hrp, hrb⟩
   have hr' : r.toPoint = nafTail a_naf (i.val + 1) • A.toPoint +
       nafTail b_naf (i.val + 1) • basepoint := by
@@ -245,9 +246,9 @@ end
 section
 open «Shared0EdwardsPointx86_64-no-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
-  (add_spec_point)
+  (add_spec)
 open «CoreOpsArithSubSharedAProjectiveNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
-  (sub_spec_point)
+  (sub_spec)
 
 namespace «x86_64-no-tables»
 
@@ -322,12 +323,12 @@ theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«x86_64-no-table
     as ⟨i, hi, hz⟩
   step with «CoreConvertFromSharedAEdwardsPointx86_64-no-tables».from_spec
     as ⟨tA, htA, htAb⟩
-  step with backend.serial.u64.constants.«x86_64-no-tables».ED25519_BASEPOINT_POINT_spec_point
+  step with backend.serial.u64.constants.«x86_64-no-tables».ED25519_BASEPOINT_POINT_spec
     as ⟨bp, hbpon, hbp, hbpb⟩
   step with «CoreConvertFromSharedAEdwardsPointx86_64-no-tables».from_spec
     as ⟨tB, htB, htBb⟩
   step with
-      ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+      ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, hron, hrp, hrb⟩
   have hr' : r.toPoint = nafTail a_naf (i.val + 1) • A.toPoint +
       nafTail b_naf (i.val + 1) • bp.toPoint := by
@@ -346,9 +347,9 @@ end
 section
 open «Shared0EdwardsPointi686-no-tables».Insts
 open «CoreOpsArithAddSharedAProjectiveNielsPointi686-no-tablesCompletedPointi686-no-tables»
-  (add_spec_point)
+  (add_spec)
 open «CoreOpsArithSubSharedAProjectiveNielsPointi686-no-tablesCompletedPointi686-no-tables»
-  (sub_spec_point)
+  (sub_spec)
 
 namespace «i686-no-tables»
 
@@ -423,12 +424,12 @@ theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«i686-no-tables�
     as ⟨i, hi, hz⟩
   step with «CoreConvertFromSharedAEdwardsPointi686-no-tables».from_spec
     as ⟨tA, htA, htAb⟩
-  step with backend.serial.u32.constants.«i686-no-tables».ED25519_BASEPOINT_POINT_spec_point
+  step with backend.serial.u32.constants.«i686-no-tables».ED25519_BASEPOINT_POINT_spec
     as ⟨bp, hbpon, hbp, hbpb⟩
   step with «CoreConvertFromSharedAEdwardsPointi686-no-tables».from_spec
     as ⟨tB, htB, htBb⟩
   step with
-      ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec_point
+      ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, hron, hrp, hrb⟩
   have hr' : r.toPoint = nafTail a_naf (i.val + 1) • A.toPoint +
       nafTail b_naf (i.val + 1) • bp.toPoint := by

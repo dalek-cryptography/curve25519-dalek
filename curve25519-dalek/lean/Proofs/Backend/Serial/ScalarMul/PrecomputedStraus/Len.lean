@@ -3,6 +3,7 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import Proofs.Helpers.Represents
 public import Curve25519Dalek.Funs
 public import Defs.Edwards
 public import Defs.ScalarMul
@@ -19,13 +20,10 @@ namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx8
 
 /-- `VartimePrecomputedStraus::len`: the number of static points. -/
 @[step]
-theorem len_spec (self : VartimePrecomputedStraus.«x86_64-tables»)
-    (ps : List curve25519.edwards.Point)
-    (hself : self.Represents ps) :
-    len self ⦃ (r : Usize) => r.val = ps.length ⦄ := by
+theorem len_spec (self : VartimePrecomputedStraus.«x86_64-tables») :
+    len self ⦃ (r : Usize) => r.val = self.static_lookup_tables.val.length ⦄ := by
   unfold len
   rw [WP.spec_ok, alloc.vec.Vec.len_val]
-  exact hself.length_eq
 
 end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-tables»
 end VartimePrecomputedStraus.«x86_64-tables».Insts
@@ -35,13 +33,10 @@ namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi6
 
 /-- `VartimePrecomputedStraus::len`: the number of static points. -/
 @[step]
-theorem len_spec (self : VartimePrecomputedStraus.«i686-tables»)
-    (ps : List curve25519.edwards.Point)
-    (hself : self.Represents ps) :
-    len self ⦃ (r : Usize) => r.val = ps.length ⦄ := by
+theorem len_spec (self : VartimePrecomputedStraus.«i686-tables») :
+    len self ⦃ (r : Usize) => r.val = self.static_lookup_tables.val.length ⦄ := by
   unfold len
   rw [WP.spec_ok, alloc.vec.Vec.len_val]
-  exact hself.length_eq
 
 end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-tables»
 end VartimePrecomputedStraus.«i686-tables».Insts
@@ -51,13 +46,10 @@ namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx8
 
 /-- `VartimePrecomputedStraus::len`: the number of static points. -/
 @[step]
-theorem len_spec (self : VartimePrecomputedStraus.«x86_64-no-tables»)
-    (ps : List curve25519.edwards.Point)
-    (hself : self.Represents ps) :
-    len self ⦃ (r : Usize) => r.val = ps.length ⦄ := by
+theorem len_spec (self : VartimePrecomputedStraus.«x86_64-no-tables») :
+    len self ⦃ (r : Usize) => r.val = self.static_lookup_tables.val.length ⦄ := by
   unfold len
   rw [WP.spec_ok, alloc.vec.Vec.len_val]
-  exact hself.length_eq
 
 end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-no-tables»
 end VartimePrecomputedStraus.«x86_64-no-tables».Insts
@@ -67,13 +59,10 @@ namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi6
 
 /-- `VartimePrecomputedStraus::len`: the number of static points. -/
 @[step]
-theorem len_spec (self : VartimePrecomputedStraus.«i686-no-tables»)
-    (ps : List curve25519.edwards.Point)
-    (hself : self.Represents ps) :
-    len self ⦃ (r : Usize) => r.val = ps.length ⦄ := by
+theorem len_spec (self : VartimePrecomputedStraus.«i686-no-tables») :
+    len self ⦃ (r : Usize) => r.val = self.static_lookup_tables.val.length ⦄ := by
   unfold len
   rw [WP.spec_ok, alloc.vec.Vec.len_val]
-  exact hself.length_eq
 
 end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-no-tables»
 end VartimePrecomputedStraus.«i686-no-tables».Insts

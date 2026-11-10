@@ -28,7 +28,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 /-- `ConstantTimeEq for EdwardsPoint`: projective equality
 `X₁ Z₂ = X₂ Z₁ ∧ Y₁ Z₂ = Y₂ Z₁` (`T` is not compared); limbs `< 2^52`. -/
 @[step]
-theorem ct_eq_spec (self other : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem ct_eq_projEq (self other : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 52) :
     ct_eq self other ⦃ (c : subtle.Choice) =>
       c.IsValid ∧ (c = 1#u8 ↔ self.ProjEq other) ⦄ := by
@@ -49,11 +49,11 @@ theorem ct_eq_spec (self other : EdwardsPoint.«x86_64-tables») (hself : self.L
   rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
 
 /-- `ConstantTimeEq for EdwardsPoint` on points: equality of the represented points. -/
-theorem ct_eq_spec_point (self other : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem ct_eq_spec (self other : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 52) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    ct_eq self other ⦃ (c : subtle.Choice) =>
-      c.IsValid ∧ (c = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
-  spec_mono (ct_eq_spec self other hself hother) fun _ ⟨hcv, hc⟩ =>
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
+  spec_mono (ct_eq_projEq self other hself hother) fun _ ⟨hcv, hc⟩ =>
     ⟨hcv, hc.trans (EdwardsPoint.«x86_64-tables».projEq_iff_toPoint_eq hself_on hother_on)⟩
 
 end EdwardsPoint.«x86_64-tables».Insts.SubtleConstantTimeEq
@@ -65,7 +65,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 /-- `ConstantTimeEq for EdwardsPoint`: projective equality
 `X₁ Z₂ = X₂ Z₁ ∧ Y₁ Z₂ = Y₂ Z₁` (`T` is not compared); limbs `< 2^26`. -/
 @[step]
-theorem ct_eq_spec (self other : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem ct_eq_projEq (self other : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 26) :
     ct_eq self other ⦃ (c : subtle.Choice) =>
       c.IsValid ∧ (c = 1#u8 ↔ self.ProjEq other) ⦄ := by
@@ -86,11 +86,11 @@ theorem ct_eq_spec (self other : EdwardsPoint.«i686-tables») (hself : self.Lim
   rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
 
 /-- `ConstantTimeEq for EdwardsPoint` on points: equality of the represented points. -/
-theorem ct_eq_spec_point (self other : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem ct_eq_spec (self other : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 26) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    ct_eq self other ⦃ (c : subtle.Choice) =>
-      c.IsValid ∧ (c = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
-  spec_mono (ct_eq_spec self other hself hother) fun _ ⟨hcv, hc⟩ =>
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
+  spec_mono (ct_eq_projEq self other hself hother) fun _ ⟨hcv, hc⟩ =>
     ⟨hcv, hc.trans (EdwardsPoint.«i686-tables».projEq_iff_toPoint_eq hself_on hother_on)⟩
 
 end EdwardsPoint.«i686-tables».Insts.SubtleConstantTimeEq
@@ -102,7 +102,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 /-- `ConstantTimeEq for EdwardsPoint`: projective equality
 `X₁ Z₂ = X₂ Z₁ ∧ Y₁ Z₂ = Y₂ Z₁` (`T` is not compared); limbs `< 2^52`. -/
 @[step]
-theorem ct_eq_spec (self other : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem ct_eq_projEq (self other : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 52) :
     ct_eq self other ⦃ (c : subtle.Choice) =>
       c.IsValid ∧ (c = 1#u8 ↔ self.ProjEq other) ⦄ := by
@@ -123,11 +123,11 @@ theorem ct_eq_spec (self other : EdwardsPoint.«x86_64-no-tables») (hself : sel
   rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
 
 /-- `ConstantTimeEq for EdwardsPoint` on points: equality of the represented points. -/
-theorem ct_eq_spec_point (self other : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem ct_eq_spec (self other : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 52) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    ct_eq self other ⦃ (c : subtle.Choice) =>
-      c.IsValid ∧ (c = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
-  spec_mono (ct_eq_spec self other hself hother) fun _ ⟨hcv, hc⟩ =>
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
+  spec_mono (ct_eq_projEq self other hself hother) fun _ ⟨hcv, hc⟩ =>
     ⟨hcv, hc.trans (EdwardsPoint.«x86_64-no-tables».projEq_iff_toPoint_eq hself_on hother_on)⟩
 
 end EdwardsPoint.«x86_64-no-tables».Insts.SubtleConstantTimeEq
@@ -139,7 +139,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 /-- `ConstantTimeEq for EdwardsPoint`: projective equality
 `X₁ Z₂ = X₂ Z₁ ∧ Y₁ Z₂ = Y₂ Z₁` (`T` is not compared); limbs `< 2^26`. -/
 @[step]
-theorem ct_eq_spec (self other : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem ct_eq_projEq (self other : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 26) :
     ct_eq self other ⦃ (c : subtle.Choice) =>
       c.IsValid ∧ (c = 1#u8 ↔ self.ProjEq other) ⦄ := by
@@ -160,11 +160,11 @@ theorem ct_eq_spec (self other : EdwardsPoint.«i686-no-tables») (hself : self.
   rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
 
 /-- `ConstantTimeEq for EdwardsPoint` on points: equality of the represented points. -/
-theorem ct_eq_spec_point (self other : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem ct_eq_spec (self other : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 26) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    ct_eq self other ⦃ (c : subtle.Choice) =>
-      c.IsValid ∧ (c = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
-  spec_mono (ct_eq_spec self other hself hother) fun _ ⟨hcv, hc⟩ =>
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
+  spec_mono (ct_eq_projEq self other hself hother) fun _ ⟨hcv, hc⟩ =>
     ⟨hcv, hc.trans (EdwardsPoint.«i686-no-tables».projEq_iff_toPoint_eq hself_on hother_on)⟩
 
 end EdwardsPoint.«i686-no-tables».Insts.SubtleConstantTimeEq

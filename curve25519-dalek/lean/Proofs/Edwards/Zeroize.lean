@@ -26,7 +26,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `Zeroize for EdwardsPoint`: reset to the identity `(0 : 1 : 1 : 0)`, limbs `< 2^52`. -/
 @[step]
-theorem zeroize_spec (self : EdwardsPoint.«x86_64-tables») :
+theorem zeroize_toExtended (self : EdwardsPoint.«x86_64-tables») :
     zeroize self ⦃ (r : EdwardsPoint.«x86_64-tables») =>
       r.toExtended = Extended.identity ∧ r.LimbsLt 52 ⦄ := by
   unfold zeroize
@@ -41,10 +41,10 @@ theorem zeroize_spec (self : EdwardsPoint.«x86_64-tables») :
       limbs_lt_of_le (by decide) hone_lt, limbs_repeat_zero_lt 52⟩
 
 /-- `Zeroize for EdwardsPoint` leaves the neutral element. -/
-theorem zeroize_spec_point (self : EdwardsPoint.«x86_64-tables») :
+theorem zeroize_spec (self : EdwardsPoint.«x86_64-tables») :
     zeroize self ⦃ (r : EdwardsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (zeroize_spec self) fun r ⟨hr, hb⟩ => by
+  spec_mono (zeroize_toExtended self) fun r ⟨hr, hb⟩ => by
     rw [EdwardsPoint.«x86_64-tables».onCurve_iff,
       EdwardsPoint.«x86_64-tables».toPoint_def,
       hr]
@@ -58,7 +58,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `Zeroize for EdwardsPoint`: reset to the identity `(0 : 1 : 1 : 0)`, limbs `< 2^26`. -/
 @[step]
-theorem zeroize_spec (self : EdwardsPoint.«i686-tables») :
+theorem zeroize_toExtended (self : EdwardsPoint.«i686-tables») :
     zeroize self ⦃ (r : EdwardsPoint.«i686-tables») =>
       r.toExtended = Extended.identity ∧ r.LimbsLt 26 ⦄ := by
   unfold zeroize
@@ -73,10 +73,10 @@ theorem zeroize_spec (self : EdwardsPoint.«i686-tables») :
       limbs_lt_of_le (by decide) hone_lt, limbs_repeat_zero_lt 26⟩
 
 /-- `Zeroize for EdwardsPoint` leaves the neutral element. -/
-theorem zeroize_spec_point (self : EdwardsPoint.«i686-tables») :
+theorem zeroize_spec (self : EdwardsPoint.«i686-tables») :
     zeroize self ⦃ (r : EdwardsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (zeroize_spec self) fun r ⟨hr, hb⟩ => by
+  spec_mono (zeroize_toExtended self) fun r ⟨hr, hb⟩ => by
     rw [EdwardsPoint.«i686-tables».onCurve_iff,
       EdwardsPoint.«i686-tables».toPoint_def,
       hr]
@@ -90,7 +90,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `Zeroize for EdwardsPoint`: reset to the identity `(0 : 1 : 1 : 0)`, limbs `< 2^52`. -/
 @[step]
-theorem zeroize_spec (self : EdwardsPoint.«x86_64-no-tables») :
+theorem zeroize_toExtended (self : EdwardsPoint.«x86_64-no-tables») :
     zeroize self ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
       r.toExtended = Extended.identity ∧ r.LimbsLt 52 ⦄ := by
   unfold zeroize
@@ -105,10 +105,10 @@ theorem zeroize_spec (self : EdwardsPoint.«x86_64-no-tables») :
       limbs_lt_of_le (by decide) hone_lt, limbs_repeat_zero_lt 52⟩
 
 /-- `Zeroize for EdwardsPoint` leaves the neutral element. -/
-theorem zeroize_spec_point (self : EdwardsPoint.«x86_64-no-tables») :
+theorem zeroize_spec (self : EdwardsPoint.«x86_64-no-tables») :
     zeroize self ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (zeroize_spec self) fun r ⟨hr, hb⟩ => by
+  spec_mono (zeroize_toExtended self) fun r ⟨hr, hb⟩ => by
     rw [EdwardsPoint.«x86_64-no-tables».onCurve_iff,
       EdwardsPoint.«x86_64-no-tables».toPoint_def,
       hr]
@@ -122,7 +122,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `Zeroize for EdwardsPoint`: reset to the identity `(0 : 1 : 1 : 0)`, limbs `< 2^26`. -/
 @[step]
-theorem zeroize_spec (self : EdwardsPoint.«i686-no-tables») :
+theorem zeroize_toExtended (self : EdwardsPoint.«i686-no-tables») :
     zeroize self ⦃ (r : EdwardsPoint.«i686-no-tables») =>
       r.toExtended = Extended.identity ∧ r.LimbsLt 26 ⦄ := by
   unfold zeroize
@@ -137,10 +137,10 @@ theorem zeroize_spec (self : EdwardsPoint.«i686-no-tables») :
       limbs_lt_of_le (by decide) hone_lt, limbs_repeat_zero_lt 26⟩
 
 /-- `Zeroize for EdwardsPoint` leaves the neutral element. -/
-theorem zeroize_spec_point (self : EdwardsPoint.«i686-no-tables») :
+theorem zeroize_spec (self : EdwardsPoint.«i686-no-tables») :
     zeroize self ⦃ (r : EdwardsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (zeroize_spec self) fun r ⟨hr, hb⟩ => by
+  spec_mono (zeroize_toExtended self) fun r ⟨hr, hb⟩ => by
     rw [EdwardsPoint.«i686-no-tables».onCurve_iff,
       EdwardsPoint.«i686-no-tables».toPoint_def,
       hr]

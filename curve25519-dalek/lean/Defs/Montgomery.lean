@@ -4,15 +4,16 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519.X25519
+public import ToAeneas.Array
 public import Defs.FieldElement2625
 public import Defs.FieldElement51
 public section
 
 /-! # `montgomery.rs`: the `u`-coordinate bytes and the ladder's projective points (audited)
 
-`MontgomeryPoint` is 32 bytes: `asNat` is their little-endian value and `u` the `u`-coordinate
-they encode, RFC 7748 `decodeUCoordinate` (`curve25519.decodeU`: bit `255` masked, reduced
-modulo `p`). A canonical output has `asNat < p` (`to_bytes`).
+`MontgomeryPoint` is 32 bytes; `toVector` (`ToAeneas/Array.lean`) gives them as a
+`Vector UInt8 32`, the byte string of RFC 7748, whose `u`-coordinate is RFC 7748
+`decodeUCoordinate`.
 
 `ProjectivePoint (U : W)` is the `x`-only projective point of the Montgomery ladder: `toXZ` maps
 it to `MontgomeryModel.XZ (ZMod p)`, whose `toU` is `U / W` (`0` at `W = 0`, as `as_affine`).
@@ -28,28 +29,10 @@ namespace Curve25519Dalek.montgomery
 
 /-! ### `MontgomeryPoint` -/
 
-/-- The little-endian value of the 32 bytes. -/
-def MontgomeryPoint.asNat (self : MontgomeryPoint) : ℕ :=
-  Aeneas.Std.Array.asNat 8 self
-
-theorem MontgomeryPoint.asNat_def (self : MontgomeryPoint) :
-    self.asNat = Aeneas.Std.Array.asNat 8 self := by
-  unfold MontgomeryPoint.asNat
-  rfl
-
 /-- Needed for `v[i]!` on vectors of points; the default is never observed for in-range
 indices. -/
 instance MontgomeryPoint.instInhabited : Inhabited MontgomeryPoint :=
   inferInstanceAs (Inhabited (Array U8 32#usize))
-
-/-- The `u`-coordinate encoded by the bytes: RFC 7748 `decodeUCoordinate`, i.e. the value of
-the low `255` bits modulo `p`. -/
-def MontgomeryPoint.u (self : MontgomeryPoint) : ZMod p :=
-  decodeU self.asNat
-
-theorem MontgomeryPoint.u_def (self : MontgomeryPoint) : self.u = decodeU self.asNat := by
-  unfold MontgomeryPoint.u
-  rfl
 
 /-! ### `ProjectivePoint` -/
 

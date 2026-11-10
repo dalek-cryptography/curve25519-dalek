@@ -26,7 +26,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `AffinePoint::to_edwards`: `(x : y : 1 : x y)`, limbs `< 2^52`. -/
 @[step]
-theorem to_edwards_spec (self : AffinePoint.«x86_64-tables») (hself : self.LimbsLt 52) :
+theorem to_edwards_toExtended (self : AffinePoint.«x86_64-tables») (hself : self.LimbsLt 52) :
     to_edwards self ⦃ (r : EdwardsPoint.«x86_64-tables») =>
       r.toExtended = ⟨self.x.toField, self.y.toField, 1, self.x.toField * self.y.toField⟩ ∧
         r.LimbsLt 52 ⦄ := by
@@ -40,11 +40,11 @@ theorem to_edwards_spec (self : AffinePoint.«x86_64-tables») (hself : self.Lim
   · exact ⟨hx, hy, limbs_lt_of_le (by decide) hone_lt, hxy_lt⟩
 
 /-- `AffinePoint::to_edwards` represents the same point. -/
-theorem to_edwards_spec_point (self : AffinePoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem to_edwards_spec (self : AffinePoint.«x86_64-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     to_edwards self ⦃ (r : EdwardsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (to_edwards_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (to_edwards_toExtended self hself) fun r ⟨hr, hb⟩ => by
     rw [EdwardsPoint.«x86_64-tables».onCurve_iff,
       EdwardsPoint.«x86_64-tables».toPoint_def,
       hr,
@@ -59,7 +59,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `AffinePoint::to_edwards`: `(x : y : 1 : x y)`, limbs `< 2^26`. -/
 @[step]
-theorem to_edwards_spec (self : AffinePoint.«i686-tables») (hself : self.LimbsLt 26) :
+theorem to_edwards_toExtended (self : AffinePoint.«i686-tables») (hself : self.LimbsLt 26) :
     to_edwards self ⦃ (r : EdwardsPoint.«i686-tables») =>
       r.toExtended = ⟨self.x.toField, self.y.toField, 1, self.x.toField * self.y.toField⟩ ∧
         r.LimbsLt 26 ⦄ := by
@@ -73,11 +73,11 @@ theorem to_edwards_spec (self : AffinePoint.«i686-tables») (hself : self.Limbs
   · exact ⟨hx, hy, limbs_lt_of_le (by decide) hone_lt, hxy_lt⟩
 
 /-- `AffinePoint::to_edwards` represents the same point. -/
-theorem to_edwards_spec_point (self : AffinePoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem to_edwards_spec (self : AffinePoint.«i686-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     to_edwards self ⦃ (r : EdwardsPoint.«i686-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (to_edwards_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (to_edwards_toExtended self hself) fun r ⟨hr, hb⟩ => by
     rw [EdwardsPoint.«i686-tables».onCurve_iff,
       EdwardsPoint.«i686-tables».toPoint_def,
       hr,
@@ -92,7 +92,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `AffinePoint::to_edwards`: `(x : y : 1 : x y)`, limbs `< 2^52`. -/
 @[step]
-theorem to_edwards_spec (self : AffinePoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
+theorem to_edwards_toExtended (self : AffinePoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
     to_edwards self ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
       r.toExtended = ⟨self.x.toField, self.y.toField, 1, self.x.toField * self.y.toField⟩ ∧
         r.LimbsLt 52 ⦄ := by
@@ -106,11 +106,11 @@ theorem to_edwards_spec (self : AffinePoint.«x86_64-no-tables») (hself : self.
   · exact ⟨hx, hy, limbs_lt_of_le (by decide) hone_lt, hxy_lt⟩
 
 /-- `AffinePoint::to_edwards` represents the same point. -/
-theorem to_edwards_spec_point (self : AffinePoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem to_edwards_spec (self : AffinePoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     to_edwards self ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono (to_edwards_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (to_edwards_toExtended self hself) fun r ⟨hr, hb⟩ => by
     rw [EdwardsPoint.«x86_64-no-tables».onCurve_iff,
       EdwardsPoint.«x86_64-no-tables».toPoint_def,
       hr,
@@ -125,7 +125,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `AffinePoint::to_edwards`: `(x : y : 1 : x y)`, limbs `< 2^26`. -/
 @[step]
-theorem to_edwards_spec (self : AffinePoint.«i686-no-tables») (hself : self.LimbsLt 26) :
+theorem to_edwards_toExtended (self : AffinePoint.«i686-no-tables») (hself : self.LimbsLt 26) :
     to_edwards self ⦃ (r : EdwardsPoint.«i686-no-tables») =>
       r.toExtended = ⟨self.x.toField, self.y.toField, 1, self.x.toField * self.y.toField⟩ ∧
         r.LimbsLt 26 ⦄ := by
@@ -139,11 +139,11 @@ theorem to_edwards_spec (self : AffinePoint.«i686-no-tables») (hself : self.Li
   · exact ⟨hx, hy, limbs_lt_of_le (by decide) hone_lt, hxy_lt⟩
 
 /-- `AffinePoint::to_edwards` represents the same point. -/
-theorem to_edwards_spec_point (self : AffinePoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem to_edwards_spec (self : AffinePoint.«i686-no-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     to_edwards self ⦃ (r : EdwardsPoint.«i686-no-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 26 ⦄ :=
-  spec_mono (to_edwards_spec self hself) fun r ⟨hr, hb⟩ => by
+  spec_mono (to_edwards_toExtended self hself) fun r ⟨hr, hb⟩ => by
     rw [EdwardsPoint.«i686-no-tables».onCurve_iff,
       EdwardsPoint.«i686-no-tables».toPoint_def,
       hr,

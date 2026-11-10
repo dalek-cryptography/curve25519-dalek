@@ -9,6 +9,7 @@ public import Defs.Edwards
 import Proofs.Backend.Serial.U64.Field.FromLimbs
 import Proofs.Helpers.Coords
 import Proofs.Helpers.ToField
+public import Proofs.Helpers.ByteValues
 public section
 
 /-! # `ED25519_BASEPOINT_POINT`
@@ -27,7 +28,7 @@ namespace «x86_64-tables»
 /-- `ED25519_BASEPOINT_POINT`: the extended coordinates `(x : y : 1 : x y)` of the basepoint;
 limbs `< 2^51`. -/
 @[step]
-theorem ED25519_BASEPOINT_POINT_spec :
+theorem ED25519_BASEPOINT_POINT_toExtended :
     ED25519_BASEPOINT_POINT.«x86_64-tables» ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
       r.toExtended = basepoint.toExtended ∧ r.LimbsLt 52 ⦄ := by
   unfold ED25519_BASEPOINT_POINT.«x86_64-tables»
@@ -53,10 +54,10 @@ theorem ED25519_BASEPOINT_POINT_spec :
     decide
 
 /-- `ED25519_BASEPOINT_POINT` represents the basepoint. -/
-theorem ED25519_BASEPOINT_POINT_spec_point :
+theorem ED25519_BASEPOINT_POINT_spec :
     ED25519_BASEPOINT_POINT.«x86_64-tables» ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
       r.OnCurve ∧ r.toPoint = basepoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono ED25519_BASEPOINT_POINT_spec fun r ⟨hr, hb⟩ => by
+  spec_mono ED25519_BASEPOINT_POINT_toExtended fun r ⟨hr, hb⟩ => by
     rw [edwards.EdwardsPoint.«x86_64-tables».onCurve_iff,
       edwards.EdwardsPoint.«x86_64-tables».toPoint_def, hr]
     exact ⟨Point.onCurve_toExtended _, Point.toPoint_toExtended _, hb⟩
@@ -68,7 +69,7 @@ namespace «x86_64-no-tables»
 /-- `ED25519_BASEPOINT_POINT`: the extended coordinates `(x : y : 1 : x y)` of the basepoint;
 limbs `< 2^51`. -/
 @[step]
-theorem ED25519_BASEPOINT_POINT_spec :
+theorem ED25519_BASEPOINT_POINT_toExtended :
     ED25519_BASEPOINT_POINT.«x86_64-no-tables» ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
       r.toExtended = basepoint.toExtended ∧ r.LimbsLt 52 ⦄ := by
   unfold ED25519_BASEPOINT_POINT.«x86_64-no-tables»
@@ -94,10 +95,10 @@ theorem ED25519_BASEPOINT_POINT_spec :
     decide
 
 /-- `ED25519_BASEPOINT_POINT` represents the basepoint. -/
-theorem ED25519_BASEPOINT_POINT_spec_point :
+theorem ED25519_BASEPOINT_POINT_spec :
     ED25519_BASEPOINT_POINT.«x86_64-no-tables» ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
       r.OnCurve ∧ r.toPoint = basepoint ∧ r.LimbsLt 52 ⦄ :=
-  spec_mono ED25519_BASEPOINT_POINT_spec fun r ⟨hr, hb⟩ => by
+  spec_mono ED25519_BASEPOINT_POINT_toExtended fun r ⟨hr, hb⟩ => by
     rw [edwards.EdwardsPoint.«x86_64-no-tables».onCurve_iff,
       edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def, hr]
     exact ⟨Point.onCurve_toExtended _, Point.toPoint_toExtended _, hb⟩

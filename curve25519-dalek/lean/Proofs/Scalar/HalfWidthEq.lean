@@ -15,8 +15,8 @@ namespace Curve25519Dalek.scalar.HalfWidthScalar.Insts.CoreCmpPartialEqHalfWidth
 
 @[step]
 theorem eq_spec (self other : HalfWidthScalar) :
-    eq self other ⦃ (b : Bool) =>
-      (b = true ↔ self = other) ⦄ := by
+    eq self other ⦃ (r : Bool) =>
+      (r = true ↔ self = other) ⦄ := by
   unfold eq
   step*
 

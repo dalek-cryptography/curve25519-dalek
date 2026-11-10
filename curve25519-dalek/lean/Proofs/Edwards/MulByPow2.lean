@@ -42,8 +42,8 @@ private theorem mul_by_pow_2_loop_spec (iter : core.ops.range.Range U32)
     · step with core.iter.range.IteratorRange.next_U32_some_spec
         as ⟨o, it1, ho, hstart1, hend1⟩
       subst ho
-      step with «ProjectivePointx86_64-tables».double_spec_point as ⟨r, hron, hr, hrb⟩
-      step with «CompletedPointx86_64-tables».as_projective_spec_point
+      step with «ProjectivePointx86_64-tables».double_spec as ⟨r, hron, hr, hrb⟩
+      step with «CompletedPointx86_64-tables».as_projective_spec
         as ⟨s1, hs1on, hs1, hs1b⟩
       refine ⟨hend1.trans hend, by scalar_tac, by rw [hend1]; scalar_tac, hs1on, hs1b, ?_,
         by rw [hend1]; scalar_tac⟩
@@ -64,11 +64,11 @@ theorem mul_by_pow_2_spec (self : EdwardsPoint.«x86_64-tables») (k : U32)
       r.OnCurve ∧ r.toPoint = 2 ^ k.val • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul_by_pow_2
   step
-  step with as_projective_spec_point as ⟨s, hson, hs, hsb⟩
+  step with as_projective_spec as ⟨s, hson, hs, hsb⟩
   step as ⟨i, hi⟩
   step as ⟨s1, hs1on, hs1, hs1b⟩
-  step with «ProjectivePointx86_64-tables».double_spec_point as ⟨cp, hcpon, hcp, hcpb⟩
-  step with «CompletedPointx86_64-tables».as_extended_spec_point as ⟨r, hron, hr, hrb⟩
+  step with «ProjectivePointx86_64-tables».double_spec as ⟨cp, hcpon, hcp, hcpb⟩
+  step with «CompletedPointx86_64-tables».as_extended_spec as ⟨r, hron, hr, hrb⟩
   refine ⟨hron, ?_, hrb⟩
   rw [hr, hcp, hs1, hs, smul_smul, ← pow_succ',
     show i.val - 0 + 1 = k.val by scalar_tac]
@@ -98,8 +98,8 @@ private theorem mul_by_pow_2_loop_spec (iter : core.ops.range.Range U32)
     · step with core.iter.range.IteratorRange.next_U32_some_spec
         as ⟨o, it1, ho, hstart1, hend1⟩
       subst ho
-      step with «ProjectivePointi686-tables».double_spec_point as ⟨r, hron, hr, hrb⟩
-      step with «CompletedPointi686-tables».as_projective_spec_point
+      step with «ProjectivePointi686-tables».double_spec as ⟨r, hron, hr, hrb⟩
+      step with «CompletedPointi686-tables».as_projective_spec
         as ⟨s1, hs1on, hs1, hs1b⟩
       refine ⟨hend1.trans hend, by scalar_tac, by rw [hend1]; scalar_tac, hs1on, hs1b, ?_,
         by rw [hend1]; scalar_tac⟩
@@ -120,11 +120,11 @@ theorem mul_by_pow_2_spec (self : EdwardsPoint.«i686-tables») (k : U32)
       r.OnCurve ∧ r.toPoint = 2 ^ k.val • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul_by_pow_2
   step
-  step with as_projective_spec_point as ⟨s, hson, hs, hsb⟩
+  step with as_projective_spec as ⟨s, hson, hs, hsb⟩
   step as ⟨i, hi⟩
   step as ⟨s1, hs1on, hs1, hs1b⟩
-  step with «ProjectivePointi686-tables».double_spec_point as ⟨cp, hcpon, hcp, hcpb⟩
-  step with «CompletedPointi686-tables».as_extended_spec_point as ⟨r, hron, hr, hrb⟩
+  step with «ProjectivePointi686-tables».double_spec as ⟨cp, hcpon, hcp, hcpb⟩
+  step with «CompletedPointi686-tables».as_extended_spec as ⟨r, hron, hr, hrb⟩
   refine ⟨hron, ?_, hrb⟩
   rw [hr, hcp, hs1, hs, smul_smul, ← pow_succ',
     show i.val - 0 + 1 = k.val by scalar_tac]
@@ -154,8 +154,8 @@ private theorem mul_by_pow_2_loop_spec (iter : core.ops.range.Range U32)
     · step with core.iter.range.IteratorRange.next_U32_some_spec
         as ⟨o, it1, ho, hstart1, hend1⟩
       subst ho
-      step with «ProjectivePointx86_64-no-tables».double_spec_point as ⟨r, hron, hr, hrb⟩
-      step with «CompletedPointx86_64-no-tables».as_projective_spec_point
+      step with «ProjectivePointx86_64-no-tables».double_spec as ⟨r, hron, hr, hrb⟩
+      step with «CompletedPointx86_64-no-tables».as_projective_spec
         as ⟨s1, hs1on, hs1, hs1b⟩
       refine ⟨hend1.trans hend, by scalar_tac, by rw [hend1]; scalar_tac, hs1on, hs1b, ?_,
         by rw [hend1]; scalar_tac⟩
@@ -176,11 +176,11 @@ theorem mul_by_pow_2_spec (self : EdwardsPoint.«x86_64-no-tables») (k : U32)
       r.OnCurve ∧ r.toPoint = 2 ^ k.val • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul_by_pow_2
   step
-  step with as_projective_spec_point as ⟨s, hson, hs, hsb⟩
+  step with as_projective_spec as ⟨s, hson, hs, hsb⟩
   step as ⟨i, hi⟩
   step as ⟨s1, hs1on, hs1, hs1b⟩
-  step with «ProjectivePointx86_64-no-tables».double_spec_point as ⟨cp, hcpon, hcp, hcpb⟩
-  step with «CompletedPointx86_64-no-tables».as_extended_spec_point as ⟨r, hron, hr, hrb⟩
+  step with «ProjectivePointx86_64-no-tables».double_spec as ⟨cp, hcpon, hcp, hcpb⟩
+  step with «CompletedPointx86_64-no-tables».as_extended_spec as ⟨r, hron, hr, hrb⟩
   refine ⟨hron, ?_, hrb⟩
   rw [hr, hcp, hs1, hs, smul_smul, ← pow_succ',
     show i.val - 0 + 1 = k.val by scalar_tac]
@@ -210,8 +210,8 @@ private theorem mul_by_pow_2_loop_spec (iter : core.ops.range.Range U32)
     · step with core.iter.range.IteratorRange.next_U32_some_spec
         as ⟨o, it1, ho, hstart1, hend1⟩
       subst ho
-      step with «ProjectivePointi686-no-tables».double_spec_point as ⟨r, hron, hr, hrb⟩
-      step with «CompletedPointi686-no-tables».as_projective_spec_point
+      step with «ProjectivePointi686-no-tables».double_spec as ⟨r, hron, hr, hrb⟩
+      step with «CompletedPointi686-no-tables».as_projective_spec
         as ⟨s1, hs1on, hs1, hs1b⟩
       refine ⟨hend1.trans hend, by scalar_tac, by rw [hend1]; scalar_tac, hs1on, hs1b, ?_,
         by rw [hend1]; scalar_tac⟩
@@ -232,11 +232,11 @@ theorem mul_by_pow_2_spec (self : EdwardsPoint.«i686-no-tables») (k : U32)
       r.OnCurve ∧ r.toPoint = 2 ^ k.val • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul_by_pow_2
   step
-  step with as_projective_spec_point as ⟨s, hson, hs, hsb⟩
+  step with as_projective_spec as ⟨s, hson, hs, hsb⟩
   step as ⟨i, hi⟩
   step as ⟨s1, hs1on, hs1, hs1b⟩
-  step with «ProjectivePointi686-no-tables».double_spec_point as ⟨cp, hcpon, hcp, hcpb⟩
-  step with «CompletedPointi686-no-tables».as_extended_spec_point as ⟨r, hron, hr, hrb⟩
+  step with «ProjectivePointi686-no-tables».double_spec as ⟨cp, hcpon, hcp, hcpb⟩
+  step with «CompletedPointi686-no-tables».as_extended_spec as ⟨r, hron, hr, hrb⟩
   refine ⟨hron, ?_, hrb⟩
   rw [hr, hcp, hs1, hs, smul_smul, ← pow_succ',
     show i.val - 0 + 1 = k.val by scalar_tac]

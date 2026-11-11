@@ -6308,7 +6308,7 @@ def
   ok { X := fe, Y := fe1, Z := fe1, T := fe }
 
 /-- [curve25519_dalek::scalar::read_le_u64_into]: loop body 0:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1382:4-1390:5 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1399:4-1407:5 -/
 @[rust_loop_body]
 def scalar.read_le_u64_into_loop.body
   (src : Slice Std.U8) (iter : core.ops.range.Range Std.Usize)
@@ -6337,7 +6337,7 @@ def scalar.read_le_u64_into_loop.body
     ok (cont (iter1, s))
 
 /-- [curve25519_dalek::scalar::read_le_u64_into]: loop 0:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1382:4-1390:5 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1399:4-1407:5 -/
 @[rust_loop]
 def scalar.read_le_u64_into_loop
   (iter : core.ops.range.Range Std.Usize) (src : Slice Std.U8)
@@ -6349,7 +6349,7 @@ def scalar.read_le_u64_into_loop
     (iter, dst)
 
 /-- [curve25519_dalek::scalar::read_le_u64_into]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1375:0-1391:1 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1392:0-1408:1 -/
 def scalar.read_le_u64_into
   (src : Slice Std.U8) (dst : Slice Std.U64) : Result (Slice Std.U64) := do
   let i := Slice.len src
@@ -19365,7 +19365,7 @@ def backend.serial.scalar_mul.vartime_double_base.mul.«32bit-notables»
   backend.serial.curve_models.«ProjectivePoint32bit-notables».as_extended r1
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::scalar::HalfWidthScalar}::from_bytes]: loop body 0:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1458:8-1461:9
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1475:8-1478:9
     Visibility: public -/
 @[rust_loop_body]
 def scalar.HalfWidthScalar.from_bytes_loop.body
@@ -19383,7 +19383,7 @@ def scalar.HalfWidthScalar.from_bytes_loop.body
   else ok (done s_bytes)
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::scalar::HalfWidthScalar}::from_bytes]: loop 0:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1458:8-1461:9
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1475:8-1478:9
     Visibility: public -/
 @[rust_loop]
 def scalar.HalfWidthScalar.from_bytes_loop
@@ -19397,7 +19397,7 @@ def scalar.HalfWidthScalar.from_bytes_loop
     (s_bytes, i)
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::scalar::HalfWidthScalar}::from_bytes]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1455:4-1465:5
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1472:4-1482:5
     Visibility: public -/
 def scalar.HalfWidthScalar.from_bytes
   (bytes : Array Std.U8 16#usize) : Result scalar.HalfWidthScalar := do
@@ -19406,7 +19406,7 @@ def scalar.HalfWidthScalar.from_bytes
   ok { bytes := s_bytes1 }
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::scalar::Scalar}::split_at_128]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1491:4-1501:5 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1508:4-1518:5 -/
 def scalar.Scalar.split_at_128
   (self : scalar.Scalar) :
   Result (scalar.HalfWidthScalar × scalar.HalfWidthScalar)
@@ -19432,7 +19432,7 @@ def scalar.Scalar.split_at_128
   ok (hws, hws1)
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::scalar::HalfWidthScalar}::non_adjacent_form]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1481:4-1483:5 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1498:4-1500:5 -/
 def scalar.HalfWidthScalar.non_adjacent_form
   (self : scalar.HalfWidthScalar) (w : Std.Usize) :
   Result (Array Std.I8 256#usize)
@@ -43272,7 +43272,7 @@ def edwards.«EdwardsPoint32bit-notables».mul_base
     scalar ep
 
 /-- [curve25519_dalek::scalar::clamp_integer]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1413:0-1418:1
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1430:0-1435:1
     Visibility: public -/
 def scalar.clamp_integer
   (bytes : Array Std.U8 32#usize) : Result (Array Std.U8 32#usize) := do
@@ -61711,10 +61711,10 @@ def scalar.Scalar.to_bytes
   (self : scalar.Scalar) : Result (Array Std.U8 32#usize) := do
   ok self.bytes
 
-/-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u64::scalar::Scalar52}::montgomery_invert::square_multiply]: loop body 0:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1206:12-1208:13 -/
+/-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u64::scalar::Scalar52}::montgomery_invert::square_n]: loop body 0:
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1218:12-1220:13 -/
 @[rust_loop_body]
-def scalar.Scalar52.montgomery_invert.square_multiply_loop.body
+def scalar.Scalar52.montgomery_invert.square_n_loop.body
   (iter : core.ops.range.Range Std.Usize)
   (y : backend.serial.u64.scalar.Scalar52) :
   Result (ControlFlow ((core.ops.range.Range Std.Usize) ×
@@ -61728,33 +61728,41 @@ def scalar.Scalar52.montgomery_invert.square_multiply_loop.body
     let y1 ← backend.serial.u64.scalar.Scalar52.montgomery_square y
     ok (cont (iter1, y1))
 
-/-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u64::scalar::Scalar52}::montgomery_invert::square_multiply]: loop 0:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1206:12-1208:13 -/
+/-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u64::scalar::Scalar52}::montgomery_invert::square_n]: loop 0:
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1218:12-1220:13 -/
 @[rust_loop]
-def scalar.Scalar52.montgomery_invert.square_multiply_loop
+def scalar.Scalar52.montgomery_invert.square_n_loop
   (iter : core.ops.range.Range Std.Usize)
   (y : backend.serial.u64.scalar.Scalar52) :
   Result backend.serial.u64.scalar.Scalar52
   := do
   loop
-    (fun (iter1, y1) =>
-      scalar.Scalar52.montgomery_invert.square_multiply_loop.body iter1 y1)
+    (fun (iter1, y1) => scalar.Scalar52.montgomery_invert.square_n_loop.body
+      iter1 y1)
     (iter, y)
 
+/-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u64::scalar::Scalar52}::montgomery_invert::square_n]:
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1217:8-1221:9 -/
+@[reducible]
+def scalar.Scalar52.montgomery_invert.square_n
+  (y : backend.serial.u64.scalar.Scalar52) (squarings : Std.Usize) :
+  Result backend.serial.u64.scalar.Scalar52
+  := do
+  scalar.Scalar52.montgomery_invert.square_n_loop
+    { start := 0#usize, «end» := squarings } y
+
 /-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u64::scalar::Scalar52}::montgomery_invert::square_multiply]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1205:8-1210:9 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1224:8-1227:9 -/
 def scalar.Scalar52.montgomery_invert.square_multiply
   (y : backend.serial.u64.scalar.Scalar52) (squarings : Std.Usize)
   (x : backend.serial.u64.scalar.Scalar52) :
   Result backend.serial.u64.scalar.Scalar52
   := do
-  let y1 ←
-    scalar.Scalar52.montgomery_invert.square_multiply_loop
-      { start := 0#usize, «end» := squarings } y
+  let y1 ← scalar.Scalar52.montgomery_invert.square_n y squarings
   backend.serial.u64.scalar.Scalar52.montgomery_mul y1 x
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u64::scalar::Scalar52}::montgomery_invert]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1188:4-1241:5
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1188:4-1258:5
     Visibility: public -/
 def scalar.Scalar52.montgomery_invert
   (self : backend.serial.u64.scalar.Scalar52) :
@@ -61762,55 +61770,93 @@ def scalar.Scalar52.montgomery_invert
   := do
   let _10 ← backend.serial.u64.scalar.Scalar52.montgomery_square self
   let _100 ← backend.serial.u64.scalar.Scalar52.montgomery_square _10
-  let _11 ← backend.serial.u64.scalar.Scalar52.montgomery_mul _10 self
-  let _101 ← backend.serial.u64.scalar.Scalar52.montgomery_mul _10 _11
-  let _111 ← backend.serial.u64.scalar.Scalar52.montgomery_mul _10 _101
-  let _1001 ← backend.serial.u64.scalar.Scalar52.montgomery_mul _10 _111
-  let _1011 ← backend.serial.u64.scalar.Scalar52.montgomery_mul _10 _1001
-  let _1111 ← backend.serial.u64.scalar.Scalar52.montgomery_mul _100 _1011
-  let y ← backend.serial.u64.scalar.Scalar52.montgomery_mul _1111 self
-  let i ← 123#usize + 3#usize
-  let y1 ← scalar.Scalar52.montgomery_invert.square_multiply y i _101
-  let i1 ← 2#usize + 2#usize
-  let y2 ← scalar.Scalar52.montgomery_invert.square_multiply y1 i1 _11
-  let i2 ← 1#usize + 4#usize
-  let y3 ← scalar.Scalar52.montgomery_invert.square_multiply y2 i2 _1111
-  let y4 ← scalar.Scalar52.montgomery_invert.square_multiply y3 i2 _1111
-  let y5 ← scalar.Scalar52.montgomery_invert.square_multiply y4 4#usize _1001
-  let y6 ← scalar.Scalar52.montgomery_invert.square_multiply y5 2#usize _11
-  let y7 ← scalar.Scalar52.montgomery_invert.square_multiply y6 i2 _1111
-  let i3 ← 1#usize + 3#usize
-  let y8 ← scalar.Scalar52.montgomery_invert.square_multiply y7 i3 _101
-  let i4 ← 3#usize + 3#usize
-  let y9 ← scalar.Scalar52.montgomery_invert.square_multiply y8 i4 _101
-  let y10 ← scalar.Scalar52.montgomery_invert.square_multiply y9 3#usize _111
-  let y11 ← scalar.Scalar52.montgomery_invert.square_multiply y10 i2 _1111
-  let i5 ← 2#usize + 3#usize
-  let y12 ← scalar.Scalar52.montgomery_invert.square_multiply y11 i5 _111
-  let y13 ← scalar.Scalar52.montgomery_invert.square_multiply y12 i1 _11
-  let y14 ← scalar.Scalar52.montgomery_invert.square_multiply y13 i2 _1011
-  let i6 ← 2#usize + 4#usize
-  let y15 ← scalar.Scalar52.montgomery_invert.square_multiply y14 i6 _1011
-  let i7 ← 6#usize + 4#usize
-  let y16 ← scalar.Scalar52.montgomery_invert.square_multiply y15 i7 _1001
-  let y17 ← scalar.Scalar52.montgomery_invert.square_multiply y16 i1 _11
-  let i8 ← 3#usize + 2#usize
-  let y18 ← scalar.Scalar52.montgomery_invert.square_multiply y17 i8 _11
-  let y19 ← scalar.Scalar52.montgomery_invert.square_multiply y18 i8 _11
-  let y20 ← scalar.Scalar52.montgomery_invert.square_multiply y19 i2 _1001
-  let y21 ← scalar.Scalar52.montgomery_invert.square_multiply y20 i3 _111
-  let y22 ← scalar.Scalar52.montgomery_invert.square_multiply y21 i6 _1111
-  let y23 ← scalar.Scalar52.montgomery_invert.square_multiply y22 i2 _1011
-  let y24 ←
-    scalar.Scalar52.montgomery_invert.square_multiply y23 3#usize _101
-  let y25 ← scalar.Scalar52.montgomery_invert.square_multiply y24 i6 _1111
-  let y26 ←
-    scalar.Scalar52.montgomery_invert.square_multiply y25 3#usize _101
-  let i9 ← 1#usize + 2#usize
-  scalar.Scalar52.montgomery_invert.square_multiply y26 i9 _11
+  let _1000 ← backend.serial.u64.scalar.Scalar52.montgomery_square _100
+  let _10000 ← backend.serial.u64.scalar.Scalar52.montgomery_square _1000
+  let _10001 ← backend.serial.u64.scalar.Scalar52.montgomery_mul _10000 self
+  let _100001 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_mul _10001 _10000
+  let _1000010 ← backend.serial.u64.scalar.Scalar52.montgomery_square _100001
+  let _1100011 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_mul _1000010 _100001
+  let _11000110 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_square _1100011
+  let _110001100 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_square _11000110
+  let _110011101 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_mul _110001100 _10001
+  let _1100101001 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_mul _110011101 _110001100
+  let _11001010010 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_square _1100101001
+  let _110010100100 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_square _11001010010
+  let _1100101001000 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_square _110010100100
+  let _1100101001001 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_mul _1100101001000 self
+  let _11001010010001 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_mul _1100101001001
+      _1100101001000
+  let _110010100100010 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_square _11001010010001
+  let _111111001101011 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_mul _110010100100010
+      _1100101001001
+  let _1111110011010110 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_square _111111001101011
+  let _1111111111111111 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_mul _1111110011010110
+      _1100101001
+  let y ←
+    backend.serial.u64.scalar.Scalar52.montgomery_mul _1111111111111111 self
+  let y1 ← scalar.Scalar52.montgomery_invert.square_n y 4#usize
+  let _100000000000001100011 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_mul y1 _1100011
+  let y2 ← scalar.Scalar52.montgomery_invert.square_n y1 19#usize
+  let _1000000000000000000000000001100101001001 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_mul y2 _1100101001001
+  let y3 ← scalar.Scalar52.montgomery_invert.square_n y2 3#usize
+  let _1001000000000000000000000000001100101001001 ←
+    backend.serial.u64.scalar.Scalar52.montgomery_mul y3
+      _1000000000000000000000000001100101001001
+  let i ← 85#usize + 5#usize
+  let y4 ← scalar.Scalar52.montgomery_invert.square_multiply y3 i _10001
+  let y5 ←
+    scalar.Scalar52.montgomery_invert.square_multiply y4 8#usize _110011101
+  let y6 ←
+    scalar.Scalar52.montgomery_invert.square_multiply y5 14#usize
+      _111111001101011
+  let y7 ←
+    scalar.Scalar52.montgomery_invert.square_multiply y6 6#usize _1100101001
+  let y8 ←
+    scalar.Scalar52.montgomery_invert.square_multiply y7 13#usize
+      _1001000000000000000000000000001100101001001
+  let y9 ←
+    scalar.Scalar52.montgomery_invert.square_multiply y8 2#usize
+      _11001010010001
+  let y10 ←
+    scalar.Scalar52.montgomery_invert.square_multiply y9 12#usize
+      _111111001101011
+  let i1 ← 4#usize + 21#usize
+  let y11 ←
+    scalar.Scalar52.montgomery_invert.square_multiply y10 i1
+      _100000000000001100011
+  let i2 ← 3#usize + 7#usize
+  let y12 ← scalar.Scalar52.montgomery_invert.square_multiply y11 i2 _1100011
+  let y13 ←
+    scalar.Scalar52.montgomery_invert.square_multiply y12 10#usize
+      _1001000000000000000000000000001100101001001
+  let y14 ←
+    scalar.Scalar52.montgomery_invert.square_multiply y13 10#usize
+      _1001000000000000000000000000001100101001001
+  let y15 ←
+    scalar.Scalar52.montgomery_invert.square_multiply y14 3#usize
+      _100000000000001100011
+  scalar.Scalar52.montgomery_invert.square_multiply y15 7#usize
+    _111111001101011
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u64::scalar::Scalar52}::invert]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1244:4-1246:5
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1261:4-1263:5
     Visibility: public -/
 def scalar.Scalar52.invert
   (self : backend.serial.u64.scalar.Scalar52) :
@@ -61838,10 +61884,10 @@ def scalar.Scalar.invert.«64bit-notables»
   let s1 ← scalar.Scalar52.invert s
   scalar.Scalar52.pack s1
 
-/-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u32::scalar::Scalar29}::montgomery_invert::square_multiply]: loop body 0:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1206:12-1208:13 -/
+/-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u32::scalar::Scalar29}::montgomery_invert::square_n]: loop body 0:
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1218:12-1220:13 -/
 @[rust_loop_body]
-def scalar.Scalar29.montgomery_invert.square_multiply_loop.body
+def scalar.Scalar29.montgomery_invert.square_n_loop.body
   (iter : core.ops.range.Range Std.Usize)
   (y : backend.serial.u32.scalar.Scalar29) :
   Result (ControlFlow ((core.ops.range.Range Std.Usize) ×
@@ -61855,33 +61901,41 @@ def scalar.Scalar29.montgomery_invert.square_multiply_loop.body
     let y1 ← backend.serial.u32.scalar.Scalar29.montgomery_square y
     ok (cont (iter1, y1))
 
-/-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u32::scalar::Scalar29}::montgomery_invert::square_multiply]: loop 0:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1206:12-1208:13 -/
+/-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u32::scalar::Scalar29}::montgomery_invert::square_n]: loop 0:
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1218:12-1220:13 -/
 @[rust_loop]
-def scalar.Scalar29.montgomery_invert.square_multiply_loop
+def scalar.Scalar29.montgomery_invert.square_n_loop
   (iter : core.ops.range.Range Std.Usize)
   (y : backend.serial.u32.scalar.Scalar29) :
   Result backend.serial.u32.scalar.Scalar29
   := do
   loop
-    (fun (iter1, y1) =>
-      scalar.Scalar29.montgomery_invert.square_multiply_loop.body iter1 y1)
+    (fun (iter1, y1) => scalar.Scalar29.montgomery_invert.square_n_loop.body
+      iter1 y1)
     (iter, y)
 
+/-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u32::scalar::Scalar29}::montgomery_invert::square_n]:
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1217:8-1221:9 -/
+@[reducible]
+def scalar.Scalar29.montgomery_invert.square_n
+  (y : backend.serial.u32.scalar.Scalar29) (squarings : Std.Usize) :
+  Result backend.serial.u32.scalar.Scalar29
+  := do
+  scalar.Scalar29.montgomery_invert.square_n_loop
+    { start := 0#usize, «end» := squarings } y
+
 /-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u32::scalar::Scalar29}::montgomery_invert::square_multiply]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1205:8-1210:9 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1224:8-1227:9 -/
 def scalar.Scalar29.montgomery_invert.square_multiply
   (y : backend.serial.u32.scalar.Scalar29) (squarings : Std.Usize)
   (x : backend.serial.u32.scalar.Scalar29) :
   Result backend.serial.u32.scalar.Scalar29
   := do
-  let y1 ←
-    scalar.Scalar29.montgomery_invert.square_multiply_loop
-      { start := 0#usize, «end» := squarings } y
+  let y1 ← scalar.Scalar29.montgomery_invert.square_n y squarings
   backend.serial.u32.scalar.Scalar29.montgomery_mul y1 x
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u32::scalar::Scalar29}::montgomery_invert]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1188:4-1241:5
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1188:4-1258:5
     Visibility: public -/
 def scalar.Scalar29.montgomery_invert
   (self : backend.serial.u32.scalar.Scalar29) :
@@ -61889,55 +61943,93 @@ def scalar.Scalar29.montgomery_invert
   := do
   let _10 ← backend.serial.u32.scalar.Scalar29.montgomery_square self
   let _100 ← backend.serial.u32.scalar.Scalar29.montgomery_square _10
-  let _11 ← backend.serial.u32.scalar.Scalar29.montgomery_mul _10 self
-  let _101 ← backend.serial.u32.scalar.Scalar29.montgomery_mul _10 _11
-  let _111 ← backend.serial.u32.scalar.Scalar29.montgomery_mul _10 _101
-  let _1001 ← backend.serial.u32.scalar.Scalar29.montgomery_mul _10 _111
-  let _1011 ← backend.serial.u32.scalar.Scalar29.montgomery_mul _10 _1001
-  let _1111 ← backend.serial.u32.scalar.Scalar29.montgomery_mul _100 _1011
-  let y ← backend.serial.u32.scalar.Scalar29.montgomery_mul _1111 self
-  let i ← 123#usize + 3#usize
-  let y1 ← scalar.Scalar29.montgomery_invert.square_multiply y i _101
-  let i1 ← 2#usize + 2#usize
-  let y2 ← scalar.Scalar29.montgomery_invert.square_multiply y1 i1 _11
-  let i2 ← 1#usize + 4#usize
-  let y3 ← scalar.Scalar29.montgomery_invert.square_multiply y2 i2 _1111
-  let y4 ← scalar.Scalar29.montgomery_invert.square_multiply y3 i2 _1111
-  let y5 ← scalar.Scalar29.montgomery_invert.square_multiply y4 4#usize _1001
-  let y6 ← scalar.Scalar29.montgomery_invert.square_multiply y5 2#usize _11
-  let y7 ← scalar.Scalar29.montgomery_invert.square_multiply y6 i2 _1111
-  let i3 ← 1#usize + 3#usize
-  let y8 ← scalar.Scalar29.montgomery_invert.square_multiply y7 i3 _101
-  let i4 ← 3#usize + 3#usize
-  let y9 ← scalar.Scalar29.montgomery_invert.square_multiply y8 i4 _101
-  let y10 ← scalar.Scalar29.montgomery_invert.square_multiply y9 3#usize _111
-  let y11 ← scalar.Scalar29.montgomery_invert.square_multiply y10 i2 _1111
-  let i5 ← 2#usize + 3#usize
-  let y12 ← scalar.Scalar29.montgomery_invert.square_multiply y11 i5 _111
-  let y13 ← scalar.Scalar29.montgomery_invert.square_multiply y12 i1 _11
-  let y14 ← scalar.Scalar29.montgomery_invert.square_multiply y13 i2 _1011
-  let i6 ← 2#usize + 4#usize
-  let y15 ← scalar.Scalar29.montgomery_invert.square_multiply y14 i6 _1011
-  let i7 ← 6#usize + 4#usize
-  let y16 ← scalar.Scalar29.montgomery_invert.square_multiply y15 i7 _1001
-  let y17 ← scalar.Scalar29.montgomery_invert.square_multiply y16 i1 _11
-  let i8 ← 3#usize + 2#usize
-  let y18 ← scalar.Scalar29.montgomery_invert.square_multiply y17 i8 _11
-  let y19 ← scalar.Scalar29.montgomery_invert.square_multiply y18 i8 _11
-  let y20 ← scalar.Scalar29.montgomery_invert.square_multiply y19 i2 _1001
-  let y21 ← scalar.Scalar29.montgomery_invert.square_multiply y20 i3 _111
-  let y22 ← scalar.Scalar29.montgomery_invert.square_multiply y21 i6 _1111
-  let y23 ← scalar.Scalar29.montgomery_invert.square_multiply y22 i2 _1011
-  let y24 ←
-    scalar.Scalar29.montgomery_invert.square_multiply y23 3#usize _101
-  let y25 ← scalar.Scalar29.montgomery_invert.square_multiply y24 i6 _1111
-  let y26 ←
-    scalar.Scalar29.montgomery_invert.square_multiply y25 3#usize _101
-  let i9 ← 1#usize + 2#usize
-  scalar.Scalar29.montgomery_invert.square_multiply y26 i9 _11
+  let _1000 ← backend.serial.u32.scalar.Scalar29.montgomery_square _100
+  let _10000 ← backend.serial.u32.scalar.Scalar29.montgomery_square _1000
+  let _10001 ← backend.serial.u32.scalar.Scalar29.montgomery_mul _10000 self
+  let _100001 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_mul _10001 _10000
+  let _1000010 ← backend.serial.u32.scalar.Scalar29.montgomery_square _100001
+  let _1100011 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_mul _1000010 _100001
+  let _11000110 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_square _1100011
+  let _110001100 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_square _11000110
+  let _110011101 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_mul _110001100 _10001
+  let _1100101001 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_mul _110011101 _110001100
+  let _11001010010 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_square _1100101001
+  let _110010100100 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_square _11001010010
+  let _1100101001000 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_square _110010100100
+  let _1100101001001 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_mul _1100101001000 self
+  let _11001010010001 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_mul _1100101001001
+      _1100101001000
+  let _110010100100010 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_square _11001010010001
+  let _111111001101011 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_mul _110010100100010
+      _1100101001001
+  let _1111110011010110 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_square _111111001101011
+  let _1111111111111111 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_mul _1111110011010110
+      _1100101001
+  let y ←
+    backend.serial.u32.scalar.Scalar29.montgomery_mul _1111111111111111 self
+  let y1 ← scalar.Scalar29.montgomery_invert.square_n y 4#usize
+  let _100000000000001100011 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_mul y1 _1100011
+  let y2 ← scalar.Scalar29.montgomery_invert.square_n y1 19#usize
+  let _1000000000000000000000000001100101001001 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_mul y2 _1100101001001
+  let y3 ← scalar.Scalar29.montgomery_invert.square_n y2 3#usize
+  let _1001000000000000000000000000001100101001001 ←
+    backend.serial.u32.scalar.Scalar29.montgomery_mul y3
+      _1000000000000000000000000001100101001001
+  let i ← 85#usize + 5#usize
+  let y4 ← scalar.Scalar29.montgomery_invert.square_multiply y3 i _10001
+  let y5 ←
+    scalar.Scalar29.montgomery_invert.square_multiply y4 8#usize _110011101
+  let y6 ←
+    scalar.Scalar29.montgomery_invert.square_multiply y5 14#usize
+      _111111001101011
+  let y7 ←
+    scalar.Scalar29.montgomery_invert.square_multiply y6 6#usize _1100101001
+  let y8 ←
+    scalar.Scalar29.montgomery_invert.square_multiply y7 13#usize
+      _1001000000000000000000000000001100101001001
+  let y9 ←
+    scalar.Scalar29.montgomery_invert.square_multiply y8 2#usize
+      _11001010010001
+  let y10 ←
+    scalar.Scalar29.montgomery_invert.square_multiply y9 12#usize
+      _111111001101011
+  let i1 ← 4#usize + 21#usize
+  let y11 ←
+    scalar.Scalar29.montgomery_invert.square_multiply y10 i1
+      _100000000000001100011
+  let i2 ← 3#usize + 7#usize
+  let y12 ← scalar.Scalar29.montgomery_invert.square_multiply y11 i2 _1100011
+  let y13 ←
+    scalar.Scalar29.montgomery_invert.square_multiply y12 10#usize
+      _1001000000000000000000000000001100101001001
+  let y14 ←
+    scalar.Scalar29.montgomery_invert.square_multiply y13 10#usize
+      _1001000000000000000000000000001100101001001
+  let y15 ←
+    scalar.Scalar29.montgomery_invert.square_multiply y14 3#usize
+      _100000000000001100011
+  scalar.Scalar29.montgomery_invert.square_multiply y15 7#usize
+    _111111001101011
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::backend::serial::u32::scalar::Scalar29}::invert]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1244:4-1246:5
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1261:4-1263:5
     Visibility: public -/
 def scalar.Scalar29.invert
   (self : backend.serial.u32.scalar.Scalar29) :
@@ -62736,14 +62828,14 @@ def scalar.Scalar.div_by_2 (s : scalar.Scalar) : Result scalar.Scalar := do
       else scalar.Scalar.div_by_2.«32bit-notables» s
 
 /-- [curve25519_dalek::scalar::{impl core::clone::Clone for curve25519_dalek::scalar::HalfWidthScalar}::clone]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1427:15-1427:20
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1444:15-1444:20
     Visibility: public -/
 def scalar.HalfWidthScalar.Insts.CoreCloneClone.clone
   (self : scalar.HalfWidthScalar) : Result scalar.HalfWidthScalar := do
   ok self
 
 /-- Trait implementation: [curve25519_dalek::scalar::{impl core::clone::Clone for curve25519_dalek::scalar::HalfWidthScalar}]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1427:15-1427:20 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1444:15-1444:20 -/
 @[reducible]
 def scalar.HalfWidthScalar.Insts.CoreCloneClone : core.clone.Clone
   scalar.HalfWidthScalar := {
@@ -62751,7 +62843,7 @@ def scalar.HalfWidthScalar.Insts.CoreCloneClone : core.clone.Clone
 }
 
 /-- Trait implementation: [curve25519_dalek::scalar::{impl core::marker::Copy for curve25519_dalek::scalar::HalfWidthScalar}]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1427:9-1427:13 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1444:9-1444:13 -/
 @[reducible]
 def scalar.HalfWidthScalar.Insts.CoreMarkerCopy : core.marker.Copy
   scalar.HalfWidthScalar := {
@@ -62759,7 +62851,7 @@ def scalar.HalfWidthScalar.Insts.CoreMarkerCopy : core.marker.Copy
 }
 
 /-- [curve25519_dalek::scalar::{impl core::default::Default for curve25519_dalek::scalar::HalfWidthScalar}::default]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1427:29-1427:36
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1444:29-1444:36
     Visibility: public -/
 def scalar.HalfWidthScalar.Insts.CoreDefaultDefault.default
   : Result scalar.HalfWidthScalar := do
@@ -62767,7 +62859,7 @@ def scalar.HalfWidthScalar.Insts.CoreDefaultDefault.default
   ok s
 
 /-- Trait implementation: [curve25519_dalek::scalar::{impl core::default::Default for curve25519_dalek::scalar::HalfWidthScalar}]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1427:29-1427:36 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1444:29-1444:36 -/
 @[reducible]
 def scalar.HalfWidthScalar.Insts.CoreDefaultDefault : core.default.Default
   scalar.HalfWidthScalar := {
@@ -62775,14 +62867,14 @@ def scalar.HalfWidthScalar.Insts.CoreDefaultDefault : core.default.Default
 }
 
 /-- Trait implementation: [curve25519_dalek::scalar::{impl core::marker::StructuralPartialEq for curve25519_dalek::scalar::HalfWidthScalar}]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1427:42-1427:51 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1444:42-1444:51 -/
 @[reducible]
 def scalar.HalfWidthScalar.Insts.CoreMarkerStructuralPartialEq :
   core.marker.StructuralPartialEq scalar.HalfWidthScalar := {
 }
 
 /-- [curve25519_dalek::scalar::{impl core::cmp::PartialEq<curve25519_dalek::scalar::HalfWidthScalar> for curve25519_dalek::scalar::HalfWidthScalar}::eq]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1427:42-1427:51
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1444:42-1444:51
     Visibility: public -/
 def scalar.HalfWidthScalar.Insts.CoreCmpPartialEqHalfWidthScalar.eq
   (self : scalar.HalfWidthScalar) (other : scalar.HalfWidthScalar) :
@@ -62791,7 +62883,7 @@ def scalar.HalfWidthScalar.Insts.CoreCmpPartialEqHalfWidthScalar.eq
   scalar.Scalar.Insts.CoreCmpPartialEqScalar.eq self other
 
 /-- Trait implementation: [curve25519_dalek::scalar::{impl core::cmp::PartialEq<curve25519_dalek::scalar::HalfWidthScalar> for curve25519_dalek::scalar::HalfWidthScalar}]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1427:42-1427:51 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1444:42-1444:51 -/
 @[reducible]
 impl_def scalar.HalfWidthScalar.Insts.CoreCmpPartialEqHalfWidthScalar :
   core.cmp.PartialEq scalar.HalfWidthScalar scalar.HalfWidthScalar := {
@@ -62801,7 +62893,7 @@ impl_def scalar.HalfWidthScalar.Insts.CoreCmpPartialEqHalfWidthScalar :
 }
 
 /-- [curve25519_dalek::scalar::{impl core::convert::TryFrom<curve25519_dalek::scalar::Scalar, ()> for curve25519_dalek::scalar::HalfWidthScalar}::try_from]: loop body 0:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1436:8-1442:5
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1453:8-1459:5
     Visibility: public -/
 @[rust_loop_body]
 def
@@ -62819,7 +62911,7 @@ def
     else ok (cont iter1)
 
 /-- [curve25519_dalek::scalar::{impl core::convert::TryFrom<curve25519_dalek::scalar::Scalar, ()> for curve25519_dalek::scalar::HalfWidthScalar}::try_from]: loop 0:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1436:8-1442:5
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1453:8-1459:5
     Visibility: public -/
 @[rust_loop]
 def scalar.HalfWidthScalar.Insts.CoreConvertTryFromScalarTuple.try_from_loop
@@ -62833,7 +62925,7 @@ def scalar.HalfWidthScalar.Insts.CoreConvertTryFromScalarTuple.try_from_loop
     iter
 
 /-- [curve25519_dalek::scalar::{impl core::convert::TryFrom<curve25519_dalek::scalar::Scalar, ()> for curve25519_dalek::scalar::HalfWidthScalar}::try_from]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1435:4-1442:5
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1452:4-1459:5
     Visibility: public -/
 def scalar.HalfWidthScalar.Insts.CoreConvertTryFromScalarTuple.try_from
   (value : scalar.Scalar) :
@@ -62848,7 +62940,7 @@ def scalar.HalfWidthScalar.Insts.CoreConvertTryFromScalarTuple.try_from
     value.bytes
 
 /-- Trait implementation: [curve25519_dalek::scalar::{impl core::convert::TryFrom<curve25519_dalek::scalar::Scalar, ()> for curve25519_dalek::scalar::HalfWidthScalar}]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1430:0-1443:1 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1447:0-1460:1 -/
 @[reducible]
 def scalar.HalfWidthScalar.Insts.CoreConvertTryFromScalarTuple :
   core.convert.TryFrom scalar.HalfWidthScalar scalar.Scalar Unit := {
@@ -62857,26 +62949,26 @@ def scalar.HalfWidthScalar.Insts.CoreConvertTryFromScalarTuple :
 }
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::scalar::HalfWidthScalar}::ZERO]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1447:4-1447:46
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1464:4-1464:46
     Visibility: public -/
 @[global_simps, irreducible]
 def scalar.HalfWidthScalar.ZERO : scalar.HalfWidthScalar := scalar.Scalar.ZERO
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::scalar::HalfWidthScalar}::ONE]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1450:4-1450:44
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1467:4-1467:44
     Visibility: public -/
 @[global_simps, irreducible]
 def scalar.HalfWidthScalar.ONE : scalar.HalfWidthScalar := scalar.Scalar.ONE
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::scalar::HalfWidthScalar}::as_scalar]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1468:4-1470:5
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1485:4-1487:5
     Visibility: public -/
 def scalar.HalfWidthScalar.as_scalar
   (self : scalar.HalfWidthScalar) : Result scalar.Scalar := do
   ok self
 
 /-- [curve25519_dalek::scalar::{curve25519_dalek::scalar::HalfWidthScalar}::to_bytes]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1473:4-1477:5
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1490:4-1494:5
     Visibility: public -/
 def scalar.HalfWidthScalar.to_bytes
   (self : scalar.HalfWidthScalar) : Result (Array Std.U8 16#usize) := do
@@ -62890,14 +62982,14 @@ def scalar.HalfWidthScalar.to_bytes
   ok (to_slice_mut_back s2)
 
 /-- [curve25519_dalek::scalar::{impl core::convert::From<curve25519_dalek::scalar::HalfWidthScalar> for curve25519_dalek::scalar::Scalar}::from]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1505:4-1507:5
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1522:4-1524:5
     Visibility: public -/
 def scalar.Scalar.Insts.CoreConvertFromHalfWidthScalar.from
   (x : scalar.HalfWidthScalar) : Result scalar.Scalar := do
   ok x
 
 /-- Trait implementation: [curve25519_dalek::scalar::{impl core::convert::From<curve25519_dalek::scalar::HalfWidthScalar> for curve25519_dalek::scalar::Scalar}]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1504:0-1508:1 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1521:0-1525:1 -/
 @[reducible]
 def scalar.Scalar.Insts.CoreConvertFromHalfWidthScalar : core.convert.From
   scalar.Scalar scalar.HalfWidthScalar := {
@@ -62905,7 +62997,7 @@ def scalar.Scalar.Insts.CoreConvertFromHalfWidthScalar : core.convert.From
 }
 
 /-- [curve25519_dalek::scalar::{impl core::convert::From<u8> for curve25519_dalek::scalar::HalfWidthScalar}::from]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1513:12-1518:13; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1523:0-1523:66
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1530:12-1535:13; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1540:0-1540:66
     Visibility: public -/
 def scalar.HalfWidthScalar.Insts.CoreConvertFromU8.from
   (x : Std.U8) : Result scalar.HalfWidthScalar := do
@@ -62923,7 +63015,7 @@ def scalar.HalfWidthScalar.Insts.CoreConvertFromU8.from
   scalar.HalfWidthScalar.from_bytes bytes1
 
 /-- Trait implementation: [curve25519_dalek::scalar::{impl core::convert::From<u8> for curve25519_dalek::scalar::HalfWidthScalar}]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1512:8-1519:9; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1523:0-1523:66 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1529:8-1536:9; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1540:0-1540:66 -/
 @[reducible]
 def scalar.HalfWidthScalar.Insts.CoreConvertFromU8 : core.convert.From
   scalar.HalfWidthScalar Std.U8 := {
@@ -62931,7 +63023,7 @@ def scalar.HalfWidthScalar.Insts.CoreConvertFromU8 : core.convert.From
 }
 
 /-- [curve25519_dalek::scalar::{impl core::convert::From<u16> for curve25519_dalek::scalar::HalfWidthScalar}::from]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1513:12-1518:13; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1523:0-1523:66
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1530:12-1535:13; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1540:0-1540:66
     Visibility: public -/
 def scalar.HalfWidthScalar.Insts.CoreConvertFromU16.from
   (x : Std.U16) : Result scalar.HalfWidthScalar := do
@@ -62949,7 +63041,7 @@ def scalar.HalfWidthScalar.Insts.CoreConvertFromU16.from
   scalar.HalfWidthScalar.from_bytes bytes1
 
 /-- Trait implementation: [curve25519_dalek::scalar::{impl core::convert::From<u16> for curve25519_dalek::scalar::HalfWidthScalar}]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1512:8-1519:9; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1523:0-1523:66 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1529:8-1536:9; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1540:0-1540:66 -/
 @[reducible]
 def scalar.HalfWidthScalar.Insts.CoreConvertFromU16 : core.convert.From
   scalar.HalfWidthScalar Std.U16 := {
@@ -62957,7 +63049,7 @@ def scalar.HalfWidthScalar.Insts.CoreConvertFromU16 : core.convert.From
 }
 
 /-- [curve25519_dalek::scalar::{impl core::convert::From<u32> for curve25519_dalek::scalar::HalfWidthScalar}::from]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1513:12-1518:13; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1523:0-1523:66
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1530:12-1535:13; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1540:0-1540:66
     Visibility: public -/
 def scalar.HalfWidthScalar.Insts.CoreConvertFromU32.from
   (x : Std.U32) : Result scalar.HalfWidthScalar := do
@@ -62975,7 +63067,7 @@ def scalar.HalfWidthScalar.Insts.CoreConvertFromU32.from
   scalar.HalfWidthScalar.from_bytes bytes1
 
 /-- Trait implementation: [curve25519_dalek::scalar::{impl core::convert::From<u32> for curve25519_dalek::scalar::HalfWidthScalar}]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1512:8-1519:9; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1523:0-1523:66 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1529:8-1536:9; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1540:0-1540:66 -/
 @[reducible]
 def scalar.HalfWidthScalar.Insts.CoreConvertFromU32 : core.convert.From
   scalar.HalfWidthScalar Std.U32 := {
@@ -62983,7 +63075,7 @@ def scalar.HalfWidthScalar.Insts.CoreConvertFromU32 : core.convert.From
 }
 
 /-- [curve25519_dalek::scalar::{impl core::convert::From<u64> for curve25519_dalek::scalar::HalfWidthScalar}::from]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1513:12-1518:13; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1523:0-1523:66
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1530:12-1535:13; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1540:0-1540:66
     Visibility: public -/
 def scalar.HalfWidthScalar.Insts.CoreConvertFromU64.from
   (x : Std.U64) : Result scalar.HalfWidthScalar := do
@@ -63001,7 +63093,7 @@ def scalar.HalfWidthScalar.Insts.CoreConvertFromU64.from
   scalar.HalfWidthScalar.from_bytes bytes1
 
 /-- Trait implementation: [curve25519_dalek::scalar::{impl core::convert::From<u64> for curve25519_dalek::scalar::HalfWidthScalar}]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1512:8-1519:9; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1523:0-1523:66 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1529:8-1536:9; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1540:0-1540:66 -/
 @[reducible]
 def scalar.HalfWidthScalar.Insts.CoreConvertFromU64 : core.convert.From
   scalar.HalfWidthScalar Std.U64 := {
@@ -63009,7 +63101,7 @@ def scalar.HalfWidthScalar.Insts.CoreConvertFromU64 : core.convert.From
 }
 
 /-- [curve25519_dalek::scalar::{impl core::convert::From<u128> for curve25519_dalek::scalar::HalfWidthScalar}::from]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1513:12-1518:13; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1523:0-1523:66
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1530:12-1535:13; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1540:0-1540:66
     Visibility: public -/
 def scalar.HalfWidthScalar.Insts.CoreConvertFromU128.from
   (x : Std.U128) : Result scalar.HalfWidthScalar := do
@@ -63027,7 +63119,7 @@ def scalar.HalfWidthScalar.Insts.CoreConvertFromU128.from
   scalar.HalfWidthScalar.from_bytes bytes1
 
 /-- Trait implementation: [curve25519_dalek::scalar::{impl core::convert::From<u128> for curve25519_dalek::scalar::HalfWidthScalar}]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1512:8-1519:9; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1523:0-1523:66 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1529:8-1536:9; this code is generated from a macro invocation at: 'curve25519-dalek/src/scalar.rs', lines 1540:0-1540:66 -/
 @[reducible]
 def scalar.HalfWidthScalar.Insts.CoreConvertFromU128 : core.convert.From
   scalar.HalfWidthScalar Std.U128 := {
@@ -63035,7 +63127,7 @@ def scalar.HalfWidthScalar.Insts.CoreConvertFromU128 : core.convert.From
 }
 
 /-- [curve25519_dalek::scalar::{impl zeroize::Zeroize for curve25519_dalek::scalar::HalfWidthScalar}::zeroize]:
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1527:4-1529:5
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1544:4-1546:5
     Visibility: public -/
 def scalar.HalfWidthScalar.Insts.ZeroizeZeroize.zeroize
   (self : scalar.HalfWidthScalar) : Result scalar.HalfWidthScalar := do
@@ -63043,7 +63135,7 @@ def scalar.HalfWidthScalar.Insts.ZeroizeZeroize.zeroize
   ok s
 
 /-- Trait implementation: [curve25519_dalek::scalar::{impl zeroize::Zeroize for curve25519_dalek::scalar::HalfWidthScalar}]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1526:0-1530:1 -/
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1543:0-1547:1 -/
 @[reducible]
 def scalar.HalfWidthScalar.Insts.ZeroizeZeroize : zeroize.Zeroize
   scalar.HalfWidthScalar := {

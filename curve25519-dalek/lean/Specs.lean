@@ -2,6 +2,9 @@ module
 public import Specs.Constants
 public import Specs.Edwards
 public import Specs.Montgomery
+public import Specs.Montgomery.I686NoTables
+public import Specs.Montgomery.I686Tables
+public import Specs.Montgomery.X86_64NoTables
 public import Specs.Ristretto
 public import Specs.Scalar
 public import Specs.Traits

@@ -72,6 +72,10 @@ jobs:
             lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-
             lean-build-${{ runner.os }}-${{ runner.arch }}-
 
+      # The per-configuration copies in `Specs/` are generated from their templates.
+      - name: Check generated specs
+        run: python3 scripts/gen-config-specs.py --check
+
       - name: Mathlib cache
         run: lake exe cache get
 

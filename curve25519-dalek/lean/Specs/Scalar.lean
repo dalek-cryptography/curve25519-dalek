@@ -109,7 +109,8 @@ theorem index (s : Scalar) (index : Usize) (hindex : index.val < 32) :
 
 /-- `Mul` and `MulAssign`: the product modulo `L`. -/
 theorem mul (a b : Scalar) :
-    ∀ mul ∈ [Shared0Scalar.Insts.CoreOpsArithMulSharedAScalarScalar.mul, -- &a * &b
+    ∀ mul ∈ [
+        Shared0Scalar.Insts.CoreOpsArithMulSharedAScalarScalar.mul, -- &a * &b
         Scalar.Insts.CoreOpsArithMulSharedBScalarScalar.mul, -- a * &b
         SharedAScalar.Insts.CoreOpsArithMulScalarScalar.mul, -- &a * b
         Scalar.Insts.CoreOpsArithMulScalarScalar.mul, -- a * b
@@ -120,7 +121,8 @@ theorem mul (a b : Scalar) :
 
 /-- `Add` and `AddAssign`: the sum modulo `L`, for reduced inputs. -/
 theorem add (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
-    ∀ add ∈ [Shared0Scalar.Insts.CoreOpsArithAddSharedAScalarScalar.add, -- &a + &b
+    ∀ add ∈ [
+        Shared0Scalar.Insts.CoreOpsArithAddSharedAScalarScalar.add, -- &a + &b
         Scalar.Insts.CoreOpsArithAddSharedBScalarScalar.add, -- a + &b
         SharedAScalar.Insts.CoreOpsArithAddScalarScalar.add, -- &a + b
         Scalar.Insts.CoreOpsArithAddScalarScalar.add, -- a + b
@@ -131,7 +133,8 @@ theorem add (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
 
 /-- `Sub` and `SubAssign`: the difference modulo `L`, reduced, for reduced inputs. -/
 theorem sub (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
-    ∀ sub ∈ [Shared0Scalar.Insts.CoreOpsArithSubSharedAScalarScalar.sub, -- &a - &b
+    ∀ sub ∈ [
+        Shared0Scalar.Insts.CoreOpsArithSubSharedAScalarScalar.sub, -- &a - &b
         Scalar.Insts.CoreOpsArithSubSharedBScalarScalar.sub, -- a - &b
         SharedAScalar.Insts.CoreOpsArithSubScalarScalar.sub, -- &a - b
         Scalar.Insts.CoreOpsArithSubScalarScalar.sub, -- a - b
@@ -142,7 +145,8 @@ theorem sub (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
 
 /-- `Neg`: the negation modulo `L`, reduced. -/
 theorem neg (a : Scalar) :
-    ∀ neg ∈ [Shared0Scalar.Insts.CoreOpsArithNegScalar.neg, -- -&a
+    ∀ neg ∈ [
+        Shared0Scalar.Insts.CoreOpsArithNegScalar.neg, -- -&a
         Scalar.Insts.CoreOpsArithNegScalar.neg], -- -a
       neg a ⦃ (r : Scalar) => (r.asNat + a.asNat) % L = 0 ∧ r.asNat < L ⦄ := by
   variants [Shared0Scalar.Insts.CoreOpsArithNegScalar.neg_spec]

@@ -5,17 +5,17 @@ Released under Apache 2.0 license as described in the file LICENSE.
 import ForHumans.Theorems
 import Lean
 
-/-! # The axioms of the specs
+/-! # The axioms of the theorems
 
-Every theorem in `Specs` may use only Lean's three axioms and the contracts of the external crates
-that curve25519-dalek calls:
+Every theorem in `ForHumans/Theorems/` may use only Lean's three axioms and the contracts of the
+external crates that curve25519-dalek calls:
 
 * `propext`, `Classical.choice`, `Quot.sound`: Lean's axioms;
 * `RustAx.subtle` (`ForHumans/Specs/External/Subtle/Contract.lean`): the `subtle` crate meets its
   contract;
 * `RustAx.zeroize` (`ForHumans/Specs/External/Zeroize/Contract.lean`): the `zeroize` crate meets
   its contract;
-* `RustAx.alloc` (`Curve25519Dalek/FunsExternal.lean`): `alloc` meets its contract.
+* `RustAx.alloc` (`ForHumans/Specs/External/Alloc.lean`): `alloc` meets its contract.
 
 The check below fails if one does not, or if a theorem uses `sorryAx`. -/
 
@@ -25,7 +25,7 @@ open Lean Elab Command
 def allowedAxioms : List Name :=
   [``propext, ``Classical.choice, ``Quot.sound, ``RustAx.alloc, ``RustAx.subtle, ``RustAx.zeroize]
 
-/-- The theorems of `Specs`. -/
+/-- The theorems of `ForHumans/Theorems/`. -/
 def specTheorems (env : Environment) : Array Name :=
   env.constants.fold (init := #[]) fun acc n c =>
     if (`Theorems).isPrefixOf n && c matches .thmInfo _ && !n.isInternal then acc.push n else acc

@@ -7,7 +7,7 @@ public import ForHumans.Specs.Montgomery
 import all ForHumans.Specs.Montgomery
 public import Proofs.Curve25519.Edwards.Order
 public import Proofs.Curve25519.X25519
-import Proofs.Curve25519.Proofs.Edwards.Certs
+import Proofs.Curve25519.Certificates.Edwards
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 public section

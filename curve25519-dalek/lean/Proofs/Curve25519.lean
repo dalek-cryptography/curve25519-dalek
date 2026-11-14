@@ -9,7 +9,7 @@ public import Proofs.Curve25519.Edwards.Torsion
 public import Proofs.Curve25519.Edwards.Order
 public import Proofs.Curve25519.Edwards.Encoding
 public import Proofs.Curve25519.Ristretto.Even
-public import Proofs.Curve25519.Ristretto.Encoding.Defs
+public import Proofs.Curve25519.Ristretto.SqrtRatio
 public import Proofs.Curve25519.Ristretto.Encoding
 public import Proofs.Curve25519.Ristretto.Map
 public import Proofs.Curve25519.X25519
@@ -17,14 +17,14 @@ public import Proofs.Curve25519.X25519.LowOrder
 public import Proofs.Curve25519.Montgomery
 public import Proofs.Curve25519.Models
 public import Proofs.Curve25519.ToEllipticCurve
-import Proofs.Curve25519.Proofs.X25519.TestVector
-import Proofs.Curve25519.Proofs.Ristretto.TestVector
-import Proofs.Curve25519.Proofs.Ristretto.InvalidVector
-import Proofs.Curve25519.Proofs.Ristretto.MapVector
+import Proofs.Curve25519.TestVectors.X25519
+import Proofs.Curve25519.TestVectors.RistrettoEncoding
+import Proofs.Curve25519.TestVectors.RistrettoInvalid
+import Proofs.Curve25519.TestVectors.RistrettoMap
 
-/-! # Curve25519
+/-! # Curve25519: the facts behind the specifications
 
-Definitions about curve25519 in general (RFC 7748, RFC 8032, RFC 9496), independent of any
-implementation. The RFC functions are stated on byte strings (`Vector UInt8 n`) as the RFCs write
-them, and computed by arithmetic cores on the little-endian values (`…Nat`). Audited: everything
-here is part of the meaning of the spec statements. -/
+The lemmas about the definitions of `ForHumans/Specs/` (the constants, the curves, the RFC 8032,
+7748 and 9496 functions), the kernel certificates they use (`Certificates/`), and the RFC test
+vectors, checked by the kernel against those definitions (`TestVectors/`). `Models/` and
+`ToEllipticCurve/` stage generic results for the `EllipticCurve` library. -/

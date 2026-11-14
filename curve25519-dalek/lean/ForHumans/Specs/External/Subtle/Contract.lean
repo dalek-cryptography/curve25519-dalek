@@ -19,8 +19,8 @@ This file and `ForHumans/Specs/External/Subtle/Types.lean` are the trusted base 
 * Signatures: Each external function that Aeneas expects is an `opaque` constant with the
   required name, type and `@[rust_fun]` attribute.
 * Contracts: Each function used by the proofs has one predicate `….Contract : Prop` that restates
-  the Rust documentation. Specs that call trait methods of a generic `T` assume the behaviour of
-  those methods as a hypothesis.
+  the Rust documentation. Theorems about functions that call trait methods of a generic `T` assume
+  the behaviour of those methods as a hypothesis.
 * Axiom: The single axiom `RustAx.subtle` states that all the contracts hold.
 
 **`Choice` validity.** `Choice` is a plain `u8`. The crate maintains the invariant that it is `0` or

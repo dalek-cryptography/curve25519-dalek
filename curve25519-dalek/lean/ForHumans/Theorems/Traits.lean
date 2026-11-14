@@ -8,14 +8,14 @@ public import Proofs.External.Subtle
 import Proofs
 public section
 
-/-! # Specs of `src/traits.rs`
+/-! # Theorems about `src/traits.rs`
 
 The traits of `traits.rs` (`Identity`, `IsIdentity`, `ValidityCheck`, `BasepointTable`,
 `MultiscalarMul`, …) have no functions of their own in the translation: their implementations are
 specified in the files of the implementing types. The one function is the blanket implementation
 of `IsIdentity` for every `T : ConstantTimeEq + Identity`.
 
-Definitions used: `subtle.Choice.IsValid` (`Subtle/`). -/
+Definitions used: `subtle.Choice`, `Choice.IsValid` (`ForHumans/Specs/External/Subtle/`).-/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek
 

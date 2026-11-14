@@ -3,10 +3,10 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Proofs.Curve25519.Ristretto.Encoding.Defs
+public import Proofs.Curve25519.Ristretto.SqrtRatio
 public import ForHumans.Specs.X25519
-import Proofs.Curve25519.Proofs.Ristretto.Algebra
-import Proofs.Curve25519.Proofs.Ristretto.Elligator
+import Proofs.Curve25519.Ristretto.Algebra
+import Proofs.Curve25519.Ristretto.Elligator
 import Proofs.Curve25519.Ristretto.Even
 import Mathlib.Tactic.LinearCombination
 public section
@@ -24,7 +24,7 @@ even point of `edwards` (hidden; coordinates `mapRepField_x`, `mapRepField_y`, w
 map of §4.3.4 on the little-endian value `n` of 64 uniform bytes: `MAP(r₀) + MAP(r₁)` for the two
 32-byte halves masked to 255 bits (`decodeU`), an even point (`even_fromUniformRepNat`). The field
 identities behind the on-curve proof of `mapRepField` are in
-`Proofs.Curve25519.Proofs.Ristretto.Elligator` (not audited). -/
+`Proofs.Curve25519.Ristretto.Elligator` (not audited). -/
 
 namespace curve25519.Ristretto
 

@@ -6,29 +6,17 @@ module
 public import ForHumans.Specs.Field
 import all ForHumans.Specs.Field
 public import Proofs.Curve25519.Edwards.Basic
-import Proofs.Curve25519.Proofs.Ristretto.Algebra
+import Proofs.Curve25519.Ristretto.Algebra
 import Mathlib.Tactic.LinearCombination
 public section
 
-/-! # The ristretto255 encoding (RFC 9496 §4.2, §4.3.1, §4.3.2): definitions
+/-! # `SQRT_RATIO_M1` and the decoded point
 
-The square-root helper `sqrtRatioM1 u v` (RFC 9496 §4.2 `SQRT_RATIO_M1`): `(true, √(u/v))` when
-`v ≠ 0` and `u/v` is a square, `(true, 0)` when `u = v = 0`, `(false, 0)` when `u ≠ 0 = v`, and
-`(false, √(√-1 · u/v))` otherwise, the root being non-negative
-(`ZMod.IsNeg`); it is exposed, with its characterisation `sqrtRatioM1_spec` (all cases in one
-statement, for reading) and the uniqueness lemmas `sqrtRatioM1_eq_of_mul_sq_eq`,
-`sqrtRatioM1_eq_of_mul_sq_eq_sqrtM1_mul`, `sqrtRatioM1_zero_left`,
-`sqrtRatioM1_zero_right` (through which the dalek field specification `sqrt_ratio_i_spec`
-connects to it). Its non-square branch rests on
-`sqrtM1` not being a square (`not_isSquare_sqrtM1`, `p ≡ 5 (mod 8)`).
-
-The representative-level codec, hidden: `decodeRepNat s` (§4.3.1, the Edwards point encoded by the
-canonical non-negative field element `s < p`, or `none`) and `encodeRepNat P` (§4.3.2 on the
-extended representative `(x, y, 1, x y)` of a point, a natural number below `p`). Their
-properties, in particular the round trips and the invariance of `encodeRepNat` on the classes of
-`edwards.Rel`, are in `Proofs.Curve25519.Ristretto.Encoding`. The field identities behind the
-on-curve proof of `decodeRepNat` are in `Proofs.Curve25519.Proofs.Ristretto.Algebra` (not audited).
--/
+The facts about `sqrtRatioM1` (RFC 9496 §4.2, defined in `ForHumans/Specs/Field.lean`):
+`sqrtRatioM1_spec` states its four cases in one theorem, and the uniqueness lemmas
+`sqrtRatioM1_eq_of_mul_sq_eq`, `sqrtRatioM1_eq_of_mul_sq_eq_sqrtM1_mul`, `sqrtRatioM1_zero_left`,
+`sqrtRatioM1_zero_right` connect it to dalek's `sqrt_ratio_i`. Also `decodeRepNat_equation`: the
+point that RFC 9496 §4.3.1 decodes is on the curve (used by `Ristretto.decodeRepNat`). -/
 
 namespace curve25519
 

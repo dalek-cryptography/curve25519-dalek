@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Curve25519.X25519
 public import Proofs.Curve25519.ToEllipticCurve.Montgomery.XOnly
-import Proofs.Curve25519.Proofs.X25519.LowOrderCerts
+import Proofs.Curve25519.Certificates.X25519LowOrder
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.Tactic.LinearCombination
 public section
@@ -22,7 +22,7 @@ The proof is x-only. On `u`-coordinates, doubling is `dblU u = (u² - 1)² / (4 
 by `dblU` (`isLowOrderU_of_isLowOrderU_dblU`): `dblU w = 0` only for `w = 0, ±1`,
 `dblU w = 1` only for `w = u₈, u₈⁻¹`, and `dblU w = c` has no solution `w` when
 `c² + A c + 1` is not a square, which is the case for `c = -1, u₈, u₈⁻¹`
-(`Proofs.Curve25519.Proofs.X25519.LowOrderCerts`). The scalar `0` clamps to `2 ^ 254`, so
+(`Proofs.Curve25519.Certificates.X25519LowOrder`). The scalar `0` clamps to `2 ^ 254`, so
 `x25519Nat 0 u = 0` already puts `decodeU u` in `S`; conversely `dblU` sends `S` to `0` in three
 steps, and every clamped scalar is a multiple of `8`. -/
 

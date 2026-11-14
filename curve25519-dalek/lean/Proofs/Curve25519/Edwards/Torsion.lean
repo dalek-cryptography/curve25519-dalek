@@ -6,7 +6,7 @@ module
 public import ForHumans.Specs.Edwards
 import all ForHumans.Specs.Edwards
 public import Proofs.Curve25519.Edwards.Basic
-import Proofs.Curve25519.Proofs.Edwards.Certs
+import Proofs.Curve25519.Certificates.Edwards
 import Proofs.Curve25519.ToEllipticCurve.TwistedEdwards.Lemmas
 import Mathlib.Tactic.Abel
 public section
@@ -21,7 +21,7 @@ array: `2 • T` and `6 • T` are `(∓√-1, 0)`, `4 • T = (0, -1)`, and `3 
 `torsion8_x_eq`, `torsion8_y_eq`, `two_nsmul_torsion8_x_eq`, ….
 
 Only `T` being on the model and the coordinates of `2 • T` and `4 • T` are kernel certificates
-(`Proofs.Curve25519.Proofs.Edwards.Certs`, not audited). The rest follows from the group law:
+(`Proofs.Curve25519.Certificates.Edwards`, not audited). The rest follows from the group law:
 `4 • T = (0, -1)` has order `2`, so `8 • T = 0` and `4 • T ≠ 0`; adding `(0, -1)` negates both
 coordinates, so `5 • T = (-x, -y)`; and `3 • T`, `6 • T`, `7 • T` are the negations of `5 • T`,
 `2 • T`, `T`. -/

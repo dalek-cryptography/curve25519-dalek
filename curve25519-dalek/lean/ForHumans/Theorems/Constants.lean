@@ -17,12 +17,12 @@ public import Proofs.Representation.ScalarMul
 import Proofs
 public section
 
-/-! # Specs of `src/constants.rs`
+/-! # Theorems about `src/constants.rs`
 
 The public constants of `constants.rs`. The ones that depend on the configuration, which include
 those `constants.rs` re-exports from the backend (`backend/serial/u64/constants.rs` or
 `backend/serial/u32/constants.rs`), are stated at the end, for `x86_64-tables`; the other
-configurations' copies are generated in `Specs/Constants/`. The tables exist only with precomputed
+configurations' copies are generated in `Constants/`. The tables exist only with precomputed
 tables.
 
 Points are specified through `toPoint` under the invariants `OnCurve` and `IsBounded`, and tables
@@ -32,14 +32,13 @@ and `IsBounded`.
 Not restated here: `BASEPOINT_ORDER` (`pub(crate)`, proved in
 `Proofs/Constants/BasepointOrder.lean`).
 
-Definitions used: Mathlib's `Even`, `EdwardsPoint.toPoint`, `OnCurve`, `IsBounded`, the tables'
-`point`, `IsTable` and `IsBounded` (`Proofs/Representation/Edwards.lean`),
-`curve25519.basepoint` (`Proofs/Curve25519/Edwards/Basepoint.lean`), `curve25519.encode`
-(`Proofs/Curve25519/Edwards/Encoding.lean`), `curve25519.torsion8`
-(`Proofs/Curve25519/Edwards/Torsion.lean`), `curve25519.montgomeryBasepoint`
-(`Proofs/Curve25519/Montgomery.lean`), `curve25519.decodeUCoordinate`, `encodeUCoordinate`,
-`X25519` (`Proofs/Curve25519/X25519.lean`), `Array.toVector` (`Proofs/ToAeneas/Array.lean`),
-`Ristretto.encodeRep` (`Curve25519/Ristretto/`). -/
+Definitions used, in `ForHumans/Specs/`: `edwards`, `montgomery` (`Curves.lean`), `p`
+(`Constants.lean`), `basepoint`, `torsion8`, `encode` (`Edwards.lean`), `montgomeryBasepoint`
+(`Montgomery.lean`), `X25519`, `decodeUCoordinate`, `encodeUCoordinate` (`X25519.lean`),
+`Ristretto.encodeRep` (`Ristretto.lean`), `EdwardsPoint.toPoint`, `OnCurve`
+(`Representation/Edwards.lean`), `Array.toVector` (`Representation/Array.lean`), and Mathlib's
+`Even`. Not to be read (see `Basic.lean`): the invariants `IsBounded`, the tables' `IsTable`,
+`IsBounded` and `point`, defined in `Proofs/Representation/`.-/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel Curve25519Dalek
 

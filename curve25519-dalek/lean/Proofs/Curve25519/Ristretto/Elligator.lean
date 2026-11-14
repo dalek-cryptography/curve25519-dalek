@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Proofs.Curve25519.Edwards.Basic
-import Proofs.Curve25519.Proofs.Ristretto.Algebra
+import Proofs.Curve25519.Ristretto.Algebra
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring

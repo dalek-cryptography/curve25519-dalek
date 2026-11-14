@@ -9,8 +9,8 @@ public import Proofs.Curve25519.Ristretto.MapFacts
 import all Proofs.Curve25519.Ristretto.MapFacts
 public import Proofs.Curve25519.Ristretto.Encoding
 public import Proofs.Curve25519.X25519
-import Proofs.Curve25519.Proofs.Ristretto.Algebra
-import Proofs.Curve25519.Proofs.Ristretto.Elligator
+import Proofs.Curve25519.Ristretto.Algebra
+import Proofs.Curve25519.Ristretto.Elligator
 import Proofs.Curve25519.Ristretto.Even
 import Mathlib.Tactic.LinearCombination
 public section

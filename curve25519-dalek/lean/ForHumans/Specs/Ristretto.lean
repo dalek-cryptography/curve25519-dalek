@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import ForHumans.Specs.Edwards
 public import ForHumans.Specs.X25519
-import Proofs.Curve25519.Ristretto.Encoding.Defs
+import Proofs.Curve25519.Ristretto.SqrtRatio
 import Proofs.Curve25519.Ristretto.MapFacts
 public section
 
@@ -16,17 +16,14 @@ A ristretto255 element is a class of `TwistedEdwardsModel.Rel edwards`
 decoding (§4.3.1) and the encoding (§4.3.2) of representatives, and the one-way map from uniform
 bytes (§4.3.4). -/
 
-namespace curve25519
+namespace curve25519.Ristretto
 
-open TwistedEdwardsModel
-
-namespace Ristretto
+/-! ### Decoding and encoding (§4.3.1, §4.3.2) -/
 
 /-- RFC 9496 §4.3.1, the decoding of a representative: `none` unless `s < p` and `s` is
 non-negative; then with `u1 = 1 - s²`, `u2 = 1 + s²`, `v = -(d u1²) - u2²`,
 `(wasSquare, r) = SQRT_RATIO_M1(1, v u2²)`, `x = |2 s r u2|`, `y = u1 r (r u2) v`: `none` if
-`¬ wasSquare`, `x y` is negative or `y = 0`, else `some (x, y)`. Hidden; see
-`decodeRepNat_eq_some_iff`, `decodeRepNat_eq_none_iff` in `Proofs.Curve25519.Ristretto.Encoding`. -/
+`¬ wasSquare`, `x y` is negative or `y = 0`, else `some (x, y)`. -/
 noncomputable def decodeRepNat (s : ℕ) : Option edwards.Point :=
   if s < p ∧ ¬ (s : ZMod p).IsNeg then
     let s' : ZMod p := s
@@ -43,13 +40,16 @@ noncomputable def decodeRepNat (s : ℕ) : Option edwards.Point :=
     else none
   else none
 
+/-- RFC 9496 §4.3.1 `Decode` of 32 bytes to a representative: `decodeRepNat` of their value. -/
+@[expose] noncomputable def decodeRep (b : Vector UInt8 32) : Option edwards.Point :=
+  decodeRepNat (decodeLittleEndian b)
+
 /-- RFC 9496 §4.3.2, the encoding of a representative, on the extended coordinates
 `(x, y, 1, x y)` of the point: with `u1 = (1 + y)(1 - y)`, `u2 = x y`,
 `(_, invsqrt) = SQRT_RATIO_M1(1, u1 u2²)`, `den1 = invsqrt u1`, `den2 = invsqrt u2`,
 `zInv = den1 den2 t`, `rotate = IS_NEGATIVE(t zInv)`; `(x', y', denInv) = (y √-1, x √-1,
 den1 · INVSQRT_A_MINUS_D)` if `rotate` else `(x, y, den2)`; `y'' = -y'` if `x' zInv` is negative
-else `y'`; the result is `|denInv (1 - y'')|` as a natural number below `p`. Hidden; see
-`encodeRepNat_eq`. -/
+else `y'`; the result is `|denInv (1 - y'')|` as a natural number below `p`. -/
 noncomputable def encodeRepNat (P : edwards.Point) : ℕ :=
   let x := P.x
   let y := P.y
@@ -70,34 +70,15 @@ noncomputable def encodeRepNat (P : edwards.Point) : ℕ :=
   let y'' := if (x' * zInv).IsNeg then -y' else y'
   (denInv * (1 - y'')).abs.val
 
-end Ristretto
-
-open TwistedEdwardsModel
-
-open TwistedEdwardsModel
-
-namespace Ristretto
-
 /-- RFC 9496 §4.3.2 `Encode` of a representative: the 32 little-endian bytes of
 `encodeRepNat`. -/
 @[expose] noncomputable def encodeRep (P : edwards.Point) : Vector UInt8 32 :=
   encodeLittleEndian 32 (encodeRepNat P)
 
-/-- RFC 9496 §4.3.1 `Decode` of 32 bytes to a representative: `decodeRepNat` of their value. -/
-@[expose] noncomputable def decodeRep (b : Vector UInt8 32) : Option edwards.Point :=
-  decodeRepNat (decodeLittleEndian b)
-
-end Ristretto
-
-end curve25519
-
-namespace curve25519.Ristretto
-
-open TwistedEdwardsModel
+/-! ### The one-way map (§4.3.4) -/
 
 /-- RFC 9496 §4.3.4 `MAP(r₀)`: the even point `(2 s v / (N √(a d - 1)), (1 - s²) / (1 + s²))`
-of `mapRepField_equation` (the RFC's `(w0 w3 : w2 w1 : w1 w3 : w0 w2)` in affine form). Hidden; see
-`mapRepField_x`, `mapRepField_y`, `even_mapRepField`. -/
+of `mapRepField_equation` (the RFC's `(w0 w3 : w2 w1 : w1 w3 : w0 w2)` in affine form). -/
 noncomputable def mapRepField (r₀ : ZMod p) : edwards.Point :=
   let r := sqrtM1 * r₀ ^ 2
   let u := (r + 1) * oneMinusDSq

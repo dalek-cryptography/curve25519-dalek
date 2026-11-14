@@ -7,11 +7,11 @@ public import ForHumans.Specs.Ristretto
 import all ForHumans.Specs.Ristretto
 public import Proofs.Curve25519.Bytes
 public import Proofs.Curve25519.Edwards.Basepoint
-public import Proofs.Curve25519.Ristretto.Encoding.Defs
-import all Proofs.Curve25519.Ristretto.Encoding.Defs
+public import Proofs.Curve25519.Ristretto.SqrtRatio
+import all Proofs.Curve25519.Ristretto.SqrtRatio
 import all ForHumans.Specs.Field
-import Proofs.Curve25519.Proofs.Ristretto.Algebra
-import Proofs.Curve25519.Proofs.Ristretto.Certs
+import Proofs.Curve25519.Ristretto.Algebra
+import Proofs.Curve25519.Certificates.Ristretto
 import Proofs.Curve25519.Ristretto.Even
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
@@ -21,7 +21,7 @@ public section
 
 RFC 9496 on 32-byte strings (`Vector UInt8 32`) is `Ristretto.encodeRep` and `Ristretto.decodeRep`
 (at the end), computed by the arithmetic cores `Ristretto.encodeRepNat` and `Ristretto.decodeRepNat`
-of `Proofs.Curve25519.Ristretto.Encoding.Defs` on the little-endian value of the bytes. The audited
+of `Proofs.Curve25519.Ristretto.SqrtRatio` on the little-endian value of the bytes. The audited
 statements here are about the cores. Both act on representatives: even Edwards points, two of them
 standing for the same element of ristretto255 when they are related by `edwards.Rel`
 (`Proofs.Curve25519.Ristretto.Even`).
@@ -33,7 +33,7 @@ standing for the same element of ristretto255 when they are related by `edwards.
   and `decodeRepNat_encodeRepNat`, and **the encoding of ristretto255**: on even points, two
   representatives have the same encoding iff they are related (`encodeRepNat_eq_iff`; one direction
   is the invariance `encodeRepNat_rel`). The encoding of the basepoint is `encodeRepNat_basepoint`
-  (RFC 9496 §A.1, a kernel certificate in `Proofs.Curve25519.Proofs.Ristretto.Certs`).
+  (RFC 9496 §A.1, a kernel certificate in `Proofs.Curve25519.Certificates.Ristretto`).
 * The uniqueness of the canonical representative of a class `eq_of_rel_of_canonical` (`x` and `x y`
   non-negative, `y ≠ 0`, `y ≠ -1`), the generic
   `TwistedEdwardsModel.eq_of_rel_of_canonical_of_a_eq_neg_one` at `edwards`.

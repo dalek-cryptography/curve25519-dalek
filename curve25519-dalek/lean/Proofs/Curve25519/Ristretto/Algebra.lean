@@ -15,7 +15,7 @@ The algebra of RFC 9496 §4.3.1 (decoding) and §4.3.2 (encoding), stated for fi
 with explicit hypotheses in place of the square roots: for decoding, `W r² = 1` where
 `W = v u2²`, `u1 = 1 - s²`, `u2 = 1 + s²`, `v = -(d u1²) - u2²`; for encoding, `W I² = 1` where
 `W = (1 + y)(1 - y)(x y)²`. The results are instantiated by
-`Proofs.Curve25519.Ristretto.Encoding.Defs` (the on-curve proof of `decodeRepNat`) and
+`Proofs.Curve25519.Ristretto.SqrtRatio` (the on-curve proof of `decodeRepNat`) and
 `Proofs.Curve25519.Ristretto.Encoding` (the round trips). -/
 
 namespace curve25519.Proofs

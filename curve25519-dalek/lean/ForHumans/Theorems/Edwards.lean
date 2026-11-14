@@ -17,7 +17,7 @@ import Proofs
 import Proofs.External.Zeroize.Instances
 public section
 
-/-! # Specs of `src/edwards.rs`
+/-! # Theorems about `src/edwards.rs`
 
 The public items of `edwards.rs`, in its order.
 
@@ -30,19 +30,19 @@ multiscalar statements are about the patched code
 scalars as points; the original panics unless both inputs' `size_hint`s are exact and equal.
 
 `CompressedEdwardsY` does not depend on the configuration. Everything else is stated after it, for
-`x86_64-tables`; the other configurations' copies are generated in `Specs/Edwards/`, without the
+`x86_64-tables`; the other configurations' copies are generated in `Edwards/`, without the
 basepoint tables for the configurations without precomputed tables.
 
-Definitions used: `EdwardsPoint.toPoint`, `OnCurve`, `IsBounded`, the tables' `point`, `IsTable`,
-`IsBounded` (`Proofs/Representation/Edwards.lean`), the precomputations' `points`,
-`IsValid`, `IsBounded` (`Proofs/Representation/ScalarMul.lean`), `Scalar.asNat`,
-`HalfWidthScalar.asNat` (`Proofs/Representation/Scalar.lean`), `Array.toVector`
-(`Proofs/ToAeneas/Array.lean`), `Iterator.Yields`, `IntoIterator.Yields`
-(`Proofs/ToAeneas/Iterator.lean`), `curve25519.encode`, `decodeLenient`
-(`Proofs/Curve25519/Edwards/Encoding.lean`), `curve25519.basepoint`
-(`Proofs/Curve25519/Edwards/Basepoint.lean`), `decodeScalar25519`, `encodeUCoordinate`
-(`Proofs/Curve25519/X25519.lean`), `curve25519.L` (`Proofs/Curve25519/Basic.lean`),
-`edwardsToMontgomery` (`Proofs/Curve25519/Montgomery.lean`), `subtle.Choice.IsValid` (`Subtle/`).
+Definitions used, in `ForHumans/Specs/`: `edwards`, `montgomery` (`Curves.lean`), `p`, `L`
+(`Constants.lean`), `basepoint`, `encode`, `decodeLenient` (`Edwards.lean`), `edwardsToMontgomery`
+(`Montgomery.lean`), `decodeScalar25519`, `encodeUCoordinate` (`X25519.lean`),
+`EdwardsPoint.toPoint`, `OnCurve` (`Representation/Edwards.lean`), `Scalar.asNat`,
+`HalfWidthScalar.asNat` (`Representation/Scalar.lean`), `Array.toVector`
+(`Representation/Array.lean`), `Iterator.Yields`, `IntoIterator.Yields`
+(`Representation/Iterator.lean`), `subtle.Choice`, `Choice.IsValid` (`External/Subtle/`).
+Not to be read (see `Basic.lean`): the invariants `IsBounded`, the tables' `IsTable`, `IsBounded`
+and `point`, the precomputations' `IsValid`, `IsBounded` and `points`, defined in
+`Proofs/Representation/`.
 
 Not translated: `Debug`, `Hash`, the `group` and `serde` impls, `random`, hash-to-curve, and the
 provided methods of the traits. -/

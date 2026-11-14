@@ -6,7 +6,7 @@ module
 public import Proofs.Curve25519.Ristretto.Map
 import all Proofs.Curve25519.Basic
 import all ForHumans.Specs.Constants
-import Proofs.Curve25519.Proofs.Ristretto.Certs
+import Proofs.Curve25519.Certificates.Ristretto
 public section
 
 /-! # The RFC 9496 §A.3 test vectors for the one-way map (not audited)
@@ -21,7 +21,7 @@ Each vector is one certificate (`FromUniformCert`), checked by the kernel in a s
 `sqrtRatioM1_eq_of_mul_sq_eq_sqrtM1_mul`) and the coordinates of `MAP(r)`; and the coordinates of
 the sum (`AddCert`, the addition formula with its denominators). `fromUniformRepNat_xy_of_cert`
 turns a certificate into the coordinates of `fromUniformRepNat n`, and the encoding is checked as in
-`Proofs.Curve25519.Proofs.Ristretto.TestVector` (`encodeRepNat_of_coords`). Every condition is a
+`Proofs.Curve25519.TestVectors.RistrettoEncoding` (`encodeRepNat_of_coords`). Every condition is a
 polynomial identity or a non-vanishing: the kernel never meets a field inverse.
 `Proofs.Curve25519.Basic` is imported with `import all` so that the kernel can unfold `p`, `sqrtM1`
 and the ristretto255 constants. -/

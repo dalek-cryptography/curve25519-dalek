@@ -37,7 +37,8 @@ namespace curve25519
 open scoped Classical in
 /-- RFC 9496 §4.2 `SQRT_RATIO_M1(u, v)`: `(true, r)` with `v r² = u` when `u / v` is a square,
 `(false, r)` with `v r² = √-1 · u` otherwise, `r` non-negative in both cases; `(u = 0, 0)` when
-`v = 0`. Exposed; see `sqrtRatioM1_spec`. -/
+`v = 0`. The four cases are stated as one theorem, `sqrtRatioM1_spec`, in
+`Proofs/Curve25519/Ristretto/SqrtRatio.lean`. -/
 @[expose] noncomputable def sqrtRatioM1 (u v : ZMod p) : Bool × ZMod p :=
   if v = 0 then (decide (u = 0), 0)
   else if h : IsSquare (u / v) then (true, (Classical.choose h).abs)

@@ -6,7 +6,7 @@ module
 public import ForHumans.Specs.Edwards
 import all ForHumans.Specs.Edwards
 public import Proofs.Curve25519.Edwards.Basic
-import Proofs.Curve25519.Proofs.Edwards.Certs
+import Proofs.Curve25519.Certificates.Edwards
 import Mathlib.Tactic.LinearCombination
 public section
 
@@ -15,7 +15,7 @@ public section
 The basepoint `B` of edwards25519 (RFC 8032 §5.1): the point with `y = 4/5` and even `x`. It
 generates the prime-order subgroup: `L • B = 0` and `addOrderOf B = L`. The definition is
 hidden; the coordinates are `basepoint_x_eq`, `basepoint_y_eq`, `basepoint_y`. The certificates
-are in `Proofs.Curve25519.Proofs.Edwards.Certs` (not audited). -/
+are in `Proofs.Curve25519.Certificates.Edwards` (not audited). -/
 
 namespace curve25519
 

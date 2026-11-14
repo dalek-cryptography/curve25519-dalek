@@ -16,9 +16,7 @@ RFC 7748 §5: scalar clamping, the decoding and encoding of `u`-coordinates, and
 namespace curve25519
 
 /-- RFC 7748 `decodeScalar25519` on the little-endian value `k` of the 32 bytes: clear the
-bits `0`, `1`, `2` and `255`, set the bit `254`. Matches dalek's `clamp_integer`
-(`clamp_add_mod_eight`). Its properties are the lemmas that follow: `clamp_lt`,
-`two_pow_254_le_clamp`, `clamp_mod_eight`, `clamp_add_mod_eight`, `clamp_mod_two_pow`. -/
+bits `0`, `1`, `2` and `255`, set the bit `254`. -/
 @[expose] def clamp (k : ℕ) : ℕ :=
   2 ^ 254 + 8 * (k % 2 ^ 254 / 8)
 

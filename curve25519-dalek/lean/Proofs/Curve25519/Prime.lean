@@ -4,12 +4,12 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Proofs.Curve25519.Basic
-import Proofs.Curve25519.Proofs.Prime.Certs
+import Proofs.Curve25519.Certificates.Prime
 public section
 
 /-! # Primality of `p` and `L`
 
-`p_prime` and `L_prime`, from the Lucas certificates of `Proofs.Curve25519.Proofs.Prime.Certs`, the
+`p_prime` and `L_prime`, from the Lucas certificates of `Proofs.Curve25519.Certificates.Prime`, the
 `Fact` instances that make `ZMod p` and `ZMod L` fields, and the `Fact` instances `2 < p` and
 `p % 2 = 1` (`p` is odd) that Mathlib's and `Proofs.Curve25519.Models.Field.Sign`'s lemmas take. -/
 

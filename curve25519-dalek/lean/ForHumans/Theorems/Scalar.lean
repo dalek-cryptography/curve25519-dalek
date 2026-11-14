@@ -12,7 +12,7 @@ import Proofs
 import Proofs.External.Zeroize.Instances
 public section
 
-/-! # Specs of `src/scalar.rs`
+/-! # Theorems about `src/scalar.rs`
 
 The public items of `scalar.rs`, in its order.
 
@@ -21,10 +21,10 @@ need not be reduced modulo the group order `L`. A `HalfWidthScalar` is a `Scalar
 below `2^128`; the Lean type does not carry the bound: its constructors state it and its consumers
 assume it.
 
-Definitions used: `Scalar.asNat`, `HalfWidthScalar.asNat`
-(`Proofs/Representation/Scalar.lean`), `Array.asNat`
-(`Proofs/Representation/Array.lean`), `Iterator.Yields` (`Proofs/ToAeneas/Iterator.lean`),
-`L` (`Proofs/Curve25519/Basic.lean`), `subtle.Choice.IsValid`, `subtle.CtOption` (`Subtle/`).
+Definitions used, in `ForHumans/Specs/`: `L` (`Constants.lean`), `Scalar.asNat`,
+`HalfWidthScalar.asNat` (`Representation/Scalar.lean`), `Array.asNat`
+(`Representation/Array.lean`), `Iterator.Yields` (`Representation/Iterator.lean`),
+`subtle.Choice`, `Choice.IsValid`, `subtle.CtOption` (`External/Subtle/`).
 
 Not specified: derived `Clone`/`Copy` impls, and items outside the public API (`reduce`,
 `as_radix_16`, …), which are proved in `Proofs/Scalar/`. Not translated: `Debug`, `Hash`,

@@ -6,8 +6,8 @@ module
 public import Proofs.Curve25519.Ristretto.Encoding
 import all Proofs.Curve25519.Basic
 import all ForHumans.Specs.Constants
-import Proofs.Curve25519.Proofs.Edwards.Certs
-import Proofs.Curve25519.Proofs.Ristretto.Certs
+import Proofs.Curve25519.Certificates.Edwards
+import Proofs.Curve25519.Certificates.Ristretto
 public section
 
 /-! # The RFC 9496 §A.1 test vectors for the ristretto255 encoding (not audited)
@@ -16,7 +16,7 @@ Kernel checks (`decide +kernel`) of the encodings of the multiples `2 B, …, 15
 basepoint against RFC 9496 §A.1 (the encoding of `B` itself is `encodeRepNat_basepoint` in
 `Proofs.Curve25519.Ristretto.Encoding`): a regression test of `Ristretto.encodeRepNat`. For each
 `k`, the coordinates of `k • basepoint` are certified by a projective-equality check of
-`Extended.nsmul` (as in `Proofs.Curve25519.Proofs.Edwards.Certs`), the inverse square root of `(1 +
+`Extended.nsmul` (as in `Proofs.Curve25519.Certificates.Edwards`), the inverse square root of `(1 +
 y)(1 - y)(x y)²` is exhibited as a numeral, and the rest of RFC 9496 §4.3.2 is evaluated by the
 kernel. `Proofs.Curve25519.Basic` is imported with `import all` so that the kernel can unfold `p`,
 `sqrtM1` and `invsqrtAMinusD`. -/

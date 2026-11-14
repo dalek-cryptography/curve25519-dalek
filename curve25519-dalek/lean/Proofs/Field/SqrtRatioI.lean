@@ -12,7 +12,7 @@ import Proofs.Curve25519.Prime
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.Tactic.ReduceModChar
 import Proofs.Helpers.ZMod
-public import Proofs.Curve25519.Ristretto.Encoding.Defs
+public import Proofs.Curve25519.Ristretto.SqrtRatio
 public import Proofs.Curve25519.Basic
 import Proofs.Helpers.Backend.U32.Bytes
 import Proofs.Helpers.Backend.U64.Bytes

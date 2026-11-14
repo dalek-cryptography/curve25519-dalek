@@ -18,11 +18,11 @@ import Proofs
 import Proofs.External.Zeroize.Instances
 public section
 
-/-! # Specs of `src/ristretto.rs` and `src/ristretto/elligator.rs`
+/-! # Theorems about `src/ristretto.rs` and `src/ristretto/elligator.rs`
 
 The public items of `ristretto.rs` and its submodule `elligator.rs`, in their order.
 
-A `RistrettoPoint` is an `EdwardsPoint` (`ForHumans/Specs/Representation/Ristretto.lean`): the
+A `RistrettoPoint` is an `EdwardsPoint` (a type alias in the translation): the
 statements are about the represented Edwards point, which stands for an element of ristretto255
 when it is even (Mathlib's `Even`). The functions that create points (`decompress`,
 `from_uniform_bytes`, `map_to_curve`, `identity`, `default`, `mul_base`,
@@ -41,18 +41,18 @@ inputs' `size_hint`s are exact and equal.
 
 `CompressedRistretto` does not depend on the configuration, except `decompress`. Everything else is
 stated after it, for `x86_64-tables`; the other configurations' copies are generated in
-`Specs/Ristretto/`, without `RistrettoBasepointTable` for the configurations without precomputed
+`Ristretto/`, without `RistrettoBasepointTable` for the configurations without precomputed
 tables.
 
-Definitions used: `EdwardsPoint.toPoint`, `OnCurve`, `IsBounded`, the tables' `point`, `IsTable` and
-`IsBounded`, the precomputations' `points`, `IsValid` and `IsBounded`
-(`Proofs/Representation/Edwards.lean`, `Proofs/Representation/ScalarMul.lean`),
-`Array.toVector` (`Proofs/ToAeneas/Array.lean`), `Scalar.asNat`
-(`Proofs/Representation/Scalar.lean`), `Iterator.Yields`
-(`Proofs/ToAeneas/Iterator.lean`), Mathlib's `Even`, `curve25519.edwards.Rel`,
-`Ristretto.encodeRep`, `Ristretto.decodeRep`, `Ristretto.mapRep`, `Ristretto.fromUniformRep`
-(`Curve25519/Ristretto/`), `curve25519.basepoint` (`Curve25519/`), `subtle.Choice.IsValid`
-(`Subtle/`).
+Definitions used, in `ForHumans/Specs/`: `edwards` (`Curves.lean`), `p` (`Constants.lean`),
+`basepoint` (`Edwards.lean`), `TwistedEdwardsModel.Rel` (`Models.lean`), `Ristretto.encodeRep`,
+`decodeRep`, `mapRep`, `fromUniformRep` (`Ristretto.lean`), `EdwardsPoint.toPoint`, `OnCurve`
+(`Representation/Edwards.lean`), `Scalar.asNat` (`Representation/Scalar.lean`), `Array.toVector`
+(`Representation/Array.lean`), `Iterator.Yields`, `IntoIterator.Yields`
+(`Representation/Iterator.lean`), `subtle.Choice`, `Choice.IsValid` (`External/Subtle/`), and
+Mathlib's `Even`. Not to be read (see `Basic.lean`): the invariants `IsBounded`, the table's
+`IsTable`, `IsBounded` and `point`, the precomputation's `IsValid`, `IsBounded` and `points`,
+defined in `Proofs/Representation/`.
 
 Not specified: derived `Clone`/`Copy` impls. Not translated: `Debug`, `Hash`, `random`,
 `try_random`, `hash_from_bytes`, `from_hash`, the `group` and `serde` impls.

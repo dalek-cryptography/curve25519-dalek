@@ -6,7 +6,7 @@ module
 public import Proofs.Curve25519.Edwards.Basepoint
 public import Proofs.Curve25519.Edwards.Torsion
 import Proofs.Curve25519.Edwards.Order
-import Proofs.Curve25519.Proofs.Ristretto.DescentCert
+import Proofs.Curve25519.Certificates.RistrettoDescent
 import Proofs.Curve25519.ToEllipticCurve.TwistedEdwards.Even
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.Tactic.Abel
@@ -36,7 +36,7 @@ defined: the specifications speak about representatives, and these are the facts
 The 2-descent: the generic subgroup `edwards.descent = {P | IsSquare ((a - d)(1 - y²))}` of
 `EllipticCurve.TwistedEdwards.Even` contains the even points, `a - d` is a square, and
 `torsion8 ∉ descent` by Euler's criterion (`one_sub_torsion8_y_sq_pow_p_div_two` in
-`Proofs.Curve25519.Proofs.Ristretto.DescentCert`); as the even points have index `2`, `descent` is
+`Proofs.Curve25519.Certificates.RistrettoDescent`); as the even points have index `2`, `descent` is
 the even subgroup (`descent_eq_even`, from the generic
 `TwistedEdwardsModel.descent_eq_even_of_index_eq_two`). -/
 

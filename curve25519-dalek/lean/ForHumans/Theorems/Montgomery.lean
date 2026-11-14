@@ -15,7 +15,7 @@ public import Proofs.External.Subtle
 import Proofs
 public section
 
-/-! # Specs of `src/montgomery.rs`
+/-! # Theorems about `src/montgomery.rs`
 
 The public items of `montgomery.rs`, in its order.
 
@@ -25,16 +25,16 @@ as canonical encodings (`encodeUCoordinate`). The scalar multiplications are RFC
 curve25519, which computes `u(n • Q)` on the curve or its twist (`MontgomeryModel.ladder_eq_xMul`).
 
 `to_edwards` depends on the configuration: it is stated at the end, for `x86_64-tables`; the other
-configurations' copies are generated in `Specs/Montgomery/`.
+configurations' copies are generated in `Montgomery/`.
 
-Definitions used: `Array.toVector` (`Proofs/ToAeneas/Array.lean`), `Scalar.asNat`
-(`Proofs/Representation/Scalar.lean`), `EdwardsPoint.toPoint`, `OnCurve`, `IsBounded`
-(`Proofs/Representation/Edwards.lean`), `Iterator.Yields`
-(`Proofs/ToAeneas/Iterator.lean`), `curve25519.decodeUCoordinate`, `encodeUCoordinate`, `X25519`
-(`Proofs/Curve25519/X25519.lean`), `montgomeryBasepoint` (`Proofs/Curve25519/Montgomery.lean`),
-`curve25519.decodeLenient` (`Proofs/Curve25519/Edwards/Encoding.lean`), `montgomery.ladder`,
-`montgomery.ladderBits` (`Proofs/Representation/Montgomery.lean`), `subtle.Choice.IsValid`
-(`Subtle/`).
+Definitions used, in `ForHumans/Specs/`: `edwards`, `montgomery` (`Curves.lean`), `p`
+(`Constants.lean`), `decodeLenient` (`Edwards.lean`), `montgomeryBasepoint` (`Montgomery.lean`),
+`X25519`, `decodeUCoordinate`, `encodeUCoordinate` (`X25519.lean`), `EdwardsPoint.toPoint`,
+`OnCurve` (`Representation/Edwards.lean`), `Scalar.asNat` (`Representation/Scalar.lean`),
+`Array.toVector` (`Representation/Array.lean`), `Iterator.Yields` (`Representation/Iterator.lean`),
+`subtle.Choice`, `Choice.IsValid` (`External/Subtle/`), and the `EllipticCurve` library's
+`MontgomeryModel.ladder`, `ladderBits`. Not to be read (see `Basic.lean`): the invariant
+`IsBounded`, defined in `Proofs/Representation/`.
 
 Not translated: `Debug`, `Hash`, the `serde` impls. -/
 

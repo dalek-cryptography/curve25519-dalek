@@ -411,7 +411,9 @@ public import Proofs.Window.NafLookupTable5Select
 public import Proofs.Window.NafLookupTable8From
 public import Proofs.Window.NafLookupTable8Select
 
-/-! # Proofs of the specs of curve25519-dalek
+/-! # The proofs
 
-Root of the `Proofs` library: one proof file per Rust item, and the helper theorems in
-`Proofs/Helpers`. See `README.md` for the layout. -/
+One proof file per Rust item (`Backend/`, `Edwards/`, `Field/`, …), the helper theorems they use
+(`Helpers/`), the facts about the definitions of `ForHumans/Specs/` (`Curve25519/`), the
+invariants and internal representations (`Representation/`), and the derived results about the
+external crates (`External/`). None of it needs to be read. -/

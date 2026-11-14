@@ -17,8 +17,6 @@ is the number they represent (the limbs may exceed 51 bits), `toField` the field
 
 open Aeneas.Std curve25519
 
-open Aeneas.Std curve25519
-
 namespace Curve25519Dalek.backend.serial.u64
 
 /-- The natural number represented by the five radix-2^51 limbs. The limbs may exceed 51 bits. -/

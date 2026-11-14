@@ -19,8 +19,6 @@ is that number (the limbs may exceed their nominal width), `toField` the field e
 
 open Aeneas.Std curve25519
 
-open Aeneas.Std curve25519
-
 /-- The value of ten limbs in radix `2^25.5`: `∑ x_i · 2^⌈i · 51 / 2⌉` (`⌈/⌉` is ceiling
 division). The limbs may exceed their nominal `26` or `25` bits. -/
 def Aeneas.Std.Array.asNat2625 {ty : UScalarTy} (a : Array (UScalar ty) 10#usize) : ℕ :=

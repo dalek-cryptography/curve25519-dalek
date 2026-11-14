@@ -15,8 +15,6 @@ A `Scalar` is 32 bytes; `asNat` is their little-endian value. A `HalfWidthScalar
 
 open Aeneas.Std
 
-open Aeneas.Std
-
 namespace Curve25519Dalek
 
 /-- The natural number encoded little-endian by the 32 bytes of a `Scalar` (not necessarily

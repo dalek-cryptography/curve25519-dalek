@@ -15,8 +15,6 @@ array (Aeneas's `Array U8 n`) as a Lean `Vector UInt8 n`, the byte strings of th
 
 open Aeneas.Std
 
-open Aeneas.Std
-
 /-- The natural number with the array's elements as little-endian digits in radix `2^bits`:
 `a[0] + 2^bits · a[1] + 2^(2 bits) · a[2] + …`. The digits may exceed `2^bits`.
 Bytes use `bits = 8`. -/

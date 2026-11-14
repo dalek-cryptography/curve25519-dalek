@@ -28,7 +28,7 @@ def specTheorems (env : Environment) : Array Name :=
   env.constants.fold (init := #[]) fun acc n c =>
     if (`Specs).isPrefixOf n && c matches .thmInfo _ && !n.isInternal then acc.push n else acc
 
-/-- info: 256 spec theorems, all using only the allowed axioms -/
+/-- info: 371 spec theorems, all using only the allowed axioms -/
 #guard_msgs in
 run_cmd do
   let names := (specTheorems (← getEnv)).qsort Name.lt

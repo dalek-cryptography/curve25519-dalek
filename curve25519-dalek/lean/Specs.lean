@@ -12,6 +12,9 @@ public import Specs.Montgomery.I686NoTables
 public import Specs.Montgomery.I686Tables
 public import Specs.Montgomery.X86_64NoTables
 public import Specs.Ristretto
+public import Specs.Ristretto.I686NoTables
+public import Specs.Ristretto.I686Tables
+public import Specs.Ristretto.X86_64NoTables
 public import Specs.Scalar
 public import Specs.Traits
 

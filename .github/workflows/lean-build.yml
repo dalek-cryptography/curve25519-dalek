@@ -7,15 +7,6 @@ on:
     branches: [ '**' ]
     paths: &paths
       - 'curve25519-dalek/lean/**'
-      - 'Curve25519/**'
-      - 'Curve25519.lean'
-      - 'Subtle/**'
-      - 'Subtle.lean'
-      - 'Zeroize/**'
-      - 'Zeroize.lean'
-      - 'lakefile.toml'
-      - 'lake-manifest.json'
-      - 'lean-toolchain'
       - '.github/workflows/lean-build.yml'
   pull_request:
     branches: [ '**' ]
@@ -31,6 +22,11 @@ concurrency:
 
 env:
   ELAN_VERSION: v4.2.4
+
+# The Lean project
+defaults:
+  run:
+    working-directory: curve25519-dalek/lean
 
 jobs:
   build:
@@ -59,13 +55,13 @@ jobs:
         uses: actions/cache/restore@v6.1.0
         with:
           path: &cache-paths |
-            .lake/build
-            .lake/packages/aeneas
-            .lake/packages/EllipticCurve
-          key: &cache-key lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-${{ github.ref_name }}-${{ github.sha }}
+            curve25519-dalek/lean/.lake/build
+            curve25519-dalek/lean/.lake/packages/aeneas
+            curve25519-dalek/lean/.lake/packages/EllipticCurve
+          key: &cache-key lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('curve25519-dalek/lean/lean-toolchain', 'curve25519-dalek/lean/lake-manifest.json') }}-${{ github.ref_name }}-${{ github.sha }}
           restore-keys: |
-            lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-${{ github.ref_name }}-
-            lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-
+            lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('curve25519-dalek/lean/lean-toolchain', 'curve25519-dalek/lean/lake-manifest.json') }}-${{ github.ref_name }}-
+            lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('curve25519-dalek/lean/lean-toolchain', 'curve25519-dalek/lean/lake-manifest.json') }}-
             lean-build-${{ runner.os }}-${{ runner.arch }}-
 
       # The per-configuration copies in `Specs/` are generated from their templates.
@@ -98,7 +94,7 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-          KEY: lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-${{ github.ref_name }}-${{ github.sha }}
+          KEY: lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('curve25519-dalek/lean/lean-toolchain', 'curve25519-dalek/lean/lake-manifest.json') }}-${{ github.ref_name }}-${{ github.sha }}
         run: |
           gh cache list --ref "$GITHUB_REF" --key lean-build- --limit 100 --json id,key \
             --jq 'if any(.[]; .key == env.KEY) then .[] | select(.key != env.KEY) | .id else empty end' |

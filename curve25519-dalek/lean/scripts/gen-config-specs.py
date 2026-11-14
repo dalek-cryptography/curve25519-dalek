@@ -20,7 +20,7 @@ import pathlib
 import re
 import sys
 
-SPECS = pathlib.Path(__file__).resolve().parent.parent / "curve25519-dalek" / "lean" / "Specs"
+SPECS = pathlib.Path(__file__).resolve().parent.parent / "Specs"
 TEMPLATE = "x86_64-tables"
 CONFIGS = {
     "i686-tables": "I686Tables",

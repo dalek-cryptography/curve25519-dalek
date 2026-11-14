@@ -28,38 +28,31 @@ rev = "nightly-2026.11.10-0d21a9e"
 # Hand-written library for the `subtle` crate.
 [[lean_lib]]
 name = "Subtle"
-srcDir = "."
 
 # Hand-written library for the `zeroize` crate.
 [[lean_lib]]
 name = "Zeroize"
-srcDir = "."
 
 # Aeneas-generated Lean translation.
 [[lean_lib]]
 name = "Curve25519Dalek"
-srcDir = "curve25519-dalek/lean"
 
 # Curve25519 in general (parameters, models, encodings; `Curve25519/Models`, and
 # `Curve25519/ToEllipticCurve` staged for the EllipticCurve library), independent of dalek.
 [[lean_lib]]
 name = "Curve25519"
-srcDir = "."
 
 # Definitions needed to state the specs and `ToAeneas/` staged for Aeneas.
 [[lean_lib]]
 name = "Defs"
-srcDir = "curve25519-dalek/lean"
 globs = ["Defs.*", "ToAeneas.+"]
 
 # Spec summaries, one per Rust file.
 [[lean_lib]]
 name = "Specs"
-srcDir = "curve25519-dalek/lean"
 globs = ["Specs.*"]
 
 # Proofs, one file per Rust item, and the helper theorems they use.
 [[lean_lib]]
 name = "Proofs"
-srcDir = "curve25519-dalek/lean"
 globs = ["Proofs.*"]

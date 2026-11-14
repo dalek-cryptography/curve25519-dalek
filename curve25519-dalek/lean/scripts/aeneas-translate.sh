@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Translate curve25519-dalek to Lean: copy the Cargo workspace to .llbc/work/, apply
 # curve25519-dalek/translation-patches/ to the copy, run charon on it and aeneas on the result.
+# Runs in curve25519-dalek/lean/, the Lean project; the Cargo workspace is two levels up.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 root=$PWD
+repo=$(cd ../.. && pwd)
 
 TAG=$(awk -F'"' '/^\[/{name=""} /^name = /{name=$2} /^rev = / && name=="aeneas"{print $2}' lakefile.toml)
 : "${TAG:?no aeneas rev in lakefile.toml}"
@@ -13,13 +15,13 @@ TAG=$(awk -F'"' '/^\[/{name=""} /^name = /{name=$2} /^rev = / && name=="aeneas"{
 # The workspace
 work=.llbc/work
 mkdir -p "$work"
-rsync -a --delete --exclude=target/ --exclude=/curve25519-dalek/lean/ \
+(cd "$repo" && rsync -a --delete --exclude=target/ --exclude=/curve25519-dalek/lean/ \
     Cargo.toml Cargo.lock curve25519-dalek curve25519-dalek-derive ed25519-dalek x25519-dalek \
-    "$work/"
+    "$root/$work/")
 
 shopt -s nullglob
-for patch in curve25519-dalek/translation-patches/*.patch; do
-    (cd "$work" && GIT_CEILING_DIRECTORIES="$root/.llbc" git apply "$root/$patch")
+for patch in "$repo"/curve25519-dalek/translation-patches/*.patch; do
+    (cd "$work" && GIT_CEILING_DIRECTORIES="$root/.llbc" git apply "$patch")
 done
 
 mkdir -p .llbc
@@ -45,4 +47,4 @@ done
     -- --locked --no-default-features --features alloc,zeroize \
     -Zjson-target-spec -Zbuild-std=core,alloc)
 .aeneas/aeneas -backend lean -split-files -emit-json -namespace Curve25519Dalek \
-    -dest curve25519-dalek/lean -subdir Curve25519Dalek .llbc/curve25519_dalek.llbc
+    -dest . -subdir Curve25519Dalek .llbc/curve25519_dalek.llbc

@@ -13,22 +13,7 @@ public import ToAeneas.Iterator
 public import Defs.Montgomery
 public import Defs.Scalar
 public import Subtle
-import Proofs.Helpers.Variants
-import Proofs.Montgomery.AsBytes
-import Proofs.Montgomery.ConditionalSelect
-import Proofs.Montgomery.CtEq
-import Proofs.Montgomery.Default
-import Proofs.Montgomery.Eq
-import Proofs.Montgomery.Identity
-import Proofs.Montgomery.Mul
-import Proofs.Montgomery.MulAssign
-import Proofs.Montgomery.MulBase
-import Proofs.Montgomery.MulBaseClamped
-import Proofs.Montgomery.MulBitsBe
-import Proofs.Montgomery.MulClamped
-import Proofs.Montgomery.ToBytes
-import Proofs.Montgomery.ToEdwards
-import Proofs.Montgomery.Zeroize
+import Proofs
 public section
 
 /-! # `Montgomery` specs for `x86_64-no-tables`, generated from `Specs/Montgomery.lean` -/

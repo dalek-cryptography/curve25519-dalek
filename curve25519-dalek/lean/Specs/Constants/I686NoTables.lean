@@ -15,18 +15,7 @@ public import Curve25519.Ristretto.Encoding
 public import Defs.Montgomery
 public import Defs.Ristretto
 public import Defs.ScalarMul
-import Proofs.Backend.Serial.U64.Constants.Ed25519BasepointPoint
-import Proofs.Backend.Serial.U64.Constants.Ed25519Basepoint128Point
-import Proofs.Backend.Serial.U64.Constants.Ed25519BasepointTable
-import Proofs.Backend.Serial.U64.Constants.EightTorsion
-import Proofs.Constants.Ed25519BasepointCompressed
-import Proofs.Constants.RistrettoBasepoint
-import Proofs.Constants.X25519Basepoint
-import Proofs.Constants.X25519LowOrderPoints
-import Proofs.Backend.Serial.U32.Constants.Ed25519BasepointPoint
-import Proofs.Backend.Serial.U32.Constants.Ed25519Basepoint128Point
-import Proofs.Backend.Serial.U32.Constants.Ed25519BasepointTable
-import Proofs.Backend.Serial.U32.Constants.EightTorsion
+import Proofs
 public section
 
 /-! # `Constants` specs for `i686-no-tables`, generated from `Specs/Constants.lean` -/

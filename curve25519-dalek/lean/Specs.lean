@@ -20,6 +20,6 @@ public import Specs.Traits
 
 /-! # Specs of curve25519-dalek
 
-Root of the `Specs` library: imports the spec summary of every specified Rust file (the files with
-items in the crate's public API).
-See `README.md` for the layout. -/
+Root of the `Specs` library: imports the spec file of every specified Rust file (the files with
+items in the crate's public API), and the generated per-configuration copies of their
+configuration-dependent items. See `README.md` for the layout. -/

@@ -8,45 +8,7 @@ public import Curve25519Dalek.Funs
 public import ToAeneas.Iterator
 public import Defs.Scalar
 public import Subtle
-import Proofs.Helpers.Variants
-import Proofs.Scalar.Add
-import Proofs.Scalar.AddAssign
-import Proofs.Scalar.AsBytes
-import Proofs.Scalar.ClampInteger
-import Proofs.Scalar.ConditionalSelect
-import Proofs.Scalar.CtEq
-import Proofs.Scalar.Default
-import Proofs.Scalar.DivBy2
-import Proofs.Scalar.Eq
-import Proofs.Scalar.FromBytesModOrder
-import Proofs.Scalar.FromBytesModOrderWide
-import Proofs.Scalar.FromCanonicalBytes
-import Proofs.Scalar.FromHalfWidth
-import Proofs.Scalar.FromUnsigned
-import Proofs.Scalar.HalfWidthAsScalar
-import Proofs.Scalar.HalfWidthDefault
-import Proofs.Scalar.HalfWidthEq
-import Proofs.Scalar.HalfWidthFromBytes
-import Proofs.Scalar.HalfWidthFromUnsigned
-import Proofs.Scalar.HalfWidthOne
-import Proofs.Scalar.HalfWidthToBytes
-import Proofs.Scalar.HalfWidthTryFrom
-import Proofs.Scalar.HalfWidthZero
-import Proofs.Scalar.HalfWidthZeroize
-import Proofs.Scalar.Index
-import Proofs.Scalar.Invert
-import Proofs.Scalar.InvertBatch
-import Proofs.Scalar.InvertBatchAlloc
-import Proofs.Scalar.Mul
-import Proofs.Scalar.MulAssign
-import Proofs.Scalar.Neg
-import Proofs.Scalar.One
-import Proofs.Scalar.Product
-import Proofs.Scalar.Sub
-import Proofs.Scalar.SubAssign
-import Proofs.Scalar.Sum
-import Proofs.Scalar.ToBytes
-import Proofs.Scalar.Zero
+import Proofs
 import Zeroize.Instances
 public section
 

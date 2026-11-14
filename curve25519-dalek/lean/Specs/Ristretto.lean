@@ -1,3 +1,7 @@
+/-
+Copyright 2026 The Beneficial AI Foundation. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
 module
 public import Curve25519.Edwards.Basepoint
 public import Curve25519.Ristretto.Encoding
@@ -10,36 +14,7 @@ public import Defs.Ristretto
 public import Defs.Scalar
 public import Defs.ScalarMul
 public import Subtle
-import Proofs.Ristretto.Add
-import Proofs.Ristretto.AddAssign
-import Proofs.Ristretto.AsBytes
-import Proofs.Ristretto.BasepointTable
-import Proofs.Ristretto.Compress
-import Proofs.Ristretto.CompressedCtEq
-import Proofs.Ristretto.CompressedEq
-import Proofs.Ristretto.CompressedIdentity
-import Proofs.Ristretto.CompressedZeroize
-import Proofs.Ristretto.ConditionalSelect
-import Proofs.Ristretto.CtEq
-import Proofs.Ristretto.Decompress
-import Proofs.Ristretto.DoubleAndCompressBatch
-import Proofs.Ristretto.Elligator
-import Proofs.Ristretto.FromSlice
-import Proofs.Ristretto.FromUniformBytes
-import Proofs.Ristretto.Identity
-import Proofs.Ristretto.Mul
-import Proofs.Ristretto.MulAssign
-import Proofs.Ristretto.MulBase
-import Proofs.Ristretto.MultiscalarMul
-import Proofs.Ristretto.Neg
-import Proofs.Ristretto.OptionalMultiscalarMul
-import Proofs.Ristretto.Sub
-import Proofs.Ristretto.SubAssign
-import Proofs.Ristretto.Sum
-import Proofs.Ristretto.ToBytes
-import Proofs.Ristretto.VartimeDoubleScalarMulBasepoint
-import Proofs.Ristretto.VartimeRistrettoPrecomputation
-import Proofs.Helpers.Variants
+import Proofs
 import Zeroize.Instances
 public section
 

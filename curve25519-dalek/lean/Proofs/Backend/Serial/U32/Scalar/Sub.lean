@@ -5,7 +5,7 @@ Authors: Oliver Butterley
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Scalar29
+public import ForHumans.Specs.Representation.Scalar29
 import Mathlib.Tactic.ReduceModChar
 import Proofs.Backend.Serial.U32.Scalar.ConditionalAddL
 import Proofs.Backend.Serial.U32.Scalar.Index
@@ -14,7 +14,7 @@ import Proofs.Helpers.Scalar29
 import Proofs.Backend.Serial.U32.Scalar.Zero
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.StepSpecs
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public import Proofs.Helpers.ByteValues
 public section
 

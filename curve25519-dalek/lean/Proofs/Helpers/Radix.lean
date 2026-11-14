@@ -3,14 +3,14 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public section
 
 /-! # Curve25519 constants in dalek's radices
 
 The group order `L` in radix `2^52` (dalek's `Scalar52`), the square root of `-1` in radix `2^51`
 (dalek's `FieldElement51`), and the Montgomery radices `2^260`, `2^520` modulo `L`. These are facts
-about the numerals of `Curve25519.Basic` that only the backend proofs need, kept out of the
+about the numerals of `Proofs.Curve25519.Basic` that only the backend proofs need, kept out of the
 implementation-independent `Curve25519` library. -/
 
 namespace curve25519

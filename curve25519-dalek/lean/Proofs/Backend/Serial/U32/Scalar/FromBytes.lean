@@ -5,15 +5,15 @@ Authors: Markus Dablander, Alessandro D'Angelo
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Scalar29
+public import ForHumans.Specs.Representation.Scalar29
 public import Mathlib.Tactic.LinearCombination
 import Proofs.Backend.Serial.U32.Scalar.IndexMut
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.Bitwise
 import Proofs.Helpers.Bytes
 import Proofs.Helpers.Scalar29
-public import Curve25519.Basic
-import Subtle
+public import Proofs.Curve25519.Basic
+import Proofs.External.Subtle
 import Proofs.Backend.Serial.U32.Scalar.Zero
 import Proofs.Helpers.StepSpecs
 import Proofs.Helpers.Array

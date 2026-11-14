@@ -5,10 +5,10 @@ Authors: Markus Dablander, Liao Zhang
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Scalar29
+public import ForHumans.Specs.Representation.Scalar29
 import Proofs.Backend.Serial.U32.Scalar.MontgomeryReduce
 import Proofs.Backend.Serial.U32.Scalar.MulInternal
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

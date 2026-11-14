@@ -3,11 +3,11 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Curve25519.Ristretto.Encoding.Defs
-public import Curve25519.X25519
-public import Defs.Array
-public import Defs.FieldElement2625
-public import Subtle.Contract
+public import Proofs.Curve25519.Ristretto.Encoding.Defs
+public import Proofs.Curve25519.X25519
+public import ForHumans.Specs.Representation.Array
+public import ForHumans.Specs.Representation.FieldElement2625
+public import ForHumans.Specs.External.Subtle.Contract
 import Proofs.Helpers.Array
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.ZMod

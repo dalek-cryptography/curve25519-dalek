@@ -4,10 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Markus Dablander, Alessandro D'Angelo
 -/
 module
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import Defs.Scalar52
-import Curve25519.Prime
+public import ForHumans.Specs.Representation.Scalar52
+import Proofs.Curve25519.Prime
 import Mathlib.FieldTheory.Finite.Basic
 import Proofs.Backend.Serial.U64.Scalar.MontgomeryMul
 import Proofs.Backend.Serial.U64.Scalar.MontgomerySquare

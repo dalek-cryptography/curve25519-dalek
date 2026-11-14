@@ -4,11 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Edwards
-public import Subtle.Contract
+public import ForHumans.Specs.Representation.Edwards
+public import ForHumans.Specs.External.Subtle.Contract
 import Proofs.Edwards.AsBytes
 import Proofs.Helpers.Array
-import Subtle.Instances
+import Proofs.External.Subtle.Instances
 public import Proofs.Helpers.ByteValues
 public section
 

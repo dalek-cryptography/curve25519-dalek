@@ -5,14 +5,14 @@ Authors: Markus Dablander, Oliver Butterley
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Scalar52
+public import ForHumans.Specs.Representation.Scalar52
 import Mathlib.Tactic.ReduceModChar
 import Proofs.Helpers.Limbs
 import Proofs.Backend.Serial.U64.Scalar.Index
 import Proofs.Helpers.Scalar52
 import Proofs.Backend.Serial.U64.Scalar.MontgomeryReduce
 import Proofs.Helpers.AsNat
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

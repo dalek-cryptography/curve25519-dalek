@@ -4,11 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Edwards
+public import ForHumans.Specs.Representation.Edwards
 import Proofs.Backend.Serial.U64.Field.One
 import Proofs.Helpers.Coords
 import Proofs.Helpers.ToField
-import Zeroize.Instances
+import Proofs.External.Zeroize.Instances
 import Proofs.Backend.Serial.U32.Field.One
 import Proofs.Helpers.ToField2625
 public section

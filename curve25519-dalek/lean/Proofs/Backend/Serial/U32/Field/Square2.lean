@@ -5,10 +5,10 @@ Authors: András Némedy Varga
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.FieldElement2625
+public import ForHumans.Specs.Representation.FieldElement2625
 public import Proofs.Helpers.FieldElement2625
-public import Subtle
-public import Zeroize
+public import Proofs.External.Subtle
+public import Proofs.External.Zeroize
 import Proofs.Backend.Serial.U32.Field.SquareInner
 import Proofs.Backend.Serial.U32.Field.Reduce
 public section

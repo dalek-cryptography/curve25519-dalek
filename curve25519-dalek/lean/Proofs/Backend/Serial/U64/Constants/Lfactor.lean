@@ -5,7 +5,7 @@ Authors: Markus Dablander
 -/
 module
 public import Curve25519Dalek.Funs
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 import Proofs.Helpers.Radix
 public section
 

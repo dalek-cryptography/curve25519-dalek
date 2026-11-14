@@ -5,9 +5,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Helpers.Represents
 public import Curve25519Dalek.Funs
-public import Defs.Edwards
-public import ToAeneas.Iterator
-public import Defs.Scalar
+public import ForHumans.Specs.Representation.Edwards
+public import Proofs.ToAeneas.Iterator
+public import ForHumans.Specs.Representation.Scalar
 import Proofs.Backend.Serial.CurveModels.AddProjectiveNiels
 import Proofs.Backend.Serial.CurveModels.CompletedAsExtended
 import Proofs.Edwards.Identity
@@ -21,7 +21,7 @@ import Proofs.Helpers.Vec
 import Proofs.Scalar.AsRadix16
 import Proofs.Window.LookupTableFrom
 import Proofs.Window.LookupTableSelect
-import Zeroize
+import Proofs.External.Zeroize
 public import Proofs.Helpers.EdwardsOps.Instances
 public import Proofs.Backend.Serial.ScalarMul.Straus.MultiscalarMulGeneric
 public section

@@ -4,9 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Curve25519.Ristretto.Even
-public import Defs.Edwards
-public import Subtle.Contract
+public import Proofs.Curve25519.Ristretto.Even
+public import ForHumans.Specs.Representation.Edwards
+public import ForHumans.Specs.External.Subtle.Contract
 import Proofs.Backend.Serial.U64.Field.Mul
 import Proofs.Field.CtEq
 import Proofs.Helpers.Coords

@@ -3,9 +3,9 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Curve25519.Edwards.Encoding
+public import Proofs.Curve25519.Edwards.Encoding
 public import Curve25519Dalek.Funs
-public import Defs.Edwards
+public import ForHumans.Specs.Representation.Edwards
 public import Proofs.Field.SqrtRatioI
 public import Proofs.Helpers.Backend.U32
 public import Proofs.Helpers.Backend.U64
@@ -15,7 +15,7 @@ import Proofs.Helpers.Array
 import Proofs.Helpers.Coords
 import Proofs.Helpers.Edwards
 import Proofs.Helpers.ToField
-import Subtle.Lemmas
+import Proofs.External.Subtle.Lemmas
 import Proofs.Backend.Serial.U32.Field.FromBytes
 import Proofs.Helpers.ToField2625
 public import Proofs.Helpers.ByteValues

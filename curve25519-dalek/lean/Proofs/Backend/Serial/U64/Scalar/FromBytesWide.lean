@@ -5,7 +5,7 @@ Authors: Markus Dablander, Alessandro D'Angelo
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Scalar52
+public import ForHumans.Specs.Representation.Scalar52
 import Mathlib.Tactic.LinearCombination
 import Proofs.Backend.Serial.U64.Constants.R
 import Proofs.Backend.Serial.U64.Constants.RR
@@ -16,7 +16,7 @@ import Proofs.Backend.Serial.U64.Scalar.MontgomeryMul
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.Bytes
 import Proofs.Helpers.StepSpecs
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

@@ -5,13 +5,13 @@ Authors: Hoang Le Truong
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Scalar52
+public import ForHumans.Specs.Representation.Scalar52
 import Proofs.Backend.Serial.U64.Constants.RR
 import Proofs.Helpers.Scalar52
 import Proofs.Backend.Serial.U64.Scalar.MontgomeryReduce
 import Proofs.Backend.Serial.U64.Scalar.MulInternal
 import Proofs.Backend.Serial.U64.Scalar.SquareInternal
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 import Proofs.Helpers.Montgomery
 public section
 

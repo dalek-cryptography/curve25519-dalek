@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Alessandro D'Angelo, Oliver Butterley
 -/
 module
-public import Curve25519.Basic
-public import Defs.Scalar52
+public import Proofs.Curve25519.Basic
+public import ForHumans.Specs.Representation.Scalar52
 import Proofs.Helpers.Radix
 public section
 

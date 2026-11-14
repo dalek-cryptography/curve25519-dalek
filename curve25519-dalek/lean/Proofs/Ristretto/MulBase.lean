@@ -4,10 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Curve25519.Edwards.Basepoint
-public import Defs.Edwards
-public import Defs.Scalar
-import Curve25519.Ristretto.Even
+public import Proofs.Curve25519.Edwards.Basepoint
+public import ForHumans.Specs.Representation.Edwards
+public import ForHumans.Specs.Representation.Scalar
+import Proofs.Curve25519.Ristretto.Even
 import Proofs.Constants.RistrettoBasepoint
 import Proofs.Ristretto.BasepointTable
 import Proofs.Ristretto.Mul

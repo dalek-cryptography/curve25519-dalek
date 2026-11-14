@@ -4,10 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.FieldElement2625
-public import Defs.FieldElement51
-public import Defs.Scalar52
-public import Defs.Scalar
+public import ForHumans.Specs.Representation.FieldElement2625
+public import ForHumans.Specs.Representation.FieldElement51
+public import ForHumans.Specs.Representation.Scalar52
+public import ForHumans.Specs.Representation.Scalar
 import Proofs.Helpers.Montgomery
 import Proofs.Backend.Serial.U64.Field.Zero
 import Proofs.Backend.Serial.U32.Field.Zero

@@ -1,4 +1,9 @@
 module
+public import Proofs.Curve25519
+public import Proofs.External.Subtle
+public import Proofs.External.Zeroize
+public import Proofs.ToAeneas.Array
+public import Proofs.ToAeneas.Iterator
 public import Proofs.Backend.GetSelectedBackend
 public import Proofs.Backend.PippengerOptionalMultiscalarMul
 public import Proofs.Backend.Serial.CurveModels.AddAffineNiels

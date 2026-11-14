@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Curve25519.Edwards.Encoding
-public import Defs.Edwards
+public import Proofs.Curve25519.Edwards.Encoding
+public import ForHumans.Specs.Representation.Edwards
 public import Proofs.Field.InvertBatchAlloc
 import Proofs.Edwards.Affine.Compress
 import Proofs.Helpers.Coords

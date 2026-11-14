@@ -3,11 +3,11 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Curve25519.X25519
+public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
-public import Defs.Montgomery
-import all Curve25519.Basic
-import Curve25519.X25519.LowOrder
+public import ForHumans.Specs.Representation.Montgomery
+import all Proofs.Curve25519.Basic
+import Proofs.Curve25519.X25519.LowOrder
 public import Proofs.Helpers.ByteValues
 public section
 
@@ -21,8 +21,8 @@ The seven are sent to `0`: each coordinate is sent to `0` by `u ↦ u(8 • Q)`,
 inversion) ending at infinity (`W = 0`), and clamped scalars are multiples of `8`
 (`curve25519.x25519Nat_eq_zero_of_xMul_eight`). No other coordinate is: a coordinate sent to `0` by
 every scalar is one of `0`, `1`, `-1`, `u₈`, `u₈⁻¹` (`curve25519.x25519Nat_eq_zero_iff`), and a
-kernel evaluation decodes the entries `0` to `4` to these five. `Curve25519.Basic` is imported
-with `import all` so that the kernel can unfold `p`. -/
+kernel evaluation decodes the entries `0` to `4` to these five. `Proofs.Curve25519.Basic` is
+imported with `import all` so that the kernel can unfold `p`. -/
 
 open Aeneas Aeneas.Std curve25519 MontgomeryModel
 

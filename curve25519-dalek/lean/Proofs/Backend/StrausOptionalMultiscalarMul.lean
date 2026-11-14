@@ -4,9 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Edwards
-public import ToAeneas.Iterator
-public import Defs.Scalar
+public import ForHumans.Specs.Representation.Edwards
+public import Proofs.ToAeneas.Iterator
+public import ForHumans.Specs.Representation.Scalar
 import Proofs.Backend.GetSelectedBackend
 import Proofs.Backend.Serial.ScalarMul.Straus.OptionalMultiscalarMul
 public section

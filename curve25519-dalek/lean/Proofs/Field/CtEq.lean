@@ -5,14 +5,14 @@ Authors: Hoang Le Truong
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.FieldElement2625
-public import Defs.FieldElement51
+public import ForHumans.Specs.Representation.FieldElement2625
+public import ForHumans.Specs.Representation.FieldElement51
 import Proofs.Backend.Serial.U64.Field.ToBytes
 import Proofs.Helpers.Array
 import Proofs.Helpers.AsNat
-import Subtle.Instances
+import Proofs.External.Subtle.Instances
 import Proofs.Backend.Serial.U32.Field.ToBytes
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

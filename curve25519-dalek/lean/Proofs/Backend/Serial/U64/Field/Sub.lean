@@ -5,11 +5,11 @@ Authors: Markus Dablander, Hoang Le Truong
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.FieldElement51
+public import ForHumans.Specs.Representation.FieldElement51
 import Proofs.Backend.Serial.U64.Field.Reduce
 import Proofs.Backend.Serial.U64.Field.SixteenP
 import Proofs.Helpers.AsNat
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public import Proofs.Helpers.ByteValues
 public section
 

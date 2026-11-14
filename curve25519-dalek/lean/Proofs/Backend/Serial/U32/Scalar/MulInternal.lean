@@ -5,8 +5,8 @@ Authors: Wojciech Aleksander Wołoszyn
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Scalar29
-public import Curve25519.Basic
+public import ForHumans.Specs.Representation.Scalar29
+public import Proofs.Curve25519.Basic
 import Proofs.Backend.Serial.U32.Scalar.Index
 import Proofs.Backend.Serial.U32.Scalar.M
 import Proofs.Helpers.Array

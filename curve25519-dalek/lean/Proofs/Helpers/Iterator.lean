@@ -5,13 +5,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Aeneas.Std.RangeIter
 public import Aeneas.Std.Alloc.Vec.IntoIter
-public import ToAeneas.Iterator
+public import Proofs.ToAeneas.Iterator
 public section
 
 /-! # Iterators
 
 The specs of `next` on slices and on reversed `Usize` ranges. (That concrete iterators yield their
-items, so that specs assuming `Yields` are not vacuous, is in `ToAeneas/Iterator.lean`.) -/
+items, so that specs assuming `Yields` are not vacuous, is in `Proofs/ToAeneas/Iterator.lean`.) -/
 
 open Aeneas Aeneas.Std Aeneas.Std.WP
 

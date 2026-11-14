@@ -5,11 +5,11 @@ Authors: Oliver Butterley, Hoang Le Truong
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.FieldElement51
+public import ForHumans.Specs.Representation.FieldElement51
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.Limbs
-public import Curve25519.Basic
-import Subtle
+public import Proofs.Curve25519.Basic
+import Proofs.External.Subtle
 import Proofs.Helpers.StepSpecs
 import Mathlib.Tactic.ReduceModChar
 import Proofs.Helpers.Array

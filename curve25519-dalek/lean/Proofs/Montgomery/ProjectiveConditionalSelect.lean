@@ -4,9 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Montgomery
-public import Subtle.Contract
-import Subtle.Lemmas
+public import ForHumans.Specs.Representation.Montgomery
+public import ForHumans.Specs.External.Subtle.Contract
+import Proofs.External.Subtle.Lemmas
 import Proofs.Backend.Serial.U64.Field.ConditionalSelect
 import Proofs.Backend.Serial.U32.Field.ConditionalSelect
 public section

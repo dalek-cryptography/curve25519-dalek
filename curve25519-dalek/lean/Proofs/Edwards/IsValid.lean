@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Edwards
+public import ForHumans.Specs.Representation.Edwards
 import Mathlib.Tactic.LinearCombination
 import Proofs.Backend.Serial.CurveModels.ProjectiveIsValid
 import Proofs.Backend.Serial.U64.Field.Mul

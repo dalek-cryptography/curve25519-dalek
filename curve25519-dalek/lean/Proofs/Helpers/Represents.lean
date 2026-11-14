@@ -3,9 +3,9 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Defs.Edwards
-public import Defs.ScalarMul
-public import Defs.Window
+public import ForHumans.Specs.Representation.Edwards
+public import ForHumans.Specs.Representation.ScalarMul
+public import ForHumans.Specs.Representation.Window
 public section
 
 /-! # Row invariants of the internal tables (proof helper, not audited)

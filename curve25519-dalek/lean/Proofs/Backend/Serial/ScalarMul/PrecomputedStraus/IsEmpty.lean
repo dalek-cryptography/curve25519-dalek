@@ -5,8 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Helpers.Represents
 public import Curve25519Dalek.Funs
-public import Defs.Edwards
-public import Defs.ScalarMul
+public import ForHumans.Specs.Representation.Edwards
+public import ForHumans.Specs.Representation.ScalarMul
 public section
 
 /-! # `VartimePrecomputedStraus::is_empty` -/

@@ -21,34 +21,17 @@ package «curve25519-dalek» where
     ⟨`weak.linter.style.header, false⟩,
     ⟨`maxRecDepth, .ofNat 10000⟩]
 
--- Hand-written library for the `subtle` crate.
+-- What a reviewer reads: the specifications (`ForHumans/Specs/`) and the theorems about the Rust
+-- code (`ForHumans/Theorems/`).
 @[default_target]
-lean_lib Subtle
-
--- Hand-written library for the `zeroize` crate.
-@[default_target]
-lean_lib Zeroize
+lean_lib ForHumans where
+  globs := #[.andSubmodules `ForHumans]
 
 -- Aeneas-generated Lean translation.
 @[default_target]
 lean_lib Curve25519Dalek
 
--- Curve25519 in general (parameters, models, encodings; `Curve25519/Models`, and
--- `Curve25519/ToEllipticCurve` staged for the EllipticCurve library), independent of dalek.
-@[default_target]
-lean_lib Curve25519
-
--- Definitions needed to state the specs and `ToAeneas/` staged for Aeneas.
-@[default_target]
-lean_lib Defs where
-  globs := #[.andSubmodules `Defs, .submodules `ToAeneas]
-
--- Spec summaries, one per Rust file.
-@[default_target]
-lean_lib Specs where
-  globs := #[.andSubmodules `Specs]
-
--- Proofs, one file per Rust item, and the helper theorems they use.
+-- Everything else: the proofs and the lemmas they use.
 @[default_target]
 lean_lib Proofs where
   globs := #[.andSubmodules `Proofs]

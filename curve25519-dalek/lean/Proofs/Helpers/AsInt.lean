@@ -3,7 +3,7 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Defs.Array
+public import ForHumans.Specs.Representation.Array
 import Proofs.Helpers.Array
 import Aeneas.Tactic.Misc.FCongr.FCongr
 public section

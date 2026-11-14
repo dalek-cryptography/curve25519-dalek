@@ -4,9 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Markus Dablander, Hoang Le Truong, Oliver Butterley
 -/
 module
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import Defs.FieldElement51
+public import ForHumans.Specs.Representation.FieldElement51
 import Proofs.Helpers.FieldMul
 import Proofs.Helpers.Limbs
 import Proofs.Helpers.Array

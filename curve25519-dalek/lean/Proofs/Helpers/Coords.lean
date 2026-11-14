@@ -3,17 +3,18 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Defs.Edwards
-public import Defs.Montgomery
+public import ForHumans.Specs.Representation.Edwards
+public import ForHumans.Specs.Representation.Montgomery
 public import Proofs.Helpers.ToField2625
 public section
 
 /-! # The coordinate lemmas of the math library on the dalek structures
 
-For each point structure of `Defs.CurveModels`, `Defs.Edwards` and `Defs.Montgomery`:
-`OnCurve` on the limbs' values (`onCurve_iff_equation`, `onCurve_iff_homogeneous`), the
-coordinates of `toPoint` (`toPoint_x`, `toPoint_y`, `toPoint_of_not_onCurve`), and projective
-equality as point equality (`projEq_iff_toPoint_eq`). Everything is the corresponding lemma of
+For each point structure of `ForHumans.Specs.Representation.CurveModels`,
+`ForHumans.Specs.Representation.Edwards` and `ForHumans.Specs.Representation.Montgomery`: `OnCurve`
+on the limbs' values (`onCurve_iff_equation`, `onCurve_iff_homogeneous`), the coordinates of
+`toPoint` (`toPoint_x`, `toPoint_y`, `toPoint_of_not_onCurve`), and projective equality as point
+equality (`projEq_iff_toPoint_eq`). Everything is the corresponding lemma of
 `EllipticCurve.TwistedEdwards.Coords` (projective, extended, completed) or
 `Curve25519.Models.TwistedEdwards.Coords` (Niels) rewritten through the `_def` lemmas. -/
 

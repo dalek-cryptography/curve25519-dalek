@@ -4,11 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Ristretto
-public import Subtle.Contract
+public import ForHumans.Specs.Representation.Ristretto
+public import ForHumans.Specs.External.Subtle.Contract
 import Proofs.Ristretto.AsBytes
 import Proofs.Helpers.Array
-import Subtle.Instances
+import Proofs.External.Subtle.Instances
 public import Proofs.Helpers.ByteValues
 public section
 

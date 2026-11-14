@@ -6,9 +6,9 @@ Authors: Hoang Le Truong
 module
 public import Curve25519Dalek.Funs
 import Proofs.Helpers.Array
-public import Curve25519.Basic
-public import Defs.FieldElement51
-public import Subtle
+public import Proofs.Curve25519.Basic
+public import ForHumans.Specs.Representation.FieldElement51
+public import Proofs.External.Subtle
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

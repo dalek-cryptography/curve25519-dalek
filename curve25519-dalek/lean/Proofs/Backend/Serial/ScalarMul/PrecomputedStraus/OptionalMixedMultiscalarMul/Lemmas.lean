@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Curve25519.Edwards.Basic
+public import Proofs.Curve25519.Edwards.Basic
 public import Proofs.Helpers.Naf
 public section
 

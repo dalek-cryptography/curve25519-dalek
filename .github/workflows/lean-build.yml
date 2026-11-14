@@ -110,21 +110,9 @@ jobs:
             --jq 'if any(.[]; .key == env.KEY) then .[] | select(.key != env.KEY) | .id else empty end' |
             xargs -r -n1 gh cache delete
 
-      - name: Lint Subtle
+      - name: Lint ForHumans
         if: ${{ !cancelled() }}
-        run: lake exe runLinter Subtle
-      - name: Lint Zeroize
-        if: ${{ !cancelled() }}
-        run: lake exe runLinter Zeroize
-      - name: Lint Curve25519
-        if: ${{ !cancelled() }}
-        run: lake exe runLinter Curve25519
-      - name: Lint Defs
-        if: ${{ !cancelled() }}
-        run: lake exe runLinter Defs
-      - name: Lint Specs
-        if: ${{ !cancelled() }}
-        run: lake exe runLinter Specs
+        run: lake exe runLinter ForHumans
       - name: Lint Proofs
         if: ${{ !cancelled() }}
         run: lake exe runLinter Proofs

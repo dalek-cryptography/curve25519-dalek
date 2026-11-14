@@ -3,10 +3,10 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import ToAeneas.Iterator
-public import Defs.Scalar
+public import Proofs.ToAeneas.Iterator
+public import ForHumans.Specs.Representation.Scalar
 import Proofs.Scalar.Add
 import Proofs.Scalar.Zero
 public section

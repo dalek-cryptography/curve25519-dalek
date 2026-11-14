@@ -5,10 +5,10 @@ Authors: Oliver Butterley, Markus Dablander
 -/
 module
 public import Curve25519Dalek.Funs
-public import Curve25519.Basic
-public import Defs.FieldElement51
+public import Proofs.Curve25519.Basic
+public import ForHumans.Specs.Representation.FieldElement51
 import Proofs.Helpers.StepSpecs
-import Subtle
+import Proofs.External.Subtle
 import Proofs.Helpers.Array
 public section
 

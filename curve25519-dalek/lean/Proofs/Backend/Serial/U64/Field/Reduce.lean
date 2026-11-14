@@ -5,11 +5,11 @@ Authors: Alessandro D'Angelo
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.FieldElement51
-public import Curve25519.Basic
+public import ForHumans.Specs.Representation.FieldElement51
+public import Proofs.Curve25519.Basic
 public import Mathlib.Tactic.LinearCombination
 import Proofs.Helpers.Limbs
-import Subtle
+import Proofs.External.Subtle
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.StepSpecs
 import Aeneas.Tactic.Solver.ScalarTac.Init

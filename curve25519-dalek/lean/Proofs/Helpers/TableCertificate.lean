@@ -3,10 +3,10 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Curve25519.Edwards.Basepoint
+public import Proofs.Curve25519.Edwards.Basepoint
 public import Curve25519Dalek.Funs
-public import Defs.Edwards
-public import Curve25519.Proofs.Edwards.Certs
+public import ForHumans.Specs.Representation.Edwards
+public import Proofs.Curve25519.Proofs.Edwards.Certs
 import Proofs.Helpers.Coords
 import Proofs.Helpers.ToField
 import Mathlib.Tactic.LinearCombination

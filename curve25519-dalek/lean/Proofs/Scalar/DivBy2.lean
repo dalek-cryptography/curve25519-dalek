@@ -3,10 +3,10 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import Defs.Scalar
-public import Defs.Scalar29
+public import ForHumans.Specs.Representation.Scalar
+public import ForHumans.Specs.Representation.Scalar29
 import Proofs.Backend.Serial.U64.Scalar.ConditionalAddL
 import Proofs.Backend.Serial.U64.Scalar.Shr1Assign
 import Proofs.Helpers.AsNat
@@ -20,7 +20,7 @@ import Proofs.Scalar.Unpack
 import Proofs.Backend.Serial.U32.Scalar.ConditionalAddL
 import Proofs.Backend.Serial.U32.Scalar.Shr1Assign
 import Proofs.Scalar.Scalar29Pack
-import Subtle.Lemmas
+import Proofs.External.Subtle.Lemmas
 public import Proofs.Helpers.ByteValues
 public section
 

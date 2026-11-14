@@ -5,7 +5,7 @@ Authors: Hoang Le Truong
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Scalar
+public import ForHumans.Specs.Representation.Scalar
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.ReduceModChar
 import Proofs.Helpers.Array

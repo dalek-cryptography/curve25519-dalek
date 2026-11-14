@@ -4,9 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Curve25519.Ristretto.Encoding
-public import Defs.Edwards
-public import Defs.Ristretto
+public import Proofs.Curve25519.Ristretto.Encoding
+public import ForHumans.Specs.Representation.Edwards
+public import ForHumans.Specs.Representation.Ristretto
 import Proofs.Helpers.Coords
 import Proofs.Helpers.RistrettoCompress
 public import Proofs.Field.Invsqrt

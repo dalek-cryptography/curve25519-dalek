@@ -4,10 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Montgomery
+public import ForHumans.Specs.Representation.Montgomery
 import Proofs.Helpers.Array
 import Proofs.Helpers.AsNat
-import Zeroize.Instances
+import Proofs.External.Zeroize.Instances
 public import Proofs.Helpers.ByteValues
 public section
 

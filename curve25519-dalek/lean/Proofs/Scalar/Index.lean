@@ -4,12 +4,12 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Hoang Le Truong
 -/
 module
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import Defs.Scalar
-public import Defs.Scalar52
+public import ForHumans.Specs.Representation.Scalar
+public import ForHumans.Specs.Representation.Scalar52
 import Proofs.Helpers.Array
-import Subtle
+import Proofs.External.Subtle
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

@@ -3,9 +3,9 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import Defs.Scalar
+public import ForHumans.Specs.Representation.Scalar
 import Proofs.Backend.Serial.U64.Scalar.AsMontgomery
 import Proofs.Helpers.Target
 import Proofs.Scalar.InvertBatchInternal

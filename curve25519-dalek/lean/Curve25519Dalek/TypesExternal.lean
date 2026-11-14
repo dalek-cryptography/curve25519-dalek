@@ -6,7 +6,7 @@ Authors: Oliver Butterley
 -- [curve25519_dalek]: external types.
 module
 public import Aeneas
-public import Subtle.Types
+public import ForHumans.Specs.External.Subtle.Types
 @[expose] public section
 open Aeneas Aeneas.Std Result ControlFlow Error
 set_option linter.dupNamespace false

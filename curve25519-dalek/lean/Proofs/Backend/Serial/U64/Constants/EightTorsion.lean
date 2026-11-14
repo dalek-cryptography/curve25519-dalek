@@ -3,9 +3,9 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Curve25519.Edwards.Torsion
+public import Proofs.Curve25519.Edwards.Torsion
 public import Curve25519Dalek.Funs
-public import Defs.Edwards
+public import ForHumans.Specs.Representation.Edwards
 import Proofs.Backend.Serial.U64.Field.FromLimbs
 import Proofs.Helpers.Coords
 import Proofs.Helpers.ToField
@@ -16,7 +16,7 @@ public section
 
 Entry `i` is the point `i • torsion8` of `curve25519` in the extended coordinates
 `(x : y : 1 : x y)`; the limbs are compared with the coordinates of
-`Curve25519/Edwards/Torsion.lean` as numbers. -/
+`Proofs/Curve25519/Edwards/Torsion.lean` as numbers. -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel
 open Curve25519Dalek.backend.serial.u64.field (FieldElement51)

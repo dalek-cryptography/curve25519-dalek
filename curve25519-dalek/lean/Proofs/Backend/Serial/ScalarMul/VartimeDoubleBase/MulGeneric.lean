@@ -4,10 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Proofs.Helpers.Represents
-public import Curve25519.Edwards.Basepoint
+public import Proofs.Curve25519.Edwards.Basepoint
 public import Curve25519Dalek.Funs
-public import Defs.Edwards
-public import Defs.Scalar
+public import ForHumans.Specs.Representation.Edwards
+public import ForHumans.Specs.Representation.Scalar
 import Proofs.Helpers.Iterator
 public import Proofs.Helpers.Naf
 import Proofs.Helpers.StepSpecs

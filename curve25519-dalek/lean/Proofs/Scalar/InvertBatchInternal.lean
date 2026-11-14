@@ -4,11 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Hoang Le Truong
 -/
 module
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import Defs.Scalar
-public import Defs.Scalar29
-import Curve25519.Prime
+public import ForHumans.Specs.Representation.Scalar
+public import ForHumans.Specs.Representation.Scalar29
+import Proofs.Curve25519.Prime
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Tactic.LinearCombination
 import Proofs.Backend.Serial.U64.Scalar.AsMontgomery
@@ -31,8 +31,8 @@ import Proofs.Backend.Serial.U32.Scalar.MontgomeryMul
 import Proofs.Helpers.Scalar29
 import Proofs.Scalar.Scalar29MontgomeryInvert
 import Proofs.Scalar.Scalar29Pack
-import Zeroize.Instances
-import Zeroize.Lemmas
+import Proofs.External.Zeroize.Instances
+import Proofs.External.Zeroize.Lemmas
 import Proofs.Helpers.Iterator
 public section
 

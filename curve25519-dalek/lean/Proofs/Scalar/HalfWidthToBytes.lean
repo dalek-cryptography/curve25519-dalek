@@ -3,12 +3,12 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import Defs.Scalar
-public import Defs.Scalar52
+public import ForHumans.Specs.Representation.Scalar
+public import ForHumans.Specs.Representation.Scalar52
 import Proofs.Helpers.AsNat
-import Subtle
+import Proofs.External.Subtle
 public import Proofs.Helpers.ByteValues
 public section
 

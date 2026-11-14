@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Helpers.Represents
 public import Curve25519Dalek.Funs
-public import Defs.Window
+public import ForHumans.Specs.Representation.Window
 import Proofs.Helpers.StepSpecs
 public section
 

@@ -5,11 +5,11 @@ Authors: András Némedy Varga
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.FieldElement2625
+public import ForHumans.Specs.Representation.FieldElement2625
 import Proofs.Helpers.FieldElement2625
 import Proofs.Helpers.Array
-public import Subtle
-public import Zeroize
+public import Proofs.External.Subtle
+public import Proofs.External.Zeroize
 public section
 
 /-!

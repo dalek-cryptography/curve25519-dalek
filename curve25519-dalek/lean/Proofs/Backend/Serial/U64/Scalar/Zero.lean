@@ -5,9 +5,9 @@ Authors: Oliver Butterley
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Scalar52
-public import Defs.FieldElement51
-public import Defs.Scalar
+public import ForHumans.Specs.Representation.Scalar52
+public import ForHumans.Specs.Representation.FieldElement51
+public import ForHumans.Specs.Representation.Scalar
 import Proofs.Helpers.Montgomery
 public import Proofs.Helpers.ByteValues
 public section

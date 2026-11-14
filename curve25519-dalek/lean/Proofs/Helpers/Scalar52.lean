@@ -3,12 +3,12 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Defs.Scalar52
+public import ForHumans.Specs.Representation.Scalar52
 import Proofs.Helpers.Limbs
 import Proofs.Helpers.Array
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.Bitwise
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 import Proofs.Helpers.Montgomery
 public import Proofs.Helpers.ByteValues
 public section

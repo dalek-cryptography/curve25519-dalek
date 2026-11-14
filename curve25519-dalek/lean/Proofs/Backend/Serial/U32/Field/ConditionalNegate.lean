@@ -4,11 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.FieldElement2625
-public import Subtle
+public import ForHumans.Specs.Representation.FieldElement2625
+public import Proofs.External.Subtle
 import Proofs.Backend.Serial.U32.Field.ConditionalAssign
 import Proofs.Backend.Serial.U32.Field.Neg
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public section
 
 /-! # `ConditionallyNegatable::conditional_negate` on field elements -/

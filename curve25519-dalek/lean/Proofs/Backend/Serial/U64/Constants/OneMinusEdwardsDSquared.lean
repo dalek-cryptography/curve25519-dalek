@@ -5,10 +5,10 @@ Authors: Markus Dablander
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.FieldElement51
+public import ForHumans.Specs.Representation.FieldElement51
 import Proofs.Backend.Serial.U64.Field.FromLimbs
 import Proofs.Helpers.ZMod
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public import Proofs.Helpers.ByteValues
 public section
 

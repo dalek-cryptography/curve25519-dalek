@@ -4,9 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Markus Dablander, Hoang Le Truong, Oliver Butterley
 -/
 module
-public import Curve25519.Basic
-public import Defs.Array
-public import Defs.FieldElement51
+public import Proofs.Curve25519.Basic
+public import ForHumans.Specs.Representation.Array
+public import ForHumans.Specs.Representation.FieldElement51
 public import Aeneas.Std.Scalar.Bitwise
 public import Aeneas.Std.Scalar.Casts
 public import Aeneas.Std.Scalar.Notations

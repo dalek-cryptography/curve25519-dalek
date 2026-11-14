@@ -5,9 +5,9 @@ Authors: Markus Dablander
 -/
 module
 public import Curve25519Dalek.Funs
-public import Curve25519.Basic
-public import Defs.FieldElement51
-import Subtle
+public import Proofs.Curve25519.Basic
+public import ForHumans.Specs.Representation.FieldElement51
+import Proofs.External.Subtle
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

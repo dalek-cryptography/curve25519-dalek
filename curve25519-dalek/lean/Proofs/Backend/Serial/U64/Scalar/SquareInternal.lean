@@ -5,13 +5,13 @@ Authors: Oliver Butterley, Alessandro D'Angelo, Liao Zhang
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.Scalar52
+public import ForHumans.Specs.Representation.Scalar52
 public import Mathlib.Tactic.IntervalCases
 import Proofs.Backend.Serial.U64.Scalar.Index
 import Proofs.Backend.Serial.U64.Scalar.M
 import Proofs.Helpers.AsNat
-public import Curve25519.Basic
-import Subtle
+public import Proofs.Curve25519.Basic
+import Proofs.External.Subtle
 import Proofs.Helpers.StepSpecs
 public import Mathlib.Tactic.Linarith
 import Proofs.Helpers.Array

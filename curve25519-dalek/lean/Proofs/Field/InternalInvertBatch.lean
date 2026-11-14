@@ -4,9 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.FieldElement2625
-public import Defs.FieldElement51
-import Curve25519.Prime
+public import ForHumans.Specs.Representation.FieldElement2625
+public import ForHumans.Specs.Representation.FieldElement51
+import Proofs.Curve25519.Prime
 import Mathlib.Algebra.Field.ZMod
 import Proofs.Backend.Serial.U64.Field.ConditionalAssign
 import Proofs.Backend.Serial.U64.Field.Mul
@@ -20,7 +20,7 @@ import Proofs.Helpers.ZMod
 import Proofs.Backend.Serial.U32.Field.ConditionalAssign
 import Proofs.Backend.Serial.U32.Field.Mul
 import Proofs.Backend.Serial.U32.Field.One
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519

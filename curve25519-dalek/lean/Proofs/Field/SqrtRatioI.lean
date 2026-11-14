@@ -5,15 +5,15 @@ Authors: Markus Dablander, Hoang Le Truong, Alessandro D'Angelo
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.FieldElement2625
-public import Defs.FieldElement51
+public import ForHumans.Specs.Representation.FieldElement2625
+public import ForHumans.Specs.Representation.FieldElement51
 public import Proofs.Field.PowP58
-import Curve25519.Prime
+import Proofs.Curve25519.Prime
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.Tactic.ReduceModChar
 import Proofs.Helpers.ZMod
-public import Curve25519.Ristretto.Encoding.Defs
-public import Curve25519.Basic
+public import Proofs.Curve25519.Ristretto.Encoding.Defs
+public import Proofs.Curve25519.Basic
 import Proofs.Helpers.Backend.U32.Bytes
 import Proofs.Helpers.Backend.U64.Bytes
 public section

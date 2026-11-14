@@ -4,12 +4,12 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Defs.FieldElement2625
-public import Defs.FieldElement51
+public import ForHumans.Specs.Representation.FieldElement2625
+public import ForHumans.Specs.Representation.FieldElement51
 import Proofs.Backend.Serial.U64.Field.One
 import Proofs.Field.InternalInvertBatch
 import Proofs.Backend.Serial.U32.Field.One
-public import Curve25519.Basic
+public import Proofs.Curve25519.Basic
 public import Proofs.Helpers.Backend.U64
 public import Proofs.Helpers.Backend.U32
 import Proofs.Helpers.ToField

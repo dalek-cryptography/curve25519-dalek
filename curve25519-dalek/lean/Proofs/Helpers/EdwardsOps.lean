@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Proofs.Helpers.Represents
-public import Curve25519.Edwards.Basic
-public import Defs.Window
+public import Proofs.Curve25519.Edwards.Basic
+public import ForHumans.Specs.Representation.Window
 public import Aeneas
 public section
 

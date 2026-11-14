@@ -5,7 +5,7 @@ Authors: Oliver Butterley, Theodore Ehrenborg, Liao Zhang
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar29
+public import Proofs.Representation.Scalar29
 public import Proofs.Curve25519.Basic
 public section
 

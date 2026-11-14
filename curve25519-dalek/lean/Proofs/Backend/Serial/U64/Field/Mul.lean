@@ -6,7 +6,7 @@ Authors: Markus Dablander, Hoang Le Truong, Oliver Butterley
 module
 public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.FieldElement51
+public import Proofs.Representation.FieldElement51
 import Proofs.Helpers.FieldMul
 import Proofs.Helpers.Limbs
 import Proofs.Helpers.Array

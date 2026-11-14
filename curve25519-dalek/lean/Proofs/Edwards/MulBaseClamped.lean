@@ -6,7 +6,7 @@ module
 public import Proofs.Curve25519.Edwards.Basepoint
 public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Edwards
+public import Proofs.Representation.Edwards
 import Proofs.Edwards.MulBase
 import Proofs.Scalar.ClampInteger
 public import Proofs.Helpers.ByteValues

@@ -5,8 +5,8 @@ Authors: Markus Dablander, Hoang Le Truong
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.FieldElement2625
-public import ForHumans.Specs.Representation.FieldElement51
+public import Proofs.Representation.FieldElement2625
+public import Proofs.Representation.FieldElement51
 import Proofs.Curve25519.Prime
 import Mathlib.FieldTheory.Finite.Basic
 import Proofs.Backend.Serial.U64.Field.Mul

@@ -5,7 +5,7 @@ Authors: Oliver Butterley, Alessandro D'Angelo, Liao Zhang
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar52
+public import Proofs.Representation.Scalar52
 public import Mathlib.Tactic.IntervalCases
 import Proofs.Backend.Serial.U64.Scalar.Index
 import Proofs.Backend.Serial.U64.Scalar.M

@@ -5,8 +5,8 @@ Authors: András Némedy Varga
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.FieldElement2625
-public import ForHumans.Specs.Representation.Array
+public import Proofs.Representation.FieldElement2625
+public import Proofs.Representation.Array
 import Proofs.Helpers.FieldElement2625
 import Proofs.Helpers.AsNat
 import Proofs.Backend.Serial.U32.Field.Reduce

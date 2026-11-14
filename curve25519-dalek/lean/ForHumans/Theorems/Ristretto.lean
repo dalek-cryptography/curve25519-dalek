@@ -8,11 +8,11 @@ public import Proofs.Curve25519.Ristretto.Encoding
 public import Proofs.Curve25519.Ristretto.Map
 public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Edwards
+public import Proofs.Representation.Edwards
 public import ForHumans.Specs.Representation.Iterator
-public import ForHumans.Specs.Representation.Ristretto
+public import ForHumans.Specs.Representation.Array
 public import ForHumans.Specs.Representation.Scalar
-public import ForHumans.Specs.Representation.ScalarMul
+public import Proofs.Representation.ScalarMul
 public import Proofs.External.Subtle
 import Proofs
 import Proofs.External.Zeroize.Instances
@@ -46,9 +46,9 @@ tables.
 
 Definitions used: `EdwardsPoint.toPoint`, `OnCurve`, `IsBounded`, the tables' `point`, `IsTable` and
 `IsBounded`, the precomputations' `points`, `IsValid` and `IsBounded`
-(`ForHumans/Specs/Representation/Edwards.lean`, `ForHumans/Specs/Representation/ScalarMul.lean`),
+(`Proofs/Representation/Edwards.lean`, `Proofs/Representation/ScalarMul.lean`),
 `Array.toVector` (`Proofs/ToAeneas/Array.lean`), `Scalar.asNat`
-(`ForHumans/Specs/Representation/Scalar.lean`), `Iterator.Yields`
+(`Proofs/Representation/Scalar.lean`), `Iterator.Yields`
 (`Proofs/ToAeneas/Iterator.lean`), Mathlib's `Even`, `curve25519.edwards.Rel`,
 `Ristretto.encodeRep`, `Ristretto.decodeRep`, `Ristretto.mapRep`, `Ristretto.fromUniformRep`
 (`Curve25519/Ristretto/`), `curve25519.basepoint` (`Curve25519/`), `subtle.Choice.IsValid`

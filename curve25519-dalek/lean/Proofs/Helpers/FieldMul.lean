@@ -5,8 +5,8 @@ Authors: Markus Dablander, Hoang Le Truong, Oliver Butterley
 -/
 module
 public import Proofs.Curve25519.Basic
-public import ForHumans.Specs.Representation.Array
-public import ForHumans.Specs.Representation.FieldElement51
+public import Proofs.Representation.Array
+public import Proofs.Representation.FieldElement51
 public import Aeneas.Std.Scalar.Bitwise
 public import Aeneas.Std.Scalar.Casts
 public import Aeneas.Std.Scalar.Notations

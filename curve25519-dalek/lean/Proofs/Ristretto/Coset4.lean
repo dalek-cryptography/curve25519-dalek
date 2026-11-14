@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Curve25519Dalek.Funs
 public import Proofs.Curve25519.Edwards.Torsion
-public import ForHumans.Specs.Representation.Edwards
+public import Proofs.Representation.Edwards
 import Proofs.Backend.Serial.U64.Constants.EightTorsion
 import Proofs.Edwards.Add
 import Proofs.Helpers.Array

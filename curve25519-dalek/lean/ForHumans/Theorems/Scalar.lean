@@ -22,8 +22,8 @@ below `2^128`; the Lean type does not carry the bound: its constructors state it
 assume it.
 
 Definitions used: `Scalar.asNat`, `HalfWidthScalar.asNat`
-(`ForHumans/Specs/Representation/Scalar.lean`), `Array.asNat`
-(`ForHumans/Specs/Representation/Array.lean`), `Iterator.Yields` (`Proofs/ToAeneas/Iterator.lean`),
+(`Proofs/Representation/Scalar.lean`), `Array.asNat`
+(`Proofs/Representation/Array.lean`), `Iterator.Yields` (`Proofs/ToAeneas/Iterator.lean`),
 `L` (`Proofs/Curve25519/Basic.lean`), `subtle.Choice.IsValid`, `subtle.CtOption` (`Subtle/`).
 
 Not specified: derived `Clone`/`Copy` impls, and items outside the public API (`reduce`,

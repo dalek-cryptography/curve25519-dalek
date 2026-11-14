@@ -8,9 +8,9 @@ public import Proofs.Curve25519.Edwards.Encoding
 public import Proofs.Curve25519.Montgomery
 public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Edwards
+public import Proofs.Representation.Edwards
 public import ForHumans.Specs.Representation.Iterator
-public import ForHumans.Specs.Representation.Montgomery
+public import Proofs.Representation.Montgomery
 public import ForHumans.Specs.Representation.Scalar
 public import Proofs.External.Subtle
 import Proofs
@@ -18,7 +18,7 @@ public section
 
 set_option linter.style.longLine false
 
-/-! # `Montgomery` theorems for `i686-no-tables`, generated from `ForHumans/Theorems/Montgomery.lean` -/
+/-! # `Montgomery` for `i686-no-tables`, generated from `ForHumans/Theorems/Montgomery.lean` -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 Curve25519Dalek
 open Curve25519Dalek.montgomery (MontgomeryPoint)

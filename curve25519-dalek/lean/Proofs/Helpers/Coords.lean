@@ -3,15 +3,15 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import ForHumans.Specs.Representation.Edwards
-public import ForHumans.Specs.Representation.Montgomery
+public import Proofs.Representation.Edwards
+public import Proofs.Representation.Montgomery
 public import Proofs.Helpers.ToField2625
 public section
 
 /-! # The coordinate lemmas of the math library on the dalek structures
 
-For each point structure of `ForHumans.Specs.Representation.CurveModels`,
-`ForHumans.Specs.Representation.Edwards` and `ForHumans.Specs.Representation.Montgomery`: `OnCurve`
+For each point structure of `Proofs.Representation.CurveModels`,
+`Proofs.Representation.Edwards` and `Proofs.Representation.Montgomery`: `OnCurve`
 on the limbs' values (`onCurve_iff_equation`, `onCurve_iff_homogeneous`), the coordinates of
 `toPoint` (`toPoint_x`, `toPoint_y`, `toPoint_of_not_onCurve`), and projective equality as point
 equality (`projEq_iff_toPoint_eq`). Everything is the corresponding lemma of

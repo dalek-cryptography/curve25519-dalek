@@ -5,7 +5,7 @@ Authors: Markus Dablander, Liao Zhang
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar29
+public import Proofs.Representation.Scalar29
 import Proofs.Backend.Serial.U32.Scalar.MontgomeryReduce
 import Proofs.Backend.Serial.U32.Scalar.MulInternal
 public import Proofs.Curve25519.Basic

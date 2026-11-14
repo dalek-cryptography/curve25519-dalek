@@ -9,9 +9,9 @@ public import Proofs.Curve25519.Edwards.Encoding
 public import Proofs.Curve25519.Montgomery
 public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Edwards
+public import Proofs.Representation.Edwards
 public import ForHumans.Specs.Representation.Scalar
-public import ForHumans.Specs.Representation.ScalarMul
+public import Proofs.Representation.ScalarMul
 public import Proofs.External.Subtle
 public import ForHumans.Specs.Representation.Iterator
 import Proofs
@@ -20,7 +20,7 @@ public section
 
 set_option linter.style.longLine false
 
-/-! # `Edwards` theorems for `i686-no-tables`, generated from `ForHumans/Theorems/Edwards.lean` -/
+/-! # `Edwards` for `i686-no-tables`, generated from `ForHumans/Theorems/Edwards.lean` -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel Curve25519Dalek
 open Curve25519Dalek.edwards (CompressedEdwardsY)

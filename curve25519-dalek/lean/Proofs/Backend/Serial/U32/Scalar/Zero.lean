@@ -5,7 +5,7 @@ Authors: Oliver Butterley
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar29
+public import Proofs.Representation.Scalar29
 public import Proofs.Curve25519.Basic
 public import Proofs.Helpers.ByteValues
 public section

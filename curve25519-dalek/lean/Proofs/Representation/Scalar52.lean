@@ -5,7 +5,7 @@ Authors: Alessandro D'Angelo, Oliver Butterley
 -/
 module
 public import Curve25519Dalek.Types
-public import ForHumans.Specs.Representation.Array
+public import Proofs.Representation.Array
 public section
 
 /-! # The value of a `Scalar52`, its limb bounds and the Montgomery radix (audited) -/

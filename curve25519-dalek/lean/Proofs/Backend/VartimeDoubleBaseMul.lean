@@ -5,8 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Curve25519.Edwards.Basepoint
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Edwards
-public import ForHumans.Specs.Representation.Scalar
+public import Proofs.Representation.Edwards
+public import Proofs.Representation.Scalar
 import Proofs.Backend.GetSelectedBackend
 import Proofs.Backend.Serial.ScalarMul.VartimeDoubleBase.Mul
 public section

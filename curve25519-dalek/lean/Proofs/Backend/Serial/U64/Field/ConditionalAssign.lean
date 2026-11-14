@@ -7,7 +7,7 @@ module
 public import Curve25519Dalek.Funs
 import Proofs.Helpers.Array
 public import Proofs.Curve25519.Basic
-public import ForHumans.Specs.Representation.FieldElement51
+public import Proofs.Representation.FieldElement51
 public import Proofs.External.Subtle
 public section
 

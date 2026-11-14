@@ -6,8 +6,8 @@ module
 public import Proofs.Helpers.Represents
 public import Proofs.Curve25519.Ristretto.Encoding
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Edwards
-public import ForHumans.Specs.Representation.Ristretto
+public import Proofs.Representation.Edwards
+public import Proofs.Representation.Array
 import Proofs.Curve25519.Ristretto.Even
 import Proofs.Backend.Serial.U64.Constants.Ed25519BasepointPoint
 import Proofs.Backend.Serial.U64.Constants.Ed25519BasepointTable

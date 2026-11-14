@@ -8,9 +8,9 @@ public import Proofs.Curve25519.Edwards.Encoding
 public import Proofs.Curve25519.Montgomery
 public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Edwards
+public import Proofs.Representation.Edwards
 public import ForHumans.Specs.Representation.Scalar
-public import ForHumans.Specs.Representation.ScalarMul
+public import Proofs.Representation.ScalarMul
 public import Proofs.External.Subtle
 public import ForHumans.Specs.Representation.Iterator
 import Proofs
@@ -34,9 +34,9 @@ scalars as points; the original panics unless both inputs' `size_hint`s are exac
 basepoint tables for the configurations without precomputed tables.
 
 Definitions used: `EdwardsPoint.toPoint`, `OnCurve`, `IsBounded`, the tables' `point`, `IsTable`,
-`IsBounded` (`ForHumans/Specs/Representation/Edwards.lean`), the precomputations' `points`,
-`IsValid`, `IsBounded` (`ForHumans/Specs/Representation/ScalarMul.lean`), `Scalar.asNat`,
-`HalfWidthScalar.asNat` (`ForHumans/Specs/Representation/Scalar.lean`), `Array.toVector`
+`IsBounded` (`Proofs/Representation/Edwards.lean`), the precomputations' `points`,
+`IsValid`, `IsBounded` (`Proofs/Representation/ScalarMul.lean`), `Scalar.asNat`,
+`HalfWidthScalar.asNat` (`Proofs/Representation/Scalar.lean`), `Array.toVector`
 (`Proofs/ToAeneas/Array.lean`), `Iterator.Yields`, `IntoIterator.Yields`
 (`Proofs/ToAeneas/Iterator.lean`), `curve25519.encode`, `decodeLenient`
 (`Proofs/Curve25519/Edwards/Encoding.lean`), `curve25519.basepoint`

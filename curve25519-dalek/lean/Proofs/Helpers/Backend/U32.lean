@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.FieldElement2625
+public import Proofs.Representation.FieldElement2625
 public import Proofs.Helpers.Backend
 public import Proofs.Helpers.ToField2625
 import Proofs.Backend.Serial.U32.Constants.EdwardsD

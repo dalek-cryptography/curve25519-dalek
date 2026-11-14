@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Curve25519Dalek.Funs
 public import Proofs.Curve25519.Edwards.Encoding
-public import ForHumans.Specs.Representation.Edwards
+public import Proofs.Representation.Edwards
 import Proofs.Backend.Serial.U64.Field.ToBytes
 import Proofs.Field.IsNegative
 import Proofs.Helpers.Array

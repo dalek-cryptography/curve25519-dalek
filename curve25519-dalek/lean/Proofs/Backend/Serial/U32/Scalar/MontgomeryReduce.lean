@@ -5,7 +5,7 @@ Authors: András Némedy Varga, Wojciech Aleksander Wołoszyn
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar29
+public import Proofs.Representation.Scalar29
 public import Proofs.Curve25519.Basic
 public import Mathlib.Tactic.LinearCombination
 import Proofs.Backend.Serial.U32.Constants.L

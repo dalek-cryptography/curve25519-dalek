@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Aeneas.Std.Scalar.Notations
 public import Proofs.Curve25519.Edwards.Basic
-public import ForHumans.Specs.Representation.Array
+public import Proofs.Representation.Array
 import Proofs.Helpers.AsInt
 public section
 

@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar29
+public import Proofs.Representation.Scalar29
 import Mathlib.Tactic.LinearCombination
 import Proofs.Backend.Serial.U32.Scalar.Index
 import Proofs.Backend.Serial.U32.Scalar.IndexMut

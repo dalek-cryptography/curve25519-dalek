@@ -6,8 +6,8 @@ module
 public import Proofs.Helpers.Represents
 public import Proofs.Curve25519.Edwards.Basepoint
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Edwards
-public import ForHumans.Specs.Representation.Scalar
+public import Proofs.Representation.Edwards
+public import Proofs.Representation.Scalar
 import Proofs.Helpers.Iterator
 public import Proofs.Helpers.Naf
 import Proofs.Helpers.StepSpecs

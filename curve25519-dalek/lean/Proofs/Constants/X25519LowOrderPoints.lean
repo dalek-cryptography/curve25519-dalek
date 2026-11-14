@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Montgomery
+public import Proofs.Representation.Montgomery
 import all Proofs.Curve25519.Basic
 import all ForHumans.Specs.Constants
 import Proofs.Curve25519.X25519.LowOrder

@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.FieldElement2625
-public import ForHumans.Specs.Representation.FieldElement51
+public import Proofs.Representation.FieldElement2625
+public import Proofs.Representation.FieldElement51
 import Proofs.Field.CtEq
 public import Proofs.Curve25519.Basic
 public section

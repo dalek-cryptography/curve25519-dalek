@@ -4,11 +4,16 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Alessandro D'Angelo, Oliver Butterley
 -/
 module
-public import Curve25519Dalek.Types
 public import ForHumans.Specs.Representation.Array
+public import Curve25519Dalek.Types
 public section
 
-/-! # The value of a `Scalar` (audited) -/
+/-! # The value of a `Scalar`
+
+A `Scalar` is 32 bytes; `asNat` is their little-endian value. A `HalfWidthScalar` likewise, with
+16 bytes. -/
+
+open Aeneas.Std
 
 open Aeneas.Std
 
@@ -22,15 +27,6 @@ def scalar.Scalar.asNat (self : scalar.Scalar) : ℕ :=
 /-- The natural number encoded by a `HalfWidthScalar` (a `Scalar` meant to be below `2^128`). -/
 def scalar.HalfWidthScalar.asNat (self : scalar.HalfWidthScalar) : ℕ :=
   scalar.Scalar.asNat self
-
-theorem scalar.Scalar.asNat_def (self : scalar.Scalar) : self.asNat = self.bytes.asNat 8 := by
-  unfold scalar.Scalar.asNat
-  rfl
-
-theorem scalar.HalfWidthScalar.asNat_def (self : scalar.HalfWidthScalar) :
-    self.asNat = scalar.Scalar.asNat self := by
-  unfold scalar.HalfWidthScalar.asNat
-  rfl
 
 /-- Needed for `a[i]!` on arrays of scalars; the default (the zero scalar) is never observed for
 in-range indices. -/

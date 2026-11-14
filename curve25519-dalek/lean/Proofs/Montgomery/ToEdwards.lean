@@ -6,8 +6,8 @@ module
 public import Proofs.Curve25519.Edwards.Encoding
 public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Edwards
-public import ForHumans.Specs.Representation.Montgomery
+public import Proofs.Representation.Edwards
+public import Proofs.Representation.Montgomery
 public import Proofs.Field.Invert
 import Proofs.Backend.Serial.U64.Field.MinusOne
 import Proofs.Backend.Serial.U64.Field.FromBytes

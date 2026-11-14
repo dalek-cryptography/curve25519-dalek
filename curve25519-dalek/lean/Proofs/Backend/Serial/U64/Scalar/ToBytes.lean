@@ -5,9 +5,9 @@ Authors: Markus Dablander, Lim Jin Xing, Oliver Butterley
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar52
-public import ForHumans.Specs.Representation.FieldElement51
-public import ForHumans.Specs.Representation.Scalar
+public import Proofs.Representation.Scalar52
+public import Proofs.Representation.FieldElement51
+public import Proofs.Representation.Scalar
 import Proofs.Helpers.Montgomery
 import Mathlib.Tactic.LinearCombination
 import Proofs.Helpers.Limbs

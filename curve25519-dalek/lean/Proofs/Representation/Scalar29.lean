@@ -5,7 +5,7 @@ Authors: András Némedy Varga, Wojciech Aleksander Wołoszyn
 -/
 module
 public import Curve25519Dalek.Types
-public import ForHumans.Specs.Representation.Array
+public import Proofs.Representation.Array
 public section
 
 /-! # The value of a `Scalar29`, its limb bounds and the Montgomery radix (audited) -/

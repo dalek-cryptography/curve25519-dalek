@@ -5,7 +5,7 @@ Authors: Alessandro D'Angelo, Oliver Butterley
 -/
 module
 public import Proofs.Curve25519.Basic
-public import ForHumans.Specs.Representation.Scalar52
+public import Proofs.Representation.Scalar52
 import Proofs.Helpers.Radix
 public section
 

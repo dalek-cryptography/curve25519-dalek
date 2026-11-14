@@ -1,0 +1,28 @@
+/-
+Copyright 2025 The Beneficial AI Foundation. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Alessandro D'Angelo, Oliver Butterley
+-/
+module
+public import ForHumans.Specs.Representation.Scalar
+import all ForHumans.Specs.Representation.Scalar
+public import Curve25519Dalek.Types
+public import Proofs.Representation.Array
+public section
+
+/-! # The value of a `Scalar` (audited) -/
+
+open Aeneas.Std
+
+namespace Curve25519Dalek
+
+theorem scalar.Scalar.asNat_def (self : scalar.Scalar) : self.asNat = self.bytes.asNat 8 := by
+  unfold scalar.Scalar.asNat
+  rfl
+
+theorem scalar.HalfWidthScalar.asNat_def (self : scalar.HalfWidthScalar) :
+    self.asNat = scalar.Scalar.asNat self := by
+  unfold scalar.HalfWidthScalar.asNat
+  rfl
+
+end Curve25519Dalek

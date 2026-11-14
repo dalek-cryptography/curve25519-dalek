@@ -6,7 +6,7 @@ module
 public import Proofs.Helpers.Represents
 public import Proofs.Curve25519.Edwards.Basepoint
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Edwards
+public import Proofs.Representation.Edwards
 import all Proofs.Curve25519.Basic
 import all ForHumans.Specs.Constants
 import Proofs.Helpers.TableCertificate2625

@@ -5,7 +5,7 @@ Authors: Markus Dablander
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.FieldElement2625
+public import Proofs.Representation.FieldElement2625
 import Proofs.Backend.Serial.U32.Field.FromLimbs
 import Proofs.Helpers.FieldElement2625
 public import Proofs.Curve25519.Basic

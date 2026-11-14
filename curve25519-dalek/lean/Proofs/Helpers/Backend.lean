@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Curve25519.Basic
 public import Proofs.Curve25519.Ristretto.Encoding.Defs
-public import ForHumans.Specs.Representation.Array
+public import Proofs.Representation.Array
 public import ForHumans.Specs.External.Subtle.Contract
 public import Aeneas
 public section

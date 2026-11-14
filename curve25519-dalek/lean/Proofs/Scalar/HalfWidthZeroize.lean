@@ -5,8 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar
-public import ForHumans.Specs.Representation.Scalar52
+public import Proofs.Representation.Scalar
+public import Proofs.Representation.Scalar52
 public import Proofs.External.Zeroize.Instances
 import Mathlib.Tactic.ReduceModChar
 import Proofs.External.Subtle

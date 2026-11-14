@@ -5,7 +5,7 @@ Authors: Oliver Butterley
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.FieldElement51
+public import Proofs.Representation.FieldElement51
 import Aeneas.Tactic.Solver.ScalarTac.Init
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.ReduceModChar

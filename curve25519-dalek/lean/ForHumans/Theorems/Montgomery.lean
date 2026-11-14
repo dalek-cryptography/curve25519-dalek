@@ -7,9 +7,9 @@ public import Proofs.Curve25519.Edwards.Encoding
 public import Proofs.Curve25519.Montgomery
 public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Edwards
+public import Proofs.Representation.Edwards
 public import ForHumans.Specs.Representation.Iterator
-public import ForHumans.Specs.Representation.Montgomery
+public import Proofs.Representation.Montgomery
 public import ForHumans.Specs.Representation.Scalar
 public import Proofs.External.Subtle
 import Proofs
@@ -28,12 +28,12 @@ curve25519, which computes `u(n • Q)` on the curve or its twist (`MontgomeryMo
 configurations' copies are generated in `Specs/Montgomery/`.
 
 Definitions used: `Array.toVector` (`Proofs/ToAeneas/Array.lean`), `Scalar.asNat`
-(`ForHumans/Specs/Representation/Scalar.lean`), `EdwardsPoint.toPoint`, `OnCurve`, `IsBounded`
-(`ForHumans/Specs/Representation/Edwards.lean`), `Iterator.Yields`
+(`Proofs/Representation/Scalar.lean`), `EdwardsPoint.toPoint`, `OnCurve`, `IsBounded`
+(`Proofs/Representation/Edwards.lean`), `Iterator.Yields`
 (`Proofs/ToAeneas/Iterator.lean`), `curve25519.decodeUCoordinate`, `encodeUCoordinate`, `X25519`
 (`Proofs/Curve25519/X25519.lean`), `montgomeryBasepoint` (`Proofs/Curve25519/Montgomery.lean`),
 `curve25519.decodeLenient` (`Proofs/Curve25519/Edwards/Encoding.lean`), `montgomery.ladder`,
-`montgomery.ladderBits` (`ForHumans/Specs/Representation/Montgomery.lean`), `subtle.Choice.IsValid`
+`montgomery.ladderBits` (`Proofs/Representation/Montgomery.lean`), `subtle.Choice.IsValid`
 (`Subtle/`).
 
 Not translated: `Debug`, `Hash`, the `serde` impls. -/

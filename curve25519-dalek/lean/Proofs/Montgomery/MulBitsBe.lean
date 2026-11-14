@@ -6,7 +6,7 @@ module
 public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
 public import Proofs.ToAeneas.Iterator
-public import ForHumans.Specs.Representation.Montgomery
+public import Proofs.Representation.Montgomery
 import Proofs.Backend.Serial.U64.Field.FromBytes
 import Proofs.Backend.Serial.U64.Field.One
 import Proofs.Helpers.Target

@@ -5,7 +5,7 @@ Authors: Liao Zhang
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.FieldElement51
+public import Proofs.Representation.FieldElement51
 import Proofs.Backend.Serial.U64.Field.FromLimbs
 public import Proofs.Curve25519.Basic
 public import Proofs.Helpers.ByteValues

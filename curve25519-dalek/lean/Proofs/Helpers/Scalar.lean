@@ -3,8 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import ForHumans.Specs.Representation.Scalar52
-public import ForHumans.Specs.Representation.Scalar
+public import Proofs.Representation.Scalar52
+public import Proofs.Representation.Scalar
 import Proofs.Helpers.AsNat
 public import Proofs.Curve25519.Basic
 import Proofs.Helpers.Montgomery

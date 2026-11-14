@@ -6,9 +6,9 @@ module
 public import Proofs.Curve25519.Edwards.Encoding
 public import Proofs.Curve25519.Ristretto.Map
 public import Proofs.Curve25519.Montgomery
-public import ForHumans.Specs.Representation.Edwards
-public import ForHumans.Specs.Representation.Montgomery
-public import ForHumans.Specs.Representation.Ristretto
+public import Proofs.Representation.Edwards
+public import Proofs.Representation.Montgomery
+public import Proofs.Representation.Array
 public import Proofs.ToAeneas.Array
 public section
 

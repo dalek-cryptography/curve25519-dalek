@@ -5,7 +5,7 @@ Authors: Hoang Le Truong
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.FieldElement51
+public import Proofs.Representation.FieldElement51
 import Proofs.Backend.Serial.U64.Field.Negate
 public import Proofs.Curve25519.Basic
 public section

@@ -5,7 +5,7 @@ Authors: Oliver Butterley, Hoang Le Truong
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.FieldElement51
+public import Proofs.Representation.FieldElement51
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.Limbs
 public import Proofs.Curve25519.Basic

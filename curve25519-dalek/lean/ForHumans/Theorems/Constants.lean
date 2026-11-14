@@ -9,11 +9,11 @@ public import Proofs.Curve25519.Edwards.Torsion
 public import Proofs.Curve25519.Montgomery
 public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Edwards
+public import Proofs.Representation.Edwards
 public import Proofs.Curve25519.Ristretto.Encoding
-public import ForHumans.Specs.Representation.Montgomery
-public import ForHumans.Specs.Representation.Ristretto
-public import ForHumans.Specs.Representation.ScalarMul
+public import Proofs.Representation.Montgomery
+public import ForHumans.Specs.Representation.Array
+public import Proofs.Representation.ScalarMul
 import Proofs
 public section
 
@@ -33,7 +33,7 @@ Not restated here: `BASEPOINT_ORDER` (`pub(crate)`, proved in
 `Proofs/Constants/BasepointOrder.lean`).
 
 Definitions used: Mathlib's `Even`, `EdwardsPoint.toPoint`, `OnCurve`, `IsBounded`, the tables'
-`point`, `IsTable` and `IsBounded` (`ForHumans/Specs/Representation/Edwards.lean`),
+`point`, `IsTable` and `IsBounded` (`Proofs/Representation/Edwards.lean`),
 `curve25519.basepoint` (`Proofs/Curve25519/Edwards/Basepoint.lean`), `curve25519.encode`
 (`Proofs/Curve25519/Edwards/Encoding.lean`), `curve25519.torsion8`
 (`Proofs/Curve25519/Edwards/Torsion.lean`), `curve25519.montgomeryBasepoint`

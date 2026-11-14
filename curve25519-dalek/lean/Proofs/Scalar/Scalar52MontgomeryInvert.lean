@@ -6,7 +6,7 @@ Authors: Markus Dablander, Alessandro D'Angelo
 module
 public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar52
+public import Proofs.Representation.Scalar52
 import Proofs.Curve25519.Prime
 import Mathlib.FieldTheory.Finite.Basic
 import Proofs.Backend.Serial.U64.Scalar.MontgomeryMul

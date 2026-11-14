@@ -5,7 +5,7 @@ Authors: Hoang Le Truong
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar52
+public import Proofs.Representation.Scalar52
 import Proofs.Backend.Serial.U64.Constants.RR
 import Proofs.Helpers.Scalar52
 import Proofs.Backend.Serial.U64.Scalar.MontgomeryReduce

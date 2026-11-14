@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Ristretto
+public import Proofs.Representation.Array
 public import ForHumans.Specs.External.Subtle.Contract
 import Proofs.Ristretto.AsBytes
 import Proofs.Helpers.Array

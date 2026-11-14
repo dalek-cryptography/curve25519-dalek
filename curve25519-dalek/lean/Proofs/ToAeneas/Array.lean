@@ -3,8 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import ForHumans.Specs.Representation.Array
-import all ForHumans.Specs.Representation.Array
+public import Proofs.Representation.Array
+import all Proofs.Representation.Array
 public import Aeneas.Std.Array.Array
 public section
 

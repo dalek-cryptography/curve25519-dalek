@@ -5,7 +5,7 @@ Authors: Oliver Butterley, Markus Dablander
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar
+public import Proofs.Representation.Scalar
 import Mathlib.Tactic.ReduceModChar
 import Proofs.Helpers.Array
 import Proofs.Helpers.AsInt

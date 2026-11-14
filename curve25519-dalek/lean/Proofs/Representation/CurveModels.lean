@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Proofs.Curve25519.Edwards.Basic
-public import ForHumans.Specs.Representation.FieldElement2625
-public import ForHumans.Specs.Representation.FieldElement51
+public import Proofs.Representation.FieldElement2625
+public import Proofs.Representation.FieldElement51
 public section
 
 /-! # The point structures of `curve_models.rs` (audited)

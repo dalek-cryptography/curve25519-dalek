@@ -6,7 +6,7 @@ Authors: Markus Dablander, Hoang Le Truong, Oliver Butterley
 module
 public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar52
+public import Proofs.Representation.Scalar52
 import Proofs.Curve25519.Prime
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Tactic.LinearCombination

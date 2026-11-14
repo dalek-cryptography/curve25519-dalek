@@ -6,8 +6,8 @@ Authors: Oliver Butterley, Markus Dablander
 module
 public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar
-public import ForHumans.Specs.Representation.Scalar52
+public import Proofs.Representation.Scalar
+public import Proofs.Representation.Scalar52
 public import Proofs.External.Subtle
 import Proofs.Helpers.Array
 import Proofs.External.Subtle.Instances

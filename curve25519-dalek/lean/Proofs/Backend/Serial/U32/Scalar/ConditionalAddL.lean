@@ -5,7 +5,7 @@ Authors: Markus Dablander, Oliver Butterley
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Scalar29
+public import Proofs.Representation.Scalar29
 public import Proofs.Curve25519.Basic
 import Proofs.Backend.Serial.U32.Constants.L
 import Proofs.Backend.Serial.U32.Scalar.Index

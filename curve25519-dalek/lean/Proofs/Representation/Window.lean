@@ -3,7 +3,7 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import ForHumans.Specs.Representation.CurveModels
+public import Proofs.Representation.CurveModels
 public section
 
 /-! # The lookup tables of `window.rs` (audited)
@@ -11,20 +11,20 @@ public section
 A table is an array of Niels points (`LookupTable T = Array T 8`, `LookupTableRadix32/64/128/256
 T = Array T 16/32/64/128`, `NafLookupTable5 T = Array T 8`, `NafLookupTable8 T = Array T 64`),
 generic in the entry type `T`. The entry types are the four Niels structures of
-`ForHumans.Specs.Representation.CurveModels` (`ProjectiveNielsPoint`, `AffineNielsPoint`, in all
+`Proofs.Representation.CurveModels` (`ProjectiveNielsPoint`, `AffineNielsPoint`, in all
 four configurations); the class `PointRepr` collects their `OnCurve`, `toPoint` and `LimbsLt`, so
 that each table predicate is stated once: `….LimbsLt n t` says that every limb of every entry is `<
 2^n`.
 
-The basepoint tables of `edwards.rs` are in `ForHumans.Specs.Representation.Edwards`, the
-precomputations of `scalar_mul` in `ForHumans.Specs.Representation.ScalarMul`. -/
+The basepoint tables of `edwards.rs` are in `Proofs.Representation.Edwards`, the
+precomputations of `scalar_mul` in `Proofs.Representation.ScalarMul`. -/
 
 open Aeneas Aeneas.Std
 
 namespace Curve25519Dalek
 
 /-- A dalek point structure usable as a table entry: its curve predicate, the point it
-represents and its limb bounds (the definitions of `ForHumans.Specs.Representation.CurveModels`, as
+represents and its limb bounds (the definitions of `Proofs.Representation.CurveModels`, as
 instance fields). -/
 class PointRepr (T : Type) where
   /-- The entry represents a point (`OnCurve` of its structure). -/

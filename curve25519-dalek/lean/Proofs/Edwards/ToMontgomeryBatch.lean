@@ -5,8 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Curve25519.Montgomery
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.Edwards
-public import ForHumans.Specs.Representation.Montgomery
+public import Proofs.Representation.Edwards
+public import Proofs.Representation.Montgomery
 public import Proofs.Field.InvertBatchAlloc
 import Proofs.Helpers.EdwardsMontgomery
 import Proofs.Helpers.StepSpecs

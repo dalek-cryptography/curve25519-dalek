@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.CurveModels
+public import Proofs.Representation.CurveModels
 import Proofs.Backend.Serial.CurveModels.ProjectiveNielsIdentity
 public import Proofs.Helpers.Coords
 public section

@@ -3,13 +3,14 @@
 
 curve25519-dalek is translated in four configurations (`x86_64-tables`, `i686-tables`,
 `x86_64-no-tables`, `i686-no-tables`), and their specs are the same up to names. Each
-`ForHumans/Theorems/<File>.lean` states its per-configuration items once, for `x86_64-tables`, between the lines
+`<File>.lean` in `ForHumans/Theorems/` and `ForHumans/Specs/Representation/` states its
+per-configuration items once, for `x86_64-tables`, between the lines
 
     -- BEGIN PER-CONFIG
     -- END PER-CONFIG
 
-and this script writes the other three configurations' copies to `ForHumans/Theorems/<File>/<Config>.lean` by
-renaming. Lines between `-- BEGIN TABLES-ONLY` and `-- END TABLES-ONLY` (items that exist only with
+and this script writes the other three configurations' copies to `<File>/<Config>.lean` next to it
+by renaming. Lines between `-- BEGIN TABLES-ONLY` and `-- END TABLES-ONLY` (items that exist only with
 precomputed tables) are dropped from the `no-tables` copies.
 
     scripts/gen-config-specs.py           # regenerate
@@ -20,7 +21,9 @@ import pathlib
 import re
 import sys
 
-SPECS = pathlib.Path(__file__).resolve().parent.parent / "ForHumans" / "Theorems"
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+# Directories whose files may be templates.
+DIRS = [ROOT / "ForHumans" / "Theorems", ROOT / "ForHumans" / "Specs" / "Representation"]
 TEMPLATE = "x86_64-tables"
 CONFIGS = {
     "i686-tables": "I686Tables",
@@ -61,8 +64,8 @@ def generate(template: pathlib.Path, config: str) -> str:
         + imports
         # Config names differ in length: the template's lines fit, the copies' may not.
         + ["", "set_option linter.style.longLine false", ""]
-        + [f"/-! # `{template.stem}` theorems for `{config}`, generated from"
-           f" `ForHumans/Theorems/{template.name}` -/", ""]
+        + [f"/-! # `{template.stem}` for `{config}`, generated from"
+           f" `{template.relative_to(ROOT)}` -/", ""]
         + preamble
         + [""]
         + body
@@ -76,11 +79,11 @@ def generate(template: pathlib.Path, config: str) -> str:
 def main() -> int:
     check = "--check" in sys.argv[1:]
     stale = []
-    for template in sorted(SPECS.glob("*.lean")):
+    for template in sorted(t for d in DIRS for t in d.glob("*.lean")):
         if "-- BEGIN PER-CONFIG" not in template.read_text():
             continue
         for config, stem in CONFIGS.items():
-            target = SPECS / template.stem / f"{stem}.lean"
+            target = template.parent / template.stem / f"{stem}.lean"
             text = generate(template, config)
             if target.exists() and target.read_text() == text:
                 continue
@@ -89,7 +92,7 @@ def main() -> int:
                 target.parent.mkdir(exist_ok=True)
                 target.write_text(text)
     for target in stale:
-        print(f"{'out of date' if check else 'wrote'}: {target.relative_to(SPECS.parent)}")
+        print(f"{'out of date' if check else 'wrote'}: {target.relative_to(ROOT)}")
     return 1 if check and stale else 0
 
 

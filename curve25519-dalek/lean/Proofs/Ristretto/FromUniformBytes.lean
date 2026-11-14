@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Curve25519Dalek.Funs
 public import Proofs.Curve25519.Ristretto.Map
-public import ForHumans.Specs.Representation.Edwards
+public import Proofs.Representation.Edwards
 import Proofs.Backend.Serial.U64.Field.FromBytes
 import Proofs.Helpers.Array
 import Proofs.Helpers.AsNat

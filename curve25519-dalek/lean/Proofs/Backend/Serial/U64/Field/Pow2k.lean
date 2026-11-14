@@ -5,7 +5,7 @@ Authors: Markus Dablander, Hoang Le Truong, Oliver Butterley
 -/
 module
 public import Curve25519Dalek.Funs
-public import ForHumans.Specs.Representation.FieldElement51
+public import Proofs.Representation.FieldElement51
 import Proofs.Backend.Serial.U64.Field.SquareLimbs
 public import Proofs.Curve25519.Basic
 public section

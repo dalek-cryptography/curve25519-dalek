@@ -15,7 +15,8 @@ on:
       - 'curve25519-dalek/lean/Curve25519Dalek/**'
       - 'curve25519-dalek/lean/translation.json'
       - 'curve25519-dalek/lean/scripts/aeneas-*.sh'
-      - 'curve25519-dalek/lean/lakefile.toml'
+      - 'curve25519-dalek/lean/AENEAS_VERSION.txt'
+      - 'curve25519-dalek/lean/lakefile.lean'
       - 'curve25519-dalek/lean/lean-toolchain'
       - '.github/workflows/aeneas-translation.yml'
   pull_request:
@@ -43,7 +44,7 @@ jobs:
 
       - name: Read pinned Aeneas release
         id: aeneas
-        run: echo "tag=$(awk -F'"' '/^\[/{name=""} /^name = /{name=$2} /^rev = / && name=="aeneas"{print $2}' lakefile.toml)" >> "$GITHUB_OUTPUT"
+        run: echo "tag=$(tr -d '[:space:]' < AENEAS_VERSION.txt)" >> "$GITHUB_OUTPUT"
 
       # Binaries + the nightly (with rustc-dev) charon-driver needs; changes only with the pin.
       # Restore and save are split so the cache is saved even when the freshness check fails.

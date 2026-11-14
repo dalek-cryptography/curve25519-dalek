@@ -15,7 +15,7 @@ Specifications of curve25519-dalek's public API in Lean 4, proved against an
 The elliptic curves and their models (`Curve`, `MontgomeryModel`, `TwistedEdwardsModel`), the
 projective, extended and completed coordinates with their formulas, and the Montgomery ladder come
 from the [`EllipticCurve`](https://github.com/Beneficial-AI-Foundation/elliptic-curve) library, a
-dependency in `lakefile.toml`.
+dependency in `lakefile.lean`. The Aeneas version is pinned in `AENEAS_VERSION.txt`.
 
 To trust the result, read `Specs` (except the generated `Specs/<File>/` copies, which
 `scripts/gen-config-specs.py --check` keeps equal to their templates up to the configuration's

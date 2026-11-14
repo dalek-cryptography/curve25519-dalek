@@ -7,8 +7,8 @@ cd "$(dirname "$0")/.."
 root=$PWD
 repo=$(cd ../.. && pwd)
 
-TAG=$(awk -F'"' '/^\[/{name=""} /^name = /{name=$2} /^rev = / && name=="aeneas"{print $2}' lakefile.toml)
-: "${TAG:?no aeneas rev in lakefile.toml}"
+TAG=$(tr -d '[:space:]' < AENEAS_VERSION.txt)
+: "${TAG:?AENEAS_VERSION.txt is empty}"
 [[ "$(.aeneas/aeneas -version 2>/dev/null)" == "aeneas $TAG" ]] \
     || { echo "run ./scripts/aeneas-install.sh: .aeneas/ is not $TAG" >&2; exit 1; }
 

@@ -64,6 +64,16 @@ jobs:
             lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('curve25519-dalek/lean/lean-toolchain', 'curve25519-dalek/lean/lake-manifest.json') }}-
             lean-build-${{ runner.os }}-${{ runner.arch }}-
 
+      - name: Pinned Aeneas matches AENEAS_VERSION.txt
+        run: |
+          want=$(tr -d '[:space:]' < AENEAS_VERSION.txt)
+          got=$(python3 -c "import json;print([p['inputRev'] for p in json.load(open('lake-manifest.json'))['packages'] if p['name']=='aeneas'][0])")
+          if [ "$want" != "$got" ]; then
+            echo "AENEAS_VERSION.txt is '$want' but lake-manifest.json pins '$got'."
+            echo "Refresh it with: rm -rf .lake/config && lake update aeneas"
+            exit 1
+          fi
+
       # The per-configuration copies in `Specs/` are generated from their templates.
       - name: Check generated specs
         run: python3 scripts/gen-config-specs.py --check

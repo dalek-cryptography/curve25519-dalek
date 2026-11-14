@@ -1,4 +1,5 @@
 module
+public import Specs.Basic
 public import Specs.Constants
 public import Specs.Constants.I686NoTables
 public import Specs.Constants.I686Tables

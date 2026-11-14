@@ -63,17 +63,3 @@ globs = ["Specs.*"]
 name = "Proofs"
 srcDir = "curve25519-dalek/lean"
 globs = ["Proofs.*"]
-
-# A fast X25519 in core Lean only (not audited), compiled to native code for `native_decide`.
-# Not a default target: built by `Curve25519Test`.
-[[lean_lib]]
-name = "Curve25519Fast"
-srcDir = "."
-precompileModules = true
-
-# Tests by evaluation (not audited): RFC 7748's iterated X25519 test with `native_decide`, which
-# trusts the compiler (`Lean.ofReduceBool`). Not a default target: `lake build Curve25519Test`.
-[[lean_lib]]
-name = "Curve25519Test"
-srcDir = "."
-leanOptions = { weak.linter.style.native = false }

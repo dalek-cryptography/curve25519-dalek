@@ -11,7 +11,6 @@ Specifications of curve25519-dalek's public API in Lean 4, proved against an
 | `Proofs` | The proofs, one file per Rust item. |
 | `Curve25519` | Curve25519's models and facts, and the Niels coordinates, encodings and Ristretto relation of the implementation, independent of dalek (repository root); `Curve25519/ToEllipticCurve` stages generic results for the `EllipticCurve` library, and `Curve25519/Proofs` holds unaudited kernel certificates. |
 | `Subtle`, `Zeroize` | Models of the `subtle` and `zeroize` crates (repository root). |
-| `Curve25519Fast`, `Curve25519Test` | Not audited and not built by default (`lake build Curve25519Test`): a fast X25519 proved equal to `x25519Nat`, and RFC 7748's iterated X25519 test after 1,000 and 1,000,000 iterations, evaluated by `native_decide`, which trusts the Lean compiler (repository root). |
 
 The elliptic curves and their models (`Curve`, `MontgomeryModel`, `TwistedEdwardsModel`), the
 projective, extended and completed coordinates with their formulas, and the Montgomery ladder come

@@ -282,6 +282,7 @@ public import Proofs.Helpers.TableCertificate2625
 public import Proofs.Helpers.Target
 public import Proofs.Helpers.ToField
 public import Proofs.Helpers.ToField2625
+public import Proofs.Helpers.Variants
 public import Proofs.Helpers.Vec
 public import Proofs.Helpers.Window
 public import Proofs.Helpers.ZMod

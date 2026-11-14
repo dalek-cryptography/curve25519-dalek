@@ -3,6 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import ForHumans.Specs.Edwards
+import all ForHumans.Specs.Edwards
 public import Proofs.Curve25519.Bytes
 public import Proofs.Curve25519.Edwards.Basepoint
 import Proofs.Curve25519.ToEllipticCurve.TwistedEdwards.Lemmas
@@ -34,10 +36,6 @@ open TwistedEdwardsModel
 
 /-- `p < 2 ^ 255`: the `y`-coordinate fits in `255` bits. -/
 instance instFactPLtTwoPow255 : Fact (p < 2 ^ 255) := ⟨p_lt_two_pow_255⟩
-
-/-- RFC 8032 §5.1.2: the encoding of a point of edwards25519, `y.val + 2 ^ 255 * sign(x)`. -/
-noncomputable abbrev encodeNat : edwards.Point → ℕ :=
-  TwistedEdwardsModel.encode edwards 255
 
 /-- RFC 8032 §5.1.3, strict: the decoding of a `256`-bit value, `none` unless it is the encoding
 of a point (`decodeNat_eq_some_iff_encodeNat_eq`). -/
@@ -102,18 +100,6 @@ theorem edwards_xSq (y : ZMod p) : edwards.xSq y = (y ^ 2 - 1) / (d * y ^ 2 + 1)
   rw [edwards_a_eq_neg_one, edwards_d, sub_neg_eq_add]
 
 /-! ### The lenient decoder -/
-
-open scoped Classical in
-/-- Lenient decoding of the value `n` of the 32 bytes: `y := n % 2^255` reduced modulo `p`,
-sign `s := n / 2^255`; `none` if no point has this `y`, otherwise the point `(x, y)` with `x = 0`
-or `x` of sign `s`. Unlike the strict `decodeNat`, it accepts `y ≥ p` (reduced) and `x = 0` with
-`s = 1`; on canonical inputs the two agree (`decodeLenientNat_eq_decodeNat_of_canonical`). This is
-dalek's `CompressedEdwardsY::decompress`. -/
-noncomputable def decodeLenientNat (n : ℕ) : Option edwards.Point :=
-  if h : ∃ x : ZMod p, edwards.Equation x ((n % 2 ^ 255 : ℕ) : ZMod p) ∧
-      (x = 0 ∨ (x.IsNeg ↔ n / 2 ^ 255 = 1)) then
-    some ⟨Classical.choose h, ((n % 2 ^ 255 : ℕ) : ZMod p), (Classical.choose_spec h).1⟩
-  else none
 
 open scoped Classical in
 theorem decodeLenientNat_def (n : ℕ) :
@@ -247,17 +233,9 @@ theorem decodeLenientNat_eq_some_of_sign {n : ℕ} {x : ZMod p} (hneg : ¬ x.IsN
 
 /-! ### RFC 8032 on 32-byte strings -/
 
-/-- RFC 8032 §5.1.2: the 32-byte encoding of a point, the little-endian bytes of `encodeNat`. -/
-@[expose] noncomputable def encode (P : edwards.Point) : Vector UInt8 32 :=
-  encodeLittleEndian 32 (encodeNat P)
-
 /-- RFC 8032 §5.1.3: the strict decoding of 32 bytes, `decodeNat` of their value. -/
 @[expose] noncomputable def decode (b : Vector UInt8 32) : Option edwards.Point :=
   decodeNat (decodeLittleEndian b)
-
-/-- The lenient decoding of 32 bytes, `decodeLenientNat` of their value. -/
-@[expose] noncomputable def decodeLenient (b : Vector UInt8 32) : Option edwards.Point :=
-  decodeLenientNat (decodeLittleEndian b)
 
 /-- `b` is the encoding of `P` iff its value is `encodeNat P`. -/
 theorem eq_encode_iff (b : Vector UInt8 32) (P : edwards.Point) :

@@ -3,6 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import ForHumans.Specs.Bytes
+import all ForHumans.Specs.Bytes
 public import Mathlib.Data.Nat.Digits.Lemmas
 public section
 
@@ -16,14 +18,6 @@ inverse (`encodeLittleEndian_decodeLittleEndian`), so a byte string is determine
 (`decodeLittleEndian_injective`). -/
 
 namespace curve25519
-
-/-- RFC 7748 `decodeLittleEndian`: the value of the bytes, `b[0] + 256 · b[1] + …`. -/
-@[expose] def decodeLittleEndian {n : ℕ} (b : Vector UInt8 n) : ℕ :=
-  Nat.ofDigits 256 (b.toList.map UInt8.toNat)
-
-/-- The `n` little-endian bytes of `x` modulo `256 ^ n`: byte `i` is `x / 256 ^ i % 256`. -/
-@[expose] def encodeLittleEndian (n : ℕ) (x : ℕ) : Vector UInt8 n :=
-  Vector.ofFn fun i => UInt8.ofNat (x / 256 ^ i.val)
 
 private theorem ofDigits_lt {l : List ℕ} (h : ∀ d ∈ l, d < 256) :
     Nat.ofDigits 256 l < 256 ^ l.length := by

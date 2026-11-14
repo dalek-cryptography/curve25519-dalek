@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Proofs.Curve25519.X25519
-public import Proofs.ToAeneas.Array
+public import ForHumans.Specs.Representation.Array
 public import ForHumans.Specs.Representation.FieldElement2625
 public import ForHumans.Specs.Representation.FieldElement51
 public section

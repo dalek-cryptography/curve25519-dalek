@@ -3,6 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import ForHumans.Specs.Field
+import all ForHumans.Specs.Field
 public import Proofs.Curve25519.Edwards.Basic
 import Proofs.Curve25519.Proofs.Ristretto.Algebra
 import Mathlib.Tactic.LinearCombination
@@ -33,15 +35,6 @@ namespace curve25519
 open TwistedEdwardsModel
 
 /-! ### `SQRT_RATIO_M1` -/
-
-open scoped Classical in
-/-- RFC 9496 §4.2 `SQRT_RATIO_M1(u, v)`: `(true, r)` with `v r² = u` when `u / v` is a square,
-`(false, r)` with `v r² = √-1 · u` otherwise, `r` non-negative in both cases; `(u = 0, 0)` when
-`v = 0`. Exposed; see `sqrtRatioM1_spec`. -/
-@[expose] noncomputable def sqrtRatioM1 (u v : ZMod p) : Bool × ZMod p :=
-  if v = 0 then (decide (u = 0), 0)
-  else if h : IsSquare (u / v) then (true, (Classical.choose h).abs)
-  else (false, (Classical.choose (isSquare_sqrtM1_mul_of_not_isSquare h)).abs)
 
 theorem sqrtRatioM1_of_v_eq_zero {u v : ZMod p} (hv : v = 0) :
     sqrtRatioM1 u v = (decide (u = 0), 0) := by
@@ -199,77 +192,6 @@ theorem decodeRepNat_equation (s r : ZMod p)
     edwards.Equation (2 * s * (r * (1 + s ^ 2))).abs
       ((1 - s ^ 2) * (r * (r * (1 + s ^ 2)) * (-(d * (1 - s ^ 2) ^ 2) - (1 + s ^ 2) ^ 2))) :=
   Proofs.decodeNat_equation s r hr
-
-/-- RFC 9496 §4.3.1, the decoding of a representative: `none` unless `s < p` and `s` is
-non-negative; then with `u1 = 1 - s²`, `u2 = 1 + s²`, `v = -(d u1²) - u2²`,
-`(wasSquare, r) = SQRT_RATIO_M1(1, v u2²)`, `x = |2 s r u2|`, `y = u1 r (r u2) v`: `none` if
-`¬ wasSquare`, `x y` is negative or `y = 0`, else `some (x, y)`. Hidden; see
-`decodeRepNat_eq_some_iff`, `decodeRepNat_eq_none_iff` in `Proofs.Curve25519.Ristretto.Encoding`. -/
-noncomputable def decodeRepNat (s : ℕ) : Option edwards.Point :=
-  if s < p ∧ ¬ (s : ZMod p).IsNeg then
-    let s' : ZMod p := s
-    let u1 := 1 - s' ^ 2
-    let u2 := 1 + s' ^ 2
-    let v := -(d * u1 ^ 2) - u2 ^ 2
-    let r := (sqrtRatioM1 1 (v * u2 ^ 2)).2
-    let denX := r * u2
-    let denY := r * denX * v
-    let x := (2 * s' * denX).abs
-    let y := u1 * denY
-    if h : (sqrtRatioM1 1 (v * u2 ^ 2)).1 = true ∧ ¬ (x * y).IsNeg ∧ y ≠ 0 then
-      some ⟨x, y, decodeRepNat_equation s' r (sqrtRatioM1_one_of_fst h.1)⟩
-    else none
-  else none
-
-/-- RFC 9496 §4.3.2, the encoding of a representative, on the extended coordinates
-`(x, y, 1, x y)` of the point: with `u1 = (1 + y)(1 - y)`, `u2 = x y`,
-`(_, invsqrt) = SQRT_RATIO_M1(1, u1 u2²)`, `den1 = invsqrt u1`, `den2 = invsqrt u2`,
-`zInv = den1 den2 t`, `rotate = IS_NEGATIVE(t zInv)`; `(x', y', denInv) = (y √-1, x √-1,
-den1 · INVSQRT_A_MINUS_D)` if `rotate` else `(x, y, den2)`; `y'' = -y'` if `x' zInv` is negative
-else `y'`; the result is `|denInv (1 - y'')|` as a natural number below `p`. Hidden; see
-`encodeRepNat_eq`. -/
-noncomputable def encodeRepNat (P : edwards.Point) : ℕ :=
-  let x := P.x
-  let y := P.y
-  let t := x * y
-  let u1 := (1 + y) * (1 - y)
-  let u2 := x * y
-  let invsqrt := (sqrtRatioM1 1 (u1 * u2 ^ 2)).2
-  let den1 := invsqrt * u1
-  let den2 := invsqrt * u2
-  let zInv := den1 * den2 * t
-  let ix := x * sqrtM1
-  let iy := y * sqrtM1
-  let enchanted := den1 * invsqrtAMinusD
-  let rotate := (t * zInv).IsNeg
-  let x' := if rotate then iy else x
-  let y' := if rotate then ix else y
-  let denInv := if rotate then enchanted else den2
-  let y'' := if (x' * zInv).IsNeg then -y' else y'
-  (denInv * (1 - y'')).abs.val
-
-/-- `encodeRepNat P`, RFC 9496 §4.3.2 spelled out. -/
-theorem encodeRepNat_eq (P : edwards.Point) : encodeRepNat P =
-    let x := P.x
-    let y := P.y
-    let t := x * y
-    let u1 := (1 + y) * (1 - y)
-    let u2 := x * y
-    let invsqrt := (sqrtRatioM1 1 (u1 * u2 ^ 2)).2
-    let den1 := invsqrt * u1
-    let den2 := invsqrt * u2
-    let zInv := den1 * den2 * t
-    let ix := x * sqrtM1
-    let iy := y * sqrtM1
-    let enchanted := den1 * invsqrtAMinusD
-    let rotate := (t * zInv).IsNeg
-    let x' := if rotate then iy else x
-    let y' := if rotate then ix else y
-    let denInv := if rotate then enchanted else den2
-    let y'' := if (x' * zInv).IsNeg then -y' else y'
-    (denInv * (1 - y'')).abs.val := by
-  unfold encodeRepNat
-  rfl
 
 end Ristretto
 

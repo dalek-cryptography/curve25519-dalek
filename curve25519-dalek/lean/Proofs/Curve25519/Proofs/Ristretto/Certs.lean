@@ -3,8 +3,10 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Proofs.Curve25519.Ristretto.Encoding.Defs
+public import ForHumans.Specs.Ristretto
+import all ForHumans.Specs.Ristretto
 import all Proofs.Curve25519.Basic
+import all ForHumans.Specs.Constants
 public section
 
 /-! # Certificates for the ristretto255 encoding of the basepoint (not audited)
@@ -61,7 +63,7 @@ root `r` of `(1 + y)(1 - y)(x y)²` given: what the kernel evaluates. Exposed, f
 theorem encodeRepNat_of_coords {x y r : ZMod p} {n : ℕ} (P : edwards.Point) (hx : P.x = x)
     (hy : P.y = y) (hr : (1 + y) * (1 - y) * (x * y) ^ 2 * r ^ 2 = 1) (hneg : ¬ r.IsNeg)
     (hc : encodeRepOf x y r = n) : Ristretto.encodeRepNat P = n := by
-  rw [Ristretto.encodeRepNat_eq]
+  unfold Ristretto.encodeRepNat
   dsimp only
   rw [hx, hy, sqrtRatioM1_one_eq_of_mul_sq_eq hr hneg]
   exact hc

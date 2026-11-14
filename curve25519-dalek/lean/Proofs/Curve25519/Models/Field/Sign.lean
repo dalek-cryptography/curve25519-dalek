@@ -3,6 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import ForHumans.Specs.Field
+import all ForHumans.Specs.Field
 public import Mathlib.Algebra.Field.ZMod
 public section
 
@@ -23,18 +25,6 @@ follows from `2 ≠ 0`: `mod_two_eq_one_of_two_ne_zero`,
 namespace ZMod
 
 variable {p : ℕ}
-
-/-- `x` is *negative* (RFC 8032 §5.1.2, RFC 9496 §4.1): its canonical representative
-`x.val ∈ [0, p)` is odd. -/
-@[expose] def IsNeg (x : ZMod p) : Prop :=
-  x.val % 2 = 1
-
-instance instDecidableIsNeg (x : ZMod p) : Decidable x.IsNeg :=
-  inferInstanceAs (Decidable (x.val % 2 = 1))
-
-/-- `|x|` (RFC 9496's `CT_ABS`): `-x` if `x` is negative, `x` otherwise. -/
-@[expose] def abs (x : ZMod p) : ZMod p :=
-  if x.IsNeg then -x else x
 
 /-! ### Parity -/
 

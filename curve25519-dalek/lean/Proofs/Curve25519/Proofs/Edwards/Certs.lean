@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Curve25519.Edwards.Basic
 import all Proofs.Curve25519.Basic
+import all ForHumans.Specs.Constants
 import Proofs.Curve25519.ToEllipticCurve.TwistedEdwards.Formulas.Lemmas
 public section
 

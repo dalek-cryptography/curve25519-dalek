@@ -3,10 +3,13 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import ForHumans.Specs.Ristretto
+import all ForHumans.Specs.Ristretto
 public import Proofs.Curve25519.Bytes
 public import Proofs.Curve25519.Edwards.Basepoint
 public import Proofs.Curve25519.Ristretto.Encoding.Defs
 import all Proofs.Curve25519.Ristretto.Encoding.Defs
+import all ForHumans.Specs.Field
 import Proofs.Curve25519.Proofs.Ristretto.Algebra
 import Proofs.Curve25519.Proofs.Ristretto.Certs
 import Proofs.Curve25519.Ristretto.Even
@@ -40,6 +43,39 @@ contains one (`exists_canon`), and when `x y ≠ 0` it is the only representativ
 non-negative (`eq_of_rel_of_canonical`); `encodeRepNat` of any representative is `|D (1 - y_C)|`
 with `D² (1 - y_C²) = 1` for the canonical `(x_C, y_C)` (the `rotate`/sign machinery of §4.3.2), and
 `decodeRepNat` returns the canonical representative. -/
+
+namespace curve25519
+
+open TwistedEdwardsModel
+
+namespace Ristretto
+
+/-- `encodeRepNat P`, RFC 9496 §4.3.2 spelled out. -/
+theorem encodeRepNat_eq (P : edwards.Point) : encodeRepNat P =
+    let x := P.x
+    let y := P.y
+    let t := x * y
+    let u1 := (1 + y) * (1 - y)
+    let u2 := x * y
+    let invsqrt := (sqrtRatioM1 1 (u1 * u2 ^ 2)).2
+    let den1 := invsqrt * u1
+    let den2 := invsqrt * u2
+    let zInv := den1 * den2 * t
+    let ix := x * sqrtM1
+    let iy := y * sqrtM1
+    let enchanted := den1 * invsqrtAMinusD
+    let rotate := (t * zInv).IsNeg
+    let x' := if rotate then iy else x
+    let y' := if rotate then ix else y
+    let denInv := if rotate then enchanted else den2
+    let y'' := if (x' * zInv).IsNeg then -y' else y'
+    (denInv * (1 - y'')).abs.val := by
+  unfold encodeRepNat
+  rfl
+
+end Ristretto
+
+end curve25519
 
 namespace curve25519
 
@@ -491,15 +527,6 @@ theorem encodeRepNat_basepoint : encodeRepNat curve25519.basepoint =
   Proofs.encodeRepNat_of_basepoint_coords _ basepoint_x_eq basepoint_y_eq
 
 /-! ### RFC 9496 on 32-byte strings -/
-
-/-- RFC 9496 §4.3.2 `Encode` of a representative: the 32 little-endian bytes of
-`encodeRepNat`. -/
-@[expose] noncomputable def encodeRep (P : edwards.Point) : Vector UInt8 32 :=
-  encodeLittleEndian 32 (encodeRepNat P)
-
-/-- RFC 9496 §4.3.1 `Decode` of 32 bytes to a representative: `decodeRepNat` of their value. -/
-@[expose] noncomputable def decodeRep (b : Vector UInt8 32) : Option edwards.Point :=
-  decodeRepNat (decodeLittleEndian b)
 
 theorem encodeRepNat_lt_two_pow_256 (P : edwards.Point) : encodeRepNat P < 256 ^ 32 :=
   (encodeRepNat_lt P).trans (p_lt_two_pow_255.trans (by norm_num))

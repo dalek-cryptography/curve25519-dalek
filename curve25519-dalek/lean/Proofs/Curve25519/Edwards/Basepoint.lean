@@ -3,6 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import ForHumans.Specs.Edwards
+import all ForHumans.Specs.Edwards
 public import Proofs.Curve25519.Edwards.Basic
 import Proofs.Curve25519.Proofs.Edwards.Certs
 import Mathlib.Tactic.LinearCombination
@@ -22,12 +24,6 @@ theorem basepoint_equation : edwards.Equation
     15112221349535400772501151409588531511454012693041857206046113283949847762202
     46316835694926478169428394003475163141307993866256225615783033603165251855960 :=
   Proofs.basepoint_equation
-
-/-- The basepoint of edwards25519: `y = 4/5`, `x` even (RFC 8032 §5.1). -/
-noncomputable def basepoint : edwards.Point :=
-  ⟨15112221349535400772501151409588531511454012693041857206046113283949847762202,
-    46316835694926478169428394003475163141307993866256225615783033603165251855960,
-    basepoint_equation⟩
 
 theorem basepoint_def : basepoint =
     ⟨15112221349535400772501151409588531511454012693041857206046113283949847762202,

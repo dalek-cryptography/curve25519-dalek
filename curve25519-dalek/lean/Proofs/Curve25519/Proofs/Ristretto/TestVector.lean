@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Curve25519.Ristretto.Encoding
 import all Proofs.Curve25519.Basic
+import all ForHumans.Specs.Constants
 import Proofs.Curve25519.Proofs.Edwards.Certs
 import Proofs.Curve25519.Proofs.Ristretto.Certs
 public section

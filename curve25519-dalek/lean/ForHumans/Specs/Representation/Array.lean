@@ -33,3 +33,11 @@ theorem Aeneas.Std.Array.asInt_def {ty : IScalarTy} {n : Usize} (bits : ℕ)
     a.asInt bits = (a.val.map (·.val)).foldr (fun d acc => d + 2 ^ bits * acc) 0 := by
   unfold Aeneas.Std.Array.asInt
   rfl
+
+namespace Aeneas.Std
+
+/-- The bytes of a byte array, as a `Vector UInt8`. -/
+@[expose] def Array.toVector {n : Usize} (a : Array U8 n) : Vector UInt8 n.val :=
+  ⟨(a.val.map fun x => UInt8.ofBitVec x.bv).toArray, by simp⟩
+
+end Aeneas.Std

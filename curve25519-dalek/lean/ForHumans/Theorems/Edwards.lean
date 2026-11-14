@@ -12,7 +12,7 @@ public import ForHumans.Specs.Representation.Edwards
 public import ForHumans.Specs.Representation.Scalar
 public import ForHumans.Specs.Representation.ScalarMul
 public import Proofs.External.Subtle
-public import Proofs.ToAeneas.Iterator
+public import ForHumans.Specs.Representation.Iterator
 import Proofs
 import Proofs.External.Zeroize.Instances
 public section

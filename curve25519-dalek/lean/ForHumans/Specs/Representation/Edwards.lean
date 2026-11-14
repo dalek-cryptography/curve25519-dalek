@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import ForHumans.Specs.Representation.Window
-public import Proofs.ToAeneas.Array
+public import ForHumans.Specs.Representation.Array
 public section
 
 /-! # `edwards.rs`: points, the compressed form, the lenient decoder, the basepoint tables

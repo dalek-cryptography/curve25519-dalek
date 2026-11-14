@@ -3,6 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import ForHumans.Specs.Representation.Array
+import all ForHumans.Specs.Representation.Array
 public import Aeneas.Std.Array.Array
 public section
 
@@ -17,10 +19,6 @@ functions of the RFCs, independently of Aeneas.
 Staged here for upstreaming to Aeneas: it depends only on Aeneas's `Array` and `U8`. -/
 
 namespace Aeneas.Std
-
-/-- The bytes of a byte array, as a `Vector UInt8`. -/
-@[expose] def Array.toVector {n : Usize} (a : Array U8 n) : Vector UInt8 n.val :=
-  ⟨(a.val.map fun x => UInt8.ofBitVec x.bv).toArray, by simp⟩
 
 /-- The byte array with the given bytes. -/
 @[expose] def Array.ofVector {n : Usize} (v : Vector UInt8 n.val) : Array U8 n :=

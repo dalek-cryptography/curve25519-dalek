@@ -3,6 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import ForHumans.Specs.Models
+import all ForHumans.Specs.Models
 public import EllipticCurve.TwistedEdwards.Group
 public import Mathlib.Algebra.Module.Torsion.Basic
 public section
@@ -22,10 +24,5 @@ universe u
 namespace TwistedEdwardsModel
 
 variable {F : Type u} [Field F] (E : TwistedEdwardsModel F) [E.IsComplete]
-
-/-- Two points are related iff they differ by 4-torsion: the equality test of Decaf/Ristretto
-representatives. -/
-@[expose] def Rel (P Q : E.Point) : Prop :=
-  P - Q ∈ AddSubgroup.torsionBy E.Point 4
 
 end TwistedEdwardsModel

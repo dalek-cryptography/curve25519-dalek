@@ -7,6 +7,7 @@ public import Proofs.Curve25519.Edwards.Basepoint
 public import Curve25519Dalek.Funs
 public import ForHumans.Specs.Representation.Edwards
 import all Proofs.Curve25519.Basic
+import all ForHumans.Specs.Constants
 import Proofs.Backend.Serial.U32.Field.FromLimbs
 import Proofs.Helpers.Coords
 import Proofs.Helpers.FieldElement2625

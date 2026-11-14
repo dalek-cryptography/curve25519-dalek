@@ -9,6 +9,7 @@ public import Proofs.Curve25519.Montgomery
 public import ForHumans.Specs.Representation.Edwards
 public import ForHumans.Specs.Representation.Montgomery
 public import ForHumans.Specs.Representation.Ristretto
+public import Proofs.ToAeneas.Array
 public section
 
 /-! # The values of byte strings (proof helper, not audited)

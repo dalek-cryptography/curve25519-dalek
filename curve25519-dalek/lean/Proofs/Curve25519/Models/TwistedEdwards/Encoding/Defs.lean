@@ -3,6 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import ForHumans.Specs.Models
+import all ForHumans.Specs.Models
 public import Proofs.Curve25519.Models.Field.Sign
 public import Proofs.Curve25519.ToEllipticCurve.TwistedEdwards.Defs
 public section
@@ -33,11 +35,6 @@ needed. -/
 namespace TwistedEdwardsModel
 
 variable {p : ℕ} [Fact p.Prime] (E : TwistedEdwardsModel (ZMod p)) (bits : ℕ)
-
-/-- RFC 8032 §5.1.2: the encoding of `(x, y)` is `y.val` with the sign of `x` (`1` iff `x.val`
-is odd) in bit `bits`. -/
-@[expose] def encode (P : E.Point) : ℕ :=
-  P.y.val + 2 ^ bits * (if P.x.IsNeg then 1 else 0)
 
 open scoped Classical in
 /-- RFC 8032 §5.1.3, strict: `y := n % 2 ^ bits`, sign `s := n / 2 ^ bits`; `none` if

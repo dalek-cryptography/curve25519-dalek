@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Curve25519Dalek.Types
 public import ForHumans.Specs.Representation.Array
-public import Proofs.ToAeneas.Array
+public import ForHumans.Specs.Representation.Array
 public section
 
 /-! # `ristretto.rs`: the compressed form (audited)

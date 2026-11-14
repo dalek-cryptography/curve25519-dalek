@@ -3,6 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import ForHumans.Specs.Montgomery
+import all ForHumans.Specs.Montgomery
 public import Proofs.Curve25519.Edwards.Order
 public import Proofs.Curve25519.X25519
 import Proofs.Curve25519.Proofs.Edwards.Certs
@@ -40,22 +42,6 @@ namespace curve25519
 open MontgomeryModel TwistedEdwardsModel
 
 /-! ### The equivalence `edwards ≃+ montgomery` -/
-
-/-- `montgomery = (A, 1)` is the rescaling of the Montgomery model `(A, sqrtNegAAddTwo²)` of
-`edwards` by `sqrtNegAAddTwo`. -/
-theorem montgomery_B_mul_sqrtNegAAddTwo_sq :
-    montgomery.B * (sqrtNegAAddTwo : ZMod p) ^ 2 = edwards.toMontgomery.B := by
-  rw [montgomery_B, edwards_toMontgomery_B, one_mul]
-
-/-- The group isomorphism `edwards.Point ≃+ montgomery.Point` of RFC 7748 §4.1,
-`(x, y) ↦ ((1 + y) / (1 - y), sqrtNegAAddTwo · (1 + y) / ((1 - y) x))`. Hidden; characterised by
-`u_edwardsToMontgomery`, `v_edwardsToMontgomery`, `edwardsToMontgomery_of_y_eq_one`,
-`edwardsToMontgomery_of_y_eq_neg_one`, `edwardsToMontgomery_symm_x`,
-`edwardsToMontgomery_symm_y`. -/
-noncomputable def edwardsToMontgomery : edwards.Point ≃+ montgomery.Point :=
-  edwards.toMontgomeryEquiv.trans
-    (rescaleEquiv edwards.toMontgomery montgomery edwards_toMontgomery_A.symm sqrtNegAAddTwo
-      sqrtNegAAddTwo_ne_zero montgomery_B_mul_sqrtNegAAddTwo_sq)
 
 private theorem edwardsToMontgomery_apply (P : edwards.Point) :
     edwardsToMontgomery P =
@@ -113,10 +99,6 @@ theorem edwardsToMontgomery_symm_y (Q : montgomery.Point) (hQ : Q ≠ 0) :
     toMontgomeryEquiv_symm_y _ ((AddEquiv.map_ne_zero_iff _).mpr hQ), u_rescaleEquiv_symm]
 
 /-! ### The Montgomery basepoint -/
-
-/-- The basepoint of `montgomery`: the image of `basepoint`, with `u = 9` (RFC 7748 §4.1). -/
-noncomputable def montgomeryBasepoint : montgomery.Point :=
-  edwardsToMontgomery basepoint
 
 theorem montgomeryBasepoint_def : montgomeryBasepoint = edwardsToMontgomery basepoint := by
   unfold montgomeryBasepoint

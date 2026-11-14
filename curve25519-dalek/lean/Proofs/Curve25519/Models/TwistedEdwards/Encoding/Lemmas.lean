@@ -6,6 +6,7 @@ module
 public import Proofs.Curve25519.Models.TwistedEdwards.Encoding.Defs
 public import Proofs.Curve25519.ToEllipticCurve.TwistedEdwards.Lemmas
 import all Proofs.Curve25519.Models.TwistedEdwards.Encoding.Defs
+import all ForHumans.Specs.Models
 import Mathlib.Tactic.Ring
 public section
 

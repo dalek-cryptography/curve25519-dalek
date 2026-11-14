@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Curve25519.Basic
 import all Proofs.Curve25519.Basic
+import all ForHumans.Specs.Constants
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.ReduceModChar
 public section

@@ -3,6 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import ForHumans.Specs.Curves
+import all ForHumans.Specs.Curves
 public import Proofs.Curve25519.Basic
 public import Proofs.Curve25519.Prime
 public import Proofs.Curve25519.Squares
@@ -30,9 +32,6 @@ namespace curve25519
 
 /-! ### The twisted Edwards model -/
 
-/-- The twisted Edwards model `-x² + y² = 1 + d x² y²` of curve25519 (edwards25519). -/
-noncomputable def edwards : TwistedEdwardsModel (ZMod p) := ⟨a, d⟩
-
 theorem edwards_def : edwards = ⟨a, d⟩ := by
   unfold edwards
   rfl
@@ -57,9 +56,6 @@ instance instIsCompleteEdwards : edwards.IsComplete where
   not_isSquare_d := edwards_d ▸ not_isSquare_d
 
 /-! ### The Montgomery model -/
-
-/-- The Montgomery model `v² = u³ + A u² + u` of curve25519. -/
-def montgomery : MontgomeryModel (ZMod p) := ⟨(A : ZMod p), 1⟩
 
 theorem montgomery_def : montgomery = ⟨(A : ZMod p), 1⟩ := by
   unfold montgomery
@@ -115,5 +111,17 @@ theorem toCurve_montgomery : montgomery.toCurve = curve := by
   exact (MontgomeryModel.toCurve_eq_of_B_eq_mul_sq montgomery edwards.toMontgomery
     edwards_toMontgomery_A sqrtNegAAddTwo_ne_zero
     (by rw [edwards_toMontgomery_B, montgomery_B, one_mul])).symm
+
+end curve25519
+
+namespace curve25519
+
+open MontgomeryModel TwistedEdwardsModel
+
+/-- `montgomery = (A, 1)` is the rescaling of the Montgomery model `(A, sqrtNegAAddTwo²)` of
+`edwards` by `sqrtNegAAddTwo`. -/
+theorem montgomery_B_mul_sqrtNegAAddTwo_sq :
+    montgomery.B * (sqrtNegAAddTwo : ZMod p) ^ 2 = edwards.toMontgomery.B := by
+  rw [montgomery_B, edwards_toMontgomery_B, one_mul]
 
 end curve25519

@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Curve25519.X25519
 import all Proofs.Curve25519.Basic
+import all ForHumans.Specs.Constants
 public section
 
 /-! # The RFC 7748 test vectors for X25519 (not audited)

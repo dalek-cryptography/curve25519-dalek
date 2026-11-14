@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.Curve25519.Ristretto.Encoding
 import all Proofs.Curve25519.Basic
+import all ForHumans.Specs.Constants
 public section
 
 /-! # The RFC 9496 §A.2 and §A.4 test vectors (not audited)

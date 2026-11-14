@@ -9,7 +9,7 @@ public import Proofs.Curve25519.Montgomery
 public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
 public import ForHumans.Specs.Representation.Edwards
-public import Proofs.ToAeneas.Iterator
+public import ForHumans.Specs.Representation.Iterator
 public import ForHumans.Specs.Representation.Montgomery
 public import ForHumans.Specs.Representation.Scalar
 public import Proofs.External.Subtle

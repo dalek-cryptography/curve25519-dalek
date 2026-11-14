@@ -3,6 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import ForHumans.Specs.Edwards
+import all ForHumans.Specs.Edwards
 public import Proofs.Curve25519.Edwards.Basic
 import Proofs.Curve25519.Proofs.Edwards.Certs
 import Proofs.Curve25519.ToEllipticCurve.TwistedEdwards.Lemmas
@@ -31,13 +33,6 @@ theorem torsion8_equation : edwards.Equation
     14399317868200118260347934320527232580618823971194345261214217575416788799818
     55188659117513257062467267217118295137698188065244968500265048394206261417927 :=
   Proofs.torsion8_equation
-
-/-- The point of order `8` with `2 • T = (-√-1, 0)` and `x` non-negative (`eq_torsion8_iff`):
-dalek's `EIGHT_TORSION[1]`. -/
-noncomputable def torsion8 : edwards.Point :=
-  ⟨14399317868200118260347934320527232580618823971194345261214217575416788799818,
-    55188659117513257062467267217118295137698188065244968500265048394206261417927,
-    torsion8_equation⟩
 
 theorem torsion8_def : torsion8 =
     ⟨14399317868200118260347934320527232580618823971194345261214217575416788799818,

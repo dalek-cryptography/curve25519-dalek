@@ -3,6 +3,8 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
+public import ForHumans.Specs.X25519
+import all ForHumans.Specs.X25519
 public import Proofs.Curve25519.Bytes
 public import Proofs.Curve25519.Edwards.Basic
 import Mathlib.FieldTheory.Finite.Basic
@@ -37,14 +39,22 @@ unfolds too: the test vectors import `Proofs.Curve25519.Basic` with `import all`
 
 namespace curve25519
 
-/-! ### Clamping and coordinate coding -/
+/-- RFC 7748 `decodeUCoordinate` on the little-endian value `n` of the 32 bytes: mask the bit
+`255`, then reduce modulo `p`. -/
+@[expose] def decodeU (n : ℕ) : ZMod p :=
+  ((n % 2 ^ 255 : ℕ) : ZMod p)
 
-/-- RFC 7748 `decodeScalar25519` on the little-endian value `k` of the 32 bytes: clear the
-bits `0`, `1`, `2` and `255`, set the bit `254`. Matches dalek's `clamp_integer`
-(`clamp_add_mod_eight`). Its properties are the lemmas that follow: `clamp_lt`,
-`two_pow_254_le_clamp`, `clamp_mod_eight`, `clamp_add_mod_eight`, `clamp_mod_two_pow`. -/
-@[expose] def clamp (k : ℕ) : ℕ :=
-  2 ^ 254 + 8 * (k % 2 ^ 254 / 8)
+/-- RFC 7748 §5 `X25519(k, u)` on the little-endian values of the two 32-byte strings: the
+Montgomery ladder of curve25519 over 255 bits on the clamped scalar and the decoded
+coordinate, encoded. -/
+@[expose] def x25519Nat (k u : ℕ) : ℕ :=
+  encodeU (montgomery.ladder 255 (clamp k) (decodeU u))
+
+end curve25519
+
+namespace curve25519
+
+/-! ### Clamping and coordinate coding -/
 
 theorem clamp_lt (k : ℕ) : clamp k < 2 ^ 255 := by
   unfold clamp
@@ -67,15 +77,6 @@ theorem clamp_add_mod_eight (k : ℕ) : clamp k + k % 8 = 2 ^ 254 + k % 2 ^ 254 
 theorem clamp_mod_two_pow (k : ℕ) : clamp (k % 2 ^ 256) = clamp k := by
   unfold clamp
   omega
-
-/-- RFC 7748 `decodeUCoordinate` on the little-endian value `n` of the 32 bytes: mask the bit
-`255`, then reduce modulo `p`. -/
-@[expose] def decodeU (n : ℕ) : ZMod p :=
-  ((n % 2 ^ 255 : ℕ) : ZMod p)
-
-/-- RFC 7748 `encodeUCoordinate`: the canonical representative below `p`. -/
-@[expose] def encodeU (u : ZMod p) : ℕ :=
-  u.val
 
 theorem encodeU_lt (u : ZMod p) : encodeU u < p :=
   ZMod.val_lt u
@@ -116,35 +117,10 @@ theorem toU_eq_mul_pow_sub_two (P : MontgomeryModel.XZ (ZMod p)) :
 
 /-! ### X25519 -/
 
-/-- RFC 7748 §5 `X25519(k, u)` on the little-endian values of the two 32-byte strings: the
-Montgomery ladder of curve25519 over 255 bits on the clamped scalar and the decoded
-coordinate, encoded. -/
-@[expose] def x25519Nat (k u : ℕ) : ℕ :=
-  encodeU (montgomery.ladder 255 (clamp k) (decodeU u))
-
 theorem x25519Nat_lt (k u : ℕ) : x25519Nat k u < p :=
   encodeU_lt _
 
 /-! ### RFC 7748 on 32-byte strings -/
-
-/-- RFC 7748 `decodeScalar25519`: the clamped little-endian value of the 32 bytes. -/
-@[expose] def decodeScalar25519 (k : Vector UInt8 32) : ℕ :=
-  clamp (decodeLittleEndian k)
-
-/-- RFC 7748 `decodeUCoordinate`: the little-endian value of the 32 bytes with bit `255`
-masked, as a field element (the RFC processes non-canonical values as reduced modulo `p`). -/
-@[expose] def decodeUCoordinate (u : Vector UInt8 32) : ZMod p :=
-  ((decodeLittleEndian u % 2 ^ 255 : ℕ) : ZMod p)
-
-/-- RFC 7748 `encodeUCoordinate`: the 32 little-endian bytes of the canonical representative
-(the RFC reduces its integer argument modulo `p`; here the argument is the field element). -/
-@[expose] def encodeUCoordinate (u : ZMod p) : Vector UInt8 32 :=
-  encodeLittleEndian 32 (encodeU u)
-
-/-- RFC 7748 §5 `X25519(k, u)` on 32-byte strings: the Montgomery ladder of `montgomery` over
-`255` bits on the clamped scalar and the decoded coordinate, encoded. -/
-@[expose] def X25519 (k u : Vector UInt8 32) : Vector UInt8 32 :=
-  encodeUCoordinate (montgomery.ladder 255 (decodeScalar25519 k) (decodeUCoordinate u))
 
 /-- The decoded coordinate is `decodeU` of the value of the bytes. -/
 theorem decodeUCoordinate_eq (u : Vector UInt8 32) :

@@ -4,6 +4,9 @@ public import Specs.Constants.I686NoTables
 public import Specs.Constants.I686Tables
 public import Specs.Constants.X86_64NoTables
 public import Specs.Edwards
+public import Specs.Edwards.I686NoTables
+public import Specs.Edwards.I686Tables
+public import Specs.Edwards.X86_64NoTables
 public import Specs.Montgomery
 public import Specs.Montgomery.I686NoTables
 public import Specs.Montgomery.I686Tables

@@ -31,6 +31,8 @@ public section
 
 /-! # `Constants` specs for `x86_64-no-tables`, generated from `Specs/Constants.lean` -/
 
+set_option linter.style.longLine false
+
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel Curve25519Dalek
 
 namespace Specs.constants.«x86_64-no-tables»

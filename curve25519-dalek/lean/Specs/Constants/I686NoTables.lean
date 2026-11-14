@@ -31,6 +31,8 @@ public section
 
 /-! # `Constants` specs for `i686-no-tables`, generated from `Specs/Constants.lean` -/
 
+set_option linter.style.longLine false
+
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel Curve25519Dalek
 
 namespace Specs.constants.«i686-no-tables»

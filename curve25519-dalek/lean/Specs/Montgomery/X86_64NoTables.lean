@@ -33,6 +33,8 @@ public section
 
 /-! # `Montgomery` specs for `x86_64-no-tables`, generated from `Specs/Montgomery.lean` -/
 
+set_option linter.style.longLine false
+
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 Curve25519Dalek
 open Curve25519Dalek.montgomery (MontgomeryPoint)
 open Curve25519Dalek.scalar (Scalar)

@@ -6,7 +6,7 @@ module
 public import Proofs.Curve25519.Ristretto.Encoding.Defs
 public import Proofs.Curve25519.X25519
 public import Proofs.Representation.FieldElement51
-public import ForHumans.Specs.External.Subtle.Contract
+public import Proofs.External.Subtle.Contract
 import Proofs.Helpers.Array
 import Proofs.Helpers.AsNat
 import Proofs.Helpers.ZMod

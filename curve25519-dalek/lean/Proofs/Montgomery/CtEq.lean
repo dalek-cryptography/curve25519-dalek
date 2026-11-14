@@ -6,7 +6,7 @@ module
 public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
 public import Proofs.Representation.Montgomery
-public import ForHumans.Specs.External.Subtle.Contract
+public import Proofs.External.Subtle.Contract
 import Proofs.Backend.Serial.U64.Field.FromBytes
 import Proofs.Field.CtEq
 import Proofs.Helpers.Target

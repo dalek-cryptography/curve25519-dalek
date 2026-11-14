@@ -1,5 +1,5 @@
 module
-public import ForHumans.Specs.External.Zeroize.Contract
+public import Proofs.External.Zeroize.Contract
 public import Proofs.External.Zeroize.Lemmas
 public import Proofs.External.Zeroize.Instances
 

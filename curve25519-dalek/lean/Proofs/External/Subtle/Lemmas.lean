@@ -3,7 +3,7 @@ Copyright 2025 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import ForHumans.Specs.External.Subtle.Contract
+public import Proofs.External.Subtle.Contract
 @[expose] public section
 open Aeneas Aeneas.Std Result Aeneas.Std.WP
 open Curve25519Dalek

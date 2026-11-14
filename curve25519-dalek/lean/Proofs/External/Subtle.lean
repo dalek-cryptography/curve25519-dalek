@@ -1,6 +1,6 @@
 module
 public import ForHumans.Specs.External.Subtle.Types
-public import ForHumans.Specs.External.Subtle.Contract
+public import Proofs.External.Subtle.Contract
 public import Proofs.External.Subtle.Lemmas
 public import Proofs.External.Subtle.Instances
 

@@ -427,6 +427,12 @@ theorem basepoint (t : RistrettoBasepointTable) (ht : t.IsTable) (ht' : t.IsBoun
     basepoint t ⦃ (r : RistrettoPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ :=
   basepoint_spec t ht' ht
 
+/-- `Clone`: the table itself. -/
+theorem clone (t : RistrettoBasepointTable) :
+    ristretto.RistrettoBasepointTable.«i686-tables».Insts.CoreCloneClone.clone t
+      ⦃ (r : RistrettoBasepointTable) => r = t ⦄ :=
+  ristretto.RistrettoBasepointTable.«i686-tables».Insts.CoreCloneClone.clone_spec t
+
 end RistrettoBasepointTable
 
 namespace RistrettoPoint

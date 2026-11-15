@@ -23,7 +23,9 @@ Everything a reviewer needs is in `ForHumans/`, about 4,000 lines. Nothing else 
 3. **`ForHumans/Theorems/`** (2,200 lines): one file per Rust file, a theorem per public item:
    `Scalar`, `Edwards`, `Montgomery`, `Ristretto`, `Constants`, `Traits`. `Axioms.lean` checks that
    the theorems use no other axioms, `Definitions.lean` that they use no definition outside
-   `ForHumans/Specs/` (and the translation and the libraries).
+   `ForHumans/Specs/` (and the translation and the libraries), `Coverage.lean` that every function
+   returning a point, a table, a precomputation or a scalar has a theorem (its exemptions, with
+   their reasons, are worth reading).
 4. Optionally, **`ForHumans/TestVectors.lean`** (470 lines, mostly hexadecimal): the definitions
    of `ForHumans/Specs/` on the test vectors of RFC 8032, RFC 7748 and RFC 9496, written as the
    RFCs write them, to compare line by line with the RFCs.

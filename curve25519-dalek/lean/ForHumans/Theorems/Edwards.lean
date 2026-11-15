@@ -573,6 +573,12 @@ theorem basepoint (t : EdwardsBasepointTable) (ht : t.IsTable) (ht' : t.IsBounde
     basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
   apply basepoint_spec <;> assumption
 
+/-- `Clone`: the table itself. -/
+theorem clone (t : EdwardsBasepointTable) :
+    edwards.EdwardsBasepointTable.«x86_64-tables».Insts.CoreCloneClone.clone t
+      ⦃ (r : EdwardsBasepointTable) => r = t ⦄ :=
+  edwards.EdwardsBasepointTable.«x86_64-tables».Insts.CoreCloneClone.clone_spec t
+
 /-- `BasepointTable::mul_base`, `Mul<&Scalar> for &EdwardsBasepointTable`
 and its reverse: `s • t.point`. -/
 theorem mul_base (t : EdwardsBasepointTable) (s : Scalar) (ht : t.IsTable)
@@ -630,6 +636,12 @@ theorem create (B : EdwardsPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
 theorem basepoint (t : EdwardsBasepointTableRadix32) (ht : t.IsTable) (ht' : t.IsBounded) :
     basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
   apply basepoint_spec <;> assumption
+
+/-- `Clone`: the table itself. -/
+theorem clone (t : EdwardsBasepointTableRadix32) :
+    edwards.EdwardsBasepointTableRadix32.«x86_64-tables».Insts.CoreCloneClone.clone t
+      ⦃ (r : EdwardsBasepointTableRadix32) => r = t ⦄ :=
+  edwards.EdwardsBasepointTableRadix32.«x86_64-tables».Insts.CoreCloneClone.clone_spec t
 
 /-- `BasepointTable::mul_base`, `Mul<&Scalar> for &EdwardsBasepointTableRadix32`
 and its reverse: `s • t.point`. -/
@@ -689,6 +701,12 @@ theorem basepoint (t : EdwardsBasepointTableRadix64) (ht : t.IsTable) (ht' : t.I
     basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
   apply basepoint_spec <;> assumption
 
+/-- `Clone`: the table itself. -/
+theorem clone (t : EdwardsBasepointTableRadix64) :
+    edwards.EdwardsBasepointTableRadix64.«x86_64-tables».Insts.CoreCloneClone.clone t
+      ⦃ (r : EdwardsBasepointTableRadix64) => r = t ⦄ :=
+  edwards.EdwardsBasepointTableRadix64.«x86_64-tables».Insts.CoreCloneClone.clone_spec t
+
 /-- `BasepointTable::mul_base`, `Mul<&Scalar> for &EdwardsBasepointTableRadix64`
 and its reverse: `s • t.point`. -/
 theorem mul_base (t : EdwardsBasepointTableRadix64) (s : Scalar) (ht : t.IsTable)
@@ -747,6 +765,12 @@ theorem basepoint (t : EdwardsBasepointTableRadix128) (ht : t.IsTable) (ht' : t.
     basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
   apply basepoint_spec <;> assumption
 
+/-- `Clone`: the table itself. -/
+theorem clone (t : EdwardsBasepointTableRadix128) :
+    edwards.EdwardsBasepointTableRadix128.«x86_64-tables».Insts.CoreCloneClone.clone t
+      ⦃ (r : EdwardsBasepointTableRadix128) => r = t ⦄ :=
+  edwards.EdwardsBasepointTableRadix128.«x86_64-tables».Insts.CoreCloneClone.clone_spec t
+
 /-- `BasepointTable::mul_base`, `Mul<&Scalar> for &EdwardsBasepointTableRadix128`
 and its reverse: `s • t.point`. -/
 theorem mul_base (t : EdwardsBasepointTableRadix128) (s : Scalar) (ht : t.IsTable)
@@ -804,6 +828,12 @@ theorem create (B : EdwardsPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
 theorem basepoint (t : EdwardsBasepointTableRadix256) (ht : t.IsTable) (ht' : t.IsBounded) :
     basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
   apply basepoint_spec <;> assumption
+
+/-- `Clone`: the table itself. -/
+theorem clone (t : EdwardsBasepointTableRadix256) :
+    edwards.EdwardsBasepointTableRadix256.«x86_64-tables».Insts.CoreCloneClone.clone t
+      ⦃ (r : EdwardsBasepointTableRadix256) => r = t ⦄ :=
+  edwards.EdwardsBasepointTableRadix256.«x86_64-tables».Insts.CoreCloneClone.clone_spec t
 
 /-- `BasepointTable::mul_base`, `Mul<&Scalar> for &EdwardsBasepointTableRadix256`
 and its reverse: `s • t.point`. -/

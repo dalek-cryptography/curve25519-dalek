@@ -27,10 +27,11 @@ are small enough for the arithmetic not to overflow, a basepoint table holds the
 point, and so on. They appear as hypotheses (`hP : P.OnCurve`, `hP' : P.IsBounded`,
 `ht : t.IsTable`, …) of the functions that take such a value, and as conclusions of the functions
 that return one. Their definitions are in `ForHumans/Specs/Representation/`, next to the values.
-Two things are worth checking: that each definition says what its docstring says (a theorem
-assuming a false invariant says nothing), and that every function returning a value of the type
-states the invariants in its conclusion (otherwise the theorems about the functions that take the
-value do not apply to it).
+Each definition should say what its docstring says: a theorem assuming a false invariant says
+nothing. And every function returning a value of the type must guarantee the invariants, or the
+theorems about the functions that take the value do not apply to it: `Coverage.lean` checks that
+every translated function returning such a value has a theorem stating them, or is in its list of
+exemptions, each with its reason (not callable from outside the crate, or returns an argument).
 
 **Operators.** The variants of one operator (`&a + &b`, `a + &b`, `&a + b`, `a + b`, `a += &b`,
 `a += b`) are stated together, as `∀ f ∈ [f₁, …, fₙ], f a b ⦃ … ⦄`. In `Edwards.lean` and

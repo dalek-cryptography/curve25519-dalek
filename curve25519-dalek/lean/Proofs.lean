@@ -197,6 +197,7 @@ public import Proofs.Edwards.AsBytes
 public import Proofs.Edwards.AsProjective
 public import Proofs.Edwards.AsProjectiveNiels
 public import Proofs.Edwards.BasepointTableBasepoint
+public import Proofs.Edwards.BasepointTableClone
 public import Proofs.Edwards.BasepointTableCreate
 public import Proofs.Edwards.BasepointTableFrom
 public import Proofs.Edwards.BasepointTableMul
@@ -314,6 +315,7 @@ public import Proofs.Ristretto.Add
 public import Proofs.Ristretto.AddAssign
 public import Proofs.Ristretto.AsBytes
 public import Proofs.Ristretto.BasepointTable
+public import Proofs.Ristretto.BasepointTableClone
 public import Proofs.Ristretto.Compress
 public import Proofs.Ristretto.CompressedCtEq
 public import Proofs.Ristretto.CompressedEq

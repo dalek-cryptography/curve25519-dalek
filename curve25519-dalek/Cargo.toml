@@ -34,6 +34,7 @@ postcard = { version = "1", features = ["alloc"] }
 criterion = { version = "0.5", features = ["html_reports"] }
 getrandom = { version = "0.4", features = ["sys_rng"] }
 hex = "0.4.2"
+hex-literal = "1"
 proptest = "1"
 sha2 = { version = "0.11", default-features = false }
 

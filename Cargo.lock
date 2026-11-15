@@ -319,6 +319,7 @@ dependencies = [
  "getrandom 0.4.0",
  "group",
  "hex",
+ "hex-literal",
  "postcard",
  "proptest",
  "rand_core 0.10.0",

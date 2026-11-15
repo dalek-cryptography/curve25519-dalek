@@ -13,7 +13,8 @@ public import Proofs.Representation.Edwards
 public import ForHumans.Specs.Representation.Iterator
 public import ForHumans.Specs.Representation.Array
 public import ForHumans.Specs.Representation.Scalar
-public import Proofs.Representation.ScalarMul
+public import ForHumans.Specs.Representation
+public import Proofs.Representation.Window
 public import Proofs.External.Subtle
 import Proofs
 import Proofs.External.Zeroize.Instances

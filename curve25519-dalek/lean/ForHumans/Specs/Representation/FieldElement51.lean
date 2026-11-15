@@ -13,7 +13,8 @@ public section
 /-! # The value of a `FieldElement51`
 
 A `FieldElement51` (`backend/serial/u64/field.rs`) is five `u64` limbs in radix `2^51`. `asNat`
-is the number they represent (the limbs may exceed 51 bits), `toField` the field element. -/
+is the number they represent (the limbs may exceed 51 bits), `toField` the field element,
+`LimbsLt n` says that every limb is `< 2^n`. -/
 
 open Aeneas.Std curve25519
 
@@ -26,5 +27,10 @@ def field.FieldElement51.asNat (self : field.FieldElement51) : ℕ :=
 /-- The field element represented by the limbs: their value modulo `p`. -/
 noncomputable def field.FieldElement51.toField (self : field.FieldElement51) : ZMod p :=
   (self.asNat : ZMod p)
+
+/-- Every limb is `< 2^n`: the limb bounds that the theorems assume and guarantee (the
+bound is in the invariant of each point type). -/
+abbrev field.FieldElement51.LimbsLt (n : ℕ) (self : field.FieldElement51) : Prop :=
+  ∀ i < 5, self[i]!.val < 2 ^ n
 
 end Curve25519Dalek.backend.serial.u64

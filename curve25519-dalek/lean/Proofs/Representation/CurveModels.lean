@@ -6,6 +6,11 @@ module
 public import Proofs.Curve25519.Edwards.Basic
 public import Proofs.Representation.FieldElement2625
 public import Proofs.Representation.FieldElement51
+public import ForHumans.Specs.Representation
+import all ForHumans.Specs.Representation.CurveModels
+import all ForHumans.Specs.Representation.CurveModels.I686Tables
+import all ForHumans.Specs.Representation.CurveModels.X86_64NoTables
+import all ForHumans.Specs.Representation.CurveModels.I686NoTables
 public section
 
 /-! # The point structures of `curve_models.rs` (audited)
@@ -22,6 +27,9 @@ radix-`2^51` limbs (x86_64, `FieldElement51`) or radix-`2^25.5` limbs (i686,
   `toPoint_def`);
 - `S.LimbsLt n`: every limb is `< 2^n` (exposed). The x86_64 specs use `LimbsLt 52` for
   `ProjectivePoint` and `LimbsLt 54` for the three others.
+
+The definitions for `AffineNielsPoint`, the entries of the precomputed tables, are in
+`ForHumans/Specs/Representation/CurveModels.lean`; this file has their unfolding lemmas.
 
 The four configurations (`«x86_64-tables»`, `«x86_64-no-tables»`, `«i686-tables»`,
 `«i686-no-tables»`) have distinct structures with identical bodies, so every definition appears
@@ -168,49 +176,20 @@ end CompletedPoint.«i686-tables»
 
 namespace AffineNielsPoint.«x86_64-tables»
 
-/-- The affine Niels coordinates `(y + x, y - x, 2 d x y)` as field elements. -/
-noncomputable def toAffineNiels (self : AffineNielsPoint.«x86_64-tables») :
-    curve25519.edwards.AffineNiels :=
-  ⟨self.y_plus_x.toField, self.y_minus_x.toField, self.xy2d.toField⟩
-
 theorem toAffineNiels_def (self : AffineNielsPoint.«x86_64-tables») :
     self.toAffineNiels =
       ⟨self.y_plus_x.toField, self.y_minus_x.toField, self.xy2d.toField⟩ := by
   unfold toAffineNiels
   rfl
 
-/-- `self` represents a point: with `x := ((y + x) - (y - x)) / 2` and
-`y := ((y + x) + (y - x)) / 2`, `(x, y)` is on the curve and `xy2d = 2 d x y`. -/
-@[expose] def OnCurve (self : AffineNielsPoint.«x86_64-tables») : Prop :=
-  self.toAffineNiels.OnCurve
-
-/-- The point represented by `self` (`0` if `¬ self.OnCurve`). -/
-noncomputable def toPoint (self : AffineNielsPoint.«x86_64-tables») :
-    curve25519.edwards.Point :=
-  self.toAffineNiels.toPoint
-
 theorem toPoint_def (self : AffineNielsPoint.«x86_64-tables») :
     self.toPoint = self.toAffineNiels.toPoint := by
   unfold toPoint
   rfl
 
-/-- Every limb of an `AffineNielsPoint` is `< 2^n`. -/
-@[expose] def LimbsLt (n : ℕ) (self : AffineNielsPoint.«x86_64-tables») : Prop :=
-  self.y_plus_x.LimbsLt n ∧ self.y_minus_x.LimbsLt n ∧ self.xy2d.LimbsLt n
-
-/-- Needed for `t[j]!` on tables of `AffineNielsPoint`s; the default is never observed for
-in-range indices. -/
-instance instInhabited : Inhabited (AffineNielsPoint.«x86_64-tables») :=
-  ⟨⟨default, default, default⟩⟩
-
 end AffineNielsPoint.«x86_64-tables»
 
 namespace AffineNielsPoint.«i686-tables»
-
-/-- The affine Niels coordinates `(y + x, y - x, 2 d x y)` as field elements. -/
-noncomputable def toAffineNiels (self : AffineNielsPoint.«i686-tables») :
-    curve25519.edwards.AffineNiels :=
-  ⟨self.y_plus_x.toField, self.y_minus_x.toField, self.xy2d.toField⟩
 
 theorem toAffineNiels_def (self : AffineNielsPoint.«i686-tables») :
     self.toAffineNiels =
@@ -218,29 +197,10 @@ theorem toAffineNiels_def (self : AffineNielsPoint.«i686-tables») :
   unfold toAffineNiels
   rfl
 
-/-- `self` represents a point: with `x := ((y + x) - (y - x)) / 2` and
-`y := ((y + x) + (y - x)) / 2`, `(x, y)` is on the curve and `xy2d = 2 d x y`. -/
-@[expose] def OnCurve (self : AffineNielsPoint.«i686-tables») : Prop :=
-  self.toAffineNiels.OnCurve
-
-/-- The point represented by `self` (`0` if `¬ self.OnCurve`). -/
-noncomputable def toPoint (self : AffineNielsPoint.«i686-tables») :
-    curve25519.edwards.Point :=
-  self.toAffineNiels.toPoint
-
 theorem toPoint_def (self : AffineNielsPoint.«i686-tables») :
     self.toPoint = self.toAffineNiels.toPoint := by
   unfold toPoint
   rfl
-
-/-- Every limb of an `AffineNielsPoint` is `< 2^n`. -/
-@[expose] def LimbsLt (n : ℕ) (self : AffineNielsPoint.«i686-tables») : Prop :=
-  self.y_plus_x.LimbsLt n ∧ self.y_minus_x.LimbsLt n ∧ self.xy2d.LimbsLt n
-
-/-- Needed for `t[j]!` on tables of `AffineNielsPoint`s; the default is never observed for
-in-range indices. -/
-instance instInhabited : Inhabited (AffineNielsPoint.«i686-tables») :=
-  ⟨⟨default, default, default⟩⟩
 
 end AffineNielsPoint.«i686-tables»
 
@@ -460,49 +420,20 @@ end CompletedPoint.«i686-no-tables»
 
 namespace AffineNielsPoint.«x86_64-no-tables»
 
-/-- The affine Niels coordinates `(y + x, y - x, 2 d x y)` as field elements. -/
-noncomputable def toAffineNiels (self : AffineNielsPoint.«x86_64-no-tables») :
-    curve25519.edwards.AffineNiels :=
-  ⟨self.y_plus_x.toField, self.y_minus_x.toField, self.xy2d.toField⟩
-
 theorem toAffineNiels_def (self : AffineNielsPoint.«x86_64-no-tables») :
     self.toAffineNiels =
       ⟨self.y_plus_x.toField, self.y_minus_x.toField, self.xy2d.toField⟩ := by
   unfold toAffineNiels
   rfl
 
-/-- `self` represents a point: with `x := ((y + x) - (y - x)) / 2` and
-`y := ((y + x) + (y - x)) / 2`, `(x, y)` is on the curve and `xy2d = 2 d x y`. -/
-@[expose] def OnCurve (self : AffineNielsPoint.«x86_64-no-tables») : Prop :=
-  self.toAffineNiels.OnCurve
-
-/-- The point represented by `self` (`0` if `¬ self.OnCurve`). -/
-noncomputable def toPoint (self : AffineNielsPoint.«x86_64-no-tables») :
-    curve25519.edwards.Point :=
-  self.toAffineNiels.toPoint
-
 theorem toPoint_def (self : AffineNielsPoint.«x86_64-no-tables») :
     self.toPoint = self.toAffineNiels.toPoint := by
   unfold toPoint
   rfl
 
-/-- Every limb of an `AffineNielsPoint` is `< 2^n`. -/
-@[expose] def LimbsLt (n : ℕ) (self : AffineNielsPoint.«x86_64-no-tables») : Prop :=
-  self.y_plus_x.LimbsLt n ∧ self.y_minus_x.LimbsLt n ∧ self.xy2d.LimbsLt n
-
-/-- Needed for `t[j]!` on tables of `AffineNielsPoint`s; the default is never observed for
-in-range indices. -/
-instance instInhabited : Inhabited (AffineNielsPoint.«x86_64-no-tables») :=
-  ⟨⟨default, default, default⟩⟩
-
 end AffineNielsPoint.«x86_64-no-tables»
 
 namespace AffineNielsPoint.«i686-no-tables»
-
-/-- The affine Niels coordinates `(y + x, y - x, 2 d x y)` as field elements. -/
-noncomputable def toAffineNiels (self : AffineNielsPoint.«i686-no-tables») :
-    curve25519.edwards.AffineNiels :=
-  ⟨self.y_plus_x.toField, self.y_minus_x.toField, self.xy2d.toField⟩
 
 theorem toAffineNiels_def (self : AffineNielsPoint.«i686-no-tables») :
     self.toAffineNiels =
@@ -510,29 +441,10 @@ theorem toAffineNiels_def (self : AffineNielsPoint.«i686-no-tables») :
   unfold toAffineNiels
   rfl
 
-/-- `self` represents a point: with `x := ((y + x) - (y - x)) / 2` and
-`y := ((y + x) + (y - x)) / 2`, `(x, y)` is on the curve and `xy2d = 2 d x y`. -/
-@[expose] def OnCurve (self : AffineNielsPoint.«i686-no-tables») : Prop :=
-  self.toAffineNiels.OnCurve
-
-/-- The point represented by `self` (`0` if `¬ self.OnCurve`). -/
-noncomputable def toPoint (self : AffineNielsPoint.«i686-no-tables») :
-    curve25519.edwards.Point :=
-  self.toAffineNiels.toPoint
-
 theorem toPoint_def (self : AffineNielsPoint.«i686-no-tables») :
     self.toPoint = self.toAffineNiels.toPoint := by
   unfold toPoint
   rfl
-
-/-- Every limb of an `AffineNielsPoint` is `< 2^n`. -/
-@[expose] def LimbsLt (n : ℕ) (self : AffineNielsPoint.«i686-no-tables») : Prop :=
-  self.y_plus_x.LimbsLt n ∧ self.y_minus_x.LimbsLt n ∧ self.xy2d.LimbsLt n
-
-/-- Needed for `t[j]!` on tables of `AffineNielsPoint`s; the default is never observed for
-in-range indices. -/
-instance instInhabited : Inhabited (AffineNielsPoint.«i686-no-tables») :=
-  ⟨⟨default, default, default⟩⟩
 
 end AffineNielsPoint.«i686-no-tables»
 

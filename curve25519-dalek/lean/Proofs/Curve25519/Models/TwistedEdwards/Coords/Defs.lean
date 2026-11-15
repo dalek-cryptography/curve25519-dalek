@@ -4,6 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import EllipticCurve.TwistedEdwards.Coords.Defs
+public import ForHumans.Specs.Models
+import all ForHumans.Specs.Models
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NormNum
 public section
@@ -15,7 +17,8 @@ alongside the projective, extended and completed coordinates of
 `EllipticCurve.TwistedEdwards.Coords.Defs`:
 
 * `E.ProjectiveNiels`: `(Y + X : Y - X : Z : 2 d T)` of an extended point;
-* `E.AffineNiels`: `(y + x, y - x, 2 d x y)` of an affine point.
+* `E.AffineNiels`: `(y + x, y - x, 2 d x y)` of an affine point, defined with its `OnCurve` and
+  `toPoint` in `ForHumans.Specs.Models`.
 
 Each is a plain structure of field elements, as in the library, with
 
@@ -50,17 +53,6 @@ variable {F : Type u} [Field F] (E : TwistedEdwardsModel F)
   Z : F
   /-- `2 d T`. -/
   T2d : F
-  deriving DecidableEq
-
-/-- Affine Niels coordinates `(y + x, y - x, 2 d x y)` of an affine point (curve25519-dalek's
-`AffineNielsPoint`). -/
-@[ext] structure AffineNiels (E : TwistedEdwardsModel F) where
-  /-- `y + x`. -/
-  yPlusX : F
-  /-- `y - x`. -/
-  yMinusX : F
-  /-- `2 d x y`. -/
-  xy2d : F
   deriving DecidableEq
 
 variable {E}
@@ -176,19 +168,6 @@ end ProjectiveNiels
 
 namespace AffineNiels
 
-/-- The `x`-coordinate `((y + x) - (y - x)) / 2` recovered from the Niels form. -/
-@[expose] def x (P : E.AffineNiels) : F :=
-  (P.yPlusX - P.yMinusX) / 2
-
-/-- The `y`-coordinate `((y + x) + (y - x)) / 2` recovered from the Niels form. -/
-@[expose] def y (P : E.AffineNiels) : F :=
-  (P.yPlusX + P.yMinusX) / 2
-
-/-- `(y + x, y - x, xy2d)` represents a point of `E`: `(x, y)` satisfies the equation (`x`, `y`
-recovered from the Niels form) and `xy2d = 2 d x y`. -/
-@[expose] def OnCurve (P : E.AffineNiels) : Prop :=
-  E.Equation P.x P.y ∧ P.xy2d = 2 * E.d * P.x * P.y
-
 /-- `OnCurve` without division, in terms of `x' = 2 x = (y + x) - (y - x)` and
 `y' = 2 y = (y + x) + (y - x)` (in characteristic `≠ 2`): `4 a x'² + 4 y'² = 16 + d x'² y'²`
 and `2 xy2d = d x' y'`. -/
@@ -220,12 +199,6 @@ theorem onCurve_iff_homogeneous [NeZero (2 : F)] (P : E.AffineNiels) :
 instance instDecidableOnCurve [DecidableEq F] [NeZero (2 : F)] (P : E.AffineNiels) :
     Decidable P.OnCurve :=
   decidable_of_iff _ (onCurve_iff_homogeneous P).symm
-
-open scoped Classical in
-/-- The point represented by `(y + x, y - x, xy2d)`: `(x, y)` when `OnCurve`, and `(0, 1)`
-otherwise. Hidden; characterised by `toPoint_x`, `toPoint_y`, `toPoint_of_not_onCurve`. -/
-noncomputable def toPoint (P : E.AffineNiels) : E.Point :=
-  if h : P.OnCurve then ⟨P.x, P.y, h.1⟩ else ⟨0, 1, E.equation_zero_one⟩
 
 /-- The `x`-coordinate of the point represented by an affine Niels point is `x`. -/
 theorem toPoint_x {P : E.AffineNiels} (h : P.OnCurve) : P.toPoint.x = P.x := by

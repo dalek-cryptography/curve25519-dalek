@@ -7,7 +7,8 @@ public import Proofs.Helpers.Represents
 public import Curve25519Dalek.Funs
 public import Proofs.Representation.Edwards
 public import Proofs.ToAeneas.Iterator
-public import Proofs.Representation.ScalarMul
+public import ForHumans.Specs.Representation
+public import Proofs.Representation.Window
 import Proofs.Helpers.Collect
 import Proofs.Window.NafLookupTable8From
 public section

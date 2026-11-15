@@ -10,7 +10,8 @@ public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
 public import Proofs.Representation.Edwards
 public import ForHumans.Specs.Representation.Scalar
-public import Proofs.Representation.ScalarMul
+public import ForHumans.Specs.Representation
+public import Proofs.Representation.Window
 public import Proofs.External.Subtle
 public import ForHumans.Specs.Representation.Iterator
 import Proofs

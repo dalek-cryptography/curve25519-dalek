@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Proofs.Representation.Edwards
-public import Proofs.Representation.ScalarMul
+public import ForHumans.Specs.Representation
 public import Proofs.Representation.Window
 public section
 

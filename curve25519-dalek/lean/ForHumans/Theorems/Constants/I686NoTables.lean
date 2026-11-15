@@ -14,7 +14,8 @@ public import Proofs.Representation.Edwards
 public import Proofs.Curve25519.Ristretto.Encoding
 public import Proofs.Representation.Montgomery
 public import ForHumans.Specs.Representation.Array
-public import Proofs.Representation.ScalarMul
+public import ForHumans.Specs.Representation
+public import Proofs.Representation.Window
 import Proofs
 public section
 

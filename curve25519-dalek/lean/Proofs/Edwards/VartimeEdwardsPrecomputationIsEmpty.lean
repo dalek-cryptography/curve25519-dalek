@@ -8,7 +8,8 @@ public import Curve25519Dalek.Funs
 public import Proofs.Representation.Edwards
 public import Proofs.ToAeneas.Iterator
 public import Proofs.Representation.Scalar
-public import Proofs.Representation.ScalarMul
+public import ForHumans.Specs.Representation
+public import Proofs.Representation.Window
 import Proofs.Backend.VartimePrecomputedStrausIsEmpty
 public section
 

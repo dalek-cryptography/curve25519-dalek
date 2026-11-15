@@ -40,10 +40,6 @@ theorem field.FieldElement2625.toField_def (self : field.FieldElement2625) :
   unfold field.FieldElement2625.toField
   rfl
 
-/-- Every limb is `< 2^n`. -/
-abbrev field.FieldElement2625.LimbsLt (n : ℕ) (self : field.FieldElement2625) : Prop :=
-  ∀ i < 10, self[i]!.val < 2 ^ n
-
 instance field.FieldElement2625.instDecidableLimbsLt (n : ℕ) (self : field.FieldElement2625) :
     Decidable (self.LimbsLt n) :=
   inferInstanceAs (Decidable (∀ i < 10, self[i]!.val < 2 ^ n))

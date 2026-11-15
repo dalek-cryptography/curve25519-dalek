@@ -26,13 +26,11 @@ encodings and the functions of the RFCs).
 are small enough for the arithmetic not to overflow, a basepoint table holds the multiples of its
 point, and so on. They appear as hypotheses (`hP : P.OnCurve`, `hP' : P.IsBounded`,
 `ht : t.IsTable`, …) of the functions that take such a value, and as conclusions of the functions
-that return one. Their definitions (`IsBounded`, `LimbsLt`, `IsTable`, `IsValid`, and the `point`
-of a table and the `points` of a precomputation that `IsTable` and `IsValid` talk about) are in
-`Proofs/Representation/` and need not be read. Every way to obtain a value of the type (the
-constructors, the constants, `default`, `zeroize`, the operations) has a theorem stating that its
-result satisfies the invariants, so the hypotheses hold for every value a program can have, whatever
-the definitions say. What a reviewer checks is that these theorems exist: that every function
-returning a value of the type states the invariants in its conclusion.
+that return one. Their definitions are in `ForHumans/Specs/Representation/`, next to the values.
+Two things are worth checking: that each definition says what its docstring says (a theorem
+assuming a false invariant says nothing), and that every function returning a value of the type
+states the invariants in its conclusion (otherwise the theorems about the functions that take the
+value do not apply to it).
 
 **Operators.** The variants of one operator (`&a + &b`, `a + &b`, `&a + b`, `a + b`, `a += &b`,
 `a += b`) are stated together, as `∀ f ∈ [f₁, …, fₙ], f a b ⦃ … ⦄`. In `Edwards.lean` and
@@ -47,7 +45,9 @@ date).
 
 **Proofs.** The proofs are one line, from the theorems of `Proofs/`; they need not be read.
 `Axioms.lean` checks that no theorem depends on an axiom other than Lean's three and the contracts
-of the external crates (`ForHumans/Specs/External/`). -/
+of the external crates (`ForHumans/Specs/External/`), and `Definitions.lean` that every definition
+the statements depend on is in `ForHumans/Specs/` (or in the translation or a library), so that
+nothing outside `ForHumans/` needs to be read. -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP
 

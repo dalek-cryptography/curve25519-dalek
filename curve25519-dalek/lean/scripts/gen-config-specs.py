@@ -11,7 +11,9 @@ per-configuration items once, for `x86_64-tables`, between the lines
 
 and this script writes the other three configurations' copies to `<File>/<Config>.lean` next to it
 by renaming. Lines between `-- BEGIN TABLES-ONLY` and `-- END TABLES-ONLY` (items that exist only with
-precomputed tables) are dropped from the `no-tables` copies.
+precomputed tables) are dropped from the `no-tables` copies. A line ending in `-- i686: <text>`
+(a limb bound, which differs on the 32-bit backend) becomes `<text>` in the `i686` copies, and
+loses the comment in the others.
 
     scripts/gen-config-specs.py           # regenerate
     scripts/gen-config-specs.py --check   # fail if a generated file is out of date (CI)
@@ -41,6 +43,17 @@ def rename(text: str, config: str) -> str:
     return text
 
 
+I686_ALT = re.compile(r"^(\s*)(.*?)\s+-- i686: (.*)$")
+
+
+def per_arch(line: str, config: str) -> str:
+    m = I686_ALT.match(line)
+    if not m:
+        return line
+    indent, x86, i686 = m.groups()
+    return indent + (i686 if config.startswith("i686") else x86)
+
+
 def generate(template: pathlib.Path, config: str) -> str:
     lines = template.read_text().split("\n")
     header_end = lines.index("public section")
@@ -55,7 +68,7 @@ def generate(template: pathlib.Path, config: str) -> str:
             skipping = False
             continue
         if not skipping:
-            body.append(line)
+            body.append(per_arch(line, config))
     # Keep the imports and the `open`s of the template, drop its module docstring.
     imports = lines[: header_end + 1]
     preamble = [l for l in lines[header_end + 1 : begin] if l.startswith("open ")]

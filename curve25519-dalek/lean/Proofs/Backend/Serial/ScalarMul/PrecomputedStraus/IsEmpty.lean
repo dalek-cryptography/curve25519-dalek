@@ -6,7 +6,8 @@ module
 public import Proofs.Helpers.Represents
 public import Curve25519Dalek.Funs
 public import Proofs.Representation.Edwards
-public import Proofs.Representation.ScalarMul
+public import ForHumans.Specs.Representation
+public import Proofs.Representation.Window
 public section
 
 /-! # `VartimePrecomputedStraus::is_empty` -/

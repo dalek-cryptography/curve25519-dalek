@@ -6,6 +6,12 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import ForHumans.Specs.Curves
 public import ForHumans.Specs.Representation.FieldElement51
+public import ForHumans.Specs.Representation.Window
+public import Proofs.Curve25519.Edwards.Basic
+public import ForHumans.Specs.Representation.CurveModels
+public import ForHumans.Specs.Representation.CurveModels.I686NoTables
+public import ForHumans.Specs.Representation.CurveModels.I686Tables
+public import ForHumans.Specs.Representation.CurveModels.X86_64NoTables
 public section
 
 set_option linter.style.longLine false
@@ -28,6 +34,15 @@ noncomputable def toExtended (self : EdwardsPoint.«x86_64-no-tables») :
 /-- The point represented by `self` (`0` if `¬ self.OnCurve`). -/
 noncomputable def toPoint (self : EdwardsPoint.«x86_64-no-tables») : curve25519.edwards.Point :=
   self.toExtended.toPoint
+
+/-- Every limb of an `EdwardsPoint` is `< 2^n`. -/
+@[expose] def LimbsLt (n : ℕ) (self : EdwardsPoint.«x86_64-no-tables») : Prop :=
+  self.X.LimbsLt n ∧ self.Y.LimbsLt n ∧ self.Z.LimbsLt n ∧ self.T.LimbsLt n
+
+/-- The bound on the limbs of an `EdwardsPoint` that every public function assumes and preserves:
+every limb is `< 2^52` (`< 2^26` on i686). -/
+@[expose] def IsBounded (self : EdwardsPoint.«x86_64-no-tables») : Prop :=
+  self.LimbsLt 52
 
 /-- Needed for `a[i]!` on arrays of points; the default is never observed for in-range
 indices. -/

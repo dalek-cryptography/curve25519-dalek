@@ -15,7 +15,8 @@ public section
 
 A `FieldElement2625` (`backend/serial/u32/field.rs`) is ten `u32` limbs in radix `2^25.5`:
 "`x = ∑_{i=0}^9 x_i 2^⌈i 51/2⌉ = x_0 + x_1 2^26 + x_2 2^51 + x_3 2^77 + ⋯ + x_9 2^230`". `asNat`
-is that number (the limbs may exceed their nominal width), `toField` the field element. -/
+is that number (the limbs may exceed their nominal width), `toField` the field element, `LimbsLt n`
+says that every limb is `< 2^n`. -/
 
 open Aeneas.Std curve25519
 
@@ -33,5 +34,10 @@ def field.FieldElement2625.asNat (self : field.FieldElement2625) : ℕ :=
 /-- The field element represented by the limbs: their value modulo `p`. -/
 noncomputable def field.FieldElement2625.toField (self : field.FieldElement2625) : ZMod p :=
   (self.asNat : ZMod p)
+
+/-- Every limb is `< 2^n`: the limb bounds that the theorems assume and guarantee (the
+bound is in the invariant of each point type). -/
+abbrev field.FieldElement2625.LimbsLt (n : ℕ) (self : field.FieldElement2625) : Prop :=
+  ∀ i < 10, self[i]!.val < 2 ^ n
 
 end Curve25519Dalek.backend.serial.u32

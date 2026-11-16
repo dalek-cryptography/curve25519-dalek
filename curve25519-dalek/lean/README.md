@@ -53,8 +53,12 @@ are), and the SIMD and fiat backends. The invariants rely on the Rust fields sta
 
 ## Building
 
-`lake exe cache get && lake build`. Check the generated copies with
-`scripts/gen-config-specs.py --check`, regenerate them with `scripts/gen-config-specs.py`.
-
-The Aeneas version is pinned in `AENEAS_VERSION.txt`. To regenerate the translation:
-`scripts/aeneas-install.sh`, then `scripts/aeneas-translate.sh`.
+| Command | Does |
+|---|---|
+| `make` | Regenerate the copies, then build everything, checks included. |
+| `make check` | What CI runs: copies up to date, strict build, linters. |
+| `make gen` | Regenerate the copies (`scripts/gen-config-specs.py`). Run after editing a template. |
+| `make axioms`, `make definitions`, `make coverage` | Run one check; silent when it passes. |
+| `make lint` | The linters on `ForHumans` and `Proofs`. |
+| `make shake` | List unneeded imports in `ForHumans` (`lake shake ForHumans --fix` applies them). |
+| `make translate` | Regenerate the translation with the Aeneas version pinned in `AENEAS_VERSION.txt`. |

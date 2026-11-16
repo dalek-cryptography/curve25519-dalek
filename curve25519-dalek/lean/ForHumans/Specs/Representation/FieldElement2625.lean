@@ -11,7 +11,8 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Order.Floor.Div
 public section
 
-open Aeneas.Std curve25519
+open Aeneas.Std
+open curve25519 (p)
 
 /-- The value of ten limbs in radix `2^25.5`: `∑ x_i · 2^⌈i · 51 / 2⌉` (`⌈/⌉` is ceiling
 division). The limbs may exceed their nominal `26` or `25` bits. -/

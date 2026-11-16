@@ -12,7 +12,8 @@ import Proofs
 import Proofs.External.Zeroize.Instances
 public section
 
-open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
+open Aeneas Aeneas.Std Result Aeneas.Std.WP
+open curve25519 (L)
 open Curve25519Dalek
 open Curve25519Dalek.scalar (Scalar HalfWidthScalar)
 

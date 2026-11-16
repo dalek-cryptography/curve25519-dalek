@@ -25,7 +25,6 @@ noncomputable def torsion8 : edwards.Point :=
     55188659117513257062467267217118295137698188065244968500265048394206261417927,
     Proofs.torsion8_equation⟩
 
-open TwistedEdwardsModel
 
 /-- RFC 8032 §5.1.2: the encoding of a point of edwards25519, `y.val + 2 ^ 255 * sign(x)`. -/
 noncomputable abbrev encodeNat : edwards.Point → ℕ :=

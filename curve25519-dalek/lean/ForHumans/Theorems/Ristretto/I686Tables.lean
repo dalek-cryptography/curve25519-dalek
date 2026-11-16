@@ -24,7 +24,9 @@ set_option linter.style.longLine false
 
 /-! # `Ristretto` for `i686-tables`, generated from `ForHumans/Theorems/Ristretto.lean` -/
 
-open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 Curve25519Dalek
+open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek
+open curve25519 (Ristretto.decodeRep Ristretto.encodeRep Ristretto.fromUniformRep Ristretto.mapRep
+    basepoint edwards)
 open Curve25519Dalek.ristretto (CompressedRistretto)
 open Curve25519Dalek.scalar (Scalar)
 

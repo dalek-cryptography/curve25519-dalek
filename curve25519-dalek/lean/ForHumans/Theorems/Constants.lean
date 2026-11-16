@@ -18,7 +18,9 @@ public import Proofs.Representation.Window
 import Proofs
 public section
 
-open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel Curve25519Dalek
+open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek
+open curve25519 (Ristretto.encodeRep X25519 basepoint decodeUCoordinate edwards encode
+    encodeUCoordinate montgomery montgomeryBasepoint torsion8)
 
 namespace Theorems.constants
 

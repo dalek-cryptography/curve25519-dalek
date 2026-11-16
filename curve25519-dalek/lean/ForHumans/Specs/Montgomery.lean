@@ -8,7 +8,7 @@ public section
 
 namespace curve25519
 
-open MontgomeryModel TwistedEdwardsModel
+open MontgomeryModel (rescaleEquiv)
 
 /-- The group isomorphism `edwards.Point ≃+ montgomery.Point` of RFC 7748 §4.1, `(x, y) ↦ ((1 + y) /
 (1 - y), sqrtNegAAddTwo · (1 + y) / ((1 - y) x))`. Hidden; characterised by `u_edwardsToMontgomery`,

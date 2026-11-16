@@ -10,7 +10,8 @@ public import Curve25519Dalek.Types
 public import Mathlib.Algebra.Field.ZMod
 public section
 
-open Aeneas.Std curve25519
+open Aeneas.Std
+open curve25519 (p)
 
 namespace Curve25519Dalek.backend.serial.u64
 

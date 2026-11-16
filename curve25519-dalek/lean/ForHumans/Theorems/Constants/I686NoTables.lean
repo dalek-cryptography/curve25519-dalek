@@ -23,7 +23,9 @@ set_option linter.style.longLine false
 
 /-! # `Constants` for `i686-no-tables`, generated from `ForHumans/Theorems/Constants.lean` -/
 
-open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel Curve25519Dalek
+open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek
+open curve25519 (Ristretto.encodeRep X25519 basepoint decodeUCoordinate edwards encode
+    encodeUCoordinate montgomery montgomeryBasepoint torsion8)
 
 namespace Theorems.constants.«i686-no-tables»
 

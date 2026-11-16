@@ -15,7 +15,8 @@ public import Proofs.External.Subtle
 import Proofs
 public section
 
-open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 Curve25519Dalek
+open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek
+open curve25519 (X25519 decodeUCoordinate edwards encodeUCoordinate montgomery montgomeryBasepoint)
 open Curve25519Dalek.montgomery (MontgomeryPoint)
 open Curve25519Dalek.scalar (Scalar)
 

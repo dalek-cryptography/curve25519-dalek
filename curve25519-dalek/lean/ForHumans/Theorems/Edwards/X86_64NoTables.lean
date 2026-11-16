@@ -23,7 +23,9 @@ set_option linter.style.longLine false
 
 /-! # `Edwards` for `x86_64-no-tables`, generated from `ForHumans/Theorems/Edwards.lean` -/
 
-open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel Curve25519Dalek
+open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek
+open curve25519 (L basepoint decodeLenient decodeScalar25519 edwards edwardsToMontgomery encode
+    encodeUCoordinate montgomery)
 open Curve25519Dalek.edwards (CompressedEdwardsY)
 open Curve25519Dalek.scalar (Scalar HalfWidthScalar)
 

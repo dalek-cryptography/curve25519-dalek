@@ -1,0 +1,30 @@
+Translation patch: <EdwardsPoint as Sum<T>>::sum
+
+Change: `iter.fold(..)` becomes a `for item in iter` loop.
+Why: Aeneas only models `Iterator::next` (aeneas#1057).
+Behaviour: identical for iterators whose `fold` agrees with `next` (all std/lawful iterators): the default `fold` is exactly this loop.
+
+diff --git a/curve25519-dalek/src/edwards.rs b/curve25519-dalek/src/edwards.rs
+index 1120e8f..376adf0 100644
+--- a/curve25519-dalek/src/edwards.rs
++++ b/curve25519-dalek/src/edwards.rs
+@@ -838,14 +838,18 @@ impl<T> Sum<T> for EdwardsPoint
+ where
+     T: Borrow<EdwardsPoint>,
+ {
+     fn sum<I>(iter: I) -> Self
+     where
+         I: Iterator<Item = T>,
+     {
+-        iter.fold(EdwardsPoint::identity(), |acc, item| acc + item.borrow())
++        let mut acc = EdwardsPoint::identity();
++        for item in iter {
++            acc = acc + item.borrow();
++        }
++        acc
+     }
+ }
+ 
+ // ------------------------------------------------------------------------
+ // Negation
+ // ------------------------------------------------------------------------

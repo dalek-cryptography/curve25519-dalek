@@ -38,8 +38,8 @@ Definitions used, in `ForHumans/Specs/`: `edwards`, `montgomery` (`Curves.lean`)
 (`Montgomery.lean`), `X25519`, `decodeUCoordinate`, `encodeUCoordinate` (`X25519.lean`),
 `Ristretto.encodeRep` (`Ristretto.lean`), `EdwardsPoint.toPoint`, `OnCurve`
 (`Representation/Edwards.lean`), `Array.toVector` (`Representation/Array.lean`), and Mathlib's
-`Even`. Not to be read (see `Basic.lean`): the invariants `IsBounded`, the tables' `IsTable`,
-`IsBounded` and `point`, defined in `Proofs/Representation/`.-/
+`Even`, and the invariants `IsBounded`, the tables' `IsTable`, `IsBounded` and `point`
+(`Representation/Edwards.lean`). -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel Curve25519Dalek
 

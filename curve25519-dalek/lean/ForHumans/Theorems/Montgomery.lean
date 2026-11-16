@@ -33,8 +33,8 @@ Definitions used, in `ForHumans/Specs/`: `edwards`, `montgomery` (`Curves.lean`)
 `OnCurve` (`Representation/Edwards.lean`), `Scalar.asNat` (`Representation/Scalar.lean`),
 `Array.toVector` (`Representation/Array.lean`), `Iterator.Yields` (`Representation/Iterator.lean`),
 `subtle.Choice`, `Choice.IsValid` (`External/Subtle/`), and the `EllipticCurve` library's
-`MontgomeryModel.ladder`, `ladderBits`. Not to be read (see `Basic.lean`): the invariant
-`IsBounded`, defined in `Proofs/Representation/`.
+`MontgomeryModel.ladder`, `ladderBits`, and the invariant `IsBounded`
+(`Representation/Edwards.lean`).
 
 Not translated: `Debug`, `Hash`, the `serde` impls. -/
 

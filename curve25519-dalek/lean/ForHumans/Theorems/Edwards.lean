@@ -41,9 +41,9 @@ Definitions used, in `ForHumans/Specs/`: `edwards`, `montgomery` (`Curves.lean`)
 `HalfWidthScalar.asNat` (`Representation/Scalar.lean`), `Array.toVector`
 (`Representation/Array.lean`), `Iterator.Yields`, `IntoIterator.Yields`
 (`Representation/Iterator.lean`), `subtle.Choice`, `Choice.IsValid` (`External/Subtle/`).
-Not to be read (see `Basic.lean`): the invariants `IsBounded`, the tables' `IsTable`, `IsBounded`
-and `point`, the precomputations' `IsValid`, `IsBounded` and `points`, defined in
-`Proofs/Representation/`.
+The invariants `IsBounded`, the tables' `IsTable`, `IsBounded` and `point`
+(`Representation/Edwards.lean`), the precomputations' `IsValid`, `IsBounded` and `points`
+(`Representation/ScalarMul.lean`).
 
 Not translated: `Debug`, `Hash`, the `group` and `serde` impls, `random`, hash-to-curve, and the
 provided methods of the traits. -/

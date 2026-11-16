@@ -51,9 +51,9 @@ Definitions used, in `ForHumans/Specs/`: `edwards` (`Curves.lean`), `p` (`Consta
 (`Representation/Edwards.lean`), `Scalar.asNat` (`Representation/Scalar.lean`), `Array.toVector`
 (`Representation/Array.lean`), `Iterator.Yields`, `IntoIterator.Yields`
 (`Representation/Iterator.lean`), `subtle.Choice`, `Choice.IsValid` (`External/Subtle/`), and
-Mathlib's `Even`. Not to be read (see `Basic.lean`): the invariants `IsBounded`, the table's
-`IsTable`, `IsBounded` and `point`, the precomputation's `IsValid`, `IsBounded` and `points`,
-defined in `Proofs/Representation/`.
+Mathlib's `Even`, and the invariants `IsBounded`, the table's `IsTable`, `IsBounded` and `point`
+(`Representation/Edwards.lean`), the precomputation's `IsValid`, `IsBounded` and `points`
+(`Representation/ScalarMul.lean`).
 
 Not specified: derived `Clone`/`Copy` impls. Not translated: `Debug`, `Hash`, `random`,
 `try_random`, `hash_from_bytes`, `from_hash`, the `group` and `serde` impls.

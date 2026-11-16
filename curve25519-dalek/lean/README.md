@@ -7,9 +7,7 @@ Theorems about curve25519-dalek's public API in Lean 4, proved against an
 
 Everything a reviewer needs is in `ForHumans/`, about 4,000 lines. Nothing else needs to be read.
 
-1. **`ForHumans/Theorems/Basic.lean`** (60 lines): how to read a theorem, what to check about the
-   invariants, and why the generated copies need not be read.
-2. **`ForHumans/Specs/`**, the definitions the theorems use, with no proofs:
+1. **`ForHumans/Specs/`**, the definitions the theorems use, with no proofs:
    - the mathematics (520 lines): `Constants`, `Bytes`, `Field`, `Curves` (edwards25519,
      curve25519), `Models`, `Edwards` (basepoint, RFC 8032 encoding), `Montgomery`, `X25519`
      (RFC 7748), `Ristretto` (RFC 9496), in import order;
@@ -20,13 +18,13 @@ Everything a reviewer needs is in `ForHumans/`, about 4,000 lines. Nothing else 
    - `External/` (640 lines): what is assumed about the crates dalek calls (`subtle`, `zeroize`,
      `alloc`): their signatures, a contract per function, restating its documentation, and one
      axiom per crate saying that the contracts hold.
-3. **`ForHumans/Theorems/`** (2,200 lines): one file per Rust file, a theorem per public item:
+2. **`ForHumans/Theorems/`** (2,200 lines): one file per Rust file, a theorem per public item:
    `Scalar`, `Edwards`, `Montgomery`, `Ristretto`, `Constants`, `Traits`. `Axioms.lean` checks that
    the theorems use no other axioms, `Definitions.lean` that they use no definition outside
    `ForHumans/Specs/` (and the translation and the libraries), `Coverage.lean` that every function
    returning a point, a table, a precomputation or a scalar has a theorem (its exemptions, with
    their reasons, are worth reading).
-4. Optionally, **`ForHumans/TestVectors.lean`** (470 lines, mostly hexadecimal): the definitions
+3. Optionally, **`ForHumans/TestVectors.lean`** (470 lines, mostly hexadecimal): the definitions
    of `ForHumans/Specs/` on the test vectors of RFC 8032, RFC 7748 and RFC 9496, written as the
    RFCs write them, to compare line by line with the RFCs.
 

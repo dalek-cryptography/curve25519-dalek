@@ -13,19 +13,6 @@ import Proofs.Curve25519.TestVectors.RistrettoInvalid
 import Proofs.Curve25519.TestVectors.RistrettoMap
 public section
 
-/-! # The RFC test vectors
-
-Evidence that the definitions of `ForHumans/Specs/` are those of the RFCs: their outputs on the
-RFCs' test vectors, written in hexadecimal as the RFCs write them, so that each line can be
-compared with the RFC's text. Checked by the kernel (`decide +kernel`); the proofs need not be
-read. Reading this file is optional: the theorems of `ForHumans/Theorems/` do not depend on it.
-
-* RFC 8032 §5.1: the encoding of the basepoint;
-* RFC 7748 §5.2 and §6.1: `X25519`;
-* RFC 9496 §A.1: the encodings of the multiples `0 B, …, 15 B` of the basepoint;
-* RFC 9496 §A.2: the decoding rejects each of the invalid encodings;
-* RFC 9496 §A.3: the one-way map from uniform bytes. -/
-
 set_option linter.style.longLine false
 
 namespace TestVectors
@@ -41,16 +28,12 @@ where
   /-- The value of a hexadecimal digit `0`–`9`, `a`–`f`. -/
   digit (c : Char) : ℕ := if c.isDigit then c.toNat - '0'.toNat else c.toNat - 'a'.toNat + 10
 
-/-! ## RFC 8032 -/
-
 /-- RFC 8032 §5.1: the encoding of the basepoint `B`, `(x, 4/5)` with `x` positive. -/
 theorem rfc8032_basepoint :
     encode basepoint = hex "5866666666666666666666666666666666666666666666666666666666666666" := by
   change encodeLittleEndian 32 (encodeNat basepoint) = _
   rw [encodeNat_basepoint]
   decide +kernel
-
-/-! ## RFC 7748 -/
 
 /-- RFC 7748 §5.2, first vector. -/
 theorem rfc7748_vector₁ :
@@ -93,8 +76,6 @@ theorem rfc7748_shared_secret :
       (hex "de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f") =
       hex "4a5d9d5ba4ce2de1728e3bf480350f25e07e21c947d19e3376f09b3c1e161742" := by
   convert Proofs.X25519_shared_secret using 2 <;> decide +kernel
-
-/-! ## RFC 9496 §A.1: multiples of the basepoint -/
 
 /-- RFC 9496 §A.1: the encoding of `0 B`, the identity. -/
 theorem rfc9496_encode_0 :
@@ -207,8 +188,6 @@ theorem rfc9496_encode_15 :
   change encodeLittleEndian 32 (Ristretto.encodeRepNat _) = _
   rw [Proofs.encodeRepNat_fifteen_nsmul_basepoint]
   decide +kernel
-
-/-! ## RFC 9496 §A.2: invalid encodings -/
 
 /-- RFC 9496 §A.2: rejected, a non-canonical field encoding (`s ≥ p`). -/
 theorem rfc9496_invalid_noncanonical₁ :
@@ -412,8 +391,6 @@ theorem rfc9496_invalid_y_zero :
   change Ristretto.decodeRepNat (decodeLittleEndian _) = none
   convert Proofs.decodeRepNat_y_zero_vector using 2
   decide +kernel
-
-/-! ## RFC 9496 §A.3: the one-way map -/
 
 /-- RFC 9496 §A.3, vector 1. -/
 theorem rfc9496_map_1 :

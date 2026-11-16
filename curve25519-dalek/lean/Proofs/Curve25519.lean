@@ -22,9 +22,3 @@ import Proofs.Curve25519.TestVectors.RistrettoEncoding
 import Proofs.Curve25519.TestVectors.RistrettoInvalid
 import Proofs.Curve25519.TestVectors.RistrettoMap
 
-/-! # Curve25519: the facts behind the specifications
-
-The lemmas about the definitions of `ForHumans/Specs/` (the constants, the curves, the RFC 8032,
-7748 and 9496 functions), the kernel certificates they use (`Certificates/`), and the RFC test
-vectors, checked by the kernel against those definitions (`TestVectors/`). `Models/` and
-`ToEllipticCurve/` stage generic results for the `EllipticCurve` library. -/

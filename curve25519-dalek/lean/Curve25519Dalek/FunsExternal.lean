@@ -6,5 +6,3 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import Proofs.External.Alloc
 
-/-! The external functions that `Funs.lean` calls, imported by name by the Aeneas translation:
-`ForHumans/Specs/External/Alloc.lean`. -/

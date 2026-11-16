@@ -12,15 +12,18 @@ import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.ReduceModChar
 public section
 
-/-! # Facts about Curve25519's constants
+/-! # Curve25519 parameters
 
-The characterisations of the constants of `ForHumans/Specs/Constants.lean`. The constants are not
-exposed: importing modules cannot unfold them (neither the elaborator nor the kernel) and use the
-lemmas below instead. The exception is the certificate files, which `import all` the constants so
-that the kernel can unfold `p` and `L`: `Proofs/Curve25519/Certificates/`,
-`Proofs/Curve25519/TestVectors/`, and the precomputed-table and low-order-point certificates of the
-dalek proofs (`Proofs/Backend/Serial/*/Constants/*`, `Proofs/Constants/X25519LowOrderPoints.lean`).
--/
+The field prime, the prime-order subgroup's order, and the constants of the twisted Edwards form
+`a x² + y² = 1 + d x² y²` (RFC 8032 §5.1) and the Montgomery form `y² = x³ + A x² + x`
+(RFC 7748 §4.1), defined in `ForHumans/Specs/Constants.lean`.
+
+The definitions are not exposed: importing modules cannot unfold them (neither the elaborator nor
+the kernel), and use the characterisation lemmas below instead. The exception is the unaudited
+certificate files, which `import all` `ForHumans.Specs.Constants` so that the kernel can unfold
+`p` and `L`: `Proofs/Curve25519/Certificates/`, `Proofs/Curve25519/TestVectors/`, and the
+precomputed-table and low-order-point certificates of the dalek proofs
+(`Proofs/Backend/Serial/*/Constants/*`, `Proofs/Constants/X25519LowOrderPoints.lean`). -/
 
 namespace curve25519
 

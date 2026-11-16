@@ -27,21 +27,21 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel Curve
 
 namespace Theorems.constants.«x86_64-no-tables»
 
-/-- `ED25519_BASEPOINT_POINT`: the basepoint. -/
+/-- `ED25519_BASEPOINT_POINT` represents the basepoint. -/
 theorem ED25519_BASEPOINT_POINT :
     backend.serial.u64.constants.ED25519_BASEPOINT_POINT.«x86_64-no-tables»
       ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
         r.OnCurve ∧ r.toPoint = basepoint ∧ r.IsBounded ⦄ :=
   backend.serial.u64.constants.«x86_64-no-tables».ED25519_BASEPOINT_POINT_spec
 
-/-- `ED25519_BASEPOINT_128_POINT`: `2^128 • basepoint`. -/
+/-- `ED25519_BASEPOINT_128_POINT` represents `2^128 • B`. -/
 theorem ED25519_BASEPOINT_128_POINT :
     backend.serial.u64.constants.ED25519_BASEPOINT_128_POINT.«x86_64-no-tables»
       ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
         r.OnCurve ∧ r.toPoint = 2 ^ 128 • basepoint ∧ r.IsBounded ⦄ :=
   backend.serial.u64.constants.«x86_64-no-tables».ED25519_BASEPOINT_128_POINT_spec
 
-/-- `EIGHT_TORSION`: entry `i` is `i • torsion8`. -/
+/-- `EIGHT_TORSION`: entry `i` represents `i • torsion8`. -/
 theorem EIGHT_TORSION :
     backend.serial.u64.constants.EIGHT_TORSION.«x86_64-no-tables»
       ⦃ (r : Array edwards.EdwardsPoint.«x86_64-no-tables» 8#usize) =>

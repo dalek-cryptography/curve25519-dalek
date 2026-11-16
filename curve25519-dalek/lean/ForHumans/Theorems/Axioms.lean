@@ -5,20 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 import ForHumans
 import Lean
 
-/-! # The axioms of the theorems
-
-Every theorem in `ForHumans/Theorems/` and `ForHumans/TestVectors.lean` may use only Lean's three
-axioms and the contracts of the external crates that curve25519-dalek calls:
-
-* `propext`, `Classical.choice`, `Quot.sound`: Lean's axioms;
-* `RustAx.subtle` (`ForHumans/Specs/External/Subtle/Contract.lean`): the `subtle` crate meets its
-  contract;
-* `RustAx.zeroize` (`ForHumans/Specs/External/Zeroize/Contract.lean`): the `zeroize` crate meets
-  its contract;
-* `RustAx.alloc` (`ForHumans/Specs/External/Alloc.lean`): `alloc` meets its contract.
-
-The check below fails if one does not, or if a theorem uses `sorryAx`. -/
-
 open Lean Elab Command
 
 /-- Lean's axioms and the contracts of the external crates. -/

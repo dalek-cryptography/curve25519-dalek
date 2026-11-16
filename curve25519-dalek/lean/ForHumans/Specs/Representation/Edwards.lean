@@ -13,26 +13,29 @@ public import ForHumans.Specs.Representation.CurveModels.I686Tables
 public import ForHumans.Specs.Representation.CurveModels.X86_64NoTables
 public section
 
-/-! # The point an `EdwardsPoint` represents
+/-! # `edwards.rs`: points, the compressed form, the lenient decoder, the basepoint tables
+(audited)
 
-An `EdwardsPoint` holds extended coordinates `(X : Y : Z : T)`, field elements with `x = X / Z`,
-`y = Y / Z` and `X Y = Z T`. `toPoint` is that point of edwards25519, or `0` when the coordinates
-are not those of a point (`OnCurve`; both from the `EllipticCurve` library). `IsBounded`, the
-bound on the limbs that the theorems assume and guarantee, is `LimbsLt 52` (every limb `< 2^52`)
-on x86_64 and `LimbsLt 26` on i686.
+- `EdwardsPoint` implements the extended coordinates `(X : Y : Z : T)` of `curve25519.edwards`
+  on radix-`2^51` limbs (x86_64) or radix-`2^25.5` limbs (i686): `toExtended` (hidden,
+  `toExtended_def`), `OnCurve` (exposed), `toPoint` (hidden, `toPoint_def`), `LimbsLt n` (all
+  limbs `< 2^n`, exposed), `IsBounded` (exposed: `LimbsLt 52` on x86_64, the bound forced by
+  the mixed affine-Niels addition, `LimbsLt 26` on i686; the bound every public function
+  assumes and preserves) and `ProjEq` (exposed), the projective equality that `ct_eq`
+  computes.
+- `AffinePoint` (`edwards/affine.rs`) is the affine point itself: `OnCurve` is the curve
+  equation, `toPoint` the point (`0` off the curve), `LimbsLt n` as for `EdwardsPoint`.
+- `CompressedEdwardsY` is 32 bytes; `toVector` gives them as a `Vector UInt8 32`, the byte
+  string of RFC 8032 (`curve25519.encode`, `decodeLenient`).
+- The basepoint tables `EdwardsBasepointTable{,Radix32,Radix64,Radix128,Radix256}` (radix
+  `2^w`, `w = 4, 5, 6, 7, 8`) hold `32` rows of `2^(w-1)` affine Niels points. `t.point` is the
+  point of entry `0` of row `0`, and `t.IsTable`, the invariant of the Rust type (whose tables
+  come only from `BasepointTable::create`), says that entry `j` of row `i` is on the curve and
+  is `(j + 1) • 2^(2 w i) • t.point`. `t.IsBounded`: every limb of every entry is `< 2^54`
+  (x86_64) or `< 2^27` (i686).
+  They exist only in the `tables` configuration.
 
-The basepoint tables `EdwardsBasepointTable{,Radix32,Radix64,Radix128,Radix256}` (radix `2^w`,
-`w = 4, 5, 6, 7, 8`) hold `32` rows of `2^(w-1)` affine Niels points
-(`Representation/CurveModels.lean`); they exist only with precomputed tables. For a table `t`:
-
-- `t.point`, the point the table is for, is the point of its entry `0` of row `0`;
-- `t.IsTable`, the invariant of the Rust type (whose tables come only from
-  `BasepointTable::create`): entry `j` of row `i` is on the curve and is
-  `(j + 1) • 2^(2 w i) • t.point`;
-- `t.IsBounded`: every limb of every entry is `< 2^54` (`< 2^27` on i686).
-
-The definitions are written for `x86_64-tables`; `scripts/gen-config-specs.py` generates the
-other configurations' copies in `Representation/Edwards/`. -/
+`RistrettoPoint` is `EdwardsPoint`. -/
 
 open Aeneas Aeneas.Std
 

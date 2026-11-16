@@ -26,9 +26,9 @@ open Curve25519Dalek.scalar (Scalar)
 
 namespace Theorems.montgomery.«x86_64-no-tables».MontgomeryPoint
 
-/-- `to_edwards`: `none` for `u = -1`; otherwise the lenient decoding (as
-`CompressedEdwardsY::decompress`) of the bytes of `y = (u - 1) / (u + 1)` with
-`y_bytes[31] ^= sign << 7`. -/
+/-- `MontgomeryPoint::to_edwards`: `none` for `u = -1`; otherwise the lenient decoding (as
+`CompressedEdwardsY::decompress`) of the bytes of `y = (u - 1) / (u + 1)` with `y_bytes[31] ^= sign
+<< 7`. -/
 theorem to_edwards (P : MontgomeryPoint) (sign : U8) :
     MontgomeryPoint.to_edwards.«x86_64-no-tables» P sign
       ⦃ (r : Option (edwards.EdwardsPoint.«x86_64-no-tables»)) =>

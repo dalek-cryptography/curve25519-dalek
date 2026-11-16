@@ -7,13 +7,6 @@ public import Proofs.Representation.CurveModels
 public import ForHumans.Specs.Representation
 public section
 
-/-! # The projective Niels points as table entries
-
-The `PointRepr` instances of the four `ProjectiveNielsPoint` structures, the entries of the
-tables that `EdwardsPoint::mul` and the multiscalar multiplications build on the fly. The class,
-the table predicates and the instances for `AffineNielsPoint` are in
-`ForHumans/Specs/Representation/` (`Window.lean`, `CurveModels.lean`). -/
-
 open Aeneas Aeneas.Std
 
 namespace Curve25519Dalek

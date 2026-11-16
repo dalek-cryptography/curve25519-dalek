@@ -10,11 +10,6 @@ set_option linter.unusedVariables false
 open Aeneas Aeneas.Std Result Aeneas.Std.WP
 open Curve25519Dalek
 
-/-! # The contracts of `zeroize`, as theorems
-
-Each contract of `ForHumans/Specs/External/Zeroize/Contract.lean`, as the theorem that the proofs
-use: its projection from the axiom `RustAx.zeroize`. -/
-
 /-- `zeroize.Zeroize.Blanket.zeroize` meets its contract (`RustAx.zeroize`). -/
 theorem zeroize.Zeroize.Blanket.zeroize_eq
     {Z : Type} (inst : zeroize.DefaultIsZeroes Z) (x : Z) :

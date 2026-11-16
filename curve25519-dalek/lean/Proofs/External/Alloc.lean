@@ -12,11 +12,6 @@ set_option linter.unusedVariables false
 open Aeneas Aeneas.Std Result Aeneas.Std.WP
 open Curve25519Dalek
 
-/-! # The contracts of `alloc`, as theorems
-
-Each contract of `ForHumans/Specs/External/Alloc.lean`, as the theorem that the proofs use: its
-projection from the axiom `RustAx.alloc`. -/
-
 /-- `SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter` meets its contract
 (`RustAx.alloc`). -/
 @[step]

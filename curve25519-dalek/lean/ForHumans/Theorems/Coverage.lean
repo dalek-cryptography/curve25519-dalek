@@ -5,39 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 import ForHumans
 import Lean
 
-/-! # Every way to obtain a point, a table, a precomputation or a scalar has a theorem
-
-The theorems about a function that takes an `EdwardsPoint` assume its invariants (`OnCurve`,
-`IsBounded`); they apply to a point only if whatever produced it guarantees them. The check
-below goes through every function of the translation (`Curve25519Dalek/Funs.lean`, regenerated
-and compared in CI, so a new Rust function appears there) whose result contains one of the types
-below, and fails unless one of the following holds:
-
-* a theorem of `ForHumans/Theorems/` is about it and its conclusion (after the hypotheses)
-  mentions the invariants of each of these types in the result;
-* a theorem of `ForHumans/Theorems/` is about it and concludes that the result is one of the
-  arguments (`clone`);
-* its translation returns its argument (`fun x => ok x`, e.g. `clone` of `Copy` types);
-* it is a loop of a function's body (`_loop`), translated as a function of its own;
-* it is the copy for one configuration of a function that dispatches on the configuration
-  (`get_target`), and the dispatcher is covered or exempt;
-* it is exempt below, by its Rust source file or by name, with the reason: the function is not
-  callable from outside the crate, or its result is one of its arguments.
-
-The types and their invariants:
-
-* `EdwardsPoint`, `RistrettoPoint`: `OnCurve`, `IsBounded`;
-* the five `EdwardsBasepointTable*`, `RistrettoBasepointTable`: `IsTable`, `IsBounded`;
-* `VartimePrecomputedStraus`, `VartimeEdwardsPrecomputation`, `VartimeRistrettoPrecomputation`:
-  `IsValid`, `IsBounded`;
-* `Scalar`: none (a theorem is required, whatever it says), since the hypotheses about a scalar
-  are bounds on its value `asNat`.
-
-An exemption that no longer matches an uncovered function is an error, so the list stays exact.
-Not covered by this check: the features that are not translated (`serde`, `group`, `rand_core`,
-`digest`, `legacy_compatibility`, the SIMD and fiat backends), and the privacy of the fields
-of these types, which the argument relies on (users cannot build the values by hand). -/
-
 open Lean Meta Elab Command
 
 namespace Coverage

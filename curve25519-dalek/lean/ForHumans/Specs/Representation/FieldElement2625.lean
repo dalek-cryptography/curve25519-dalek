@@ -11,13 +11,6 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Order.Floor.Div
 public section
 
-/-! # The value of a `FieldElement2625`
-
-A `FieldElement2625` (`backend/serial/u32/field.rs`) is ten `u32` limbs in radix `2^25.5`:
-"`x = ∑_{i=0}^9 x_i 2^⌈i 51/2⌉ = x_0 + x_1 2^26 + x_2 2^51 + x_3 2^77 + ⋯ + x_9 2^230`". `asNat`
-is that number (the limbs may exceed their nominal width), `toField` the field element, `LimbsLt n`
-says that every limb is `< 2^n`. -/
-
 open Aeneas.Std curve25519
 
 /-- The value of ten limbs in radix `2^25.5`: `∑ x_i · 2^⌈i · 51 / 2⌉` (`⌈/⌉` is ceiling
@@ -35,8 +28,7 @@ def field.FieldElement2625.asNat (self : field.FieldElement2625) : ℕ :=
 noncomputable def field.FieldElement2625.toField (self : field.FieldElement2625) : ZMod p :=
   (self.asNat : ZMod p)
 
-/-- Every limb is `< 2^n`: the limb bounds that the theorems assume and guarantee (the
-bound is in the invariant of each point type). -/
+/-- Every limb is `< 2^n`. -/
 abbrev field.FieldElement2625.LimbsLt (n : ℕ) (self : field.FieldElement2625) : Prop :=
   ∀ i < 10, self[i]!.val < 2 ^ n
 

@@ -37,8 +37,8 @@ abbrev RistrettoPoint := ristretto.RistrettoPoint.«i686-no-tables»
 abbrev VartimeRistrettoPrecomputation := ristretto.VartimeRistrettoPrecomputation.«i686-no-tables»
 
 /-- `CompressedRistretto::decompress`: RFC 9496's decoding `decodeRep` of the bytes, `none` exactly
-when they are not a valid ristretto255 encoding; the point is even (a ristretto255
-representative). -/
+when they are not a valid ristretto255 encoding; the point is even (a ristretto255 representative).
+-/
 theorem CompressedRistretto.decompress (c : CompressedRistretto) :
     CompressedRistretto.decompress.«i686-no-tables» c ⦃ (r : Option RistrettoPoint) =>
       r.map (·.toPoint) = Ristretto.decodeRep c.toVector ∧
@@ -49,13 +49,13 @@ namespace RistrettoPoint
 
 open ristretto.«RistrettoPointi686-no-tables»
 
-/-- `compress`: RFC 9496's encoding of the represented point. -/
+/-- `RistrettoPoint::compress`: RFC 9496's encoding of the represented point. -/
 theorem compress (P : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
     compress P ⦃ (r : CompressedRistretto) => r.toVector = Ristretto.encodeRep P.toPoint ⦄ :=
   compress_spec P hP' hP
 
-/-- `double_and_compress_batch`: entry `i` is RFC 9496's encoding of `2 P_i` for the points `P_i`
-the input yields. -/
+/-- `RistrettoPoint::double_and_compress_batch`: entry `i` is RFC 9496's encoding of `2 P_i` for the
+points `P_i` the input yields. -/
 theorem double_and_compress_batch {I Clause0_IntoIter : Type}
     (pointsInst : core.iter.traits.collect.IntoIterator I RistrettoPoint Clause0_IntoIter)
     (points : I) (Ps : List RistrettoPoint) (hpoints : pointsInst.Yields points Ps)
@@ -65,8 +65,8 @@ theorem double_and_compress_batch {I Clause0_IntoIter : Type}
         ∀ i < Ps.length, r[i]!.toVector = Ristretto.encodeRep (2 • Ps[i]!.toPoint) ⦄ := by
   apply double_and_compress_batch_spec <;> assumption
 
-/-- `from_uniform_bytes`: RFC 9496's one-way map of the 64 bytes' little-endian value,
-`MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255 representative). -/
+/-- `RistrettoPoint::from_uniform_bytes`: RFC 9496's one-way map of the 64 bytes' little-endian
+value, `MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255 representative). -/
 theorem from_uniform_bytes (bytes : Array U8 64#usize) :
     from_uniform_bytes bytes ⦃ (r : RistrettoPoint) =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep bytes.toVector ∧
@@ -79,27 +79,27 @@ namespace RistrettoPoint
 
 open ristretto.RistrettoPoint.«i686-no-tables».Insts
 
-/-- `Identity`: the neutral element. -/
+/-- `Identity for RistrettoPoint` represents the neutral element. -/
 theorem identity :
     Curve25519_dalekTraitsIdentity.identity ⦃ (r : RistrettoPoint) =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.IsBounded ⦄ :=
   Curve25519_dalekTraitsIdentity.identity_spec
 
-/-- `Default`: the neutral element. -/
+/-- `Default for RistrettoPoint` represents the neutral element. -/
 theorem default :
     CoreDefaultDefault.default ⦃ (r : RistrettoPoint) =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.IsBounded ⦄ :=
   CoreDefaultDefault.default_spec
 
-/-- `PartialEq`: equality in the Ristretto group. -/
+/-- `PartialEq for RistrettoPoint`: equality in the Ristretto group. -/
 theorem eq (P Q : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
     (hQ' : Q.IsBounded) :
     «CoreCmpPartialEqRistrettoPointi686-no-tables».eq P Q ⦃ (r : Bool) =>
       r = true ↔ edwards.Rel P.toPoint Q.toPoint ⦄ :=
   «CoreCmpPartialEqRistrettoPointi686-no-tables».eq_spec P Q hP' hQ' hP hQ
 
-/-- `ConstantTimeEq`: equality in the Ristretto group, i.e. of the classes of the represented
-points (`X₁ Y₂ = Y₁ X₂` or `X₁ X₂ = Y₁ Y₂`). -/
+/-- `ConstantTimeEq for RistrettoPoint`: equality in the Ristretto group, i.e. of the classes of the
+represented points (`X₁ Y₂ = Y₁ X₂` or `X₁ X₂ = Y₁ Y₂`). -/
 theorem ct_eq (P Q : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
     (hQ' : Q.IsBounded) :
     SubtleConstantTimeEq.ct_eq P Q ⦃ (r : subtle.Choice) =>
@@ -107,10 +107,6 @@ theorem ct_eq (P Q : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : 
   SubtleConstantTimeEq.ct_eq_spec P Q hP' hQ' hP hQ
 
 end RistrettoPoint
-
-/-! ### Arithmetic
-
-The operator impls, named by the Rust expression they evaluate (`P`, `Q` points, `s` a scalar). -/
 
 /-- `impl Add<&RistrettoPoint> for &RistrettoPoint` -/
 abbrev «&P + &Q» := open «Shared0RistrettoPointi686-no-tables».Insts in
@@ -191,7 +187,7 @@ abbrev «s * P» := open scalar.Scalar.Insts in
 
 namespace RistrettoPoint
 
-/-- `Add` and `AddAssign`: the sum of the points. -/
+/-- `Add<&RistrettoPoint> for &RistrettoPoint` on the represented points. -/
 theorem add (P Q : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
     (hQ' : Q.IsBounded) :
     ∀ add ∈ [«&P + &Q», «P + &Q», «&P + Q», «P + Q», «P += &Q», «P += Q»],
@@ -200,7 +196,7 @@ theorem add (P Q : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.
   open «Shared0RistrettoPointi686-no-tables».Insts in
   variants [«CoreOpsArithAddSharedARistrettoPointi686-no-tablesRistrettoPointi686-no-tables».add_spec]
 
-/-- `Sub` and `SubAssign`: the difference of the points. -/
+/-- `Sub<&RistrettoPoint> for &RistrettoPoint` on the represented points. -/
 theorem sub (P Q : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
     (hQ' : Q.IsBounded) :
     ∀ sub ∈ [«&P - &Q», «P - &Q», «&P - Q», «P - Q», «P -= &Q», «P -= Q»],
@@ -209,7 +205,7 @@ theorem sub (P Q : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.
   open «Shared0RistrettoPointi686-no-tables».Insts in
   variants [«CoreOpsArithSubSharedARistrettoPointi686-no-tablesRistrettoPointi686-no-tables».sub_spec]
 
-/-- `Sum`: the sum of the points the iterator yields (through `borrow`). -/
+/-- `Sum for RistrettoPoint`: the sum of the points yielded by the iterator (through `borrow`). -/
 theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
     (Ps : List RistrettoPoint) (hiter : iterInst.Yields iter xs)
@@ -222,14 +218,14 @@ theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint)
   apply ristretto.RistrettoPoint.«i686-no-tables».Insts.CoreIterTraitsAccumSum.sum_spec <;>
     assumption
 
-/-- `Neg`: the negation of the point. -/
+/-- `Neg for RistrettoPoint` negates the represented point. -/
 theorem neg (P : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
     ∀ neg ∈ [«-&P», «-P»],
       neg P ⦃ (r : RistrettoPoint) => r.OnCurve ∧ r.toPoint = -P.toPoint ∧ r.IsBounded ⦄ := by
   open «Shared0RistrettoPointi686-no-tables».Insts in
   variants [«CoreOpsArithNegRistrettoPointi686-no-tables».neg_spec]
 
-/-- `Mul<Scalar>` and `MulAssign<Scalar>`: `s • P`. -/
+/-- `Mul<&Scalar> for &RistrettoPoint`: `s • P` (unreduced, `< 2^255`). -/
 theorem mul (P : RistrettoPoint) (s : Scalar) (hP : P.OnCurve) (hP' : P.IsBounded)
     (hs : s.asNat < 2 ^ 255) :
     ∀ mul ∈ [«&P * &s», «P * &s», «&P * s», «P * s», «P *= &s», «P *= s»],
@@ -238,7 +234,7 @@ theorem mul (P : RistrettoPoint) (s : Scalar) (hP : P.OnCurve) (hP' : P.IsBounde
   open «Shared0RistrettoPointi686-no-tables».Insts in
   variants [«CoreOpsArithMulSharedAScalarRistrettoPointi686-no-tables».mul_spec]
 
-/-- `Mul<RistrettoPoint> for Scalar`: `s • P`. -/
+/-- `Mul<&RistrettoPoint> for &Scalar`: as `&RistrettoPoint * &Scalar`. -/
 theorem mul_left (s : Scalar) (P : RistrettoPoint) (hs : s.asNat < 2 ^ 255) (hP : P.OnCurve)
     (hP' : P.IsBounded) :
     ∀ mul ∈ [«&s * &P», «s * &P», «&s * P», «s * P»],
@@ -247,7 +243,7 @@ theorem mul_left (s : Scalar) (P : RistrettoPoint) (hs : s.asNat < 2 ^ 255) (hP 
   open Shared0Scalar.Insts in
   variants [«CoreOpsArithMulSharedARistrettoPointi686-no-tablesRistrettoPointi686-no-tables».mul_spec]
 
-/-- `mul_base`: `s • B` for the basepoint `B`: an even point. -/
+/-- `RistrettoPoint::mul_base`: `s • B` for the basepoint `B` (unreduced, `< 2^255`). -/
 theorem mul_base (s : Scalar) (hs : s.asNat < 2 ^ 255) :
     ristretto.«RistrettoPointi686-no-tables».mul_base s ⦃ (r : RistrettoPoint) =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = s.asNat • basepoint ∧ r.IsBounded ⦄ :=
@@ -255,14 +251,13 @@ theorem mul_base (s : Scalar) (hs : s.asNat < 2 ^ 255) :
 
 end RistrettoPoint
 
-/-! ### Multiscalar multiplication -/
-
 namespace RistrettoPoint
 
 open ristretto.RistrettoPoint.«i686-no-tables».Insts
 
-/-- `MultiscalarMul::multiscalar_mul`: `∑ s_i • P_i` over the scalars and points the two inputs
-yield, which must be equally many (the patched `assert_eq!`). -/
+/-- `MultiscalarMul::multiscalar_mul` for `RistrettoPoint`: `∑ s_i • P_i` over the scalars and
+points the two inputs yield, which must be equally many (the patched `assert_eq!`; unreduced scalars
+`< 2^255`). -/
 theorem multiscalar_mul
     {I J Clause0_Item Clause0_IntoIter Clause2_Item Clause2_IntoIter : Type}
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
@@ -286,9 +281,9 @@ theorem multiscalar_mul
     assumption
 
 open «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointi686-no-tables» in
-/-- `VartimeMultiscalarMul::optional_multiscalar_mul`: `none` iff some point is `none`; otherwise
-`∑ s_i • P_i` over the scalars and points, which must be equally many (the patched
-`assert_eq!`). -/
+/-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `RistrettoPoint`: `none` iff some point is
+`none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the patched
+`assert_eq!`; unreduced scalars `< 2^255`). -/
 theorem optional_multiscalar_mul {I J Clause0_Item Clause0_IntoIter Clause2_IntoIter : Type}
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item Scalar)
@@ -315,8 +310,8 @@ namespace VartimeRistrettoPrecomputation
 open ristretto.VartimeRistrettoPrecomputation.«i686-no-tables».Insts
 open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulRistrettoPointi686-no-tables»
 
-/-- `VartimePrecomputedMultiscalarMul::new`: a precomputation of the points the input yields
-(through `borrow`). -/
+/-- `VartimePrecomputedMultiscalarMul::new` for `VartimeRistrettoPrecomputation`: a precomputation
+of the points the input yields (through `borrow`). -/
 theorem new {I Clause0_Item Clause0_IntoIter : Type}
     (pointsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowInst : core.borrow.Borrow Clause0_Item RistrettoPoint)
@@ -329,20 +324,22 @@ theorem new {I Clause0_Item Clause0_IntoIter : Type}
       r.IsValid ∧ r.points = Ps.map (·.toPoint) ∧ r.IsBounded ⦄ := by
   apply new_spec <;> assumption
 
-/-- `VartimePrecomputedMultiscalarMul::len`: the number of static points. -/
+/-- `VartimePrecomputedMultiscalarMul::len` for `VartimeRistrettoPrecomputation`: the number of
+static points. -/
 theorem len (pre : VartimeRistrettoPrecomputation) :
     len pre ⦃ (r : Usize) => r.val = pre.points.length ⦄ :=
   len_spec pre
 
-/-- `VartimePrecomputedMultiscalarMul::is_empty`: whether there are no static points. -/
+/-- `VartimePrecomputedMultiscalarMul::is_empty` for `VartimeRistrettoPrecomputation`: whether there
+are no static points. -/
 theorem is_empty (pre : VartimeRistrettoPrecomputation) :
     is_empty pre ⦃ (r : Bool) => r = true ↔ pre.points = [] ⦄ :=
   is_empty_spec pre
 
-/-- `VartimePrecomputedMultiscalarMul::optional_mixed_multiscalar_mul` (static points
-`pre.points`): `none` iff some dynamic point is `none`; otherwise `∑ s_i • P_i + ∑ d_i • Q_i`,
-missing static scalars counting as `0` (if no point is `none`, at most `|pre.points|` static
-scalars and as many dynamic scalars as dynamic points). -/
+/-- `VartimePrecomputedMultiscalarMul::optional_mixed_multiscalar_mul` for
+`VartimeRistrettoPrecomputation` (static points `pre.points`): `none` iff some dynamic point is
+`none`; otherwise `∑ s_i • P_i + ∑ d_i • Q_i`, missing static scalars counting as `0` (if no point
+is `none`, at most `|pre.points|` static scalars and as many dynamic scalars as dynamic points). -/
 theorem optional_mixed_multiscalar_mul
     {I J K Clause0_Item Clause0_IntoIter Clause2_Item Clause2_IntoIter Clause4_IntoIter : Type}
     (staticScalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
@@ -381,7 +378,8 @@ end VartimeRistrettoPrecomputation
 
 namespace RistrettoPoint
 
-/-- `vartime_double_scalar_mul_basepoint`: `a • A + b • B` for the basepoint `B`. -/
+/-- `RistrettoPoint::vartime_double_scalar_mul_basepoint`: `a • A + b • B` for the basepoint `B`
+(unreduced scalars `< 2^255`). -/
 theorem vartime_double_scalar_mul_basepoint (a : Scalar) (A : RistrettoPoint) (b : Scalar)
     (ha : a.asNat < 2 ^ 255) (hA : A.OnCurve) (hA' : A.IsBounded) (hb : b.asNat < 2 ^ 255) :
     ristretto.«RistrettoPointi686-no-tables».vartime_double_scalar_mul_basepoint a A b
@@ -396,20 +394,20 @@ namespace RistrettoPoint
 
 open ristretto.RistrettoPoint.«i686-no-tables».Insts
 
-/-- `ConditionallySelectable`: `a` if `choice = 0`, `b` if `choice = 1`. -/
+/-- `ConditionallySelectable for RistrettoPoint`: `a` if `choice = 0`, `b` if `choice = 1`. -/
 theorem conditional_select (a b : RistrettoPoint) (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
     SubtleConditionallySelectable.conditional_select a b choice ⦃ (r : RistrettoPoint) =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ :=
   SubtleConditionallySelectable.conditional_select_spec a b choice hchoice
 
-/-- `Zeroize`: leaves the neutral element. -/
+/-- `Zeroize for RistrettoPoint` leaves the neutral element. -/
 theorem zeroize (P : RistrettoPoint) :
     ZeroizeZeroize.zeroize P ⦃ (r : RistrettoPoint) => r.OnCurve ∧ r.toPoint = 0 ∧ r.IsBounded ⦄ :=
   ZeroizeZeroize.zeroize_spec P
 
-/-- `elligator`'s `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the 32 bytes
-(`Ristretto.mapRep`): an even point (a ristretto255 representative). -/
+/-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the 32 bytes (`Ristretto.mapRep`): an even
+point (a ristretto255 representative). -/
 theorem map_to_curve (bytes : Array U8 32#usize) :
     ristretto.elligator.«RistrettoPointi686-no-tables».map_to_curve bytes ⦃ (r : RistrettoPoint) =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep bytes.toVector ∧ r.IsBounded ⦄ :=

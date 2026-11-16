@@ -32,7 +32,7 @@ The conversions into them (`Extended.toProjectiveNiels`, `Extended.toAffineNiels
 `Point.toAffineNiels`), the identities and the negations are the exposed formulas the code
 computes; their `onCurve_*` and `toPoint_*`
 lemmas are in `Proofs.Curve25519.Models.TwistedEdwards.Coords.Lemmas`. The mixed additions with
-Niels points are in `Curve25519.Models.TwistedEdwards.Formulas.*`. -/
+Niels points are in `Proofs.Curve25519.Models.TwistedEdwards.Formulas.*`. -/
 
 universe u
 

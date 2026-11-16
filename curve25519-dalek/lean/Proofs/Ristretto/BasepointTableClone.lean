@@ -7,11 +7,6 @@ public import Curve25519Dalek.Funs
 import Proofs.Edwards.BasepointTableClone
 public section
 
-/-! # `Clone for RistrettoBasepointTable`
-
-`#[derive(Clone)]` on the wrapper: the clone of the inner `EdwardsBasepointTable`, which is the
-table itself. -/
-
 open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek.ristretto

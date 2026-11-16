@@ -12,24 +12,6 @@ import Proofs
 import Proofs.External.Zeroize.Instances
 public section
 
-/-! # Theorems about `src/scalar.rs`
-
-The public items of `scalar.rs`, in its order.
-
-A `Scalar` is specified by its value `asNat`, the number its 32 bytes encode little-endian, which
-need not be reduced modulo the group order `L`. A `HalfWidthScalar` is a `Scalar` whose value is
-below `2^128`; the Lean type does not carry the bound: its constructors state it and its consumers
-assume it.
-
-Definitions used, in `ForHumans/Specs/`: `L` (`Constants.lean`), `Scalar.asNat`,
-`HalfWidthScalar.asNat` (`Representation/Scalar.lean`), `Array.asNat`
-(`Representation/Array.lean`), `Iterator.Yields` (`Representation/Iterator.lean`),
-`subtle.Choice`, `Choice.IsValid`, `subtle.CtOption` (`External/Subtle/`).
-
-Not specified: derived `Clone`/`Copy` impls, and items outside the public API (`reduce`,
-`as_radix_16`, …), which are proved in `Proofs/Scalar/`. Not translated: `Debug`, `Hash`,
-`from_bits`, `random`, `hash_from_bytes`, `from_hash`, the `group` and `serde` impls. -/
-
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 open Curve25519Dalek
 open Curve25519Dalek.scalar (Scalar HalfWidthScalar)
@@ -53,24 +35,24 @@ theorem from_canonical_bytes (bytes : Array U8 32#usize) :
       (bytes.asNat 8 < L → r.is_some = 1#u8) ∧ (L ≤ bytes.asNat 8 → r.is_some = 0#u8) ⦄ :=
   Scalar.from_canonical_bytes_spec bytes
 
-/-- `PartialEq`: equality of the byte encodings. -/
+/-- `PartialEq::eq`: equality of the byte encodings. -/
 theorem eq (a b : Scalar) :
     Scalar.Insts.CoreCmpPartialEqScalar.eq a b ⦃ (r : Bool) => r = true ↔ a = b ⦄ :=
   Scalar.Insts.CoreCmpPartialEqScalar.eq_spec a b
 
-/-- `ConstantTimeEq`: `1` iff the byte encodings are equal. -/
+/-- `ConstantTimeEq::ct_eq`: `1` iff the byte encodings are equal. -/
 theorem ct_eq (a b : Scalar) :
     Scalar.Insts.SubtleConstantTimeEq.ct_eq a b ⦃ (r : subtle.Choice) =>
       r.IsValid ∧ (a = b → r = 1#u8) ∧ (a ≠ b → r = 0#u8) ⦄ :=
   Scalar.Insts.SubtleConstantTimeEq.ct_eq_spec a b
 
-/-- `Index<usize>`: byte `index`. -/
+/-- `Index::index`: byte `index`. -/
 theorem index (s : Scalar) (index : Usize) (hindex : index.val < 32) :
     Scalar.Insts.CoreOpsIndexIndexUsizeU8.index s index ⦃ (r : U8) =>
       r = s.bytes[index.val]! ⦄ :=
   Scalar.Insts.CoreOpsIndexIndexUsizeU8.index_spec s index hindex
 
-/-- `Mul` and `MulAssign`: the product modulo `L`. -/
+/-- `Mul::mul`: the product modulo `L`. -/
 theorem mul (a b : Scalar) :
     ∀ mul ∈ [
         Shared0Scalar.Insts.CoreOpsArithMulSharedAScalarScalar.mul, -- &a * &b
@@ -82,7 +64,7 @@ theorem mul (a b : Scalar) :
       mul a b ⦃ (r : Scalar) => r.asNat = a.asNat * b.asNat % L ⦄ := by
   variants [Shared0Scalar.Insts.CoreOpsArithMulSharedAScalarScalar.mul_spec]
 
-/-- `Add` and `AddAssign`: the sum modulo `L`, for reduced inputs. -/
+/-- `Add::add`: the sum modulo `L`, for reduced inputs. -/
 theorem add (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
     ∀ add ∈ [
         Shared0Scalar.Insts.CoreOpsArithAddSharedAScalarScalar.add, -- &a + &b
@@ -94,7 +76,7 @@ theorem add (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
       add a b ⦃ (r : Scalar) => r.asNat = (a.asNat + b.asNat) % L ⦄ := by
   variants [Shared0Scalar.Insts.CoreOpsArithAddSharedAScalarScalar.add_spec]
 
-/-- `Sub` and `SubAssign`: the difference modulo `L`, reduced, for reduced inputs. -/
+/-- `Sub::sub`: the difference modulo `L`, reduced, for reduced inputs. -/
 theorem sub (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
     ∀ sub ∈ [
         Shared0Scalar.Insts.CoreOpsArithSubSharedAScalarScalar.sub, -- &a - &b
@@ -106,7 +88,7 @@ theorem sub (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
       sub a b ⦃ (r : Scalar) => (r.asNat + b.asNat) % L = a.asNat ∧ r.asNat < L ⦄ := by
   variants [Shared0Scalar.Insts.CoreOpsArithSubSharedAScalarScalar.sub_spec]
 
-/-- `Neg`: the negation modulo `L`, reduced. -/
+/-- `Neg::neg` (for `&Scalar`): the negation modulo `L`, reduced. -/
 theorem neg (a : Scalar) :
     ∀ neg ∈ [
         Shared0Scalar.Insts.CoreOpsArithNegScalar.neg, -- -&a
@@ -114,14 +96,13 @@ theorem neg (a : Scalar) :
       neg a ⦃ (r : Scalar) => (r.asNat + a.asNat) % L = 0 ∧ r.asNat < L ⦄ := by
   variants [Shared0Scalar.Insts.CoreOpsArithNegScalar.neg_spec]
 
-/-- `ConditionallySelectable`: `a` if `choice = 0`, `b` if `choice = 1`, for a valid `choice`. -/
+/-- `conditional_select`: `a` if `choice = 0`, `b` if `choice = 1`, for a valid `choice`. -/
 theorem conditional_select (a b : Scalar) (choice : subtle.Choice) (hchoice : choice.IsValid) :
     Scalar.Insts.SubtleConditionallySelectable.conditional_select a b choice ⦃ (r : Scalar) =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ :=
   Scalar.Insts.SubtleConditionallySelectable.conditional_select_spec a b choice hchoice
 
-/-- `Product`: the product of the items modulo `L`. The items are given by the list `xs` that the
-iterator yields, and `ss`, the scalars they borrow as. -/
+/-- `Product::product`: the product of the items modulo `L`. -/
 theorem product {T I : Type} (borrowInst : core.borrow.Borrow T Scalar)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
     (ss : List Scalar) (hiter : iterInst.Yields iter xs)
@@ -130,7 +111,7 @@ theorem product {T I : Type} (borrowInst : core.borrow.Borrow T Scalar)
       r.asNat = (ss.map (·.asNat)).prod % L ⦄ :=
   Scalar.Insts.CoreIterTraitsAccumProduct.product_spec borrowInst iterInst iter xs ss hiter hborrow
 
-/-- `Sum`: the sum of the items modulo `L`, for reduced items (given as for `product`). -/
+/-- `Sum::sum`: the sum of the items modulo `L`, for reduced items. -/
 theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T Scalar)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
     (ss : List Scalar) (hiter : iterInst.Yields iter xs)
@@ -140,11 +121,11 @@ theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T Scalar)
       r.asNat = (ss.map (·.asNat)).sum % L ⦄ :=
   Scalar.Insts.CoreIterTraitsAccumSum.sum_spec borrowInst iterInst iter xs ss hiter hborrow hss
 
-/-- `Default`: the scalar `0`. -/
+/-- `Default::default`: the scalar `0`. -/
 theorem default : Scalar.Insts.CoreDefaultDefault.default ⦃ (r : Scalar) => r.asNat = 0 ⦄ :=
   Scalar.Insts.CoreDefaultDefault.default_spec
 
-/-- `From<u8>`, `From<u16>`, `From<u32>`, `From<u64>`, `From<u128>`: the value of the integer. -/
+/-- `From<u8>`: the value of `x`. -/
 theorem «from» :
     (∀ x : U8, Scalar.Insts.CoreConvertFromU8.from x ⦃ (r : Scalar) => r.asNat = x.val ⦄) ∧
     (∀ x : U16, Scalar.Insts.CoreConvertFromU16.from x ⦃ (r : Scalar) => r.asNat = x.val ⦄) ∧
@@ -155,7 +136,7 @@ theorem «from» :
     Scalar.Insts.CoreConvertFromU32.from_spec, Scalar.Insts.CoreConvertFromU64.from_spec,
     Scalar.Insts.CoreConvertFromU128.from_spec⟩
 
-/-- `Zeroize`: all bytes `0`. -/
+/-- `Zeroize::zeroize`: all bytes `0`. -/
 theorem zeroize (s : Scalar) :
     Scalar.Insts.ZeroizeZeroize.zeroize s ⦃ (r : Scalar) =>
       r = { bytes := Array.repeat 32#usize 0#u8 } ⦄ :=
@@ -220,45 +201,45 @@ end Theorems.scalar
 
 namespace Theorems.scalar.HalfWidthScalar
 
-/-- `Default` (derived): the scalar `0`. -/
+/-- `Default::default` (derived): the scalar `0`. -/
 theorem default :
     HalfWidthScalar.Insts.CoreDefaultDefault.default ⦃ (r : HalfWidthScalar) =>
       r.asNat < 2 ^ 128 ∧ r.asNat = 0 ⦄ :=
   HalfWidthScalar.Insts.CoreDefaultDefault.default_spec
 
-/-- `PartialEq` (derived): equality. -/
+/-- `PartialEq::eq` (derived): equality. -/
 theorem eq (a b : HalfWidthScalar) :
     HalfWidthScalar.Insts.CoreCmpPartialEqHalfWidthScalar.eq a b ⦃ (r : Bool) =>
       r = true ↔ a = b ⦄ :=
   HalfWidthScalar.Insts.CoreCmpPartialEqHalfWidthScalar.eq_spec a b
 
-/-- `TryFrom<Scalar>`: succeeds iff the value is below `2^128`. -/
+/-- `TryFrom<Scalar> for HalfWidthScalar`: succeeds iff the value is below `2^128`. -/
 theorem try_from (value : Scalar) :
     HalfWidthScalar.Insts.CoreConvertTryFromScalarTuple.try_from value
       ⦃ (r : core.result.Result HalfWidthScalar Unit) =>
         (value.asNat < 2 ^ 128 → r = .Ok value) ∧ (2 ^ 128 ≤ value.asNat → r = .Err ()) ⦄ :=
   HalfWidthScalar.Insts.CoreConvertTryFromScalarTuple.try_from_spec value
 
-/-- `ZERO`: `0`. -/
+/-- `HalfWidthScalar::ZERO`: `0`. -/
 theorem ZERO : HalfWidthScalar.ZERO.asNat < 2 ^ 128 ∧ HalfWidthScalar.ZERO.asNat = 0 :=
   HalfWidthScalar.ZERO_spec
 
-/-- `ONE`: `1`. -/
+/-- `HalfWidthScalar::ONE`: `1`. -/
 theorem ONE : HalfWidthScalar.ONE.asNat < 2 ^ 128 ∧ HalfWidthScalar.ONE.asNat = 1 :=
   HalfWidthScalar.ONE_spec
 
-/-- `from_bytes`: the 128-bit little-endian value. -/
+/-- `HalfWidthScalar::from_bytes`: the 128-bit little-endian value. -/
 theorem from_bytes (bytes : Array U8 16#usize) :
     HalfWidthScalar.from_bytes bytes ⦃ (r : HalfWidthScalar) =>
       r.asNat < 2 ^ 128 ∧ r.asNat = bytes.asNat 8 ⦄ :=
   HalfWidthScalar.from_bytes_spec bytes
 
-/-- `as_scalar`: the same value. -/
+/-- `HalfWidthScalar::as_scalar`: the same value. -/
 theorem as_scalar (s : HalfWidthScalar) :
     HalfWidthScalar.as_scalar s ⦃ (r : Scalar) => r.asNat = s.asNat ⦄ :=
   HalfWidthScalar.as_scalar_spec s
 
-/-- `to_bytes`: the 128-bit little-endian encoding. -/
+/-- `HalfWidthScalar::to_bytes`: the 128-bit little-endian encoding. -/
 theorem to_bytes (s : HalfWidthScalar) (hs : s.asNat < 2 ^ 128) :
     HalfWidthScalar.to_bytes s ⦃ (r : Array U8 16#usize) => r.asNat 8 = s.asNat ⦄ :=
   HalfWidthScalar.to_bytes_spec s hs
@@ -268,7 +249,7 @@ theorem into_scalar (x : HalfWidthScalar) :
     Scalar.Insts.CoreConvertFromHalfWidthScalar.from x ⦃ (r : Scalar) => r.asNat = x.asNat ⦄ :=
   Scalar.Insts.CoreConvertFromHalfWidthScalar.from_spec x
 
-/-- `From<u8>`, `From<u16>`, `From<u32>`, `From<u64>`, `From<u128>`: the value of the integer. -/
+/-- `From<u8> for HalfWidthScalar`: the value of `x`. -/
 theorem «from» :
     (∀ x : U8, HalfWidthScalar.Insts.CoreConvertFromU8.from x ⦃ (r : HalfWidthScalar) =>
       r.asNat < 2 ^ 128 ∧ r.asNat = x.val ⦄) ∧
@@ -286,7 +267,7 @@ theorem «from» :
     HalfWidthScalar.Insts.CoreConvertFromU64.from_spec,
     HalfWidthScalar.Insts.CoreConvertFromU128.from_spec⟩
 
-/-- `Zeroize`: all bytes `0`. -/
+/-- `Zeroize::zeroize` for `HalfWidthScalar`: all bytes `0`. -/
 theorem zeroize (s : HalfWidthScalar) :
     HalfWidthScalar.Insts.ZeroizeZeroize.zeroize s ⦃ (r : HalfWidthScalar) =>
       r = { bytes := Array.repeat 32#usize 0#u8 } ⦄ :=

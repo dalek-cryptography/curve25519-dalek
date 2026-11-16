@@ -6,20 +6,14 @@ module
 public import ForHumans.Specs.Edwards
 public section
 
-/-! # The isomorphism between edwards25519 and curve25519
-
-RFC 7748 §4.1's map from the Edwards model to the Montgomery model, as a group isomorphism, and the
-Montgomery basepoint. -/
-
 namespace curve25519
 
 open MontgomeryModel TwistedEdwardsModel
 
-/-- The group isomorphism `edwards.Point ≃+ montgomery.Point` of RFC 7748 §4.1,
-`(x, y) ↦ ((1 + y) / (1 - y), sqrtNegAAddTwo · (1 + y) / ((1 - y) x))`: the `EllipticCurve`
-library's isomorphism to the Montgomery model `(A, 4 / (a - d))` of `edwards`, rescaled to
-`montgomery = (A, 1)` by `v ↦ v / sqrtNegAAddTwo`. The formula is proved in
-`Proofs/Curve25519/Montgomery.lean` (`u_edwardsToMontgomery`, `v_edwardsToMontgomery`). -/
+/-- The group isomorphism `edwards.Point ≃+ montgomery.Point` of RFC 7748 §4.1, `(x, y) ↦ ((1 + y) /
+(1 - y), sqrtNegAAddTwo · (1 + y) / ((1 - y) x))`. Hidden; characterised by `u_edwardsToMontgomery`,
+`v_edwardsToMontgomery`, `edwardsToMontgomery_of_y_eq_one`, `edwardsToMontgomery_of_y_eq_neg_one`,
+`edwardsToMontgomery_symm_x`, `edwardsToMontgomery_symm_y`. -/
 noncomputable def edwardsToMontgomery : edwards.Point ≃+ montgomery.Point :=
   edwards.toMontgomeryEquiv.trans
     (rescaleEquiv edwards.toMontgomery montgomery edwards_toMontgomery_A.symm sqrtNegAAddTwo

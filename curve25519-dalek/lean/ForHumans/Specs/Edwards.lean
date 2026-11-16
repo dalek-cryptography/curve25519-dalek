@@ -10,12 +10,6 @@ public import Proofs.Curve25519.Edwards.Basic
 import Proofs.Curve25519.Certificates.Edwards
 public section
 
-/-! # edwards25519: the basepoint, the 8-torsion point, the RFC 8032 encoding
-
-The basepoint of RFC 8032 §5.1, the point of order 8 that dalek calls `EIGHT_TORSION[1]`, the
-point encoding of RFC 8032 §5.1.2 and dalek's lenient decoding. The proofs that the two points are
-on the curve are kernel computations (`Proofs/Curve25519/Certificates/Edwards.lean`). -/
-
 namespace curve25519
 
 /-- The basepoint of edwards25519: `y = 4/5`, `x` even (RFC 8032 §5.1). -/
@@ -24,8 +18,8 @@ noncomputable def basepoint : edwards.Point :=
     46316835694926478169428394003475163141307993866256225615783033603165251855960,
     Proofs.basepoint_equation⟩
 
-/-- The point of order `8` with `2 • T = (-√-1, 0)` and `x` non-negative: dalek's
-`EIGHT_TORSION[1]`. -/
+/-- The point of order `8` with `2 • T = (-√-1, 0)` and `x` non-negative (`eq_torsion8_iff`):
+dalek's `EIGHT_TORSION[1]`. -/
 noncomputable def torsion8 : edwards.Point :=
   ⟨14399317868200118260347934320527232580618823971194345261214217575416788799818,
     55188659117513257062467267217118295137698188065244968500265048394206261417927,
@@ -38,11 +32,11 @@ noncomputable abbrev encodeNat : edwards.Point → ℕ :=
   TwistedEdwardsModel.encode edwards 255
 
 open scoped Classical in
-/-- Lenient decoding of the value `n` of the 32 bytes: `y := n % 2^255` reduced modulo `p`,
-sign `s := n / 2^255`; `none` if no point has this `y`, otherwise the point `(x, y)` with `x = 0`
-or `x` of sign `s`. Unlike RFC 8032 §5.1.3's strict decoding, it accepts `y ≥ p` (reduced) and
-`x = 0` with `s = 1`; on canonical encodings the two agree. This is what dalek's
-`CompressedEdwardsY::decompress` computes. -/
+/-- Lenient decoding of the value `n` of the 32 bytes: `y := n % 2^255` reduced modulo `p`, sign `s
+:= n / 2^255`; `none` if no point has this `y`, otherwise the point `(x, y)` with `x = 0` or `x` of
+sign `s`. Unlike the strict `decodeNat`, it accepts `y ≥ p` (reduced) and `x = 0` with `s = 1`; on
+canonical inputs the two agree (`decodeLenientNat_eq_decodeNat_of_canonical`). This is dalek's
+`CompressedEdwardsY::decompress`. -/
 noncomputable def decodeLenientNat (n : ℕ) : Option edwards.Point :=
   if h : ∃ x : ZMod p, edwards.Equation x ((n % 2 ^ 255 : ℕ) : ZMod p) ∧
       (x = 0 ∨ (x.IsNeg ↔ n / 2 ^ 255 = 1)) then

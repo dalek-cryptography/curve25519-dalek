@@ -6,11 +6,6 @@ module
 public import Curve25519Dalek.Funs
 public section
 
-/-! # `Clone` for the five basepoint tables
-
-`#[derive(Clone)]`: the translation copies the rows with `core::array::Clone`, whose entries
-(`AffineNielsPoint`, also derived) are returned unchanged, so the clone is the table itself. -/
-
 open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek.edwards

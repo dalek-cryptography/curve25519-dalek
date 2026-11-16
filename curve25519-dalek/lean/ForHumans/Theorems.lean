@@ -18,10 +18,3 @@ public import ForHumans.Theorems.Ristretto.X86_64NoTables
 public import ForHumans.Theorems.Scalar
 public import ForHumans.Theorems.Traits
 
-/-! # The theorems
-
-One file per Rust file with items in the crate's public API, each public item's statement as a
-theorem. Each file's copies for the other three configurations are generated in the
-subdirectory of the same name. `Axioms.lean` checks the axioms, `Definitions.lean` the
-definitions the statements use, `Coverage.lean` that every producer of a value with invariants
-has a theorem. -/

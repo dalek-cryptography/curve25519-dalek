@@ -7,21 +7,26 @@ public import ForHumans.Specs.Curves
 public import Curve25519Dalek.Types
 public section
 
-/-! # The limbs of the lookup tables of `window.rs`
+/-! # The lookup tables of `window.rs` (audited)
 
-A lookup table is an array of entries (`LookupTable T = Array T 8`, `LookupTableRadix32/64/128/256
-T = Array T 16/32/64/128`, `NafLookupTable5 T = Array T 8`, `NafLookupTable8 T = Array T 64`), for
-any entry type `T` with a `PointRepr`: whether an entry represents a point, the point it
-represents, and the bounds on its limbs. The entry types are the affine Niels points
-(`Representation/CurveModels.lean`) and, in the proofs, the projective Niels points.
-`….LimbsLt n t` says that every limb of every entry is `< 2^n`. -/
+A table is an array of Niels points (`LookupTable T = Array T 8`, `LookupTableRadix32/64/128/256
+T = Array T 16/32/64/128`, `NafLookupTable5 T = Array T 8`, `NafLookupTable8 T = Array T 64`),
+generic in the entry type `T`. The entry types are the four Niels structures of
+`ForHumans.Specs.Representation.CurveModels` and `Proofs.Representation.CurveModels`
+(`ProjectiveNielsPoint`, `AffineNielsPoint`, in all four configurations); the class
+`PointRepr` collects their `OnCurve`, `toPoint` and `LimbsLt`, so that each table predicate is
+stated once: `….LimbsLt n t` says that every limb of every entry is `< 2^n`.
+
+The basepoint tables of `edwards.rs` are in `ForHumans.Specs.Representation.Edwards`, the
+precomputations of `scalar_mul` in `ForHumans.Specs.Representation.ScalarMul`. -/
 
 open Aeneas Aeneas.Std
 
 namespace Curve25519Dalek
 
-/-- A dalek point structure that can be a table entry: whether it represents a point, the point
-it represents, and its limb bounds. -/
+/-- A dalek point structure usable as a table entry: its curve predicate, the point it represents
+and its limb bounds (the definitions of `ForHumans.Specs.Representation.CurveModels` and
+`Proofs.Representation.CurveModels`, as instance fields). -/
 class PointRepr (T : Type) where
   /-- The entry represents a point (`OnCurve` of its structure). -/
   OnCurve : T → Prop

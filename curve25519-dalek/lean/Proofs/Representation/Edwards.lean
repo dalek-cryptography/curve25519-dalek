@@ -12,17 +12,6 @@ public import Proofs.Representation.Window
 public import Proofs.Representation.Array
 public section
 
-/-! # `edwards.rs`: the unfolding lemmas of the point, and `AffinePoint`
-
-The definitions of `EdwardsPoint` (`toExtended`, `OnCurve`, `toPoint`, `LimbsLt`, `IsBounded`)
-and of the basepoint tables (`point`, `IsTable`, `LimbsLt`, `IsBounded`) are in
-`ForHumans/Specs/Representation/Edwards.lean`; this file has the unfolding lemmas of the hidden
-ones, and the definitions that the statements do not use:
-
-- `EdwardsPoint.ProjEq` (exposed), the projective equality that `ct_eq` computes;
-- `AffinePoint` (`edwards/affine.rs`), the affine point itself: `OnCurve` is the curve equation,
-  `toPoint` the point (`0` off the curve), `LimbsLt n` as for `EdwardsPoint`. -/
-
 open Aeneas Aeneas.Std
 open curve25519 (p)
 open Curve25519Dalek.backend.serial.u64.field (FieldElement51)

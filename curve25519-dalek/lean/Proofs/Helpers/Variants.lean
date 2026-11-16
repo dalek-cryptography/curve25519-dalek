@@ -6,13 +6,6 @@ module
 public import Lean
 public section
 
-/-! # The `variants` tactic
-
-`Specs/` states the specs of the variants of one Rust operation (`&a + &b`, `a + b`, `a += b`, …)
-together, as `∀ f ∈ [f₁, …, fₙ], P f`. `variants [h₁, …, hₙ]` proves such a goal from the specs
-`hᵢ` of the `fᵢ`, in order, each applied to the hypotheses in context; `variants [h]` proves every
-`P fᵢ` from `h`, for variants that unfold to the same function. -/
-
 /-- Proves `∀ f ∈ [f₁, …, fₙ], P f` from `h₁, …, hₙ` (or from a single `h` for all). -/
 syntax (name := variants) "variants " "[" term,+ "]" : tactic
 

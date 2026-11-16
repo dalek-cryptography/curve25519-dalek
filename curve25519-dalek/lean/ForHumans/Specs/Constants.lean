@@ -7,14 +7,6 @@ module
 public import Mathlib.Data.ZMod.Basic
 public section
 
-/-! # Curve25519's constants
-
-The field prime `p`, the order `L` of the prime-order subgroup, the coefficients of the twisted
-Edwards form `a x² + y² = 1 + d x² y²` (RFC 8032 §5.1) and of the Montgomery form
-`y² = x³ + A x² + x` (RFC 7748 §4.1), and the constants of RFC 9496 §4.1 (ristretto255), as the
-RFCs give them. The facts about them (`p` and `L` are prime, `sqrtM1² = -1`, …) are proved in
-`Proofs/Curve25519/Basic.lean`. -/
-
 namespace curve25519
 
 /-- The field prime `p = 2^255 - 19`. -/

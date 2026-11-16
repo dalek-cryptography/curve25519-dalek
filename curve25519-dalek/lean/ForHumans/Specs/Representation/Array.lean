@@ -8,11 +8,6 @@ public import Mathlib.Data.Nat.Digits.Defs
 public import Aeneas.Std.Array.Array
 public section
 
-/-! # Arrays as numbers and as byte strings
-
-`asNat`: the number with the array's elements as little-endian digits. `toVector`: a Rust byte
-array (Aeneas's `Array U8 n`) as a Lean `Vector UInt8 n`, the byte strings of the RFCs. -/
-
 open Aeneas.Std
 
 /-- The natural number with the array's elements as little-endian digits in radix `2^bits`:

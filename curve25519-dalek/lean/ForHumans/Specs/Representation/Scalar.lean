@@ -8,11 +8,6 @@ public import ForHumans.Specs.Representation.Array
 public import Curve25519Dalek.Types
 public section
 
-/-! # The value of a `Scalar`
-
-A `Scalar` is 32 bytes; `asNat` is their little-endian value. A `HalfWidthScalar` likewise, with
-16 bytes. -/
-
 open Aeneas.Std
 
 namespace Curve25519Dalek

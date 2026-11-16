@@ -35,8 +35,8 @@ abbrev EdwardsPoint := edwards.EdwardsPoint.«i686-tables»
 /-- `VartimeEdwardsPrecomputation` in this configuration. -/
 abbrev VartimeEdwardsPrecomputation := edwards.VartimeEdwardsPrecomputation.«i686-tables»
 
-/-- `CompressedEdwardsY::decompress`: the lenient decoding `decodeLenient` of the bytes (`y`
-reduced modulo `p`, `x = 0` accepted with either sign); the point is on the curve. -/
+/-- `CompressedEdwardsY::decompress`: the lenient decoding `decodeLenient` of the bytes (`y` reduced
+modulo `p`, `x = 0` accepted with either sign); the point is on the curve. -/
 theorem CompressedEdwardsY.decompress (c : CompressedEdwardsY) :
     CompressedEdwardsY.decompress.«i686-tables» c ⦃ (r : Option EdwardsPoint) =>
       r.map (·.toPoint) = decodeLenient c.toVector ∧ ∀ P, r = some P → P.OnCurve ∧ P.IsBounded ⦄ :=
@@ -46,37 +46,38 @@ namespace EdwardsPoint
 
 open edwards.EdwardsPoint.«i686-tables».Insts
 
-/-- `Identity`: the neutral element. -/
+/-- `Identity for EdwardsPoint` represents the neutral element. -/
 theorem identity :
     Curve25519_dalekTraitsIdentity.identity ⦃ (r : EdwardsPoint) =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.IsBounded ⦄ :=
   Curve25519_dalekTraitsIdentity.identity_spec
 
-/-- `Default`: the neutral element. -/
+/-- `Default for EdwardsPoint` represents the neutral element. -/
 theorem default :
     CoreDefaultDefault.default ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = 0 ∧ r.IsBounded ⦄ :=
   CoreDefaultDefault.default_spec
 
-/-- `Zeroize`: leaves the neutral element. -/
+/-- `Zeroize for EdwardsPoint` leaves the neutral element. -/
 theorem zeroize (P : EdwardsPoint) :
     ZeroizeZeroize.zeroize P ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = 0 ∧ r.IsBounded ⦄ :=
   ZeroizeZeroize.zeroize_spec P
 
-/-- `ConditionallySelectable`: `a` if `choice = 0`, `b` if `choice = 1`. -/
+/-- `ConditionallySelectable::conditional_select` for `EdwardsPoint`: `a` if `choice = 0`, `b` if
+`choice = 1`. -/
 theorem conditional_select (a b : EdwardsPoint) (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
     SubtleConditionallySelectable.conditional_select a b choice ⦃ (r : EdwardsPoint) =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ :=
   SubtleConditionallySelectable.conditional_select_spec a b choice hchoice
 
-/-- `ConstantTimeEq`: equality of the represented points. -/
+/-- `ConstantTimeEq for EdwardsPoint` on points: equality of the represented points. -/
 theorem ct_eq (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
     (hQ' : Q.IsBounded) :
     SubtleConstantTimeEq.ct_eq P Q ⦃ (r : subtle.Choice) =>
       r.IsValid ∧ (r = 1#u8 ↔ P.toPoint = Q.toPoint) ⦄ :=
   SubtleConstantTimeEq.ct_eq_spec P Q hP' hQ' hP hQ
 
-/-- `PartialEq`: equality of the represented points. -/
+/-- `PartialEq for EdwardsPoint` on points: equality of the represented points. -/
 theorem eq (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
     (hQ' : Q.IsBounded) :
     «CoreCmpPartialEqEdwardsPointi686-tables».eq P Q ⦃ (r : Bool) =>
@@ -89,15 +90,15 @@ namespace EdwardsPoint
 
 open edwards.«EdwardsPointi686-tables»
 
-/-- `to_montgomery`: RFC 7748's encoding of the `u`-coordinate of the Montgomery image of the
-point (`0` for the identity). -/
+/-- `EdwardsPoint::to_montgomery`: RFC 7748's encoding of the `u`-coordinate of the Montgomery image
+of the represented point (`0` for the identity). -/
 theorem to_montgomery (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
     to_montgomery P ⦃ (r : montgomery.MontgomeryPoint) =>
       r.toVector = encodeUCoordinate (edwardsToMontgomery P.toPoint).u ⦄ :=
   to_montgomery_spec P hP' hP
 
-/-- `to_montgomery_batch`: entry `i` is RFC 7748's encoding of the `u`-coordinate of the
-Montgomery image of point `i` (`0` for the identity). -/
+/-- `EdwardsPoint::to_montgomery_batch`: entry `i` is RFC 7748's encoding of the `u`-coordinate of
+the Montgomery image of point `i` (`0` for the identity). -/
 theorem to_montgomery_batch (Ps : Slice EdwardsPoint) (hPs : ∀ i < Ps.length, Ps[i]!.OnCurve)
     (hPs' : ∀ i < Ps.length, Ps[i]!.IsBounded) :
     to_montgomery_batch Ps ⦃ (r : alloc.vec.Vec montgomery.MontgomeryPoint) =>
@@ -106,19 +107,19 @@ theorem to_montgomery_batch (Ps : Slice EdwardsPoint) (hPs : ∀ i < Ps.length, 
           r[i]!.toVector = encodeUCoordinate (edwardsToMontgomery Ps[i]!.toPoint).u ⦄ :=
   to_montgomery_batch_spec Ps hPs' hPs
 
-/-- `compress`: RFC 8032's encoding of the point. -/
+/-- `EdwardsPoint::compress` is RFC 8032's encoding of the represented point. -/
 theorem compress (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
     compress P ⦃ (r : CompressedEdwardsY) => r.toVector = encode P.toPoint ⦄ :=
   compress_spec P hP' hP
 
-/-- `compress_batch`: entry `i` is RFC 8032's encoding of point `i`. -/
+/-- `EdwardsPoint::compress_batch`: entry `i` is RFC 8032's encoding of point `i`. -/
 theorem compress_batch {N : Usize} (Ps : Array EdwardsPoint N) (hPs : ∀ i < N.val, Ps[i]!.OnCurve)
     (hPs' : ∀ i < N.val, Ps[i]!.IsBounded) :
     compress_batch Ps ⦃ (r : Array CompressedEdwardsY N) =>
       ∀ i < N.val, r[i]!.toVector = encode Ps[i]!.toPoint ⦄ :=
   compress_batch_spec Ps hPs' hPs
 
-/-- `compress_batch_alloc`: entry `i` is RFC 8032's encoding of point `i`. -/
+/-- `EdwardsPoint::compress_batch_alloc`: entry `i` is RFC 8032's encoding of point `i`. -/
 theorem compress_batch_alloc (Ps : Slice EdwardsPoint) (hPs : ∀ i < Ps.length, Ps[i]!.OnCurve)
     (hPs' : ∀ i < Ps.length, Ps[i]!.IsBounded) :
     compress_batch_alloc Ps ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
@@ -126,10 +127,6 @@ theorem compress_batch_alloc (Ps : Slice EdwardsPoint) (hPs : ∀ i < Ps.length,
   compress_batch_alloc_spec Ps hPs' hPs
 
 end EdwardsPoint
-
-/-! ### Arithmetic
-
-The operator impls, named by the Rust expression they evaluate (`P`, `Q` points, `s` a scalar). -/
 
 /-- `impl Add<&EdwardsPoint> for &EdwardsPoint` -/
 abbrev «&P + &Q» := open «Shared0EdwardsPointi686-tables».Insts in
@@ -210,7 +207,7 @@ abbrev «s * P» := open scalar.Scalar.Insts in
 
 namespace EdwardsPoint
 
-/-- `Add` and `AddAssign`: the sum of the points. -/
+/-- `Add<&EdwardsPoint> for &EdwardsPoint` on the represented points. -/
 theorem add (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
     (hQ' : Q.IsBounded) :
     ∀ add ∈ [«&P + &Q», «P + &Q», «&P + Q», «P + Q», «P += &Q», «P += Q»],
@@ -219,7 +216,7 @@ theorem add (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.On
   open «Shared0EdwardsPointi686-tables».Insts in
   variants [«CoreOpsArithAddSharedAEdwardsPointi686-tablesEdwardsPointi686-tables».add_spec]
 
-/-- `Sub` and `SubAssign`: the difference of the points. -/
+/-- `Sub<&EdwardsPoint> for &EdwardsPoint` on the represented points. -/
 theorem sub (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
     (hQ' : Q.IsBounded) :
     ∀ sub ∈ [«&P - &Q», «P - &Q», «&P - Q», «P - Q», «P -= &Q», «P -= Q»],
@@ -228,7 +225,7 @@ theorem sub (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.On
   open «Shared0EdwardsPointi686-tables».Insts in
   variants [«CoreOpsArithSubSharedAEdwardsPointi686-tablesEdwardsPointi686-tables».sub_spec]
 
-/-- `Sum`: the sum of the points the iterator yields (through `borrow`). -/
+/-- `Sum for EdwardsPoint`: the sum of the points yielded by the iterator (through `borrow`). -/
 theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T EdwardsPoint)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
     (Ps : List EdwardsPoint) (hiter : iterInst.Yields iter xs)
@@ -240,14 +237,14 @@ theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T EdwardsPoint)
   edwards.EdwardsPoint.«i686-tables».Insts.CoreIterTraitsAccumSum.sum_spec borrowInst iterInst
     iter xs Ps hiter hborrow hPs' hPs
 
-/-- `Neg`: the negation of the point. -/
+/-- `Neg for EdwardsPoint` (by value) negates the represented point. -/
 theorem neg (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
     ∀ neg ∈ [«-&P», «-P»],
       neg P ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = -P.toPoint ∧ r.IsBounded ⦄ := by
   open «Shared0EdwardsPointi686-tables».Insts in
   variants [«CoreOpsArithNegEdwardsPointi686-tables».neg_spec]
 
-/-- `Mul<Scalar>` and `MulAssign<Scalar>`: `s • P`. -/
+/-- `Mul<&Scalar> for &EdwardsPoint`: `s • P` (unreduced, `< 2^255`). -/
 theorem mul (P : EdwardsPoint) (s : Scalar) (hP : P.OnCurve) (hP' : P.IsBounded)
     (hs : s.asNat < 2 ^ 255) :
     ∀ mul ∈ [«&P * &s», «P * &s», «&P * s», «P * s», «P *= &s», «P *= s»],
@@ -256,7 +253,7 @@ theorem mul (P : EdwardsPoint) (s : Scalar) (hP : P.OnCurve) (hP' : P.IsBounded)
   open «Shared0EdwardsPointi686-tables».Insts in
   variants [«CoreOpsArithMulSharedAScalarEdwardsPointi686-tables».mul_spec]
 
-/-- `Mul<EdwardsPoint> for Scalar`: `s • P`. -/
+/-- `Mul<&EdwardsPoint> for &Scalar`: as `&EdwardsPoint * &Scalar`. -/
 theorem mul_left (s : Scalar) (P : EdwardsPoint) (hs : s.asNat < 2 ^ 255) (hP : P.OnCurve)
     (hP' : P.IsBounded) :
     ∀ mul ∈ [«&s * &P», «s * &P», «&s * P», «s * P»],
@@ -267,22 +264,22 @@ theorem mul_left (s : Scalar) (P : EdwardsPoint) (hs : s.asNat < 2 ^ 255) (hP : 
 
 open edwards.«EdwardsPointi686-tables»
 
-/-- `mul_base`: `s • B` for the basepoint `B`. -/
+/-- `EdwardsPoint::mul_base`: `s • B` for the basepoint `B` (unreduced, `< 2^255`). -/
 theorem mul_base (s : Scalar) (hs : s.asNat < 2 ^ 255) :
     mul_base s ⦃ (r : EdwardsPoint) =>
       r.OnCurve ∧ r.toPoint = s.asNat • basepoint ∧ r.IsBounded ⦄ :=
   mul_base_spec s hs
 
-/-- `mul_clamped`: `clamp bytes • P`, with RFC 7748's clamping of the little-endian value of
-`bytes`. -/
+/-- `EdwardsPoint::mul_clamped`: `clamp bytes • P`, with RFC 7748's clamping of the little-endian
+value of `bytes`. -/
 theorem mul_clamped (P : EdwardsPoint) (bytes : Array U8 32#usize) (hP : P.OnCurve)
     (hP' : P.IsBounded) :
     mul_clamped P bytes ⦃ (r : EdwardsPoint) =>
       r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • P.toPoint ∧ r.IsBounded ⦄ :=
   mul_clamped_spec P bytes hP' hP
 
-/-- `mul_base_clamped`: `clamp bytes • B`, with RFC 7748's clamping of the little-endian value of
-`bytes`. -/
+/-- `EdwardsPoint::mul_base_clamped`: `clamp bytes • B`, with RFC 7748's clamping of the
+little-endian value of `bytes`. -/
 theorem mul_base_clamped (bytes : Array U8 32#usize) :
     mul_base_clamped bytes ⦃ (r : EdwardsPoint) =>
       r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • basepoint ∧ r.IsBounded ⦄ :=
@@ -290,14 +287,13 @@ theorem mul_base_clamped (bytes : Array U8 32#usize) :
 
 end EdwardsPoint
 
-/-! ### Multiscalar multiplication -/
-
 namespace EdwardsPoint
 
 open edwards.EdwardsPoint.«i686-tables».Insts
 
-/-- `MultiscalarMul::multiscalar_mul`: `∑ s_i • P_i` over the scalars and points the two inputs
-yield, which must be equally many (the patched `assert_eq!`). -/
+/-- `MultiscalarMul::multiscalar_mul` for `EdwardsPoint`: `∑ s_i • P_i` over the scalars and points
+the two inputs yield, which must be equally many (the patched `assert_eq!`; unreduced scalars `<
+2^255`). -/
 theorem multiscalar_mul
     {I J Clause0_Item Clause0_IntoIter Clause2_Item Clause2_IntoIter : Type}
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
@@ -320,9 +316,9 @@ theorem multiscalar_mul
   apply «Curve25519_dalekTraitsMultiscalarMulEdwardsPointi686-tables».multiscalar_mul_spec <;>
     assumption
 
-/-- `VartimeMultiscalarMul::optional_multiscalar_mul`: `none` iff some point is `none`; otherwise
-`∑ s_i • P_i` over the scalars and points, which must be equally many (the patched `assert_eq!`;
-Straus below `190` points, Pippenger from `190` on). -/
+/-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `EdwardsPoint`: `none` iff some point is
+`none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the patched
+`assert_eq!`; Straus below `190` points, Pippenger from `190` on; unreduced scalars `< 2^255`). -/
 theorem optional_multiscalar_mul {I J Clause0_Item Clause0_IntoIter Clause2_IntoIter : Type}
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item Scalar)
@@ -351,8 +347,8 @@ namespace VartimeEdwardsPrecomputation
 open edwards.VartimeEdwardsPrecomputation.«i686-tables».Insts
 open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-tables»
 
-/-- `VartimePrecomputedMultiscalarMul::new`: a precomputation of the points the input yields
-(through `borrow`). -/
+/-- `VartimePrecomputedMultiscalarMul::new` for `VartimeEdwardsPrecomputation`: a precomputation of
+the points the input yields (through `borrow`). -/
 theorem new {I Clause0_Item Clause0_IntoIter : Type}
     (pointsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowInst : core.borrow.Borrow Clause0_Item EdwardsPoint)
@@ -365,20 +361,22 @@ theorem new {I Clause0_Item Clause0_IntoIter : Type}
       r.IsValid ∧ r.points = Ps.map (·.toPoint) ∧ r.IsBounded ⦄ := by
   apply new_spec <;> assumption
 
-/-- `VartimePrecomputedMultiscalarMul::len`: the number of static points. -/
+/-- `VartimePrecomputedMultiscalarMul::len` for `VartimeEdwardsPrecomputation`: the number of static
+points. -/
 theorem len (pre : VartimeEdwardsPrecomputation) :
     len pre ⦃ (r : Usize) => r.val = pre.points.length ⦄ :=
   len_spec pre
 
-/-- `VartimePrecomputedMultiscalarMul::is_empty`: whether there are no static points. -/
+/-- `VartimePrecomputedMultiscalarMul::is_empty` for `VartimeEdwardsPrecomputation`: whether there
+are no static points. -/
 theorem is_empty (pre : VartimeEdwardsPrecomputation) :
     is_empty pre ⦃ (r : Bool) => r = true ↔ pre.points = [] ⦄ :=
   is_empty_spec pre
 
-/-- `VartimePrecomputedMultiscalarMul::optional_mixed_multiscalar_mul` (static points
-`pre.points`): `none` iff some dynamic point is `none`; otherwise `∑ s_i • P_i + ∑ d_i • Q_i`,
-missing static scalars counting as `0` (if no point is `none`, at most `|pre.points|` static
-scalars and as many dynamic scalars as dynamic points). -/
+/-- `VartimePrecomputedMultiscalarMul::optional_mixed_multiscalar_mul` for
+`VartimeEdwardsPrecomputation` (static points `pre.points`): `none` iff some dynamic point is
+`none`; otherwise `∑ s_i • P_i + ∑ d_i • Q_i`, missing static scalars counting as `0` (if no point
+is `none`, at most `|pre.points|` static scalars and as many dynamic scalars as dynamic points). -/
 theorem optional_mixed_multiscalar_mul
     {I J K Clause0_Item Clause0_IntoIter Clause2_Item Clause2_IntoIter Clause4_IntoIter : Type}
     (staticScalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
@@ -419,15 +417,16 @@ namespace EdwardsPoint
 
 open edwards.«EdwardsPointi686-tables»
 
-/-- `vartime_double_scalar_mul_basepoint`: `a • A + b • B` for the basepoint `B`. -/
+/-- `EdwardsPoint::vartime_double_scalar_mul_basepoint`: `a • A + b • B` for the basepoint `B`
+(unreduced scalars `< 2^255`). -/
 theorem vartime_double_scalar_mul_basepoint (a : Scalar) (A : EdwardsPoint) (b : Scalar)
     (ha : a.asNat < 2 ^ 255) (hA : A.OnCurve) (hA' : A.IsBounded) (hb : b.asNat < 2 ^ 255) :
     vartime_double_scalar_mul_basepoint a A b ⦃ (r : EdwardsPoint) =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.IsBounded ⦄ :=
   vartime_double_scalar_mul_basepoint_spec a A b ha hA' hA hb
 
-/-- `vartime_triple_scalar_mul_basepoint`: `a1 • A1 + a2 • A2 + b • B` for the basepoint `B` (any
-`b`, which the code splits into two `128`-bit halves). -/
+/-- `EdwardsPoint::vartime_triple_scalar_mul_basepoint`: `a1 • A1 + a2 • A2 + b • B` for the
+basepoint `B` (any `b`, which the code splits into two `128`-bit halves). -/
 theorem vartime_triple_scalar_mul_basepoint (a1 : HalfWidthScalar) (A1 : EdwardsPoint)
     (a2 : HalfWidthScalar) (A2 : EdwardsPoint) (b : Scalar) (ha1 : a1.asNat < 2 ^ 128)
     (hA1 : A1.OnCurve) (hA1' : A1.IsBounded) (ha2 : a2.asNat < 2 ^ 128) (hA2 : A2.OnCurve)
@@ -438,12 +437,6 @@ theorem vartime_triple_scalar_mul_basepoint (a1 : HalfWidthScalar) (A1 : Edwards
   vartime_triple_scalar_mul_basepoint_spec a1 A1 a2 A2 b ha1 hA1' hA1 ha2 hA2' hA2
 
 end EdwardsPoint
-
-/-! ### Basepoint tables
-
-The five table types, of radix `2^4` to `2^8`, have the same specs: a table `t` of radix `2^w`
-represents the point `t.point`, with entry `j` of row `i` equal to `(j + 1) • 2^(2 w i) • t.point`
-(`IsTable`). -/
 
 /-- `EdwardsBasepointTable` (radix `2^4`) in this configuration. -/
 abbrev EdwardsBasepointTable := edwards.EdwardsBasepointTable.«i686-tables»
@@ -472,12 +465,12 @@ abbrev «&t * &s» := open «SharedAEdwardsBasepointTablei686-tables».Insts in
 abbrev «&s * &t» := open SharedBScalar.Insts in
   «CoreOpsArithMulSharedAEdwardsBasepointTablei686-tablesEdwardsPointi686-tables».mul
 
-/-- `BasepointTable::create`: a table of `B`. -/
+/-- `BasepointTable::create` (radix `2^4`): row `i` is the lookup table of `2^(8 i) • B`. -/
 theorem create (B : EdwardsPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
     create B ⦃ (t : EdwardsBasepointTable) => t.IsTable ∧ t.point = B.toPoint ∧ t.IsBounded ⦄ := by
   apply create_spec <;> assumption
 
-/-- `BasepointTable::basepoint`: the table's point. -/
+/-- `BasepointTable::basepoint` (radix `2^4`): the table's point `t.point`. -/
 theorem basepoint (t : EdwardsBasepointTable) (ht : t.IsTable) (ht' : t.IsBounded) :
     basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
   apply basepoint_spec <;> assumption
@@ -488,8 +481,7 @@ theorem clone (t : EdwardsBasepointTable) :
       ⦃ (r : EdwardsBasepointTable) => r = t ⦄ :=
   edwards.EdwardsBasepointTable.«i686-tables».Insts.CoreCloneClone.clone_spec t
 
-/-- `BasepointTable::mul_base`, `Mul<&Scalar> for &EdwardsBasepointTable`
-and its reverse: `s • t.point`. -/
+/-- `BasepointTable::mul_base` (radix `2^4`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
 theorem mul_base (t : EdwardsBasepointTable) (s : Scalar) (ht : t.IsTable)
     (ht' : t.IsBounded) (hs : s.asNat < 2 ^ 255) :
     ∀ ts ∈ [mul_base t s, «&t * &s» t s, «&s * &t» s t],
@@ -497,8 +489,7 @@ theorem mul_base (t : EdwardsBasepointTable) (s : Scalar) (ht : t.IsTable)
   variants [mul_base_spec]
 
 open edwards.EdwardsBasepointTable.«i686-tables».Insts in
-/-- `From<&T> for EdwardsBasepointTable`, for the other four table types `T`: a table
-of the same point. -/
+/-- `From<&EdwardsBasepointTableRadix32> for EdwardsBasepointTable`: a table of the same point. -/
 theorem «from» :
     (∀ t : EdwardsBasepointTableRadix32, t.IsTable → t.IsBounded →
       «CoreConvertFromSharedAEdwardsBasepointTableRadix32i686-tables».«from» t
@@ -535,13 +526,14 @@ abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix32i686-tables».In
 abbrev «&s * &t» := open SharedBScalar.Insts in
   «CoreOpsArithMulSharedAEdwardsBasepointTableRadix32i686-tablesEdwardsPointi686-tables».mul
 
-/-- `BasepointTable::create`: a table of `B`. -/
+/-- `BasepointTable::create` (radix `2^5`): row `i` is the lookup table of `2^(10 i) • B`.
+-/
 theorem create (B : EdwardsPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
     create B ⦃ (t : EdwardsBasepointTableRadix32) =>
       t.IsTable ∧ t.point = B.toPoint ∧ t.IsBounded ⦄ := by
   apply create_spec <;> assumption
 
-/-- `BasepointTable::basepoint`: the table's point. -/
+/-- `BasepointTable::basepoint` (radix `2^5`): the table's point `t.point`. -/
 theorem basepoint (t : EdwardsBasepointTableRadix32) (ht : t.IsTable) (ht' : t.IsBounded) :
     basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
   apply basepoint_spec <;> assumption
@@ -552,8 +544,7 @@ theorem clone (t : EdwardsBasepointTableRadix32) :
       ⦃ (r : EdwardsBasepointTableRadix32) => r = t ⦄ :=
   edwards.EdwardsBasepointTableRadix32.«i686-tables».Insts.CoreCloneClone.clone_spec t
 
-/-- `BasepointTable::mul_base`, `Mul<&Scalar> for &EdwardsBasepointTableRadix32`
-and its reverse: `s • t.point`. -/
+/-- `BasepointTable::mul_base` (radix `2^5`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
 theorem mul_base (t : EdwardsBasepointTableRadix32) (s : Scalar) (ht : t.IsTable)
     (ht' : t.IsBounded) (hs : s.asNat < 2 ^ 255) :
     ∀ ts ∈ [mul_base t s, «&t * &s» t s, «&s * &t» s t],
@@ -561,8 +552,7 @@ theorem mul_base (t : EdwardsBasepointTableRadix32) (s : Scalar) (ht : t.IsTable
   variants [mul_base_spec]
 
 open edwards.EdwardsBasepointTableRadix32.«i686-tables».Insts in
-/-- `From<&T> for EdwardsBasepointTableRadix32`, for the other four table types `T`: a table
-of the same point. -/
+/-- `From<&EdwardsBasepointTable> for EdwardsBasepointTableRadix32`: a table of the same point. -/
 theorem «from» :
     (∀ t : EdwardsBasepointTable, t.IsTable → t.IsBounded →
       «CoreConvertFromSharedAEdwardsBasepointTablei686-tables».«from» t
@@ -599,13 +589,14 @@ abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix64i686-tables».In
 abbrev «&s * &t» := open SharedBScalar.Insts in
   «CoreOpsArithMulSharedAEdwardsBasepointTableRadix64i686-tablesEdwardsPointi686-tables».mul
 
-/-- `BasepointTable::create`: a table of `B`. -/
+/-- `BasepointTable::create` (radix `2^6`): row `i` is the lookup table of `2^(12 i) • B`.
+-/
 theorem create (B : EdwardsPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
     create B ⦃ (t : EdwardsBasepointTableRadix64) =>
       t.IsTable ∧ t.point = B.toPoint ∧ t.IsBounded ⦄ := by
   apply create_spec <;> assumption
 
-/-- `BasepointTable::basepoint`: the table's point. -/
+/-- `BasepointTable::basepoint` (radix `2^6`): the table's point `t.point`. -/
 theorem basepoint (t : EdwardsBasepointTableRadix64) (ht : t.IsTable) (ht' : t.IsBounded) :
     basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
   apply basepoint_spec <;> assumption
@@ -616,8 +607,7 @@ theorem clone (t : EdwardsBasepointTableRadix64) :
       ⦃ (r : EdwardsBasepointTableRadix64) => r = t ⦄ :=
   edwards.EdwardsBasepointTableRadix64.«i686-tables».Insts.CoreCloneClone.clone_spec t
 
-/-- `BasepointTable::mul_base`, `Mul<&Scalar> for &EdwardsBasepointTableRadix64`
-and its reverse: `s • t.point`. -/
+/-- `BasepointTable::mul_base` (radix `2^6`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
 theorem mul_base (t : EdwardsBasepointTableRadix64) (s : Scalar) (ht : t.IsTable)
     (ht' : t.IsBounded) (hs : s.asNat < 2 ^ 255) :
     ∀ ts ∈ [mul_base t s, «&t * &s» t s, «&s * &t» s t],
@@ -625,8 +615,7 @@ theorem mul_base (t : EdwardsBasepointTableRadix64) (s : Scalar) (ht : t.IsTable
   variants [mul_base_spec]
 
 open edwards.EdwardsBasepointTableRadix64.«i686-tables».Insts in
-/-- `From<&T> for EdwardsBasepointTableRadix64`, for the other four table types `T`: a table
-of the same point. -/
+/-- `From<&EdwardsBasepointTable> for EdwardsBasepointTableRadix64`: a table of the same point. -/
 theorem «from» :
     (∀ t : EdwardsBasepointTable, t.IsTable → t.IsBounded →
       «CoreConvertFromSharedAEdwardsBasepointTablei686-tables».«from» t
@@ -663,13 +652,14 @@ abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix128i686-tables».I
 abbrev «&s * &t» := open SharedBScalar.Insts in
   «CoreOpsArithMulSharedAEdwardsBasepointTableRadix128i686-tablesEdwardsPointi686-tables».mul
 
-/-- `BasepointTable::create`: a table of `B`. -/
+/-- `BasepointTable::create` (radix `2^7`): row `i` is the lookup table of `2^(14 i) • B`.
+-/
 theorem create (B : EdwardsPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
     create B ⦃ (t : EdwardsBasepointTableRadix128) =>
       t.IsTable ∧ t.point = B.toPoint ∧ t.IsBounded ⦄ := by
   apply create_spec <;> assumption
 
-/-- `BasepointTable::basepoint`: the table's point. -/
+/-- `BasepointTable::basepoint` (radix `2^7`): the table's point `t.point`. -/
 theorem basepoint (t : EdwardsBasepointTableRadix128) (ht : t.IsTable) (ht' : t.IsBounded) :
     basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
   apply basepoint_spec <;> assumption
@@ -680,8 +670,7 @@ theorem clone (t : EdwardsBasepointTableRadix128) :
       ⦃ (r : EdwardsBasepointTableRadix128) => r = t ⦄ :=
   edwards.EdwardsBasepointTableRadix128.«i686-tables».Insts.CoreCloneClone.clone_spec t
 
-/-- `BasepointTable::mul_base`, `Mul<&Scalar> for &EdwardsBasepointTableRadix128`
-and its reverse: `s • t.point`. -/
+/-- `BasepointTable::mul_base` (radix `2^7`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
 theorem mul_base (t : EdwardsBasepointTableRadix128) (s : Scalar) (ht : t.IsTable)
     (ht' : t.IsBounded) (hs : s.asNat < 2 ^ 255) :
     ∀ ts ∈ [mul_base t s, «&t * &s» t s, «&s * &t» s t],
@@ -689,8 +678,7 @@ theorem mul_base (t : EdwardsBasepointTableRadix128) (s : Scalar) (ht : t.IsTabl
   variants [mul_base_spec]
 
 open edwards.EdwardsBasepointTableRadix128.«i686-tables».Insts in
-/-- `From<&T> for EdwardsBasepointTableRadix128`, for the other four table types `T`: a table
-of the same point. -/
+/-- `From<&EdwardsBasepointTable> for EdwardsBasepointTableRadix128`: a table of the same point. -/
 theorem «from» :
     (∀ t : EdwardsBasepointTable, t.IsTable → t.IsBounded →
       «CoreConvertFromSharedAEdwardsBasepointTablei686-tables».«from» t
@@ -727,13 +715,14 @@ abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix256i686-tables».I
 abbrev «&s * &t» := open SharedBScalar.Insts in
   «CoreOpsArithMulSharedAEdwardsBasepointTableRadix256i686-tablesEdwardsPointi686-tables».mul
 
-/-- `BasepointTable::create`: a table of `B`. -/
+/-- `BasepointTable::create` (radix `2^8`): row `i` is the lookup table of `2^(16 i) • B`.
+-/
 theorem create (B : EdwardsPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
     create B ⦃ (t : EdwardsBasepointTableRadix256) =>
       t.IsTable ∧ t.point = B.toPoint ∧ t.IsBounded ⦄ := by
   apply create_spec <;> assumption
 
-/-- `BasepointTable::basepoint`: the table's point. -/
+/-- `BasepointTable::basepoint` (radix `2^8`): the table's point `t.point`. -/
 theorem basepoint (t : EdwardsBasepointTableRadix256) (ht : t.IsTable) (ht' : t.IsBounded) :
     basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
   apply basepoint_spec <;> assumption
@@ -744,8 +733,7 @@ theorem clone (t : EdwardsBasepointTableRadix256) :
       ⦃ (r : EdwardsBasepointTableRadix256) => r = t ⦄ :=
   edwards.EdwardsBasepointTableRadix256.«i686-tables».Insts.CoreCloneClone.clone_spec t
 
-/-- `BasepointTable::mul_base`, `Mul<&Scalar> for &EdwardsBasepointTableRadix256`
-and its reverse: `s • t.point`. -/
+/-- `BasepointTable::mul_base` (radix `2^8`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
 theorem mul_base (t : EdwardsBasepointTableRadix256) (s : Scalar) (ht : t.IsTable)
     (ht' : t.IsBounded) (hs : s.asNat < 2 ^ 255) :
     ∀ ts ∈ [mul_base t s, «&t * &s» t s, «&s * &t» s t],
@@ -753,8 +741,7 @@ theorem mul_base (t : EdwardsBasepointTableRadix256) (s : Scalar) (ht : t.IsTabl
   variants [mul_base_spec]
 
 open edwards.EdwardsBasepointTableRadix256.«i686-tables».Insts in
-/-- `From<&T> for EdwardsBasepointTableRadix256`, for the other four table types `T`: a table
-of the same point. -/
+/-- `From<&EdwardsBasepointTable> for EdwardsBasepointTableRadix256`: a table of the same point. -/
 theorem «from» :
     (∀ t : EdwardsBasepointTable, t.IsTable → t.IsBounded →
       «CoreConvertFromSharedAEdwardsBasepointTablei686-tables».«from» t
@@ -783,18 +770,19 @@ namespace EdwardsPoint
 
 open edwards.«EdwardsPointi686-tables»
 
-/-- `mul_by_cofactor`: `8 • P`. -/
+/-- `EdwardsPoint::mul_by_cofactor`: `8 • P`. -/
 theorem mul_by_cofactor (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
     mul_by_cofactor P ⦃ (r : EdwardsPoint) =>
       r.OnCurve ∧ r.toPoint = 8 • P.toPoint ∧ r.IsBounded ⦄ :=
   mul_by_cofactor_spec P hP' hP
 
-/-- `is_small_order`: whether `8 • P = 0`. -/
+/-- `EdwardsPoint::is_small_order`: `8 • P = 0`. -/
 theorem is_small_order (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
     is_small_order P ⦃ (r : Bool) => r = true ↔ 8 • P.toPoint = 0 ⦄ :=
   is_small_order_spec P hP' hP
 
-/-- `is_torsion_free`: whether `L • P = 0` (multiplication by the unreduced `BASEPOINT_ORDER`). -/
+/-- `EdwardsPoint::is_torsion_free`: `L • P = 0` (multiplication by the unreduced
+`BASEPOINT_ORDER`). -/
 theorem is_torsion_free (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
     is_torsion_free P ⦃ (r : Bool) => r = true ↔ L • P.toPoint = 0 ⦄ :=
   is_torsion_free_spec P hP' hP

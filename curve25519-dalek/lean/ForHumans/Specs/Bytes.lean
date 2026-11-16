@@ -6,10 +6,6 @@ module
 public import Mathlib.Data.Nat.Digits.Lemmas
 public section
 
-/-! # Byte strings as numbers
-
-The little-endian value of a byte string, and the little-endian bytes of a number. -/
-
 namespace curve25519
 
 /-- RFC 7748 `decodeLittleEndian`: the value of the bytes, `b[0] + 256 · b[1] + …`. -/

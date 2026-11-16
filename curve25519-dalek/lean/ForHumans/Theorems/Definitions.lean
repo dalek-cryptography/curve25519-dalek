@@ -5,18 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 import ForHumans
 import Lean
 
-/-! # The definitions of the theorems
-
-Every definition that a statement in `ForHumans/Theorems/` or `ForHumans/TestVectors.lean`
-depends on, directly or through other definitions, is in `ForHumans/Specs/`, in the Aeneas
-translation (`Curve25519Dalek/`), or in a library (Lean, Mathlib, Aeneas, `EllipticCurve`). None
-is in `Proofs/`, so reading `ForHumans/Specs/` is enough to know what the theorems say.
-
-The check below follows the statements into the bodies of the definitions they use and fails if
-it reaches a definition of `Proofs/`. Theorems and other proofs (constants whose type is a
-proposition, such as `Fact (Nat.Prime p)` instances) are not followed: what they prove does not
-matter, only that they are proved. -/
-
 open Lean Meta Elab Command
 
 /-- The theorems of `ForHumans/Theorems/` and `ForHumans/TestVectors.lean`. -/

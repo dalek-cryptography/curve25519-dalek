@@ -11,20 +11,16 @@ public import ForHumans.Specs.Representation.CurveModels.I686Tables
 public import ForHumans.Specs.Representation.CurveModels.X86_64NoTables
 public section
 
-/-! # The precomputation of `backend/serial/scalar_mul/precomputed_straus.rs`
+/-! # The precomputations of `backend/serial/scalar_mul/precomputed_straus.rs` (audited)
 
-`VartimePrecomputedStraus` holds one `NafLookupTable8` of affine Niels points per static point.
-The backend enum `backend.VartimePrecomputedStraus` (whose only variant is `Scalar`), and its
-aliases `edwards.VartimeEdwardsPrecomputation` and `ristretto.VartimeRistrettoPrecomputation`,
-wrap it. On the enum:
-
-- `points` are the static points: the point of entry `0` of each table;
-- `IsValid`, the invariant of the Rust type (whose values come only from `new`): entry `k` of each
-  table is on the curve and is `(2 k + 1)` times that point;
-- `IsBounded`: every limb of every entry is `< 2^54` (x86_64) or `< 2^27` (i686).
-
-The definitions are written for `x86_64-tables`; `scripts/gen-config-specs.py` generates the
-other configurations' copies in `Representation/ScalarMul/`. -/
+`VartimePrecomputedStraus` holds one `NafLookupTable8` of affine Niels points per static point,
+and `self.LimbsLt n` says that every limb of every entry is `< 2^n`. The backend enum
+`backend.VartimePrecomputedStraus` (whose only variant is `Scalar`), and its aliases
+`edwards.VartimeEdwardsPrecomputation` and `ristretto.VartimeRistrettoPrecomputation`, forward to
+it; on the enum, `points` are the static points (the point of entry `0` of each table),
+`IsValid`, the invariant of the Rust type (whose values come only from `new`), says that entry
+`k` of each table is on the curve and is `(2 k + 1)` times that point, and `IsBounded` that every
+limb is `< 2^54` (x86_64) or `< 2^27` (i686). -/
 
 open Aeneas Aeneas.Std
 

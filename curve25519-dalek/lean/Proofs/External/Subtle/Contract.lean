@@ -10,11 +10,6 @@ set_option linter.unusedVariables false
 open Aeneas Aeneas.Std Result Aeneas.Std.WP
 open Curve25519Dalek
 
-/-! # The contracts of `subtle`, as theorems
-
-Each contract of `ForHumans/Specs/External/Subtle/Contract.lean`, as the theorem that the proofs
-use: its projection from the axiom `RustAx.subtle`. -/
-
 /-- `subtle.Choice.unwrap_u8` meets its contract (`RustAx.subtle`). -/
 @[step]
 theorem subtle.Choice.unwrap_u8_spec

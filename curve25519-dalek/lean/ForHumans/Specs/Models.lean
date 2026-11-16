@@ -8,13 +8,6 @@ public import EllipticCurve.TwistedEdwards.Group
 public import Mathlib.Algebra.Module.Torsion.Basic
 public section
 
-/-! # Twisted Edwards models: encoding, the Ristretto relation, affine Niels coordinates
-
-Definitions over any twisted Edwards model `E` (from the `EllipticCurve` library) that the
-library does not have yet: the RFC 8032 encoding of a point as a number, the relation whose
-classes are the elements of the Decaf/Ristretto quotient, and the affine Niels coordinates
-`(y + x, y - x, 2 d x y)` that dalek's precomputed tables store. -/
-
 namespace TwistedEdwardsModel
 
 variable {p : ℕ} [Fact p.Prime] (E : TwistedEdwardsModel (ZMod p)) (bits : ℕ)

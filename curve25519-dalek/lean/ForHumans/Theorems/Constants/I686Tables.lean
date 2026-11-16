@@ -27,21 +27,21 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel Curve
 
 namespace Theorems.constants.«i686-tables»
 
-/-- `ED25519_BASEPOINT_POINT`: the basepoint. -/
+/-- `ED25519_BASEPOINT_POINT` represents the basepoint. -/
 theorem ED25519_BASEPOINT_POINT :
     backend.serial.u32.constants.ED25519_BASEPOINT_POINT.«i686-tables»
       ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
         r.OnCurve ∧ r.toPoint = basepoint ∧ r.IsBounded ⦄ :=
   backend.serial.u32.constants.«i686-tables».ED25519_BASEPOINT_POINT_spec
 
-/-- `ED25519_BASEPOINT_128_POINT`: `2^128 • basepoint`. -/
+/-- `ED25519_BASEPOINT_128_POINT` represents `2^128 • B`. -/
 theorem ED25519_BASEPOINT_128_POINT :
     backend.serial.u32.constants.ED25519_BASEPOINT_128_POINT.«i686-tables»
       ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
         r.OnCurve ∧ r.toPoint = 2 ^ 128 • basepoint ∧ r.IsBounded ⦄ :=
   backend.serial.u32.constants.«i686-tables».ED25519_BASEPOINT_128_POINT_spec
 
-/-- `EIGHT_TORSION`: entry `i` is `i • torsion8`. -/
+/-- `EIGHT_TORSION`: entry `i` represents `i • torsion8`. -/
 theorem EIGHT_TORSION :
     backend.serial.u32.constants.EIGHT_TORSION.«i686-tables»
       ⦃ (r : Array edwards.EdwardsPoint.«i686-tables» 8#usize) =>
@@ -56,14 +56,14 @@ theorem RISTRETTO_BASEPOINT_POINT :
         r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = basepoint ∧ r.IsBounded ⦄ :=
   constants.«i686-tables».RISTRETTO_BASEPOINT_POINT_spec
 
-/-- `ED25519_BASEPOINT_TABLE`: a table of the basepoint. -/
+/-- `ED25519_BASEPOINT_TABLE`: a table representing the basepoint. -/
 theorem ED25519_BASEPOINT_TABLE :
     backend.serial.u32.constants.ED25519_BASEPOINT_TABLE
       ⦃ (r : edwards.EdwardsBasepointTable.«i686-tables») =>
         r.IsTable ∧ r.point = basepoint ∧ r.IsBounded ⦄ :=
   backend.serial.u32.constants.ED25519_BASEPOINT_TABLE_spec
 
-/-- `RISTRETTO_BASEPOINT_TABLE`: a table of the basepoint. -/
+/-- `RISTRETTO_BASEPOINT_TABLE`: a table representing the basepoint. -/
 theorem RISTRETTO_BASEPOINT_TABLE :
     constants.RISTRETTO_BASEPOINT_TABLE.«i686-tables»
       ⦃ (r : ristretto.RistrettoBasepointTable.«i686-tables») =>

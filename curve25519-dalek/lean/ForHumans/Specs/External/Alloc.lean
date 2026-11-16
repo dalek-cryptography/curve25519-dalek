@@ -41,8 +41,8 @@ opaque SharedAVec.Insts.CoreIterTraitsCollectIntoIteratorSharedATIter.into_iter
 
 The behaviour of the `opaque` function above, as stated in the Rust standard library
 documentation: a predicate `….Contract : Prop`, and one axiom (`RustAx.alloc`) stating it. The
-axiom is the only trusted addition of this file; the theorem `…_spec` that the proofs use is its
-projection, in `Proofs/External/Alloc.lean`. -/
+axiom is the only trusted addition of this file; the theorem `…_spec` used by the proofs is its
+projection. -/
 
 /-- `<&Vec<T> as IntoIterator>::into_iter` (alloc/src/vec/mod.rs,
 `impl<'a, T, A: Allocator> IntoIterator for &'a Vec<T, A>`): "Creates an iterator from a value."

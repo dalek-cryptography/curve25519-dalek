@@ -11,11 +11,6 @@ import Proofs.Curve25519.Ristretto.Even
 import Mathlib.Tactic.LinearCombination
 public section
 
-/-! # The point of RFC 9496's `MAP` is on the curve
-
-The field facts behind `curve25519.Ristretto.mapRepField` (`ForHumans/Specs/Ristretto.lean`):
-`mapRepField_equation`, its two coordinates satisfy the equation of `edwards`. -/
-
 /-! # The ristretto255 map (RFC 9496 §4.3.4)
 
 `Ristretto.mapRepField r₀` is RFC 9496's `MAP(r₀)`, the Elligator-style map of a field element to an

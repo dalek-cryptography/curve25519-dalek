@@ -7,14 +7,6 @@ public import Aeneas.Std.Core.Iter
 public import Aeneas.Std.WP
 public section
 
-/-! # Finite iterators
-
-Theorems about functions that consume a generic iterator (`Product`, `Sum`) assume that it yields
-a given list of items and then stops (`Iterator.Yields`). Functions that take an `IntoIterator`
-(the multiscalar multiplications) assume that `into_iter` returns such an iterator
-(`IntoIterator.Yields`). The assumption can be met: the iterator over a list yields that list,
-and so does `Vec::into_iter` (`Proofs/ToAeneas/Iterator.lean`). -/
-
 open Aeneas Aeneas.Std Aeneas.Std.WP
 
 /-- Calling `next` repeatedly, starting from `it`, returns the items `xs` in order, then `none`. -/

@@ -5,8 +5,8 @@ open Lake DSL
 require EllipticCurve from git "https://github.com/Beneficial-AI-Foundation/elliptic-curve.git"
   @ "4015c7cfab714640e77500bdbde6e64face3fbaa"
 
--- The pinned Aeneas version, read from `AENEAS_VERSION.txt` (a GitHub release tag), which
--- `scripts/aeneas-install.sh` also reads to download the charon/aeneas binaries.
+-- The pinned Aeneas version (`AENEAS_VERSION.txt`). Also read by `scripts/aeneas-install.sh` to
+-- download the charon/aeneas binaries from the GitHub. The `rev` must be a GitHub release tag.
 def aeneasRev : String := (include_str "AENEAS_VERSION.txt").trimAscii.toString
 require aeneas from git "https://github.com/AeneasVerif/aeneas.git"
   @ aeneasRev / "backends/lean"
@@ -21,8 +21,6 @@ package «curve25519-dalek» where
     ⟨`weak.linter.style.header, false⟩,
     ⟨`maxRecDepth, .ofNat 10000⟩]
 
--- What a reviewer reads: the specifications (`ForHumans/Specs/`) and the theorems about the Rust
--- code (`ForHumans/Theorems/`).
 @[default_target]
 lean_lib ForHumans where
   globs := #[.andSubmodules `ForHumans]
@@ -31,7 +29,6 @@ lean_lib ForHumans where
 @[default_target]
 lean_lib Curve25519Dalek
 
--- Everything else: the proofs and the lemmas they use.
 @[default_target]
 lean_lib Proofs where
   globs := #[.andSubmodules `Proofs]

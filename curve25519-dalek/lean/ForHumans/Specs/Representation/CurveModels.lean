@@ -9,17 +9,6 @@ public import ForHumans.Specs.Representation.FieldElement51
 public import ForHumans.Specs.Representation.Window
 public section
 
-/-! # The point an `AffineNielsPoint` represents
-
-The precomputed tables store affine Niels points (`backend/serial/curve_models.rs`): three field
-elements `(y + x, y - x, 2 d x y)` of an affine point `(x, y)` (`AffineNiels` in
-`ForHumans.Specs.Models`). `OnCurve` says that the three are those of a point, `toPoint` is that
-point (`0` otherwise), and `LimbsLt n` that every limb is `< 2^n`; the instance `PointRepr`
-(`Representation/Window.lean`) makes them those of a table entry.
-
-The definitions are written for `x86_64-tables`; `scripts/gen-config-specs.py` generates the
-other configurations' copies in `Representation/CurveModels/`. -/
-
 open Aeneas Aeneas.Std
 
 -- BEGIN PER-CONFIG

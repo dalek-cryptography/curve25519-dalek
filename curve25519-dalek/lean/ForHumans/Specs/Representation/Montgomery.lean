@@ -6,11 +6,6 @@ module
 public import Curve25519Dalek.Types
 public section
 
-/-! # `MontgomeryPoint`
-
-A `MontgomeryPoint` is 32 bytes, the encoding of a `u`-coordinate; the theorems use them through
-`Array.toVector`. Only the default value is needed here. -/
-
 open Aeneas Aeneas.Std
 
 namespace Curve25519Dalek.montgomery

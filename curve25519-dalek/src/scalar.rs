@@ -1184,20 +1184,30 @@ impl UnpackedScalar {
     #[rustfmt::skip] // keep alignment of addition chain and squarings
     #[allow(clippy::just_underscores_and_digits)]
     pub fn montgomery_invert(&self) -> UnpackedScalar {
-        // Uses the addition chain from
-        // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
-        let    _1 = *self;
-        let   _10 = _1.montgomery_square();
-        let  _100 = _10.montgomery_square();
-        let   _11 = UnpackedScalar::montgomery_mul(&_10,     &_1);
-        let  _101 = UnpackedScalar::montgomery_mul(&_10,    &_11);
-        let  _111 = UnpackedScalar::montgomery_mul(&_10,   &_101);
-        let _1001 = UnpackedScalar::montgomery_mul(&_10,   &_111);
-        let _1011 = UnpackedScalar::montgomery_mul(&_10,  &_1001);
-        let _1111 = UnpackedScalar::montgomery_mul(&_100, &_1011);
+        // 275 steps: 248 squarings, 27 multiplications
+        let _1 = *self;
+        let _10 = _1.montgomery_square();
+        let _100 = _10.montgomery_square();
+        let _101 = UnpackedScalar::montgomery_mul(&_100, &_1);
+        let _1010 = _101.montgomery_square();
+        let _1011 = UnpackedScalar::montgomery_mul(&_1010, &_1);
+        let _10101 = UnpackedScalar::montgomery_mul(&_1011, &_1010);
+        let _101010 = _10101.montgomery_square();
+        let _1010100 = _101010.montgomery_square();
+        let _1101001 = UnpackedScalar::montgomery_mul(&_1010100, &_10101);
+        let _1101011 = UnpackedScalar::montgomery_mul(&_1101001, &_10);
+        let _10010011 = UnpackedScalar::montgomery_mul(&_1101001, &_101010);
+        let _11100111 = UnpackedScalar::montgomery_mul(&_10010011, &_1010100);
+        let _11010110 = _1101011.montgomery_square();
+        let _110101100 = _11010110.montgomery_square();
+        let _1101011000 = _110101100.montgomery_square();
+        let _1111101011 = UnpackedScalar::montgomery_mul(&_1101011000, &_10010011);
+        let _10011010010 = UnpackedScalar::montgomery_mul(&_1111101011, &_11100111);
+        let _100010111101 = UnpackedScalar::montgomery_mul(&_10011010010, &_1111101011);
+        let _110010101000 = UnpackedScalar::montgomery_mul(&_100010111101, &_1111101011);
 
-        // _10000
-        let mut y = UnpackedScalar::montgomery_mul(&_1111, &_1);
+        // _1000000000000
+        let mut y = UnpackedScalar::montgomery_mul(&_110010101000, &_1101011000);
 
         #[inline]
         fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar) {
@@ -1207,33 +1217,21 @@ impl UnpackedScalar {
             *y = UnpackedScalar::montgomery_mul(y, x);
         }
 
-        square_multiply(&mut y, 123 + 3, &_101);
-        square_multiply(&mut y,   2 + 2, &_11);
-        square_multiply(&mut y,   1 + 4, &_1111);
-        square_multiply(&mut y,   1 + 4, &_1111);
-        square_multiply(&mut y,       4, &_1001);
-        square_multiply(&mut y,       2, &_11);
-        square_multiply(&mut y,   1 + 4, &_1111);
-        square_multiply(&mut y,   1 + 3, &_101);
-        square_multiply(&mut y,   3 + 3, &_101);
-        square_multiply(&mut y,       3, &_111);
-        square_multiply(&mut y,   1 + 4, &_1111);
-        square_multiply(&mut y,   2 + 3, &_111);
-        square_multiply(&mut y,   2 + 2, &_11);
-        square_multiply(&mut y,   1 + 4, &_1011);
-        square_multiply(&mut y,   2 + 4, &_1011);
-        square_multiply(&mut y,   6 + 4, &_1001);
-        square_multiply(&mut y,   2 + 2, &_11);
-        square_multiply(&mut y,   3 + 2, &_11);
-        square_multiply(&mut y,   3 + 2, &_11);
-        square_multiply(&mut y,   1 + 4, &_1001);
-        square_multiply(&mut y,   1 + 3, &_111);
-        square_multiply(&mut y,   2 + 4, &_1111);
-        square_multiply(&mut y,   1 + 4, &_1011);
-        square_multiply(&mut y,       3, &_101);
-        square_multiply(&mut y,   2 + 4, &_1111);
-        square_multiply(&mut y,       3, &_101);
-        square_multiply(&mut y,   1 + 2, &_11);
+        square_multiply(&mut y, 115 + 11, &_10011010010);
+        square_multiply(&mut y,        5, &_110010101000);
+        square_multiply(&mut y,        6, &_1111101011);
+        square_multiply(&mut y,        8, &_100010111101);
+        square_multiply(&mut y,   1 + 12, &_100010111101);
+        square_multiply(&mut y,        8, &_11100111);
+        square_multiply(&mut y,    2 + 7, &_1101011);
+        square_multiply(&mut y,    2 + 4, &_1011);
+        square_multiply(&mut y,    6 + 8, &_10010011);
+        square_multiply(&mut y,    3 + 3, &_101);
+        square_multiply(&mut y,       10, &_10011010010);
+        square_multiply(&mut y,        7, &_1101011);
+        square_multiply(&mut y,        8, &_100010111101);
+        square_multiply(&mut y,        2, &_1101001);
+        square_multiply(&mut y,   2 + 10, &_1111101011);
 
         y
     }

@@ -95,6 +95,13 @@ mod vectors {
                 "Signature strict verification failed on line {}",
                 lineno
             );
+            assert!(
+                expected_verifying_key
+                    .verify_consensus(&msg_bytes, &sig2)
+                    .is_ok(),
+                "Signature consensus verification failed on line {}",
+                lineno
+            );
         }
     }
 

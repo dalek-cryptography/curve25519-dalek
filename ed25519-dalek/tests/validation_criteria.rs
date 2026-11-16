@@ -127,9 +127,7 @@ fn get_test_vectors() -> impl Iterator<Item = TestVector> {
         .map(TestVector::from)
 }
 
-/// Tests that the verify() and verify_strict() functions succeed only on test cases whose flags
-/// (i.e., edge cases it falls into) are a subset of VERIFY_ALLOWED_EDGECASES and
-/// VERIFY_STRICT_ALLOWED_EDGECASES, respectively
+/// Tests the validation criteria of verify(), verify_strict(), and verify_consensus().
 #[test]
 fn check_validation_criteria() {
     let verify_allowed_edgecases = Set::from_iter(VERIFY_ALLOWED_EDGECASES.to_vec());
@@ -166,6 +164,40 @@ fn check_validation_criteria() {
                 "verify_strict() expected failure in testcase #{number}",
             );
         }
+
+        // ZIP-215 hashes the original encodings. Re-encoding changes k, which only becomes
+        // irrelevant when A has low order and [8][k]A is the identity.
+        let expected = !flags.contains(&Flag::ReencodedK) || flags.contains(&Flag::LowOrderA);
+        assert_eq!(
+            pubkey.verify_consensus(&msg, &sig).is_ok(),
+            expected,
+            "verify_consensus() disagreed in testcase #{number}",
+        );
+    }
+}
+
+/// ZIP-215 requires S < ℓ, including when `legacy_compatibility` is enabled.
+#[test]
+fn verify_consensus_scalar_boundary() {
+    use curve25519_dalek::{
+        constants::ED25519_BASEPOINT_POINT, edwards::EdwardsPoint, traits::Identity,
+    };
+
+    let identity = EdwardsPoint::identity();
+    let pubkey = VerifyingKey::from(identity);
+    let mut s =
+        hex_literal::hex!("ecd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010");
+
+    // Test ℓ - 1, ℓ, and ℓ + 1 with R = [S]B. Since A is the identity, the equation holds
+    // for all three signatures, but only the first has a canonical scalar.
+    for (r, expected) in [
+        (-ED25519_BASEPOINT_POINT, true),
+        (identity, false),
+        (ED25519_BASEPOINT_POINT, false),
+    ] {
+        let sig = Signature::from_components(r.compress().to_bytes(), s);
+        assert_eq!(pubkey.verify_consensus(b"", &sig).is_ok(), expected);
+        s[0] += 1;
     }
 }
 

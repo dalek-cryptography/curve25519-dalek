@@ -5,6 +5,8 @@ Authors: Oliver Butterley
 -/
 module
 public import Aeneas.Std.Scalar.Core
+import Batteries.Tactic.Lint.Basic
+import Mathlib.Tactic.Linter.Style
 @[expose] public section
 set_option linter.style.whitespace false
 open Aeneas Aeneas.Std

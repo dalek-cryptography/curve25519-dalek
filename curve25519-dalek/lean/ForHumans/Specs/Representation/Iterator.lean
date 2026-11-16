@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Aeneas.Std.Core.Iter
-public import Aeneas.Std.WP
 public section
 
 open Aeneas Aeneas.Std Aeneas.Std.WP

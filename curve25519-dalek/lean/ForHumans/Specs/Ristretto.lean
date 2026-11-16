@@ -3,10 +3,9 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import ForHumans.Specs.Edwards
-public import ForHumans.Specs.X25519
-import Proofs.Curve25519.Ristretto.SqrtRatio
 import Proofs.Curve25519.Ristretto.MapFacts
+public import ForHumans.Specs.Bytes
+public import Proofs.Curve25519.Edwards.Basic
 public section
 
 namespace curve25519.Ristretto

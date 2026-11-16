@@ -70,7 +70,10 @@ def generate(template: pathlib.Path, config: str) -> str:
         if not skipping:
             body.append(per_arch(line, config))
     # Keep the imports and the `open`s of the template, drop its module docstring.
-    imports = lines[: header_end + 1]
+    # An import of a template becomes the import of its copy for this configuration.
+    imports = [re.sub(r"^((?:public )?import (\S+))", lambda m: m.group(1) + "." + CONFIGS[config]
+                      if m.group(2) in TEMPLATES else m.group(1), l)
+               for l in lines[: header_end + 1]]
     preamble, in_open = [], False
     for l in lines[header_end + 1 : begin]:
         in_open = l.startswith("open ") or (in_open and l.startswith("    "))
@@ -91,6 +94,12 @@ def generate(template: pathlib.Path, config: str) -> str:
     # Collapse the blank lines left where tables-only blocks were dropped.
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.rstrip("\n") + "\n"
+
+
+TEMPLATES = {
+    ".".join(t.relative_to(ROOT).with_suffix("").parts)
+    for d in DIRS for t in d.glob("*.lean") if "-- BEGIN PER-CONFIG" in t.read_text()
+}
 
 
 def main() -> int:

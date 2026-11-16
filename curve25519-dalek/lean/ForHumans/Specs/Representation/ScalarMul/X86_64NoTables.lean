@@ -4,11 +4,7 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import ForHumans.Specs.Representation.Window
 public import Proofs.Curve25519.Edwards.Basic
-public import ForHumans.Specs.Representation.CurveModels
-public import ForHumans.Specs.Representation.CurveModels.I686NoTables
-public import ForHumans.Specs.Representation.CurveModels.I686Tables
 public import ForHumans.Specs.Representation.CurveModels.X86_64NoTables
 public section
 

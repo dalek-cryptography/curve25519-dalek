@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Alessandro D'Angelo, Oliver Butterley
 -/
 module
-public import Mathlib.Data.Nat.Digits.Defs
 public import Aeneas.Std.Array.Array
+import Mathlib.Data.Nat.Digits.Defs
 public section
 
 open Aeneas.Std

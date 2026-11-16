@@ -6,6 +6,8 @@ Authors: Oliver Butterley, Zhang-Liao, Alessandro D'Angelo, Hoang Le Truong,
 -/
 module
 public import Curve25519Dalek.Types
+import Batteries.Tactic.Lint.Basic
+import Mathlib.Tactic.Linter.Style
 @[expose] public section
 set_option linter.style.whitespace false
 set_option linter.unusedVariables false

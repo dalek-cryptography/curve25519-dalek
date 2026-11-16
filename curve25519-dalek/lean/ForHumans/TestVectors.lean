@@ -3,14 +3,16 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import ForHumans.Specs
 import Proofs.Curve25519.Edwards.Encoding
-import Proofs.Curve25519.Ristretto.Encoding
-import Proofs.Curve25519.Ristretto.Map
 import Proofs.Curve25519.TestVectors.X25519
 import Proofs.Curve25519.TestVectors.RistrettoEncoding
 import Proofs.Curve25519.TestVectors.RistrettoInvalid
 import Proofs.Curve25519.TestVectors.RistrettoMap
+public import Aeneas.Std.Alloc.String
+public import Aeneas.Std.Core.Core
+public import ForHumans.Specs.Edwards
+public import ForHumans.Specs.Ristretto
+public import ForHumans.Specs.X25519
 public section
 
 set_option linter.style.longLine false

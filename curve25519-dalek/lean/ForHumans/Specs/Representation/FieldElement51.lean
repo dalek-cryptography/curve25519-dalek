@@ -5,9 +5,8 @@ Authors: Alessandro D'Angelo, Oliver Butterley
 -/
 module
 public import ForHumans.Specs.Constants
-public import ForHumans.Specs.Representation.Array
 public import Curve25519Dalek.Types
-public import Mathlib.Algebra.Field.ZMod
+import ForHumans.Specs.Representation.Array
 public section
 
 open Aeneas.Std

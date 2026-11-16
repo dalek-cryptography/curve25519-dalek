@@ -5,7 +5,7 @@ Authors: Oliver Butterley, Zhang-Liao, Alessandro D'Angelo,
   Hoang Le Truong, Markus Ferdinand Dablander
 -/
 -- [curve25519_dalek]: external functions.
-module
+module -- shake: keep-all
 public import Aeneas
 public import Curve25519Dalek.Types
 public import ForHumans.Specs.External.Subtle.Contract

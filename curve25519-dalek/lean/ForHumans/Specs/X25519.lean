@@ -5,7 +5,14 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 public import ForHumans.Specs.Bytes
 public import ForHumans.Specs.Curves
-public import Proofs.Curve25519.Edwards.Basic
+public import EllipticCurve.Montgomery.Ladder.Defs
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Rat.Floor
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.Continuity.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.Positivity.Finset
 public section
 
 namespace curve25519

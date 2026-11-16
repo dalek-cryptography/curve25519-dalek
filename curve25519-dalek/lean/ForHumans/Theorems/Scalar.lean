@@ -3,13 +3,12 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Proofs.Curve25519.Basic
 public import Curve25519Dalek.Funs
 public import ForHumans.Specs.Representation.Iterator
 public import ForHumans.Specs.Representation.Scalar
-public import Proofs.External.Subtle
-import Proofs
-import Proofs.External.Zeroize.Instances
+import Proofs -- shake: keep
+public import ForHumans.Specs.Constants
+public import ForHumans.Specs.Representation.Array
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP

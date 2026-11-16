@@ -4,7 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Alessandro D'Angelo, Oliver Butterley
 -/
 module
-public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Data.ZMod.Defs
+import Mathlib.Data.ZMod.Basic
 public section
 
 namespace curve25519

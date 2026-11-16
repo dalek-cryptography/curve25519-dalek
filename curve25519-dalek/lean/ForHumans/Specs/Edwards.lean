@@ -6,7 +6,6 @@ module
 public import ForHumans.Specs.Bytes
 public import ForHumans.Specs.Curves
 public import ForHumans.Specs.Models
-public import Proofs.Curve25519.Edwards.Basic
 import Proofs.Curve25519.Certificates.Edwards
 public section
 

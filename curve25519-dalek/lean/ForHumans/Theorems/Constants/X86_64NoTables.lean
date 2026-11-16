@@ -4,19 +4,15 @@ Copyright 2026 The Beneficial AI Foundation. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
-public import Proofs.Curve25519.Edwards.Basepoint
-public import Proofs.Curve25519.Edwards.Encoding
-public import Proofs.Curve25519.Edwards.Torsion
-public import Proofs.Curve25519.Montgomery
-public import Proofs.Curve25519.X25519
 public import Curve25519Dalek.Funs
-public import Proofs.Representation.Edwards
-public import Proofs.Curve25519.Ristretto.Encoding
-public import Proofs.Representation.Montgomery
 public import ForHumans.Specs.Representation.Array
-public import ForHumans.Specs.Representation
-public import Proofs.Representation.Window
-import Proofs
+import Proofs -- shake: keep
+public import ForHumans.Specs.Edwards
+public import ForHumans.Specs.Montgomery
+public import ForHumans.Specs.Representation.Edwards.X86_64NoTables
+public import ForHumans.Specs.Representation.Montgomery
+public import ForHumans.Specs.Ristretto
+public import ForHumans.Specs.X25519
 public section
 
 set_option linter.style.longLine false

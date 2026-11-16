@@ -4,8 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Curve25519Dalek.Funs
-public import Proofs.External.Subtle
-import Proofs
+import Proofs -- shake: keep
 public section
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek

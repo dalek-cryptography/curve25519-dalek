@@ -15,10 +15,11 @@ public section
   `toExtended_def`), `OnCurve` (exposed), `toPoint` (hidden, `toPoint_def`), `LimbsLt n` (all
   limbs `< 2^n`, exposed), `IsBounded` (exposed: `LimbsLt 52` on x86_64, the bound forced by
   the mixed affine-Niels addition, `LimbsLt 26` on i686; the bound every public function
-  assumes and preserves) and `ProjEq` (exposed), the projective equality that `ct_eq`
-  computes.
-- `AffinePoint` (`edwards/affine.rs`) is the affine point itself: `OnCurve` is the curve
-  equation, `toPoint` the point (`0` off the curve), `LimbsLt n` as for `EdwardsPoint`.
+  assumes and preserves) and `ProjEq` (exposed, in `Proofs.Representation.Edwards`), the
+  projective equality that `ct_eq` computes.
+- `AffinePoint` (`edwards/affine.rs`, in `Proofs.Representation.Edwards`) is the affine point
+  itself: `OnCurve` is the curve equation, `toPoint` the point (`0` off the curve), `LimbsLt n` as
+  for `EdwardsPoint`.
 - `CompressedEdwardsY` is 32 bytes; `toVector` gives them as a `Vector UInt8 32`, the byte
   string of RFC 8032 (`curve25519.encode`, `decodeLenient`).
 - The basepoint tables `EdwardsBasepointTable{,Radix32,Radix64,Radix128,Radix256}` (radix

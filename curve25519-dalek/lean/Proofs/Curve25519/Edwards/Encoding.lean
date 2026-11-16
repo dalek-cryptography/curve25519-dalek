@@ -18,13 +18,13 @@ non-canonical encodings (`y ≥ p`, reduced, and `x = 0` with the sign bit set);
 `decodeLenient_encode`, `eq_encode_iff`.
 
 They are computed by arithmetic cores on the little-endian value of the bytes
-(`decodeLittleEndian`): the generic encoding of `Curve25519.Models.TwistedEdwards.Encoding.*` at
-`edwards` with `bits = 255`, `encodeNat P = P.y.val + 2 ^ 255 * sign(P.x)` and the strict
+(`decodeLittleEndian`): the generic encoding of `Proofs.Curve25519.Models.TwistedEdwards.Encoding.*`
+at `edwards` with `bits = 255`, `encodeNat P = P.y.val + 2 ^ 255 * sign(P.x)` and the strict
 `decodeNat`, with the generic lemmas instantiated (`encodeNat_lt_two_pow_256`,
 `decodeNat_encodeNat`, `encodeNat_decodeNat`, `decodeNat_eq_some_iff`, `decodeNat_eq_none_iff`,
 `encodeNat_injective`), and the lenient `decodeLenientNat` with its meaning
-(`decodeLenientNat_eq_some_iff`, `decodeLenientNat_eq_none_iff`) and its relation to `decodeNat`
-and `encodeNat`. Also the sign of the basepoint (`not_isNeg_basepoint_x`) and the encodings of the
+(`decodeLenientNat_eq_some_iff`, `decodeLenientNat_eq_none_iff`) and its relation to `decodeNat` and
+`encodeNat`. Also the sign of the basepoint (`not_isNeg_basepoint_x`) and the encodings of the
 basepoint (`encodeNat_basepoint`, dalek's `ED25519_BASEPOINT_COMPRESSED`) and of `0`.
 
 `encodeNat` and `decodeNat` are abbreviations of the generic functions, so every generic lemma

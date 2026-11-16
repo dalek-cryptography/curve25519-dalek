@@ -16,7 +16,7 @@ on the limbs' values (`onCurve_iff_equation`, `onCurve_iff_homogeneous`), the co
 `toPoint` (`toPoint_x`, `toPoint_y`, `toPoint_of_not_onCurve`), and projective equality as point
 equality (`projEq_iff_toPoint_eq`). Everything is the corresponding lemma of
 `EllipticCurve.TwistedEdwards.Coords` (projective, extended, completed) or
-`Curve25519.Models.TwistedEdwards.Coords` (Niels) rewritten through the `_def` lemmas. -/
+`Proofs.Curve25519.Models.TwistedEdwards.Coords` (Niels) rewritten through the `_def` lemmas. -/
 
 open curve25519 TwistedEdwardsModel
 

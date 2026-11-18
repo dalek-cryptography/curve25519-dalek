@@ -128,6 +128,10 @@ in `~/.cargo/config`.
 
 Note: The [SIMD backend] requires a word size of 64 bits. Attempting to set bits=32 and backend=`simd` will yield a compile error.
 
+On `wasm32` the automatic 32-bit choice is the right one: forcing
+`bits="64"` measures 1.6-1.9x slower for X25519, because wasm has no
+64x64->128 multiply, so the 64-bit backend's `u128` products are emulated.
+
 ### Cross-compilation
 
 Because backend selection is done by target, cross-compiling will select the correct word size automatically. For example, if a x86-64 Linux machine runs the following commands, `curve25519-dalek` will be compiled with the 32-bit `serial` backend.
@@ -147,6 +151,18 @@ For a given CPU feature, you can also specify an appropriate `-C target_feature`
 | :---    | :---                                      | :---              |
 | AVX2    | `-C target_feature=+avx2`                 | no                |
 | AVX512  | `-C target_feature=+avx512ifma,+avx512vl` | yes if `<= 1.89`  |
+
+Not everything the crate does is covered by the vector backends. The current
+caveats:
+
+* `EdwardsPoint::mul_base(_clamped)` only has `serial` support and is unaffected
+  by `simd`: the basepoint tables are precomputed in the serial representation.
+* `MontgomeryPoint` only has `serial` support and is unaffected by `simd`. Its
+  `mul_base(_clamped)` goes through `EdwardsPoint::mul_base` above, and its
+  `mul_clamped` runs a ladder over the field arithmetic below.
+* The `FieldElement` type used by those paths has no SIMD implementation, though
+  `curve25519-dalek` does contain SIMD field arithmetic internally, used by the
+  vectorized point types.
 
 # Documentation
 

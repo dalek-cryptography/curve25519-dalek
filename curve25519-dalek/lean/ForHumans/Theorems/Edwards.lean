@@ -129,6 +129,17 @@ theorem conditional_select (a b : EdwardsPoint) (choice : subtle.Choice)
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ :=
   SubtleConditionallySelectable.conditional_select_spec a b choice hchoice
 
+/-- `conditional_select` of well-formed points is well-formed. -/
+theorem conditional_select_wellFormed (a b : EdwardsPoint) (choice : subtle.Choice)
+    (hchoice : choice.IsValid) (ha : a.OnCurve) (ha' : a.IsBounded) (hb : b.OnCurve)
+    (hb' : b.IsBounded) :
+    SubtleConditionallySelectable.conditional_select a b choice ⦃ (r : EdwardsPoint) =>
+      r.OnCurve ∧ r.IsBounded ⦄ :=
+  spec_mono (conditional_select a b choice hchoice) fun r ⟨h0, h1⟩ => by
+    rcases hchoice with h | h
+    · obtain rfl := h0 h; exact ⟨ha, ha'⟩
+    · obtain rfl := h1 h; exact ⟨hb, hb'⟩
+
 /-- `ConstantTimeEq for EdwardsPoint` on points: equality of the represented points. -/
 theorem ct_eq (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
     (hQ' : Q.IsBounded) :

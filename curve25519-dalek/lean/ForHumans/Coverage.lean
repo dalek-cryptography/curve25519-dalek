@@ -39,8 +39,13 @@ def exemptFiles : List (String × String) := [
   ("curve25519-dalek/src/edwards/affine.rs",
     "`mod affine` is private; `AffinePoint` is returned only by `pub(crate) fn to_affine`")]
 
-/-- Functions not callable from outside the crate, or whose result is one of their arguments,
-by their name for `64bit-tables` (the other configurations are matched by renaming). -/
+/-- Files under an exempt prefix whose public items are public: `constants.rs` re-exports them. -/
+def unexemptFiles : List String :=
+  ["curve25519-dalek/src/backend/serial/u64/constants.rs",
+   "curve25519-dalek/src/backend/serial/u32/constants.rs"]
+
+/-- Functions not callable from outside the crate, by their name for `64bit-tables` (the other
+configurations are matched by renaming). -/
 def exemptNames : List (String × String) := [
   ("edwards.«EdwardsPoint64bit-tables».double", "`pub(crate) fn double`"),
   ("edwards.«EdwardsPoint64bit-tables».mul_by_pow_2", "`pub(crate) fn mul_by_pow_2`"),
@@ -65,11 +70,8 @@ def exemptNames : List (String × String) := [
   ("scalar.Scalar.invert_batch_internal.«64bit-tables»", "private `fn invert_batch_internal`"),
   ("scalar.Scalar29.pack", "private `fn pack` of the internal `UnpackedScalar`"),
   ("scalar.Scalar52.pack", "private `fn pack` of the internal `UnpackedScalar`"),
-  ("edwards.EdwardsPoint.«64bit-tables».Insts.SubtleConditionallySelectable.conditional_select",
-    "the result is `a` or `b` (theorem `conditional_select`)"),
-  ("ristretto.RistrettoPoint.«64bit-tables».Insts.SubtleConditionallySelectable\
-      .conditional_select",
-    "the result is `a` or `b` (theorem `conditional_select`)")]
+  ("backend.serial.u64.constants.ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN", "private `static`"),
+  ("backend.serial.u32.constants.ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN", "private `static`")]
 
 /-- `n` with every configuration renamed to `64bit-tables`. -/
 def normalize (n : Name) : String :=
@@ -112,7 +114,8 @@ def returnsItsArgument (f : Expr) : MetaM Bool :=
 /-- The exemption of `n`, if any: the exemption's key and its reason. -/
 def exemption (env : Environment) (n : Name) : IO (Option (String × String)) := do
   if let some f ← sourceFile env n then
-    if let some e := exemptFiles.find? (f.startsWith ·.1) then return some e
+    if let some e := exemptFiles.find? (f.startsWith ·.1) then
+      unless unexemptFiles.contains f do return some e
   return exemptNames.find? (·.1 == normalize n)
 
 /-- The uncovered functions, each with the reason it is exempt (if it is), and the exemptions

@@ -29,7 +29,7 @@ lint:
 axioms: gen
 	lake env lean ForHumans/AxiomCheck.lean
 definitions: gen
-	lake env lean ForHumans/Theorems/Definitions.lean
+	lake env lean ForHumans/Definitions.lean
 coverage: gen
 	lake env lean ForHumans/Coverage.lean
 

@@ -6,7 +6,7 @@ public import Proofs.External.Zeroize.Instances
 /-! # The `zeroize` crate (zeroize-1.8.2)
 
 * `ForHumans/Specs/External/Zeroize/Contract.lean`: TRUSTED. Opaque signatures and spec axiom.
-  `Curve25519Dalek/FunsExternal.lean` imports only this file.
+  `Curve25519Dalek/Funs.lean` imports it.
 * `Proofs/External/Zeroize/Lemmas.lean`: derived generic results (no axioms).
 * `Proofs/External/Zeroize/Instances.lean`: derived results about the instances generated in
   `Curve25519Dalek/Funs.lean`.

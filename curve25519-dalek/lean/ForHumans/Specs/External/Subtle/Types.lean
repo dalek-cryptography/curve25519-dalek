@@ -13,7 +13,7 @@ open Aeneas Aeneas.Std
 
 /-! # Types of the `subtle` crate (subtle-2.6.1) — TRUSTED
 
-Types only: this file is imported by `Curve25519Dalek/TypesExternal.lean`. They are what Aeneas
+Types only: this file is imported by `Curve25519Dalek/Types.lean`. They are what Aeneas
 emits when it translates the type definitions of `subtle`. Functions and their specs are in
 `ForHumans/Specs/External/Subtle/Contract.lean`. -/
 

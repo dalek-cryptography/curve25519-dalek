@@ -18,7 +18,7 @@ documentation = "https://docs.rs/curve25519-dalek"
 categories = ["cryptography", "no-std"]
 keywords = ["cryptography", "crypto", "ristretto", "curve25519", "ristretto255"]
 description = "A pure-Rust implementation of group operations on ristretto255 and Curve25519"
-exclude = ["**/.gitignore", ".gitignore"]
+exclude = ["**/.gitignore", ".gitignore", "lean/", "translation-patches/"]
 
 [package.metadata.docs.rs]
 rustdoc-args = [

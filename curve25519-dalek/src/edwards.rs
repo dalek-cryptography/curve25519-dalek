@@ -208,6 +208,10 @@ impl CompressedEdwardsY {
     ///
     /// Returns `None` if the input is not the \\(y\\)-coordinate of a
     /// curve point.
+    ///
+    /// Accepts non-canonical encodings. For canonical decoding, use
+    /// [`Self::decompress_rfc8032`]. For full public-key validation, use
+    /// [`Self::decompress_nist_full`].
     pub fn decompress(&self) -> Option<EdwardsPoint> {
         let (is_valid_y_coord, X, Y, Z) = decompress::step_1(self);
 
@@ -216,6 +220,44 @@ impl CompressedEdwardsY {
         } else {
             None
         }
+    }
+
+    /// Attempt to decompress to an `EdwardsPoint` according to [RFC 8032 §5.1.3].
+    ///
+    /// Returns `None` if the input does not encode a curve point, the encoded
+    /// \\(y\\)-coordinate is not reduced modulo the field modulus, or the
+    /// \\(x\\)-coordinate is zero and the sign bit is set.
+    ///
+    /// Accepts the identity and points with a nonzero torsion component. For
+    /// full public-key validation, use [`Self::decompress_nist_full`].
+    ///
+    /// [RFC 8032 §5.1.3]: https://www.rfc-editor.org/rfc/rfc8032.html#section-5.1.3
+    pub fn decompress_rfc8032(&self) -> Option<EdwardsPoint> {
+        let point = self.decompress()?;
+
+        // Decompression sets `Z = 1`, so re-encode the affine coordinates directly
+        // to check canonicality without performing a field inversion.
+        debug_assert_eq!(point.Z, FieldElement::ONE);
+
+        let repr = AffinePoint {
+            x: point.X,
+            y: point.Y,
+        }
+        .compress();
+
+        (repr == *self).then_some(point)
+    }
+
+    /// Attempt canonical decompression followed by full public-key validation
+    /// according to [NIST SP 800-186], Appendix D.1.3.2.
+    ///
+    /// Returns `None` if [`Self::decompress_rfc8032`] fails, the point is the
+    /// identity, or the point is not contained in the prime-order subgroup.
+    ///
+    /// [NIST SP 800-186]: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-186.pdf
+    pub fn decompress_nist_full(&self) -> Option<EdwardsPoint> {
+        self.decompress_rfc8032()
+            .filter(|point| !point.is_identity() && point.is_torsion_free())
     }
 }
 
@@ -1833,6 +1875,7 @@ mod test {
         SysRng,
         rand_core::{TryRng, UnwrapErr},
     };
+    use hex_literal::hex;
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
@@ -1923,6 +1966,85 @@ mod test {
         assert_eq!(minus_basepoint.Y, constants::ED25519_BASEPOINT_POINT.Y);
         assert_eq!(minus_basepoint.Z, constants::ED25519_BASEPOINT_POINT.Z);
         assert_eq!(minus_basepoint.T, -(&constants::ED25519_BASEPOINT_POINT.T));
+    }
+
+    #[test]
+    fn decompression_rfc8032() {
+        // (encoding, accepted by decompress, accepted by decompress_rfc8032)
+        for (bytes, permissive, canonical) in [
+            // Identity and the point of order two: y = 1 and y = p - 1.
+            (
+                hex!("0100000000000000000000000000000000000000000000000000000000000000"),
+                true,
+                true,
+            ),
+            (
+                hex!("ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"),
+                true,
+                true,
+            ),
+            // The same points with a sign bit set for x = 0.
+            (
+                hex!("0100000000000000000000000000000000000000000000000000000000000080"),
+                true,
+                false,
+            ),
+            (
+                hex!("ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
+                true,
+                false,
+            ),
+            // Unreduced y = p and y = p + 1, with both sign bits.
+            (
+                hex!("edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"),
+                true,
+                false,
+            ),
+            (
+                hex!("edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
+                true,
+                false,
+            ),
+            (
+                hex!("eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"),
+                true,
+                false,
+            ),
+            (
+                hex!("eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
+                true,
+                false,
+            ),
+            // Reduced y = 2 is not the y-coordinate of a curve point.
+            (
+                hex!("0200000000000000000000000000000000000000000000000000000000000000"),
+                false,
+                false,
+            ),
+        ] {
+            let compressed = CompressedEdwardsY(bytes);
+            assert_eq!(compressed.decompress().is_some(), permissive,);
+            assert_eq!(compressed.decompress_rfc8032().is_some(), canonical,);
+            assert!(compressed.decompress_nist_full().is_none());
+        }
+    }
+
+    #[test]
+    fn decompression_nist_full() {
+        for (i, torsion) in constants::EIGHT_TORSION.iter().enumerate() {
+            let compressed = torsion.compress();
+            assert_eq!(compressed.decompress_rfc8032(), Some(*torsion));
+            assert!(compressed.decompress_nist_full().is_none());
+
+            // Accept the basepoint (and its negation), but reject every nonzero
+            // torsion component, even when the point is not of small order.
+            let point = constants::ED25519_BASEPOINT_POINT + torsion;
+            for point in [point, -point] {
+                let compressed = point.compress();
+                assert_eq!(compressed.decompress_rfc8032(), Some(point));
+                assert_eq!(compressed.decompress_nist_full(), (i == 0).then_some(point));
+            }
+        }
     }
 
     /// Test that computing 1*basepoint gives the correct basepoint.

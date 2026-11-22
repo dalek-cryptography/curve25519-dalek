@@ -20,6 +20,7 @@ use curve25519_dalek::{
     edwards::{CompressedEdwardsY, EdwardsPoint},
     montgomery::MontgomeryPoint,
     scalar::Scalar,
+    traits::IsIdentity,
 };
 
 use ed25519::signature::{MultipartVerifier, Verifier};
@@ -371,10 +372,7 @@ impl VerifyingKey {
     ) -> Result<(), SignatureError> {
         let signature = InternalSignature::try_from(signature)?;
 
-        let signature_R = signature
-            .R
-            .decompress()
-            .ok_or_else(|| SignatureError::from(InternalError::Verify))?;
+        let signature_R = signature.R.decompress().ok_or(InternalError::Verify)?;
 
         // Logical OR is fine here as we're not trying to be constant time.
         if signature_R.is_small_order() || self.point.is_small_order() {
@@ -383,6 +381,56 @@ impl VerifyingKey {
 
         let expected_R = RCompute::<Sha512>::compute(self, signature, None, &[message]);
         if expected_R == signature.R {
+            Ok(())
+        } else {
+            Err(InternalError::Verify.into())
+        }
+    }
+
+    /// Verify signature using the [ZIP-215] rules for consensus-critical contexts.
+    ///
+    /// Consensus-critical contexts require validation criteria that work consistently across
+    /// implementations. Unfortunately, these criteria were inconsistent in-the-wild, and despite
+    /// [RFC 8032] enumerating certain criteria, few implementations actually followed that
+    /// specification.
+    ///
+    /// ZIP-215 specifically amends the verification criteria in the following way:
+    ///
+    /// - The public key `A` and the `R` component of the signature MUST encode points on
+    ///   Ed25519. Non-canonical encodings are accepted.
+    /// - The `S` component of the signature MUST represent an integer less than ℓ, the order
+    ///   of Ed25519's prime-order subgroup.
+    /// - The equation `[8][S]B = [8]R + [8][k]A` MUST be satisfied, where `k` and `B` are defined
+    ///   as in [RFC 8032] §5.1.7 and §5.1 respectively. The challenge `k` is computed using the
+    ///   original encodings of `R` and `A`.
+    ///
+    /// These rules apply even when the `legacy_compatibility` feature is enabled.
+    /// The `verify_batch` function uses different verification rules and can reject signatures
+    /// accepted by this method.
+    ///
+    /// [ZIP-215]: https://zips.z.cash/zip-0215
+    /// [RFC 8032]: https://datatracker.ietf.org/doc/html/rfc8032
+    #[allow(non_snake_case)]
+    pub fn verify_consensus(
+        &self,
+        message: &[u8],
+        signature: &ed25519::Signature,
+    ) -> Result<(), SignatureError> {
+        // ZIP-215 requires a canonical scalar even with `legacy_compatibility` enabled.
+        let signature = InternalSignature {
+            R: CompressedEdwardsY(*signature.r_bytes()),
+            s: Scalar::from_canonical_bytes(*signature.s_bytes())
+                .into_option()
+                .ok_or(InternalError::ScalarFormat)?,
+        };
+
+        let signature_R = signature.R.decompress().ok_or(InternalError::Verify)?;
+
+        let mut c = RCompute::<Sha512>::new(self, signature, None);
+        c.update(message);
+        let expected_R = c.finish();
+
+        if (signature_R - expected_R).mul_by_cofactor().is_identity() {
             Ok(())
         } else {
             Err(InternalError::Verify.into())
@@ -522,7 +570,7 @@ where
     ) -> CompressedEdwardsY {
         let mut c = Self::new(key, signature, prehash_ctx);
         message.iter().for_each(|slice| c.update(slice));
-        c.finish()
+        c.finish().compress()
     }
 
     pub(crate) fn new(
@@ -554,13 +602,14 @@ where
         self.h.update(m)
     }
 
-    pub(crate) fn finish(self) -> CompressedEdwardsY {
+    pub(crate) fn finish(self) -> EdwardsPoint {
         let k = Scalar::from_hash(self.h);
 
+        // TODO(tarcieri): cache this to avoid recomputing it?
         let minus_A: EdwardsPoint = -self.key.point;
+
         // Recall the (non-batched) verification equation: -[k]A + [s]B = R
-        EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(minus_A), &self.signature.s)
-            .compress()
+        EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &minus_A, &self.signature.s)
     }
 }
 

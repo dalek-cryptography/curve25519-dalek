@@ -11,7 +11,7 @@ on:
       - 'curve25519-dalek/Cargo.toml'
       - 'curve25519-dalek/build.rs'
       - 'curve25519-dalek/src/**'
-      - 'curve25519-dalek/translation-patches/**'
+      - 'curve25519-dalek/lean/translation-patches/**'
       - 'curve25519-dalek/lean/Curve25519Dalek/**'
       - 'curve25519-dalek/lean/translation.json'
       - 'curve25519-dalek/lean/scripts/aeneas-*.sh'

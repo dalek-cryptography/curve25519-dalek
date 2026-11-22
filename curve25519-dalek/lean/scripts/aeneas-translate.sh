@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Translate curve25519-dalek to Lean: copy the Cargo workspace to .llbc/work/, apply
-# curve25519-dalek/translation-patches/ to the copy, run charon on it and aeneas on the result.
+# translation-patches/ to the copy, run charon on it and aeneas on the result.
 # Runs in curve25519-dalek/lean/, the Lean project; the Cargo workspace is two levels up.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -20,7 +20,7 @@ mkdir -p "$work"
     "$root/$work/")
 
 shopt -s nullglob
-for patch in "$repo"/curve25519-dalek/translation-patches/*.patch; do
+for patch in "$root"/translation-patches/*.patch; do
     (cd "$work" && GIT_CEILING_DIRECTORIES="$root/.llbc" git apply "$patch")
 done
 

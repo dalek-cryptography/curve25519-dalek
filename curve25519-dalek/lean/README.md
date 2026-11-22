@@ -43,6 +43,7 @@ The `ForHumans/` directory has all the stuff that humans need to read in order t
 - `ForHumans/Theorems/` contains all top-level theorems proved about the crate. It is organized such that each Lean file corresponds to one Rust file.
 - `ForHumans/AxiomCheck.lean` contains a list of all the places that axioms can come from, and checks that no Lean proofs use any axioms outside of those.
 - `ForHumans/Coverage.lean` checks that every Rust function returning a point, table, precomputation, or scalar has a theorem about it (or is explicitly exempted). This is intended to ensure that we check the well-formedness of all values that are publicly constructible.
+- `ForHumans/Definitions.lean` checks that `ForHumans/` is self-contained, and doesn't rely on, e.g., definitions in `Proofs/`.
 - `ForHumans/TestVectors.lean` (optional) contains correctness checks against RFC test vectors.
 
 One syntax hint: when `f` is an Aeneas-translated function, `f args ⦃ r => P r ⦄` means that that `f args` returns a value `r` satisfying predicate `P`. This also guarantees that `r` exists, and no panic or other no-return condition happened.

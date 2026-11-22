@@ -42,7 +42,36 @@ for bits_triple in 64:x86_64-unknown-linux-gnu 32:i686-unknown-linux-gnu; do
     export "CARGO_TARGET_${bits}BIT_TABLES_RUSTFLAGS=$serial --cfg feature=\"precomputed-tables\""
     export "CARGO_TARGET_${bits}BIT_NOTABLES_RUSTFLAGS=$serial"
 done
-(cd "$work/curve25519-dalek" && "$root/.aeneas/charon" cargo --preset=aeneas "${targets[@]}" \
+# Items we will never verify: not translated at all.
+charon_opts=(
+    --start-from curve25519_dalek
+    # Debug impls (use core::fmt::Formatter)
+    --exclude 'curve25519_dalek::backend::serial::curve_models::{impl core::fmt::Debug for _}'
+    --exclude 'curve25519_dalek::backend::serial::u64::field::{impl core::fmt::Debug for _}'
+    --exclude 'curve25519_dalek::backend::serial::u64::scalar::{impl core::fmt::Debug for _}'
+    --exclude 'curve25519_dalek::backend::serial::u32::field::{impl core::fmt::Debug for _}'
+    --exclude 'curve25519_dalek::backend::serial::u32::scalar::{impl core::fmt::Debug for _}'
+    --exclude 'curve25519_dalek::montgomery::{impl core::fmt::Debug for _}'
+    --exclude 'curve25519_dalek::scalar::{impl core::fmt::Debug for _}'
+    --exclude 'curve25519_dalek::ristretto::{impl core::fmt::Debug for _}'
+    --exclude 'curve25519_dalek::edwards::{impl core::fmt::Debug for _}'
+    --exclude 'curve25519_dalek::edwards::affine::{impl core::fmt::Debug for _}'
+    --exclude 'curve25519_dalek::window::{impl core::fmt::Debug for _}'
+    --exclude 'curve25519_dalek::ristretto::_::double_and_compress_batch::{impl core::fmt::Debug for _}'
+    # Hash impls (use core::hash::Hasher)
+    --exclude 'curve25519_dalek::montgomery::{impl core::hash::Hash for _}'
+    --exclude 'curve25519_dalek::scalar::{impl core::hash::Hash for _}'
+    --exclude 'curve25519_dalek::ristretto::{impl core::hash::Hash for _}'
+    --exclude 'curve25519_dalek::edwards::{impl core::hash::Hash for _}'
+    # Derived `Eq` impls (marker trait, no behaviour)
+    --exclude 'curve25519_dalek::edwards::{impl core::cmp::Eq for _}'
+    --exclude 'curve25519_dalek::edwards::affine::{impl core::cmp::Eq for _}'
+    --exclude 'curve25519_dalek::field::{impl core::cmp::Eq for _}'
+    --exclude 'curve25519_dalek::montgomery::{impl core::cmp::Eq for _}'
+    --exclude 'curve25519_dalek::ristretto::{impl core::cmp::Eq for _}'
+    --exclude 'curve25519_dalek::scalar::{impl core::cmp::Eq for _}'
+)
+(cd "$work/curve25519-dalek" && "$root/.aeneas/charon" cargo --preset=aeneas "${targets[@]}" "${charon_opts[@]}" \
     --dest-file "$root/.llbc/curve25519_dalek.llbc" \
     -- --locked --no-default-features --features alloc,zeroize \
     -Zjson-target-spec -Zbuild-std=core,alloc)

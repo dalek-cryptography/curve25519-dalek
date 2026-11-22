@@ -19,10 +19,10 @@ The patched wrapper collects the borrowed points into a vector and calls the Edw
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
-namespace Curve25519Dalek.ristretto.RistrettoPoint.«x86_64-tables».Insts
-namespace «Curve25519_dalekTraitsMultiscalarMulRistrettoPointx86_64-tables»
+namespace Curve25519Dalek.ristretto.RistrettoPoint.«64bit-tables».Insts
+namespace «Curve25519_dalekTraitsMultiscalarMulRistrettoPoint64bit-tables»
 
-open edwards.EdwardsPoint.«x86_64-tables».Insts in
+open edwards.EdwardsPoint.«64bit-tables».Insts in
 /-- `MultiscalarMul::multiscalar_mul` for `RistrettoPoint`: `∑ s_i • P_i` over the scalars and
 points the two inputs yield, which must be equally many (the patched `assert_eq!`; unreduced
 scalars `< 2^255`); limbs `< 2^52`. -/
@@ -32,22 +32,22 @@ theorem multiscalar_mul_spec
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
-    (borrowPointInst : core.borrow.Borrow Clause2_Item ristretto.RistrettoPoint.«x86_64-tables»)
+    (borrowPointInst : core.borrow.Borrow Clause2_Item ristretto.RistrettoPoint.«64bit-tables»)
     (scalars : I) (points : J) (xs : List Clause0_Item) (ys : List Clause2_Item)
-    (ss : List scalar.Scalar) (ps : List ristretto.RistrettoPoint.«x86_64-tables»)
+    (ss : List scalar.Scalar) (ps : List ristretto.RistrettoPoint.«64bit-tables»)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ys)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hborrow_points : List.Forall₂
       (fun y P => borrowPointInst.borrow y
-          ⦃ (P' : ristretto.RistrettoPoint.«x86_64-tables») => P' = P ⦄)
+          ⦃ (P' : ristretto.RistrettoPoint.«64bit-tables») => P' = P ⦄)
       ys ps)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P ∈ ps, P.LimbsLt 52)
     (hps_on : ∀ P ∈ ps, P.OnCurve)
     (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ys.length) :
     multiscalar_mul scalarsInst borrowScalarInst pointsInst borrowPointInst scalars points
-      ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») => r.OnCurve ∧
+      ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧ r.LimbsLt 52 ⦄ := by
   have hys : ys.length ≤ Usize.max := hlen ▸ hxs
   unfold multiscalar_mul
@@ -61,7 +61,7 @@ theorem multiscalar_mul_spec
   intro v hv
   replace hv : v.val = ps := by rw [hv]; rfl
   step with
-    «Curve25519_dalekTraitsMultiscalarMulEdwardsPointx86_64-tables».multiscalar_mul_spec _ _
+    «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint64bit-tables».multiscalar_mul_spec _ _
       (core.iter.traits.collect.IntoIteratorVec _) (core.borrow.Borrow.Blanket _) scalars v
       xs v.val ss ps hscalars (core.iter.traits.collect.IntoIteratorVec_yields v)
       hborrow_scalars (by rw [hv]; exact List.forall₂_same.mpr fun P _ =>
@@ -69,13 +69,13 @@ theorem multiscalar_mul_spec
       (by rw [hv, ← hpsys]; exact hlen) as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «Curve25519_dalekTraitsMultiscalarMulRistrettoPointx86_64-tables»
-end Curve25519Dalek.ristretto.RistrettoPoint.«x86_64-tables».Insts
+end «Curve25519_dalekTraitsMultiscalarMulRistrettoPoint64bit-tables»
+end Curve25519Dalek.ristretto.RistrettoPoint.«64bit-tables».Insts
 
-namespace Curve25519Dalek.ristretto.RistrettoPoint.«i686-tables».Insts
-namespace «Curve25519_dalekTraitsMultiscalarMulRistrettoPointi686-tables»
+namespace Curve25519Dalek.ristretto.RistrettoPoint.«32bit-tables».Insts
+namespace «Curve25519_dalekTraitsMultiscalarMulRistrettoPoint32bit-tables»
 
-open edwards.EdwardsPoint.«i686-tables».Insts in
+open edwards.EdwardsPoint.«32bit-tables».Insts in
 /-- `MultiscalarMul::multiscalar_mul` for `RistrettoPoint`: `∑ s_i • P_i` over the scalars and
 points the two inputs yield, which must be equally many (the patched `assert_eq!`; unreduced
 scalars `< 2^255`); limbs `< 2^26`. -/
@@ -85,22 +85,22 @@ theorem multiscalar_mul_spec
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
-    (borrowPointInst : core.borrow.Borrow Clause2_Item ristretto.RistrettoPoint.«i686-tables»)
+    (borrowPointInst : core.borrow.Borrow Clause2_Item ristretto.RistrettoPoint.«32bit-tables»)
     (scalars : I) (points : J) (xs : List Clause0_Item) (ys : List Clause2_Item)
-    (ss : List scalar.Scalar) (ps : List ristretto.RistrettoPoint.«i686-tables»)
+    (ss : List scalar.Scalar) (ps : List ristretto.RistrettoPoint.«32bit-tables»)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ys)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hborrow_points : List.Forall₂
       (fun y P => borrowPointInst.borrow y
-          ⦃ (P' : ristretto.RistrettoPoint.«i686-tables») => P' = P ⦄)
+          ⦃ (P' : ristretto.RistrettoPoint.«32bit-tables») => P' = P ⦄)
       ys ps)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P ∈ ps, P.LimbsLt 26)
     (hps_on : ∀ P ∈ ps, P.OnCurve)
     (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ys.length) :
     multiscalar_mul scalarsInst borrowScalarInst pointsInst borrowPointInst scalars points
-      ⦃ (r : ristretto.RistrettoPoint.«i686-tables») => r.OnCurve ∧
+      ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧ r.LimbsLt 26 ⦄ := by
   have hys : ys.length ≤ Usize.max := hlen ▸ hxs
   unfold multiscalar_mul
@@ -114,7 +114,7 @@ theorem multiscalar_mul_spec
   intro v hv
   replace hv : v.val = ps := by rw [hv]; rfl
   step with
-    «Curve25519_dalekTraitsMultiscalarMulEdwardsPointi686-tables».multiscalar_mul_spec _ _
+    «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint32bit-tables».multiscalar_mul_spec _ _
       (core.iter.traits.collect.IntoIteratorVec _) (core.borrow.Borrow.Blanket _) scalars v
       xs v.val ss ps hscalars (core.iter.traits.collect.IntoIteratorVec_yields v)
       hborrow_scalars (by rw [hv]; exact List.forall₂_same.mpr fun P _ =>
@@ -122,13 +122,13 @@ theorem multiscalar_mul_spec
       (by rw [hv, ← hpsys]; exact hlen) as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «Curve25519_dalekTraitsMultiscalarMulRistrettoPointi686-tables»
-end Curve25519Dalek.ristretto.RistrettoPoint.«i686-tables».Insts
+end «Curve25519_dalekTraitsMultiscalarMulRistrettoPoint32bit-tables»
+end Curve25519Dalek.ristretto.RistrettoPoint.«32bit-tables».Insts
 
-namespace Curve25519Dalek.ristretto.RistrettoPoint.«x86_64-no-tables».Insts
-namespace «Curve25519_dalekTraitsMultiscalarMulRistrettoPointx86_64-no-tables»
+namespace Curve25519Dalek.ristretto.RistrettoPoint.«64bit-notables».Insts
+namespace «Curve25519_dalekTraitsMultiscalarMulRistrettoPoint64bit-notables»
 
-open edwards.EdwardsPoint.«x86_64-no-tables».Insts in
+open edwards.EdwardsPoint.«64bit-notables».Insts in
 /-- `MultiscalarMul::multiscalar_mul` for `RistrettoPoint`: `∑ s_i • P_i` over the scalars and
 points the two inputs yield, which must be equally many (the patched `assert_eq!`; unreduced
 scalars `< 2^255`); limbs `< 2^52`. -/
@@ -138,22 +138,22 @@ theorem multiscalar_mul_spec
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
-    (borrowPointInst : core.borrow.Borrow Clause2_Item ristretto.RistrettoPoint.«x86_64-no-tables»)
+    (borrowPointInst : core.borrow.Borrow Clause2_Item ristretto.RistrettoPoint.«64bit-notables»)
     (scalars : I) (points : J) (xs : List Clause0_Item) (ys : List Clause2_Item)
-    (ss : List scalar.Scalar) (ps : List ristretto.RistrettoPoint.«x86_64-no-tables»)
+    (ss : List scalar.Scalar) (ps : List ristretto.RistrettoPoint.«64bit-notables»)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ys)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hborrow_points : List.Forall₂
       (fun y P => borrowPointInst.borrow y
-          ⦃ (P' : ristretto.RistrettoPoint.«x86_64-no-tables») => P' = P ⦄)
+          ⦃ (P' : ristretto.RistrettoPoint.«64bit-notables») => P' = P ⦄)
       ys ps)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P ∈ ps, P.LimbsLt 52)
     (hps_on : ∀ P ∈ ps, P.OnCurve)
     (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ys.length) :
     multiscalar_mul scalarsInst borrowScalarInst pointsInst borrowPointInst scalars points
-      ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») => r.OnCurve ∧
+      ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧ r.LimbsLt 52 ⦄ := by
   have hys : ys.length ≤ Usize.max := hlen ▸ hxs
   unfold multiscalar_mul
@@ -167,7 +167,7 @@ theorem multiscalar_mul_spec
   intro v hv
   replace hv : v.val = ps := by rw [hv]; rfl
   step with
-    «Curve25519_dalekTraitsMultiscalarMulEdwardsPointx86_64-no-tables».multiscalar_mul_spec _ _
+    «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint64bit-notables».multiscalar_mul_spec _ _
       (core.iter.traits.collect.IntoIteratorVec _) (core.borrow.Borrow.Blanket _) scalars v
       xs v.val ss ps hscalars (core.iter.traits.collect.IntoIteratorVec_yields v)
       hborrow_scalars (by rw [hv]; exact List.forall₂_same.mpr fun P _ =>
@@ -175,13 +175,13 @@ theorem multiscalar_mul_spec
       (by rw [hv, ← hpsys]; exact hlen) as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «Curve25519_dalekTraitsMultiscalarMulRistrettoPointx86_64-no-tables»
-end Curve25519Dalek.ristretto.RistrettoPoint.«x86_64-no-tables».Insts
+end «Curve25519_dalekTraitsMultiscalarMulRistrettoPoint64bit-notables»
+end Curve25519Dalek.ristretto.RistrettoPoint.«64bit-notables».Insts
 
-namespace Curve25519Dalek.ristretto.RistrettoPoint.«i686-no-tables».Insts
-namespace «Curve25519_dalekTraitsMultiscalarMulRistrettoPointi686-no-tables»
+namespace Curve25519Dalek.ristretto.RistrettoPoint.«32bit-notables».Insts
+namespace «Curve25519_dalekTraitsMultiscalarMulRistrettoPoint32bit-notables»
 
-open edwards.EdwardsPoint.«i686-no-tables».Insts in
+open edwards.EdwardsPoint.«32bit-notables».Insts in
 /-- `MultiscalarMul::multiscalar_mul` for `RistrettoPoint`: `∑ s_i • P_i` over the scalars and
 points the two inputs yield, which must be equally many (the patched `assert_eq!`; unreduced
 scalars `< 2^255`); limbs `< 2^26`. -/
@@ -191,22 +191,22 @@ theorem multiscalar_mul_spec
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
-    (borrowPointInst : core.borrow.Borrow Clause2_Item ristretto.RistrettoPoint.«i686-no-tables»)
+    (borrowPointInst : core.borrow.Borrow Clause2_Item ristretto.RistrettoPoint.«32bit-notables»)
     (scalars : I) (points : J) (xs : List Clause0_Item) (ys : List Clause2_Item)
-    (ss : List scalar.Scalar) (ps : List ristretto.RistrettoPoint.«i686-no-tables»)
+    (ss : List scalar.Scalar) (ps : List ristretto.RistrettoPoint.«32bit-notables»)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ys)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hborrow_points : List.Forall₂
       (fun y P => borrowPointInst.borrow y
-          ⦃ (P' : ristretto.RistrettoPoint.«i686-no-tables») => P' = P ⦄)
+          ⦃ (P' : ristretto.RistrettoPoint.«32bit-notables») => P' = P ⦄)
       ys ps)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P ∈ ps, P.LimbsLt 26)
     (hps_on : ∀ P ∈ ps, P.OnCurve)
     (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ys.length) :
     multiscalar_mul scalarsInst borrowScalarInst pointsInst borrowPointInst scalars points
-      ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») => r.OnCurve ∧
+      ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧ r.LimbsLt 26 ⦄ := by
   have hys : ys.length ≤ Usize.max := hlen ▸ hxs
   unfold multiscalar_mul
@@ -220,7 +220,7 @@ theorem multiscalar_mul_spec
   intro v hv
   replace hv : v.val = ps := by rw [hv]; rfl
   step with
-    «Curve25519_dalekTraitsMultiscalarMulEdwardsPointi686-no-tables».multiscalar_mul_spec _ _
+    «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint32bit-notables».multiscalar_mul_spec _ _
       (core.iter.traits.collect.IntoIteratorVec _) (core.borrow.Borrow.Blanket _) scalars v
       xs v.val ss ps hscalars (core.iter.traits.collect.IntoIteratorVec_yields v)
       hborrow_scalars (by rw [hv]; exact List.forall₂_same.mpr fun P _ =>
@@ -228,5 +228,5 @@ theorem multiscalar_mul_spec
       (by rw [hv, ← hpsys]; exact hlen) as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «Curve25519_dalekTraitsMultiscalarMulRistrettoPointi686-no-tables»
-end Curve25519Dalek.ristretto.RistrettoPoint.«i686-no-tables».Insts
+end «Curve25519_dalekTraitsMultiscalarMulRistrettoPoint32bit-notables»
+end Curve25519Dalek.ristretto.RistrettoPoint.«32bit-notables».Insts

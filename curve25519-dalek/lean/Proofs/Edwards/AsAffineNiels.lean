@@ -61,16 +61,16 @@ end Curve25519Dalek.Backend
 
 namespace Curve25519Dalek.edwards
 
-namespace «EdwardsPointx86_64-tables»
+namespace «EdwardsPoint64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `EdwardsPoint::as_affine_niels`: `(y + x, y - x, x y (2 d))` with `x = X Z⁻¹`, `y = Y Z⁻¹`
 (`0⁻¹ = 0`); limbs `< 2^52` in, `< 2^54` out. -/
 @[step]
-theorem as_affine_niels_toAffineNiels (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt
+theorem as_affine_niels_toAffineNiels (self : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt
     52) :
-    as_affine_niels self ⦃ (r : AffineNielsPoint.«x86_64-tables») =>
+    as_affine_niels self ⦃ (r : AffineNielsPoint.«64bit-tables») =>
       r.toAffineNiels = self.toExtended.toAffineNiels ∧ r.LimbsLt 54 ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
   unfold as_affine_niels
@@ -79,38 +79,38 @@ theorem as_affine_niels_toAffineNiels (self : EdwardsPoint.«x86_64-tables») (h
     (spec_mono backend.serial.u64.constants.EDWARDS_D2_spec fun _ ⟨h, hb⟩ =>
       ⟨toField_eq_two_mul_d_of_asNat h, limbs_lt_of_le (by decide) hb⟩)
     (fun a b c => ({ y_plus_x := a, y_minus_x := b, xy2d := c } :
-      AffineNielsPoint.«x86_64-tables»)) _ _ _ self.T hX hY hZ)
+      AffineNielsPoint.«64bit-tables»)) _ _ _ self.T hX hY hZ)
   rintro _ ⟨a, b, c, rfl, h, ha, hb, hc⟩
   refine ⟨by
-    rw [AffineNielsPoint.«x86_64-tables».toAffineNiels_def,
-      EdwardsPoint.«x86_64-tables».toExtended_def]
+    rw [AffineNielsPoint.«64bit-tables».toAffineNiels_def,
+      EdwardsPoint.«64bit-tables».toExtended_def]
     exact h.symm, limbs_lt_of_le (by decide) ha, limbs_lt_of_le (by decide) hb,
     limbs_lt_of_le (by decide) hc⟩
 
 /-- `EdwardsPoint::as_affine_niels` represents the same point. -/
-theorem as_affine_niels_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem as_affine_niels_spec (self : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
-    as_affine_niels self ⦃ (r : AffineNielsPoint.«x86_64-tables») =>
+    as_affine_niels self ⦃ (r : AffineNielsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 54 ⦄ :=
   spec_mono (as_affine_niels_toAffineNiels self hself) fun r ⟨hr, hb⟩ => by
-    rw [AffineNielsPoint.«x86_64-tables».onCurve_iff,
-      AffineNielsPoint.«x86_64-tables».toPoint_def, hr,
-      EdwardsPoint.«x86_64-tables».toPoint_def]
+    rw [AffineNielsPoint.«64bit-tables».onCurve_iff,
+      AffineNielsPoint.«64bit-tables».toPoint_def, hr,
+      EdwardsPoint.«64bit-tables».toPoint_def]
     exact ⟨Extended.onCurve_toAffineNiels hon,
       Extended.toPoint_toAffineNiels hon, hb⟩
 
-end «EdwardsPointx86_64-tables»
+end «EdwardsPoint64bit-tables»
 
-namespace «EdwardsPointi686-tables»
+namespace «EdwardsPoint32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `EdwardsPoint::as_affine_niels`: `(y + x, y - x, x y (2 d))` with `x = X Z⁻¹`, `y = Y Z⁻¹`
 (`0⁻¹ = 0`); limbs `< 2^26` in, `< 2^27` out. -/
 @[step]
-theorem as_affine_niels_toAffineNiels (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem as_affine_niels_toAffineNiels (self : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     :
-    as_affine_niels self ⦃ (r : AffineNielsPoint.«i686-tables») =>
+    as_affine_niels self ⦃ (r : AffineNielsPoint.«32bit-tables») =>
       r.toAffineNiels = self.toExtended.toAffineNiels ∧ r.LimbsLt 27 ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
   unfold as_affine_niels
@@ -119,38 +119,38 @@ theorem as_affine_niels_toAffineNiels (self : EdwardsPoint.«i686-tables») (hse
     (spec_mono backend.serial.u32.constants.EDWARDS_D2_spec fun _ ⟨h, hb⟩ =>
       ⟨toField_eq_two_mul_d_of_asNat h, limbs_lt_of_le (by decide) hb⟩)
     (fun a b c => ({ y_plus_x := a, y_minus_x := b, xy2d := c } :
-      AffineNielsPoint.«i686-tables»)) _ _ _ self.T hX hY hZ)
+      AffineNielsPoint.«32bit-tables»)) _ _ _ self.T hX hY hZ)
   rintro _ ⟨a, b, c, rfl, h, ha, hb, hc⟩
   refine ⟨by
-    rw [AffineNielsPoint.«i686-tables».toAffineNiels_def,
-      EdwardsPoint.«i686-tables».toExtended_def]
+    rw [AffineNielsPoint.«32bit-tables».toAffineNiels_def,
+      EdwardsPoint.«32bit-tables».toExtended_def]
     exact h.symm, limbs_lt_of_le (by decide) ha, limbs_lt_of_le (by decide) hb,
     limbs_lt_of_le (by decide) hc⟩
 
 /-- `EdwardsPoint::as_affine_niels` represents the same point. -/
-theorem as_affine_niels_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem as_affine_niels_spec (self : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
-    as_affine_niels self ⦃ (r : AffineNielsPoint.«i686-tables») =>
+    as_affine_niels self ⦃ (r : AffineNielsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 27 ⦄ :=
   spec_mono (as_affine_niels_toAffineNiels self hself) fun r ⟨hr, hb⟩ => by
-    rw [AffineNielsPoint.«i686-tables».onCurve_iff,
-      AffineNielsPoint.«i686-tables».toPoint_def, hr,
-      EdwardsPoint.«i686-tables».toPoint_def]
+    rw [AffineNielsPoint.«32bit-tables».onCurve_iff,
+      AffineNielsPoint.«32bit-tables».toPoint_def, hr,
+      EdwardsPoint.«32bit-tables».toPoint_def]
     exact ⟨Extended.onCurve_toAffineNiels hon,
       Extended.toPoint_toAffineNiels hon, hb⟩
 
-end «EdwardsPointi686-tables»
+end «EdwardsPoint32bit-tables»
 
-namespace «EdwardsPointx86_64-no-tables»
+namespace «EdwardsPoint64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `EdwardsPoint::as_affine_niels`: `(y + x, y - x, x y (2 d))` with `x = X Z⁻¹`, `y = Y Z⁻¹`
 (`0⁻¹ = 0`); limbs `< 2^52` in, `< 2^54` out. -/
 @[step]
-theorem as_affine_niels_toAffineNiels (self : EdwardsPoint.«x86_64-no-tables») (hself :
+theorem as_affine_niels_toAffineNiels (self : EdwardsPoint.«64bit-notables») (hself :
     self.LimbsLt 52) :
-    as_affine_niels self ⦃ (r : AffineNielsPoint.«x86_64-no-tables») =>
+    as_affine_niels self ⦃ (r : AffineNielsPoint.«64bit-notables») =>
       r.toAffineNiels = self.toExtended.toAffineNiels ∧ r.LimbsLt 54 ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
   unfold as_affine_niels
@@ -159,39 +159,39 @@ theorem as_affine_niels_toAffineNiels (self : EdwardsPoint.«x86_64-no-tables»)
     (spec_mono backend.serial.u64.constants.EDWARDS_D2_spec fun _ ⟨h, hb⟩ =>
       ⟨toField_eq_two_mul_d_of_asNat h, limbs_lt_of_le (by decide) hb⟩)
     (fun a b c => ({ y_plus_x := a, y_minus_x := b, xy2d := c } :
-      AffineNielsPoint.«x86_64-no-tables»)) _ _ _ self.T hX hY hZ)
+      AffineNielsPoint.«64bit-notables»)) _ _ _ self.T hX hY hZ)
   rintro _ ⟨a, b, c, rfl, h, ha, hb, hc⟩
   refine ⟨by
-    rw [AffineNielsPoint.«x86_64-no-tables».toAffineNiels_def,
-      EdwardsPoint.«x86_64-no-tables».toExtended_def]
+    rw [AffineNielsPoint.«64bit-notables».toAffineNiels_def,
+      EdwardsPoint.«64bit-notables».toExtended_def]
     exact h.symm, limbs_lt_of_le (by decide) ha, limbs_lt_of_le (by decide) hb,
     limbs_lt_of_le (by decide) hc⟩
 
 /-- `EdwardsPoint::as_affine_niels` represents the same point. -/
-theorem as_affine_niels_spec (self : EdwardsPoint.«x86_64-no-tables»)
+theorem as_affine_niels_spec (self : EdwardsPoint.«64bit-notables»)
     (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
-    as_affine_niels self ⦃ (r : AffineNielsPoint.«x86_64-no-tables») =>
+    as_affine_niels self ⦃ (r : AffineNielsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 54 ⦄ :=
   spec_mono (as_affine_niels_toAffineNiels self hself) fun r ⟨hr, hb⟩ => by
-    rw [AffineNielsPoint.«x86_64-no-tables».onCurve_iff,
-      AffineNielsPoint.«x86_64-no-tables».toPoint_def, hr,
-      EdwardsPoint.«x86_64-no-tables».toPoint_def]
+    rw [AffineNielsPoint.«64bit-notables».onCurve_iff,
+      AffineNielsPoint.«64bit-notables».toPoint_def, hr,
+      EdwardsPoint.«64bit-notables».toPoint_def]
     exact ⟨Extended.onCurve_toAffineNiels hon,
       Extended.toPoint_toAffineNiels hon, hb⟩
 
-end «EdwardsPointx86_64-no-tables»
+end «EdwardsPoint64bit-notables»
 
-namespace «EdwardsPointi686-no-tables»
+namespace «EdwardsPoint32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `EdwardsPoint::as_affine_niels`: `(y + x, y - x, x y (2 d))` with `x = X Z⁻¹`, `y = Y Z⁻¹`
 (`0⁻¹ = 0`); limbs `< 2^26` in, `< 2^27` out. -/
 @[step]
-theorem as_affine_niels_toAffineNiels (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt
+theorem as_affine_niels_toAffineNiels (self : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt
     26) :
-    as_affine_niels self ⦃ (r : AffineNielsPoint.«i686-no-tables») =>
+    as_affine_niels self ⦃ (r : AffineNielsPoint.«32bit-notables») =>
       r.toAffineNiels = self.toExtended.toAffineNiels ∧ r.LimbsLt 27 ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
   unfold as_affine_niels
@@ -200,27 +200,27 @@ theorem as_affine_niels_toAffineNiels (self : EdwardsPoint.«i686-no-tables») (
     (spec_mono backend.serial.u32.constants.EDWARDS_D2_spec fun _ ⟨h, hb⟩ =>
       ⟨toField_eq_two_mul_d_of_asNat h, limbs_lt_of_le (by decide) hb⟩)
     (fun a b c => ({ y_plus_x := a, y_minus_x := b, xy2d := c } :
-      AffineNielsPoint.«i686-no-tables»)) _ _ _ self.T hX hY hZ)
+      AffineNielsPoint.«32bit-notables»)) _ _ _ self.T hX hY hZ)
   rintro _ ⟨a, b, c, rfl, h, ha, hb, hc⟩
   refine ⟨by
-    rw [AffineNielsPoint.«i686-no-tables».toAffineNiels_def,
-      EdwardsPoint.«i686-no-tables».toExtended_def]
+    rw [AffineNielsPoint.«32bit-notables».toAffineNiels_def,
+      EdwardsPoint.«32bit-notables».toExtended_def]
     exact h.symm, limbs_lt_of_le (by decide) ha, limbs_lt_of_le (by decide) hb,
     limbs_lt_of_le (by decide) hc⟩
 
 /-- `EdwardsPoint::as_affine_niels` represents the same point. -/
-theorem as_affine_niels_spec (self : EdwardsPoint.«i686-no-tables»)
+theorem as_affine_niels_spec (self : EdwardsPoint.«32bit-notables»)
     (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
-    as_affine_niels self ⦃ (r : AffineNielsPoint.«i686-no-tables») =>
+    as_affine_niels self ⦃ (r : AffineNielsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 27 ⦄ :=
   spec_mono (as_affine_niels_toAffineNiels self hself) fun r ⟨hr, hb⟩ => by
-    rw [AffineNielsPoint.«i686-no-tables».onCurve_iff,
-      AffineNielsPoint.«i686-no-tables».toPoint_def, hr,
-      EdwardsPoint.«i686-no-tables».toPoint_def]
+    rw [AffineNielsPoint.«32bit-notables».onCurve_iff,
+      AffineNielsPoint.«32bit-notables».toPoint_def, hr,
+      EdwardsPoint.«32bit-notables».toPoint_def]
     exact ⟨Extended.onCurve_toAffineNiels hon,
       Extended.toPoint_toAffineNiels hon, hb⟩
 
-end «EdwardsPointi686-no-tables»
+end «EdwardsPoint32bit-notables»
 
 end Curve25519Dalek.edwards

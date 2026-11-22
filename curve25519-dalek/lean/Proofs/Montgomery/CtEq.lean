@@ -26,10 +26,10 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 /-- `ConstantTimeEq for MontgomeryPoint`: equality of the encoded `u`-coordinates (bit `255`
 masked, reduced modulo `p`). -/
 @[step]
-theorem ct_eq.«x86_64-tables_spec» (self other : MontgomeryPoint) :
-    ct_eq.«x86_64-tables» self other ⦃ (r : subtle.Choice) => r.IsValid ∧
+theorem ct_eq.«64bit-tables_spec» (self other : MontgomeryPoint) :
+    ct_eq.«64bit-tables» self other ⦃ (r : subtle.Choice) => r.IsValid ∧
       (r = 1#u8 ↔ decodeUCoordinate self.toVector = decodeUCoordinate other.toVector) ⦄ := by
-  unfold ct_eq.«x86_64-tables»
+  unfold ct_eq.«64bit-tables»
   step as ⟨a, ha, ha_lt⟩
   step as ⟨b, hb, hb_lt⟩
   step as ⟨c, hcv, hc1, hc0⟩
@@ -48,10 +48,10 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
 /-- `ConstantTimeEq for MontgomeryPoint`: equality of the encoded `u`-coordinates (bit `255`
 masked, reduced modulo `p`). -/
 @[step]
-theorem ct_eq.«i686-tables_spec» (self other : MontgomeryPoint) :
-    ct_eq.«i686-tables» self other ⦃ (r : subtle.Choice) => r.IsValid ∧
+theorem ct_eq.«32bit-tables_spec» (self other : MontgomeryPoint) :
+    ct_eq.«32bit-tables» self other ⦃ (r : subtle.Choice) => r.IsValid ∧
       (r = 1#u8 ↔ decodeUCoordinate self.toVector = decodeUCoordinate other.toVector) ⦄ := by
-  unfold ct_eq.«i686-tables»
+  unfold ct_eq.«32bit-tables»
   step as ⟨a, ha, ha_lt⟩
   step as ⟨b, hb, hb_lt⟩
   step as ⟨c, hcv, hc1, hc0⟩
@@ -70,10 +70,10 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 /-- `ConstantTimeEq for MontgomeryPoint`: equality of the encoded `u`-coordinates (bit `255`
 masked, reduced modulo `p`). -/
 @[step]
-theorem ct_eq.«x86_64-no-tables_spec» (self other : MontgomeryPoint) :
-    ct_eq.«x86_64-no-tables» self other ⦃ (r : subtle.Choice) => r.IsValid ∧
+theorem ct_eq.«64bit-notables_spec» (self other : MontgomeryPoint) :
+    ct_eq.«64bit-notables» self other ⦃ (r : subtle.Choice) => r.IsValid ∧
       (r = 1#u8 ↔ decodeUCoordinate self.toVector = decodeUCoordinate other.toVector) ⦄ := by
-  unfold ct_eq.«x86_64-no-tables»
+  unfold ct_eq.«64bit-notables»
   step as ⟨a, ha, ha_lt⟩
   step as ⟨b, hb, hb_lt⟩
   step as ⟨c, hcv, hc1, hc0⟩
@@ -92,10 +92,10 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
 /-- `ConstantTimeEq for MontgomeryPoint`: equality of the encoded `u`-coordinates (bit `255`
 masked, reduced modulo `p`). -/
 @[step]
-theorem ct_eq.«i686-no-tables_spec» (self other : MontgomeryPoint) :
-    ct_eq.«i686-no-tables» self other ⦃ (r : subtle.Choice) => r.IsValid ∧
+theorem ct_eq.«32bit-notables_spec» (self other : MontgomeryPoint) :
+    ct_eq.«32bit-notables» self other ⦃ (r : subtle.Choice) => r.IsValid ∧
       (r = 1#u8 ↔ decodeUCoordinate self.toVector = decodeUCoordinate other.toVector) ⦄ := by
-  unfold ct_eq.«i686-no-tables»
+  unfold ct_eq.«32bit-notables»
   step as ⟨a, ha, ha_lt⟩
   step as ⟨b, hb, hb_lt⟩
   step as ⟨c, hcv, hc1, hc0⟩
@@ -123,9 +123,9 @@ theorem ct_eq_spec (self other : MontgomeryPoint) :
       (r = 1#u8 ↔ decodeUCoordinate self.toVector = decodeUCoordinate other.toVector) ⦄ := by
   unfold ct_eq
   exact dispatch_all_spec
-    (ConstantTimeEqMontgomeryPoint.ct_eq.«x86_64-tables_spec» self other)
-    (ConstantTimeEqMontgomeryPoint.ct_eq.«x86_64-no-tables_spec» self other)
-    (ConstantTimeEqMontgomeryPoint.ct_eq.«i686-tables_spec» self other)
-    (ConstantTimeEqMontgomeryPoint.ct_eq.«i686-no-tables_spec» self other)
+    (ConstantTimeEqMontgomeryPoint.ct_eq.«64bit-tables_spec» self other)
+    (ConstantTimeEqMontgomeryPoint.ct_eq.«64bit-notables_spec» self other)
+    (ConstantTimeEqMontgomeryPoint.ct_eq.«32bit-tables_spec» self other)
+    (ConstantTimeEqMontgomeryPoint.ct_eq.«32bit-notables_spec» self other)
 
 end Curve25519Dalek.montgomery.MontgomeryPoint.Insts.SubtleConstantTimeEq

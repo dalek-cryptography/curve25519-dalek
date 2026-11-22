@@ -17,10 +17,10 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek.backend
 
-namespace «VartimePrecomputedStrausx86_64-tables»
+namespace «VartimePrecomputedStraus64bit-tables»
 
-open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«x86_64-tables».Insts in
-open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-tables» renaming
+open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«64bit-tables».Insts in
+open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint64bit-tables» renaming
   optional_mixed_multiscalar_mul_spec → serial_spec in
 /-- `VartimePrecomputedStraus::optional_mixed_multiscalar_mul` (backend): the serial one. -/
 @[step]
@@ -31,11 +31,11 @@ theorem optional_mixed_multiscalar_mul_spec
     (dynamicScalarsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
     (borrowDynamicInst : core.borrow.Borrow Clause2_Item scalar.Scalar)
     (dynamicPointsInst : core.iter.traits.collect.IntoIterator K
-      (Option edwards.EdwardsPoint.«x86_64-tables») Clause4_IntoIter)
-    (self : VartimePrecomputedStraus.«x86_64-tables») (static_scalars : I) (dynamic_scalars : J)
+      (Option edwards.EdwardsPoint.«64bit-tables») Clause4_IntoIter)
+    (self : VartimePrecomputedStraus.«64bit-tables») (static_scalars : I) (dynamic_scalars : J)
     (dynamic_points : K) (xs : List Clause0_Item)
     (ss : List scalar.Scalar) (ys : List Clause2_Item) (ds : List scalar.Scalar)
-    (qops : List (Option edwards.EdwardsPoint.«x86_64-tables»))
+    (qops : List (Option edwards.EdwardsPoint.«64bit-tables»))
     (hself : self.IsValid) (hself_b : self.LimbsLt 54)
     (hstatic_scalars : staticScalarsInst.Yields static_scalars xs)
     (hdynamic_scalars : dynamicScalarsInst.Yields dynamic_scalars ys)
@@ -51,7 +51,7 @@ theorem optional_mixed_multiscalar_mul_spec
     (hdynamic : none ∉ qops → ds.length = qops.length) :
     optional_mixed_multiscalar_mul staticScalarsInst borrowStaticInst dynamicScalarsInst
       borrowDynamicInst dynamicPointsInst self static_scalars dynamic_scalars dynamic_points
-      ⦃ (r : Option edwards.EdwardsPoint.«x86_64-tables») => (r = none ↔ none ∈ qops) ∧
+      ⦃ (r : Option edwards.EdwardsPoint.«64bit-tables») => (r = none ↔ none ∈ qops) ∧
         ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P) ss self.points).sum +
             (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds (qops.filterMap id)).sum ∧
@@ -63,12 +63,12 @@ theorem optional_mixed_multiscalar_mul_spec
         hstatic_scalars hdynamic_scalars
     hdynamic_points hborrow_static hborrow_dynamic hss hds hqs hxs hys hqops hstatic hdynamic
 
-end «VartimePrecomputedStrausx86_64-tables»
+end «VartimePrecomputedStraus64bit-tables»
 
-namespace «VartimePrecomputedStrausi686-tables»
+namespace «VartimePrecomputedStraus32bit-tables»
 
-open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«i686-tables».Insts in
-open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-tables» renaming
+open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«32bit-tables».Insts in
+open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-tables» renaming
   optional_mixed_multiscalar_mul_spec → serial_spec in
 /-- `VartimePrecomputedStraus::optional_mixed_multiscalar_mul` (backend): the serial one. -/
 @[step]
@@ -79,11 +79,11 @@ theorem optional_mixed_multiscalar_mul_spec
     (dynamicScalarsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
     (borrowDynamicInst : core.borrow.Borrow Clause2_Item scalar.Scalar)
     (dynamicPointsInst : core.iter.traits.collect.IntoIterator K
-      (Option edwards.EdwardsPoint.«i686-tables») Clause4_IntoIter)
-    (self : VartimePrecomputedStraus.«i686-tables») (static_scalars : I) (dynamic_scalars : J)
+      (Option edwards.EdwardsPoint.«32bit-tables») Clause4_IntoIter)
+    (self : VartimePrecomputedStraus.«32bit-tables») (static_scalars : I) (dynamic_scalars : J)
     (dynamic_points : K) (xs : List Clause0_Item)
     (ss : List scalar.Scalar) (ys : List Clause2_Item) (ds : List scalar.Scalar)
-    (qops : List (Option edwards.EdwardsPoint.«i686-tables»))
+    (qops : List (Option edwards.EdwardsPoint.«32bit-tables»))
     (hself : self.IsValid) (hself_b : self.LimbsLt 27)
     (hstatic_scalars : staticScalarsInst.Yields static_scalars xs)
     (hdynamic_scalars : dynamicScalarsInst.Yields dynamic_scalars ys)
@@ -99,7 +99,7 @@ theorem optional_mixed_multiscalar_mul_spec
     (hdynamic : none ∉ qops → ds.length = qops.length) :
     optional_mixed_multiscalar_mul staticScalarsInst borrowStaticInst dynamicScalarsInst
       borrowDynamicInst dynamicPointsInst self static_scalars dynamic_scalars dynamic_points
-      ⦃ (r : Option edwards.EdwardsPoint.«i686-tables») => (r = none ↔ none ∈ qops) ∧
+      ⦃ (r : Option edwards.EdwardsPoint.«32bit-tables») => (r = none ↔ none ∈ qops) ∧
         ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P) ss self.points).sum +
             (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds (qops.filterMap id)).sum ∧
@@ -111,12 +111,12 @@ theorem optional_mixed_multiscalar_mul_spec
         hstatic_scalars hdynamic_scalars
     hdynamic_points hborrow_static hborrow_dynamic hss hds hqs hxs hys hqops hstatic hdynamic
 
-end «VartimePrecomputedStrausi686-tables»
+end «VartimePrecomputedStraus32bit-tables»
 
-namespace «VartimePrecomputedStrausx86_64-no-tables»
+namespace «VartimePrecomputedStraus64bit-notables»
 
-open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«x86_64-no-tables».Insts in
-open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-no-tables» renaming
+open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«64bit-notables».Insts in
+open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint64bit-notables» renaming
   optional_mixed_multiscalar_mul_spec → serial_spec in
 /-- `VartimePrecomputedStraus::optional_mixed_multiscalar_mul` (backend): the serial one. -/
 @[step]
@@ -127,11 +127,11 @@ theorem optional_mixed_multiscalar_mul_spec
     (dynamicScalarsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
     (borrowDynamicInst : core.borrow.Borrow Clause2_Item scalar.Scalar)
     (dynamicPointsInst : core.iter.traits.collect.IntoIterator K
-      (Option edwards.EdwardsPoint.«x86_64-no-tables») Clause4_IntoIter)
-    (self : VartimePrecomputedStraus.«x86_64-no-tables») (static_scalars : I) (dynamic_scalars : J)
+      (Option edwards.EdwardsPoint.«64bit-notables») Clause4_IntoIter)
+    (self : VartimePrecomputedStraus.«64bit-notables») (static_scalars : I) (dynamic_scalars : J)
     (dynamic_points : K) (xs : List Clause0_Item)
     (ss : List scalar.Scalar) (ys : List Clause2_Item) (ds : List scalar.Scalar)
-    (qops : List (Option edwards.EdwardsPoint.«x86_64-no-tables»))
+    (qops : List (Option edwards.EdwardsPoint.«64bit-notables»))
     (hself : self.IsValid) (hself_b : self.LimbsLt 54)
     (hstatic_scalars : staticScalarsInst.Yields static_scalars xs)
     (hdynamic_scalars : dynamicScalarsInst.Yields dynamic_scalars ys)
@@ -147,7 +147,7 @@ theorem optional_mixed_multiscalar_mul_spec
     (hdynamic : none ∉ qops → ds.length = qops.length) :
     optional_mixed_multiscalar_mul staticScalarsInst borrowStaticInst dynamicScalarsInst
       borrowDynamicInst dynamicPointsInst self static_scalars dynamic_scalars dynamic_points
-      ⦃ (r : Option edwards.EdwardsPoint.«x86_64-no-tables») => (r = none ↔ none ∈ qops) ∧
+      ⦃ (r : Option edwards.EdwardsPoint.«64bit-notables») => (r = none ↔ none ∈ qops) ∧
         ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P) ss self.points).sum +
             (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds (qops.filterMap id)).sum ∧
@@ -159,12 +159,12 @@ theorem optional_mixed_multiscalar_mul_spec
         hstatic_scalars hdynamic_scalars
     hdynamic_points hborrow_static hborrow_dynamic hss hds hqs hxs hys hqops hstatic hdynamic
 
-end «VartimePrecomputedStrausx86_64-no-tables»
+end «VartimePrecomputedStraus64bit-notables»
 
-namespace «VartimePrecomputedStrausi686-no-tables»
+namespace «VartimePrecomputedStraus32bit-notables»
 
-open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«i686-no-tables».Insts in
-open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-no-tables» renaming
+open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«32bit-notables».Insts in
+open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-notables» renaming
   optional_mixed_multiscalar_mul_spec → serial_spec in
 /-- `VartimePrecomputedStraus::optional_mixed_multiscalar_mul` (backend): the serial one. -/
 @[step]
@@ -175,11 +175,11 @@ theorem optional_mixed_multiscalar_mul_spec
     (dynamicScalarsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
     (borrowDynamicInst : core.borrow.Borrow Clause2_Item scalar.Scalar)
     (dynamicPointsInst : core.iter.traits.collect.IntoIterator K
-      (Option edwards.EdwardsPoint.«i686-no-tables») Clause4_IntoIter)
-    (self : VartimePrecomputedStraus.«i686-no-tables») (static_scalars : I) (dynamic_scalars : J)
+      (Option edwards.EdwardsPoint.«32bit-notables») Clause4_IntoIter)
+    (self : VartimePrecomputedStraus.«32bit-notables») (static_scalars : I) (dynamic_scalars : J)
     (dynamic_points : K) (xs : List Clause0_Item)
     (ss : List scalar.Scalar) (ys : List Clause2_Item) (ds : List scalar.Scalar)
-    (qops : List (Option edwards.EdwardsPoint.«i686-no-tables»))
+    (qops : List (Option edwards.EdwardsPoint.«32bit-notables»))
     (hself : self.IsValid) (hself_b : self.LimbsLt 27)
     (hstatic_scalars : staticScalarsInst.Yields static_scalars xs)
     (hdynamic_scalars : dynamicScalarsInst.Yields dynamic_scalars ys)
@@ -195,7 +195,7 @@ theorem optional_mixed_multiscalar_mul_spec
     (hdynamic : none ∉ qops → ds.length = qops.length) :
     optional_mixed_multiscalar_mul staticScalarsInst borrowStaticInst dynamicScalarsInst
       borrowDynamicInst dynamicPointsInst self static_scalars dynamic_scalars dynamic_points
-      ⦃ (r : Option edwards.EdwardsPoint.«i686-no-tables») => (r = none ↔ none ∈ qops) ∧
+      ⦃ (r : Option edwards.EdwardsPoint.«32bit-notables») => (r = none ↔ none ∈ qops) ∧
         ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P) ss self.points).sum +
             (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds (qops.filterMap id)).sum ∧
@@ -207,6 +207,6 @@ theorem optional_mixed_multiscalar_mul_spec
         hstatic_scalars hdynamic_scalars
     hdynamic_points hborrow_static hborrow_dynamic hss hds hqs hxs hys hqops hstatic hdynamic
 
-end «VartimePrecomputedStrausi686-no-tables»
+end «VartimePrecomputedStraus32bit-notables»
 
 end Curve25519Dalek.backend

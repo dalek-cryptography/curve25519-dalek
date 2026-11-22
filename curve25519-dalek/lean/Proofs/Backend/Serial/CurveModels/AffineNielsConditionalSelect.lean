@@ -13,64 +13,64 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek.backend.serial.curve_models
 
-namespace AffineNielsPoint.«x86_64-tables».Insts.SubtleConditionallySelectable
+namespace AffineNielsPoint.«64bit-tables».Insts.SubtleConditionallySelectable
 
 /-- `ConditionallySelectable::conditional_select` for `AffineNielsPoint`:
 `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : AffineNielsPoint.«x86_64-tables»)
+theorem conditional_select_spec (a b : AffineNielsPoint.«64bit-tables»)
     (choice : subtle.Choice) (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : AffineNielsPoint.«x86_64-tables») =>
+    conditional_select a b choice ⦃ (r : AffineNielsPoint.«64bit-tables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step*
   constructor <;> intro hc <;> simp [*]
 
-end AffineNielsPoint.«x86_64-tables».Insts.SubtleConditionallySelectable
+end AffineNielsPoint.«64bit-tables».Insts.SubtleConditionallySelectable
 
-namespace AffineNielsPoint.«i686-tables».Insts.SubtleConditionallySelectable
+namespace AffineNielsPoint.«32bit-tables».Insts.SubtleConditionallySelectable
 
 /-- `ConditionallySelectable::conditional_select` for `AffineNielsPoint`:
 `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : AffineNielsPoint.«i686-tables»)
+theorem conditional_select_spec (a b : AffineNielsPoint.«32bit-tables»)
     (choice : subtle.Choice) (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : AffineNielsPoint.«i686-tables») =>
+    conditional_select a b choice ⦃ (r : AffineNielsPoint.«32bit-tables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step*
   constructor <;> intro hc <;> simp [*]
 
-end AffineNielsPoint.«i686-tables».Insts.SubtleConditionallySelectable
+end AffineNielsPoint.«32bit-tables».Insts.SubtleConditionallySelectable
 
-namespace AffineNielsPoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable
+namespace AffineNielsPoint.«64bit-notables».Insts.SubtleConditionallySelectable
 
 /-- `ConditionallySelectable::conditional_select` for `AffineNielsPoint`:
 `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : AffineNielsPoint.«x86_64-no-tables»)
+theorem conditional_select_spec (a b : AffineNielsPoint.«64bit-notables»)
     (choice : subtle.Choice) (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : AffineNielsPoint.«x86_64-no-tables») =>
+    conditional_select a b choice ⦃ (r : AffineNielsPoint.«64bit-notables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step*
   constructor <;> intro hc <;> simp [*]
 
-end AffineNielsPoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable
+end AffineNielsPoint.«64bit-notables».Insts.SubtleConditionallySelectable
 
-namespace AffineNielsPoint.«i686-no-tables».Insts.SubtleConditionallySelectable
+namespace AffineNielsPoint.«32bit-notables».Insts.SubtleConditionallySelectable
 
 /-- `ConditionallySelectable::conditional_select` for `AffineNielsPoint`:
 `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : AffineNielsPoint.«i686-no-tables»)
+theorem conditional_select_spec (a b : AffineNielsPoint.«32bit-notables»)
     (choice : subtle.Choice) (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : AffineNielsPoint.«i686-no-tables») =>
+    conditional_select a b choice ⦃ (r : AffineNielsPoint.«32bit-notables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step*
   constructor <;> intro hc <;> simp [*]
 
-end AffineNielsPoint.«i686-no-tables».Insts.SubtleConditionallySelectable
+end AffineNielsPoint.«32bit-notables».Insts.SubtleConditionallySelectable
 
 end Curve25519Dalek.backend.serial.curve_models

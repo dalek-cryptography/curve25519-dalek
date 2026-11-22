@@ -234,12 +234,12 @@ end Curve25519Dalek.Backend
 
 namespace Curve25519Dalek.edwards
 
-namespace «EdwardsPointx86_64-tables»
+namespace «EdwardsPoint64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 private theorem compress_batch_alloc_loop0_eq
-    (iter : core.slice.iter.Iter EdwardsPoint.«x86_64-tables»)
+    (iter : core.slice.iter.Iter EdwardsPoint.«64bit-tables»)
     (zs : alloc.vec.Vec FieldElement51) :
     compress_batch_alloc_loop0 iter zs = Backend.U64.cbaLoop0 (·.Z) iter zs := by
   unfold compress_batch_alloc_loop0 Backend.cbaLoop0
@@ -251,9 +251,9 @@ private theorem compress_batch_alloc_loop0_eq
   funext ⟨o, it1⟩
   cases o <;> rfl
 
-private theorem compress_batch_alloc_eq (inputs : Slice EdwardsPoint.«x86_64-tables») :
+private theorem compress_batch_alloc_eq (inputs : Slice EdwardsPoint.«64bit-tables») :
     compress_batch_alloc inputs = Backend.U64.compressBatchAlloc (·.X) (·.Y) (·.Z)
-      (fun x y => affine.«AffinePointx86_64-tables».compress { x, y }) inputs := by
+      (fun x y => affine.«AffinePoint64bit-tables».compress { x, y }) inputs := by
   unfold compress_batch_alloc Backend.compressBatchAlloc
   simp only [compress_batch_alloc_loop0_eq]
   rfl
@@ -261,7 +261,7 @@ private theorem compress_batch_alloc_eq (inputs : Slice EdwardsPoint.«x86_64-ta
 /-- `EdwardsPoint::compress_batch_alloc`: entry `i` is the canonical `y = Y / Z` of point `i`
 with the sign of `x = X / Z` in bit `255`; limbs `< 2^52`. -/
 @[step]
-theorem compress_batch_alloc_asNat (inputs : Slice EdwardsPoint.«x86_64-tables»)
+theorem compress_batch_alloc_asNat (inputs : Slice EdwardsPoint.«64bit-tables»)
     (hinputs : ∀ i < inputs.length, inputs[i]!.LimbsLt 52) :
     compress_batch_alloc inputs ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
       r.length = inputs.length ∧ ∀ i < inputs.length,
@@ -270,11 +270,11 @@ theorem compress_batch_alloc_asNat (inputs : Slice EdwardsPoint.«x86_64-tables�
   rw [compress_batch_alloc_eq]
   exact Backend.compressBatchAlloc_spec Backend.U64 Backend.U64.mul_spec
     Backend.U64.invertBatchAlloc_spec _ _ _ _
-    (fun x y => affine.«AffinePointx86_64-tables».compress_asNat { x, y }) inputs
+    (fun x y => affine.«AffinePoint64bit-tables».compress_asNat { x, y }) inputs
     fun i hi => by obtain ⟨hX, hY, hZ, -⟩ := hinputs i hi; exact ⟨hX, hY, hZ⟩
 
 /-- `EdwardsPoint::compress_batch_alloc`: entry `i` is RFC 8032's encoding of point `i`. -/
-theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«x86_64-tables»)
+theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«64bit-tables»)
     (hinputs : ∀ i < inputs.length, inputs[i]!.LimbsLt 52)
     (hinputs_on : ∀ i < inputs.length, inputs[i]!.OnCurve) :
     compress_batch_alloc inputs ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
@@ -283,17 +283,17 @@ theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«x86_64-tables»
   simp only [Curve25519Dalek.edwards.CompressedEdwardsY.toVector_eq_encode_iff]
   exact spec_mono (compress_batch_alloc_asNat inputs hinputs) fun r ⟨hlen, hr⟩ =>
       ⟨hlen, fun i hi => by
-      rw [hr i hi, encodeNat_eq, EdwardsPoint.«x86_64-tables».toPoint_x (hinputs_on i hi),
-        EdwardsPoint.«x86_64-tables».toPoint_y (hinputs_on i hi)]⟩
+      rw [hr i hi, encodeNat_eq, EdwardsPoint.«64bit-tables».toPoint_x (hinputs_on i hi),
+        EdwardsPoint.«64bit-tables».toPoint_y (hinputs_on i hi)]⟩
 
-end «EdwardsPointx86_64-tables»
+end «EdwardsPoint64bit-tables»
 
-namespace «EdwardsPointi686-tables»
+namespace «EdwardsPoint32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 private theorem compress_batch_alloc_loop0_eq
-    (iter : core.slice.iter.Iter EdwardsPoint.«i686-tables»)
+    (iter : core.slice.iter.Iter EdwardsPoint.«32bit-tables»)
     (zs : alloc.vec.Vec FieldElement2625) :
     compress_batch_alloc_loop0 iter zs = Backend.U32.cbaLoop0 (·.Z) iter zs := by
   unfold compress_batch_alloc_loop0 Backend.cbaLoop0
@@ -305,9 +305,9 @@ private theorem compress_batch_alloc_loop0_eq
   funext ⟨o, it1⟩
   cases o <;> rfl
 
-private theorem compress_batch_alloc_eq (inputs : Slice EdwardsPoint.«i686-tables») :
+private theorem compress_batch_alloc_eq (inputs : Slice EdwardsPoint.«32bit-tables») :
     compress_batch_alloc inputs = Backend.U32.compressBatchAlloc (·.X) (·.Y) (·.Z)
-      (fun x y => affine.«AffinePointi686-tables».compress { x, y }) inputs := by
+      (fun x y => affine.«AffinePoint32bit-tables».compress { x, y }) inputs := by
   unfold compress_batch_alloc Backend.compressBatchAlloc
   simp only [compress_batch_alloc_loop0_eq]
   rfl
@@ -315,7 +315,7 @@ private theorem compress_batch_alloc_eq (inputs : Slice EdwardsPoint.«i686-tabl
 /-- `EdwardsPoint::compress_batch_alloc`: entry `i` is the canonical `y = Y / Z` of point `i`
 with the sign of `x = X / Z` in bit `255`; limbs `< 2^26`. -/
 @[step]
-theorem compress_batch_alloc_asNat (inputs : Slice EdwardsPoint.«i686-tables»)
+theorem compress_batch_alloc_asNat (inputs : Slice EdwardsPoint.«32bit-tables»)
     (hinputs : ∀ i < inputs.length, inputs[i]!.LimbsLt 26) :
     compress_batch_alloc inputs ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
       r.length = inputs.length ∧ ∀ i < inputs.length,
@@ -324,11 +324,11 @@ theorem compress_batch_alloc_asNat (inputs : Slice EdwardsPoint.«i686-tables»)
   rw [compress_batch_alloc_eq]
   exact Backend.compressBatchAlloc_spec Backend.U32 Backend.U32.mul_spec
     Backend.U32.invertBatchAlloc_spec _ _ _ _
-    (fun x y => affine.«AffinePointi686-tables».compress_asNat { x, y }) inputs
+    (fun x y => affine.«AffinePoint32bit-tables».compress_asNat { x, y }) inputs
     fun i hi => by obtain ⟨hX, hY, hZ, -⟩ := hinputs i hi; exact ⟨hX, hY, hZ⟩
 
 /-- `EdwardsPoint::compress_batch_alloc`: entry `i` is RFC 8032's encoding of point `i`. -/
-theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«i686-tables»)
+theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«32bit-tables»)
     (hinputs : ∀ i < inputs.length, inputs[i]!.LimbsLt 26)
     (hinputs_on : ∀ i < inputs.length, inputs[i]!.OnCurve) :
     compress_batch_alloc inputs ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
@@ -337,17 +337,17 @@ theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«i686-tables»)
   simp only [Curve25519Dalek.edwards.CompressedEdwardsY.toVector_eq_encode_iff]
   exact spec_mono (compress_batch_alloc_asNat inputs hinputs) fun r ⟨hlen, hr⟩ =>
       ⟨hlen, fun i hi => by
-      rw [hr i hi, encodeNat_eq, EdwardsPoint.«i686-tables».toPoint_x (hinputs_on i hi),
-        EdwardsPoint.«i686-tables».toPoint_y (hinputs_on i hi)]⟩
+      rw [hr i hi, encodeNat_eq, EdwardsPoint.«32bit-tables».toPoint_x (hinputs_on i hi),
+        EdwardsPoint.«32bit-tables».toPoint_y (hinputs_on i hi)]⟩
 
-end «EdwardsPointi686-tables»
+end «EdwardsPoint32bit-tables»
 
-namespace «EdwardsPointx86_64-no-tables»
+namespace «EdwardsPoint64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 private theorem compress_batch_alloc_loop0_eq
-    (iter : core.slice.iter.Iter EdwardsPoint.«x86_64-no-tables»)
+    (iter : core.slice.iter.Iter EdwardsPoint.«64bit-notables»)
     (zs : alloc.vec.Vec FieldElement51) :
     compress_batch_alloc_loop0 iter zs = Backend.U64.cbaLoop0 (·.Z) iter zs := by
   unfold compress_batch_alloc_loop0 Backend.cbaLoop0
@@ -359,9 +359,9 @@ private theorem compress_batch_alloc_loop0_eq
   funext ⟨o, it1⟩
   cases o <;> rfl
 
-private theorem compress_batch_alloc_eq (inputs : Slice EdwardsPoint.«x86_64-no-tables») :
+private theorem compress_batch_alloc_eq (inputs : Slice EdwardsPoint.«64bit-notables») :
     compress_batch_alloc inputs = Backend.U64.compressBatchAlloc (·.X) (·.Y) (·.Z)
-      (fun x y => affine.«AffinePointx86_64-no-tables».compress { x, y }) inputs := by
+      (fun x y => affine.«AffinePoint64bit-notables».compress { x, y }) inputs := by
   unfold compress_batch_alloc Backend.compressBatchAlloc
   simp only [compress_batch_alloc_loop0_eq]
   rfl
@@ -369,7 +369,7 @@ private theorem compress_batch_alloc_eq (inputs : Slice EdwardsPoint.«x86_64-no
 /-- `EdwardsPoint::compress_batch_alloc`: entry `i` is the canonical `y = Y / Z` of point `i`
 with the sign of `x = X / Z` in bit `255`; limbs `< 2^52`. -/
 @[step]
-theorem compress_batch_alloc_asNat (inputs : Slice EdwardsPoint.«x86_64-no-tables»)
+theorem compress_batch_alloc_asNat (inputs : Slice EdwardsPoint.«64bit-notables»)
     (hinputs : ∀ i < inputs.length, inputs[i]!.LimbsLt 52) :
     compress_batch_alloc inputs ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
       r.length = inputs.length ∧ ∀ i < inputs.length,
@@ -378,11 +378,11 @@ theorem compress_batch_alloc_asNat (inputs : Slice EdwardsPoint.«x86_64-no-tabl
   rw [compress_batch_alloc_eq]
   exact Backend.compressBatchAlloc_spec Backend.U64 Backend.U64.mul_spec
     Backend.U64.invertBatchAlloc_spec _ _ _ _
-    (fun x y => affine.«AffinePointx86_64-no-tables».compress_asNat { x, y }) inputs
+    (fun x y => affine.«AffinePoint64bit-notables».compress_asNat { x, y }) inputs
     fun i hi => by obtain ⟨hX, hY, hZ, -⟩ := hinputs i hi; exact ⟨hX, hY, hZ⟩
 
 /-- `EdwardsPoint::compress_batch_alloc`: entry `i` is RFC 8032's encoding of point `i`. -/
-theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«x86_64-no-tables»)
+theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«64bit-notables»)
     (hinputs : ∀ i < inputs.length, inputs[i]!.LimbsLt 52)
     (hinputs_on : ∀ i < inputs.length, inputs[i]!.OnCurve) :
     compress_batch_alloc inputs ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
@@ -391,17 +391,17 @@ theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«x86_64-no-table
   simp only [Curve25519Dalek.edwards.CompressedEdwardsY.toVector_eq_encode_iff]
   exact spec_mono (compress_batch_alloc_asNat inputs hinputs) fun r ⟨hlen, hr⟩ =>
       ⟨hlen, fun i hi => by
-      rw [hr i hi, encodeNat_eq, EdwardsPoint.«x86_64-no-tables».toPoint_x (hinputs_on i hi),
-        EdwardsPoint.«x86_64-no-tables».toPoint_y (hinputs_on i hi)]⟩
+      rw [hr i hi, encodeNat_eq, EdwardsPoint.«64bit-notables».toPoint_x (hinputs_on i hi),
+        EdwardsPoint.«64bit-notables».toPoint_y (hinputs_on i hi)]⟩
 
-end «EdwardsPointx86_64-no-tables»
+end «EdwardsPoint64bit-notables»
 
-namespace «EdwardsPointi686-no-tables»
+namespace «EdwardsPoint32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 private theorem compress_batch_alloc_loop0_eq
-    (iter : core.slice.iter.Iter EdwardsPoint.«i686-no-tables»)
+    (iter : core.slice.iter.Iter EdwardsPoint.«32bit-notables»)
     (zs : alloc.vec.Vec FieldElement2625) :
     compress_batch_alloc_loop0 iter zs = Backend.U32.cbaLoop0 (·.Z) iter zs := by
   unfold compress_batch_alloc_loop0 Backend.cbaLoop0
@@ -413,9 +413,9 @@ private theorem compress_batch_alloc_loop0_eq
   funext ⟨o, it1⟩
   cases o <;> rfl
 
-private theorem compress_batch_alloc_eq (inputs : Slice EdwardsPoint.«i686-no-tables») :
+private theorem compress_batch_alloc_eq (inputs : Slice EdwardsPoint.«32bit-notables») :
     compress_batch_alloc inputs = Backend.U32.compressBatchAlloc (·.X) (·.Y) (·.Z)
-      (fun x y => affine.«AffinePointi686-no-tables».compress { x, y }) inputs := by
+      (fun x y => affine.«AffinePoint32bit-notables».compress { x, y }) inputs := by
   unfold compress_batch_alloc Backend.compressBatchAlloc
   simp only [compress_batch_alloc_loop0_eq]
   rfl
@@ -423,7 +423,7 @@ private theorem compress_batch_alloc_eq (inputs : Slice EdwardsPoint.«i686-no-t
 /-- `EdwardsPoint::compress_batch_alloc`: entry `i` is the canonical `y = Y / Z` of point `i`
 with the sign of `x = X / Z` in bit `255`; limbs `< 2^26`. -/
 @[step]
-theorem compress_batch_alloc_asNat (inputs : Slice EdwardsPoint.«i686-no-tables»)
+theorem compress_batch_alloc_asNat (inputs : Slice EdwardsPoint.«32bit-notables»)
     (hinputs : ∀ i < inputs.length, inputs[i]!.LimbsLt 26) :
     compress_batch_alloc inputs ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
       r.length = inputs.length ∧ ∀ i < inputs.length,
@@ -432,11 +432,11 @@ theorem compress_batch_alloc_asNat (inputs : Slice EdwardsPoint.«i686-no-tables
   rw [compress_batch_alloc_eq]
   exact Backend.compressBatchAlloc_spec Backend.U32 Backend.U32.mul_spec
     Backend.U32.invertBatchAlloc_spec _ _ _ _
-    (fun x y => affine.«AffinePointi686-no-tables».compress_asNat { x, y }) inputs
+    (fun x y => affine.«AffinePoint32bit-notables».compress_asNat { x, y }) inputs
     fun i hi => by obtain ⟨hX, hY, hZ, -⟩ := hinputs i hi; exact ⟨hX, hY, hZ⟩
 
 /-- `EdwardsPoint::compress_batch_alloc`: entry `i` is RFC 8032's encoding of point `i`. -/
-theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«i686-no-tables»)
+theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«32bit-notables»)
     (hinputs : ∀ i < inputs.length, inputs[i]!.LimbsLt 26)
     (hinputs_on : ∀ i < inputs.length, inputs[i]!.OnCurve) :
     compress_batch_alloc inputs ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
@@ -445,9 +445,9 @@ theorem compress_batch_alloc_spec (inputs : Slice EdwardsPoint.«i686-no-tables�
   simp only [Curve25519Dalek.edwards.CompressedEdwardsY.toVector_eq_encode_iff]
   exact spec_mono (compress_batch_alloc_asNat inputs hinputs) fun r ⟨hlen, hr⟩ =>
       ⟨hlen, fun i hi => by
-      rw [hr i hi, encodeNat_eq, EdwardsPoint.«i686-no-tables».toPoint_x (hinputs_on i hi),
-        EdwardsPoint.«i686-no-tables».toPoint_y (hinputs_on i hi)]⟩
+      rw [hr i hi, encodeNat_eq, EdwardsPoint.«32bit-notables».toPoint_x (hinputs_on i hi),
+        EdwardsPoint.«32bit-notables».toPoint_y (hinputs_on i hi)]⟩
 
-end «EdwardsPointi686-no-tables»
+end «EdwardsPoint32bit-notables»
 
 end Curve25519Dalek.edwards

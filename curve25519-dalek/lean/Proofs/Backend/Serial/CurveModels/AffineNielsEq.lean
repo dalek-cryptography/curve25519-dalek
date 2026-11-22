@@ -17,116 +17,116 @@ open Curve25519Dalek.backend.serial.u32.field (FieldElement2625)
 
 namespace Curve25519Dalek.backend.serial.curve_models
 
-namespace AffineNielsPoint.«x86_64-tables».Insts
+namespace AffineNielsPoint.«64bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreCmpPartialEqAffineNielsPointx86_64-tables»
+namespace «CoreCmpPartialEqAffineNielsPoint64bit-tables»
 
 /-- `PartialEq for AffineNielsPoint` (derived): the three coordinates agree modulo `p`. -/
 @[step]
-theorem eq_toAffineNiels (self other : AffineNielsPoint.«x86_64-tables») :
+theorem eq_toAffineNiels (self other : AffineNielsPoint.«64bit-tables») :
     eq self other ⦃ (b : Bool) =>
       b = true ↔ self.toAffineNiels = other.toAffineNiels ⦄ := by
   unfold eq
-  simp only [AffineNielsPoint.«x86_64-tables».toAffineNiels_def, AffineNiels.mk.injEq,
+  simp only [AffineNielsPoint.«64bit-tables».toAffineNiels_def, AffineNiels.mk.injEq,
     toField_eq_toField_iff]
   step*
 
 /-- `PartialEq for AffineNielsPoint` on points: equality of the represented points. -/
-theorem eq_spec (self other : AffineNielsPoint.«x86_64-tables») (hself : self.OnCurve)
+theorem eq_spec (self other : AffineNielsPoint.«64bit-tables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
     eq self other ⦃ (b : Bool) => b = true ↔ self.toPoint = other.toPoint ⦄ :=
   spec_mono (eq_toAffineNiels self other) fun b hb => by
-    rw [hb, AffineNielsPoint.«x86_64-tables».toPoint_def,
-      AffineNielsPoint.«x86_64-tables».toPoint_def]
+    rw [hb, AffineNielsPoint.«64bit-tables».toPoint_def,
+      AffineNielsPoint.«64bit-tables».toPoint_def]
     exact (AffineNiels.toPoint_inj hself hother).symm
 
-end «CoreCmpPartialEqAffineNielsPointx86_64-tables»
-end AffineNielsPoint.«x86_64-tables».Insts
+end «CoreCmpPartialEqAffineNielsPoint64bit-tables»
+end AffineNielsPoint.«64bit-tables».Insts
 
-namespace AffineNielsPoint.«i686-tables».Insts
+namespace AffineNielsPoint.«32bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-namespace «CoreCmpPartialEqAffineNielsPointi686-tables»
+namespace «CoreCmpPartialEqAffineNielsPoint32bit-tables»
 
 /-- `PartialEq for AffineNielsPoint` (derived): the three coordinates agree modulo `p`. -/
 @[step]
-theorem eq_toAffineNiels (self other : AffineNielsPoint.«i686-tables») :
+theorem eq_toAffineNiels (self other : AffineNielsPoint.«32bit-tables») :
     eq self other ⦃ (b : Bool) =>
       b = true ↔ self.toAffineNiels = other.toAffineNiels ⦄ := by
   unfold eq
-  simp only [AffineNielsPoint.«i686-tables».toAffineNiels_def, AffineNiels.mk.injEq,
+  simp only [AffineNielsPoint.«32bit-tables».toAffineNiels_def, AffineNiels.mk.injEq,
     toField_eq_toField_iff]
   step*
 
 /-- `PartialEq for AffineNielsPoint` on points: equality of the represented points. -/
-theorem eq_spec (self other : AffineNielsPoint.«i686-tables») (hself : self.OnCurve)
+theorem eq_spec (self other : AffineNielsPoint.«32bit-tables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
     eq self other ⦃ (b : Bool) => b = true ↔ self.toPoint = other.toPoint ⦄ :=
   spec_mono (eq_toAffineNiels self other) fun b hb => by
-    rw [hb, AffineNielsPoint.«i686-tables».toPoint_def,
-      AffineNielsPoint.«i686-tables».toPoint_def]
+    rw [hb, AffineNielsPoint.«32bit-tables».toPoint_def,
+      AffineNielsPoint.«32bit-tables».toPoint_def]
     exact (AffineNiels.toPoint_inj hself hother).symm
 
-end «CoreCmpPartialEqAffineNielsPointi686-tables»
-end AffineNielsPoint.«i686-tables».Insts
+end «CoreCmpPartialEqAffineNielsPoint32bit-tables»
+end AffineNielsPoint.«32bit-tables».Insts
 
-namespace AffineNielsPoint.«x86_64-no-tables».Insts
+namespace AffineNielsPoint.«64bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreCmpPartialEqAffineNielsPointx86_64-no-tables»
+namespace «CoreCmpPartialEqAffineNielsPoint64bit-notables»
 
 /-- `PartialEq for AffineNielsPoint` (derived): the three coordinates agree modulo `p`. -/
 @[step]
-theorem eq_toAffineNiels (self other : AffineNielsPoint.«x86_64-no-tables») :
+theorem eq_toAffineNiels (self other : AffineNielsPoint.«64bit-notables») :
     eq self other ⦃ (b : Bool) =>
       b = true ↔ self.toAffineNiels = other.toAffineNiels ⦄ := by
   unfold eq
-  simp only [AffineNielsPoint.«x86_64-no-tables».toAffineNiels_def, AffineNiels.mk.injEq,
+  simp only [AffineNielsPoint.«64bit-notables».toAffineNiels_def, AffineNiels.mk.injEq,
     toField_eq_toField_iff]
   step*
 
 /-- `PartialEq for AffineNielsPoint` on points: equality of the represented points. -/
-theorem eq_spec (self other : AffineNielsPoint.«x86_64-no-tables») (hself : self.OnCurve)
+theorem eq_spec (self other : AffineNielsPoint.«64bit-notables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
     eq self other ⦃ (b : Bool) => b = true ↔ self.toPoint = other.toPoint ⦄ :=
   spec_mono (eq_toAffineNiels self other) fun b hb => by
-    rw [hb, AffineNielsPoint.«x86_64-no-tables».toPoint_def,
-      AffineNielsPoint.«x86_64-no-tables».toPoint_def]
+    rw [hb, AffineNielsPoint.«64bit-notables».toPoint_def,
+      AffineNielsPoint.«64bit-notables».toPoint_def]
     exact (AffineNiels.toPoint_inj hself hother).symm
 
-end «CoreCmpPartialEqAffineNielsPointx86_64-no-tables»
-end AffineNielsPoint.«x86_64-no-tables».Insts
+end «CoreCmpPartialEqAffineNielsPoint64bit-notables»
+end AffineNielsPoint.«64bit-notables».Insts
 
-namespace AffineNielsPoint.«i686-no-tables».Insts
+namespace AffineNielsPoint.«32bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-namespace «CoreCmpPartialEqAffineNielsPointi686-no-tables»
+namespace «CoreCmpPartialEqAffineNielsPoint32bit-notables»
 
 /-- `PartialEq for AffineNielsPoint` (derived): the three coordinates agree modulo `p`. -/
 @[step]
-theorem eq_toAffineNiels (self other : AffineNielsPoint.«i686-no-tables») :
+theorem eq_toAffineNiels (self other : AffineNielsPoint.«32bit-notables») :
     eq self other ⦃ (b : Bool) =>
       b = true ↔ self.toAffineNiels = other.toAffineNiels ⦄ := by
   unfold eq
-  simp only [AffineNielsPoint.«i686-no-tables».toAffineNiels_def, AffineNiels.mk.injEq,
+  simp only [AffineNielsPoint.«32bit-notables».toAffineNiels_def, AffineNiels.mk.injEq,
     toField_eq_toField_iff]
   step*
 
 /-- `PartialEq for AffineNielsPoint` on points: equality of the represented points. -/
-theorem eq_spec (self other : AffineNielsPoint.«i686-no-tables») (hself : self.OnCurve)
+theorem eq_spec (self other : AffineNielsPoint.«32bit-notables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
     eq self other ⦃ (b : Bool) => b = true ↔ self.toPoint = other.toPoint ⦄ :=
   spec_mono (eq_toAffineNiels self other) fun b hb => by
-    rw [hb, AffineNielsPoint.«i686-no-tables».toPoint_def,
-      AffineNielsPoint.«i686-no-tables».toPoint_def]
+    rw [hb, AffineNielsPoint.«32bit-notables».toPoint_def,
+      AffineNielsPoint.«32bit-notables».toPoint_def]
     exact (AffineNiels.toPoint_inj hself hother).symm
 
-end «CoreCmpPartialEqAffineNielsPointi686-no-tables»
-end AffineNielsPoint.«i686-no-tables».Insts
+end «CoreCmpPartialEqAffineNielsPoint32bit-notables»
+end AffineNielsPoint.«32bit-notables».Insts
 
 end Curve25519Dalek.backend.serial.curve_models

@@ -5,20 +5,20 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Proofs.Curve25519.Edwards.Basic
-public import ForHumans.Specs.Representation.CurveModels.I686NoTables
+public import ForHumans.Specs.Representation.CurveModels.Bits32NoTables
 public section
 
 set_option linter.style.longLine false
 
-/-! # `ScalarMul` for `i686-no-tables`, generated from `ForHumans/Specs/Representation/ScalarMul.lean` -/
+/-! # `ScalarMul` for `32bit-notables`, generated from `ForHumans/Specs/Representation/ScalarMul.lean` -/
 
 open Aeneas Aeneas.Std
 
 namespace Curve25519Dalek.backend.serial.scalar_mul.precomputed_straus
 
 /-- Every limb of every entry of every table of `self` is `< 2^n`. -/
-@[expose] def VartimePrecomputedStraus.«i686-no-tables».LimbsLt (n : ℕ)
-    (self : VartimePrecomputedStraus.«i686-no-tables») : Prop :=
+@[expose] def VartimePrecomputedStraus.«32bit-notables».LimbsLt (n : ℕ)
+    (self : VartimePrecomputedStraus.«32bit-notables») : Prop :=
   ∀ t ∈ self.static_lookup_tables.val, window.NafLookupTable8.LimbsLt n t
 
 end Curve25519Dalek.backend.serial.scalar_mul.precomputed_straus
@@ -26,29 +26,29 @@ end Curve25519Dalek.backend.serial.scalar_mul.precomputed_straus
 namespace Curve25519Dalek.backend
 
 /-- The limbs of the serial precomputation inside the backend enum are `< 2^n`. -/
-@[expose] def VartimePrecomputedStraus.«i686-no-tables».LimbsLt (n : ℕ) :
-    VartimePrecomputedStraus.«i686-no-tables» → Prop
+@[expose] def VartimePrecomputedStraus.«32bit-notables».LimbsLt (n : ℕ) :
+    VartimePrecomputedStraus.«32bit-notables» → Prop
   | .Scalar pre => pre.LimbsLt n
 
 /-- The static points of the precomputation: the point of entry `0` of each NAF table, in
 order. -/
-@[expose] noncomputable def VartimePrecomputedStraus.«i686-no-tables».points :
-    VartimePrecomputedStraus.«i686-no-tables» → List curve25519.edwards.Point
+@[expose] noncomputable def VartimePrecomputedStraus.«32bit-notables».points :
+    VartimePrecomputedStraus.«32bit-notables» → List curve25519.edwards.Point
   | .Scalar pre => pre.static_lookup_tables.val.map fun t => PointRepr.toPoint t[0]!
 
 /-- The invariant of the precomputation: entry `k` of table `n` is on the curve and is the odd
 multiple `(2 k + 1) • P` of the point `P` of its entry `0`. -/
-@[expose] def VartimePrecomputedStraus.«i686-no-tables».IsValid :
-    VartimePrecomputedStraus.«i686-no-tables» → Prop
+@[expose] def VartimePrecomputedStraus.«32bit-notables».IsValid :
+    VartimePrecomputedStraus.«32bit-notables» → Prop
   | .Scalar pre => ∀ n < pre.static_lookup_tables.length, ∀ k < 64,
       PointRepr.OnCurve (pre.static_lookup_tables[n]!)[k]! ∧
         PointRepr.toPoint (pre.static_lookup_tables[n]!)[k]! =
           (2 * k + 1) • PointRepr.toPoint (pre.static_lookup_tables[n]!)[0]!
 
 /-- The bound on the limbs of the precomputation that every public function assumes and
-preserves: every limb of every entry is `< 2^54` (`< 2^27` on i686). -/
-@[expose] def VartimePrecomputedStraus.«i686-no-tables».IsBounded
-    (self : VartimePrecomputedStraus.«i686-no-tables») : Prop :=
+preserves: every limb of every entry is `< 2^54` (`< 2^27` on 32-bit). -/
+@[expose] def VartimePrecomputedStraus.«32bit-notables».IsBounded
+    (self : VartimePrecomputedStraus.«32bit-notables») : Prop :=
   self.LimbsLt 27
 
 end Curve25519Dalek.backend

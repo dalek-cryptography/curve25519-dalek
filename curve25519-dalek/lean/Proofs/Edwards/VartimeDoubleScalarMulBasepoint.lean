@@ -16,66 +16,66 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 
 namespace Curve25519Dalek.edwards
 
-namespace «EdwardsPointx86_64-tables»
+namespace «EdwardsPoint64bit-tables»
 
 /-- `EdwardsPoint::vartime_double_scalar_mul_basepoint`: `a • A + b • B` for the basepoint `B`
 (unreduced scalars `< 2^255`); limbs `< 2^52`. -/
 @[step]
 theorem vartime_double_scalar_mul_basepoint_spec (a : scalar.Scalar)
-    (A : EdwardsPoint.«x86_64-tables») (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255)
+    (A : EdwardsPoint.«64bit-tables») (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255)
     (hA : A.LimbsLt 52) (hon : A.OnCurve) (hb : b.asNat < 2 ^ 255) :
-    vartime_double_scalar_mul_basepoint a A b ⦃ (r : EdwardsPoint.«x86_64-tables») =>
+    vartime_double_scalar_mul_basepoint a A b ⦃ (r : EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.LimbsLt 52 ⦄ := by
   unfold vartime_double_scalar_mul_basepoint
-  step with backend.«x86_64-tables».vartime_double_base_mul_spec as ⟨r, hron, hr, hrb⟩
+  step with backend.«64bit-tables».vartime_double_base_mul_spec as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hr, hrb⟩
 
-end «EdwardsPointx86_64-tables»
+end «EdwardsPoint64bit-tables»
 
-namespace «EdwardsPointi686-tables»
+namespace «EdwardsPoint32bit-tables»
 
 /-- `EdwardsPoint::vartime_double_scalar_mul_basepoint`: `a • A + b • B` for the basepoint `B`
 (unreduced scalars `< 2^255`); limbs `< 2^26`. -/
 @[step]
 theorem vartime_double_scalar_mul_basepoint_spec (a : scalar.Scalar)
-    (A : EdwardsPoint.«i686-tables») (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255)
+    (A : EdwardsPoint.«32bit-tables») (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255)
     (hA : A.LimbsLt 26) (hon : A.OnCurve) (hb : b.asNat < 2 ^ 255) :
-    vartime_double_scalar_mul_basepoint a A b ⦃ (r : EdwardsPoint.«i686-tables») =>
+    vartime_double_scalar_mul_basepoint a A b ⦃ (r : EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.LimbsLt 26 ⦄ := by
   unfold vartime_double_scalar_mul_basepoint
-  step with backend.«i686-tables».vartime_double_base_mul_spec as ⟨r, hron, hr, hrb⟩
+  step with backend.«32bit-tables».vartime_double_base_mul_spec as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hr, hrb⟩
 
-end «EdwardsPointi686-tables»
+end «EdwardsPoint32bit-tables»
 
-namespace «EdwardsPointx86_64-no-tables»
+namespace «EdwardsPoint64bit-notables»
 
 /-- `EdwardsPoint::vartime_double_scalar_mul_basepoint`: `a • A + b • B` for the basepoint `B`
 (unreduced scalars `< 2^255`); limbs `< 2^52`. -/
 @[step]
 theorem vartime_double_scalar_mul_basepoint_spec (a : scalar.Scalar)
-    (A : EdwardsPoint.«x86_64-no-tables») (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255)
+    (A : EdwardsPoint.«64bit-notables») (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255)
     (hA : A.LimbsLt 52) (hon : A.OnCurve) (hb : b.asNat < 2 ^ 255) :
-    vartime_double_scalar_mul_basepoint a A b ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
+    vartime_double_scalar_mul_basepoint a A b ⦃ (r : EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.LimbsLt 52 ⦄ := by
   unfold vartime_double_scalar_mul_basepoint
   step*
 
-end «EdwardsPointx86_64-no-tables»
+end «EdwardsPoint64bit-notables»
 
-namespace «EdwardsPointi686-no-tables»
+namespace «EdwardsPoint32bit-notables»
 
 /-- `EdwardsPoint::vartime_double_scalar_mul_basepoint`: `a • A + b • B` for the basepoint `B`
 (unreduced scalars `< 2^255`); limbs `< 2^26`. -/
 @[step]
 theorem vartime_double_scalar_mul_basepoint_spec (a : scalar.Scalar)
-    (A : EdwardsPoint.«i686-no-tables») (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255)
+    (A : EdwardsPoint.«32bit-notables») (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255)
     (hA : A.LimbsLt 26) (hon : A.OnCurve) (hb : b.asNat < 2 ^ 255) :
-    vartime_double_scalar_mul_basepoint a A b ⦃ (r : EdwardsPoint.«i686-no-tables») =>
+    vartime_double_scalar_mul_basepoint a A b ⦃ (r : EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.LimbsLt 26 ⦄ := by
   unfold vartime_double_scalar_mul_basepoint
   step*
 
-end «EdwardsPointi686-no-tables»
+end «EdwardsPoint32bit-notables»
 
 end Curve25519Dalek.edwards

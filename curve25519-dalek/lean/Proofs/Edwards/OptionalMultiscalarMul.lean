@@ -22,8 +22,8 @@ calls `backend::straus_optional_multiscalar_mul` (fewer than `190` pairs) or
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
-namespace Curve25519Dalek.edwards.EdwardsPoint.«x86_64-tables».Insts
-namespace «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-tables»
+namespace Curve25519Dalek.edwards.EdwardsPoint.«64bit-tables».Insts
+namespace «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint64bit-tables»
 
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `EdwardsPoint`: `none` iff some point
 is `none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the
@@ -34,10 +34,10 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-        (Option edwards.EdwardsPoint.«x86_64-tables»)
+        (Option edwards.EdwardsPoint.«64bit-tables»)
       Clause2_IntoIter)
     (scalars : I) (points : J) (xs : List Clause0_Item)
-    (ops : List (Option edwards.EdwardsPoint.«x86_64-tables»)) (ss : List scalar.Scalar)
+    (ops : List (Option edwards.EdwardsPoint.«64bit-tables»)) (ss : List scalar.Scalar)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
@@ -46,7 +46,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option edwards.EdwardsPoint.«x86_64-tables») => (none ∈ ops → r = none) ∧
+      ⦃ (r : Option edwards.EdwardsPoint.«64bit-tables») => (none ∈ ops → r = none) ∧
         ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 52 ⦄ := by
@@ -65,23 +65,23 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   have hys : (core.iter.traits.collect.IntoIteratorVec Clause0_Item).Yields vs xs :=
     hvs ▸ core.iter.traits.collect.IntoIteratorVec_yields vs
   have hyp : (core.iter.traits.collect.IntoIteratorVec
-      (Option edwards.EdwardsPoint.«x86_64-tables»)).Yields vp ops :=
+      (Option edwards.EdwardsPoint.«64bit-tables»)).Yields vp ops :=
     hvp ▸ core.iter.traits.collect.IntoIteratorVec_yields vp
   split
-  · exact backend.«x86_64-tables».straus_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss hys hyp
+  · exact backend.«64bit-tables».straus_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss hys hyp
       hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs hops
   · apply spec_mono
-      (backend.«x86_64-tables».pippenger_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss
+      (backend.«64bit-tables».pippenger_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss
       hys hyp hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs)
     rintro r ⟨hnone, hsome⟩
     rw [List.take_of_length_le (by rw [← hborrow_scalars.length_eq, hlen])] at hnone
     exact ⟨hnone, hsome⟩
 
-end «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-tables»
-end Curve25519Dalek.edwards.EdwardsPoint.«x86_64-tables».Insts
+end «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint64bit-tables»
+end Curve25519Dalek.edwards.EdwardsPoint.«64bit-tables».Insts
 
-namespace Curve25519Dalek.edwards.EdwardsPoint.«i686-tables».Insts
-namespace «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-tables»
+namespace Curve25519Dalek.edwards.EdwardsPoint.«32bit-tables».Insts
+namespace «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint32bit-tables»
 
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `EdwardsPoint`: `none` iff some point
 is `none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the
@@ -92,10 +92,10 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-        (Option edwards.EdwardsPoint.«i686-tables»)
+        (Option edwards.EdwardsPoint.«32bit-tables»)
       Clause2_IntoIter)
     (scalars : I) (points : J) (xs : List Clause0_Item)
-    (ops : List (Option edwards.EdwardsPoint.«i686-tables»)) (ss : List scalar.Scalar)
+    (ops : List (Option edwards.EdwardsPoint.«32bit-tables»)) (ss : List scalar.Scalar)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
@@ -104,7 +104,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option edwards.EdwardsPoint.«i686-tables») => (none ∈ ops → r = none) ∧
+      ⦃ (r : Option edwards.EdwardsPoint.«32bit-tables») => (none ∈ ops → r = none) ∧
         ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 26 ⦄ := by
@@ -123,23 +123,23 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   have hys : (core.iter.traits.collect.IntoIteratorVec Clause0_Item).Yields vs xs :=
     hvs ▸ core.iter.traits.collect.IntoIteratorVec_yields vs
   have hyp : (core.iter.traits.collect.IntoIteratorVec
-      (Option edwards.EdwardsPoint.«i686-tables»)).Yields vp ops :=
+      (Option edwards.EdwardsPoint.«32bit-tables»)).Yields vp ops :=
     hvp ▸ core.iter.traits.collect.IntoIteratorVec_yields vp
   split
-  · exact backend.«i686-tables».straus_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss hys hyp
+  · exact backend.«32bit-tables».straus_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss hys hyp
       hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs hops
   · apply spec_mono
-      (backend.«i686-tables».pippenger_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss
+      (backend.«32bit-tables».pippenger_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss
       hys hyp hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs)
     rintro r ⟨hnone, hsome⟩
     rw [List.take_of_length_le (by rw [← hborrow_scalars.length_eq, hlen])] at hnone
     exact ⟨hnone, hsome⟩
 
-end «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-tables»
-end Curve25519Dalek.edwards.EdwardsPoint.«i686-tables».Insts
+end «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint32bit-tables»
+end Curve25519Dalek.edwards.EdwardsPoint.«32bit-tables».Insts
 
-namespace Curve25519Dalek.edwards.EdwardsPoint.«x86_64-no-tables».Insts
-namespace «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-no-tables»
+namespace Curve25519Dalek.edwards.EdwardsPoint.«64bit-notables».Insts
+namespace «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint64bit-notables»
 
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `EdwardsPoint`: `none` iff some point
 is `none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the
@@ -150,10 +150,10 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-        (Option edwards.EdwardsPoint.«x86_64-no-tables»)
+        (Option edwards.EdwardsPoint.«64bit-notables»)
       Clause2_IntoIter)
     (scalars : I) (points : J) (xs : List Clause0_Item)
-    (ops : List (Option edwards.EdwardsPoint.«x86_64-no-tables»)) (ss : List scalar.Scalar)
+    (ops : List (Option edwards.EdwardsPoint.«64bit-notables»)) (ss : List scalar.Scalar)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
@@ -162,7 +162,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option edwards.EdwardsPoint.«x86_64-no-tables») => (none ∈ ops → r = none) ∧
+      ⦃ (r : Option edwards.EdwardsPoint.«64bit-notables») => (none ∈ ops → r = none) ∧
         ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 52 ⦄ := by
@@ -181,24 +181,24 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   have hys : (core.iter.traits.collect.IntoIteratorVec Clause0_Item).Yields vs xs :=
     hvs ▸ core.iter.traits.collect.IntoIteratorVec_yields vs
   have hyp : (core.iter.traits.collect.IntoIteratorVec
-      (Option edwards.EdwardsPoint.«x86_64-no-tables»)).Yields vp ops :=
+      (Option edwards.EdwardsPoint.«64bit-notables»)).Yields vp ops :=
     hvp ▸ core.iter.traits.collect.IntoIteratorVec_yields vp
   split
-  · exact backend.«x86_64-no-tables».straus_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss hys
+  · exact backend.«64bit-notables».straus_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss hys
       hyp
       hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs hops
   · apply spec_mono
-      (backend.«x86_64-no-tables».pippenger_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss
+      (backend.«64bit-notables».pippenger_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss
       hys hyp hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs)
     rintro r ⟨hnone, hsome⟩
     rw [List.take_of_length_le (by rw [← hborrow_scalars.length_eq, hlen])] at hnone
     exact ⟨hnone, hsome⟩
 
-end «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-no-tables»
-end Curve25519Dalek.edwards.EdwardsPoint.«x86_64-no-tables».Insts
+end «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint64bit-notables»
+end Curve25519Dalek.edwards.EdwardsPoint.«64bit-notables».Insts
 
-namespace Curve25519Dalek.edwards.EdwardsPoint.«i686-no-tables».Insts
-namespace «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-no-tables»
+namespace Curve25519Dalek.edwards.EdwardsPoint.«32bit-notables».Insts
+namespace «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint32bit-notables»
 
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `EdwardsPoint`: `none` iff some point
 is `none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the
@@ -209,10 +209,10 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-        (Option edwards.EdwardsPoint.«i686-no-tables»)
+        (Option edwards.EdwardsPoint.«32bit-notables»)
       Clause2_IntoIter)
     (scalars : I) (points : J) (xs : List Clause0_Item)
-    (ops : List (Option edwards.EdwardsPoint.«i686-no-tables»)) (ss : List scalar.Scalar)
+    (ops : List (Option edwards.EdwardsPoint.«32bit-notables»)) (ss : List scalar.Scalar)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
@@ -221,7 +221,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option edwards.EdwardsPoint.«i686-no-tables») => (none ∈ ops → r = none) ∧
+      ⦃ (r : Option edwards.EdwardsPoint.«32bit-notables») => (none ∈ ops → r = none) ∧
         ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 26 ⦄ := by
@@ -240,20 +240,20 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   have hys : (core.iter.traits.collect.IntoIteratorVec Clause0_Item).Yields vs xs :=
     hvs ▸ core.iter.traits.collect.IntoIteratorVec_yields vs
   have hyp : (core.iter.traits.collect.IntoIteratorVec
-      (Option edwards.EdwardsPoint.«i686-no-tables»)).Yields vp ops :=
+      (Option edwards.EdwardsPoint.«32bit-notables»)).Yields vp ops :=
     hvp ▸ core.iter.traits.collect.IntoIteratorVec_yields vp
   split
-  · exact backend.«i686-no-tables».straus_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss hys
+  · exact backend.«32bit-notables».straus_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss hys
       hyp
       hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs hops
   · apply spec_mono
-      (backend.«i686-no-tables».pippenger_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss
+      (backend.«32bit-notables».pippenger_optional_multiscalar_mul_spec _ _ _ _ _ xs ops ss
       hys hyp hborrow_scalars hss (fun P hP => ⟨hps P hP, hps_on P hP⟩) hxs)
     rintro r ⟨hnone, hsome⟩
     rw [List.take_of_length_le (by rw [← hborrow_scalars.length_eq, hlen])] at hnone
     exact ⟨hnone, hsome⟩
 
-end «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-no-tables»
-end Curve25519Dalek.edwards.EdwardsPoint.«i686-no-tables».Insts
+end «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint32bit-notables»
+end Curve25519Dalek.edwards.EdwardsPoint.«32bit-notables».Insts
 
 

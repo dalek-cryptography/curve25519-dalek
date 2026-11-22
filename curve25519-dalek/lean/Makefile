@@ -2,7 +2,7 @@
 
 all: build
 
-# Regenerate the per-configuration copies from the x86_64-tables templates.
+# Regenerate the per-configuration copies from the 64bit-tables templates.
 gen:
 	python3 scripts/gen-config-specs.py
 

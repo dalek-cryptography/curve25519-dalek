@@ -58,18 +58,18 @@ end Curve25519Dalek.Backend
 
 namespace Curve25519Dalek.backend.serial.curve_models
 
-namespace «ProjectivePointx86_64-tables»
+namespace «ProjectivePoint64bit-tables»
 
-theorem double_eq (self : ProjectivePoint.«x86_64-tables») :
+theorem double_eq (self : ProjectivePoint.«64bit-tables») :
     double self = Backend.projectiveDouble Backend.U64
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«x86_64-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«64bit-tables»))
       self.X self.Y self.Z := rfl
 
 /-- `ProjectivePoint::double`: the "dbl-2008-bbjlp" formula `Projective.double`; limbs `< 2^52`
 in, `< 2^54` out. -/
 @[step]
-theorem double_toCompleted (self : ProjectivePoint.«x86_64-tables») (hself : self.LimbsLt 52) :
-    double self ⦃ (r : CompletedPoint.«x86_64-tables») =>
+theorem double_toCompleted (self : ProjectivePoint.«64bit-tables») (hself : self.LimbsLt 52) :
+    double self ⦃ (r : CompletedPoint.«64bit-tables») =>
       r.toCompleted = self.toProjective.double ∧ r.LimbsLt 54 ⦄ := by
   obtain ⟨h1, h2, h3⟩ := hself
   rw [double_eq]
@@ -77,35 +77,35 @@ theorem double_toCompleted (self : ProjectivePoint.«x86_64-tables») (hself : s
     Backend.U64.add_spec Backend.U64.sub_spec Backend.U64.square_spec Backend.U64.square2_spec _ _ _
     _ h1 h2 h3)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [CompletedPoint.«x86_64-tables».toCompleted_def,
-    ProjectivePoint.«x86_64-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [CompletedPoint.«64bit-tables».toCompleted_def,
+    ProjectivePoint.«64bit-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `ProjectivePoint::double` doubles the represented point. -/
-theorem double_spec (self : ProjectivePoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem double_spec (self : ProjectivePoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
-    double self ⦃ (r : CompletedPoint.«x86_64-tables») =>
+    double self ⦃ (r : CompletedPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = 2 • self.toPoint ∧ r.LimbsLt 54 ⦄ :=
   spec_mono (double_toCompleted self hself) fun r ⟨hr, hb⟩ => by
-    rw [CompletedPoint.«x86_64-tables».onCurve_iff,
-      CompletedPoint.«x86_64-tables».toPoint_def, hr,
-      ProjectivePoint.«x86_64-tables».toPoint_def]
+    rw [CompletedPoint.«64bit-tables».onCurve_iff,
+      CompletedPoint.«64bit-tables».toPoint_def, hr,
+      ProjectivePoint.«64bit-tables».toPoint_def]
     exact ⟨Projective.double_onCurve hon,
       Projective.toPoint_double hon, hb⟩
 
-end «ProjectivePointx86_64-tables»
+end «ProjectivePoint64bit-tables»
 
-namespace «ProjectivePointi686-tables»
+namespace «ProjectivePoint32bit-tables»
 
-theorem double_eq (self : ProjectivePoint.«i686-tables») :
+theorem double_eq (self : ProjectivePoint.«32bit-tables») :
     double self = Backend.projectiveDouble Backend.U32
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«i686-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«32bit-tables»))
       self.X self.Y self.Z := rfl
 
 /-- `ProjectivePoint::double`: the "dbl-2008-bbjlp" formula `Projective.double`; limbs `< 2^26`
 in, `< 3 · 2^26` out. -/
 @[step]
-theorem double_toCompleted (self : ProjectivePoint.«i686-tables») (hself : self.LimbsLt 26) :
-    double self ⦃ (r : CompletedPoint.«i686-tables») =>
+theorem double_toCompleted (self : ProjectivePoint.«32bit-tables») (hself : self.LimbsLt 26) :
+    double self ⦃ (r : CompletedPoint.«32bit-tables») =>
       r.toCompleted = self.toProjective.double ∧ r.MulBounded ⦄ := by
   obtain ⟨h1, h2, h3⟩ := hself
   rw [double_eq]
@@ -113,35 +113,35 @@ theorem double_toCompleted (self : ProjectivePoint.«i686-tables») (hself : sel
     Backend.U32.add_spec Backend.U32.sub_spec Backend.U32.square_spec Backend.U32.square2_spec _ _ _
     _ h1 h2 h3)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [CompletedPoint.«i686-tables».toCompleted_def,
-    ProjectivePoint.«i686-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [CompletedPoint.«32bit-tables».toCompleted_def,
+    ProjectivePoint.«32bit-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `ProjectivePoint::double` doubles the represented point. -/
-theorem double_spec (self : ProjectivePoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem double_spec (self : ProjectivePoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
-    double self ⦃ (r : CompletedPoint.«i686-tables») =>
+    double self ⦃ (r : CompletedPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = 2 • self.toPoint ∧ r.MulBounded ⦄ :=
   spec_mono (double_toCompleted self hself) fun r ⟨hr, hb⟩ => by
-    rw [CompletedPoint.«i686-tables».onCurve_iff,
-      CompletedPoint.«i686-tables».toPoint_def, hr,
-      ProjectivePoint.«i686-tables».toPoint_def]
+    rw [CompletedPoint.«32bit-tables».onCurve_iff,
+      CompletedPoint.«32bit-tables».toPoint_def, hr,
+      ProjectivePoint.«32bit-tables».toPoint_def]
     exact ⟨Projective.double_onCurve hon,
       Projective.toPoint_double hon, hb⟩
 
-end «ProjectivePointi686-tables»
+end «ProjectivePoint32bit-tables»
 
-namespace «ProjectivePointx86_64-no-tables»
+namespace «ProjectivePoint64bit-notables»
 
-theorem double_eq (self : ProjectivePoint.«x86_64-no-tables») :
+theorem double_eq (self : ProjectivePoint.«64bit-notables») :
     double self = Backend.projectiveDouble Backend.U64
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«x86_64-no-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«64bit-notables»))
       self.X self.Y self.Z := rfl
 
 /-- `ProjectivePoint::double`: the "dbl-2008-bbjlp" formula `Projective.double`; limbs `< 2^52`
 in, `< 2^54` out. -/
 @[step]
-theorem double_toCompleted (self : ProjectivePoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
-    double self ⦃ (r : CompletedPoint.«x86_64-no-tables») =>
+theorem double_toCompleted (self : ProjectivePoint.«64bit-notables») (hself : self.LimbsLt 52) :
+    double self ⦃ (r : CompletedPoint.«64bit-notables») =>
       r.toCompleted = self.toProjective.double ∧ r.LimbsLt 54 ⦄ := by
   obtain ⟨h1, h2, h3⟩ := hself
   rw [double_eq]
@@ -149,35 +149,35 @@ theorem double_toCompleted (self : ProjectivePoint.«x86_64-no-tables») (hself 
     Backend.U64.add_spec Backend.U64.sub_spec Backend.U64.square_spec Backend.U64.square2_spec _ _ _
     _ h1 h2 h3)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [CompletedPoint.«x86_64-no-tables».toCompleted_def,
-    ProjectivePoint.«x86_64-no-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [CompletedPoint.«64bit-notables».toCompleted_def,
+    ProjectivePoint.«64bit-notables».toProjective_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `ProjectivePoint::double` doubles the represented point. -/
-theorem double_spec (self : ProjectivePoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem double_spec (self : ProjectivePoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
-    double self ⦃ (r : CompletedPoint.«x86_64-no-tables») =>
+    double self ⦃ (r : CompletedPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = 2 • self.toPoint ∧ r.LimbsLt 54 ⦄ :=
   spec_mono (double_toCompleted self hself) fun r ⟨hr, hb⟩ => by
-    rw [CompletedPoint.«x86_64-no-tables».onCurve_iff,
-      CompletedPoint.«x86_64-no-tables».toPoint_def, hr,
-      ProjectivePoint.«x86_64-no-tables».toPoint_def]
+    rw [CompletedPoint.«64bit-notables».onCurve_iff,
+      CompletedPoint.«64bit-notables».toPoint_def, hr,
+      ProjectivePoint.«64bit-notables».toPoint_def]
     exact ⟨Projective.double_onCurve hon,
       Projective.toPoint_double hon, hb⟩
 
-end «ProjectivePointx86_64-no-tables»
+end «ProjectivePoint64bit-notables»
 
-namespace «ProjectivePointi686-no-tables»
+namespace «ProjectivePoint32bit-notables»
 
-theorem double_eq (self : ProjectivePoint.«i686-no-tables») :
+theorem double_eq (self : ProjectivePoint.«32bit-notables») :
     double self = Backend.projectiveDouble Backend.U32
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«i686-no-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«32bit-notables»))
       self.X self.Y self.Z := rfl
 
 /-- `ProjectivePoint::double`: the "dbl-2008-bbjlp" formula `Projective.double`; limbs `< 2^26`
 in, `< 3 · 2^26` out. -/
 @[step]
-theorem double_toCompleted (self : ProjectivePoint.«i686-no-tables») (hself : self.LimbsLt 26) :
-    double self ⦃ (r : CompletedPoint.«i686-no-tables») =>
+theorem double_toCompleted (self : ProjectivePoint.«32bit-notables») (hself : self.LimbsLt 26) :
+    double self ⦃ (r : CompletedPoint.«32bit-notables») =>
       r.toCompleted = self.toProjective.double ∧ r.MulBounded ⦄ := by
   obtain ⟨h1, h2, h3⟩ := hself
   rw [double_eq]
@@ -185,21 +185,21 @@ theorem double_toCompleted (self : ProjectivePoint.«i686-no-tables») (hself : 
     Backend.U32.add_spec Backend.U32.sub_spec Backend.U32.square_spec Backend.U32.square2_spec _ _ _
     _ h1 h2 h3)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [CompletedPoint.«i686-no-tables».toCompleted_def,
-    ProjectivePoint.«i686-no-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [CompletedPoint.«32bit-notables».toCompleted_def,
+    ProjectivePoint.«32bit-notables».toProjective_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `ProjectivePoint::double` doubles the represented point. -/
-theorem double_spec (self : ProjectivePoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem double_spec (self : ProjectivePoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
-    double self ⦃ (r : CompletedPoint.«i686-no-tables») =>
+    double self ⦃ (r : CompletedPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = 2 • self.toPoint ∧ r.MulBounded ⦄ :=
   spec_mono (double_toCompleted self hself) fun r ⟨hr, hb⟩ => by
-    rw [CompletedPoint.«i686-no-tables».onCurve_iff,
-      CompletedPoint.«i686-no-tables».toPoint_def, hr,
-      ProjectivePoint.«i686-no-tables».toPoint_def]
+    rw [CompletedPoint.«32bit-notables».onCurve_iff,
+      CompletedPoint.«32bit-notables».toPoint_def, hr,
+      ProjectivePoint.«32bit-notables».toPoint_def]
     exact ⟨Projective.double_onCurve hon,
       Projective.toPoint_double hon, hb⟩
 
-end «ProjectivePointi686-no-tables»
+end «ProjectivePoint32bit-notables»
 
 end Curve25519Dalek.backend.serial.curve_models

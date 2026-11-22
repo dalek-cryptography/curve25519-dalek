@@ -15,14 +15,14 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 
 namespace Curve25519Dalek.edwards
 
-namespace «EdwardsPointx86_64-tables»
+namespace «EdwardsPoint64bit-tables»
 
 /-- `EdwardsPoint::mul_clamped`: `clamp bytes • self`, with RFC 7748's clamping of the
 little-endian value of `bytes`; limbs `< 2^52`. -/
 @[step]
-theorem mul_clamped_spec (self : EdwardsPoint.«x86_64-tables») (bytes : Array U8 32#usize)
+theorem mul_clamped_spec (self : EdwardsPoint.«64bit-tables») (bytes : Array U8 32#usize)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) :
-    mul_clamped self bytes ⦃ (r : EdwardsPoint.«x86_64-tables») =>
+    mul_clamped self bytes ⦃ (r : EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   simp only [Aeneas.Std.Array.decodeScalar25519_toVector]
   unfold mul_clamped
@@ -36,16 +36,16 @@ theorem mul_clamped_spec (self : EdwardsPoint.«x86_64-tables») (bytes : Array 
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hca ▸ hr, hrb⟩
 
-end «EdwardsPointx86_64-tables»
+end «EdwardsPoint64bit-tables»
 
-namespace «EdwardsPointi686-tables»
+namespace «EdwardsPoint32bit-tables»
 
 /-- `EdwardsPoint::mul_clamped`: `clamp bytes • self`, with RFC 7748's clamping of the
 little-endian value of `bytes`; limbs `< 2^26`. -/
 @[step]
-theorem mul_clamped_spec (self : EdwardsPoint.«i686-tables») (bytes : Array U8 32#usize)
+theorem mul_clamped_spec (self : EdwardsPoint.«32bit-tables») (bytes : Array U8 32#usize)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) :
-    mul_clamped self bytes ⦃ (r : EdwardsPoint.«i686-tables») =>
+    mul_clamped self bytes ⦃ (r : EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   simp only [Aeneas.Std.Array.decodeScalar25519_toVector]
   unfold mul_clamped
@@ -59,16 +59,16 @@ theorem mul_clamped_spec (self : EdwardsPoint.«i686-tables») (bytes : Array U8
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hca ▸ hr, hrb⟩
 
-end «EdwardsPointi686-tables»
+end «EdwardsPoint32bit-tables»
 
-namespace «EdwardsPointx86_64-no-tables»
+namespace «EdwardsPoint64bit-notables»
 
 /-- `EdwardsPoint::mul_clamped`: `clamp bytes • self`, with RFC 7748's clamping of the
 little-endian value of `bytes`; limbs `< 2^52`. -/
 @[step]
-theorem mul_clamped_spec (self : EdwardsPoint.«x86_64-no-tables») (bytes : Array U8 32#usize)
+theorem mul_clamped_spec (self : EdwardsPoint.«64bit-notables») (bytes : Array U8 32#usize)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) :
-    mul_clamped self bytes ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
+    mul_clamped self bytes ⦃ (r : EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   simp only [Aeneas.Std.Array.decodeScalar25519_toVector]
   unfold mul_clamped
@@ -82,16 +82,16 @@ theorem mul_clamped_spec (self : EdwardsPoint.«x86_64-no-tables») (bytes : Arr
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hca ▸ hr, hrb⟩
 
-end «EdwardsPointx86_64-no-tables»
+end «EdwardsPoint64bit-notables»
 
-namespace «EdwardsPointi686-no-tables»
+namespace «EdwardsPoint32bit-notables»
 
 /-- `EdwardsPoint::mul_clamped`: `clamp bytes • self`, with RFC 7748's clamping of the
 little-endian value of `bytes`; limbs `< 2^26`. -/
 @[step]
-theorem mul_clamped_spec (self : EdwardsPoint.«i686-no-tables») (bytes : Array U8 32#usize)
+theorem mul_clamped_spec (self : EdwardsPoint.«32bit-notables») (bytes : Array U8 32#usize)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) :
-    mul_clamped self bytes ⦃ (r : EdwardsPoint.«i686-no-tables») =>
+    mul_clamped self bytes ⦃ (r : EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   simp only [Aeneas.Std.Array.decodeScalar25519_toVector]
   unfold mul_clamped
@@ -105,6 +105,6 @@ theorem mul_clamped_spec (self : EdwardsPoint.«i686-no-tables») (bytes : Array
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hca ▸ hr, hrb⟩
 
-end «EdwardsPointi686-no-tables»
+end «EdwardsPoint32bit-notables»
 
 end Curve25519Dalek.edwards

@@ -30,7 +30,7 @@ collect_limbs odd128Limbs from AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128
 
 /-- The table built from its 32 field elements in source order. -/
 private def mkOdd128Table (fes : List FieldElement51) :
-    window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables» :=
+    window.NafLookupTable5 ProjectiveNielsPoint.«64bit-tables» :=
   if h : (entriesProj fes).length = (8#usize).val then Array.make 8#usize (entriesProj fes) h
   else default
 
@@ -38,7 +38,7 @@ private theorem mkOdd128Table_get {fes : List FieldElement51} (hlen : fes.length
     (hk : k < 8) :
     (mkOdd128Table fes)[k]! =
       (⟨fes[4 * k]!, fes[4 * k + 1]!, fes[4 * k + 2]!, fes[4 * k + 3]!⟩ :
-        ProjectiveNielsPoint.«x86_64-tables») := by
+        ProjectiveNielsPoint.«64bit-tables») := by
   have h8 : (entriesProj fes).length = (8#usize).val := by
     rw [entriesProj_length, hlen]
     rfl
@@ -72,7 +72,7 @@ private theorem odd128_bounded :
 @[step]
 theorem AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128_spec :
     AFFINE_ODD_MULTIPLES_OF_BASEPOINT_128
-      ⦃ (r : window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables») =>
+      ⦃ (r : window.NafLookupTable5 ProjectiveNielsPoint.«64bit-tables») =>
         r.Represents (2 ^ 128 • basepoint) ∧ r.LimbsLt 54 ⦄ := by
   rw [odd128_eq, spec_ok]
   constructor

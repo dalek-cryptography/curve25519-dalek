@@ -18,13 +18,13 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 
 namespace Curve25519Dalek.edwards
 
-namespace «EdwardsPointx86_64-tables»
+namespace «EdwardsPoint64bit-tables»
 
 /-- `EdwardsPoint::mul_base_clamped`: `clamp bytes • B`, with RFC 7748's clamping of the
 little-endian value of `bytes`; limbs `< 2^52`. -/
 @[step]
 theorem mul_base_clamped_spec (bytes : Array U8 32#usize) :
-    mul_base_clamped bytes ⦃ (r : EdwardsPoint.«x86_64-tables») =>
+    mul_base_clamped bytes ⦃ (r : EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • basepoint ∧ r.LimbsLt 52 ⦄ := by
   simp only [Aeneas.Std.Array.decodeScalar25519_toVector]
   unfold mul_base_clamped
@@ -37,15 +37,15 @@ theorem mul_base_clamped_spec (bytes : Array U8 32#usize) :
   step with mul_base_spec _ (hca ▸ clamp_lt _) as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hca ▸ hr, hrb⟩
 
-end «EdwardsPointx86_64-tables»
+end «EdwardsPoint64bit-tables»
 
-namespace «EdwardsPointi686-tables»
+namespace «EdwardsPoint32bit-tables»
 
 /-- `EdwardsPoint::mul_base_clamped`: `clamp bytes • B`, with RFC 7748's clamping of the
 little-endian value of `bytes`; limbs `< 2^26`. -/
 @[step]
 theorem mul_base_clamped_spec (bytes : Array U8 32#usize) :
-    mul_base_clamped bytes ⦃ (r : EdwardsPoint.«i686-tables») =>
+    mul_base_clamped bytes ⦃ (r : EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • basepoint ∧ r.LimbsLt 26 ⦄ := by
   simp only [Aeneas.Std.Array.decodeScalar25519_toVector]
   unfold mul_base_clamped
@@ -58,15 +58,15 @@ theorem mul_base_clamped_spec (bytes : Array U8 32#usize) :
   step with mul_base_spec _ (hca ▸ clamp_lt _) as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hca ▸ hr, hrb⟩
 
-end «EdwardsPointi686-tables»
+end «EdwardsPoint32bit-tables»
 
-namespace «EdwardsPointx86_64-no-tables»
+namespace «EdwardsPoint64bit-notables»
 
 /-- `EdwardsPoint::mul_base_clamped`: `clamp bytes • B`, with RFC 7748's clamping of the
 little-endian value of `bytes`; limbs `< 2^52`. -/
 @[step]
 theorem mul_base_clamped_spec (bytes : Array U8 32#usize) :
-    mul_base_clamped bytes ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
+    mul_base_clamped bytes ⦃ (r : EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • basepoint ∧ r.LimbsLt 52 ⦄ := by
   simp only [Aeneas.Std.Array.decodeScalar25519_toVector]
   unfold mul_base_clamped
@@ -79,15 +79,15 @@ theorem mul_base_clamped_spec (bytes : Array U8 32#usize) :
   step with mul_base_spec _ (hca ▸ clamp_lt _) as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hca ▸ hr, hrb⟩
 
-end «EdwardsPointx86_64-no-tables»
+end «EdwardsPoint64bit-notables»
 
-namespace «EdwardsPointi686-no-tables»
+namespace «EdwardsPoint32bit-notables»
 
 /-- `EdwardsPoint::mul_base_clamped`: `clamp bytes • B`, with RFC 7748's clamping of the
 little-endian value of `bytes`; limbs `< 2^26`. -/
 @[step]
 theorem mul_base_clamped_spec (bytes : Array U8 32#usize) :
-    mul_base_clamped bytes ⦃ (r : EdwardsPoint.«i686-no-tables») =>
+    mul_base_clamped bytes ⦃ (r : EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • basepoint ∧ r.LimbsLt 26 ⦄ := by
   simp only [Aeneas.Std.Array.decodeScalar25519_toVector]
   unfold mul_base_clamped
@@ -100,6 +100,6 @@ theorem mul_base_clamped_spec (bytes : Array U8 32#usize) :
   step with mul_base_spec _ (hca ▸ clamp_lt _) as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hca ▸ hr, hrb⟩
 
-end «EdwardsPointi686-no-tables»
+end «EdwardsPoint32bit-notables»
 
 end Curve25519Dalek.edwards

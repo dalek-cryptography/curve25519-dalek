@@ -23,23 +23,23 @@ open Curve25519Dalek.backend.serial.curve_models
 
 namespace Curve25519Dalek.backend.serial.scalar_mul.precomputed_straus
 
-namespace VartimePrecomputedStraus.«x86_64-tables».Insts
-namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-tables»
+namespace VartimePrecomputedStraus.«64bit-tables».Insts
+namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint64bit-tables»
 
-open window.«NafLookupTable8AffineNielsPointx86_64-tables».Insts in
+open window.«NafLookupTable8AffineNielsPoint64bit-tables».Insts in
 /-- `VartimePrecomputedStraus::new`: a precomputation of the points the input yields (through
 `borrow`); limbs `< 2^52` in, `< 2^54` out. -/
 @[step]
 theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
     (pointsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
-    (borrowInst : core.borrow.Borrow Clause0_Item edwards.EdwardsPoint.«x86_64-tables»)
-    (static_points : I) (ys : List Clause0_Item) (ps : List edwards.EdwardsPoint.«x86_64-tables»)
+    (borrowInst : core.borrow.Borrow Clause0_Item edwards.EdwardsPoint.«64bit-tables»)
+    (static_points : I) (ys : List Clause0_Item) (ps : List edwards.EdwardsPoint.«64bit-tables»)
     (hstatic_points : pointsInst.Yields static_points ys)
     (hborrow : List.Forall₂
-      (fun y P => borrowInst.borrow y ⦃ (P' : edwards.EdwardsPoint.«x86_64-tables») => P' = P ⦄) ys
+      (fun y P => borrowInst.borrow y ⦃ (P' : edwards.EdwardsPoint.«64bit-tables») => P' = P ⦄) ys
           ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52 ∧ P.OnCurve) (hys : ys.length ≤ Usize.max) :
-    new pointsInst borrowInst static_points ⦃ (r : VartimePrecomputedStraus.«x86_64-tables») =>
+    new pointsInst borrowInst static_points ⦃ (r : VartimePrecomputedStraus.«64bit-tables») =>
       r.Represents (ps.map (·.toPoint)) ∧ r.LimbsLt 54 ⦄ := by
   unfold new
   have h : pointsInst.into_iter static_points
@@ -47,10 +47,10 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
   step with h as ⟨it, hit⟩
   unfold new_loop
   apply spec_bind (collect.collectMapLoop_spec _ borrowInst.borrow
-    «CoreConvertFromSharedAEdwardsPointx86_64-tables».«from»
+    «CoreConvertFromSharedAEdwardsPoint64bit-tables».«from»
     (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 54) it ys hit ps hborrow
     (fun P hP =>
-        «CoreConvertFromSharedAEdwardsPointx86_64-tables».from_spec
+        «CoreConvertFromSharedAEdwardsPoint64bit-tables».from_spec
       P (hps P hP).1 (hps P hP).2) (alloc.vec.Vec.new _) (by simpa using hys))
   rintro v ⟨zs, hv, hzs⟩
   rw [WP.spec_ok]
@@ -63,26 +63,26 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
     obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem ht
     exact ((List.forall₂_iff_get.mp hzs).2 i (hzs.length_eq ▸ hi) hi).2
 
-end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-tables»
-end VartimePrecomputedStraus.«x86_64-tables».Insts
+end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint64bit-tables»
+end VartimePrecomputedStraus.«64bit-tables».Insts
 
-namespace VartimePrecomputedStraus.«i686-tables».Insts
-namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-tables»
+namespace VartimePrecomputedStraus.«32bit-tables».Insts
+namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-tables»
 
-open window.«NafLookupTable8AffineNielsPointi686-tables».Insts in
+open window.«NafLookupTable8AffineNielsPoint32bit-tables».Insts in
 /-- `VartimePrecomputedStraus::new`: a precomputation of the points the input yields (through
 `borrow`); limbs `< 2^26` in, `< 2^27` out. -/
 @[step]
 theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
     (pointsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
-    (borrowInst : core.borrow.Borrow Clause0_Item edwards.EdwardsPoint.«i686-tables»)
-    (static_points : I) (ys : List Clause0_Item) (ps : List edwards.EdwardsPoint.«i686-tables»)
+    (borrowInst : core.borrow.Borrow Clause0_Item edwards.EdwardsPoint.«32bit-tables»)
+    (static_points : I) (ys : List Clause0_Item) (ps : List edwards.EdwardsPoint.«32bit-tables»)
     (hstatic_points : pointsInst.Yields static_points ys)
     (hborrow : List.Forall₂
-      (fun y P => borrowInst.borrow y ⦃ (P' : edwards.EdwardsPoint.«i686-tables») => P' = P ⦄) ys
+      (fun y P => borrowInst.borrow y ⦃ (P' : edwards.EdwardsPoint.«32bit-tables») => P' = P ⦄) ys
           ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26 ∧ P.OnCurve) (hys : ys.length ≤ Usize.max) :
-    new pointsInst borrowInst static_points ⦃ (r : VartimePrecomputedStraus.«i686-tables») =>
+    new pointsInst borrowInst static_points ⦃ (r : VartimePrecomputedStraus.«32bit-tables») =>
       r.Represents (ps.map (·.toPoint)) ∧ r.LimbsLt 27 ⦄ := by
   unfold new
   have h : pointsInst.into_iter static_points
@@ -90,10 +90,10 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
   step with h as ⟨it, hit⟩
   unfold new_loop
   apply spec_bind (collect.collectMapLoop_spec _ borrowInst.borrow
-    «CoreConvertFromSharedAEdwardsPointi686-tables».«from»
+    «CoreConvertFromSharedAEdwardsPoint32bit-tables».«from»
     (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 27) it ys hit ps hborrow
     (fun P hP =>
-        «CoreConvertFromSharedAEdwardsPointi686-tables».from_spec
+        «CoreConvertFromSharedAEdwardsPoint32bit-tables».from_spec
       P (hps P hP).1 (hps P hP).2) (alloc.vec.Vec.new _) (by simpa using hys))
   rintro v ⟨zs, hv, hzs⟩
   rw [WP.spec_ok]
@@ -106,26 +106,26 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
     obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem ht
     exact ((List.forall₂_iff_get.mp hzs).2 i (hzs.length_eq ▸ hi) hi).2
 
-end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-tables»
-end VartimePrecomputedStraus.«i686-tables».Insts
+end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-tables»
+end VartimePrecomputedStraus.«32bit-tables».Insts
 
-namespace VartimePrecomputedStraus.«x86_64-no-tables».Insts
-namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-no-tables»
+namespace VartimePrecomputedStraus.«64bit-notables».Insts
+namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint64bit-notables»
 
-open window.«NafLookupTable8AffineNielsPointx86_64-no-tables».Insts in
+open window.«NafLookupTable8AffineNielsPoint64bit-notables».Insts in
 /-- `VartimePrecomputedStraus::new`: a precomputation of the points the input yields (through
 `borrow`); limbs `< 2^52` in, `< 2^54` out. -/
 @[step]
 theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
     (pointsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
-    (borrowInst : core.borrow.Borrow Clause0_Item edwards.EdwardsPoint.«x86_64-no-tables»)
-    (static_points : I) (ys : List Clause0_Item) (ps : List edwards.EdwardsPoint.«x86_64-no-tables»)
+    (borrowInst : core.borrow.Borrow Clause0_Item edwards.EdwardsPoint.«64bit-notables»)
+    (static_points : I) (ys : List Clause0_Item) (ps : List edwards.EdwardsPoint.«64bit-notables»)
     (hstatic_points : pointsInst.Yields static_points ys)
     (hborrow : List.Forall₂
-      (fun y P => borrowInst.borrow y ⦃ (P' : edwards.EdwardsPoint.«x86_64-no-tables») => P' = P ⦄)
+      (fun y P => borrowInst.borrow y ⦃ (P' : edwards.EdwardsPoint.«64bit-notables») => P' = P ⦄)
           ys ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52 ∧ P.OnCurve) (hys : ys.length ≤ Usize.max) :
-    new pointsInst borrowInst static_points ⦃ (r : VartimePrecomputedStraus.«x86_64-no-tables») =>
+    new pointsInst borrowInst static_points ⦃ (r : VartimePrecomputedStraus.«64bit-notables») =>
       r.Represents (ps.map (·.toPoint)) ∧ r.LimbsLt 54 ⦄ := by
   unfold new
   have h : pointsInst.into_iter static_points
@@ -133,10 +133,10 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
   step with h as ⟨it, hit⟩
   unfold new_loop
   apply spec_bind (collect.collectMapLoop_spec _ borrowInst.borrow
-    «CoreConvertFromSharedAEdwardsPointx86_64-no-tables».«from»
+    «CoreConvertFromSharedAEdwardsPoint64bit-notables».«from»
     (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 54) it ys hit ps hborrow
     (fun P hP =>
-        «CoreConvertFromSharedAEdwardsPointx86_64-no-tables».from_spec
+        «CoreConvertFromSharedAEdwardsPoint64bit-notables».from_spec
       P (hps P hP).1 (hps P hP).2) (alloc.vec.Vec.new _) (by simpa using hys))
   rintro v ⟨zs, hv, hzs⟩
   rw [WP.spec_ok]
@@ -149,26 +149,26 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
     obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem ht
     exact ((List.forall₂_iff_get.mp hzs).2 i (hzs.length_eq ▸ hi) hi).2
 
-end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-no-tables»
-end VartimePrecomputedStraus.«x86_64-no-tables».Insts
+end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint64bit-notables»
+end VartimePrecomputedStraus.«64bit-notables».Insts
 
-namespace VartimePrecomputedStraus.«i686-no-tables».Insts
-namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-no-tables»
+namespace VartimePrecomputedStraus.«32bit-notables».Insts
+namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-notables»
 
-open window.«NafLookupTable8AffineNielsPointi686-no-tables».Insts in
+open window.«NafLookupTable8AffineNielsPoint32bit-notables».Insts in
 /-- `VartimePrecomputedStraus::new`: a precomputation of the points the input yields (through
 `borrow`); limbs `< 2^26` in, `< 2^27` out. -/
 @[step]
 theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
     (pointsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
-    (borrowInst : core.borrow.Borrow Clause0_Item edwards.EdwardsPoint.«i686-no-tables»)
-    (static_points : I) (ys : List Clause0_Item) (ps : List edwards.EdwardsPoint.«i686-no-tables»)
+    (borrowInst : core.borrow.Borrow Clause0_Item edwards.EdwardsPoint.«32bit-notables»)
+    (static_points : I) (ys : List Clause0_Item) (ps : List edwards.EdwardsPoint.«32bit-notables»)
     (hstatic_points : pointsInst.Yields static_points ys)
     (hborrow : List.Forall₂
-      (fun y P => borrowInst.borrow y ⦃ (P' : edwards.EdwardsPoint.«i686-no-tables») => P' = P ⦄)
+      (fun y P => borrowInst.borrow y ⦃ (P' : edwards.EdwardsPoint.«32bit-notables») => P' = P ⦄)
           ys ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26 ∧ P.OnCurve) (hys : ys.length ≤ Usize.max) :
-    new pointsInst borrowInst static_points ⦃ (r : VartimePrecomputedStraus.«i686-no-tables») =>
+    new pointsInst borrowInst static_points ⦃ (r : VartimePrecomputedStraus.«32bit-notables») =>
       r.Represents (ps.map (·.toPoint)) ∧ r.LimbsLt 27 ⦄ := by
   unfold new
   have h : pointsInst.into_iter static_points
@@ -176,10 +176,10 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
   step with h as ⟨it, hit⟩
   unfold new_loop
   apply spec_bind (collect.collectMapLoop_spec _ borrowInst.borrow
-    «CoreConvertFromSharedAEdwardsPointi686-no-tables».«from»
+    «CoreConvertFromSharedAEdwardsPoint32bit-notables».«from»
     (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 27) it ys hit ps hborrow
     (fun P hP =>
-        «CoreConvertFromSharedAEdwardsPointi686-no-tables».from_spec
+        «CoreConvertFromSharedAEdwardsPoint32bit-notables».from_spec
       P (hps P hP).1 (hps P hP).2) (alloc.vec.Vec.new _) (by simpa using hys))
   rintro v ⟨zs, hv, hzs⟩
   rw [WP.spec_ok]
@@ -192,7 +192,7 @@ theorem new_spec {I Clause0_Item Clause0_IntoIter : Type}
     obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem ht
     exact ((List.forall₂_iff_get.mp hzs).2 i (hzs.length_eq ▸ hi) hi).2
 
-end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-no-tables»
-end VartimePrecomputedStraus.«i686-no-tables».Insts
+end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-notables»
+end VartimePrecomputedStraus.«32bit-notables».Insts
 
 end Curve25519Dalek.backend.serial.scalar_mul.precomputed_straus

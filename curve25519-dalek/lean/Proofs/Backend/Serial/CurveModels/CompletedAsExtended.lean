@@ -45,137 +45,137 @@ end Curve25519Dalek.Backend
 
 namespace Curve25519Dalek.backend.serial.curve_models
 
-namespace «CompletedPointx86_64-tables»
+namespace «CompletedPoint64bit-tables»
 
-theorem as_extended_eq (self : CompletedPoint.«x86_64-tables») :
+theorem as_extended_eq (self : CompletedPoint.«64bit-tables») :
     as_extended self = Backend.completedAsExtended Backend.U64
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«x86_64-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«64bit-tables»))
       self.X self.Y self.Z self.T := rfl
 
 /-- `CompletedPoint::as_extended`: `(X T : Y Z : Z T : X Y)`, limbs `< 2^52`. -/
 @[step]
-theorem as_extended_toExtended (self : CompletedPoint.«x86_64-tables») (hself : self.LimbsLt 54) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+theorem as_extended_toExtended (self : CompletedPoint.«64bit-tables») (hself : self.LimbsLt 54) :
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.toExtended = self.toCompleted.toExtended ∧ r.LimbsLt 52 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
   rw [as_extended_eq]
   apply spec_mono (Backend.completedAsExtended_spec Backend.U64
     Backend.U64.mul_spec _ _ _ _ _ h1 h2 h3 h4)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [edwards.EdwardsPoint.«x86_64-tables».toExtended_def,
-    CompletedPoint.«x86_64-tables».toCompleted_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [edwards.EdwardsPoint.«64bit-tables».toExtended_def,
+    CompletedPoint.«64bit-tables».toCompleted_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `CompletedPoint::as_extended` represents the same point. -/
-theorem as_extended_spec (self : CompletedPoint.«x86_64-tables») (hself : self.LimbsLt 54)
+theorem as_extended_spec (self : CompletedPoint.«64bit-tables») (hself : self.LimbsLt 54)
     (hon : self.OnCurve) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
-    rw [edwards.EdwardsPoint.«x86_64-tables».onCurve_iff,
-      edwards.EdwardsPoint.«x86_64-tables».toPoint_def, hr,
-      CompletedPoint.«x86_64-tables».toPoint_def]
+    rw [edwards.EdwardsPoint.«64bit-tables».onCurve_iff,
+      edwards.EdwardsPoint.«64bit-tables».toPoint_def, hr,
+      CompletedPoint.«64bit-tables».toPoint_def]
     exact ⟨Completed.onCurve_toExtended hon, Completed.toPoint_toExtended hon, hb⟩
 
-end «CompletedPointx86_64-tables»
+end «CompletedPoint64bit-tables»
 
-namespace «CompletedPointi686-tables»
+namespace «CompletedPoint32bit-tables»
 
-theorem as_extended_eq (self : CompletedPoint.«i686-tables») :
+theorem as_extended_eq (self : CompletedPoint.«32bit-tables») :
     as_extended self = Backend.completedAsExtended Backend.U32
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«i686-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«32bit-tables»))
       self.X self.Y self.Z self.T := rfl
 
 /-- `CompletedPoint::as_extended`: `(X T : Y Z : Z T : X Y)`, limbs `< 2^26`. -/
 @[step]
-theorem as_extended_toExtended (self : CompletedPoint.«i686-tables») (hself : self.MulBounded) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+theorem as_extended_toExtended (self : CompletedPoint.«32bit-tables») (hself : self.MulBounded) :
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.toExtended = self.toCompleted.toExtended ∧ r.LimbsLt 26 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
   rw [as_extended_eq]
   apply spec_mono (Backend.completedAsExtended_spec Backend.U32
     Backend.U32.mul_spec _ _ _ _ _ h1 h2 h3 h4)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [edwards.EdwardsPoint.«i686-tables».toExtended_def,
-    CompletedPoint.«i686-tables».toCompleted_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [edwards.EdwardsPoint.«32bit-tables».toExtended_def,
+    CompletedPoint.«32bit-tables».toCompleted_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `CompletedPoint::as_extended` represents the same point. -/
-theorem as_extended_spec (self : CompletedPoint.«i686-tables») (hself : self.MulBounded)
+theorem as_extended_spec (self : CompletedPoint.«32bit-tables») (hself : self.MulBounded)
     (hon : self.OnCurve) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
-    rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff,
-      edwards.EdwardsPoint.«i686-tables».toPoint_def, hr,
-      CompletedPoint.«i686-tables».toPoint_def]
+    rw [edwards.EdwardsPoint.«32bit-tables».onCurve_iff,
+      edwards.EdwardsPoint.«32bit-tables».toPoint_def, hr,
+      CompletedPoint.«32bit-tables».toPoint_def]
     exact ⟨Completed.onCurve_toExtended hon, Completed.toPoint_toExtended hon, hb⟩
 
-end «CompletedPointi686-tables»
+end «CompletedPoint32bit-tables»
 
-namespace «CompletedPointx86_64-no-tables»
+namespace «CompletedPoint64bit-notables»
 
-theorem as_extended_eq (self : CompletedPoint.«x86_64-no-tables») :
+theorem as_extended_eq (self : CompletedPoint.«64bit-notables») :
     as_extended self = Backend.completedAsExtended Backend.U64
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«x86_64-no-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«64bit-notables»))
       self.X self.Y self.Z self.T := rfl
 
 /-- `CompletedPoint::as_extended`: `(X T : Y Z : Z T : X Y)`, limbs `< 2^52`. -/
 @[step]
-theorem as_extended_toExtended (self : CompletedPoint.«x86_64-no-tables») (hself : self.LimbsLt 54)
+theorem as_extended_toExtended (self : CompletedPoint.«64bit-notables») (hself : self.LimbsLt 54)
     :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.toExtended = self.toCompleted.toExtended ∧ r.LimbsLt 52 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
   rw [as_extended_eq]
   apply spec_mono (Backend.completedAsExtended_spec Backend.U64
     Backend.U64.mul_spec _ _ _ _ _ h1 h2 h3 h4)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def,
-    CompletedPoint.«x86_64-no-tables».toCompleted_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [edwards.EdwardsPoint.«64bit-notables».toExtended_def,
+    CompletedPoint.«64bit-notables».toCompleted_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `CompletedPoint::as_extended` represents the same point. -/
-theorem as_extended_spec (self : CompletedPoint.«x86_64-no-tables») (hself : self.LimbsLt 54)
+theorem as_extended_spec (self : CompletedPoint.«64bit-notables») (hself : self.LimbsLt 54)
     (hon : self.OnCurve) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
-    rw [edwards.EdwardsPoint.«x86_64-no-tables».onCurve_iff,
-      edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def, hr,
-      CompletedPoint.«x86_64-no-tables».toPoint_def]
+    rw [edwards.EdwardsPoint.«64bit-notables».onCurve_iff,
+      edwards.EdwardsPoint.«64bit-notables».toPoint_def, hr,
+      CompletedPoint.«64bit-notables».toPoint_def]
     exact ⟨Completed.onCurve_toExtended hon, Completed.toPoint_toExtended hon, hb⟩
 
-end «CompletedPointx86_64-no-tables»
+end «CompletedPoint64bit-notables»
 
-namespace «CompletedPointi686-no-tables»
+namespace «CompletedPoint32bit-notables»
 
-theorem as_extended_eq (self : CompletedPoint.«i686-no-tables») :
+theorem as_extended_eq (self : CompletedPoint.«32bit-notables») :
     as_extended self = Backend.completedAsExtended Backend.U32
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«i686-no-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«32bit-notables»))
       self.X self.Y self.Z self.T := rfl
 
 /-- `CompletedPoint::as_extended`: `(X T : Y Z : Z T : X Y)`, limbs `< 2^26`. -/
 @[step]
-theorem as_extended_toExtended (self : CompletedPoint.«i686-no-tables») (hself : self.MulBounded) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+theorem as_extended_toExtended (self : CompletedPoint.«32bit-notables») (hself : self.MulBounded) :
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.toExtended = self.toCompleted.toExtended ∧ r.LimbsLt 26 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
   rw [as_extended_eq]
   apply spec_mono (Backend.completedAsExtended_spec Backend.U32
     Backend.U32.mul_spec _ _ _ _ _ h1 h2 h3 h4)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def,
-    CompletedPoint.«i686-no-tables».toCompleted_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [edwards.EdwardsPoint.«32bit-notables».toExtended_def,
+    CompletedPoint.«32bit-notables».toCompleted_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `CompletedPoint::as_extended` represents the same point. -/
-theorem as_extended_spec (self : CompletedPoint.«i686-no-tables») (hself : self.MulBounded)
+theorem as_extended_spec (self : CompletedPoint.«32bit-notables») (hself : self.MulBounded)
     (hon : self.OnCurve) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
-    rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff,
-      edwards.EdwardsPoint.«i686-no-tables».toPoint_def, hr,
-      CompletedPoint.«i686-no-tables».toPoint_def]
+    rw [edwards.EdwardsPoint.«32bit-notables».onCurve_iff,
+      edwards.EdwardsPoint.«32bit-notables».toPoint_def, hr,
+      CompletedPoint.«32bit-notables».toPoint_def]
     exact ⟨Completed.onCurve_toExtended hon, Completed.toPoint_toExtended hon, hb⟩
 
-end «CompletedPointi686-no-tables»
+end «CompletedPoint32bit-notables»
 
 end Curve25519Dalek.backend.serial.curve_models

@@ -30,10 +30,10 @@ open Curve25519Dalek.backend.serial.u64.scalar (montgomeryRadix)
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem reduce.«x86_64-tables_spec» (self : Scalar) :
-    reduce.«x86_64-tables» self ⦃ (r : Scalar) =>
+theorem reduce.«64bit-tables_spec» (self : Scalar) :
+    reduce.«64bit-tables» self ⦃ (r : Scalar) =>
       r.asNat = self.asNat % L ⦄ := by
-  unfold reduce.«x86_64-tables»
+  unfold reduce.«64bit-tables»
   obtain ⟨hR, hRb⟩ := backend.serial.u64.constants.R_spec
   step as ⟨x, hx, hxb⟩
   step with backend.serial.u64.scalar.Scalar52.mul_internal_spec x _ hxb hRb as ⟨xR, hxR, hxRb⟩
@@ -55,10 +55,10 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem reduce.«x86_64-no-tables_spec» (self : Scalar) :
-    reduce.«x86_64-no-tables» self ⦃ (r : Scalar) =>
+theorem reduce.«64bit-notables_spec» (self : Scalar) :
+    reduce.«64bit-notables» self ⦃ (r : Scalar) =>
       r.asNat = self.asNat % L ⦄ :=
-  reduce.«x86_64-tables_spec» self
+  reduce.«64bit-tables_spec» self
 
 end Curve25519Dalek.scalar.Scalar
 
@@ -66,10 +66,10 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem reduce.«i686-tables_spec» (self : Scalar) :
-    reduce.«i686-tables» self ⦃ (r : Scalar) =>
+theorem reduce.«32bit-tables_spec» (self : Scalar) :
+    reduce.«32bit-tables» self ⦃ (r : Scalar) =>
       r.asNat = self.asNat % L ⦄ := by
-  unfold reduce.«i686-tables»
+  unfold reduce.«32bit-tables»
   obtain ⟨hR, hRb⟩ := backend.serial.u32.constants.R_spec
   step as ⟨x, hx, hxb⟩
   step with backend.serial.u32.scalar.Scalar29.mul_internal_spec x _ hxb hRb as ⟨xR, hxR, hxRb⟩
@@ -91,10 +91,10 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem reduce.«i686-no-tables_spec» (self : Scalar) :
-    reduce.«i686-no-tables» self ⦃ (r : Scalar) =>
+theorem reduce.«32bit-notables_spec» (self : Scalar) :
+    reduce.«32bit-notables» self ⦃ (r : Scalar) =>
       r.asNat = self.asNat % L ⦄ :=
-  reduce.«i686-tables_spec» self
+  reduce.«32bit-tables_spec» self
 
 end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
@@ -105,9 +105,9 @@ theorem reduce_spec (self : Scalar) :
       r.asNat = self.asNat % L ⦄ := by
   unfold reduce
   exact dispatch_all_spec
-    (reduce.«x86_64-tables_spec» self)
-    (reduce.«x86_64-no-tables_spec» self)
-    (reduce.«i686-tables_spec» self)
-    (reduce.«i686-no-tables_spec» self)
+    (reduce.«64bit-tables_spec» self)
+    (reduce.«64bit-notables_spec» self)
+    (reduce.«32bit-tables_spec» self)
+    (reduce.«32bit-notables_spec» self)
 
 end Curve25519Dalek.scalar.Scalar

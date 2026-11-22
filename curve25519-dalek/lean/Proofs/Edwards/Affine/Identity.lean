@@ -20,14 +20,14 @@ open Curve25519Dalek.backend.serial.u32.field (FieldElement2625)
 
 namespace Curve25519Dalek.edwards.affine
 
-namespace AffinePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace AffinePoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `Identity for AffinePoint`: `(0, 1)`, limbs `< 2^52`. -/
 @[step]
 theorem identity_coords :
-    identity ⦃ (r : AffinePoint.«x86_64-tables») =>
+    identity ⦃ (r : AffinePoint.«64bit-tables») =>
       r.x.toField = 0 ∧ r.y.toField = 1 ∧ r.LimbsLt 52 ⦄ := by
   unfold identity
   step as ⟨zero, hzero, hzero_lt⟩
@@ -37,26 +37,26 @@ theorem identity_coords :
 
 /-- `Identity for AffinePoint` represents the neutral element. -/
 theorem identity_spec :
-    identity ⦃ (r : AffinePoint.«x86_64-tables») =>
+    identity ⦃ (r : AffinePoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ :=
   spec_mono identity_coords fun r ⟨hx, hy, hb⟩ => by
     have hr : r.OnCurve := by
-      rw [AffinePoint.«x86_64-tables».onCurve_iff, hx, hy]
+      rw [AffinePoint.«64bit-tables».onCurve_iff, hx, hy]
       exact curve25519.edwards.equation_zero_one
     refine ⟨hr, Point.ext ?_ ?_, hb⟩
-    · rw [AffinePoint.«x86_64-tables».toPoint_x hr, hx, zero_x]
-    · rw [AffinePoint.«x86_64-tables».toPoint_y hr, hy, zero_y]
+    · rw [AffinePoint.«64bit-tables».toPoint_x hr, hx, zero_x]
+    · rw [AffinePoint.«64bit-tables».toPoint_y hr, hy, zero_y]
 
-end AffinePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity
+end AffinePoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
-namespace AffinePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace AffinePoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `Identity for AffinePoint`: `(0, 1)`, limbs `< 2^26`. -/
 @[step]
 theorem identity_coords :
-    identity ⦃ (r : AffinePoint.«i686-tables») =>
+    identity ⦃ (r : AffinePoint.«32bit-tables») =>
       r.x.toField = 0 ∧ r.y.toField = 1 ∧ r.LimbsLt 26 ⦄ := by
   unfold identity
   step as ⟨zero, hzero, hzero_lt⟩
@@ -66,26 +66,26 @@ theorem identity_coords :
 
 /-- `Identity for AffinePoint` represents the neutral element. -/
 theorem identity_spec :
-    identity ⦃ (r : AffinePoint.«i686-tables») =>
+    identity ⦃ (r : AffinePoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ :=
   spec_mono identity_coords fun r ⟨hx, hy, hb⟩ => by
     have hr : r.OnCurve := by
-      rw [AffinePoint.«i686-tables».onCurve_iff, hx, hy]
+      rw [AffinePoint.«32bit-tables».onCurve_iff, hx, hy]
       exact curve25519.edwards.equation_zero_one
     refine ⟨hr, Point.ext ?_ ?_, hb⟩
-    · rw [AffinePoint.«i686-tables».toPoint_x hr, hx, zero_x]
-    · rw [AffinePoint.«i686-tables».toPoint_y hr, hy, zero_y]
+    · rw [AffinePoint.«32bit-tables».toPoint_x hr, hx, zero_x]
+    · rw [AffinePoint.«32bit-tables».toPoint_y hr, hy, zero_y]
 
-end AffinePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity
+end AffinePoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
-namespace AffinePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace AffinePoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `Identity for AffinePoint`: `(0, 1)`, limbs `< 2^52`. -/
 @[step]
 theorem identity_coords :
-    identity ⦃ (r : AffinePoint.«x86_64-no-tables») =>
+    identity ⦃ (r : AffinePoint.«64bit-notables») =>
       r.x.toField = 0 ∧ r.y.toField = 1 ∧ r.LimbsLt 52 ⦄ := by
   unfold identity
   step as ⟨zero, hzero, hzero_lt⟩
@@ -95,26 +95,26 @@ theorem identity_coords :
 
 /-- `Identity for AffinePoint` represents the neutral element. -/
 theorem identity_spec :
-    identity ⦃ (r : AffinePoint.«x86_64-no-tables») =>
+    identity ⦃ (r : AffinePoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ :=
   spec_mono identity_coords fun r ⟨hx, hy, hb⟩ => by
     have hr : r.OnCurve := by
-      rw [AffinePoint.«x86_64-no-tables».onCurve_iff, hx, hy]
+      rw [AffinePoint.«64bit-notables».onCurve_iff, hx, hy]
       exact curve25519.edwards.equation_zero_one
     refine ⟨hr, Point.ext ?_ ?_, hb⟩
-    · rw [AffinePoint.«x86_64-no-tables».toPoint_x hr, hx, zero_x]
-    · rw [AffinePoint.«x86_64-no-tables».toPoint_y hr, hy, zero_y]
+    · rw [AffinePoint.«64bit-notables».toPoint_x hr, hx, zero_x]
+    · rw [AffinePoint.«64bit-notables».toPoint_y hr, hy, zero_y]
 
-end AffinePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity
+end AffinePoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity
 
-namespace AffinePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace AffinePoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `Identity for AffinePoint`: `(0, 1)`, limbs `< 2^26`. -/
 @[step]
 theorem identity_coords :
-    identity ⦃ (r : AffinePoint.«i686-no-tables») =>
+    identity ⦃ (r : AffinePoint.«32bit-notables») =>
       r.x.toField = 0 ∧ r.y.toField = 1 ∧ r.LimbsLt 26 ⦄ := by
   unfold identity
   step as ⟨zero, hzero, hzero_lt⟩
@@ -124,16 +124,16 @@ theorem identity_coords :
 
 /-- `Identity for AffinePoint` represents the neutral element. -/
 theorem identity_spec :
-    identity ⦃ (r : AffinePoint.«i686-no-tables») =>
+    identity ⦃ (r : AffinePoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ :=
   spec_mono identity_coords fun r ⟨hx, hy, hb⟩ => by
     have hr : r.OnCurve := by
-      rw [AffinePoint.«i686-no-tables».onCurve_iff, hx, hy]
+      rw [AffinePoint.«32bit-notables».onCurve_iff, hx, hy]
       exact curve25519.edwards.equation_zero_one
     refine ⟨hr, Point.ext ?_ ?_, hb⟩
-    · rw [AffinePoint.«i686-no-tables».toPoint_x hr, hx, zero_x]
-    · rw [AffinePoint.«i686-no-tables».toPoint_y hr, hy, zero_y]
+    · rw [AffinePoint.«32bit-notables».toPoint_x hr, hx, zero_x]
+    · rw [AffinePoint.«32bit-notables».toPoint_y hr, hy, zero_y]
 
-end AffinePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity
+end AffinePoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity
 
 end Curve25519Dalek.edwards.affine

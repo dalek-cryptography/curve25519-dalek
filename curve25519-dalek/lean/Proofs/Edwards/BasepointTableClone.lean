@@ -17,11 +17,11 @@ theorem cloneArray_eq_ok {T : Type} {N : Usize} (inst : core.clone.Clone T) (a :
   revert this
   cases core.array.CloneArray.clone inst a <;> simp_all
 
-namespace EdwardsBasepointTable.«x86_64-tables».Insts.CoreCloneClone
+namespace EdwardsBasepointTable.«64bit-tables».Insts.CoreCloneClone
 
 /-- `Clone for EdwardsBasepointTable`: the table itself. -/
 @[step]
-theorem clone_spec (self : EdwardsBasepointTable.«x86_64-tables») :
+theorem clone_spec (self : EdwardsBasepointTable.«64bit-tables») :
     clone self ⦃ r => r = self ⦄ := by
   unfold clone
   rw [cloneArray_eq_ok]
@@ -32,13 +32,13 @@ theorem clone_spec (self : EdwardsBasepointTable.«x86_64-tables») :
     · simp
     · intro y _; rfl
 
-end EdwardsBasepointTable.«x86_64-tables».Insts.CoreCloneClone
+end EdwardsBasepointTable.«64bit-tables».Insts.CoreCloneClone
 
-namespace EdwardsBasepointTableRadix32.«x86_64-tables».Insts.CoreCloneClone
+namespace EdwardsBasepointTableRadix32.«64bit-tables».Insts.CoreCloneClone
 
 /-- `Clone for EdwardsBasepointTableRadix32`: the table itself. -/
 @[step]
-theorem clone_spec (self : EdwardsBasepointTableRadix32.«x86_64-tables») :
+theorem clone_spec (self : EdwardsBasepointTableRadix32.«64bit-tables») :
     clone self ⦃ r => r = self ⦄ := by
   unfold clone
   rw [cloneArray_eq_ok]
@@ -49,13 +49,13 @@ theorem clone_spec (self : EdwardsBasepointTableRadix32.«x86_64-tables») :
     · simp
     · intro y _; rfl
 
-end EdwardsBasepointTableRadix32.«x86_64-tables».Insts.CoreCloneClone
+end EdwardsBasepointTableRadix32.«64bit-tables».Insts.CoreCloneClone
 
-namespace EdwardsBasepointTableRadix64.«x86_64-tables».Insts.CoreCloneClone
+namespace EdwardsBasepointTableRadix64.«64bit-tables».Insts.CoreCloneClone
 
 /-- `Clone for EdwardsBasepointTableRadix64`: the table itself. -/
 @[step]
-theorem clone_spec (self : EdwardsBasepointTableRadix64.«x86_64-tables») :
+theorem clone_spec (self : EdwardsBasepointTableRadix64.«64bit-tables») :
     clone self ⦃ r => r = self ⦄ := by
   unfold clone
   rw [cloneArray_eq_ok]
@@ -66,13 +66,13 @@ theorem clone_spec (self : EdwardsBasepointTableRadix64.«x86_64-tables») :
     · simp
     · intro y _; rfl
 
-end EdwardsBasepointTableRadix64.«x86_64-tables».Insts.CoreCloneClone
+end EdwardsBasepointTableRadix64.«64bit-tables».Insts.CoreCloneClone
 
-namespace EdwardsBasepointTableRadix128.«x86_64-tables».Insts.CoreCloneClone
+namespace EdwardsBasepointTableRadix128.«64bit-tables».Insts.CoreCloneClone
 
 /-- `Clone for EdwardsBasepointTableRadix128`: the table itself. -/
 @[step]
-theorem clone_spec (self : EdwardsBasepointTableRadix128.«x86_64-tables») :
+theorem clone_spec (self : EdwardsBasepointTableRadix128.«64bit-tables») :
     clone self ⦃ r => r = self ⦄ := by
   unfold clone
   rw [cloneArray_eq_ok]
@@ -83,13 +83,13 @@ theorem clone_spec (self : EdwardsBasepointTableRadix128.«x86_64-tables») :
     · simp
     · intro y _; rfl
 
-end EdwardsBasepointTableRadix128.«x86_64-tables».Insts.CoreCloneClone
+end EdwardsBasepointTableRadix128.«64bit-tables».Insts.CoreCloneClone
 
-namespace EdwardsBasepointTableRadix256.«x86_64-tables».Insts.CoreCloneClone
+namespace EdwardsBasepointTableRadix256.«64bit-tables».Insts.CoreCloneClone
 
 /-- `Clone for EdwardsBasepointTableRadix256`: the table itself. -/
 @[step]
-theorem clone_spec (self : EdwardsBasepointTableRadix256.«x86_64-tables») :
+theorem clone_spec (self : EdwardsBasepointTableRadix256.«64bit-tables») :
     clone self ⦃ r => r = self ⦄ := by
   unfold clone
   rw [cloneArray_eq_ok]
@@ -100,13 +100,13 @@ theorem clone_spec (self : EdwardsBasepointTableRadix256.«x86_64-tables») :
     · simp
     · intro y _; rfl
 
-end EdwardsBasepointTableRadix256.«x86_64-tables».Insts.CoreCloneClone
+end EdwardsBasepointTableRadix256.«64bit-tables».Insts.CoreCloneClone
 
-namespace EdwardsBasepointTable.«i686-tables».Insts.CoreCloneClone
+namespace EdwardsBasepointTable.«32bit-tables».Insts.CoreCloneClone
 
 /-- `Clone for EdwardsBasepointTable`: the table itself. -/
 @[step]
-theorem clone_spec (self : EdwardsBasepointTable.«i686-tables») :
+theorem clone_spec (self : EdwardsBasepointTable.«32bit-tables») :
     clone self ⦃ r => r = self ⦄ := by
   unfold clone
   rw [cloneArray_eq_ok]
@@ -117,13 +117,13 @@ theorem clone_spec (self : EdwardsBasepointTable.«i686-tables») :
     · simp
     · intro y _; rfl
 
-end EdwardsBasepointTable.«i686-tables».Insts.CoreCloneClone
+end EdwardsBasepointTable.«32bit-tables».Insts.CoreCloneClone
 
-namespace EdwardsBasepointTableRadix32.«i686-tables».Insts.CoreCloneClone
+namespace EdwardsBasepointTableRadix32.«32bit-tables».Insts.CoreCloneClone
 
 /-- `Clone for EdwardsBasepointTableRadix32`: the table itself. -/
 @[step]
-theorem clone_spec (self : EdwardsBasepointTableRadix32.«i686-tables») :
+theorem clone_spec (self : EdwardsBasepointTableRadix32.«32bit-tables») :
     clone self ⦃ r => r = self ⦄ := by
   unfold clone
   rw [cloneArray_eq_ok]
@@ -134,13 +134,13 @@ theorem clone_spec (self : EdwardsBasepointTableRadix32.«i686-tables») :
     · simp
     · intro y _; rfl
 
-end EdwardsBasepointTableRadix32.«i686-tables».Insts.CoreCloneClone
+end EdwardsBasepointTableRadix32.«32bit-tables».Insts.CoreCloneClone
 
-namespace EdwardsBasepointTableRadix64.«i686-tables».Insts.CoreCloneClone
+namespace EdwardsBasepointTableRadix64.«32bit-tables».Insts.CoreCloneClone
 
 /-- `Clone for EdwardsBasepointTableRadix64`: the table itself. -/
 @[step]
-theorem clone_spec (self : EdwardsBasepointTableRadix64.«i686-tables») :
+theorem clone_spec (self : EdwardsBasepointTableRadix64.«32bit-tables») :
     clone self ⦃ r => r = self ⦄ := by
   unfold clone
   rw [cloneArray_eq_ok]
@@ -151,13 +151,13 @@ theorem clone_spec (self : EdwardsBasepointTableRadix64.«i686-tables») :
     · simp
     · intro y _; rfl
 
-end EdwardsBasepointTableRadix64.«i686-tables».Insts.CoreCloneClone
+end EdwardsBasepointTableRadix64.«32bit-tables».Insts.CoreCloneClone
 
-namespace EdwardsBasepointTableRadix128.«i686-tables».Insts.CoreCloneClone
+namespace EdwardsBasepointTableRadix128.«32bit-tables».Insts.CoreCloneClone
 
 /-- `Clone for EdwardsBasepointTableRadix128`: the table itself. -/
 @[step]
-theorem clone_spec (self : EdwardsBasepointTableRadix128.«i686-tables») :
+theorem clone_spec (self : EdwardsBasepointTableRadix128.«32bit-tables») :
     clone self ⦃ r => r = self ⦄ := by
   unfold clone
   rw [cloneArray_eq_ok]
@@ -168,13 +168,13 @@ theorem clone_spec (self : EdwardsBasepointTableRadix128.«i686-tables») :
     · simp
     · intro y _; rfl
 
-end EdwardsBasepointTableRadix128.«i686-tables».Insts.CoreCloneClone
+end EdwardsBasepointTableRadix128.«32bit-tables».Insts.CoreCloneClone
 
-namespace EdwardsBasepointTableRadix256.«i686-tables».Insts.CoreCloneClone
+namespace EdwardsBasepointTableRadix256.«32bit-tables».Insts.CoreCloneClone
 
 /-- `Clone for EdwardsBasepointTableRadix256`: the table itself. -/
 @[step]
-theorem clone_spec (self : EdwardsBasepointTableRadix256.«i686-tables») :
+theorem clone_spec (self : EdwardsBasepointTableRadix256.«32bit-tables») :
     clone self ⦃ r => r = self ⦄ := by
   unfold clone
   rw [cloneArray_eq_ok]
@@ -185,6 +185,6 @@ theorem clone_spec (self : EdwardsBasepointTableRadix256.«i686-tables») :
     · simp
     · intro y _; rfl
 
-end EdwardsBasepointTableRadix256.«i686-tables».Insts.CoreCloneClone
+end EdwardsBasepointTableRadix256.«32bit-tables».Insts.CoreCloneClone
 
 end Curve25519Dalek.edwards

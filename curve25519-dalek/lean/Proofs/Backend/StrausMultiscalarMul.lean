@@ -15,7 +15,7 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek.backend
 
-namespace «x86_64-tables»
+namespace «64bit-tables»
 
 open serial.scalar_mul.straus.Straus.Insts in
 /-- `straus_multiscalar_mul`: the serial `Straus::multiscalar_mul`, `∑ s_i • P_i` up to the
@@ -26,29 +26,29 @@ theorem straus_multiscalar_mul_spec
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
-    (borrowPointInst : core.borrow.Borrow Clause2_Item edwards.EdwardsPoint.«x86_64-tables»)
+    (borrowPointInst : core.borrow.Borrow Clause2_Item edwards.EdwardsPoint.«64bit-tables»)
     (scalars : I) (points : J) (xs : List Clause0_Item) (ys : List Clause2_Item)
-    (ss : List scalar.Scalar) (ps : List edwards.EdwardsPoint.«x86_64-tables»)
+    (ss : List scalar.Scalar) (ps : List edwards.EdwardsPoint.«64bit-tables»)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ys)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hborrow_points : List.Forall₂
       (fun y P => borrowPointInst.borrow y
-          ⦃ (P' : edwards.EdwardsPoint.«x86_64-tables») => P' = P ⦄)
+          ⦃ (P' : edwards.EdwardsPoint.«64bit-tables») => P' = P ⦄)
       ys ps)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P ∈ ps, P.LimbsLt 52 ∧ P.OnCurve)
     (hxs : xs.length ≤ Usize.max) (hys : ys.length ≤ Usize.max) :
-    straus_multiscalar_mul.«x86_64-tables» scalarsInst borrowScalarInst pointsInst borrowPointInst
-      scalars points ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») => r.OnCurve ∧
+    straus_multiscalar_mul.«64bit-tables» scalarsInst borrowScalarInst pointsInst borrowPointInst
+      scalars points ⦃ (r : edwards.EdwardsPoint.«64bit-tables») => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧ r.LimbsLt 52 ⦄ := by
-  unfold straus_multiscalar_mul.«x86_64-tables»
+  unfold straus_multiscalar_mul.«64bit-tables»
   step
-  exact «Curve25519_dalekTraitsMultiscalarMulEdwardsPointx86_64-tables».multiscalar_mul_spec
+  exact «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint64bit-tables».multiscalar_mul_spec
     _ _ _ _ _ _ xs ys ss ps hscalars hpoints hborrow_scalars hborrow_points hss hps hxs hys
 
-end «x86_64-tables»
+end «64bit-tables»
 
-namespace «i686-tables»
+namespace «32bit-tables»
 
 open serial.scalar_mul.straus.Straus.Insts in
 /-- `straus_multiscalar_mul`: the serial `Straus::multiscalar_mul`, `∑ s_i • P_i` up to the
@@ -59,29 +59,29 @@ theorem straus_multiscalar_mul_spec
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
-    (borrowPointInst : core.borrow.Borrow Clause2_Item edwards.EdwardsPoint.«i686-tables»)
+    (borrowPointInst : core.borrow.Borrow Clause2_Item edwards.EdwardsPoint.«32bit-tables»)
     (scalars : I) (points : J) (xs : List Clause0_Item) (ys : List Clause2_Item)
-    (ss : List scalar.Scalar) (ps : List edwards.EdwardsPoint.«i686-tables»)
+    (ss : List scalar.Scalar) (ps : List edwards.EdwardsPoint.«32bit-tables»)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ys)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hborrow_points : List.Forall₂
       (fun y P => borrowPointInst.borrow y
-          ⦃ (P' : edwards.EdwardsPoint.«i686-tables») => P' = P ⦄)
+          ⦃ (P' : edwards.EdwardsPoint.«32bit-tables») => P' = P ⦄)
       ys ps)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P ∈ ps, P.LimbsLt 26 ∧ P.OnCurve)
     (hxs : xs.length ≤ Usize.max) (hys : ys.length ≤ Usize.max) :
-    straus_multiscalar_mul.«i686-tables» scalarsInst borrowScalarInst pointsInst borrowPointInst
-      scalars points ⦃ (r : edwards.EdwardsPoint.«i686-tables») => r.OnCurve ∧
+    straus_multiscalar_mul.«32bit-tables» scalarsInst borrowScalarInst pointsInst borrowPointInst
+      scalars points ⦃ (r : edwards.EdwardsPoint.«32bit-tables») => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧ r.LimbsLt 26 ⦄ := by
-  unfold straus_multiscalar_mul.«i686-tables»
+  unfold straus_multiscalar_mul.«32bit-tables»
   step
-  exact «Curve25519_dalekTraitsMultiscalarMulEdwardsPointi686-tables».multiscalar_mul_spec
+  exact «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint32bit-tables».multiscalar_mul_spec
     _ _ _ _ _ _ xs ys ss ps hscalars hpoints hborrow_scalars hborrow_points hss hps hxs hys
 
-end «i686-tables»
+end «32bit-tables»
 
-namespace «x86_64-no-tables»
+namespace «64bit-notables»
 
 open serial.scalar_mul.straus.Straus.Insts in
 /-- `straus_multiscalar_mul`: the serial `Straus::multiscalar_mul`, `∑ s_i • P_i` up to the
@@ -92,30 +92,30 @@ theorem straus_multiscalar_mul_spec
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
-    (borrowPointInst : core.borrow.Borrow Clause2_Item edwards.EdwardsPoint.«x86_64-no-tables»)
+    (borrowPointInst : core.borrow.Borrow Clause2_Item edwards.EdwardsPoint.«64bit-notables»)
     (scalars : I) (points : J) (xs : List Clause0_Item) (ys : List Clause2_Item)
-    (ss : List scalar.Scalar) (ps : List edwards.EdwardsPoint.«x86_64-no-tables»)
+    (ss : List scalar.Scalar) (ps : List edwards.EdwardsPoint.«64bit-notables»)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ys)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hborrow_points : List.Forall₂
       (fun y P => borrowPointInst.borrow y
-          ⦃ (P' : edwards.EdwardsPoint.«x86_64-no-tables») => P' = P ⦄)
+          ⦃ (P' : edwards.EdwardsPoint.«64bit-notables») => P' = P ⦄)
       ys ps)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P ∈ ps, P.LimbsLt 52 ∧ P.OnCurve)
     (hxs : xs.length ≤ Usize.max) (hys : ys.length ≤ Usize.max) :
-    straus_multiscalar_mul.«x86_64-no-tables» scalarsInst borrowScalarInst pointsInst
+    straus_multiscalar_mul.«64bit-notables» scalarsInst borrowScalarInst pointsInst
         borrowPointInst
-      scalars points ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») => r.OnCurve ∧
+      scalars points ⦃ (r : edwards.EdwardsPoint.«64bit-notables») => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧ r.LimbsLt 52 ⦄ := by
-  unfold straus_multiscalar_mul.«x86_64-no-tables»
+  unfold straus_multiscalar_mul.«64bit-notables»
   step
-  exact «Curve25519_dalekTraitsMultiscalarMulEdwardsPointx86_64-no-tables».multiscalar_mul_spec
+  exact «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint64bit-notables».multiscalar_mul_spec
     _ _ _ _ _ _ xs ys ss ps hscalars hpoints hborrow_scalars hborrow_points hss hps hxs hys
 
-end «x86_64-no-tables»
+end «64bit-notables»
 
-namespace «i686-no-tables»
+namespace «32bit-notables»
 
 open serial.scalar_mul.straus.Straus.Insts in
 /-- `straus_multiscalar_mul`: the serial `Straus::multiscalar_mul`, `∑ s_i • P_i` up to the
@@ -126,27 +126,27 @@ theorem straus_multiscalar_mul_spec
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
-    (borrowPointInst : core.borrow.Borrow Clause2_Item edwards.EdwardsPoint.«i686-no-tables»)
+    (borrowPointInst : core.borrow.Borrow Clause2_Item edwards.EdwardsPoint.«32bit-notables»)
     (scalars : I) (points : J) (xs : List Clause0_Item) (ys : List Clause2_Item)
-    (ss : List scalar.Scalar) (ps : List edwards.EdwardsPoint.«i686-no-tables»)
+    (ss : List scalar.Scalar) (ps : List edwards.EdwardsPoint.«32bit-notables»)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ys)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hborrow_points : List.Forall₂
       (fun y P => borrowPointInst.borrow y
-          ⦃ (P' : edwards.EdwardsPoint.«i686-no-tables») => P' = P ⦄)
+          ⦃ (P' : edwards.EdwardsPoint.«32bit-notables») => P' = P ⦄)
       ys ps)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P ∈ ps, P.LimbsLt 26 ∧ P.OnCurve)
     (hxs : xs.length ≤ Usize.max) (hys : ys.length ≤ Usize.max) :
-    straus_multiscalar_mul.«i686-no-tables» scalarsInst borrowScalarInst pointsInst
+    straus_multiscalar_mul.«32bit-notables» scalarsInst borrowScalarInst pointsInst
         borrowPointInst
-      scalars points ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») => r.OnCurve ∧
+      scalars points ⦃ (r : edwards.EdwardsPoint.«32bit-notables») => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧ r.LimbsLt 26 ⦄ := by
-  unfold straus_multiscalar_mul.«i686-no-tables»
+  unfold straus_multiscalar_mul.«32bit-notables»
   step
-  exact «Curve25519_dalekTraitsMultiscalarMulEdwardsPointi686-no-tables».multiscalar_mul_spec
+  exact «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint32bit-notables».multiscalar_mul_spec
     _ _ _ _ _ _ xs ys ss ps hscalars hpoints hborrow_scalars hborrow_points hss hps hxs hys
 
-end «i686-no-tables»
+end «32bit-notables»
 
 end Curve25519Dalek.backend

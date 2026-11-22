@@ -21,21 +21,21 @@ with the `RistrettoPoint` constructor (the identity). -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
-namespace Curve25519Dalek.ristretto.RistrettoPoint.«x86_64-tables».Insts
-namespace «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointx86_64-tables»
+namespace Curve25519Dalek.ristretto.RistrettoPoint.«64bit-tables».Insts
+namespace «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPoint64bit-tables»
 
 /-- The collecting loop pushes the optional points unchanged. -/
 private theorem extended_points_loop_spec {I J Item SI It : Type}
     (scalarsInst : core.iter.traits.collect.IntoIterator I Item SI)
     (borrowInst : core.borrow.Borrow Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-      (Option RistrettoPoint.«x86_64-tables») It)
-    (it : It) (ops : List (Option RistrettoPoint.«x86_64-tables»))
+      (Option RistrettoPoint.«64bit-tables») It)
+    (it : It) (ops : List (Option RistrettoPoint.«64bit-tables»))
     (hit : pointsInst.iteratorInst.Yields it ops)
-    (out : alloc.vec.Vec (Option edwards.EdwardsPoint.«x86_64-tables»))
+    (out : alloc.vec.Vec (Option edwards.EdwardsPoint.«64bit-tables»))
     (hlen : out.length + ops.length ≤ Usize.max) :
     optional_multiscalar_mul_loop scalarsInst borrowInst pointsInst it out
-      ⦃ (r : alloc.vec.Vec (Option edwards.EdwardsPoint.«x86_64-tables»)) =>
+      ⦃ (r : alloc.vec.Vec (Option edwards.EdwardsPoint.«64bit-tables»)) =>
         r.val = out.val ++ ops ⦄ := by
   induction hit generalizing out with
   | nil hnext =>
@@ -67,8 +67,8 @@ private theorem extended_points_loop_spec {I J Item SI It : Type}
     intro r hr
     rw [hr, hout1, List.append_assoc, List.singleton_append]
 
-open edwards.EdwardsPoint.«x86_64-tables».Insts in
-open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-tables» renaming
+open edwards.EdwardsPoint.«64bit-tables».Insts in
+open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint64bit-tables» renaming
   optional_multiscalar_mul_spec → edwards_spec in
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `RistrettoPoint`: `none` iff some point
 is `none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the
@@ -78,10 +78,10 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-        (Option ristretto.RistrettoPoint.«x86_64-tables»)
+        (Option ristretto.RistrettoPoint.«64bit-tables»)
       Clause2_IntoIter)
     (scalars : I) (points : J) (xs : List Clause0_Item)
-    (ops : List (Option ristretto.RistrettoPoint.«x86_64-tables»)) (ss : List scalar.Scalar)
+    (ops : List (Option ristretto.RistrettoPoint.«64bit-tables»)) (ss : List scalar.Scalar)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
@@ -90,7 +90,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option ristretto.RistrettoPoint.«x86_64-tables») => (none ∈ ops → r = none) ∧
+      ⦃ (r : Option ristretto.RistrettoPoint.«64bit-tables») => (none ∈ ops → r = none) ∧
         ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 52 ⦄ := by
@@ -115,24 +115,24 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   rintro r rfl
   exact ⟨hnone, hsome⟩
 
-end «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointx86_64-tables»
-end Curve25519Dalek.ristretto.RistrettoPoint.«x86_64-tables».Insts
+end «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPoint64bit-tables»
+end Curve25519Dalek.ristretto.RistrettoPoint.«64bit-tables».Insts
 
-namespace Curve25519Dalek.ristretto.RistrettoPoint.«i686-tables».Insts
-namespace «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointi686-tables»
+namespace Curve25519Dalek.ristretto.RistrettoPoint.«32bit-tables».Insts
+namespace «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPoint32bit-tables»
 
 /-- The collecting loop pushes the optional points unchanged. -/
 private theorem extended_points_loop_spec {I J Item SI It : Type}
     (scalarsInst : core.iter.traits.collect.IntoIterator I Item SI)
     (borrowInst : core.borrow.Borrow Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-      (Option RistrettoPoint.«i686-tables») It)
-    (it : It) (ops : List (Option RistrettoPoint.«i686-tables»))
+      (Option RistrettoPoint.«32bit-tables») It)
+    (it : It) (ops : List (Option RistrettoPoint.«32bit-tables»))
     (hit : pointsInst.iteratorInst.Yields it ops)
-    (out : alloc.vec.Vec (Option edwards.EdwardsPoint.«i686-tables»))
+    (out : alloc.vec.Vec (Option edwards.EdwardsPoint.«32bit-tables»))
     (hlen : out.length + ops.length ≤ Usize.max) :
     optional_multiscalar_mul_loop scalarsInst borrowInst pointsInst it out
-      ⦃ (r : alloc.vec.Vec (Option edwards.EdwardsPoint.«i686-tables»)) =>
+      ⦃ (r : alloc.vec.Vec (Option edwards.EdwardsPoint.«32bit-tables»)) =>
         r.val = out.val ++ ops ⦄ := by
   induction hit generalizing out with
   | nil hnext =>
@@ -164,8 +164,8 @@ private theorem extended_points_loop_spec {I J Item SI It : Type}
     intro r hr
     rw [hr, hout1, List.append_assoc, List.singleton_append]
 
-open edwards.EdwardsPoint.«i686-tables».Insts in
-open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-tables» renaming
+open edwards.EdwardsPoint.«32bit-tables».Insts in
+open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint32bit-tables» renaming
   optional_multiscalar_mul_spec → edwards_spec in
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `RistrettoPoint`: `none` iff some point
 is `none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the
@@ -175,10 +175,10 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-        (Option ristretto.RistrettoPoint.«i686-tables»)
+        (Option ristretto.RistrettoPoint.«32bit-tables»)
       Clause2_IntoIter)
     (scalars : I) (points : J) (xs : List Clause0_Item)
-    (ops : List (Option ristretto.RistrettoPoint.«i686-tables»)) (ss : List scalar.Scalar)
+    (ops : List (Option ristretto.RistrettoPoint.«32bit-tables»)) (ss : List scalar.Scalar)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
@@ -187,7 +187,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option ristretto.RistrettoPoint.«i686-tables») => (none ∈ ops → r = none) ∧
+      ⦃ (r : Option ristretto.RistrettoPoint.«32bit-tables») => (none ∈ ops → r = none) ∧
         ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 26 ⦄ := by
@@ -212,24 +212,24 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   rintro r rfl
   exact ⟨hnone, hsome⟩
 
-end «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointi686-tables»
-end Curve25519Dalek.ristretto.RistrettoPoint.«i686-tables».Insts
+end «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPoint32bit-tables»
+end Curve25519Dalek.ristretto.RistrettoPoint.«32bit-tables».Insts
 
-namespace Curve25519Dalek.ristretto.RistrettoPoint.«x86_64-no-tables».Insts
-namespace «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointx86_64-no-tables»
+namespace Curve25519Dalek.ristretto.RistrettoPoint.«64bit-notables».Insts
+namespace «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPoint64bit-notables»
 
 /-- The collecting loop pushes the optional points unchanged. -/
 private theorem extended_points_loop_spec {I J Item SI It : Type}
     (scalarsInst : core.iter.traits.collect.IntoIterator I Item SI)
     (borrowInst : core.borrow.Borrow Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-      (Option RistrettoPoint.«x86_64-no-tables») It)
-    (it : It) (ops : List (Option RistrettoPoint.«x86_64-no-tables»))
+      (Option RistrettoPoint.«64bit-notables») It)
+    (it : It) (ops : List (Option RistrettoPoint.«64bit-notables»))
     (hit : pointsInst.iteratorInst.Yields it ops)
-    (out : alloc.vec.Vec (Option edwards.EdwardsPoint.«x86_64-no-tables»))
+    (out : alloc.vec.Vec (Option edwards.EdwardsPoint.«64bit-notables»))
     (hlen : out.length + ops.length ≤ Usize.max) :
     optional_multiscalar_mul_loop scalarsInst borrowInst pointsInst it out
-      ⦃ (r : alloc.vec.Vec (Option edwards.EdwardsPoint.«x86_64-no-tables»)) =>
+      ⦃ (r : alloc.vec.Vec (Option edwards.EdwardsPoint.«64bit-notables»)) =>
         r.val = out.val ++ ops ⦄ := by
   induction hit generalizing out with
   | nil hnext =>
@@ -261,8 +261,8 @@ private theorem extended_points_loop_spec {I J Item SI It : Type}
     intro r hr
     rw [hr, hout1, List.append_assoc, List.singleton_append]
 
-open edwards.EdwardsPoint.«x86_64-no-tables».Insts in
-open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-no-tables» renaming
+open edwards.EdwardsPoint.«64bit-notables».Insts in
+open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint64bit-notables» renaming
   optional_multiscalar_mul_spec → edwards_spec in
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `RistrettoPoint`: `none` iff some point
 is `none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the
@@ -272,10 +272,10 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-        (Option ristretto.RistrettoPoint.«x86_64-no-tables»)
+        (Option ristretto.RistrettoPoint.«64bit-notables»)
       Clause2_IntoIter)
     (scalars : I) (points : J) (xs : List Clause0_Item)
-    (ops : List (Option ristretto.RistrettoPoint.«x86_64-no-tables»)) (ss : List scalar.Scalar)
+    (ops : List (Option ristretto.RistrettoPoint.«64bit-notables»)) (ss : List scalar.Scalar)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
@@ -284,7 +284,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option ristretto.RistrettoPoint.«x86_64-no-tables») => (none ∈ ops → r = none) ∧
+      ⦃ (r : Option ristretto.RistrettoPoint.«64bit-notables») => (none ∈ ops → r = none) ∧
         ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 52 ⦄ := by
@@ -309,24 +309,24 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   rintro r rfl
   exact ⟨hnone, hsome⟩
 
-end «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointx86_64-no-tables»
-end Curve25519Dalek.ristretto.RistrettoPoint.«x86_64-no-tables».Insts
+end «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPoint64bit-notables»
+end Curve25519Dalek.ristretto.RistrettoPoint.«64bit-notables».Insts
 
-namespace Curve25519Dalek.ristretto.RistrettoPoint.«i686-no-tables».Insts
-namespace «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointi686-no-tables»
+namespace Curve25519Dalek.ristretto.RistrettoPoint.«32bit-notables».Insts
+namespace «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPoint32bit-notables»
 
 /-- The collecting loop pushes the optional points unchanged. -/
 private theorem extended_points_loop_spec {I J Item SI It : Type}
     (scalarsInst : core.iter.traits.collect.IntoIterator I Item SI)
     (borrowInst : core.borrow.Borrow Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-      (Option RistrettoPoint.«i686-no-tables») It)
-    (it : It) (ops : List (Option RistrettoPoint.«i686-no-tables»))
+      (Option RistrettoPoint.«32bit-notables») It)
+    (it : It) (ops : List (Option RistrettoPoint.«32bit-notables»))
     (hit : pointsInst.iteratorInst.Yields it ops)
-    (out : alloc.vec.Vec (Option edwards.EdwardsPoint.«i686-no-tables»))
+    (out : alloc.vec.Vec (Option edwards.EdwardsPoint.«32bit-notables»))
     (hlen : out.length + ops.length ≤ Usize.max) :
     optional_multiscalar_mul_loop scalarsInst borrowInst pointsInst it out
-      ⦃ (r : alloc.vec.Vec (Option edwards.EdwardsPoint.«i686-no-tables»)) =>
+      ⦃ (r : alloc.vec.Vec (Option edwards.EdwardsPoint.«32bit-notables»)) =>
         r.val = out.val ++ ops ⦄ := by
   induction hit generalizing out with
   | nil hnext =>
@@ -358,8 +358,8 @@ private theorem extended_points_loop_spec {I J Item SI It : Type}
     intro r hr
     rw [hr, hout1, List.append_assoc, List.singleton_append]
 
-open edwards.EdwardsPoint.«i686-no-tables».Insts in
-open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-no-tables» renaming
+open edwards.EdwardsPoint.«32bit-notables».Insts in
+open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint32bit-notables» renaming
   optional_multiscalar_mul_spec → edwards_spec in
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `RistrettoPoint`: `none` iff some point
 is `none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the
@@ -369,10 +369,10 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-        (Option ristretto.RistrettoPoint.«i686-no-tables»)
+        (Option ristretto.RistrettoPoint.«32bit-notables»)
       Clause2_IntoIter)
     (scalars : I) (points : J) (xs : List Clause0_Item)
-    (ops : List (Option ristretto.RistrettoPoint.«i686-no-tables»)) (ss : List scalar.Scalar)
+    (ops : List (Option ristretto.RistrettoPoint.«32bit-notables»)) (ss : List scalar.Scalar)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
@@ -381,7 +381,7 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
     (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
     optional_multiscalar_mul scalarsInst borrowScalarInst pointsInst scalars points
-      ⦃ (r : Option ristretto.RistrettoPoint.«i686-no-tables») => (none ∈ ops → r = none) ∧
+      ⦃ (r : Option ristretto.RistrettoPoint.«32bit-notables») => (none ∈ ops → r = none) ∧
         ∀ ps, ops = ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss ps).sum ∧
           R.LimbsLt 26 ⦄ := by
@@ -406,5 +406,5 @@ theorem optional_multiscalar_mul_spec {I J Clause0_Item Clause0_IntoIter Clause2
   rintro r rfl
   exact ⟨hnone, hsome⟩
 
-end «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointi686-no-tables»
-end Curve25519Dalek.ristretto.RistrettoPoint.«i686-no-tables».Insts
+end «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPoint32bit-notables»
+end Curve25519Dalek.ristretto.RistrettoPoint.«32bit-notables».Insts

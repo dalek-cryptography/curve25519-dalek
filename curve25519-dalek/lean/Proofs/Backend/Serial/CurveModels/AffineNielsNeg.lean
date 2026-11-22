@@ -19,136 +19,136 @@ open Curve25519Dalek.backend.serial.curve_models
 
 namespace Curve25519Dalek
 
-namespace «Shared0AffineNielsPointx86_64-tables».Insts
+namespace «Shared0AffineNielsPoint64bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreOpsArithNegAffineNielsPointx86_64-tables»
+namespace «CoreOpsArithNegAffineNielsPoint64bit-tables»
 
 /-- `Neg for &AffineNielsPoint`: swap `y + x` and `y - x`, negate `xy2d`; limbs `< 2^54`. -/
 @[step]
-theorem neg_toAffineNiels (self : AffineNielsPoint.«x86_64-tables») (hself : self.LimbsLt 54) :
-    neg self ⦃ (r : AffineNielsPoint.«x86_64-tables») =>
+theorem neg_toAffineNiels (self : AffineNielsPoint.«64bit-tables») (hself : self.LimbsLt 54) :
+    neg self ⦃ (r : AffineNielsPoint.«64bit-tables») =>
       r.toAffineNiels = self.toAffineNiels.neg ∧ r.LimbsLt 54 ⦄ := by
   obtain ⟨hypx, hymx, hxy2d⟩ := hself
   unfold neg
   step as ⟨xy2d', hxy2d', hxy2d'_lt⟩
   refine ⟨?_, ?_⟩
-  · simp only [AffineNielsPoint.«x86_64-tables».toAffineNiels_def, AffineNiels.neg,
+  · simp only [AffineNielsPoint.«64bit-tables».toAffineNiels_def, AffineNiels.neg,
       toField_neg_of_mod hxy2d']
   · exact ⟨hymx, hypx, limbs_lt_of_le (by decide) hxy2d'_lt⟩
 
 /-- `Neg for &AffineNielsPoint` negates the represented point. -/
-theorem neg_spec (self : AffineNielsPoint.«x86_64-tables») (hself : self.LimbsLt 54)
+theorem neg_spec (self : AffineNielsPoint.«64bit-tables») (hself : self.LimbsLt 54)
     (hon : self.OnCurve) :
-    neg self ⦃ (r : AffineNielsPoint.«x86_64-tables») =>
+    neg self ⦃ (r : AffineNielsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 54 ⦄ :=
   spec_mono (neg_toAffineNiels self hself) fun r ⟨hr, hb⟩ => by
-    rw [AffineNielsPoint.«x86_64-tables».onCurve_iff,
-      AffineNielsPoint.«x86_64-tables».toPoint_def, hr,
-      AffineNielsPoint.«x86_64-tables».toPoint_def]
+    rw [AffineNielsPoint.«64bit-tables».onCurve_iff,
+      AffineNielsPoint.«64bit-tables».toPoint_def, hr,
+      AffineNielsPoint.«64bit-tables».toPoint_def]
     exact ⟨AffineNiels.onCurve_neg hon, AffineNiels.toPoint_neg hon, hb⟩
 
-end «CoreOpsArithNegAffineNielsPointx86_64-tables»
-end «Shared0AffineNielsPointx86_64-tables».Insts
+end «CoreOpsArithNegAffineNielsPoint64bit-tables»
+end «Shared0AffineNielsPoint64bit-tables».Insts
 
-namespace «Shared0AffineNielsPointi686-tables».Insts
+namespace «Shared0AffineNielsPoint32bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-namespace «CoreOpsArithNegAffineNielsPointi686-tables»
+namespace «CoreOpsArithNegAffineNielsPoint32bit-tables»
 
 /-- `Neg for &AffineNielsPoint`: swap `y + x` and `y - x`, negate `xy2d`; limbs `< 2^27`. -/
 @[step]
-theorem neg_toAffineNiels (self : AffineNielsPoint.«i686-tables») (hself : self.LimbsLt 27) :
-    neg self ⦃ (r : AffineNielsPoint.«i686-tables») =>
+theorem neg_toAffineNiels (self : AffineNielsPoint.«32bit-tables») (hself : self.LimbsLt 27) :
+    neg self ⦃ (r : AffineNielsPoint.«32bit-tables») =>
       r.toAffineNiels = self.toAffineNiels.neg ∧ r.LimbsLt 27 ⦄ := by
   obtain ⟨hypx, hymx, hxy2d⟩ := hself
   unfold neg
   step as ⟨xy2d', hxy2d', hxy2d'_lt⟩
   refine ⟨?_, ?_⟩
-  · simp only [AffineNielsPoint.«i686-tables».toAffineNiels_def, AffineNiels.neg,
+  · simp only [AffineNielsPoint.«32bit-tables».toAffineNiels_def, AffineNiels.neg,
       toField_neg_of_mod hxy2d']
   · exact ⟨hymx, hypx, limbs_lt_of_le (by decide) hxy2d'_lt⟩
 
 /-- `Neg for &AffineNielsPoint` negates the represented point. -/
-theorem neg_spec (self : AffineNielsPoint.«i686-tables») (hself : self.LimbsLt 27)
+theorem neg_spec (self : AffineNielsPoint.«32bit-tables») (hself : self.LimbsLt 27)
     (hon : self.OnCurve) :
-    neg self ⦃ (r : AffineNielsPoint.«i686-tables») =>
+    neg self ⦃ (r : AffineNielsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 27 ⦄ :=
   spec_mono (neg_toAffineNiels self hself) fun r ⟨hr, hb⟩ => by
-    rw [AffineNielsPoint.«i686-tables».onCurve_iff,
-      AffineNielsPoint.«i686-tables».toPoint_def, hr,
-      AffineNielsPoint.«i686-tables».toPoint_def]
+    rw [AffineNielsPoint.«32bit-tables».onCurve_iff,
+      AffineNielsPoint.«32bit-tables».toPoint_def, hr,
+      AffineNielsPoint.«32bit-tables».toPoint_def]
     exact ⟨AffineNiels.onCurve_neg hon, AffineNiels.toPoint_neg hon, hb⟩
 
-end «CoreOpsArithNegAffineNielsPointi686-tables»
-end «Shared0AffineNielsPointi686-tables».Insts
+end «CoreOpsArithNegAffineNielsPoint32bit-tables»
+end «Shared0AffineNielsPoint32bit-tables».Insts
 
-namespace «Shared0AffineNielsPointx86_64-no-tables».Insts
+namespace «Shared0AffineNielsPoint64bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreOpsArithNegAffineNielsPointx86_64-no-tables»
+namespace «CoreOpsArithNegAffineNielsPoint64bit-notables»
 
 /-- `Neg for &AffineNielsPoint`: swap `y + x` and `y - x`, negate `xy2d`; limbs `< 2^54`. -/
 @[step]
-theorem neg_toAffineNiels (self : AffineNielsPoint.«x86_64-no-tables») (hself : self.LimbsLt 54) :
-    neg self ⦃ (r : AffineNielsPoint.«x86_64-no-tables») =>
+theorem neg_toAffineNiels (self : AffineNielsPoint.«64bit-notables») (hself : self.LimbsLt 54) :
+    neg self ⦃ (r : AffineNielsPoint.«64bit-notables») =>
       r.toAffineNiels = self.toAffineNiels.neg ∧ r.LimbsLt 54 ⦄ := by
   obtain ⟨hypx, hymx, hxy2d⟩ := hself
   unfold neg
   step as ⟨xy2d', hxy2d', hxy2d'_lt⟩
   refine ⟨?_, ?_⟩
-  · simp only [AffineNielsPoint.«x86_64-no-tables».toAffineNiels_def, AffineNiels.neg,
+  · simp only [AffineNielsPoint.«64bit-notables».toAffineNiels_def, AffineNiels.neg,
       toField_neg_of_mod hxy2d']
   · exact ⟨hymx, hypx, limbs_lt_of_le (by decide) hxy2d'_lt⟩
 
 /-- `Neg for &AffineNielsPoint` negates the represented point. -/
-theorem neg_spec (self : AffineNielsPoint.«x86_64-no-tables») (hself : self.LimbsLt 54)
+theorem neg_spec (self : AffineNielsPoint.«64bit-notables») (hself : self.LimbsLt 54)
     (hon : self.OnCurve) :
-    neg self ⦃ (r : AffineNielsPoint.«x86_64-no-tables») =>
+    neg self ⦃ (r : AffineNielsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 54 ⦄ :=
   spec_mono (neg_toAffineNiels self hself) fun r ⟨hr, hb⟩ => by
-    rw [AffineNielsPoint.«x86_64-no-tables».onCurve_iff,
-      AffineNielsPoint.«x86_64-no-tables».toPoint_def, hr,
-      AffineNielsPoint.«x86_64-no-tables».toPoint_def]
+    rw [AffineNielsPoint.«64bit-notables».onCurve_iff,
+      AffineNielsPoint.«64bit-notables».toPoint_def, hr,
+      AffineNielsPoint.«64bit-notables».toPoint_def]
     exact ⟨AffineNiels.onCurve_neg hon, AffineNiels.toPoint_neg hon, hb⟩
 
-end «CoreOpsArithNegAffineNielsPointx86_64-no-tables»
-end «Shared0AffineNielsPointx86_64-no-tables».Insts
+end «CoreOpsArithNegAffineNielsPoint64bit-notables»
+end «Shared0AffineNielsPoint64bit-notables».Insts
 
-namespace «Shared0AffineNielsPointi686-no-tables».Insts
+namespace «Shared0AffineNielsPoint32bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-namespace «CoreOpsArithNegAffineNielsPointi686-no-tables»
+namespace «CoreOpsArithNegAffineNielsPoint32bit-notables»
 
 /-- `Neg for &AffineNielsPoint`: swap `y + x` and `y - x`, negate `xy2d`; limbs `< 2^27`. -/
 @[step]
-theorem neg_toAffineNiels (self : AffineNielsPoint.«i686-no-tables») (hself : self.LimbsLt 27) :
-    neg self ⦃ (r : AffineNielsPoint.«i686-no-tables») =>
+theorem neg_toAffineNiels (self : AffineNielsPoint.«32bit-notables») (hself : self.LimbsLt 27) :
+    neg self ⦃ (r : AffineNielsPoint.«32bit-notables») =>
       r.toAffineNiels = self.toAffineNiels.neg ∧ r.LimbsLt 27 ⦄ := by
   obtain ⟨hypx, hymx, hxy2d⟩ := hself
   unfold neg
   step as ⟨xy2d', hxy2d', hxy2d'_lt⟩
   refine ⟨?_, ?_⟩
-  · simp only [AffineNielsPoint.«i686-no-tables».toAffineNiels_def, AffineNiels.neg,
+  · simp only [AffineNielsPoint.«32bit-notables».toAffineNiels_def, AffineNiels.neg,
       toField_neg_of_mod hxy2d']
   · exact ⟨hymx, hypx, limbs_lt_of_le (by decide) hxy2d'_lt⟩
 
 /-- `Neg for &AffineNielsPoint` negates the represented point. -/
-theorem neg_spec (self : AffineNielsPoint.«i686-no-tables») (hself : self.LimbsLt 27)
+theorem neg_spec (self : AffineNielsPoint.«32bit-notables») (hself : self.LimbsLt 27)
     (hon : self.OnCurve) :
-    neg self ⦃ (r : AffineNielsPoint.«i686-no-tables») =>
+    neg self ⦃ (r : AffineNielsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = -self.toPoint ∧ r.LimbsLt 27 ⦄ :=
   spec_mono (neg_toAffineNiels self hself) fun r ⟨hr, hb⟩ => by
-    rw [AffineNielsPoint.«i686-no-tables».onCurve_iff,
-      AffineNielsPoint.«i686-no-tables».toPoint_def, hr,
-      AffineNielsPoint.«i686-no-tables».toPoint_def]
+    rw [AffineNielsPoint.«32bit-notables».onCurve_iff,
+      AffineNielsPoint.«32bit-notables».toPoint_def, hr,
+      AffineNielsPoint.«32bit-notables».toPoint_def]
     exact ⟨AffineNiels.onCurve_neg hon, AffineNiels.toPoint_neg hon, hb⟩
 
-end «CoreOpsArithNegAffineNielsPointi686-no-tables»
-end «Shared0AffineNielsPointi686-no-tables».Insts
+end «CoreOpsArithNegAffineNielsPoint32bit-notables»
+end «Shared0AffineNielsPoint32bit-notables».Insts
 
 end Curve25519Dalek

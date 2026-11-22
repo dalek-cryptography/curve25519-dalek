@@ -32,7 +32,7 @@ set_option maxRecDepth 100000 in
 collect_limbs_u32 tableLimbs32 from ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN
 
 /-- The table built from its 768 field elements in source order: 32 rows of 8 entries. -/
-private def mkTable (fes : List FieldElement2625) : edwards.EdwardsBasepointTable.«i686-tables» :=
+private def mkTable (fes : List FieldElement2625) : edwards.EdwardsBasepointTable.«32bit-tables» :=
   if h : (rows (entries fes)).length = (32#usize).val then
     Array.make 32#usize (rows (entries fes)) h
   else default
@@ -41,7 +41,7 @@ private theorem mkTable_get {fes : List FieldElement2625} (hlen : fes.length = 7
     (hi : i < 32) (hj : j < 8) :
     ((mkTable fes)[i]!)[j]! =
       (⟨fes[24 * i + 3 * j]!, fes[24 * i + 3 * j + 1]!, fes[24 * i + 3 * j + 2]!⟩ :
-        AffineNielsPoint.«i686-tables») := by
+        AffineNielsPoint.«32bit-tables») := by
   have h32 : (rows (entries fes)).length = (32#usize).val := by
     rw [rows_length, entries_length, hlen]
     rfl
@@ -75,10 +75,10 @@ is the lookup table of `2^(8 i) • B`); limbs `< 2^27`. -/
 @[step]
 theorem ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN_spec :
     ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN
-      ⦃ (r : edwards.EdwardsBasepointTable.«i686-tables») =>
+      ⦃ (r : edwards.EdwardsBasepointTable.«32bit-tables») =>
         r.IsTable ∧ r.point = basepoint ∧ r.LimbsLt 27 ⦄ := by
   rw [inner_eq, spec_ok]
-  refine edwards.EdwardsBasepointTable.«i686-tables».isTable_and_of_rows ?_ ?_
+  refine edwards.EdwardsBasepointTable.«32bit-tables».isTable_and_of_rows ?_ ?_
   · intro i hi j hj
     rw [mkTable_get tableLimbs_length hi hj]
     have h := checkTable_sound onCurve_basepointExt table_check (by rw [tableLimbs_length]) i hi
@@ -94,7 +94,7 @@ theorem ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN_spec :
 table of `2^(8 i) • B`); limbs `< 2^27`. -/
 @[step]
 theorem ED25519_BASEPOINT_TABLE_spec :
-    ED25519_BASEPOINT_TABLE ⦃ (r : edwards.EdwardsBasepointTable.«i686-tables») =>
+    ED25519_BASEPOINT_TABLE ⦃ (r : edwards.EdwardsBasepointTable.«32bit-tables») =>
       r.IsTable ∧ r.point = basepoint ∧ r.LimbsLt 27 ⦄ := by
   unfold ED25519_BASEPOINT_TABLE
   exact ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN_spec

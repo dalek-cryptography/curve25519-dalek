@@ -14,8 +14,8 @@ public section
 
 The point functions (`curve_models`, `edwards`, `ristretto`, …) are translated once per
 configuration, but their bodies agree up to the field backend: `FieldElement51` with `u64` limbs
-for `«x86_64-tables»` and `«x86_64-no-tables»`, `FieldElement2625` with `u32` limbs for
-`«i686-tables»` and `«i686-no-tables»`. A `Backend` bundles what the point proofs use of a field
+for `«64bit-tables»` and `«64bit-notables»`, `FieldElement2625` with `u32` limbs for
+`«32bit-tables»` and `«32bit-notables»`. A `Backend` bundles what the point proofs use of a field
 backend: the element type `F`, its value `toField`, the operations as `Result` functions
 (the backend's and those of `field.rs`), and five abstract limb bounds; the operations' specs,
 stated with `toField` and the bounds, are propositions (`AddSpec`, `MulSpec`, …) that the

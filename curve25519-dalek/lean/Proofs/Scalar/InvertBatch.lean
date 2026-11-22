@@ -20,13 +20,13 @@ open Curve25519Dalek.backend.serial.u64.scalar (montgomeryRadix)
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert_batch.«x86_64-tables_spec» {N : Usize} (inputs : Array Scalar N)
+theorem invert_batch.«64bit-tables_spec» {N : Usize} (inputs : Array Scalar N)
     (hinputs : ∀ i < N.val, inputs[i]!.asNat % L ≠ 0) :
-    invert_batch.«x86_64-tables» inputs ⦃ (ret : Scalar) (r : Array Scalar N) =>
+    invert_batch.«64bit-tables» inputs ⦃ (ret : Scalar) (r : Array Scalar N) =>
       (∀ i < N.val, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
       ret.asNat * (∏ i ∈ Finset.range N.val, inputs[i]!.asNat) % L = 1 ∧
       ret.asNat < L ⦄ := by
-  unfold invert_batch.«x86_64-tables»
+  unfold invert_batch.«64bit-tables»
   step as ⟨one, hone, honeb⟩
   step as ⟨acc, hacc, haccb⟩
   step as ⟨s, back, hs, hback⟩
@@ -40,7 +40,7 @@ theorem invert_batch.«x86_64-tables_spec» {N : Usize} (inputs : Array Scalar N
   have hin : ∀ i : ℕ, inputs[i]! = s[i]! := by
     intro i
     rw [Array.getElem!_Nat_eq, Slice.getElem!_Nat_eq, hs]
-  step with invert_batch_internal.«x86_64-tables_spec» s s1 hs1N
+  step with invert_batch_internal.«64bit-tables_spec» s s1 hs1N
     (fun i hi => hin i ▸ hinputs i (hsN ▸ hi)) as ⟨ret, r, sc, hrl, hr, hret, hretL⟩
   have hget : ∀ i : ℕ, (back r)[i]! = r[i]! := by
     intro i
@@ -57,13 +57,13 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert_batch.«x86_64-no-tables_spec» {N : Usize} (inputs : Array Scalar N)
+theorem invert_batch.«64bit-notables_spec» {N : Usize} (inputs : Array Scalar N)
     (hinputs : ∀ i < N.val, inputs[i]!.asNat % L ≠ 0) :
-    invert_batch.«x86_64-no-tables» inputs ⦃ (ret : Scalar) (r : Array Scalar N) =>
+    invert_batch.«64bit-notables» inputs ⦃ (ret : Scalar) (r : Array Scalar N) =>
       (∀ i < N.val, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
       ret.asNat * (∏ i ∈ Finset.range N.val, inputs[i]!.asNat) % L = 1 ∧
       ret.asNat < L ⦄ :=
-  invert_batch.«x86_64-tables_spec» inputs hinputs
+  invert_batch.«64bit-tables_spec» inputs hinputs
 
 end Curve25519Dalek.scalar.Scalar
 
@@ -71,13 +71,13 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert_batch.«i686-tables_spec» {N : Usize} (inputs : Array Scalar N)
+theorem invert_batch.«32bit-tables_spec» {N : Usize} (inputs : Array Scalar N)
     (hinputs : ∀ i < N.val, inputs[i]!.asNat % L ≠ 0) :
-    invert_batch.«i686-tables» inputs ⦃ (ret : Scalar) (r : Array Scalar N) =>
+    invert_batch.«32bit-tables» inputs ⦃ (ret : Scalar) (r : Array Scalar N) =>
       (∀ i < N.val, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
       ret.asNat * (∏ i ∈ Finset.range N.val, inputs[i]!.asNat) % L = 1 ∧
       ret.asNat < L ⦄ := by
-  unfold invert_batch.«i686-tables»
+  unfold invert_batch.«32bit-tables»
   step as ⟨one, hone, honeb⟩
   step as ⟨acc, hacc, haccb⟩
   step as ⟨s, back, hs, hback⟩
@@ -91,7 +91,7 @@ theorem invert_batch.«i686-tables_spec» {N : Usize} (inputs : Array Scalar N)
   have hin : ∀ i : ℕ, inputs[i]! = s[i]! := by
     intro i
     rw [Array.getElem!_Nat_eq, Slice.getElem!_Nat_eq, hs]
-  step with invert_batch_internal.«i686-tables_spec» s s1 hs1N
+  step with invert_batch_internal.«32bit-tables_spec» s s1 hs1N
     (fun i hi => hin i ▸ hinputs i (hsN ▸ hi)) as ⟨ret, r, sc, hrl, hr, hret, hretL⟩
   have hget : ∀ i : ℕ, (back r)[i]! = r[i]! := by
     intro i
@@ -108,13 +108,13 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert_batch.«i686-no-tables_spec» {N : Usize} (inputs : Array Scalar N)
+theorem invert_batch.«32bit-notables_spec» {N : Usize} (inputs : Array Scalar N)
     (hinputs : ∀ i < N.val, inputs[i]!.asNat % L ≠ 0) :
-    invert_batch.«i686-no-tables» inputs ⦃ (ret : Scalar) (r : Array Scalar N) =>
+    invert_batch.«32bit-notables» inputs ⦃ (ret : Scalar) (r : Array Scalar N) =>
       (∀ i < N.val, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
       ret.asNat * (∏ i ∈ Finset.range N.val, inputs[i]!.asNat) % L = 1 ∧
       ret.asNat < L ⦄ :=
-  invert_batch.«i686-tables_spec» inputs hinputs
+  invert_batch.«32bit-tables_spec» inputs hinputs
 
 end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
@@ -128,9 +128,9 @@ theorem invert_batch_spec {N : Usize} (inputs : Array Scalar N)
       ret.asNat < L ⦄ := by
   unfold invert_batch
   exact dispatch_all_spec
-    (invert_batch.«x86_64-tables_spec» inputs hinputs)
-    (invert_batch.«x86_64-no-tables_spec» inputs hinputs)
-    (invert_batch.«i686-tables_spec» inputs hinputs)
-    (invert_batch.«i686-no-tables_spec» inputs hinputs)
+    (invert_batch.«64bit-tables_spec» inputs hinputs)
+    (invert_batch.«64bit-notables_spec» inputs hinputs)
+    (invert_batch.«32bit-tables_spec» inputs hinputs)
+    (invert_batch.«32bit-notables_spec» inputs hinputs)
 
 end Curve25519Dalek.scalar.Scalar

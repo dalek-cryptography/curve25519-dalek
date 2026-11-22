@@ -26,23 +26,23 @@ open Curve25519Dalek.backend.serial.curve_models
 namespace Curve25519Dalek.window
 
 section
-open «Shared0EdwardsPointx86_64-tables».Insts
-open «CoreOpsArithAddSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables»
+open «Shared0EdwardsPoint64bit-tables».Insts
+open «CoreOpsArithAddSharedAAffineNielsPoint64bit-tablesCompletedPoint64bit-tables»
   (add add_spec)
-open «CompletedPointx86_64-tables» (as_extended as_extended_spec)
-open edwards.«EdwardsPointx86_64-tables»
+open «CompletedPoint64bit-tables» (as_extended as_extended_spec)
+open edwards.«EdwardsPoint64bit-tables»
   (as_affine_niels as_affine_niels_spec double_spec)
 
-namespace «NafLookupTable8AffineNielsPointx86_64-tables».Insts
-namespace «CoreConvertFromSharedAEdwardsPointx86_64-tables»
+namespace «NafLookupTable8AffineNielsPoint64bit-tables».Insts
+namespace «CoreConvertFromSharedAEdwardsPoint64bit-tables»
 
 /-- The loop: entry `k` represents `x + k • Q`, `Q` the added point. -/
 @[local step]
-private theorem from_loop_spec (A2 : edwards.EdwardsPoint.«x86_64-tables»)
-    (x : AffineNielsPoint.«x86_64-tables») (hA2 : A2.LimbsLt 52) (hA2on : A2.OnCurve)
+private theorem from_loop_spec (A2 : edwards.EdwardsPoint.«64bit-tables»)
+    (x : AffineNielsPoint.«64bit-tables») (hA2 : A2.LimbsLt 52) (hA2on : A2.OnCurve)
     (hx : x.LimbsLt 54) (hxon : x.OnCurve) :
     from_loop { start := 0#usize, «end» := 63#usize } (Array.repeat 64#usize x) A2
-      ⦃ (r : Array AffineNielsPoint.«x86_64-tables» 64#usize) => ∀ k : ℕ, k < 64 →
+      ⦃ (r : Array AffineNielsPoint.«64bit-tables» 64#usize) => ∀ k : ℕ, k < 64 →
         r[k]!.OnCurve ∧ r[k]!.toPoint = x.toPoint + k • A2.toPoint ∧ r[k]!.LimbsLt 54 ⦄ := by
   unfold from_loop
   have h := fromLoop_spec (N := 64#usize) (add A2) as_extended as_affine_niels A2.toPoint
@@ -57,8 +57,8 @@ private theorem from_loop_spec (A2 : edwards.EdwardsPoint.«x86_64-tables»)
 /-- `From<&EdwardsPoint> for NafLookupTable8<AffineNielsPoint>`: entry `k` represents
 `(2 k + 1) • A`; limbs `< 2^52` in, `< 2^54` out. -/
 @[step]
-theorem from_spec (A : edwards.EdwardsPoint.«x86_64-tables») (hA : A.LimbsLt 52) (hon : A.OnCurve) :
-    «from» A ⦃ (r : NafLookupTable8 AffineNielsPoint.«x86_64-tables») =>
+theorem from_spec (A : edwards.EdwardsPoint.«64bit-tables») (hA : A.LimbsLt 52) (hon : A.OnCurve) :
+    «from» A ⦃ (r : NafLookupTable8 AffineNielsPoint.«64bit-tables») =>
       r.Represents A.toPoint ∧ r.LimbsLt 54 ⦄ := by
   unfold «from»
   step with as_affine_niels_spec as ⟨x, hxon, hxp, hxb⟩
@@ -69,29 +69,29 @@ theorem from_spec (A : edwards.EdwardsPoint.«x86_64-tables») (hA : A.LimbsLt 5
   refine ⟨hron, (?_ : r[k]!.toPoint = _)⟩
   rw [hrp, hxp, hA2p, smul_smul, add_comm, add_smul, one_smul, mul_comm]
 
-end «CoreConvertFromSharedAEdwardsPointx86_64-tables»
-end «NafLookupTable8AffineNielsPointx86_64-tables».Insts
+end «CoreConvertFromSharedAEdwardsPoint64bit-tables»
+end «NafLookupTable8AffineNielsPoint64bit-tables».Insts
 
 end
 
 section
-open «Shared0EdwardsPointi686-tables».Insts
-open «CoreOpsArithAddSharedAAffineNielsPointi686-tablesCompletedPointi686-tables»
+open «Shared0EdwardsPoint32bit-tables».Insts
+open «CoreOpsArithAddSharedAAffineNielsPoint32bit-tablesCompletedPoint32bit-tables»
   (add add_spec)
-open «CompletedPointi686-tables» (as_extended as_extended_spec)
-open edwards.«EdwardsPointi686-tables»
+open «CompletedPoint32bit-tables» (as_extended as_extended_spec)
+open edwards.«EdwardsPoint32bit-tables»
   (as_affine_niels as_affine_niels_spec double_spec)
 
-namespace «NafLookupTable8AffineNielsPointi686-tables».Insts
-namespace «CoreConvertFromSharedAEdwardsPointi686-tables»
+namespace «NafLookupTable8AffineNielsPoint32bit-tables».Insts
+namespace «CoreConvertFromSharedAEdwardsPoint32bit-tables»
 
 /-- The loop: entry `k` represents `x + k • Q`, `Q` the added point. -/
 @[local step]
-private theorem from_loop_spec (A2 : edwards.EdwardsPoint.«i686-tables»)
-    (x : AffineNielsPoint.«i686-tables») (hA2 : A2.LimbsLt 26) (hA2on : A2.OnCurve)
+private theorem from_loop_spec (A2 : edwards.EdwardsPoint.«32bit-tables»)
+    (x : AffineNielsPoint.«32bit-tables») (hA2 : A2.LimbsLt 26) (hA2on : A2.OnCurve)
     (hx : x.LimbsLt 27) (hxon : x.OnCurve) :
     from_loop { start := 0#usize, «end» := 63#usize } (Array.repeat 64#usize x) A2
-      ⦃ (r : Array AffineNielsPoint.«i686-tables» 64#usize) => ∀ k : ℕ, k < 64 →
+      ⦃ (r : Array AffineNielsPoint.«32bit-tables» 64#usize) => ∀ k : ℕ, k < 64 →
         r[k]!.OnCurve ∧ r[k]!.toPoint = x.toPoint + k • A2.toPoint ∧ r[k]!.LimbsLt 27 ⦄ := by
   unfold from_loop
   have h := fromLoop_spec (N := 64#usize) (add A2) as_extended as_affine_niels A2.toPoint
@@ -106,8 +106,8 @@ private theorem from_loop_spec (A2 : edwards.EdwardsPoint.«i686-tables»)
 /-- `From<&EdwardsPoint> for NafLookupTable8<AffineNielsPoint>`: entry `k` represents
 `(2 k + 1) • A`; limbs `< 2^26` in, `< 2^27` out. -/
 @[step]
-theorem from_spec (A : edwards.EdwardsPoint.«i686-tables») (hA : A.LimbsLt 26) (hon : A.OnCurve) :
-    «from» A ⦃ (r : NafLookupTable8 AffineNielsPoint.«i686-tables») =>
+theorem from_spec (A : edwards.EdwardsPoint.«32bit-tables») (hA : A.LimbsLt 26) (hon : A.OnCurve) :
+    «from» A ⦃ (r : NafLookupTable8 AffineNielsPoint.«32bit-tables») =>
       r.Represents A.toPoint ∧ r.LimbsLt 27 ⦄ := by
   unfold «from»
   step with as_affine_niels_spec as ⟨x, hxon, hxp, hxb⟩
@@ -118,29 +118,29 @@ theorem from_spec (A : edwards.EdwardsPoint.«i686-tables») (hA : A.LimbsLt 26)
   refine ⟨hron, (?_ : r[k]!.toPoint = _)⟩
   rw [hrp, hxp, hA2p, smul_smul, add_comm, add_smul, one_smul, mul_comm]
 
-end «CoreConvertFromSharedAEdwardsPointi686-tables»
-end «NafLookupTable8AffineNielsPointi686-tables».Insts
+end «CoreConvertFromSharedAEdwardsPoint32bit-tables»
+end «NafLookupTable8AffineNielsPoint32bit-tables».Insts
 
 end
 
 section
-open «Shared0EdwardsPointx86_64-no-tables».Insts
-open «CoreOpsArithAddSharedAAffineNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
+open «Shared0EdwardsPoint64bit-notables».Insts
+open «CoreOpsArithAddSharedAAffineNielsPoint64bit-notablesCompletedPoint64bit-notables»
   (add add_spec)
-open «CompletedPointx86_64-no-tables» (as_extended as_extended_spec)
-open edwards.«EdwardsPointx86_64-no-tables»
+open «CompletedPoint64bit-notables» (as_extended as_extended_spec)
+open edwards.«EdwardsPoint64bit-notables»
   (as_affine_niels as_affine_niels_spec double_spec)
 
-namespace «NafLookupTable8AffineNielsPointx86_64-no-tables».Insts
-namespace «CoreConvertFromSharedAEdwardsPointx86_64-no-tables»
+namespace «NafLookupTable8AffineNielsPoint64bit-notables».Insts
+namespace «CoreConvertFromSharedAEdwardsPoint64bit-notables»
 
 /-- The loop: entry `k` represents `x + k • Q`, `Q` the added point. -/
 @[local step]
-private theorem from_loop_spec (A2 : edwards.EdwardsPoint.«x86_64-no-tables»)
-    (x : AffineNielsPoint.«x86_64-no-tables») (hA2 : A2.LimbsLt 52) (hA2on : A2.OnCurve)
+private theorem from_loop_spec (A2 : edwards.EdwardsPoint.«64bit-notables»)
+    (x : AffineNielsPoint.«64bit-notables») (hA2 : A2.LimbsLt 52) (hA2on : A2.OnCurve)
     (hx : x.LimbsLt 54) (hxon : x.OnCurve) :
     from_loop { start := 0#usize, «end» := 63#usize } (Array.repeat 64#usize x) A2
-      ⦃ (r : Array AffineNielsPoint.«x86_64-no-tables» 64#usize) => ∀ k : ℕ, k < 64 →
+      ⦃ (r : Array AffineNielsPoint.«64bit-notables» 64#usize) => ∀ k : ℕ, k < 64 →
         r[k]!.OnCurve ∧ r[k]!.toPoint = x.toPoint + k • A2.toPoint ∧ r[k]!.LimbsLt 54 ⦄ := by
   unfold from_loop
   have h := fromLoop_spec (N := 64#usize) (add A2) as_extended as_affine_niels A2.toPoint
@@ -155,9 +155,9 @@ private theorem from_loop_spec (A2 : edwards.EdwardsPoint.«x86_64-no-tables»)
 /-- `From<&EdwardsPoint> for NafLookupTable8<AffineNielsPoint>`: entry `k` represents
 `(2 k + 1) • A`; limbs `< 2^52` in, `< 2^54` out. -/
 @[step]
-theorem from_spec (A : edwards.EdwardsPoint.«x86_64-no-tables») (hA : A.LimbsLt 52)
+theorem from_spec (A : edwards.EdwardsPoint.«64bit-notables») (hA : A.LimbsLt 52)
     (hon : A.OnCurve) :
-    «from» A ⦃ (r : NafLookupTable8 AffineNielsPoint.«x86_64-no-tables») =>
+    «from» A ⦃ (r : NafLookupTable8 AffineNielsPoint.«64bit-notables») =>
       r.Represents A.toPoint ∧ r.LimbsLt 54 ⦄ := by
   unfold «from»
   step with as_affine_niels_spec as ⟨x, hxon, hxp, hxb⟩
@@ -168,29 +168,29 @@ theorem from_spec (A : edwards.EdwardsPoint.«x86_64-no-tables») (hA : A.LimbsL
   refine ⟨hron, (?_ : r[k]!.toPoint = _)⟩
   rw [hrp, hxp, hA2p, smul_smul, add_comm, add_smul, one_smul, mul_comm]
 
-end «CoreConvertFromSharedAEdwardsPointx86_64-no-tables»
-end «NafLookupTable8AffineNielsPointx86_64-no-tables».Insts
+end «CoreConvertFromSharedAEdwardsPoint64bit-notables»
+end «NafLookupTable8AffineNielsPoint64bit-notables».Insts
 
 end
 
 section
-open «Shared0EdwardsPointi686-no-tables».Insts
-open «CoreOpsArithAddSharedAAffineNielsPointi686-no-tablesCompletedPointi686-no-tables»
+open «Shared0EdwardsPoint32bit-notables».Insts
+open «CoreOpsArithAddSharedAAffineNielsPoint32bit-notablesCompletedPoint32bit-notables»
   (add add_spec)
-open «CompletedPointi686-no-tables» (as_extended as_extended_spec)
-open edwards.«EdwardsPointi686-no-tables»
+open «CompletedPoint32bit-notables» (as_extended as_extended_spec)
+open edwards.«EdwardsPoint32bit-notables»
   (as_affine_niels as_affine_niels_spec double_spec)
 
-namespace «NafLookupTable8AffineNielsPointi686-no-tables».Insts
-namespace «CoreConvertFromSharedAEdwardsPointi686-no-tables»
+namespace «NafLookupTable8AffineNielsPoint32bit-notables».Insts
+namespace «CoreConvertFromSharedAEdwardsPoint32bit-notables»
 
 /-- The loop: entry `k` represents `x + k • Q`, `Q` the added point. -/
 @[local step]
-private theorem from_loop_spec (A2 : edwards.EdwardsPoint.«i686-no-tables»)
-    (x : AffineNielsPoint.«i686-no-tables») (hA2 : A2.LimbsLt 26) (hA2on : A2.OnCurve)
+private theorem from_loop_spec (A2 : edwards.EdwardsPoint.«32bit-notables»)
+    (x : AffineNielsPoint.«32bit-notables») (hA2 : A2.LimbsLt 26) (hA2on : A2.OnCurve)
     (hx : x.LimbsLt 27) (hxon : x.OnCurve) :
     from_loop { start := 0#usize, «end» := 63#usize } (Array.repeat 64#usize x) A2
-      ⦃ (r : Array AffineNielsPoint.«i686-no-tables» 64#usize) => ∀ k : ℕ, k < 64 →
+      ⦃ (r : Array AffineNielsPoint.«32bit-notables» 64#usize) => ∀ k : ℕ, k < 64 →
         r[k]!.OnCurve ∧ r[k]!.toPoint = x.toPoint + k • A2.toPoint ∧ r[k]!.LimbsLt 27 ⦄ := by
   unfold from_loop
   have h := fromLoop_spec (N := 64#usize) (add A2) as_extended as_affine_niels A2.toPoint
@@ -205,9 +205,9 @@ private theorem from_loop_spec (A2 : edwards.EdwardsPoint.«i686-no-tables»)
 /-- `From<&EdwardsPoint> for NafLookupTable8<AffineNielsPoint>`: entry `k` represents
 `(2 k + 1) • A`; limbs `< 2^26` in, `< 2^27` out. -/
 @[step]
-theorem from_spec (A : edwards.EdwardsPoint.«i686-no-tables») (hA : A.LimbsLt 26)
+theorem from_spec (A : edwards.EdwardsPoint.«32bit-notables») (hA : A.LimbsLt 26)
     (hon : A.OnCurve) :
-    «from» A ⦃ (r : NafLookupTable8 AffineNielsPoint.«i686-no-tables») =>
+    «from» A ⦃ (r : NafLookupTable8 AffineNielsPoint.«32bit-notables») =>
       r.Represents A.toPoint ∧ r.LimbsLt 27 ⦄ := by
   unfold «from»
   step with as_affine_niels_spec as ⟨x, hxon, hxp, hxb⟩
@@ -218,8 +218,8 @@ theorem from_spec (A : edwards.EdwardsPoint.«i686-no-tables») (hA : A.LimbsLt 
   refine ⟨hron, (?_ : r[k]!.toPoint = _)⟩
   rw [hrp, hxp, hA2p, smul_smul, add_comm, add_smul, one_smul, mul_comm]
 
-end «CoreConvertFromSharedAEdwardsPointi686-no-tables»
-end «NafLookupTable8AffineNielsPointi686-no-tables».Insts
+end «CoreConvertFromSharedAEdwardsPoint32bit-notables»
+end «NafLookupTable8AffineNielsPoint32bit-notables».Insts
 
 end
 

@@ -11,35 +11,35 @@ import Proofs -- shake: keep
 public import ForHumans.Specs.Edwards
 public import ForHumans.Specs.Montgomery
 public import ForHumans.Specs.Representation.Array
-public import ForHumans.Specs.Representation.Edwards.I686Tables
+public import ForHumans.Specs.Representation.Edwards.Bits64NoTables
 public import ForHumans.Specs.X25519
 public section
 
 set_option linter.style.longLine false
 
-/-! # `Montgomery` for `i686-tables`, generated from `ForHumans/Theorems/Montgomery.lean` -/
+/-! # `Montgomery` for `64bit-notables`, generated from `ForHumans/Theorems/Montgomery.lean` -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek
 open curve25519 (X25519 decodeUCoordinate edwards encodeUCoordinate montgomery montgomeryBasepoint)
 open Curve25519Dalek.montgomery (MontgomeryPoint)
 open Curve25519Dalek.scalar (Scalar)
 
-namespace Theorems.montgomery.«i686-tables».MontgomeryPoint
+namespace Theorems.montgomery.«64bit-notables».MontgomeryPoint
 
 /-- `MontgomeryPoint::to_edwards`: `none` for `u = -1`; otherwise the lenient decoding (as
 `CompressedEdwardsY::decompress`) of the bytes of `y = (u - 1) / (u + 1)` with `y_bytes[31] ^= sign
 << 7`. -/
 theorem to_edwards (P : MontgomeryPoint) (sign : U8) :
-    MontgomeryPoint.to_edwards.«i686-tables» P sign
-      ⦃ (r : Option (edwards.EdwardsPoint.«i686-tables»)) =>
+    MontgomeryPoint.to_edwards.«64bit-notables» P sign
+      ⦃ (r : Option (edwards.EdwardsPoint.«64bit-notables»)) =>
         let u := decodeUCoordinate P.toVector
-        r.map edwards.EdwardsPoint.«i686-tables».toPoint =
+        r.map edwards.EdwardsPoint.«64bit-notables».toPoint =
           (if u = -1 then none
           else curve25519.decodeLenient
             ((encodeUCoordinate ((u - 1) / (u + 1))).set 31
               ((encodeUCoordinate ((u - 1) / (u + 1)))[31] ^^^
                 (UInt8.ofNat sign.val <<< 7)))) ∧
         ∀ q, r = some q → q.OnCurve ∧ q.IsBounded ⦄ :=
-  MontgomeryPoint.«i686-tables».to_edwards_spec P sign
+  MontgomeryPoint.«64bit-notables».to_edwards_spec P sign
 
-end Theorems.montgomery.«i686-tables».MontgomeryPoint
+end Theorems.montgomery.«64bit-notables».MontgomeryPoint

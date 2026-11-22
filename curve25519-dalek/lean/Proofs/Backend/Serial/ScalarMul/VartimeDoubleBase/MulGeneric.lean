@@ -23,7 +23,7 @@ The proofs over `EdwardsOps`, apart from the instances (`Mul.lean`).
 
 `a • A + b • B` for the basepoint `B`, in variable time: the non-adjacent forms of `a` (width
 `5`) and `b` (width `8` with the precomputed table `AFFINE_ODD_MULTIPLES_OF_BASEPOINT` in the
-`x86_64-tables` configuration, width `5` with a table built from `ED25519_BASEPOINT_POINT`
+`64bit-tables` configuration, width `5` with a table built from `ED25519_BASEPOINT_POINT`
 otherwise), Horner's rule from the highest nonzero digit down, adding `d • A` and `d • B` for
 each nonzero digit from the tables of odd multiples. -/
 

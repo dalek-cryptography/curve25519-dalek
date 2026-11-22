@@ -11,15 +11,15 @@ import Proofs -- shake: keep
 public import ForHumans.Specs.Edwards
 public import ForHumans.Specs.Montgomery
 public import ForHumans.Specs.Representation.Array
-public import ForHumans.Specs.Representation.Edwards.X86_64NoTables
+public import ForHumans.Specs.Representation.Edwards.Bits32NoTables
 public import ForHumans.Specs.Representation.Montgomery
-public import ForHumans.Specs.Representation.ScalarMul.X86_64NoTables
+public import ForHumans.Specs.Representation.ScalarMul.Bits32NoTables
 public import ForHumans.Specs.X25519
 public section
 
 set_option linter.style.longLine false
 
-/-! # `Edwards` for `x86_64-no-tables`, generated from `ForHumans/Theorems/Edwards.lean` -/
+/-! # `Edwards` for `32bit-notables`, generated from `ForHumans/Theorems/Edwards.lean` -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek
 open curve25519 (L basepoint decodeLenient decodeScalar25519 edwards edwardsToMontgomery encode
@@ -27,24 +27,24 @@ open curve25519 (L basepoint decodeLenient decodeScalar25519 edwards edwardsToMo
 open Curve25519Dalek.edwards (CompressedEdwardsY)
 open Curve25519Dalek.scalar (Scalar HalfWidthScalar)
 
-namespace Theorems.edwards.«x86_64-no-tables»
+namespace Theorems.edwards.«32bit-notables»
 
 /-- `EdwardsPoint` in this configuration. -/
-abbrev EdwardsPoint := edwards.EdwardsPoint.«x86_64-no-tables»
+abbrev EdwardsPoint := edwards.EdwardsPoint.«32bit-notables»
 
 /-- `VartimeEdwardsPrecomputation` in this configuration. -/
-abbrev VartimeEdwardsPrecomputation := edwards.VartimeEdwardsPrecomputation.«x86_64-no-tables»
+abbrev VartimeEdwardsPrecomputation := edwards.VartimeEdwardsPrecomputation.«32bit-notables»
 
 /-- `CompressedEdwardsY::decompress`: the lenient decoding `decodeLenient` of the bytes (`y` reduced
 modulo `p`, `x = 0` accepted with either sign); the point is on the curve. -/
 theorem CompressedEdwardsY.decompress (c : CompressedEdwardsY) :
-    CompressedEdwardsY.decompress.«x86_64-no-tables» c ⦃ (r : Option EdwardsPoint) =>
+    CompressedEdwardsY.decompress.«32bit-notables» c ⦃ (r : Option EdwardsPoint) =>
       r.map (·.toPoint) = decodeLenient c.toVector ∧ ∀ P, r = some P → P.OnCurve ∧ P.IsBounded ⦄ :=
-  edwards.CompressedEdwardsY.«x86_64-no-tables».decompress_spec c
+  edwards.CompressedEdwardsY.«32bit-notables».decompress_spec c
 
 namespace EdwardsPoint
 
-open edwards.EdwardsPoint.«x86_64-no-tables».Insts
+open edwards.EdwardsPoint.«32bit-notables».Insts
 
 /-- `Identity for EdwardsPoint` represents the neutral element. -/
 theorem identity :
@@ -80,15 +80,15 @@ theorem ct_eq (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.
 /-- `PartialEq for EdwardsPoint` on points: equality of the represented points. -/
 theorem eq (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
     (hQ' : Q.IsBounded) :
-    «CoreCmpPartialEqEdwardsPointx86_64-no-tables».eq P Q ⦃ (r : Bool) =>
+    «CoreCmpPartialEqEdwardsPoint32bit-notables».eq P Q ⦃ (r : Bool) =>
       r = true ↔ P.toPoint = Q.toPoint ⦄ :=
-  «CoreCmpPartialEqEdwardsPointx86_64-no-tables».eq_spec P Q hP' hQ' hP hQ
+  «CoreCmpPartialEqEdwardsPoint32bit-notables».eq_spec P Q hP' hQ' hP hQ
 
 end EdwardsPoint
 
 namespace EdwardsPoint
 
-open edwards.«EdwardsPointx86_64-no-tables»
+open edwards.«EdwardsPoint32bit-notables»
 
 /-- `EdwardsPoint::to_montgomery`: RFC 7748's encoding of the `u`-coordinate of the Montgomery image
 of the represented point (`0` for the identity). -/
@@ -129,81 +129,81 @@ theorem compress_batch_alloc (Ps : Slice EdwardsPoint) (hPs : ∀ i < Ps.length,
 end EdwardsPoint
 
 /-- `impl Add<&EdwardsPoint> for &EdwardsPoint` -/
-abbrev «&P + &Q» := open «Shared0EdwardsPointx86_64-no-tables».Insts in
-  «CoreOpsArithAddSharedAEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».add
+abbrev «&P + &Q» := open «Shared0EdwardsPoint32bit-notables».Insts in
+  «CoreOpsArithAddSharedAEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».add
 /-- `impl Add<&EdwardsPoint> for EdwardsPoint` -/
-abbrev «P + &Q» := open edwards.EdwardsPoint.«x86_64-no-tables».Insts in
-  «CoreOpsArithAddSharedBEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».add
+abbrev «P + &Q» := open edwards.EdwardsPoint.«32bit-notables».Insts in
+  «CoreOpsArithAddSharedBEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».add
 /-- `impl Add<EdwardsPoint> for &EdwardsPoint` -/
-abbrev «&P + Q» := open «SharedAEdwardsPointx86_64-no-tables».Insts in
-  «CoreOpsArithAddEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».add
+abbrev «&P + Q» := open «SharedAEdwardsPoint32bit-notables».Insts in
+  «CoreOpsArithAddEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».add
 /-- `impl Add<EdwardsPoint> for EdwardsPoint` -/
-abbrev «P + Q» := open edwards.EdwardsPoint.«x86_64-no-tables».Insts in
-  «CoreOpsArithAddEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».add
+abbrev «P + Q» := open edwards.EdwardsPoint.«32bit-notables».Insts in
+  «CoreOpsArithAddEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».add
 /-- `impl AddAssign<&EdwardsPoint> for EdwardsPoint` -/
-abbrev «P += &Q» := open edwards.EdwardsPoint.«x86_64-no-tables».Insts in
-  «CoreOpsArithAddAssignSharedAEdwardsPointx86_64-no-tables».add_assign
+abbrev «P += &Q» := open edwards.EdwardsPoint.«32bit-notables».Insts in
+  «CoreOpsArithAddAssignSharedAEdwardsPoint32bit-notables».add_assign
 /-- `impl AddAssign<EdwardsPoint> for EdwardsPoint` -/
-abbrev «P += Q» := open edwards.EdwardsPoint.«x86_64-no-tables».Insts in
-  «CoreOpsArithAddAssignEdwardsPointx86_64-no-tables».add_assign
+abbrev «P += Q» := open edwards.EdwardsPoint.«32bit-notables».Insts in
+  «CoreOpsArithAddAssignEdwardsPoint32bit-notables».add_assign
 
 /-- `impl Sub<&EdwardsPoint> for &EdwardsPoint` -/
-abbrev «&P - &Q» := open «Shared0EdwardsPointx86_64-no-tables».Insts in
-  «CoreOpsArithSubSharedAEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».sub
+abbrev «&P - &Q» := open «Shared0EdwardsPoint32bit-notables».Insts in
+  «CoreOpsArithSubSharedAEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».sub
 /-- `impl Sub<&EdwardsPoint> for EdwardsPoint` -/
-abbrev «P - &Q» := open edwards.EdwardsPoint.«x86_64-no-tables».Insts in
-  «CoreOpsArithSubSharedBEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».sub
+abbrev «P - &Q» := open edwards.EdwardsPoint.«32bit-notables».Insts in
+  «CoreOpsArithSubSharedBEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».sub
 /-- `impl Sub<EdwardsPoint> for &EdwardsPoint` -/
-abbrev «&P - Q» := open «SharedAEdwardsPointx86_64-no-tables».Insts in
-  «CoreOpsArithSubEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».sub
+abbrev «&P - Q» := open «SharedAEdwardsPoint32bit-notables».Insts in
+  «CoreOpsArithSubEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».sub
 /-- `impl Sub<EdwardsPoint> for EdwardsPoint` -/
-abbrev «P - Q» := open edwards.EdwardsPoint.«x86_64-no-tables».Insts in
-  «CoreOpsArithSubEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».sub
+abbrev «P - Q» := open edwards.EdwardsPoint.«32bit-notables».Insts in
+  «CoreOpsArithSubEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».sub
 /-- `impl SubAssign<&EdwardsPoint> for EdwardsPoint` -/
-abbrev «P -= &Q» := open edwards.EdwardsPoint.«x86_64-no-tables».Insts in
-  «CoreOpsArithSubAssignSharedAEdwardsPointx86_64-no-tables».sub_assign
+abbrev «P -= &Q» := open edwards.EdwardsPoint.«32bit-notables».Insts in
+  «CoreOpsArithSubAssignSharedAEdwardsPoint32bit-notables».sub_assign
 /-- `impl SubAssign<EdwardsPoint> for EdwardsPoint` -/
-abbrev «P -= Q» := open edwards.EdwardsPoint.«x86_64-no-tables».Insts in
-  «CoreOpsArithSubAssignEdwardsPointx86_64-no-tables».sub_assign
+abbrev «P -= Q» := open edwards.EdwardsPoint.«32bit-notables».Insts in
+  «CoreOpsArithSubAssignEdwardsPoint32bit-notables».sub_assign
 
 /-- `impl Neg for &EdwardsPoint` -/
-abbrev «-&P» := open «Shared0EdwardsPointx86_64-no-tables».Insts in
-  «CoreOpsArithNegEdwardsPointx86_64-no-tables».neg
+abbrev «-&P» := open «Shared0EdwardsPoint32bit-notables».Insts in
+  «CoreOpsArithNegEdwardsPoint32bit-notables».neg
 /-- `impl Neg for EdwardsPoint` -/
-abbrev «-P» := open edwards.EdwardsPoint.«x86_64-no-tables».Insts in
-  «CoreOpsArithNegEdwardsPointx86_64-no-tables».neg
+abbrev «-P» := open edwards.EdwardsPoint.«32bit-notables».Insts in
+  «CoreOpsArithNegEdwardsPoint32bit-notables».neg
 
 /-- `impl Mul<&Scalar> for &EdwardsPoint` -/
-abbrev «&P * &s» := open «Shared0EdwardsPointx86_64-no-tables».Insts in
-  «CoreOpsArithMulSharedAScalarEdwardsPointx86_64-no-tables».mul
+abbrev «&P * &s» := open «Shared0EdwardsPoint32bit-notables».Insts in
+  «CoreOpsArithMulSharedAScalarEdwardsPoint32bit-notables».mul
 /-- `impl Mul<&Scalar> for EdwardsPoint` -/
-abbrev «P * &s» := open edwards.EdwardsPoint.«x86_64-no-tables».Insts in
-  «CoreOpsArithMulSharedBScalarEdwardsPointx86_64-no-tables».mul
+abbrev «P * &s» := open edwards.EdwardsPoint.«32bit-notables».Insts in
+  «CoreOpsArithMulSharedBScalarEdwardsPoint32bit-notables».mul
 /-- `impl Mul<Scalar> for &EdwardsPoint` -/
-abbrev «&P * s» := open «SharedAEdwardsPointx86_64-no-tables».Insts in
-  «CoreOpsArithMulScalarEdwardsPointx86_64-no-tables».mul
+abbrev «&P * s» := open «SharedAEdwardsPoint32bit-notables».Insts in
+  «CoreOpsArithMulScalarEdwardsPoint32bit-notables».mul
 /-- `impl Mul<Scalar> for EdwardsPoint` -/
-abbrev «P * s» := open edwards.EdwardsPoint.«x86_64-no-tables».Insts in
-  «CoreOpsArithMulScalarEdwardsPointx86_64-no-tables».mul
+abbrev «P * s» := open edwards.EdwardsPoint.«32bit-notables».Insts in
+  «CoreOpsArithMulScalarEdwardsPoint32bit-notables».mul
 /-- `impl MulAssign<&Scalar> for EdwardsPoint` -/
 abbrev «P *= &s» :=
-  edwards.EdwardsPoint.«x86_64-no-tables».Insts.CoreOpsArithMulAssignSharedAScalar.mul_assign
+  edwards.EdwardsPoint.«32bit-notables».Insts.CoreOpsArithMulAssignSharedAScalar.mul_assign
 /-- `impl MulAssign<Scalar> for EdwardsPoint` -/
 abbrev «P *= s» :=
-  edwards.EdwardsPoint.«x86_64-no-tables».Insts.CoreOpsArithMulAssignScalar.mul_assign
+  edwards.EdwardsPoint.«32bit-notables».Insts.CoreOpsArithMulAssignScalar.mul_assign
 
 /-- `impl Mul<&EdwardsPoint> for &Scalar` -/
 abbrev «&s * &P» := open Shared0Scalar.Insts in
-  «CoreOpsArithMulSharedAEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».mul
+  «CoreOpsArithMulSharedAEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».mul
 /-- `impl Mul<&EdwardsPoint> for Scalar` -/
 abbrev «s * &P» := open scalar.Scalar.Insts in
-  «CoreOpsArithMulSharedBEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».mul
+  «CoreOpsArithMulSharedBEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».mul
 /-- `impl Mul<EdwardsPoint> for &Scalar` -/
 abbrev «&s * P» := open SharedAScalar.Insts in
-  «CoreOpsArithMulEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».mul
+  «CoreOpsArithMulEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».mul
 /-- `impl Mul<EdwardsPoint> for Scalar` -/
 abbrev «s * P» := open scalar.Scalar.Insts in
-  «CoreOpsArithMulEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».mul
+  «CoreOpsArithMulEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».mul
 
 namespace EdwardsPoint
 
@@ -213,8 +213,8 @@ theorem add (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.On
     ∀ add ∈ [«&P + &Q», «P + &Q», «&P + Q», «P + Q», «P += &Q», «P += Q»],
       add P Q ⦃ (r : EdwardsPoint) =>
         r.OnCurve ∧ r.toPoint = P.toPoint + Q.toPoint ∧ r.IsBounded ⦄ := by
-  open «Shared0EdwardsPointx86_64-no-tables».Insts in
-  variants [«CoreOpsArithAddSharedAEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».add_spec]
+  open «Shared0EdwardsPoint32bit-notables».Insts in
+  variants [«CoreOpsArithAddSharedAEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».add_spec]
 
 /-- `Sub<&EdwardsPoint> for &EdwardsPoint` on the represented points. -/
 theorem sub (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
@@ -222,8 +222,8 @@ theorem sub (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.On
     ∀ sub ∈ [«&P - &Q», «P - &Q», «&P - Q», «P - Q», «P -= &Q», «P -= Q»],
       sub P Q ⦃ (r : EdwardsPoint) =>
         r.OnCurve ∧ r.toPoint = P.toPoint - Q.toPoint ∧ r.IsBounded ⦄ := by
-  open «Shared0EdwardsPointx86_64-no-tables».Insts in
-  variants [«CoreOpsArithSubSharedAEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».sub_spec]
+  open «Shared0EdwardsPoint32bit-notables».Insts in
+  variants [«CoreOpsArithSubSharedAEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».sub_spec]
 
 /-- `Sum for EdwardsPoint`: the sum of the points yielded by the iterator (through `borrow`). -/
 theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T EdwardsPoint)
@@ -232,17 +232,17 @@ theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T EdwardsPoint)
     (hborrow : List.Forall₂
       (fun x P => borrowInst.borrow x ⦃ (P' : EdwardsPoint) => P' = P ⦄) xs Ps)
     (hPs : ∀ P ∈ Ps, P.OnCurve) (hPs' : ∀ P ∈ Ps, P.IsBounded) :
-    edwards.EdwardsPoint.«x86_64-no-tables».Insts.CoreIterTraitsAccumSum.sum borrowInst iterInst iter
+    edwards.EdwardsPoint.«32bit-notables».Insts.CoreIterTraitsAccumSum.sum borrowInst iterInst iter
       ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = (Ps.map (·.toPoint)).sum ∧ r.IsBounded ⦄ :=
-  edwards.EdwardsPoint.«x86_64-no-tables».Insts.CoreIterTraitsAccumSum.sum_spec borrowInst iterInst
+  edwards.EdwardsPoint.«32bit-notables».Insts.CoreIterTraitsAccumSum.sum_spec borrowInst iterInst
     iter xs Ps hiter hborrow hPs' hPs
 
 /-- `Neg for EdwardsPoint` (by value) negates the represented point. -/
 theorem neg (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
     ∀ neg ∈ [«-&P», «-P»],
       neg P ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = -P.toPoint ∧ r.IsBounded ⦄ := by
-  open «Shared0EdwardsPointx86_64-no-tables».Insts in
-  variants [«CoreOpsArithNegEdwardsPointx86_64-no-tables».neg_spec]
+  open «Shared0EdwardsPoint32bit-notables».Insts in
+  variants [«CoreOpsArithNegEdwardsPoint32bit-notables».neg_spec]
 
 /-- `Mul<&Scalar> for &EdwardsPoint`: `s • P` (unreduced, `< 2^255`). -/
 theorem mul (P : EdwardsPoint) (s : Scalar) (hP : P.OnCurve) (hP' : P.IsBounded)
@@ -250,8 +250,8 @@ theorem mul (P : EdwardsPoint) (s : Scalar) (hP : P.OnCurve) (hP' : P.IsBounded)
     ∀ mul ∈ [«&P * &s», «P * &s», «&P * s», «P * s», «P *= &s», «P *= s»],
       mul P s ⦃ (r : EdwardsPoint) =>
         r.OnCurve ∧ r.toPoint = s.asNat • P.toPoint ∧ r.IsBounded ⦄ := by
-  open «Shared0EdwardsPointx86_64-no-tables».Insts in
-  variants [«CoreOpsArithMulSharedAScalarEdwardsPointx86_64-no-tables».mul_spec]
+  open «Shared0EdwardsPoint32bit-notables».Insts in
+  variants [«CoreOpsArithMulSharedAScalarEdwardsPoint32bit-notables».mul_spec]
 
 /-- `Mul<&EdwardsPoint> for &Scalar`: as `&EdwardsPoint * &Scalar`. -/
 theorem mul_left (s : Scalar) (P : EdwardsPoint) (hs : s.asNat < 2 ^ 255) (hP : P.OnCurve)
@@ -260,9 +260,9 @@ theorem mul_left (s : Scalar) (P : EdwardsPoint) (hs : s.asNat < 2 ^ 255) (hP : 
       mul s P ⦃ (r : EdwardsPoint) =>
         r.OnCurve ∧ r.toPoint = s.asNat • P.toPoint ∧ r.IsBounded ⦄ := by
   open Shared0Scalar.Insts in
-  variants [«CoreOpsArithMulSharedAEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».mul_spec]
+  variants [«CoreOpsArithMulSharedAEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».mul_spec]
 
-open edwards.«EdwardsPointx86_64-no-tables»
+open edwards.«EdwardsPoint32bit-notables»
 
 /-- `EdwardsPoint::mul_base`: `s • B` for the basepoint `B` (unreduced, `< 2^255`). -/
 theorem mul_base (s : Scalar) (hs : s.asNat < 2 ^ 255) :
@@ -289,7 +289,7 @@ end EdwardsPoint
 
 namespace EdwardsPoint
 
-open edwards.EdwardsPoint.«x86_64-no-tables».Insts
+open edwards.EdwardsPoint.«32bit-notables».Insts
 
 /-- `MultiscalarMul::multiscalar_mul` for `EdwardsPoint`: `∑ s_i • P_i` over the scalars and points
 the two inputs yield, which must be equally many (the patched `assert_eq!`; unreduced scalars `<
@@ -309,11 +309,11 @@ theorem multiscalar_mul
       (fun y P => borrowPointInst.borrow y ⦃ (P' : EdwardsPoint) => P' = P ⦄) ys Ps)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hPs : ∀ P ∈ Ps, P.OnCurve)
     (hPs' : ∀ P ∈ Ps, P.IsBounded) (hxs : xs.length ≤ Usize.max) (hlen : xs.length = ys.length) :
-    «Curve25519_dalekTraitsMultiscalarMulEdwardsPointx86_64-no-tables».multiscalar_mul
+    «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint32bit-notables».multiscalar_mul
       scalarsInst borrowScalarInst pointsInst borrowPointInst scalars points
       ⦃ (r : EdwardsPoint) => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss Ps).sum ∧ r.IsBounded ⦄ := by
-  apply «Curve25519_dalekTraitsMultiscalarMulEdwardsPointx86_64-no-tables».multiscalar_mul_spec <;>
+  apply «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint32bit-notables».multiscalar_mul_spec <;>
     assumption
 
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `EdwardsPoint`: `none` iff some point is
@@ -331,21 +331,21 @@ theorem optional_multiscalar_mul {I J Clause0_Item Clause0_IntoIter Clause2_Into
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hPs : ∀ P, some P ∈ ops → P.OnCurve)
     (hPs' : ∀ P, some P ∈ ops → P.IsBounded) (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
-    «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-no-tables».optional_multiscalar_mul
+    «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint32bit-notables».optional_multiscalar_mul
       scalarsInst borrowScalarInst pointsInst scalars points
       ⦃ (r : Option EdwardsPoint) => (none ∈ ops → r = none) ∧
         ∀ Ps, ops = Ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧
           R.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss Ps).sum ∧
           R.IsBounded ⦄ := by
-  open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-no-tables» in
+  open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint32bit-notables» in
   apply optional_multiscalar_mul_spec <;> assumption
 
 end EdwardsPoint
 
 namespace VartimeEdwardsPrecomputation
 
-open edwards.VartimeEdwardsPrecomputation.«x86_64-no-tables».Insts
-open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-no-tables»
+open edwards.VartimeEdwardsPrecomputation.«32bit-notables».Insts
+open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-notables»
 
 /-- `VartimePrecomputedMultiscalarMul::new` for `VartimeEdwardsPrecomputation`: a precomputation of
 the points the input yields (through `borrow`). -/
@@ -415,7 +415,7 @@ end VartimeEdwardsPrecomputation
 
 namespace EdwardsPoint
 
-open edwards.«EdwardsPointx86_64-no-tables»
+open edwards.«EdwardsPoint32bit-notables»
 
 /-- `EdwardsPoint::vartime_double_scalar_mul_basepoint`: `a • A + b • B` for the basepoint `B`
 (unreduced scalars `< 2^255`). -/
@@ -440,7 +440,7 @@ end EdwardsPoint
 
 namespace EdwardsPoint
 
-open edwards.«EdwardsPointx86_64-no-tables»
+open edwards.«EdwardsPoint32bit-notables»
 
 /-- `EdwardsPoint::mul_by_cofactor`: `8 • P`. -/
 theorem mul_by_cofactor (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
@@ -461,4 +461,4 @@ theorem is_torsion_free (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) 
 
 end EdwardsPoint
 
-end Theorems.edwards.«x86_64-no-tables»
+end Theorems.edwards.«32bit-notables»

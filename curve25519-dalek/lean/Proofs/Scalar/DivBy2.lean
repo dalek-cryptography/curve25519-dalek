@@ -50,10 +50,10 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem div_by_2.«x86_64-tables_spec» (self : Scalar) (hself : self.asNat < L) :
-    div_by_2.«x86_64-tables» self ⦃ (r : Scalar) =>
+theorem div_by_2.«64bit-tables_spec» (self : Scalar) (hself : self.asNat < L) :
+    div_by_2.«64bit-tables» self ⦃ (r : Scalar) =>
       2 * r.asNat % L = self.asNat ∧ r.asNat < L ⦄ := by
-  unfold div_by_2.«x86_64-tables»
+  unfold div_by_2.«64bit-tables»
   step as ⟨a, ha⟩
   step as ⟨i, hi⟩
   step as ⟨i1, hi1, hi1bv⟩
@@ -88,10 +88,10 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem div_by_2.«x86_64-no-tables_spec» (self : Scalar) (hself : self.asNat < L) :
-    div_by_2.«x86_64-no-tables» self ⦃ (r : Scalar) =>
+theorem div_by_2.«64bit-notables_spec» (self : Scalar) (hself : self.asNat < L) :
+    div_by_2.«64bit-notables» self ⦃ (r : Scalar) =>
       2 * r.asNat % L = self.asNat ∧ r.asNat < L ⦄ :=
-  div_by_2.«x86_64-tables_spec» self hself
+  div_by_2.«64bit-tables_spec» self hself
 
 end Curve25519Dalek.scalar.Scalar
 
@@ -99,10 +99,10 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem div_by_2.«i686-tables_spec» (self : Scalar) (hself : self.asNat < L) :
-    div_by_2.«i686-tables» self ⦃ (r : Scalar) =>
+theorem div_by_2.«32bit-tables_spec» (self : Scalar) (hself : self.asNat < L) :
+    div_by_2.«32bit-tables» self ⦃ (r : Scalar) =>
       2 * r.asNat % L = self.asNat ∧ r.asNat < L ⦄ := by
-  unfold div_by_2.«i686-tables»
+  unfold div_by_2.«32bit-tables»
   step as ⟨a, ha⟩
   step as ⟨i, hi⟩
   step as ⟨i1, hi1, hi1bv⟩
@@ -137,10 +137,10 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem div_by_2.«i686-no-tables_spec» (self : Scalar) (hself : self.asNat < L) :
-    div_by_2.«i686-no-tables» self ⦃ (r : Scalar) =>
+theorem div_by_2.«32bit-notables_spec» (self : Scalar) (hself : self.asNat < L) :
+    div_by_2.«32bit-notables» self ⦃ (r : Scalar) =>
       2 * r.asNat % L = self.asNat ∧ r.asNat < L ⦄ :=
-  div_by_2.«i686-tables_spec» self hself
+  div_by_2.«32bit-tables_spec» self hself
 
 end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
@@ -151,9 +151,9 @@ theorem div_by_2_spec (self : Scalar) (hself : self.asNat < L) :
       2 * r.asNat % L = self.asNat ∧ r.asNat < L ⦄ := by
   unfold div_by_2
   exact dispatch_all_spec
-    (div_by_2.«x86_64-tables_spec» self hself)
-    (div_by_2.«x86_64-no-tables_spec» self hself)
-    (div_by_2.«i686-tables_spec» self hself)
-    (div_by_2.«i686-no-tables_spec» self hself)
+    (div_by_2.«64bit-tables_spec» self hself)
+    (div_by_2.«64bit-notables_spec» self hself)
+    (div_by_2.«32bit-tables_spec» self hself)
+    (div_by_2.«32bit-notables_spec» self hself)
 
 end Curve25519Dalek.scalar.Scalar

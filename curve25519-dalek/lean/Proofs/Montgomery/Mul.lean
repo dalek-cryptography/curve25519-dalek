@@ -203,49 +203,49 @@ namespace MulShared1MontgomeryPointShared0ScalarMontgomeryPoint
 
 open scoped Helpers.IndexStep in
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
-open ProjectivePoint.«x86_64-tables».Insts in
+open ProjectivePoint.«64bit-tables».Insts in
 /-- The loop of `mul`: from bit `i - 1` down to bit `0`, the ladder's loop body. -/
 @[local step]
-private theorem mul.«x86_64-tables_loop_spec» (bytes : Array U8 32#usize)
+private theorem mul.«64bit-tables_loop_spec» (bytes : Array U8 32#usize)
     (affine_u : FieldElement51)
-    (x0 x1 : ProjectivePoint.«x86_64-tables») (prev_bit : Bool) (i : Usize) (hi : i.val ≤ 255)
+    (x0 x1 : ProjectivePoint.«64bit-tables») (prev_bit : Bool) (i : Usize) (hi : i.val ≤ 255)
     (hu : affine_u.LimbsLt 54) (h0 : x0.LimbsLt 52) (h1 : x1.LimbsLt 52) :
-    mul.«x86_64-tables_loop» bytes affine_u x0 x1 prev_bit i
-      ⦃ (y0 y1 : ProjectivePoint.«x86_64-tables») (b : Bool) =>
+    mul.«64bit-tables_loop» bytes affine_u x0 x1 prev_bit i
+      ⦃ (y0 y1 : ProjectivePoint.«64bit-tables») (b : Bool) =>
         y0.LimbsLt 52 ∧ y1.LimbsLt 52 ∧
         (⟨y0.toXZ, y1.toXZ, b⟩ : XZ.LadderState (ZMod p)) =
           XZ.ladderLoop montgomery.a24 affine_u.toField (bytes.asNat 8) i.val
             ⟨x0.toXZ, x1.toXZ, prev_bit⟩ ⦄ := by
-  rw [show mul.«x86_64-tables_loop» bytes affine_u x0 x1 prev_bit i =
+  rw [show mul.«64bit-tables_loop» bytes affine_u x0 x1 prev_bit i =
       Backend.U64.mulLadder
         (subtle.ConditionallySelectable.conditional_swap.default SubtleConditionallySelectable)
-        differential_add_and_double.«x86_64-tables» bytes affine_u x0 x1 prev_bit i from rfl]
-  exact Backend.mulLadder_spec Backend.U64 ProjectivePoint.«x86_64-tables».toXZ
+        differential_add_and_double.«64bit-tables» bytes affine_u x0 x1 prev_bit i from rfl]
+  exact Backend.mulLadder_spec Backend.U64 ProjectivePoint.«64bit-tables».toXZ
     (·.LimbsLt 52) _ _ SubtleConditionallySelectable.conditional_swap_spec
-    «x86_64-tables».differential_add_and_double_spec bytes affine_u x0 x1 prev_bit i hi hu h0 h1
+    «64bit-tables».differential_add_and_double_spec bytes affine_u x0 x1 prev_bit i hi hu h0 h1
 
 open scoped Helpers.IndexStep in
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
-open ProjectivePoint.«i686-tables».Insts in
+open ProjectivePoint.«32bit-tables».Insts in
 /-- The loop of `mul`: from bit `i - 1` down to bit `0`, the ladder's loop body. -/
 @[local step]
-private theorem mul.«i686-tables_loop_spec» (bytes : Array U8 32#usize)
+private theorem mul.«32bit-tables_loop_spec» (bytes : Array U8 32#usize)
     (affine_u : FieldElement2625)
-    (x0 x1 : ProjectivePoint.«i686-tables») (prev_bit : Bool) (i : Usize) (hi : i.val ≤ 255)
+    (x0 x1 : ProjectivePoint.«32bit-tables») (prev_bit : Bool) (i : Usize) (hi : i.val ≤ 255)
     (hu : affine_u.LimbsLt 27) (h0 : x0.LimbsLt 26) (h1 : x1.LimbsLt 26) :
-    mul.«i686-tables_loop» bytes affine_u x0 x1 prev_bit i
-      ⦃ (y0 y1 : ProjectivePoint.«i686-tables») (b : Bool) =>
+    mul.«32bit-tables_loop» bytes affine_u x0 x1 prev_bit i
+      ⦃ (y0 y1 : ProjectivePoint.«32bit-tables») (b : Bool) =>
         y0.LimbsLt 26 ∧ y1.LimbsLt 26 ∧
         (⟨y0.toXZ, y1.toXZ, b⟩ : XZ.LadderState (ZMod p)) =
           XZ.ladderLoop montgomery.a24 affine_u.toField (bytes.asNat 8) i.val
             ⟨x0.toXZ, x1.toXZ, prev_bit⟩ ⦄ := by
-  rw [show mul.«i686-tables_loop» bytes affine_u x0 x1 prev_bit i =
+  rw [show mul.«32bit-tables_loop» bytes affine_u x0 x1 prev_bit i =
       Backend.U32.mulLadder
         (subtle.ConditionallySelectable.conditional_swap.default SubtleConditionallySelectable)
-        differential_add_and_double.«i686-tables» bytes affine_u x0 x1 prev_bit i from rfl]
-  exact Backend.mulLadder_spec Backend.U32 ProjectivePoint.«i686-tables».toXZ
+        differential_add_and_double.«32bit-tables» bytes affine_u x0 x1 prev_bit i from rfl]
+  exact Backend.mulLadder_spec Backend.U32 ProjectivePoint.«32bit-tables».toXZ
     (·.LimbsLt 26) _ _ SubtleConditionallySelectable.conditional_swap_spec
-    «i686-tables».differential_add_and_double_spec bytes affine_u x0 x1 prev_bit i hi hu h0 h1
+    «32bit-tables».differential_add_and_double_spec bytes affine_u x0 x1 prev_bit i hi hu h0 h1
 
 open scoped Helpers.IndexStep in
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
@@ -253,16 +253,16 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 scalar, encoded canonically. The ladder computes `u(n • Q)` on the curve or its twist
 (`MontgomeryModel.ladder_eq_xMul`). -/
 @[step]
-theorem mul.«x86_64-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
-    mul.«x86_64-tables» self s ⦃ (r : MontgomeryPoint) =>
+theorem mul.«64bit-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
+    mul.«64bit-tables» self s ⦃ (r : MontgomeryPoint) =>
       r.asNat = encodeU
           (montgomery.ladder 255 (s.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
-  unfold mul.«x86_64-tables»
+  unfold mul.«64bit-tables»
   step as ⟨bytes, hbytes⟩
   step as ⟨u, hu, hu_lt⟩
   step as ⟨x0, hx0, hx0_lt⟩
   step as ⟨one, hone, hone_lt⟩
-  step with mul.«x86_64-tables_loop_spec» bytes u x0 { U := u, W := one } false 255#usize
+  step with mul.«64bit-tables_loop_spec» bytes u x0 { U := u, W := one } false 255#usize
       (by decide) (limbs_lt_of_le (by decide) hu_lt) hx0_lt
       ⟨limbs_lt_of_le (by decide) hu_lt, limbs_lt_of_le (by decide) hone_lt⟩
     as ⟨y0, y1, pb, hy0, hy1, hst⟩
@@ -273,7 +273,7 @@ theorem mul.«x86_64-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) 
     · exact Or.inr (by rw [UScalar.eq_equiv]; simpa using hi)
   step as ⟨c, hcv, hc⟩
   step with
-      ProjectivePoint.«x86_64-tables».Insts.SubtleConditionallySelectable.conditional_swap_spec
+      ProjectivePoint.«64bit-tables».Insts.SubtleConditionallySelectable.conditional_swap_spec
     y0 y1 c hcv as ⟨z0, z1, hz0, hz1⟩
   step
   have hz : z0 = if pb then y1 else y0 := by
@@ -285,7 +285,7 @@ theorem mul.«x86_64-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) 
     cases pb
     · exact ⟨limbs_lt_of_le (by decide) hy0.1, limbs_lt_of_le (by decide) hy0.2⟩
     · exact ⟨limbs_lt_of_le (by decide) hy1.1, limbs_lt_of_le (by decide) hy1.2⟩
-  step with «ProjectivePointx86_64-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
+  step with «ProjectivePoint64bit-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
   rw [hr, MontgomeryModel.ladder, MontgomeryModel.XZ.ladder, ladderXZ_mod,
     MontgomeryPoint.decodeUCoordinate_toVector, decodeU]
   congr 2
@@ -293,8 +293,8 @@ theorem mul.«x86_64-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) 
     rw [toField_def, hu, MontgomeryPoint.asNat_def]
   rw [← hu', MontgomeryModel.XZ.ladderXZ, scalar.Scalar.asNat_def, ← hbytes]
   rw [show (⟨⟨1, 0⟩, ⟨u.toField, 1⟩, false⟩ : XZ.LadderState (ZMod p)) =
-      ⟨x0.toXZ, ({ U := u, W := one } : ProjectivePoint.«x86_64-tables»).toXZ, false⟩ by
-    rw [hx0, ProjectivePoint.«x86_64-tables».toXZ_def, toField_eq_one_of_asNat hone], ← hst, hz]
+      ⟨x0.toXZ, ({ U := u, W := one } : ProjectivePoint.«64bit-tables»).toXZ, false⟩ by
+    rw [hx0, ProjectivePoint.«64bit-tables».toXZ_def, toField_eq_one_of_asNat hone], ← hst, hz]
   cases pb <;> rfl
 
 open scoped Helpers.IndexStep in
@@ -303,16 +303,16 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
 scalar, encoded canonically. The ladder computes `u(n • Q)` on the curve or its twist
 (`MontgomeryModel.ladder_eq_xMul`). -/
 @[step]
-theorem mul.«i686-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
-    mul.«i686-tables» self s ⦃ (r : MontgomeryPoint) =>
+theorem mul.«32bit-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
+    mul.«32bit-tables» self s ⦃ (r : MontgomeryPoint) =>
       r.asNat = encodeU
           (montgomery.ladder 255 (s.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
-  unfold mul.«i686-tables»
+  unfold mul.«32bit-tables»
   step as ⟨bytes, hbytes⟩
   step as ⟨u, hu, hu_lt⟩
   step as ⟨x0, hx0, hx0_lt⟩
   step as ⟨one, hone, hone_lt⟩
-  step with mul.«i686-tables_loop_spec» bytes u x0 { U := u, W := one } false 255#usize
+  step with mul.«32bit-tables_loop_spec» bytes u x0 { U := u, W := one } false 255#usize
       (by decide) (limbs_lt_of_le (by decide) hu_lt) hx0_lt
       ⟨limbs_lt_of_le (by decide) hu_lt, limbs_lt_of_le (by decide) hone_lt⟩
     as ⟨y0, y1, pb, hy0, hy1, hst⟩
@@ -323,7 +323,7 @@ theorem mul.«i686-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
     · exact Or.inr (by rw [UScalar.eq_equiv]; simpa using hi)
   step as ⟨c, hcv, hc⟩
   step with
-      ProjectivePoint.«i686-tables».Insts.SubtleConditionallySelectable.conditional_swap_spec
+      ProjectivePoint.«32bit-tables».Insts.SubtleConditionallySelectable.conditional_swap_spec
     y0 y1 c hcv as ⟨z0, z1, hz0, hz1⟩
   step
   have hz : z0 = if pb then y1 else y0 := by
@@ -335,7 +335,7 @@ theorem mul.«i686-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
     cases pb
     · exact ⟨limbs_lt_of_le (by decide) hy0.1, limbs_lt_of_le (by decide) hy0.2⟩
     · exact ⟨limbs_lt_of_le (by decide) hy1.1, limbs_lt_of_le (by decide) hy1.2⟩
-  step with «ProjectivePointi686-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
+  step with «ProjectivePoint32bit-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
   rw [hr, MontgomeryModel.ladder, MontgomeryModel.XZ.ladder, ladderXZ_mod,
     MontgomeryPoint.decodeUCoordinate_toVector, decodeU]
   congr 2
@@ -344,55 +344,55 @@ theorem mul.«i686-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
     exact (ZMod.natCast_eq_natCast_iff' _ _ _).mpr hu
   rw [← hu', MontgomeryModel.XZ.ladderXZ, scalar.Scalar.asNat_def, ← hbytes]
   rw [show (⟨⟨1, 0⟩, ⟨u.toField, 1⟩, false⟩ : XZ.LadderState (ZMod p)) =
-      ⟨x0.toXZ, ({ U := u, W := one } : ProjectivePoint.«i686-tables»).toXZ, false⟩ by
-    rw [hx0, ProjectivePoint.«i686-tables».toXZ_def, toField_eq_one_of_asNat hone], ← hst, hz]
+      ⟨x0.toXZ, ({ U := u, W := one } : ProjectivePoint.«32bit-tables»).toXZ, false⟩ by
+    rw [hx0, ProjectivePoint.«32bit-tables».toXZ_def, toField_eq_one_of_asNat hone], ← hst, hz]
   cases pb <;> rfl
 
 open scoped Helpers.IndexStep in
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
-open ProjectivePoint.«x86_64-no-tables».Insts in
+open ProjectivePoint.«64bit-notables».Insts in
 /-- The loop of `mul`: from bit `i - 1` down to bit `0`, the ladder's loop body. -/
 @[local step]
-private theorem mul.«x86_64-no-tables_loop_spec» (bytes : Array U8 32#usize)
+private theorem mul.«64bit-notables_loop_spec» (bytes : Array U8 32#usize)
     (affine_u : FieldElement51)
-    (x0 x1 : ProjectivePoint.«x86_64-no-tables») (prev_bit : Bool) (i : Usize) (hi : i.val ≤ 255)
+    (x0 x1 : ProjectivePoint.«64bit-notables») (prev_bit : Bool) (i : Usize) (hi : i.val ≤ 255)
     (hu : affine_u.LimbsLt 54) (h0 : x0.LimbsLt 52) (h1 : x1.LimbsLt 52) :
-    mul.«x86_64-no-tables_loop» bytes affine_u x0 x1 prev_bit i
-      ⦃ (y0 y1 : ProjectivePoint.«x86_64-no-tables») (b : Bool) =>
+    mul.«64bit-notables_loop» bytes affine_u x0 x1 prev_bit i
+      ⦃ (y0 y1 : ProjectivePoint.«64bit-notables») (b : Bool) =>
         y0.LimbsLt 52 ∧ y1.LimbsLt 52 ∧
         (⟨y0.toXZ, y1.toXZ, b⟩ : XZ.LadderState (ZMod p)) =
           XZ.ladderLoop montgomery.a24 affine_u.toField (bytes.asNat 8) i.val
             ⟨x0.toXZ, x1.toXZ, prev_bit⟩ ⦄ := by
-  rw [show mul.«x86_64-no-tables_loop» bytes affine_u x0 x1 prev_bit i =
+  rw [show mul.«64bit-notables_loop» bytes affine_u x0 x1 prev_bit i =
       Backend.U64.mulLadder
         (subtle.ConditionallySelectable.conditional_swap.default SubtleConditionallySelectable)
-        differential_add_and_double.«x86_64-no-tables» bytes affine_u x0 x1 prev_bit i from rfl]
-  exact Backend.mulLadder_spec Backend.U64 ProjectivePoint.«x86_64-no-tables».toXZ
+        differential_add_and_double.«64bit-notables» bytes affine_u x0 x1 prev_bit i from rfl]
+  exact Backend.mulLadder_spec Backend.U64 ProjectivePoint.«64bit-notables».toXZ
     (·.LimbsLt 52) _ _ SubtleConditionallySelectable.conditional_swap_spec
-    «x86_64-no-tables».differential_add_and_double_spec bytes affine_u x0 x1 prev_bit i hi hu h0 h1
+    «64bit-notables».differential_add_and_double_spec bytes affine_u x0 x1 prev_bit i hi hu h0 h1
 
 open scoped Helpers.IndexStep in
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
-open ProjectivePoint.«i686-no-tables».Insts in
+open ProjectivePoint.«32bit-notables».Insts in
 /-- The loop of `mul`: from bit `i - 1` down to bit `0`, the ladder's loop body. -/
 @[local step]
-private theorem mul.«i686-no-tables_loop_spec» (bytes : Array U8 32#usize)
+private theorem mul.«32bit-notables_loop_spec» (bytes : Array U8 32#usize)
     (affine_u : FieldElement2625)
-    (x0 x1 : ProjectivePoint.«i686-no-tables») (prev_bit : Bool) (i : Usize) (hi : i.val ≤ 255)
+    (x0 x1 : ProjectivePoint.«32bit-notables») (prev_bit : Bool) (i : Usize) (hi : i.val ≤ 255)
     (hu : affine_u.LimbsLt 27) (h0 : x0.LimbsLt 26) (h1 : x1.LimbsLt 26) :
-    mul.«i686-no-tables_loop» bytes affine_u x0 x1 prev_bit i
-      ⦃ (y0 y1 : ProjectivePoint.«i686-no-tables») (b : Bool) =>
+    mul.«32bit-notables_loop» bytes affine_u x0 x1 prev_bit i
+      ⦃ (y0 y1 : ProjectivePoint.«32bit-notables») (b : Bool) =>
         y0.LimbsLt 26 ∧ y1.LimbsLt 26 ∧
         (⟨y0.toXZ, y1.toXZ, b⟩ : XZ.LadderState (ZMod p)) =
           XZ.ladderLoop montgomery.a24 affine_u.toField (bytes.asNat 8) i.val
             ⟨x0.toXZ, x1.toXZ, prev_bit⟩ ⦄ := by
-  rw [show mul.«i686-no-tables_loop» bytes affine_u x0 x1 prev_bit i =
+  rw [show mul.«32bit-notables_loop» bytes affine_u x0 x1 prev_bit i =
       Backend.U32.mulLadder
         (subtle.ConditionallySelectable.conditional_swap.default SubtleConditionallySelectable)
-        differential_add_and_double.«i686-no-tables» bytes affine_u x0 x1 prev_bit i from rfl]
-  exact Backend.mulLadder_spec Backend.U32 ProjectivePoint.«i686-no-tables».toXZ
+        differential_add_and_double.«32bit-notables» bytes affine_u x0 x1 prev_bit i from rfl]
+  exact Backend.mulLadder_spec Backend.U32 ProjectivePoint.«32bit-notables».toXZ
     (·.LimbsLt 26) _ _ SubtleConditionallySelectable.conditional_swap_spec
-    «i686-no-tables».differential_add_and_double_spec bytes affine_u x0 x1 prev_bit i hi hu h0 h1
+    «32bit-notables».differential_add_and_double_spec bytes affine_u x0 x1 prev_bit i hi hu h0 h1
 
 open scoped Helpers.IndexStep in
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
@@ -400,16 +400,16 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 scalar, encoded canonically. The ladder computes `u(n • Q)` on the curve or its twist
 (`MontgomeryModel.ladder_eq_xMul`). -/
 @[step]
-theorem mul.«x86_64-no-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
-    mul.«x86_64-no-tables» self s ⦃ (r : MontgomeryPoint) =>
+theorem mul.«64bit-notables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
+    mul.«64bit-notables» self s ⦃ (r : MontgomeryPoint) =>
       r.asNat = encodeU
           (montgomery.ladder 255 (s.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
-  unfold mul.«x86_64-no-tables»
+  unfold mul.«64bit-notables»
   step as ⟨bytes, hbytes⟩
   step as ⟨u, hu, hu_lt⟩
   step as ⟨x0, hx0, hx0_lt⟩
   step as ⟨one, hone, hone_lt⟩
-  step with mul.«x86_64-no-tables_loop_spec» bytes u x0 { U := u, W := one } false 255#usize
+  step with mul.«64bit-notables_loop_spec» bytes u x0 { U := u, W := one } false 255#usize
       (by decide) (limbs_lt_of_le (by decide) hu_lt) hx0_lt
       ⟨limbs_lt_of_le (by decide) hu_lt, limbs_lt_of_le (by decide) hone_lt⟩
     as ⟨y0, y1, pb, hy0, hy1, hst⟩
@@ -420,7 +420,7 @@ theorem mul.«x86_64-no-tables_spec» (self : MontgomeryPoint) (s : scalar.Scala
     · exact Or.inr (by rw [UScalar.eq_equiv]; simpa using hi)
   step as ⟨c, hcv, hc⟩
   step with
-      ProjectivePoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable.conditional_swap_spec
+      ProjectivePoint.«64bit-notables».Insts.SubtleConditionallySelectable.conditional_swap_spec
     y0 y1 c hcv as ⟨z0, z1, hz0, hz1⟩
   step
   have hz : z0 = if pb then y1 else y0 := by
@@ -432,7 +432,7 @@ theorem mul.«x86_64-no-tables_spec» (self : MontgomeryPoint) (s : scalar.Scala
     cases pb
     · exact ⟨limbs_lt_of_le (by decide) hy0.1, limbs_lt_of_le (by decide) hy0.2⟩
     · exact ⟨limbs_lt_of_le (by decide) hy1.1, limbs_lt_of_le (by decide) hy1.2⟩
-  step with «ProjectivePointx86_64-no-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
+  step with «ProjectivePoint64bit-notables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
   rw [hr, MontgomeryModel.ladder, MontgomeryModel.XZ.ladder, ladderXZ_mod,
     MontgomeryPoint.decodeUCoordinate_toVector, decodeU]
   congr 2
@@ -440,8 +440,8 @@ theorem mul.«x86_64-no-tables_spec» (self : MontgomeryPoint) (s : scalar.Scala
     rw [toField_def, hu, MontgomeryPoint.asNat_def]
   rw [← hu', MontgomeryModel.XZ.ladderXZ, scalar.Scalar.asNat_def, ← hbytes]
   rw [show (⟨⟨1, 0⟩, ⟨u.toField, 1⟩, false⟩ : XZ.LadderState (ZMod p)) =
-      ⟨x0.toXZ, ({ U := u, W := one } : ProjectivePoint.«x86_64-no-tables»).toXZ, false⟩ by
-    rw [hx0, ProjectivePoint.«x86_64-no-tables».toXZ_def, toField_eq_one_of_asNat hone], ← hst, hz]
+      ⟨x0.toXZ, ({ U := u, W := one } : ProjectivePoint.«64bit-notables»).toXZ, false⟩ by
+    rw [hx0, ProjectivePoint.«64bit-notables».toXZ_def, toField_eq_one_of_asNat hone], ← hst, hz]
   cases pb <;> rfl
 
 open scoped Helpers.IndexStep in
@@ -450,16 +450,16 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
 scalar, encoded canonically. The ladder computes `u(n • Q)` on the curve or its twist
 (`MontgomeryModel.ladder_eq_xMul`). -/
 @[step]
-theorem mul.«i686-no-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
-    mul.«i686-no-tables» self s ⦃ (r : MontgomeryPoint) =>
+theorem mul.«32bit-notables_spec» (self : MontgomeryPoint) (s : scalar.Scalar) :
+    mul.«32bit-notables» self s ⦃ (r : MontgomeryPoint) =>
       r.asNat = encodeU
           (montgomery.ladder 255 (s.asNat % 2 ^ 255) (decodeUCoordinate self.toVector)) ⦄ := by
-  unfold mul.«i686-no-tables»
+  unfold mul.«32bit-notables»
   step as ⟨bytes, hbytes⟩
   step as ⟨u, hu, hu_lt⟩
   step as ⟨x0, hx0, hx0_lt⟩
   step as ⟨one, hone, hone_lt⟩
-  step with mul.«i686-no-tables_loop_spec» bytes u x0 { U := u, W := one } false 255#usize
+  step with mul.«32bit-notables_loop_spec» bytes u x0 { U := u, W := one } false 255#usize
       (by decide) (limbs_lt_of_le (by decide) hu_lt) hx0_lt
       ⟨limbs_lt_of_le (by decide) hu_lt, limbs_lt_of_le (by decide) hone_lt⟩
     as ⟨y0, y1, pb, hy0, hy1, hst⟩
@@ -470,7 +470,7 @@ theorem mul.«i686-no-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar)
     · exact Or.inr (by rw [UScalar.eq_equiv]; simpa using hi)
   step as ⟨c, hcv, hc⟩
   step with
-      ProjectivePoint.«i686-no-tables».Insts.SubtleConditionallySelectable.conditional_swap_spec
+      ProjectivePoint.«32bit-notables».Insts.SubtleConditionallySelectable.conditional_swap_spec
     y0 y1 c hcv as ⟨z0, z1, hz0, hz1⟩
   step
   have hz : z0 = if pb then y1 else y0 := by
@@ -482,7 +482,7 @@ theorem mul.«i686-no-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar)
     cases pb
     · exact ⟨limbs_lt_of_le (by decide) hy0.1, limbs_lt_of_le (by decide) hy0.2⟩
     · exact ⟨limbs_lt_of_le (by decide) hy1.1, limbs_lt_of_le (by decide) hy1.2⟩
-  step with «ProjectivePointi686-no-tables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
+  step with «ProjectivePoint32bit-notables».as_affine_spec z0 hz_lt as ⟨r, hr⟩
   rw [hr, MontgomeryModel.ladder, MontgomeryModel.XZ.ladder, ladderXZ_mod,
     MontgomeryPoint.decodeUCoordinate_toVector, decodeU]
   congr 2
@@ -491,8 +491,8 @@ theorem mul.«i686-no-tables_spec» (self : MontgomeryPoint) (s : scalar.Scalar)
     exact (ZMod.natCast_eq_natCast_iff' _ _ _).mpr hu
   rw [← hu', MontgomeryModel.XZ.ladderXZ, scalar.Scalar.asNat_def, ← hbytes]
   rw [show (⟨⟨1, 0⟩, ⟨u.toField, 1⟩, false⟩ : XZ.LadderState (ZMod p)) =
-      ⟨x0.toXZ, ({ U := u, W := one } : ProjectivePoint.«i686-no-tables»).toXZ, false⟩ by
-    rw [hx0, ProjectivePoint.«i686-no-tables».toXZ_def, toField_eq_one_of_asNat hone], ← hst, hz]
+      ⟨x0.toXZ, ({ U := u, W := one } : ProjectivePoint.«32bit-notables»).toXZ, false⟩ by
+    rw [hx0, ProjectivePoint.«32bit-notables».toXZ_def, toField_eq_one_of_asNat hone], ← hst, hz]
   cases pb <;> rfl
 
 end MulShared1MontgomeryPointShared0ScalarMontgomeryPoint
@@ -515,13 +515,13 @@ theorem mul_spec (self : montgomery.MontgomeryPoint) (scalar : scalar.Scalar) :
   simp only [Curve25519Dalek.montgomery.MontgomeryPoint.toVector_eq_encodeUCoordinate_iff]
   unfold mul
   exact dispatch_all_spec
-    (montgomery.MulShared1MontgomeryPointShared0ScalarMontgomeryPoint.mul.«x86_64-tables_spec» self
+    (montgomery.MulShared1MontgomeryPointShared0ScalarMontgomeryPoint.mul.«64bit-tables_spec» self
         scalar)
-    (montgomery.MulShared1MontgomeryPointShared0ScalarMontgomeryPoint.mul.«x86_64-no-tables_spec»
+    (montgomery.MulShared1MontgomeryPointShared0ScalarMontgomeryPoint.mul.«64bit-notables_spec»
         self scalar)
-    (montgomery.MulShared1MontgomeryPointShared0ScalarMontgomeryPoint.mul.«i686-tables_spec» self
+    (montgomery.MulShared1MontgomeryPointShared0ScalarMontgomeryPoint.mul.«32bit-tables_spec» self
         scalar)
-    (montgomery.MulShared1MontgomeryPointShared0ScalarMontgomeryPoint.mul.«i686-no-tables_spec»
+    (montgomery.MulShared1MontgomeryPointShared0ScalarMontgomeryPoint.mul.«32bit-notables_spec»
         self scalar)
 
 end Shared1MontgomeryPoint.Insts.CoreOpsArithMulShared0ScalarMontgomeryPoint

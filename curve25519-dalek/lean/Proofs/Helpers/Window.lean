@@ -25,53 +25,53 @@ namespace Curve25519Dalek
 
 /-! ### `PointRepr` instances for the intermediate point types -/
 
-noncomputable instance edwards.EdwardsPoint.«x86_64-tables».instPointRepr :
-    PointRepr edwards.EdwardsPoint.«x86_64-tables» where
-  OnCurve := edwards.EdwardsPoint.«x86_64-tables».OnCurve
-  toPoint := edwards.EdwardsPoint.«x86_64-tables».toPoint
-  LimbsLt := edwards.EdwardsPoint.«x86_64-tables».LimbsLt
+noncomputable instance edwards.EdwardsPoint.«64bit-tables».instPointRepr :
+    PointRepr edwards.EdwardsPoint.«64bit-tables» where
+  OnCurve := edwards.EdwardsPoint.«64bit-tables».OnCurve
+  toPoint := edwards.EdwardsPoint.«64bit-tables».toPoint
+  LimbsLt := edwards.EdwardsPoint.«64bit-tables».LimbsLt
 
-noncomputable instance edwards.EdwardsPoint.«i686-tables».instPointRepr :
-    PointRepr edwards.EdwardsPoint.«i686-tables» where
-  OnCurve := edwards.EdwardsPoint.«i686-tables».OnCurve
-  toPoint := edwards.EdwardsPoint.«i686-tables».toPoint
-  LimbsLt := edwards.EdwardsPoint.«i686-tables».LimbsLt
+noncomputable instance edwards.EdwardsPoint.«32bit-tables».instPointRepr :
+    PointRepr edwards.EdwardsPoint.«32bit-tables» where
+  OnCurve := edwards.EdwardsPoint.«32bit-tables».OnCurve
+  toPoint := edwards.EdwardsPoint.«32bit-tables».toPoint
+  LimbsLt := edwards.EdwardsPoint.«32bit-tables».LimbsLt
 
-noncomputable instance edwards.EdwardsPoint.«x86_64-no-tables».instPointRepr :
-    PointRepr edwards.EdwardsPoint.«x86_64-no-tables» where
-  OnCurve := edwards.EdwardsPoint.«x86_64-no-tables».OnCurve
-  toPoint := edwards.EdwardsPoint.«x86_64-no-tables».toPoint
-  LimbsLt := edwards.EdwardsPoint.«x86_64-no-tables».LimbsLt
+noncomputable instance edwards.EdwardsPoint.«64bit-notables».instPointRepr :
+    PointRepr edwards.EdwardsPoint.«64bit-notables» where
+  OnCurve := edwards.EdwardsPoint.«64bit-notables».OnCurve
+  toPoint := edwards.EdwardsPoint.«64bit-notables».toPoint
+  LimbsLt := edwards.EdwardsPoint.«64bit-notables».LimbsLt
 
-noncomputable instance edwards.EdwardsPoint.«i686-no-tables».instPointRepr :
-    PointRepr edwards.EdwardsPoint.«i686-no-tables» where
-  OnCurve := edwards.EdwardsPoint.«i686-no-tables».OnCurve
-  toPoint := edwards.EdwardsPoint.«i686-no-tables».toPoint
-  LimbsLt := edwards.EdwardsPoint.«i686-no-tables».LimbsLt
+noncomputable instance edwards.EdwardsPoint.«32bit-notables».instPointRepr :
+    PointRepr edwards.EdwardsPoint.«32bit-notables» where
+  OnCurve := edwards.EdwardsPoint.«32bit-notables».OnCurve
+  toPoint := edwards.EdwardsPoint.«32bit-notables».toPoint
+  LimbsLt := edwards.EdwardsPoint.«32bit-notables».LimbsLt
 
-noncomputable instance CompletedPoint.«x86_64-tables».instPointRepr :
-    PointRepr CompletedPoint.«x86_64-tables» where
-  OnCurve := CompletedPoint.«x86_64-tables».OnCurve
-  toPoint := CompletedPoint.«x86_64-tables».toPoint
-  LimbsLt := CompletedPoint.«x86_64-tables».LimbsLt
+noncomputable instance CompletedPoint.«64bit-tables».instPointRepr :
+    PointRepr CompletedPoint.«64bit-tables» where
+  OnCurve := CompletedPoint.«64bit-tables».OnCurve
+  toPoint := CompletedPoint.«64bit-tables».toPoint
+  LimbsLt := CompletedPoint.«64bit-tables».LimbsLt
 
-noncomputable instance CompletedPoint.«i686-tables».instPointRepr :
-    PointRepr CompletedPoint.«i686-tables» where
-  OnCurve := CompletedPoint.«i686-tables».OnCurve
-  toPoint := CompletedPoint.«i686-tables».toPoint
-  LimbsLt := CompletedPoint.«i686-tables».LimbsLt
+noncomputable instance CompletedPoint.«32bit-tables».instPointRepr :
+    PointRepr CompletedPoint.«32bit-tables» where
+  OnCurve := CompletedPoint.«32bit-tables».OnCurve
+  toPoint := CompletedPoint.«32bit-tables».toPoint
+  LimbsLt := CompletedPoint.«32bit-tables».LimbsLt
 
-noncomputable instance CompletedPoint.«x86_64-no-tables».instPointRepr :
-    PointRepr CompletedPoint.«x86_64-no-tables» where
-  OnCurve := CompletedPoint.«x86_64-no-tables».OnCurve
-  toPoint := CompletedPoint.«x86_64-no-tables».toPoint
-  LimbsLt := CompletedPoint.«x86_64-no-tables».LimbsLt
+noncomputable instance CompletedPoint.«64bit-notables».instPointRepr :
+    PointRepr CompletedPoint.«64bit-notables» where
+  OnCurve := CompletedPoint.«64bit-notables».OnCurve
+  toPoint := CompletedPoint.«64bit-notables».toPoint
+  LimbsLt := CompletedPoint.«64bit-notables».LimbsLt
 
-noncomputable instance CompletedPoint.«i686-no-tables».instPointRepr :
-    PointRepr CompletedPoint.«i686-no-tables» where
-  OnCurve := CompletedPoint.«i686-no-tables».OnCurve
-  toPoint := CompletedPoint.«i686-no-tables».toPoint
-  LimbsLt := CompletedPoint.«i686-no-tables».LimbsLt
+noncomputable instance CompletedPoint.«32bit-notables».instPointRepr :
+    PointRepr CompletedPoint.«32bit-notables» where
+  OnCurve := CompletedPoint.«32bit-notables».OnCurve
+  toPoint := CompletedPoint.«32bit-notables».toPoint
+  LimbsLt := CompletedPoint.«32bit-notables».LimbsLt
 
 namespace window
 

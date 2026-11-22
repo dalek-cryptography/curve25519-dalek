@@ -24,11 +24,11 @@ open Curve25519Dalek.backend.serial.u64.scalar (montgomeryRadix)
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert.«x86_64-tables_spec» (self : Scalar) :
-    invert.«x86_64-tables» self ⦃ (r : Scalar) =>
+theorem invert.«64bit-tables_spec» (self : Scalar) :
+    invert.«64bit-tables» self ⦃ (r : Scalar) =>
       (self.asNat % L ≠ 0 → r.asNat * self.asNat % L = 1) ∧
       (self.asNat % L = 0 → r.asNat = 0) ∧ r.asNat < L ⦄ := by
-  unfold invert.«x86_64-tables»
+  unfold invert.«64bit-tables»
   step as ⟨u, hu, hub⟩
   step as ⟨v, hv1, hv0, hvL, hvb⟩
   step with Scalar52.pack_spec v hvb (lt_two_pow_256_of_lt_L hvL) as ⟨r, hr⟩
@@ -40,11 +40,11 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert.«x86_64-no-tables_spec» (self : Scalar) :
-    invert.«x86_64-no-tables» self ⦃ (r : Scalar) =>
+theorem invert.«64bit-notables_spec» (self : Scalar) :
+    invert.«64bit-notables» self ⦃ (r : Scalar) =>
       (self.asNat % L ≠ 0 → r.asNat * self.asNat % L = 1) ∧
       (self.asNat % L = 0 → r.asNat = 0) ∧ r.asNat < L ⦄ :=
-  invert.«x86_64-tables_spec» self
+  invert.«64bit-tables_spec» self
 
 end Curve25519Dalek.scalar.Scalar
 
@@ -52,11 +52,11 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert.«i686-tables_spec» (self : Scalar) :
-    invert.«i686-tables» self ⦃ (r : Scalar) =>
+theorem invert.«32bit-tables_spec» (self : Scalar) :
+    invert.«32bit-tables» self ⦃ (r : Scalar) =>
       (self.asNat % L ≠ 0 → r.asNat * self.asNat % L = 1) ∧
       (self.asNat % L = 0 → r.asNat = 0) ∧ r.asNat < L ⦄ := by
-  unfold invert.«i686-tables»
+  unfold invert.«32bit-tables»
   step as ⟨u, hu, hub⟩
   step as ⟨v, hv1, hv0, hvL, hvb⟩
   step with Scalar29.pack_spec v hvb (lt_two_pow_256_of_lt_L hvL) as ⟨r, hr⟩
@@ -68,11 +68,11 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert.«i686-no-tables_spec» (self : Scalar) :
-    invert.«i686-no-tables» self ⦃ (r : Scalar) =>
+theorem invert.«32bit-notables_spec» (self : Scalar) :
+    invert.«32bit-notables» self ⦃ (r : Scalar) =>
       (self.asNat % L ≠ 0 → r.asNat * self.asNat % L = 1) ∧
       (self.asNat % L = 0 → r.asNat = 0) ∧ r.asNat < L ⦄ :=
-  invert.«i686-tables_spec» self
+  invert.«32bit-tables_spec» self
 
 end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
@@ -84,9 +84,9 @@ theorem invert_spec (self : Scalar) :
       (self.asNat % L = 0 → r.asNat = 0) ∧ r.asNat < L ⦄ := by
   unfold invert
   exact dispatch_all_spec
-    (invert.«x86_64-tables_spec» self)
-    (invert.«x86_64-no-tables_spec» self)
-    (invert.«i686-tables_spec» self)
-    (invert.«i686-no-tables_spec» self)
+    (invert.«64bit-tables_spec» self)
+    (invert.«64bit-notables_spec» self)
+    (invert.«32bit-tables_spec» self)
+    (invert.«32bit-notables_spec» self)
 
 end Curve25519Dalek.scalar.Scalar

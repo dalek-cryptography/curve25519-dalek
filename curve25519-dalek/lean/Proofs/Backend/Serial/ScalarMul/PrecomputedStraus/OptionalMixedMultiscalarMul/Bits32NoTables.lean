@@ -33,7 +33,7 @@ import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.OptionalMixedMultiscala
 import Proofs.Helpers.EdwardsOps.Instances
 public section
 
-/-! # `VartimePrecomputedStraus::optional_mixed_multiscalar_mul` (`x86_64-tables`)
+/-! # `VartimePrecomputedStraus::optional_mixed_multiscalar_mul` (`32bit-notables`)
 
 Variable-time Straus with precomputed tables for the static points: width-`8` non-adjacent forms
 of the static scalars against the precomputed `NafLookupTable8`s, width-`5` ones of the dynamic
@@ -51,14 +51,14 @@ namespace Curve25519Dalek.backend.serial.scalar_mul.precomputed_straus
 private noncomputable instance instInhabitedPoint : Inhabited curve25519.edwards.Point := ⟨0⟩
 
 section
-open «Shared0EdwardsPointx86_64-tables».Insts
-open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
+open «Shared0EdwardsPoint32bit-notables».Insts
+open «CoreOpsArithAddSharedAProjectiveNielsPoint32bit-notablesCompletedPoint32bit-notables»
     (add_spec)
-open «CoreOpsArithSubSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
+open «CoreOpsArithSubSharedAProjectiveNielsPoint32bit-notablesCompletedPoint32bit-notables»
     (sub_spec)
 
 set_option linter.style.longLine false
-namespace «VartimePrecomputedMultiscalarMulVartimePrecomputedStrausx86_64-tablesEdwardsPointx86_64-tables»
+namespace «VartimePrecomputedMultiscalarMulVartimePrecomputedStraus32bit-notablesEdwardsPoint32bit-notables»
 set_option linter.style.longLine true
 namespace optional_mixed_multiscalar_mul
 
@@ -91,26 +91,28 @@ private theorem nafs_spec {It Clause0_Item : Type}
   simpa [hr] using hzs
 
 end optional_mixed_multiscalar_mul
-end «VartimePrecomputedMultiscalarMulVartimePrecomputedStrausx86_64-tablesEdwardsPointx86_64-tables»
+set_option linter.style.longLine false
+end «VartimePrecomputedMultiscalarMulVartimePrecomputedStraus32bit-notablesEdwardsPoint32bit-notables»
+set_option linter.style.longLine true
 
-namespace VartimePrecomputedStraus.«x86_64-tables».Insts
-namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-tables»
+namespace VartimePrecomputedStraus.«32bit-notables».Insts
+namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-notables»
 
 set_option linter.style.longLine false
-open «VartimePrecomputedMultiscalarMulVartimePrecomputedStrausx86_64-tablesEdwardsPointx86_64-tables»
+open «VartimePrecomputedMultiscalarMulVartimePrecomputedStraus32bit-notablesEdwardsPoint32bit-notables»
 set_option linter.style.longLine true
 
 private theorem optional_mixed_multiscalar_mul_loop2_loop0_eq
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
     (v : alloc.vec.Vec
-      (window.NafLookupTable8 AffineNielsPoint.«x86_64-tables»))
+      (window.NafLookupTable8 AffineNielsPoint.«32bit-notables»))
     (static_nafs dynamic_nafs : alloc.vec.Vec (Array I8 256#usize))
     (dynamic_lookup_tables : alloc.vec.Vec
-      (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables»))
-    (dp : Usize) (S : ProjectivePoint.«x86_64-tables») :
+      (window.NafLookupTable5 ProjectiveNielsPoint.«32bit-notables»))
+    (dp : Usize) (S : ProjectivePoint.«32bit-notables») :
     optional_mixed_multiscalar_mul_loop2_loop0 iter v static_nafs dynamic_nafs
         dynamic_lookup_tables dp S =
-      EdwardsOps.X86Tables.pstLoop0 iter v static_nafs dynamic_nafs dynamic_lookup_tables dp
+      EdwardsOps.Bits32NoTables.pstLoop0 iter v static_nafs dynamic_nafs dynamic_lookup_tables dp
         S := by
   unfold optional_mixed_multiscalar_mul_loop2_loop0
     EdwardsOps.pstLoop0
@@ -120,44 +122,46 @@ private theorem optional_mixed_multiscalar_mul_loop2_loop0_eq
 @[local step]
 private theorem optional_mixed_multiscalar_mul_loop2_loop0_spec
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
-    (v : alloc.vec.Vec (window.NafLookupTable8 AffineNielsPoint.«x86_64-tables»))
+    (v : alloc.vec.Vec (window.NafLookupTable8 AffineNielsPoint.«32bit-notables»))
     (static_nafs dynamic_nafs : alloc.vec.Vec (Array I8 256#usize))
     (dynamic_lookup_tables : alloc.vec.Vec
-        (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables»))
-    (dp : Usize) (S : ProjectivePoint.«x86_64-tables») (P Q : ℕ → curve25519.edwards.Point)
+        (window.NafLookupTable5 ProjectiveNielsPoint.«32bit-notables»))
+    (dp : Usize) (S : ProjectivePoint.«32bit-notables») (P Q : ℕ → curve25519.edwards.Point)
     (hdp : dp.val ≤ dynamic_nafs.length ∧ dp.val ≤ dynamic_lookup_tables.length)
     (hsl : static_nafs.length ≤ v.length)
     (hT : ∀ m < dp.val, dynamic_lookup_tables.val[m]!.Represents (Q m) ∧
-      dynamic_lookup_tables.val[m]!.LimbsLt 54)
+      dynamic_lookup_tables.val[m]!.LimbsLt 27)
     (hD : ∀ m < dp.val, ∀ e : ℕ, e < 256 → (dynamic_nafs.val[m]!)[e]!.val ≠ 0 →
       (dynamic_nafs.val[m]!)[e]!.val % 2 = 1 ∧ 2 * |(dynamic_nafs.val[m]!)[e]!.val| < 2 ^ 5)
-    (hV : ∀ m < static_nafs.length, v.val[m]!.Represents (P m) ∧ v.val[m]!.LimbsLt 54)
+    (hV : ∀ m < static_nafs.length, v.val[m]!.Represents (P m) ∧ v.val[m]!.LimbsLt 27)
     (hE : ∀ m < static_nafs.length, ∀ e : ℕ, e < 256 → (static_nafs.val[m]!)[e]!.val ≠ 0 →
       (static_nafs.val[m]!)[e]!.val % 2 = 1 ∧ 2 * |(static_nafs.val[m]!)[e]!.val| < 2 ^ 8)
     (hstart : iter.iter.start.val = 0) (hend : iter.iter.end.val ≤ 256)
-    (hS : S.OnCurve) (hSb : S.LimbsLt 52)
+    (hS : S.OnCurve) (hSb : S.LimbsLt 26)
     (hSp : S.toPoint =
       (∑ m ∈ Finset.range dp.val, nafTail dynamic_nafs.val[m]! iter.iter.end.val • Q m) +
         ∑ m ∈ Finset.range static_nafs.length,
           nafTail static_nafs.val[m]! iter.iter.end.val • P m) :
     optional_mixed_multiscalar_mul_loop2_loop0 iter v static_nafs dynamic_nafs
       dynamic_lookup_tables dp S
-      ⦃ (r : ProjectivePoint.«x86_64-tables») => r.OnCurve ∧ r.LimbsLt 52 ∧ r.toPoint =
+      ⦃ (r : ProjectivePoint.«32bit-notables») => r.OnCurve ∧ r.LimbsLt 26 ∧ r.toPoint =
         (∑ m ∈ Finset.range dp.val, nafTail dynamic_nafs.val[m]! 0 • Q m) +
           ∑ m ∈ Finset.range static_nafs.length, nafTail static_nafs.val[m]! 0 • P m ⦄ := by
   rw [optional_mixed_multiscalar_mul_loop2_loop0_eq]
-  exact EdwardsOps.X86Tables.pstLoop0_spec
-    EdwardsOps.X86Tables.addN_spec EdwardsOps.X86Tables.subN_spec EdwardsOps.X86Tables.addA_spec
-    EdwardsOps.X86Tables.subA_spec EdwardsOps.X86Tables.asExtended_spec
-    EdwardsOps.X86Tables.pDouble_spec EdwardsOps.X86Tables.cAsProjective_spec iter v static_nafs
-    dynamic_nafs dynamic_lookup_tables dp S P Q hdp hsl hT hD hV hE hstart hend hS hSb hSp
+  exact EdwardsOps.Bits32NoTables.pstLoop0_spec
+    EdwardsOps.Bits32NoTables.addN_spec EdwardsOps.Bits32NoTables.subN_spec
+    EdwardsOps.Bits32NoTables.addA_spec EdwardsOps.Bits32NoTables.subA_spec
+    EdwardsOps.Bits32NoTables.asExtended_spec EdwardsOps.Bits32NoTables.pDouble_spec
+    EdwardsOps.Bits32NoTables.cAsProjective_spec iter v static_nafs dynamic_nafs
+      dynamic_lookup_tables
+    dp S P Q hdp hsl hT hD hV hE hstart hend hS hSb hSp
 
 set_option linter.style.longLine false in
 /-- `VartimePrecomputedStraus::optional_mixed_multiscalar_mul`: for a precomputation of the
 static points `ps`, `none` iff some dynamic point is `none`; otherwise
 `∑ s_i • ps_i + ∑ d_i • Q_i` over the static scalars (at most `|ps|`, the missing ones count as
 `0`) and the dynamic scalars and points (as many scalars as points); unreduced scalars
-`< 2^255`; limbs `< 2^52`. -/
+`< 2^255`; limbs `< 2^26`. -/
 @[step]
 theorem optional_mixed_multiscalar_mul_spec
     {I J K Clause0_Item Clause0_IntoIter Clause2_Item Clause2_IntoIter Clause4_IntoIter : Type}
@@ -166,12 +170,12 @@ theorem optional_mixed_multiscalar_mul_spec
     (dynamicScalarsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
     (borrowDynamicInst : core.borrow.Borrow Clause2_Item scalar.Scalar)
     (dynamicPointsInst : core.iter.traits.collect.IntoIterator K
-      (Option edwards.EdwardsPoint.«x86_64-tables») Clause4_IntoIter)
-    (self : VartimePrecomputedStraus.«x86_64-tables») (static_scalars : I) (dynamic_scalars : J)
+      (Option edwards.EdwardsPoint.«32bit-notables») Clause4_IntoIter)
+    (self : VartimePrecomputedStraus.«32bit-notables») (static_scalars : I) (dynamic_scalars : J)
     (dynamic_points : K) (ps : List curve25519.edwards.Point) (xs : List Clause0_Item)
     (ss : List scalar.Scalar) (ys : List Clause2_Item) (ds : List scalar.Scalar)
-    (qops : List (Option edwards.EdwardsPoint.«x86_64-tables»))
-    (hself : self.Represents ps) (hself_b : self.LimbsLt 54)
+    (qops : List (Option edwards.EdwardsPoint.«32bit-notables»))
+    (hself : self.Represents ps) (hself_b : self.LimbsLt 27)
     (hstatic_scalars : staticScalarsInst.Yields static_scalars xs)
     (hdynamic_scalars : dynamicScalarsInst.Yields dynamic_scalars ys)
     (hdynamic_points : dynamicPointsInst.Yields dynamic_points qops)
@@ -180,17 +184,17 @@ theorem optional_mixed_multiscalar_mul_spec
     (hborrow_dynamic : List.Forall₂
       (fun y s => borrowDynamicInst.borrow y ⦃ (s' : scalar.Scalar) => s' = s ⦄) ys ds)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hds : ∀ s ∈ ds, s.asNat < 2 ^ 255)
-    (hqs : ∀ Q, some Q ∈ qops → Q.LimbsLt 52 ∧ Q.OnCurve)
+    (hqs : ∀ Q, some Q ∈ qops → Q.LimbsLt 26 ∧ Q.OnCurve)
     (hxs : xs.length ≤ Usize.max) (hys : ys.length ≤ Usize.max)
     (hqops : qops.length ≤ Usize.max) (hstatic : none ∉ qops → ss.length ≤ ps.length)
     (hdynamic : none ∉ qops → ds.length = qops.length) :
     optional_mixed_multiscalar_mul staticScalarsInst borrowStaticInst dynamicScalarsInst
       borrowDynamicInst dynamicPointsInst self static_scalars dynamic_scalars dynamic_points
-      ⦃ (r : Option edwards.EdwardsPoint.«x86_64-tables») => (r = none ↔ none ∈ qops) ∧
+      ⦃ (r : Option edwards.EdwardsPoint.«32bit-notables») => (r = none ↔ none ∈ qops) ∧
         ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P) ss ps).sum +
             (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds (qops.filterMap id)).sum ∧
-          R.LimbsLt 52 ⦄ := by
+          R.LimbsLt 26 ⦄ := by
   unfold optional_mixed_multiscalar_mul
   have h1 : staticScalarsInst.into_iter static_scalars
       ⦃ (it : Clause0_IntoIter) => staticScalarsInst.iteratorInst.Yields it xs ⦄ :=
@@ -212,16 +216,16 @@ theorem optional_mixed_multiscalar_mul_spec
     _ _ it1 ys hit1 ds hborrow_dynamic hds hys 5#usize (by decide))
   intro dn hdn
   step with h3 as ⟨it2, hit2⟩
-  let post := fun (r : Option edwards.EdwardsPoint.«x86_64-tables») =>
+  let post := fun (r : Option edwards.EdwardsPoint.«32bit-notables») =>
     (r = none ↔ none ∈ qops) ∧ ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
       (List.zipWith (fun s P => s.asNat • P) ss ps).sum +
         (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds (qops.filterMap id)).sum ∧
-      R.LimbsLt 52
+      R.LimbsLt 26
   suffices h : ∀ it ops, dynamicPointsInst.iteratorInst.Yields it ops →
-      ∀ (seen : List edwards.EdwardsPoint.«x86_64-tables»)
-        (dtabs : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables»)),
+      ∀ (seen : List edwards.EdwardsPoint.«32bit-notables»)
+        (dtabs : alloc.vec.Vec (window.NafLookupTable5 ProjectiveNielsPoint.«32bit-notables»)),
       qops = seen.map some ++ ops →
-      List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 54) seen dtabs.val →
+      List.Forall₂ (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 27) seen dtabs.val →
       optional_mixed_multiscalar_mul_loop2 staticScalarsInst borrowStaticInst dynamicScalarsInst
         borrowDynamicInst dynamicPointsInst it self sn dn dtabs ⦃ post ⦄ by
     exact h it2 qops hit2 [] (alloc.vec.Vec.new _) rfl .nil
@@ -236,7 +240,7 @@ theorem optional_mixed_multiscalar_mul_spec
     subst hq
     have hnn : none ∉ qops := by simp [hseen]
     have hdtabs : List.Forall₂
-        (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 54) (qops.filterMap id) dtabs.val := by
+        (fun P t => t.Represents P.toPoint ∧ t.LimbsLt 27) (qops.filterMap id) dtabs.val := by
       simpa [hseen] using htabs
     obtain ⟨hTlen, hT⟩ := forall₂_getElem! hdtabs
     obtain ⟨hDlen, hD⟩ := forall₂_getElem! hdn
@@ -248,7 +252,7 @@ theorem optional_mixed_multiscalar_mul_spec
     step
     step
     step with
-        ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+        ProjectivePoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
       as ⟨S0, hS0on, hS0, hS0b⟩
     step as ⟨iter, hiter⟩
     step with optional_mixed_multiscalar_mul_loop2_loop0_spec iter self.static_lookup_tables sn dn dtabs
@@ -266,7 +270,7 @@ theorem optional_mixed_multiscalar_mul_spec
         simp only [nafTail_eq_zero _ 256 fun j hj hj' => absurd hj' (Nat.not_lt.mpr hj),
           zero_smul, Finset.sum_const_zero, add_zero])
       as ⟨S1, hS1on, hS1b, hS1⟩
-    step with «ProjectivePointx86_64-tables».as_extended_spec as ⟨R, hRon, hR, hRb⟩
+    step with «ProjectivePoint32bit-notables».as_extended_spec as ⟨R, hRon, hR, hRb⟩
     refine ⟨by simpa using hnn, fun R' hR' => ?_⟩
     obtain rfl : R = R' := Option.some.inj hR'
     refine ⟨hRon, ?_, hRb⟩
@@ -293,10 +297,10 @@ theorem optional_mixed_multiscalar_mul_spec
     rcases x with _ | P
     · simp [uncurry, core.option.Option.map, post, hseen]
     · simp only [uncurry, core.option.Option.map, Std.bind_assoc]
-      unfold optional_mixed_multiscalar_mul.closure.Insts.«CoreOpsFunctionFnOnceTupleEdwardsPointx86_64-tablesNafLookupTable5ProjectiveNielsPointx86_64-tables».call_once
+      unfold optional_mixed_multiscalar_mul.closure.Insts.«CoreOpsFunctionFnOnceTupleEdwardsPoint32bit-notablesNafLookupTable5ProjectiveNielsPoint32bit-notables».call_once
       simp only [Std.bind_tc_eq, Std.bind_assoc, bind_ok]
       obtain ⟨hPb, hPon⟩ := hqs P (by simp [hseen])
-      apply spec_bind (window.«NafLookupTable5ProjectiveNielsPointx86_64-tables».Insts.«CoreConvertFromSharedAEdwardsPointx86_64-tables».from_spec
+      apply spec_bind (window.«NafLookupTable5ProjectiveNielsPoint32bit-notables».Insts.«CoreConvertFromSharedAEdwardsPoint32bit-notables».from_spec
         P hPb hPon)
       rintro z ⟨hz, hzb⟩
       step with alloc.vec.Vec.push_spec dtabs z (by
@@ -311,8 +315,8 @@ theorem optional_mixed_multiscalar_mul_spec
       unfold optional_mixed_multiscalar_mul_loop2 at ih'
       exact ih'
 
-end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-tables»
-end VartimePrecomputedStraus.«x86_64-tables».Insts
+end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-notables»
+end VartimePrecomputedStraus.«32bit-notables».Insts
 
 end
 

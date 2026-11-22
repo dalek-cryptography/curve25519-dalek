@@ -18,18 +18,18 @@ open Curve25519Dalek.backend.serial.curve_models
 
 namespace Curve25519Dalek
 
-namespace «Shared0EdwardsPointx86_64-tables».Insts
+namespace «Shared0EdwardsPoint64bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreOpsArithSubSharedAEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+namespace «CoreOpsArithSubSharedAEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
 
 /-- `Sub<&EdwardsPoint> for &EdwardsPoint`: the mixed formula `subProjectiveNiels` on the projective
 Niels form of `other`, back in extended coordinates; limbs `< 2^52`. -/
 @[step]
-theorem sub_toExtended (self other : edwards.EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem sub_toExtended (self other : edwards.EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 52) :
-    sub self other ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    sub self other ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels other.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 52 ⦄ := by
@@ -40,7 +40,7 @@ theorem sub_toExtended (self other : edwards.EdwardsPoint.«x86_64-tables») (hs
   exact ⟨by rw [hr, hcp, hpnp], hrb⟩
 
 /-- The point-level reading of the postcondition of `sub_toExtended`. -/
-private theorem point_of_post {self other r : edwards.EdwardsPoint.«x86_64-tables»}
+private theorem point_of_post {self other r : edwards.EdwardsPoint.«64bit-tables»}
     (hself_on : self.OnCurve) (hother_on : other.OnCurve)
     (h : r.toExtended =
         (self.toExtended.subProjectiveNiels other.toExtended.toProjectiveNiels).toExtended ∧
@@ -49,38 +49,38 @@ private theorem point_of_post {self other r : edwards.EdwardsPoint.«x86_64-tabl
   obtain ⟨hr, hb⟩ := h
   have hon' := Extended.subProjectiveNiels_onCurve edwards_a_eq_neg_one hself_on
     (Extended.onCurve_toProjectiveNiels hother_on)
-  rw [edwards.EdwardsPoint.«x86_64-tables».onCurve_iff,
-    edwards.EdwardsPoint.«x86_64-tables».toPoint_def, hr,
-    edwards.EdwardsPoint.«x86_64-tables».toPoint_def,
-    edwards.EdwardsPoint.«x86_64-tables».toPoint_def, Completed.toPoint_toExtended hon',
+  rw [edwards.EdwardsPoint.«64bit-tables».onCurve_iff,
+    edwards.EdwardsPoint.«64bit-tables».toPoint_def, hr,
+    edwards.EdwardsPoint.«64bit-tables».toPoint_def,
+    edwards.EdwardsPoint.«64bit-tables».toPoint_def, Completed.toPoint_toExtended hon',
     Extended.toPoint_subProjectiveNiels edwards_a_eq_neg_one hself_on
       (Extended.onCurve_toProjectiveNiels hother_on),
     Extended.toPoint_toProjectiveNiels hother_on]
   exact ⟨Completed.onCurve_toExtended hon', rfl, hb⟩
 
 /-- `Sub<&EdwardsPoint> for &EdwardsPoint` on the represented points. -/
-theorem sub_spec (self other : edwards.EdwardsPoint.«x86_64-tables»)
+theorem sub_spec (self other : edwards.EdwardsPoint.«64bit-tables»)
     (hself : self.LimbsLt 52) (hother : other.LimbsLt 52) (hself_on : self.OnCurve)
     (hother_on : other.OnCurve) :
-    sub self other ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    sub self other ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (sub_toExtended self other hself hother) fun _ => point_of_post hself_on hother_on
 
-end «CoreOpsArithSubSharedAEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
-end «Shared0EdwardsPointx86_64-tables».Insts
+end «CoreOpsArithSubSharedAEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
+end «Shared0EdwardsPoint64bit-tables».Insts
 
-namespace «Shared0EdwardsPointi686-tables».Insts
+namespace «Shared0EdwardsPoint32bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-namespace «CoreOpsArithSubSharedAEdwardsPointi686-tablesEdwardsPointi686-tables»
+namespace «CoreOpsArithSubSharedAEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
 
 /-- `Sub<&EdwardsPoint> for &EdwardsPoint`: the mixed formula `subProjectiveNiels` on the projective
 Niels form of `other`, back in extended coordinates; limbs `< 2^26`. -/
 @[step]
-theorem sub_toExtended (self other : edwards.EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem sub_toExtended (self other : edwards.EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 26) :
-    sub self other ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    sub self other ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels other.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 26 ⦄ := by
@@ -91,7 +91,7 @@ theorem sub_toExtended (self other : edwards.EdwardsPoint.«i686-tables») (hsel
   exact ⟨by rw [hr, hcp, hpnp], hrb⟩
 
 /-- The point-level reading of the postcondition of `sub_toExtended`. -/
-private theorem point_of_post {self other r : edwards.EdwardsPoint.«i686-tables»}
+private theorem point_of_post {self other r : edwards.EdwardsPoint.«32bit-tables»}
     (hself_on : self.OnCurve) (hother_on : other.OnCurve)
     (h : r.toExtended =
         (self.toExtended.subProjectiveNiels other.toExtended.toProjectiveNiels).toExtended ∧
@@ -100,41 +100,41 @@ private theorem point_of_post {self other r : edwards.EdwardsPoint.«i686-tables
   obtain ⟨hr, hb⟩ := h
   have hon' := Extended.subProjectiveNiels_onCurve edwards_a_eq_neg_one hself_on
     (Extended.onCurve_toProjectiveNiels hother_on)
-  rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff,
-    edwards.EdwardsPoint.«i686-tables».toPoint_def, hr,
-    edwards.EdwardsPoint.«i686-tables».toPoint_def,
-    edwards.EdwardsPoint.«i686-tables».toPoint_def, Completed.toPoint_toExtended hon',
+  rw [edwards.EdwardsPoint.«32bit-tables».onCurve_iff,
+    edwards.EdwardsPoint.«32bit-tables».toPoint_def, hr,
+    edwards.EdwardsPoint.«32bit-tables».toPoint_def,
+    edwards.EdwardsPoint.«32bit-tables».toPoint_def, Completed.toPoint_toExtended hon',
     Extended.toPoint_subProjectiveNiels edwards_a_eq_neg_one hself_on
       (Extended.onCurve_toProjectiveNiels hother_on),
     Extended.toPoint_toProjectiveNiels hother_on]
   exact ⟨Completed.onCurve_toExtended hon', rfl, hb⟩
 
 /-- `Sub<&EdwardsPoint> for &EdwardsPoint` on the represented points. -/
-theorem sub_spec (self other : edwards.EdwardsPoint.«i686-tables»)
+theorem sub_spec (self other : edwards.EdwardsPoint.«32bit-tables»)
     (hself : self.LimbsLt 26) (hother : other.LimbsLt 26) (hself_on : self.OnCurve)
     (hother_on : other.OnCurve) :
-    sub self other ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    sub self other ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (sub_toExtended self other hself hother) fun _ => point_of_post hself_on hother_on
 
-end «CoreOpsArithSubSharedAEdwardsPointi686-tablesEdwardsPointi686-tables»
-end «Shared0EdwardsPointi686-tables».Insts
+end «CoreOpsArithSubSharedAEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
+end «Shared0EdwardsPoint32bit-tables».Insts
 
-open «Shared0EdwardsPointx86_64-tables».Insts
-open «CoreOpsArithSubSharedAEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+open «Shared0EdwardsPoint64bit-tables».Insts
+open «CoreOpsArithSubSharedAEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
   (point_of_post)
 
-namespace edwards.EdwardsPoint.«x86_64-tables».Insts
+namespace edwards.EdwardsPoint.«64bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreOpsArithSubEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+namespace «CoreOpsArithSubEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
 
 /-- `Sub<EdwardsPoint> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem sub_toExtended (self rhs : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem sub_toExtended (self rhs : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) :
-    sub self rhs ⦃ (r : EdwardsPoint.«x86_64-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«64bit-tables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 52 ⦄ := by
@@ -142,21 +142,21 @@ theorem sub_toExtended (self rhs : EdwardsPoint.«x86_64-tables») (hself : self
   step*
 
 /-- `Sub<EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem sub_spec (self rhs : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem sub_spec (self rhs : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    sub self rhs ⦃ (r : EdwardsPoint.«x86_64-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (sub_toExtended self rhs hself hrhs) fun _ => point_of_post hself_on hrhs_on
 
-end «CoreOpsArithSubEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+end «CoreOpsArithSubEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
 
-namespace «CoreOpsArithSubSharedBEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+namespace «CoreOpsArithSubSharedBEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
 
 /-- `Sub<&EdwardsPoint> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem sub_toExtended (self rhs : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem sub_toExtended (self rhs : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) :
-    sub self rhs ⦃ (r : EdwardsPoint.«x86_64-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«64bit-tables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 52 ⦄ := by
@@ -164,29 +164,29 @@ theorem sub_toExtended (self rhs : EdwardsPoint.«x86_64-tables») (hself : self
   step*
 
 /-- `Sub<&EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem sub_spec (self rhs : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem sub_spec (self rhs : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    sub self rhs ⦃ (r : EdwardsPoint.«x86_64-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (sub_toExtended self rhs hself hrhs) fun _ => point_of_post hself_on hrhs_on
 
-end «CoreOpsArithSubSharedBEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
-end edwards.EdwardsPoint.«x86_64-tables».Insts
+end «CoreOpsArithSubSharedBEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
+end edwards.EdwardsPoint.«64bit-tables».Insts
 
-namespace edwards.EdwardsPoint.«i686-tables».Insts
+namespace edwards.EdwardsPoint.«32bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
-open «Shared0EdwardsPointi686-tables».Insts
-open «CoreOpsArithSubSharedAEdwardsPointi686-tablesEdwardsPointi686-tables»
+open «Shared0EdwardsPoint32bit-tables».Insts
+open «CoreOpsArithSubSharedAEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
   (point_of_post)
 
-namespace «CoreOpsArithSubEdwardsPointi686-tablesEdwardsPointi686-tables»
+namespace «CoreOpsArithSubEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
 
 /-- `Sub<EdwardsPoint> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem sub_toExtended (self rhs : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem sub_toExtended (self rhs : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) :
-    sub self rhs ⦃ (r : EdwardsPoint.«i686-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«32bit-tables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 26 ⦄ := by
@@ -194,21 +194,21 @@ theorem sub_toExtended (self rhs : EdwardsPoint.«i686-tables») (hself : self.L
   step*
 
 /-- `Sub<EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem sub_spec (self rhs : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem sub_spec (self rhs : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    sub self rhs ⦃ (r : EdwardsPoint.«i686-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (sub_toExtended self rhs hself hrhs) fun _ => point_of_post hself_on hrhs_on
 
-end «CoreOpsArithSubEdwardsPointi686-tablesEdwardsPointi686-tables»
+end «CoreOpsArithSubEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
 
-namespace «CoreOpsArithSubSharedBEdwardsPointi686-tablesEdwardsPointi686-tables»
+namespace «CoreOpsArithSubSharedBEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
 
 /-- `Sub<&EdwardsPoint> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem sub_toExtended (self rhs : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem sub_toExtended (self rhs : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) :
-    sub self rhs ⦃ (r : EdwardsPoint.«i686-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«32bit-tables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 26 ⦄ := by
@@ -216,26 +216,26 @@ theorem sub_toExtended (self rhs : EdwardsPoint.«i686-tables») (hself : self.L
   step*
 
 /-- `Sub<&EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem sub_spec (self rhs : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem sub_spec (self rhs : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    sub self rhs ⦃ (r : EdwardsPoint.«i686-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (sub_toExtended self rhs hself hrhs) fun _ => point_of_post hself_on hrhs_on
 
-end «CoreOpsArithSubSharedBEdwardsPointi686-tablesEdwardsPointi686-tables»
-end edwards.EdwardsPoint.«i686-tables».Insts
+end «CoreOpsArithSubSharedBEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
+end edwards.EdwardsPoint.«32bit-tables».Insts
 
-namespace «SharedAEdwardsPointx86_64-tables».Insts
+namespace «SharedAEdwardsPoint64bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreOpsArithSubEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+namespace «CoreOpsArithSubEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
 
 /-- `Sub<EdwardsPoint> for &EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem sub_toExtended (self rhs : edwards.EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem sub_toExtended (self rhs : edwards.EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) :
-    sub self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    sub self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 52 ⦄ := by
@@ -243,29 +243,29 @@ theorem sub_toExtended (self rhs : edwards.EdwardsPoint.«x86_64-tables») (hsel
   step*
 
 /-- `Sub<EdwardsPoint> for &EdwardsPoint` on the represented points. -/
-theorem sub_spec (self rhs : edwards.EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem sub_spec (self rhs : edwards.EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    sub self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    sub self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (sub_toExtended self rhs hself hrhs) fun _ => point_of_post hself_on hrhs_on
 
-end «CoreOpsArithSubEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
-end «SharedAEdwardsPointx86_64-tables».Insts
+end «CoreOpsArithSubEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
+end «SharedAEdwardsPoint64bit-tables».Insts
 
-namespace «SharedAEdwardsPointi686-tables».Insts
+namespace «SharedAEdwardsPoint32bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
-open «Shared0EdwardsPointi686-tables».Insts
-open «CoreOpsArithSubSharedAEdwardsPointi686-tablesEdwardsPointi686-tables»
+open «Shared0EdwardsPoint32bit-tables».Insts
+open «CoreOpsArithSubSharedAEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
   (point_of_post)
 
-namespace «CoreOpsArithSubEdwardsPointi686-tablesEdwardsPointi686-tables»
+namespace «CoreOpsArithSubEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
 
 /-- `Sub<EdwardsPoint> for &EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem sub_toExtended (self rhs : edwards.EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem sub_toExtended (self rhs : edwards.EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) :
-    sub self rhs ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    sub self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 26 ⦄ := by
@@ -273,28 +273,28 @@ theorem sub_toExtended (self rhs : edwards.EdwardsPoint.«i686-tables») (hself 
   step*
 
 /-- `Sub<EdwardsPoint> for &EdwardsPoint` on the represented points. -/
-theorem sub_spec (self rhs : edwards.EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem sub_spec (self rhs : edwards.EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    sub self rhs ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    sub self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (sub_toExtended self rhs hself hrhs) fun _ => point_of_post hself_on hrhs_on
 
-end «CoreOpsArithSubEdwardsPointi686-tablesEdwardsPointi686-tables»
-end «SharedAEdwardsPointi686-tables».Insts
+end «CoreOpsArithSubEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
+end «SharedAEdwardsPoint32bit-tables».Insts
 
-namespace «Shared0EdwardsPointx86_64-no-tables».Insts
+namespace «Shared0EdwardsPoint64bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreOpsArithSubSharedAEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+namespace «CoreOpsArithSubSharedAEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
 
 /-- `Sub<&EdwardsPoint> for &EdwardsPoint`: the mixed formula `subProjectiveNiels` on the projective
 Niels form of `other`, back in extended coordinates; limbs `< 2^52`. -/
 @[step]
-theorem sub_toExtended (self other : edwards.EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt
+theorem sub_toExtended (self other : edwards.EdwardsPoint.«64bit-notables») (hself : self.LimbsLt
     52)
     (hother : other.LimbsLt 52) :
-    sub self other ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    sub self other ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels other.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 52 ⦄ := by
@@ -305,7 +305,7 @@ theorem sub_toExtended (self other : edwards.EdwardsPoint.«x86_64-no-tables») 
   exact ⟨by rw [hr, hcp, hpnp], hrb⟩
 
 /-- The point-level reading of the postcondition of `sub_toExtended`. -/
-private theorem point_of_post {self other r : edwards.EdwardsPoint.«x86_64-no-tables»}
+private theorem point_of_post {self other r : edwards.EdwardsPoint.«64bit-notables»}
     (hself_on : self.OnCurve) (hother_on : other.OnCurve)
     (h : r.toExtended =
         (self.toExtended.subProjectiveNiels other.toExtended.toProjectiveNiels).toExtended ∧
@@ -314,39 +314,39 @@ private theorem point_of_post {self other r : edwards.EdwardsPoint.«x86_64-no-t
   obtain ⟨hr, hb⟩ := h
   have hon' := Extended.subProjectiveNiels_onCurve edwards_a_eq_neg_one hself_on
     (Extended.onCurve_toProjectiveNiels hother_on)
-  rw [edwards.EdwardsPoint.«x86_64-no-tables».onCurve_iff,
-    edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def, hr,
-    edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def,
-    edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def, Completed.toPoint_toExtended hon',
+  rw [edwards.EdwardsPoint.«64bit-notables».onCurve_iff,
+    edwards.EdwardsPoint.«64bit-notables».toPoint_def, hr,
+    edwards.EdwardsPoint.«64bit-notables».toPoint_def,
+    edwards.EdwardsPoint.«64bit-notables».toPoint_def, Completed.toPoint_toExtended hon',
     Extended.toPoint_subProjectiveNiels edwards_a_eq_neg_one hself_on
       (Extended.onCurve_toProjectiveNiels hother_on),
     Extended.toPoint_toProjectiveNiels hother_on]
   exact ⟨Completed.onCurve_toExtended hon', rfl, hb⟩
 
 /-- `Sub<&EdwardsPoint> for &EdwardsPoint` on the represented points. -/
-theorem sub_spec (self other : edwards.EdwardsPoint.«x86_64-no-tables»)
+theorem sub_spec (self other : edwards.EdwardsPoint.«64bit-notables»)
     (hself : self.LimbsLt 52) (hother : other.LimbsLt 52) (hself_on : self.OnCurve)
     (hother_on : other.OnCurve) :
-    sub self other ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    sub self other ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (sub_toExtended self other hself hother) fun _ => point_of_post hself_on hother_on
 
-end «CoreOpsArithSubSharedAEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
-end «Shared0EdwardsPointx86_64-no-tables».Insts
+end «CoreOpsArithSubSharedAEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
+end «Shared0EdwardsPoint64bit-notables».Insts
 
-namespace «Shared0EdwardsPointi686-no-tables».Insts
+namespace «Shared0EdwardsPoint32bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-namespace «CoreOpsArithSubSharedAEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+namespace «CoreOpsArithSubSharedAEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
 
 /-- `Sub<&EdwardsPoint> for &EdwardsPoint`: the mixed formula `subProjectiveNiels` on the projective
 Niels form of `other`, back in extended coordinates; limbs `< 2^26`. -/
 @[step]
-theorem sub_toExtended (self other : edwards.EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt
+theorem sub_toExtended (self other : edwards.EdwardsPoint.«32bit-notables») (hself : self.LimbsLt
     26)
     (hother : other.LimbsLt 26) :
-    sub self other ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    sub self other ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels other.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 26 ⦄ := by
@@ -357,7 +357,7 @@ theorem sub_toExtended (self other : edwards.EdwardsPoint.«i686-no-tables») (h
   exact ⟨by rw [hr, hcp, hpnp], hrb⟩
 
 /-- The point-level reading of the postcondition of `sub_toExtended`. -/
-private theorem point_of_post {self other r : edwards.EdwardsPoint.«i686-no-tables»}
+private theorem point_of_post {self other r : edwards.EdwardsPoint.«32bit-notables»}
     (hself_on : self.OnCurve) (hother_on : other.OnCurve)
     (h : r.toExtended =
         (self.toExtended.subProjectiveNiels other.toExtended.toProjectiveNiels).toExtended ∧
@@ -366,41 +366,41 @@ private theorem point_of_post {self other r : edwards.EdwardsPoint.«i686-no-tab
   obtain ⟨hr, hb⟩ := h
   have hon' := Extended.subProjectiveNiels_onCurve edwards_a_eq_neg_one hself_on
     (Extended.onCurve_toProjectiveNiels hother_on)
-  rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff,
-    edwards.EdwardsPoint.«i686-no-tables».toPoint_def, hr,
-    edwards.EdwardsPoint.«i686-no-tables».toPoint_def,
-    edwards.EdwardsPoint.«i686-no-tables».toPoint_def, Completed.toPoint_toExtended hon',
+  rw [edwards.EdwardsPoint.«32bit-notables».onCurve_iff,
+    edwards.EdwardsPoint.«32bit-notables».toPoint_def, hr,
+    edwards.EdwardsPoint.«32bit-notables».toPoint_def,
+    edwards.EdwardsPoint.«32bit-notables».toPoint_def, Completed.toPoint_toExtended hon',
     Extended.toPoint_subProjectiveNiels edwards_a_eq_neg_one hself_on
       (Extended.onCurve_toProjectiveNiels hother_on),
     Extended.toPoint_toProjectiveNiels hother_on]
   exact ⟨Completed.onCurve_toExtended hon', rfl, hb⟩
 
 /-- `Sub<&EdwardsPoint> for &EdwardsPoint` on the represented points. -/
-theorem sub_spec (self other : edwards.EdwardsPoint.«i686-no-tables»)
+theorem sub_spec (self other : edwards.EdwardsPoint.«32bit-notables»)
     (hself : self.LimbsLt 26) (hother : other.LimbsLt 26) (hself_on : self.OnCurve)
     (hother_on : other.OnCurve) :
-    sub self other ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    sub self other ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - other.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (sub_toExtended self other hself hother) fun _ => point_of_post hself_on hother_on
 
-end «CoreOpsArithSubSharedAEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
-end «Shared0EdwardsPointi686-no-tables».Insts
+end «CoreOpsArithSubSharedAEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
+end «Shared0EdwardsPoint32bit-notables».Insts
 
-open «Shared0EdwardsPointx86_64-no-tables».Insts
-open «CoreOpsArithSubSharedAEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+open «Shared0EdwardsPoint64bit-notables».Insts
+open «CoreOpsArithSubSharedAEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
   (point_of_post)
 
-namespace edwards.EdwardsPoint.«x86_64-no-tables».Insts
+namespace edwards.EdwardsPoint.«64bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreOpsArithSubEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+namespace «CoreOpsArithSubEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
 
 /-- `Sub<EdwardsPoint> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem sub_toExtended (self rhs : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem sub_toExtended (self rhs : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) :
-    sub self rhs ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«64bit-notables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 52 ⦄ := by
@@ -408,21 +408,21 @@ theorem sub_toExtended (self rhs : EdwardsPoint.«x86_64-no-tables») (hself : s
   step*
 
 /-- `Sub<EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem sub_spec (self rhs : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem sub_spec (self rhs : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    sub self rhs ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (sub_toExtended self rhs hself hrhs) fun _ => point_of_post hself_on hrhs_on
 
-end «CoreOpsArithSubEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+end «CoreOpsArithSubEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
 
-namespace «CoreOpsArithSubSharedBEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+namespace «CoreOpsArithSubSharedBEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
 
 /-- `Sub<&EdwardsPoint> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem sub_toExtended (self rhs : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem sub_toExtended (self rhs : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) :
-    sub self rhs ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«64bit-notables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 52 ⦄ := by
@@ -430,29 +430,29 @@ theorem sub_toExtended (self rhs : EdwardsPoint.«x86_64-no-tables») (hself : s
   step*
 
 /-- `Sub<&EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem sub_spec (self rhs : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem sub_spec (self rhs : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    sub self rhs ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (sub_toExtended self rhs hself hrhs) fun _ => point_of_post hself_on hrhs_on
 
-end «CoreOpsArithSubSharedBEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
-end edwards.EdwardsPoint.«x86_64-no-tables».Insts
+end «CoreOpsArithSubSharedBEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
+end edwards.EdwardsPoint.«64bit-notables».Insts
 
-namespace edwards.EdwardsPoint.«i686-no-tables».Insts
+namespace edwards.EdwardsPoint.«32bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
-open «Shared0EdwardsPointi686-no-tables».Insts
-open «CoreOpsArithSubSharedAEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+open «Shared0EdwardsPoint32bit-notables».Insts
+open «CoreOpsArithSubSharedAEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
   (point_of_post)
 
-namespace «CoreOpsArithSubEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+namespace «CoreOpsArithSubEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
 
 /-- `Sub<EdwardsPoint> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem sub_toExtended (self rhs : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem sub_toExtended (self rhs : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) :
-    sub self rhs ⦃ (r : EdwardsPoint.«i686-no-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«32bit-notables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 26 ⦄ := by
@@ -460,21 +460,21 @@ theorem sub_toExtended (self rhs : EdwardsPoint.«i686-no-tables») (hself : sel
   step*
 
 /-- `Sub<EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem sub_spec (self rhs : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem sub_spec (self rhs : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    sub self rhs ⦃ (r : EdwardsPoint.«i686-no-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (sub_toExtended self rhs hself hrhs) fun _ => point_of_post hself_on hrhs_on
 
-end «CoreOpsArithSubEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+end «CoreOpsArithSubEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
 
-namespace «CoreOpsArithSubSharedBEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+namespace «CoreOpsArithSubSharedBEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
 
 /-- `Sub<&EdwardsPoint> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem sub_toExtended (self rhs : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem sub_toExtended (self rhs : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) :
-    sub self rhs ⦃ (r : EdwardsPoint.«i686-no-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«32bit-notables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 26 ⦄ := by
@@ -482,27 +482,27 @@ theorem sub_toExtended (self rhs : EdwardsPoint.«i686-no-tables») (hself : sel
   step*
 
 /-- `Sub<&EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem sub_spec (self rhs : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem sub_spec (self rhs : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    sub self rhs ⦃ (r : EdwardsPoint.«i686-no-tables») =>
+    sub self rhs ⦃ (r : EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (sub_toExtended self rhs hself hrhs) fun _ => point_of_post hself_on hrhs_on
 
-end «CoreOpsArithSubSharedBEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
-end edwards.EdwardsPoint.«i686-no-tables».Insts
+end «CoreOpsArithSubSharedBEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
+end edwards.EdwardsPoint.«32bit-notables».Insts
 
-namespace «SharedAEdwardsPointx86_64-no-tables».Insts
+namespace «SharedAEdwardsPoint64bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreOpsArithSubEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+namespace «CoreOpsArithSubEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
 
 /-- `Sub<EdwardsPoint> for &EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem sub_toExtended (self rhs : edwards.EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt
+theorem sub_toExtended (self rhs : edwards.EdwardsPoint.«64bit-notables») (hself : self.LimbsLt
     52)
     (hrhs : rhs.LimbsLt 52) :
-    sub self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    sub self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 52 ⦄ := by
@@ -510,30 +510,30 @@ theorem sub_toExtended (self rhs : edwards.EdwardsPoint.«x86_64-no-tables») (h
   step*
 
 /-- `Sub<EdwardsPoint> for &EdwardsPoint` on the represented points. -/
-theorem sub_spec (self rhs : edwards.EdwardsPoint.«x86_64-no-tables»)
+theorem sub_spec (self rhs : edwards.EdwardsPoint.«64bit-notables»)
     (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    sub self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    sub self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (sub_toExtended self rhs hself hrhs) fun _ => point_of_post hself_on hrhs_on
 
-end «CoreOpsArithSubEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
-end «SharedAEdwardsPointx86_64-no-tables».Insts
+end «CoreOpsArithSubEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
+end «SharedAEdwardsPoint64bit-notables».Insts
 
-namespace «SharedAEdwardsPointi686-no-tables».Insts
+namespace «SharedAEdwardsPoint32bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
-open «Shared0EdwardsPointi686-no-tables».Insts
-open «CoreOpsArithSubSharedAEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+open «Shared0EdwardsPoint32bit-notables».Insts
+open «CoreOpsArithSubSharedAEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
   (point_of_post)
 
-namespace «CoreOpsArithSubEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+namespace «CoreOpsArithSubEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
 
 /-- `Sub<EdwardsPoint> for &EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem sub_toExtended (self rhs : edwards.EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem sub_toExtended (self rhs : edwards.EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) :
-    sub self rhs ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    sub self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.toExtended =
         (self.toExtended.subProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 26 ⦄ := by
@@ -541,14 +541,14 @@ theorem sub_toExtended (self rhs : edwards.EdwardsPoint.«i686-no-tables») (hse
   step*
 
 /-- `Sub<EdwardsPoint> for &EdwardsPoint` on the represented points. -/
-theorem sub_spec (self rhs : edwards.EdwardsPoint.«i686-no-tables»)
+theorem sub_spec (self rhs : edwards.EdwardsPoint.«32bit-notables»)
     (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    sub self rhs ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    sub self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint - rhs.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (sub_toExtended self rhs hself hrhs) fun _ => point_of_post hself_on hrhs_on
 
-end «CoreOpsArithSubEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
-end «SharedAEdwardsPointi686-no-tables».Insts
+end «CoreOpsArithSubEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
+end «SharedAEdwardsPoint32bit-notables».Insts
 
 end Curve25519Dalek

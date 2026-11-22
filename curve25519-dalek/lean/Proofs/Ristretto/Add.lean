@@ -17,288 +17,288 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 
 namespace Curve25519Dalek
 
-namespace «Shared0RistrettoPointx86_64-tables».Insts
-namespace «CoreOpsArithAddSharedARistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
+namespace «Shared0RistrettoPoint64bit-tables».Insts
+namespace «CoreOpsArithAddSharedARistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
 
-open edwards.EdwardsPoint.«x86_64-tables» in
+open edwards.EdwardsPoint.«64bit-tables» in
 /-- `Add<&RistrettoPoint> for &RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_spec (self other : ristretto.RistrettoPoint.«x86_64-tables»)
+theorem add_spec (self other : ristretto.RistrettoPoint.«64bit-tables»)
     (hself : self.LimbsLt 52) (hother : other.LimbsLt 52) (hself_on : self.OnCurve)
     (hother_on : other.OnCurve) :
-    add self other ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    add self other ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + other.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add
   step with
-    Insts.«CoreOpsArithAddEdwardsPointx86_64-tablesEdwardsPointx86_64-tables».add_spec
+    Insts.«CoreOpsArithAddEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».add_spec
     self other hself hother hself_on hother_on as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddSharedARistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
-end «Shared0RistrettoPointx86_64-tables».Insts
+end «CoreOpsArithAddSharedARistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
+end «Shared0RistrettoPoint64bit-tables».Insts
 
-namespace «Shared0RistrettoPointi686-tables».Insts
-namespace «CoreOpsArithAddSharedARistrettoPointi686-tablesRistrettoPointi686-tables»
+namespace «Shared0RistrettoPoint32bit-tables».Insts
+namespace «CoreOpsArithAddSharedARistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
 
-open edwards.EdwardsPoint.«i686-tables» in
+open edwards.EdwardsPoint.«32bit-tables» in
 /-- `Add<&RistrettoPoint> for &RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_spec (self other : ristretto.RistrettoPoint.«i686-tables»)
+theorem add_spec (self other : ristretto.RistrettoPoint.«32bit-tables»)
     (hself : self.LimbsLt 26) (hother : other.LimbsLt 26) (hself_on : self.OnCurve)
     (hother_on : other.OnCurve) :
-    add self other ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    add self other ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + other.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add
   step with
-    Insts.«CoreOpsArithAddEdwardsPointi686-tablesEdwardsPointi686-tables».add_spec
+    Insts.«CoreOpsArithAddEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».add_spec
     self other hself hother hself_on hother_on as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddSharedARistrettoPointi686-tablesRistrettoPointi686-tables»
-end «Shared0RistrettoPointi686-tables».Insts
+end «CoreOpsArithAddSharedARistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
+end «Shared0RistrettoPoint32bit-tables».Insts
 
-namespace ristretto.RistrettoPoint.«x86_64-tables».Insts
-namespace «CoreOpsArithAddSharedBRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
-
-/-- `Add<&RistrettoPoint> for RistrettoPoint` on the represented points. -/
-@[step]
-theorem add_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
-    (hself : self.LimbsLt 52) (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve)
-    (hrhs_on : rhs.OnCurve) :
-    add self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
-      r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold add
-  step as ⟨r, h1, h2, h3⟩
-  exact ⟨h1, h2, h3⟩
-
-end «CoreOpsArithAddSharedBRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
-end ristretto.RistrettoPoint.«x86_64-tables».Insts
-
-namespace ristretto.RistrettoPoint.«i686-tables».Insts
-namespace «CoreOpsArithAddSharedBRistrettoPointi686-tablesRistrettoPointi686-tables»
+namespace ristretto.RistrettoPoint.«64bit-tables».Insts
+namespace «CoreOpsArithAddSharedBRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
 
 /-- `Add<&RistrettoPoint> for RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_spec (self rhs : ristretto.RistrettoPoint.«i686-tables»)
-    (hself : self.LimbsLt 26) (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve)
-    (hrhs_on : rhs.OnCurve) :
-    add self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
-      r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
-  unfold add
-  step as ⟨r, h1, h2, h3⟩
-  exact ⟨h1, h2, h3⟩
-
-end «CoreOpsArithAddSharedBRistrettoPointi686-tablesRistrettoPointi686-tables»
-end ristretto.RistrettoPoint.«i686-tables».Insts
-
-namespace «SharedARistrettoPointx86_64-tables».Insts
-namespace «CoreOpsArithAddRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
-
-/-- `Add<RistrettoPoint> for &RistrettoPoint` on the represented points. -/
-@[step]
-theorem add_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
+theorem add_spec (self rhs : ristretto.RistrettoPoint.«64bit-tables»)
     (hself : self.LimbsLt 52) (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    add self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
-end «SharedARistrettoPointx86_64-tables».Insts
+end «CoreOpsArithAddSharedBRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
+end ristretto.RistrettoPoint.«64bit-tables».Insts
 
-namespace «SharedARistrettoPointi686-tables».Insts
-namespace «CoreOpsArithAddRistrettoPointi686-tablesRistrettoPointi686-tables»
+namespace ristretto.RistrettoPoint.«32bit-tables».Insts
+namespace «CoreOpsArithAddSharedBRistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
 
-/-- `Add<RistrettoPoint> for &RistrettoPoint` on the represented points. -/
+/-- `Add<&RistrettoPoint> for RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_spec (self rhs : ristretto.RistrettoPoint.«i686-tables»)
+theorem add_spec (self rhs : ristretto.RistrettoPoint.«32bit-tables»)
     (hself : self.LimbsLt 26) (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    add self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddRistrettoPointi686-tablesRistrettoPointi686-tables»
-end «SharedARistrettoPointi686-tables».Insts
+end «CoreOpsArithAddSharedBRistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
+end ristretto.RistrettoPoint.«32bit-tables».Insts
 
-namespace ristretto.RistrettoPoint.«x86_64-tables».Insts
-namespace «CoreOpsArithAddRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
+namespace «SharedARistrettoPoint64bit-tables».Insts
+namespace «CoreOpsArithAddRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
 
-/-- `Add<RistrettoPoint> for RistrettoPoint` on the represented points. -/
+/-- `Add<RistrettoPoint> for &RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
+theorem add_spec (self rhs : ristretto.RistrettoPoint.«64bit-tables»)
     (hself : self.LimbsLt 52) (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    add self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
-end ristretto.RistrettoPoint.«x86_64-tables».Insts
+end «CoreOpsArithAddRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
+end «SharedARistrettoPoint64bit-tables».Insts
 
-namespace ristretto.RistrettoPoint.«i686-tables».Insts
-namespace «CoreOpsArithAddRistrettoPointi686-tablesRistrettoPointi686-tables»
+namespace «SharedARistrettoPoint32bit-tables».Insts
+namespace «CoreOpsArithAddRistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
 
-/-- `Add<RistrettoPoint> for RistrettoPoint` on the represented points. -/
+/-- `Add<RistrettoPoint> for &RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_spec (self rhs : ristretto.RistrettoPoint.«i686-tables»)
+theorem add_spec (self rhs : ristretto.RistrettoPoint.«32bit-tables»)
     (hself : self.LimbsLt 26) (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    add self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddRistrettoPointi686-tablesRistrettoPointi686-tables»
-end ristretto.RistrettoPoint.«i686-tables».Insts
+end «CoreOpsArithAddRistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
+end «SharedARistrettoPoint32bit-tables».Insts
 
-namespace «Shared0RistrettoPointx86_64-no-tables».Insts
-namespace «CoreOpsArithAddSharedARistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
+namespace ristretto.RistrettoPoint.«64bit-tables».Insts
+namespace «CoreOpsArithAddRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
 
-open edwards.EdwardsPoint.«x86_64-no-tables» in
+/-- `Add<RistrettoPoint> for RistrettoPoint` on the represented points. -/
+@[step]
+theorem add_spec (self rhs : ristretto.RistrettoPoint.«64bit-tables»)
+    (hself : self.LimbsLt 52) (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve)
+    (hrhs_on : rhs.OnCurve) :
+    add self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
+      r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
+  unfold add
+  step as ⟨r, h1, h2, h3⟩
+  exact ⟨h1, h2, h3⟩
+
+end «CoreOpsArithAddRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
+end ristretto.RistrettoPoint.«64bit-tables».Insts
+
+namespace ristretto.RistrettoPoint.«32bit-tables».Insts
+namespace «CoreOpsArithAddRistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
+
+/-- `Add<RistrettoPoint> for RistrettoPoint` on the represented points. -/
+@[step]
+theorem add_spec (self rhs : ristretto.RistrettoPoint.«32bit-tables»)
+    (hself : self.LimbsLt 26) (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve)
+    (hrhs_on : rhs.OnCurve) :
+    add self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
+      r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
+  unfold add
+  step as ⟨r, h1, h2, h3⟩
+  exact ⟨h1, h2, h3⟩
+
+end «CoreOpsArithAddRistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
+end ristretto.RistrettoPoint.«32bit-tables».Insts
+
+namespace «Shared0RistrettoPoint64bit-notables».Insts
+namespace «CoreOpsArithAddSharedARistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
+
+open edwards.EdwardsPoint.«64bit-notables» in
 /-- `Add<&RistrettoPoint> for &RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_spec (self other : ristretto.RistrettoPoint.«x86_64-no-tables»)
+theorem add_spec (self other : ristretto.RistrettoPoint.«64bit-notables»)
     (hself : self.LimbsLt 52) (hother : other.LimbsLt 52) (hself_on : self.OnCurve)
     (hother_on : other.OnCurve) :
-    add self other ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    add self other ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + other.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add
   step with
-    Insts.«CoreOpsArithAddEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».add_spec
+    Insts.«CoreOpsArithAddEdwardsPoint64bit-notablesEdwardsPoint64bit-notables».add_spec
     self other hself hother hself_on hother_on as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddSharedARistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
-end «Shared0RistrettoPointx86_64-no-tables».Insts
+end «CoreOpsArithAddSharedARistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
+end «Shared0RistrettoPoint64bit-notables».Insts
 
-namespace «Shared0RistrettoPointi686-no-tables».Insts
-namespace «CoreOpsArithAddSharedARistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
+namespace «Shared0RistrettoPoint32bit-notables».Insts
+namespace «CoreOpsArithAddSharedARistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
 
-open edwards.EdwardsPoint.«i686-no-tables» in
+open edwards.EdwardsPoint.«32bit-notables» in
 /-- `Add<&RistrettoPoint> for &RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_spec (self other : ristretto.RistrettoPoint.«i686-no-tables»)
+theorem add_spec (self other : ristretto.RistrettoPoint.«32bit-notables»)
     (hself : self.LimbsLt 26) (hother : other.LimbsLt 26) (hself_on : self.OnCurve)
     (hother_on : other.OnCurve) :
-    add self other ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    add self other ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + other.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add
   step with
-    Insts.«CoreOpsArithAddEdwardsPointi686-no-tablesEdwardsPointi686-no-tables».add_spec
+    Insts.«CoreOpsArithAddEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».add_spec
     self other hself hother hself_on hother_on as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddSharedARistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
-end «Shared0RistrettoPointi686-no-tables».Insts
+end «CoreOpsArithAddSharedARistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
+end «Shared0RistrettoPoint32bit-notables».Insts
 
-namespace ristretto.RistrettoPoint.«x86_64-no-tables».Insts
-namespace «CoreOpsArithAddSharedBRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
-
-/-- `Add<&RistrettoPoint> for RistrettoPoint` on the represented points. -/
-@[step]
-theorem add_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
-    (hself : self.LimbsLt 52) (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve)
-    (hrhs_on : rhs.OnCurve) :
-    add self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold add
-  step as ⟨r, h1, h2, h3⟩
-  exact ⟨h1, h2, h3⟩
-
-end «CoreOpsArithAddSharedBRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
-end ristretto.RistrettoPoint.«x86_64-no-tables».Insts
-
-namespace ristretto.RistrettoPoint.«i686-no-tables».Insts
-namespace «CoreOpsArithAddSharedBRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
+namespace ristretto.RistrettoPoint.«64bit-notables».Insts
+namespace «CoreOpsArithAddSharedBRistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
 
 /-- `Add<&RistrettoPoint> for RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_spec (self rhs : ristretto.RistrettoPoint.«i686-no-tables»)
-    (hself : self.LimbsLt 26) (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve)
-    (hrhs_on : rhs.OnCurve) :
-    add self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
-      r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
-  unfold add
-  step as ⟨r, h1, h2, h3⟩
-  exact ⟨h1, h2, h3⟩
-
-end «CoreOpsArithAddSharedBRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
-end ristretto.RistrettoPoint.«i686-no-tables».Insts
-
-namespace «SharedARistrettoPointx86_64-no-tables».Insts
-namespace «CoreOpsArithAddRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
-
-/-- `Add<RistrettoPoint> for &RistrettoPoint` on the represented points. -/
-@[step]
-theorem add_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
+theorem add_spec (self rhs : ristretto.RistrettoPoint.«64bit-notables»)
     (hself : self.LimbsLt 52) (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    add self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
-end «SharedARistrettoPointx86_64-no-tables».Insts
+end «CoreOpsArithAddSharedBRistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
+end ristretto.RistrettoPoint.«64bit-notables».Insts
 
-namespace «SharedARistrettoPointi686-no-tables».Insts
-namespace «CoreOpsArithAddRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
+namespace ristretto.RistrettoPoint.«32bit-notables».Insts
+namespace «CoreOpsArithAddSharedBRistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
 
-/-- `Add<RistrettoPoint> for &RistrettoPoint` on the represented points. -/
+/-- `Add<&RistrettoPoint> for RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_spec (self rhs : ristretto.RistrettoPoint.«i686-no-tables»)
+theorem add_spec (self rhs : ristretto.RistrettoPoint.«32bit-notables»)
     (hself : self.LimbsLt 26) (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    add self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
-end «SharedARistrettoPointi686-no-tables».Insts
+end «CoreOpsArithAddSharedBRistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
+end ristretto.RistrettoPoint.«32bit-notables».Insts
 
-namespace ristretto.RistrettoPoint.«x86_64-no-tables».Insts
-namespace «CoreOpsArithAddRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
+namespace «SharedARistrettoPoint64bit-notables».Insts
+namespace «CoreOpsArithAddRistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
 
-/-- `Add<RistrettoPoint> for RistrettoPoint` on the represented points. -/
+/-- `Add<RistrettoPoint> for &RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
+theorem add_spec (self rhs : ristretto.RistrettoPoint.«64bit-notables»)
     (hself : self.LimbsLt 52) (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    add self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
-end ristretto.RistrettoPoint.«x86_64-no-tables».Insts
+end «CoreOpsArithAddRistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
+end «SharedARistrettoPoint64bit-notables».Insts
 
-namespace ristretto.RistrettoPoint.«i686-no-tables».Insts
-namespace «CoreOpsArithAddRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
+namespace «SharedARistrettoPoint32bit-notables».Insts
+namespace «CoreOpsArithAddRistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
 
-/-- `Add<RistrettoPoint> for RistrettoPoint` on the represented points. -/
+/-- `Add<RistrettoPoint> for &RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_spec (self rhs : ristretto.RistrettoPoint.«i686-no-tables»)
+theorem add_spec (self rhs : ristretto.RistrettoPoint.«32bit-notables»)
     (hself : self.LimbsLt 26) (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    add self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
-end ristretto.RistrettoPoint.«i686-no-tables».Insts
+end «CoreOpsArithAddRistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
+end «SharedARistrettoPoint32bit-notables».Insts
+
+namespace ristretto.RistrettoPoint.«64bit-notables».Insts
+namespace «CoreOpsArithAddRistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
+
+/-- `Add<RistrettoPoint> for RistrettoPoint` on the represented points. -/
+@[step]
+theorem add_spec (self rhs : ristretto.RistrettoPoint.«64bit-notables»)
+    (hself : self.LimbsLt 52) (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve)
+    (hrhs_on : rhs.OnCurve) :
+    add self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
+      r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
+  unfold add
+  step as ⟨r, h1, h2, h3⟩
+  exact ⟨h1, h2, h3⟩
+
+end «CoreOpsArithAddRistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
+end ristretto.RistrettoPoint.«64bit-notables».Insts
+
+namespace ristretto.RistrettoPoint.«32bit-notables».Insts
+namespace «CoreOpsArithAddRistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
+
+/-- `Add<RistrettoPoint> for RistrettoPoint` on the represented points. -/
+@[step]
+theorem add_spec (self rhs : ristretto.RistrettoPoint.«32bit-notables»)
+    (hself : self.LimbsLt 26) (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve)
+    (hrhs_on : rhs.OnCurve) :
+    add self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
+      r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
+  unfold add
+  step as ⟨r, h1, h2, h3⟩
+  exact ⟨h1, h2, h3⟩
+
+end «CoreOpsArithAddRistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
+end ristretto.RistrettoPoint.«32bit-notables».Insts
 
 end Curve25519Dalek

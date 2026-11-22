@@ -14,68 +14,68 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek.backend
 
-namespace «x86_64-tables»
+namespace «64bit-tables»
 
 /-- `variable_base_mul`: the serial `variable_base::mul`, `scalar • P` for
 `scalar.asNat < 2^255`; limbs `< 2^52`. -/
 @[step]
-theorem variable_base_mul_spec (point : edwards.EdwardsPoint.«x86_64-tables»)
+theorem variable_base_mul_spec (point : edwards.EdwardsPoint.«64bit-tables»)
     (scalar : scalar.Scalar) (hpoint : point.LimbsLt 52) (hon : point.OnCurve)
     (hscalar : scalar.asNat < 2 ^ 255) :
-    variable_base_mul.«x86_64-tables» point scalar
-      ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    variable_base_mul.«64bit-tables» point scalar
+      ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
         r.OnCurve ∧ r.toPoint = scalar.asNat • point.toPoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold variable_base_mul.«x86_64-tables»
+  unfold variable_base_mul.«64bit-tables»
   step*
 
-end «x86_64-tables»
+end «64bit-tables»
 
-namespace «i686-tables»
+namespace «32bit-tables»
 
 /-- `variable_base_mul`: the serial `variable_base::mul`, `scalar • P` for
 `scalar.asNat < 2^255`; limbs `< 2^26`. -/
 @[step]
-theorem variable_base_mul_spec (point : edwards.EdwardsPoint.«i686-tables»)
+theorem variable_base_mul_spec (point : edwards.EdwardsPoint.«32bit-tables»)
     (scalar : scalar.Scalar) (hpoint : point.LimbsLt 26) (hon : point.OnCurve)
     (hscalar : scalar.asNat < 2 ^ 255) :
-    variable_base_mul.«i686-tables» point scalar
-      ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    variable_base_mul.«32bit-tables» point scalar
+      ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
         r.OnCurve ∧ r.toPoint = scalar.asNat • point.toPoint ∧ r.LimbsLt 26 ⦄ := by
-  unfold variable_base_mul.«i686-tables»
+  unfold variable_base_mul.«32bit-tables»
   step*
 
-end «i686-tables»
+end «32bit-tables»
 
-namespace «x86_64-no-tables»
+namespace «64bit-notables»
 
 /-- `variable_base_mul`: the serial `variable_base::mul`, `scalar • P` for
 `scalar.asNat < 2^255`; limbs `< 2^52`. -/
 @[step]
-theorem variable_base_mul_spec (point : edwards.EdwardsPoint.«x86_64-no-tables»)
+theorem variable_base_mul_spec (point : edwards.EdwardsPoint.«64bit-notables»)
     (scalar : scalar.Scalar) (hpoint : point.LimbsLt 52) (hon : point.OnCurve)
     (hscalar : scalar.asNat < 2 ^ 255) :
-    variable_base_mul.«x86_64-no-tables» point scalar
-      ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    variable_base_mul.«64bit-notables» point scalar
+      ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
         r.OnCurve ∧ r.toPoint = scalar.asNat • point.toPoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold variable_base_mul.«x86_64-no-tables»
+  unfold variable_base_mul.«64bit-notables»
   step*
 
-end «x86_64-no-tables»
+end «64bit-notables»
 
-namespace «i686-no-tables»
+namespace «32bit-notables»
 
 /-- `variable_base_mul`: the serial `variable_base::mul`, `scalar • P` for
 `scalar.asNat < 2^255`; limbs `< 2^26`. -/
 @[step]
-theorem variable_base_mul_spec (point : edwards.EdwardsPoint.«i686-no-tables»)
+theorem variable_base_mul_spec (point : edwards.EdwardsPoint.«32bit-notables»)
     (scalar : scalar.Scalar) (hpoint : point.LimbsLt 26) (hon : point.OnCurve)
     (hscalar : scalar.asNat < 2 ^ 255) :
-    variable_base_mul.«i686-no-tables» point scalar
-      ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    variable_base_mul.«32bit-notables» point scalar
+      ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
         r.OnCurve ∧ r.toPoint = scalar.asNat • point.toPoint ∧ r.LimbsLt 26 ⦄ := by
-  unfold variable_base_mul.«i686-no-tables»
+  unfold variable_base_mul.«32bit-notables»
   step*
 
-end «i686-no-tables»
+end «32bit-notables»
 
 end Curve25519Dalek.backend

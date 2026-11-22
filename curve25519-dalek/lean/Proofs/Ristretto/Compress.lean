@@ -156,120 +156,120 @@ end Curve25519Dalek.Backend
 
 namespace Curve25519Dalek.ristretto
 
-namespace «RistrettoPointx86_64-tables»
+namespace «RistrettoPoint64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-theorem compress_eq (self : RistrettoPoint.«x86_64-tables») :
+theorem compress_eq (self : RistrettoPoint.«64bit-tables») :
     compress self = Backend.compressBody Backend.U64 self.X self.Y self.Z self.T :=
   rfl
 
-open edwards.EdwardsPoint.«x86_64-tables» in
+open edwards.EdwardsPoint.«64bit-tables» in
 /-- `RistrettoPoint::compress`: RFC 9496's encoding of the represented point; limbs `< 2^52`. -/
 @[step]
-theorem compress_spec (self : RistrettoPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem compress_spec (self : RistrettoPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     compress self ⦃ (r : CompressedRistretto) =>
       r.toVector = Ristretto.encodeRep self.toPoint ⦄ := by
   simp only [Curve25519Dalek.ristretto.CompressedRistretto.toVector_eq_encodeRep_iff]
   obtain ⟨hX, hY, hZ, hT⟩ := hself
-  rw [edwards.EdwardsPoint.«x86_64-tables».onCurve_iff,
-    edwards.EdwardsPoint.«x86_64-tables».toExtended_def] at hon
-  rw [compress_eq, edwards.EdwardsPoint.«x86_64-tables».toPoint_def,
-    edwards.EdwardsPoint.«x86_64-tables».toExtended_def]
+  rw [edwards.EdwardsPoint.«64bit-tables».onCurve_iff,
+    edwards.EdwardsPoint.«64bit-tables».toExtended_def] at hon
+  rw [compress_eq, edwards.EdwardsPoint.«64bit-tables».toPoint_def,
+    edwards.EdwardsPoint.«64bit-tables».toExtended_def]
   exact Backend.compressBody_spec Backend.U64
     Backend.U64.add_spec Backend.U64.sub_spec Backend.U64.mul_spec Backend.U64.square_spec
     Backend.U64.invsqrt_spec Backend.U64.sqrtM1_spec Backend.U64.invsqrtAMinusD_spec
     Backend.U64.is_negative_spec Backend.U64.conditional_assign_spec
     Backend.U64.conditional_negate_spec Backend.U64.to_bytes_spec _ _ _ _ hX hY hZ hT hon
 
-end «RistrettoPointx86_64-tables»
+end «RistrettoPoint64bit-tables»
 
-namespace «RistrettoPointi686-tables»
+namespace «RistrettoPoint32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-theorem compress_eq (self : RistrettoPoint.«i686-tables») :
+theorem compress_eq (self : RistrettoPoint.«32bit-tables») :
     compress self = Backend.compressBody Backend.U32 self.X self.Y self.Z self.T :=
   rfl
 
-open edwards.EdwardsPoint.«i686-tables» in
+open edwards.EdwardsPoint.«32bit-tables» in
 /-- `RistrettoPoint::compress`: RFC 9496's encoding of the represented point; limbs `< 2^26`. -/
 @[step]
-theorem compress_spec (self : RistrettoPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem compress_spec (self : RistrettoPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     compress self ⦃ (r : CompressedRistretto) =>
       r.toVector = Ristretto.encodeRep self.toPoint ⦄ := by
   simp only [Curve25519Dalek.ristretto.CompressedRistretto.toVector_eq_encodeRep_iff]
   obtain ⟨hX, hY, hZ, hT⟩ := hself
-  rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff,
-    edwards.EdwardsPoint.«i686-tables».toExtended_def] at hon
-  rw [compress_eq, edwards.EdwardsPoint.«i686-tables».toPoint_def,
-    edwards.EdwardsPoint.«i686-tables».toExtended_def]
+  rw [edwards.EdwardsPoint.«32bit-tables».onCurve_iff,
+    edwards.EdwardsPoint.«32bit-tables».toExtended_def] at hon
+  rw [compress_eq, edwards.EdwardsPoint.«32bit-tables».toPoint_def,
+    edwards.EdwardsPoint.«32bit-tables».toExtended_def]
   exact Backend.compressBody_spec Backend.U32
     Backend.U32.add_spec Backend.U32.sub_spec Backend.U32.mul_spec Backend.U32.square_spec
     Backend.U32.invsqrt_spec Backend.U32.sqrtM1_spec Backend.U32.invsqrtAMinusD_spec
     Backend.U32.is_negative_spec Backend.U32.conditional_assign_spec
     Backend.U32.conditional_negate_spec Backend.U32.to_bytes_spec _ _ _ _ hX hY hZ hT hon
 
-end «RistrettoPointi686-tables»
+end «RistrettoPoint32bit-tables»
 
-namespace «RistrettoPointx86_64-no-tables»
+namespace «RistrettoPoint64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-theorem compress_eq (self : RistrettoPoint.«x86_64-no-tables») :
+theorem compress_eq (self : RistrettoPoint.«64bit-notables») :
     compress self = Backend.compressBody Backend.U64 self.X self.Y self.Z self.T :=
   rfl
 
-open edwards.EdwardsPoint.«x86_64-no-tables» in
+open edwards.EdwardsPoint.«64bit-notables» in
 /-- `RistrettoPoint::compress`: RFC 9496's encoding of the represented point; limbs `< 2^52`. -/
 @[step]
-theorem compress_spec (self : RistrettoPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem compress_spec (self : RistrettoPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     compress self ⦃ (r : CompressedRistretto) =>
       r.toVector = Ristretto.encodeRep self.toPoint ⦄ := by
   simp only [Curve25519Dalek.ristretto.CompressedRistretto.toVector_eq_encodeRep_iff]
   obtain ⟨hX, hY, hZ, hT⟩ := hself
-  rw [edwards.EdwardsPoint.«x86_64-no-tables».onCurve_iff,
-    edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def] at hon
-  rw [compress_eq, edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def,
-    edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def]
+  rw [edwards.EdwardsPoint.«64bit-notables».onCurve_iff,
+    edwards.EdwardsPoint.«64bit-notables».toExtended_def] at hon
+  rw [compress_eq, edwards.EdwardsPoint.«64bit-notables».toPoint_def,
+    edwards.EdwardsPoint.«64bit-notables».toExtended_def]
   exact Backend.compressBody_spec Backend.U64
     Backend.U64.add_spec Backend.U64.sub_spec Backend.U64.mul_spec Backend.U64.square_spec
     Backend.U64.invsqrt_spec Backend.U64.sqrtM1_spec Backend.U64.invsqrtAMinusD_spec
     Backend.U64.is_negative_spec Backend.U64.conditional_assign_spec
     Backend.U64.conditional_negate_spec Backend.U64.to_bytes_spec _ _ _ _ hX hY hZ hT hon
 
-end «RistrettoPointx86_64-no-tables»
+end «RistrettoPoint64bit-notables»
 
-namespace «RistrettoPointi686-no-tables»
+namespace «RistrettoPoint32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-theorem compress_eq (self : RistrettoPoint.«i686-no-tables») :
+theorem compress_eq (self : RistrettoPoint.«32bit-notables») :
     compress self = Backend.compressBody Backend.U32 self.X self.Y self.Z self.T :=
   rfl
 
-open edwards.EdwardsPoint.«i686-no-tables» in
+open edwards.EdwardsPoint.«32bit-notables» in
 /-- `RistrettoPoint::compress`: RFC 9496's encoding of the represented point; limbs `< 2^26`. -/
 @[step]
-theorem compress_spec (self : RistrettoPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem compress_spec (self : RistrettoPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     compress self ⦃ (r : CompressedRistretto) =>
       r.toVector = Ristretto.encodeRep self.toPoint ⦄ := by
   simp only [Curve25519Dalek.ristretto.CompressedRistretto.toVector_eq_encodeRep_iff]
   obtain ⟨hX, hY, hZ, hT⟩ := hself
-  rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff,
-    edwards.EdwardsPoint.«i686-no-tables».toExtended_def] at hon
-  rw [compress_eq, edwards.EdwardsPoint.«i686-no-tables».toPoint_def,
-    edwards.EdwardsPoint.«i686-no-tables».toExtended_def]
+  rw [edwards.EdwardsPoint.«32bit-notables».onCurve_iff,
+    edwards.EdwardsPoint.«32bit-notables».toExtended_def] at hon
+  rw [compress_eq, edwards.EdwardsPoint.«32bit-notables».toPoint_def,
+    edwards.EdwardsPoint.«32bit-notables».toExtended_def]
   exact Backend.compressBody_spec Backend.U32
     Backend.U32.add_spec Backend.U32.sub_spec Backend.U32.mul_spec Backend.U32.square_spec
     Backend.U32.invsqrt_spec Backend.U32.sqrtM1_spec Backend.U32.invsqrtAMinusD_spec
     Backend.U32.is_negative_spec Backend.U32.conditional_assign_spec
     Backend.U32.conditional_negate_spec Backend.U32.to_bytes_spec _ _ _ _ hX hY hZ hT hon
 
-end «RistrettoPointi686-no-tables»
+end «RistrettoPoint32bit-notables»
 
 end Curve25519Dalek.ristretto

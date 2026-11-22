@@ -16,21 +16,21 @@ open Curve25519Dalek.backend.serial.curve_models
 
 namespace Curve25519Dalek
 
-open «Shared0EdwardsPointx86_64-tables».Insts
-open «CoreOpsArithAddSharedAEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+open «Shared0EdwardsPoint64bit-tables».Insts
+open «CoreOpsArithAddSharedAEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
   (add_spec)
 
-namespace edwards.EdwardsPoint.«x86_64-tables».Insts
+namespace edwards.EdwardsPoint.«64bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreOpsArithAddAssignSharedAEdwardsPointx86_64-tables»
+namespace «CoreOpsArithAddAssignSharedAEdwardsPoint64bit-tables»
 
 /-- `AddAssign<&EdwardsPoint> for EdwardsPoint`: as `Add`. -/
 @[step]
-theorem add_assign_toExtended (self rhs : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem add_assign_toExtended (self rhs : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«x86_64-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«64bit-tables») =>
       r.toExtended =
         (self.toExtended.addProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 52 ⦄ := by
@@ -38,22 +38,22 @@ theorem add_assign_toExtended (self rhs : EdwardsPoint.«x86_64-tables») (hself
   step*
 
 /-- `AddAssign<&EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem add_assign_spec (self rhs : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem add_assign_spec (self rhs : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«x86_64-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add_assign
   exact add_spec self rhs hself hrhs hself_on hrhs_on
 
-end «CoreOpsArithAddAssignSharedAEdwardsPointx86_64-tables»
+end «CoreOpsArithAddAssignSharedAEdwardsPoint64bit-tables»
 
-namespace «CoreOpsArithAddAssignEdwardsPointx86_64-tables»
+namespace «CoreOpsArithAddAssignEdwardsPoint64bit-tables»
 
 /-- `AddAssign<EdwardsPoint> for EdwardsPoint`: as `Add`. -/
 @[step]
-theorem add_assign_toExtended (self rhs : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem add_assign_toExtended (self rhs : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«x86_64-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«64bit-tables») =>
       r.toExtended =
         (self.toExtended.addProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 52 ⦄ := by
@@ -61,31 +61,31 @@ theorem add_assign_toExtended (self rhs : EdwardsPoint.«x86_64-tables») (hself
   step*
 
 /-- `AddAssign<EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem add_assign_spec (self rhs : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem add_assign_spec (self rhs : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«x86_64-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add_assign
-  exact «CoreOpsArithAddAssignSharedAEdwardsPointx86_64-tables».add_assign_spec self rhs
+  exact «CoreOpsArithAddAssignSharedAEdwardsPoint64bit-tables».add_assign_spec self rhs
     hself hrhs hself_on hrhs_on
 
-end «CoreOpsArithAddAssignEdwardsPointx86_64-tables»
-end edwards.EdwardsPoint.«x86_64-tables».Insts
+end «CoreOpsArithAddAssignEdwardsPoint64bit-tables»
+end edwards.EdwardsPoint.«64bit-tables».Insts
 
-namespace edwards.EdwardsPoint.«i686-tables».Insts
+namespace edwards.EdwardsPoint.«32bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
-open «Shared0EdwardsPointi686-tables».Insts
-open «CoreOpsArithAddSharedAEdwardsPointi686-tablesEdwardsPointi686-tables»
+open «Shared0EdwardsPoint32bit-tables».Insts
+open «CoreOpsArithAddSharedAEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
   (add_spec)
 
-namespace «CoreOpsArithAddAssignSharedAEdwardsPointi686-tables»
+namespace «CoreOpsArithAddAssignSharedAEdwardsPoint32bit-tables»
 
 /-- `AddAssign<&EdwardsPoint> for EdwardsPoint`: as `Add`. -/
 @[step]
-theorem add_assign_toExtended (self rhs : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem add_assign_toExtended (self rhs : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«i686-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«32bit-tables») =>
       r.toExtended =
         (self.toExtended.addProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 26 ⦄ := by
@@ -93,22 +93,22 @@ theorem add_assign_toExtended (self rhs : EdwardsPoint.«i686-tables») (hself :
   step*
 
 /-- `AddAssign<&EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem add_assign_spec (self rhs : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem add_assign_spec (self rhs : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«i686-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add_assign
   exact add_spec self rhs hself hrhs hself_on hrhs_on
 
-end «CoreOpsArithAddAssignSharedAEdwardsPointi686-tables»
+end «CoreOpsArithAddAssignSharedAEdwardsPoint32bit-tables»
 
-namespace «CoreOpsArithAddAssignEdwardsPointi686-tables»
+namespace «CoreOpsArithAddAssignEdwardsPoint32bit-tables»
 
 /-- `AddAssign<EdwardsPoint> for EdwardsPoint`: as `Add`. -/
 @[step]
-theorem add_assign_toExtended (self rhs : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem add_assign_toExtended (self rhs : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«i686-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«32bit-tables») =>
       r.toExtended =
         (self.toExtended.addProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 26 ⦄ := by
@@ -116,32 +116,32 @@ theorem add_assign_toExtended (self rhs : EdwardsPoint.«i686-tables») (hself :
   step*
 
 /-- `AddAssign<EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem add_assign_spec (self rhs : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem add_assign_spec (self rhs : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«i686-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add_assign
-  exact «CoreOpsArithAddAssignSharedAEdwardsPointi686-tables».add_assign_spec self rhs
+  exact «CoreOpsArithAddAssignSharedAEdwardsPoint32bit-tables».add_assign_spec self rhs
     hself hrhs hself_on hrhs_on
 
-end «CoreOpsArithAddAssignEdwardsPointi686-tables»
-end edwards.EdwardsPoint.«i686-tables».Insts
+end «CoreOpsArithAddAssignEdwardsPoint32bit-tables»
+end edwards.EdwardsPoint.«32bit-tables».Insts
 
-open «Shared0EdwardsPointx86_64-no-tables».Insts
-open «CoreOpsArithAddSharedAEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+open «Shared0EdwardsPoint64bit-notables».Insts
+open «CoreOpsArithAddSharedAEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
   (add_spec)
 
-namespace edwards.EdwardsPoint.«x86_64-no-tables».Insts
+namespace edwards.EdwardsPoint.«64bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreOpsArithAddAssignSharedAEdwardsPointx86_64-no-tables»
+namespace «CoreOpsArithAddAssignSharedAEdwardsPoint64bit-notables»
 
 /-- `AddAssign<&EdwardsPoint> for EdwardsPoint`: as `Add`. -/
 @[step]
-theorem add_assign_toExtended (self rhs : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem add_assign_toExtended (self rhs : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«64bit-notables») =>
       r.toExtended =
         (self.toExtended.addProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 52 ⦄ := by
@@ -149,22 +149,22 @@ theorem add_assign_toExtended (self rhs : EdwardsPoint.«x86_64-no-tables») (hs
   step*
 
 /-- `AddAssign<&EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem add_assign_spec (self rhs : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem add_assign_spec (self rhs : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add_assign
   exact add_spec self rhs hself hrhs hself_on hrhs_on
 
-end «CoreOpsArithAddAssignSharedAEdwardsPointx86_64-no-tables»
+end «CoreOpsArithAddAssignSharedAEdwardsPoint64bit-notables»
 
-namespace «CoreOpsArithAddAssignEdwardsPointx86_64-no-tables»
+namespace «CoreOpsArithAddAssignEdwardsPoint64bit-notables»
 
 /-- `AddAssign<EdwardsPoint> for EdwardsPoint`: as `Add`. -/
 @[step]
-theorem add_assign_toExtended (self rhs : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem add_assign_toExtended (self rhs : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«64bit-notables») =>
       r.toExtended =
         (self.toExtended.addProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 52 ⦄ := by
@@ -172,31 +172,31 @@ theorem add_assign_toExtended (self rhs : EdwardsPoint.«x86_64-no-tables») (hs
   step*
 
 /-- `AddAssign<EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem add_assign_spec (self rhs : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem add_assign_spec (self rhs : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add_assign
-  exact «CoreOpsArithAddAssignSharedAEdwardsPointx86_64-no-tables».add_assign_spec self rhs
+  exact «CoreOpsArithAddAssignSharedAEdwardsPoint64bit-notables».add_assign_spec self rhs
     hself hrhs hself_on hrhs_on
 
-end «CoreOpsArithAddAssignEdwardsPointx86_64-no-tables»
-end edwards.EdwardsPoint.«x86_64-no-tables».Insts
+end «CoreOpsArithAddAssignEdwardsPoint64bit-notables»
+end edwards.EdwardsPoint.«64bit-notables».Insts
 
-namespace edwards.EdwardsPoint.«i686-no-tables».Insts
+namespace edwards.EdwardsPoint.«32bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
-open «Shared0EdwardsPointi686-no-tables».Insts
-open «CoreOpsArithAddSharedAEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+open «Shared0EdwardsPoint32bit-notables».Insts
+open «CoreOpsArithAddSharedAEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
   (add_spec)
 
-namespace «CoreOpsArithAddAssignSharedAEdwardsPointi686-no-tables»
+namespace «CoreOpsArithAddAssignSharedAEdwardsPoint32bit-notables»
 
 /-- `AddAssign<&EdwardsPoint> for EdwardsPoint`: as `Add`. -/
 @[step]
-theorem add_assign_toExtended (self rhs : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem add_assign_toExtended (self rhs : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«i686-no-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«32bit-notables») =>
       r.toExtended =
         (self.toExtended.addProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 26 ⦄ := by
@@ -204,22 +204,22 @@ theorem add_assign_toExtended (self rhs : EdwardsPoint.«i686-no-tables») (hsel
   step*
 
 /-- `AddAssign<&EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem add_assign_spec (self rhs : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem add_assign_spec (self rhs : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«i686-no-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add_assign
   exact add_spec self rhs hself hrhs hself_on hrhs_on
 
-end «CoreOpsArithAddAssignSharedAEdwardsPointi686-no-tables»
+end «CoreOpsArithAddAssignSharedAEdwardsPoint32bit-notables»
 
-namespace «CoreOpsArithAddAssignEdwardsPointi686-no-tables»
+namespace «CoreOpsArithAddAssignEdwardsPoint32bit-notables»
 
 /-- `AddAssign<EdwardsPoint> for EdwardsPoint`: as `Add`. -/
 @[step]
-theorem add_assign_toExtended (self rhs : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem add_assign_toExtended (self rhs : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«i686-no-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«32bit-notables») =>
       r.toExtended =
         (self.toExtended.addProjectiveNiels rhs.toExtended.toProjectiveNiels).toExtended ∧
         r.LimbsLt 26 ⦄ := by
@@ -227,15 +227,15 @@ theorem add_assign_toExtended (self rhs : EdwardsPoint.«i686-no-tables») (hsel
   step*
 
 /-- `AddAssign<EdwardsPoint> for EdwardsPoint` on the represented points. -/
-theorem add_assign_spec (self rhs : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem add_assign_spec (self rhs : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve) (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : EdwardsPoint.«i686-no-tables») =>
+    add_assign self rhs ⦃ (r : EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add_assign
-  exact «CoreOpsArithAddAssignSharedAEdwardsPointi686-no-tables».add_assign_spec self rhs
+  exact «CoreOpsArithAddAssignSharedAEdwardsPoint32bit-notables».add_assign_spec self rhs
     hself hrhs hself_on hrhs_on
 
-end «CoreOpsArithAddAssignEdwardsPointi686-no-tables»
-end edwards.EdwardsPoint.«i686-no-tables».Insts
+end «CoreOpsArithAddAssignEdwardsPoint32bit-notables»
+end edwards.EdwardsPoint.«32bit-notables».Insts
 
 end Curve25519Dalek

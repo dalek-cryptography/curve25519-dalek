@@ -29,19 +29,19 @@ open Curve25519Dalek.backend.serial.curve_models
 
 namespace Curve25519Dalek.edwards.basepointTable
 
-/-! ### The i686 configuration -/
+/-! ### The 32-bit configurations -/
 
-namespace i686
+namespace bits32
 
 /-! ### `create` -/
 
 /-- The loop body of `BasepointTable::create`: row `i` is `from P`, then `P := 2^(2 radix) P`. -/
 @[expose] def createLoopBody {Tab : Type}
-    (fromF : EdwardsPoint.«i686-tables» → Result Tab) (radix : U32)
+    (fromF : EdwardsPoint.«32bit-tables» → Result Tab) (radix : U32)
     (iter : core.ops.range.Range Usize) (a : Array Tab 32#usize)
-    (P : EdwardsPoint.«i686-tables») :
+    (P : EdwardsPoint.«32bit-tables») :
     Result (ControlFlow ((core.ops.range.Range Usize) × (Array Tab 32#usize) ×
-      EdwardsPoint.«i686-tables») (Array Tab 32#usize)) := do
+      EdwardsPoint.«32bit-tables») (Array Tab 32#usize)) := do
   let (o, iter1) ← core.iter.range.IteratorRange.next core.iter.range.StepUsize iter
   match o with
   | none => ok (done a)
@@ -49,22 +49,22 @@ namespace i686
     let lt ← fromF P
     let a1 ← Array.update a i lt
     let i1 ← radix + radix
-    let P1 ← «EdwardsPointi686-tables».mul_by_pow_2 P i1
+    let P1 ← «EdwardsPoint32bit-tables».mul_by_pow_2 P i1
     ok (cont (iter1, a1, P1))
 
 variable {Tab : Type} [Inhabited Tab]
 
 open scoped Helpers.UpdateStep in
 /-- The loop of `create` over `0..32`: row `i` represents `2^(2 w i) • B`. -/
-theorem createLoop_spec (fromF : EdwardsPoint.«i686-tables» → Result Tab)
+theorem createLoop_spec (fromF : EdwardsPoint.«32bit-tables» → Result Tab)
     (Rep : Tab → curve25519.edwards.Point → Prop) (Bnd : Tab → Prop)
-    (hfrom : ∀ Q : EdwardsPoint.«i686-tables», Q.LimbsLt 26 → Q.OnCurve →
+    (hfrom : ∀ Q : EdwardsPoint.«32bit-tables», Q.LimbsLt 26 → Q.OnCurve →
       fromF Q ⦃ (t : Tab) => Rep t Q.toPoint ∧ Bnd t ⦄)
     (radix : U32) (w : ℕ) (hw : radix.val = w) (hw' : 0 < w) (hw8 : w ≤ 8)
-    (a : Array Tab 32#usize) (P : EdwardsPoint.«i686-tables»)
+    (a : Array Tab 32#usize) (P : EdwardsPoint.«32bit-tables»)
     (hP : P.LimbsLt 26) (hon : P.OnCurve) :
     loop (fun ((iter1, a1, P1) : (core.ops.range.Range Usize) × (Array Tab 32#usize) ×
-        EdwardsPoint.«i686-tables») => createLoopBody fromF radix iter1 a1 P1)
+        EdwardsPoint.«32bit-tables») => createLoopBody fromF radix iter1 a1 P1)
       ({ start := 0#usize, «end» := 32#usize }, a, P)
       ⦃ (r : Array Tab 32#usize) =>
         ∀ i : ℕ, i < 32 → Rep r[i]! (2 ^ (2 * w * i) • P.toPoint) ∧ Bnd r[i]! ⦄ := by
@@ -81,7 +81,7 @@ theorem createLoop_spec (fromF : EdwardsPoint.«i686-tables» → Result Tab)
       step with hfrom Q hQ hQon as ⟨lt, hlt1, hlt2⟩
       step as ⟨a1, ha1, ha1'⟩
       step as ⟨i1, hi1⟩
-      step with «EdwardsPointi686-tables».mul_by_pow_2_spec Q i1 hQ hQon (by scalar_tac)
+      step with «EdwardsPoint32bit-tables».mul_by_pow_2_spec Q i1 hQ hQon (by scalar_tac)
         as ⟨Q1, hQ1on, hQ1, hQ1b⟩
       refine ⟨by rw [hend1, hend], by scalar_tac, hQ1b, hQ1on, ?_, fun i hi => ?_, by scalar_tac⟩
       · rw [hQ1, hQp, hstart1, smul_smul, ← pow_add, hi1]
@@ -105,20 +105,20 @@ theorem createLoop_spec (fromF : EdwardsPoint.«i686-tables» → Result Tab)
 
 /-! ### `mul_base` -/
 
-open «Shared0EdwardsPointi686-tables».Insts
-open «CoreOpsArithAddSharedAAffineNielsPointi686-tablesCompletedPointi686-tables»
+open «Shared0EdwardsPoint32bit-tables».Insts
+open «CoreOpsArithAddSharedAAffineNielsPoint32bit-tablesCompletedPoint32bit-tables»
   (add_spec)
 
 /-- The loop body of `BasepointTable::mul_base` (both loops): take the next index from the
 `step_by(2)` iterator and add the digit `a[i]` selected from row `i / 2`. -/
 @[expose] def mulBaseLoopBody (_adds : Usize)
-    (sel : Tab → I8 → Result AffineNielsPoint.«i686-tables») (a : Array I8 64#usize)
+    (sel : Tab → I8 → Result AffineNielsPoint.«32bit-tables») (a : Array I8 64#usize)
     (tables : Array Tab 32#usize)
     (iter : core.iter.adapters.step_by.StepBy (core.ops.range.Range Usize))
-    (P : EdwardsPoint.«i686-tables») :
+    (P : EdwardsPoint.«32bit-tables») :
     Result (ControlFlow
       ((core.iter.adapters.step_by.StepBy (core.ops.range.Range Usize)) ×
-        EdwardsPoint.«i686-tables») EdwardsPoint.«i686-tables») := do
+        EdwardsPoint.«32bit-tables») EdwardsPoint.«32bit-tables») := do
   let (o, iter1) ← core.iter.adapters.step_by.IteratorStepBy.next
     (core.iter.traits.iterator.IteratorRange core.iter.range.StepUsize) iter
   match o with
@@ -129,8 +129,8 @@ open «CoreOpsArithAddSharedAAffineNielsPointi686-tablesCompletedPointi686-table
     let i2 ← Array.index_usize a i
     let anp ← sel lt i2
     let cp ←
-      «CoreOpsArithAddSharedAAffineNielsPointi686-tablesCompletedPointi686-tables».add P anp
-    let P1 ← «CompletedPointi686-tables».as_extended cp
+      «CoreOpsArithAddSharedAAffineNielsPoint32bit-tablesCompletedPoint32bit-tables».add P anp
+    let P1 ← «CompletedPoint32bit-tables».as_extended cp
     ok (cont (iter1, P1))
 
 private theorem zsmul_nsmul (x : ℤ) (n : ℕ) (B : curve25519.edwards.Point) :
@@ -156,18 +156,18 @@ open scoped Helpers.IndexStep in
 `∑_k a[i₀ + 2 k] 2^(2 w k) • B`, if digit `i` selected from row `i / 2` represents
 `a[i] • 2^(2 w (i / 2)) • B` and the digits from `adds` on vanish. -/
 theorem mulBaseLoop_spec (adds : Usize) (hadds : adds.val ≤ 64)
-    (sel : Tab → I8 → Result AffineNielsPoint.«i686-tables») (a : Array I8 64#usize)
+    (sel : Tab → I8 → Result AffineNielsPoint.«32bit-tables») (a : Array I8 64#usize)
     (tables : Array Tab 32#usize) (B : curve25519.edwards.Point) (w : ℕ)
-    (hsel : ∀ i < adds.val, sel tables[i / 2]! a[i]! ⦃ (q : AffineNielsPoint.«i686-tables») =>
+    (hsel : ∀ i < adds.val, sel tables[i / 2]! a[i]! ⦃ (q : AffineNielsPoint.«32bit-tables») =>
       q.OnCurve ∧ q.toPoint = a[i]!.val • 2 ^ (2 * w * (i / 2)) • B ∧ q.LimbsLt 27 ⦄)
     (hz : ∀ j : ℕ, j < 64 → adds.val ≤ j → a[j]!.val = 0) (i0 : Usize) (hi0 : i0.val < 2)
     (hi0adds : i0.val ≤ adds.val)
-    (P : EdwardsPoint.«i686-tables») (hP : P.LimbsLt 26) (hon : P.OnCurve) :
+    (P : EdwardsPoint.«32bit-tables») (hP : P.LimbsLt 26) (hon : P.OnCurve) :
     loop (fun ((it, P1) :
         (core.iter.adapters.step_by.StepBy (core.ops.range.Range Usize)) ×
-          EdwardsPoint.«i686-tables») => mulBaseLoopBody adds sel a tables it P1)
+          EdwardsPoint.«32bit-tables») => mulBaseLoopBody adds sel a tables it P1)
       ({ iter := { start := i0, «end» := adds }, step_by := 2#usize }, P)
-      ⦃ (r : EdwardsPoint.«i686-tables») => r.OnCurve ∧
+      ⦃ (r : EdwardsPoint.«32bit-tables») => r.OnCurve ∧
         r.toPoint = P.toPoint +
           (∑ k ∈ Finset.range 32, a[i0.val + 2 * k]!.val * 2 ^ (2 * w * k)) • B ∧
         r.LimbsLt 26 ⦄ := by
@@ -198,7 +198,7 @@ theorem mulBaseLoop_spec (adds : Usize) (hadds : adds.val ≤ 64)
       rw [← hi1, ← hlt', ← hd] at hsel'
       step with hsel' as ⟨q, hqon, hq, hqb⟩
       step with add_spec Q q hQb hqb hQon hqon as ⟨c, hcon, hc, hcb⟩
-      step with «CompletedPointi686-tables».as_extended_spec as ⟨Q1, hQ1on, hQ1, hQ1b⟩
+      step with «CompletedPoint32bit-tables».as_extended_spec as ⟨Q1, hQ1on, hQ1, hQ1b⟩
       refine ⟨hstep1.trans hstep, hend1.trans hend, ⟨m + 1, by omega, ?_,
         hQ1on, hQ1b, ?_⟩, ?_⟩
       · rw [hstart1, hstep, hend]
@@ -224,17 +224,17 @@ theorem mulBaseLoop_spec (adds : Usize) (hadds : adds.val ≤ 64)
     · simp only [Nat.mul_zero, Nat.add_zero, Nat.min_eq_left hi0adds]
     · rw [Finset.sum_range_zero, zero_smul, add_zero]
 
-end i686
+end bits32
 
 /-! ### `create` -/
 
 /-- The loop body of `BasepointTable::create`: row `i` is `from P`, then `P := 2^(2 radix) P`. -/
 @[expose] def createLoopBody {Tab : Type}
-    (fromF : EdwardsPoint.«x86_64-tables» → Result Tab) (radix : U32)
+    (fromF : EdwardsPoint.«64bit-tables» → Result Tab) (radix : U32)
     (iter : core.ops.range.Range Usize) (a : Array Tab 32#usize)
-    (P : EdwardsPoint.«x86_64-tables») :
+    (P : EdwardsPoint.«64bit-tables») :
     Result (ControlFlow ((core.ops.range.Range Usize) × (Array Tab 32#usize) ×
-      EdwardsPoint.«x86_64-tables») (Array Tab 32#usize)) := do
+      EdwardsPoint.«64bit-tables») (Array Tab 32#usize)) := do
   let (o, iter1) ← core.iter.range.IteratorRange.next core.iter.range.StepUsize iter
   match o with
   | none => ok (done a)
@@ -242,22 +242,22 @@ end i686
     let lt ← fromF P
     let a1 ← Array.update a i lt
     let i1 ← radix + radix
-    let P1 ← «EdwardsPointx86_64-tables».mul_by_pow_2 P i1
+    let P1 ← «EdwardsPoint64bit-tables».mul_by_pow_2 P i1
     ok (cont (iter1, a1, P1))
 
 variable {Tab : Type} [Inhabited Tab]
 
 open scoped Helpers.UpdateStep in
 /-- The loop of `create` over `0..32`: row `i` represents `2^(2 w i) • B`. -/
-theorem createLoop_spec (fromF : EdwardsPoint.«x86_64-tables» → Result Tab)
+theorem createLoop_spec (fromF : EdwardsPoint.«64bit-tables» → Result Tab)
     (Rep : Tab → curve25519.edwards.Point → Prop) (Bnd : Tab → Prop)
-    (hfrom : ∀ Q : EdwardsPoint.«x86_64-tables», Q.LimbsLt 52 → Q.OnCurve →
+    (hfrom : ∀ Q : EdwardsPoint.«64bit-tables», Q.LimbsLt 52 → Q.OnCurve →
       fromF Q ⦃ (t : Tab) => Rep t Q.toPoint ∧ Bnd t ⦄)
     (radix : U32) (w : ℕ) (hw : radix.val = w) (hw' : 0 < w) (hw8 : w ≤ 8)
-    (a : Array Tab 32#usize) (P : EdwardsPoint.«x86_64-tables»)
+    (a : Array Tab 32#usize) (P : EdwardsPoint.«64bit-tables»)
     (hP : P.LimbsLt 52) (hon : P.OnCurve) :
     loop (fun ((iter1, a1, P1) : (core.ops.range.Range Usize) × (Array Tab 32#usize) ×
-        EdwardsPoint.«x86_64-tables») => createLoopBody fromF radix iter1 a1 P1)
+        EdwardsPoint.«64bit-tables») => createLoopBody fromF radix iter1 a1 P1)
       ({ start := 0#usize, «end» := 32#usize }, a, P)
       ⦃ (r : Array Tab 32#usize) =>
         ∀ i : ℕ, i < 32 → Rep r[i]! (2 ^ (2 * w * i) • P.toPoint) ∧ Bnd r[i]! ⦄ := by
@@ -274,7 +274,7 @@ theorem createLoop_spec (fromF : EdwardsPoint.«x86_64-tables» → Result Tab)
       step with hfrom Q hQ hQon as ⟨lt, hlt1, hlt2⟩
       step as ⟨a1, ha1, ha1'⟩
       step as ⟨i1, hi1⟩
-      step with «EdwardsPointx86_64-tables».mul_by_pow_2_spec Q i1 hQ hQon (by scalar_tac)
+      step with «EdwardsPoint64bit-tables».mul_by_pow_2_spec Q i1 hQ hQon (by scalar_tac)
         as ⟨Q1, hQ1on, hQ1, hQ1b⟩
       refine ⟨by rw [hend1, hend], by scalar_tac, hQ1b, hQ1on, ?_, fun i hi => ?_, by scalar_tac⟩
       · rw [hQ1, hQp, hstart1, smul_smul, ← pow_add, hi1]
@@ -298,20 +298,20 @@ theorem createLoop_spec (fromF : EdwardsPoint.«x86_64-tables» → Result Tab)
 
 /-! ### `mul_base` -/
 
-open «Shared0EdwardsPointx86_64-tables».Insts
-open «CoreOpsArithAddSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables»
+open «Shared0EdwardsPoint64bit-tables».Insts
+open «CoreOpsArithAddSharedAAffineNielsPoint64bit-tablesCompletedPoint64bit-tables»
   (add_spec)
 
 /-- The loop body of `BasepointTable::mul_base` (both loops): take the next index from the
 `step_by(2)` iterator and add the digit `a[i]` selected from row `i / 2`. -/
 @[expose] def mulBaseLoopBody (_adds : Usize)
-    (sel : Tab → I8 → Result AffineNielsPoint.«x86_64-tables») (a : Array I8 64#usize)
+    (sel : Tab → I8 → Result AffineNielsPoint.«64bit-tables») (a : Array I8 64#usize)
     (tables : Array Tab 32#usize)
     (iter : core.iter.adapters.step_by.StepBy (core.ops.range.Range Usize))
-    (P : EdwardsPoint.«x86_64-tables») :
+    (P : EdwardsPoint.«64bit-tables») :
     Result (ControlFlow
       ((core.iter.adapters.step_by.StepBy (core.ops.range.Range Usize)) ×
-        EdwardsPoint.«x86_64-tables») EdwardsPoint.«x86_64-tables») := do
+        EdwardsPoint.«64bit-tables») EdwardsPoint.«64bit-tables») := do
   let (o, iter1) ← core.iter.adapters.step_by.IteratorStepBy.next
     (core.iter.traits.iterator.IteratorRange core.iter.range.StepUsize) iter
   match o with
@@ -322,8 +322,8 @@ open «CoreOpsArithAddSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-t
     let i2 ← Array.index_usize a i
     let anp ← sel lt i2
     let cp ←
-      «CoreOpsArithAddSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables».add P anp
-    let P1 ← «CompletedPointx86_64-tables».as_extended cp
+      «CoreOpsArithAddSharedAAffineNielsPoint64bit-tablesCompletedPoint64bit-tables».add P anp
+    let P1 ← «CompletedPoint64bit-tables».as_extended cp
     ok (cont (iter1, P1))
 
 private theorem zsmul_nsmul (x : ℤ) (n : ℕ) (B : curve25519.edwards.Point) :
@@ -349,18 +349,18 @@ open scoped Helpers.IndexStep in
 `∑_k a[i₀ + 2 k] 2^(2 w k) • B`, if digit `i` selected from row `i / 2` represents
 `a[i] • 2^(2 w (i / 2)) • B` and the digits from `adds` on vanish. -/
 theorem mulBaseLoop_spec (adds : Usize) (hadds : adds.val ≤ 64)
-    (sel : Tab → I8 → Result AffineNielsPoint.«x86_64-tables») (a : Array I8 64#usize)
+    (sel : Tab → I8 → Result AffineNielsPoint.«64bit-tables») (a : Array I8 64#usize)
     (tables : Array Tab 32#usize) (B : curve25519.edwards.Point) (w : ℕ)
-    (hsel : ∀ i < adds.val, sel tables[i / 2]! a[i]! ⦃ (q : AffineNielsPoint.«x86_64-tables») =>
+    (hsel : ∀ i < adds.val, sel tables[i / 2]! a[i]! ⦃ (q : AffineNielsPoint.«64bit-tables») =>
       q.OnCurve ∧ q.toPoint = a[i]!.val • 2 ^ (2 * w * (i / 2)) • B ∧ q.LimbsLt 54 ⦄)
     (hz : ∀ j : ℕ, j < 64 → adds.val ≤ j → a[j]!.val = 0) (i0 : Usize) (hi0 : i0.val < 2)
     (hi0adds : i0.val ≤ adds.val)
-    (P : EdwardsPoint.«x86_64-tables») (hP : P.LimbsLt 52) (hon : P.OnCurve) :
+    (P : EdwardsPoint.«64bit-tables») (hP : P.LimbsLt 52) (hon : P.OnCurve) :
     loop (fun ((it, P1) :
         (core.iter.adapters.step_by.StepBy (core.ops.range.Range Usize)) ×
-          EdwardsPoint.«x86_64-tables») => mulBaseLoopBody adds sel a tables it P1)
+          EdwardsPoint.«64bit-tables») => mulBaseLoopBody adds sel a tables it P1)
       ({ iter := { start := i0, «end» := adds }, step_by := 2#usize }, P)
-      ⦃ (r : EdwardsPoint.«x86_64-tables») => r.OnCurve ∧
+      ⦃ (r : EdwardsPoint.«64bit-tables») => r.OnCurve ∧
         r.toPoint = P.toPoint +
           (∑ k ∈ Finset.range 32, a[i0.val + 2 * k]!.val * 2 ^ (2 * w * k)) • B ∧
         r.LimbsLt 52 ⦄ := by
@@ -391,7 +391,7 @@ theorem mulBaseLoop_spec (adds : Usize) (hadds : adds.val ≤ 64)
       rw [← hi1, ← hlt', ← hd] at hsel'
       step with hsel' as ⟨q, hqon, hq, hqb⟩
       step with add_spec Q q hQb hqb hQon hqon as ⟨c, hcon, hc, hcb⟩
-      step with «CompletedPointx86_64-tables».as_extended_spec as ⟨Q1, hQ1on, hQ1, hQ1b⟩
+      step with «CompletedPoint64bit-tables».as_extended_spec as ⟨Q1, hQ1on, hQ1, hQ1b⟩
       refine ⟨hstep1.trans hstep, hend1.trans hend, ⟨m + 1, by omega, ?_,
         hQ1on, hQ1b, ?_⟩, ?_⟩
       · rw [hstart1, hstep, hend]

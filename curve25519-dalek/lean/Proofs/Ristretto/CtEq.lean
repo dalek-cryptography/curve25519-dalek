@@ -32,15 +32,15 @@ private theorem div_mul_div_eq_iff {a b c e z₁ z₂ : ZMod p} (hz : z₁ * z�
     a / z₁ * (b / z₂) = c / z₁ * (e / z₂) ↔ a * b = c * e := by
   rw [div_mul_div_comm, div_mul_div_comm, div_left_inj' hz]
 
-namespace RistrettoPoint.«x86_64-tables».Insts.SubtleConstantTimeEq
+namespace RistrettoPoint.«64bit-tables».Insts.SubtleConstantTimeEq
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-open edwards.EdwardsPoint.«x86_64-tables» in
+open edwards.EdwardsPoint.«64bit-tables» in
 /-- `ConstantTimeEq for RistrettoPoint`: equality in the Ristretto group, i.e. of the classes of
 the represented points (`X₁ Y₂ = Y₁ X₂` or `X₁ X₂ = Y₁ Y₂`); limbs `< 2^52`. -/
 @[step]
-theorem ct_eq_spec (self other : RistrettoPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem ct_eq_spec (self other : RistrettoPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 52) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
     ct_eq self other ⦃ (r : subtle.Choice) =>
       r.IsValid ∧ (r = 1#u8 ↔ curve25519.edwards.Rel self.toPoint other.toPoint) ⦄ := by
@@ -66,17 +66,17 @@ theorem ct_eq_spec (self other : RistrettoPoint.«x86_64-tables») (hself : self
   rw [hc2, ← key, ← eq_one_iff_toField_eq hc1 hc0, ← eq_one_iff_toField_eq hc11 hc10]
   rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
 
-end RistrettoPoint.«x86_64-tables».Insts.SubtleConstantTimeEq
+end RistrettoPoint.«64bit-tables».Insts.SubtleConstantTimeEq
 
-namespace RistrettoPoint.«i686-tables».Insts.SubtleConstantTimeEq
+namespace RistrettoPoint.«32bit-tables».Insts.SubtleConstantTimeEq
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-open edwards.EdwardsPoint.«i686-tables» in
+open edwards.EdwardsPoint.«32bit-tables» in
 /-- `ConstantTimeEq for RistrettoPoint`: equality in the Ristretto group, i.e. of the classes of
 the represented points (`X₁ Y₂ = Y₁ X₂` or `X₁ X₂ = Y₁ Y₂`); limbs `< 2^26`. -/
 @[step]
-theorem ct_eq_spec (self other : RistrettoPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem ct_eq_spec (self other : RistrettoPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 26) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
     ct_eq self other ⦃ (r : subtle.Choice) =>
       r.IsValid ∧ (r = 1#u8 ↔ curve25519.edwards.Rel self.toPoint other.toPoint) ⦄ := by
@@ -102,17 +102,17 @@ theorem ct_eq_spec (self other : RistrettoPoint.«i686-tables») (hself : self.L
   rw [hc2, ← key, ← eq_one_iff_toField_eq hc1 hc0, ← eq_one_iff_toField_eq hc11 hc10]
   rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
 
-end RistrettoPoint.«i686-tables».Insts.SubtleConstantTimeEq
+end RistrettoPoint.«32bit-tables».Insts.SubtleConstantTimeEq
 
-namespace RistrettoPoint.«x86_64-tables».Insts
+namespace RistrettoPoint.«64bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreCmpPartialEqRistrettoPointx86_64-tables»
+namespace «CoreCmpPartialEqRistrettoPoint64bit-tables»
 
 /-- `PartialEq for RistrettoPoint`: equality in the Ristretto group; limbs `< 2^52`. -/
 @[step]
-theorem eq_spec (self other : RistrettoPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem eq_spec (self other : RistrettoPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 52) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
     eq self other ⦃ (r : Bool) =>
       r = true ↔ curve25519.edwards.Rel self.toPoint other.toPoint ⦄ := by
@@ -122,18 +122,18 @@ theorem eq_spec (self other : RistrettoPoint.«x86_64-tables») (hself : self.Li
   rw [hb, ← hc]
   rcases hcv with rfl | rfl <;> decide
 
-end «CoreCmpPartialEqRistrettoPointx86_64-tables»
-end RistrettoPoint.«x86_64-tables».Insts
+end «CoreCmpPartialEqRistrettoPoint64bit-tables»
+end RistrettoPoint.«64bit-tables».Insts
 
-namespace RistrettoPoint.«i686-tables».Insts
+namespace RistrettoPoint.«32bit-tables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-namespace «CoreCmpPartialEqRistrettoPointi686-tables»
+namespace «CoreCmpPartialEqRistrettoPoint32bit-tables»
 
 /-- `PartialEq for RistrettoPoint`: equality in the Ristretto group; limbs `< 2^26`. -/
 @[step]
-theorem eq_spec (self other : RistrettoPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem eq_spec (self other : RistrettoPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 26) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
     eq self other ⦃ (r : Bool) =>
       r = true ↔ curve25519.edwards.Rel self.toPoint other.toPoint ⦄ := by
@@ -143,18 +143,18 @@ theorem eq_spec (self other : RistrettoPoint.«i686-tables») (hself : self.Limb
   rw [hb, ← hc]
   rcases hcv with rfl | rfl <;> decide
 
-end «CoreCmpPartialEqRistrettoPointi686-tables»
-end RistrettoPoint.«i686-tables».Insts
+end «CoreCmpPartialEqRistrettoPoint32bit-tables»
+end RistrettoPoint.«32bit-tables».Insts
 
-namespace RistrettoPoint.«x86_64-no-tables».Insts.SubtleConstantTimeEq
+namespace RistrettoPoint.«64bit-notables».Insts.SubtleConstantTimeEq
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-open edwards.EdwardsPoint.«x86_64-no-tables» in
+open edwards.EdwardsPoint.«64bit-notables» in
 /-- `ConstantTimeEq for RistrettoPoint`: equality in the Ristretto group, i.e. of the classes of
 the represented points (`X₁ Y₂ = Y₁ X₂` or `X₁ X₂ = Y₁ Y₂`); limbs `< 2^52`. -/
 @[step]
-theorem ct_eq_spec (self other : RistrettoPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem ct_eq_spec (self other : RistrettoPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 52) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
     ct_eq self other ⦃ (r : subtle.Choice) =>
       r.IsValid ∧ (r = 1#u8 ↔ curve25519.edwards.Rel self.toPoint other.toPoint) ⦄ := by
@@ -180,17 +180,17 @@ theorem ct_eq_spec (self other : RistrettoPoint.«x86_64-no-tables») (hself : s
   rw [hc2, ← key, ← eq_one_iff_toField_eq hc1 hc0, ← eq_one_iff_toField_eq hc11 hc10]
   rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
 
-end RistrettoPoint.«x86_64-no-tables».Insts.SubtleConstantTimeEq
+end RistrettoPoint.«64bit-notables».Insts.SubtleConstantTimeEq
 
-namespace RistrettoPoint.«i686-no-tables».Insts.SubtleConstantTimeEq
+namespace RistrettoPoint.«32bit-notables».Insts.SubtleConstantTimeEq
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-open edwards.EdwardsPoint.«i686-no-tables» in
+open edwards.EdwardsPoint.«32bit-notables» in
 /-- `ConstantTimeEq for RistrettoPoint`: equality in the Ristretto group, i.e. of the classes of
 the represented points (`X₁ Y₂ = Y₁ X₂` or `X₁ X₂ = Y₁ Y₂`); limbs `< 2^26`. -/
 @[step]
-theorem ct_eq_spec (self other : RistrettoPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem ct_eq_spec (self other : RistrettoPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 26) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
     ct_eq self other ⦃ (r : subtle.Choice) =>
       r.IsValid ∧ (r = 1#u8 ↔ curve25519.edwards.Rel self.toPoint other.toPoint) ⦄ := by
@@ -216,17 +216,17 @@ theorem ct_eq_spec (self other : RistrettoPoint.«i686-no-tables») (hself : sel
   rw [hc2, ← key, ← eq_one_iff_toField_eq hc1 hc0, ← eq_one_iff_toField_eq hc11 hc10]
   rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
 
-end RistrettoPoint.«i686-no-tables».Insts.SubtleConstantTimeEq
+end RistrettoPoint.«32bit-notables».Insts.SubtleConstantTimeEq
 
-namespace RistrettoPoint.«x86_64-no-tables».Insts
+namespace RistrettoPoint.«64bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-namespace «CoreCmpPartialEqRistrettoPointx86_64-no-tables»
+namespace «CoreCmpPartialEqRistrettoPoint64bit-notables»
 
 /-- `PartialEq for RistrettoPoint`: equality in the Ristretto group; limbs `< 2^52`. -/
 @[step]
-theorem eq_spec (self other : RistrettoPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem eq_spec (self other : RistrettoPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 52) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
     eq self other ⦃ (r : Bool) =>
       r = true ↔ curve25519.edwards.Rel self.toPoint other.toPoint ⦄ := by
@@ -236,18 +236,18 @@ theorem eq_spec (self other : RistrettoPoint.«x86_64-no-tables») (hself : self
   rw [hb, ← hc]
   rcases hcv with rfl | rfl <;> decide
 
-end «CoreCmpPartialEqRistrettoPointx86_64-no-tables»
-end RistrettoPoint.«x86_64-no-tables».Insts
+end «CoreCmpPartialEqRistrettoPoint64bit-notables»
+end RistrettoPoint.«64bit-notables».Insts
 
-namespace RistrettoPoint.«i686-no-tables».Insts
+namespace RistrettoPoint.«32bit-notables».Insts
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-namespace «CoreCmpPartialEqRistrettoPointi686-no-tables»
+namespace «CoreCmpPartialEqRistrettoPoint32bit-notables»
 
 /-- `PartialEq for RistrettoPoint`: equality in the Ristretto group; limbs `< 2^26`. -/
 @[step]
-theorem eq_spec (self other : RistrettoPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem eq_spec (self other : RistrettoPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 26) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
     eq self other ⦃ (r : Bool) =>
       r = true ↔ curve25519.edwards.Rel self.toPoint other.toPoint ⦄ := by
@@ -257,7 +257,7 @@ theorem eq_spec (self other : RistrettoPoint.«i686-no-tables») (hself : self.L
   rw [hb, ← hc]
   rcases hcv with rfl | rfl <;> decide
 
-end «CoreCmpPartialEqRistrettoPointi686-no-tables»
-end RistrettoPoint.«i686-no-tables».Insts
+end «CoreCmpPartialEqRistrettoPoint32bit-notables»
+end RistrettoPoint.«32bit-notables».Insts
 
 end Curve25519Dalek.ristretto

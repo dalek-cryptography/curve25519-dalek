@@ -13,21 +13,21 @@ namespace Curve25519Dalek.ristretto
 
 /-- `Clone for RistrettoBasepointTable`: the table itself. -/
 @[step]
-theorem RistrettoBasepointTable.«x86_64-tables».Insts.CoreCloneClone.clone_spec
-    (self : RistrettoBasepointTable.«x86_64-tables») :
-    RistrettoBasepointTable.«x86_64-tables».Insts.CoreCloneClone.clone self ⦃ r => r = self ⦄ := by
-  unfold RistrettoBasepointTable.«x86_64-tables».Insts.CoreCloneClone.clone
-  step with edwards.EdwardsBasepointTable.«x86_64-tables».Insts.CoreCloneClone.clone_spec
+theorem RistrettoBasepointTable.«64bit-tables».Insts.CoreCloneClone.clone_spec
+    (self : RistrettoBasepointTable.«64bit-tables») :
+    RistrettoBasepointTable.«64bit-tables».Insts.CoreCloneClone.clone self ⦃ r => r = self ⦄ := by
+  unfold RistrettoBasepointTable.«64bit-tables».Insts.CoreCloneClone.clone
+  step with edwards.EdwardsBasepointTable.«64bit-tables».Insts.CoreCloneClone.clone_spec
     as ⟨ebt, h⟩
   exact h
 
 /-- `Clone for RistrettoBasepointTable`: the table itself. -/
 @[step]
-theorem RistrettoBasepointTable.«i686-tables».Insts.CoreCloneClone.clone_spec
-    (self : RistrettoBasepointTable.«i686-tables») :
-    RistrettoBasepointTable.«i686-tables».Insts.CoreCloneClone.clone self ⦃ r => r = self ⦄ := by
-  unfold RistrettoBasepointTable.«i686-tables».Insts.CoreCloneClone.clone
-  step with edwards.EdwardsBasepointTable.«i686-tables».Insts.CoreCloneClone.clone_spec
+theorem RistrettoBasepointTable.«32bit-tables».Insts.CoreCloneClone.clone_spec
+    (self : RistrettoBasepointTable.«32bit-tables») :
+    RistrettoBasepointTable.«32bit-tables».Insts.CoreCloneClone.clone self ⦃ r => r = self ⦄ := by
+  unfold RistrettoBasepointTable.«32bit-tables».Insts.CoreCloneClone.clone
+  step with edwards.EdwardsBasepointTable.«32bit-tables».Insts.CoreCloneClone.clone_spec
     as ⟨ebt, h⟩
   exact h
 

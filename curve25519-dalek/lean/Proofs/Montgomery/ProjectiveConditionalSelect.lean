@@ -19,16 +19,16 @@ open Curve25519Dalek.backend.serial.u32.field (FieldElement2625)
 
 namespace Curve25519Dalek
 
-namespace montgomery.ProjectivePoint.«x86_64-tables».Insts.SubtleConditionallySelectable
+namespace montgomery.ProjectivePoint.«64bit-tables».Insts.SubtleConditionallySelectable
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `ConditionallySelectable for ProjectivePoint`: `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : montgomery.ProjectivePoint.«x86_64-tables»)
+theorem conditional_select_spec (a b : montgomery.ProjectivePoint.«64bit-tables»)
     (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : montgomery.ProjectivePoint.«x86_64-tables») =>
+    conditional_select a b choice ⦃ (r : montgomery.ProjectivePoint.«64bit-tables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step as ⟨U, hU0, hU1⟩
@@ -41,33 +41,33 @@ theorem conditional_select_spec (a b : montgomery.ProjectivePoint.«x86_64-table
 /-- `conditional_swap` (the trait's default, through `conditional_select`): `(b, a)` if
 `choice = 1`, `(a, b)` if `choice = 0`. -/
 @[step]
-theorem conditional_swap_spec (a b : montgomery.ProjectivePoint.«x86_64-tables»)
+theorem conditional_swap_spec (a b : montgomery.ProjectivePoint.«64bit-tables»)
     (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
     subtle.ConditionallySelectable.conditional_swap.default
-      montgomery.ProjectivePoint.«x86_64-tables».Insts.SubtleConditionallySelectable a b choice
-      ⦃ (r : montgomery.ProjectivePoint.«x86_64-tables» ×
-          montgomery.ProjectivePoint.«x86_64-tables») =>
+      montgomery.ProjectivePoint.«64bit-tables».Insts.SubtleConditionallySelectable a b choice
+      ⦃ (r : montgomery.ProjectivePoint.«64bit-tables» ×
+          montgomery.ProjectivePoint.«64bit-tables») =>
         (choice = 0#u8 → r = (a, b)) ∧ (choice = 1#u8 → r = (b, a)) ⦄ :=
   subtle.ConditionallySelectable.conditional_swap.default_spec
-    montgomery.ProjectivePoint.«x86_64-tables».Insts.SubtleConditionallySelectable a b choice fun x
+    montgomery.ProjectivePoint.«64bit-tables».Insts.SubtleConditionallySelectable a b choice fun x
         y =>
       subtle.ConditionallySelectable.conditional_assign.default_spec
-        montgomery.ProjectivePoint.«x86_64-tables».Insts.SubtleConditionallySelectable x y choice
+        montgomery.ProjectivePoint.«64bit-tables».Insts.SubtleConditionallySelectable x y choice
         (conditional_select_spec x y choice hchoice)
 
-end montgomery.ProjectivePoint.«x86_64-tables».Insts.SubtleConditionallySelectable
+end montgomery.ProjectivePoint.«64bit-tables».Insts.SubtleConditionallySelectable
 
-namespace montgomery.ProjectivePoint.«i686-tables».Insts.SubtleConditionallySelectable
+namespace montgomery.ProjectivePoint.«32bit-tables».Insts.SubtleConditionallySelectable
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `ConditionallySelectable for ProjectivePoint`: `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : montgomery.ProjectivePoint.«i686-tables»)
+theorem conditional_select_spec (a b : montgomery.ProjectivePoint.«32bit-tables»)
     (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : montgomery.ProjectivePoint.«i686-tables») =>
+    conditional_select a b choice ⦃ (r : montgomery.ProjectivePoint.«32bit-tables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step as ⟨U, hU0, hU1⟩
@@ -80,33 +80,33 @@ theorem conditional_select_spec (a b : montgomery.ProjectivePoint.«i686-tables�
 /-- `conditional_swap` (the trait's default, through `conditional_select`): `(b, a)` if
 `choice = 1`, `(a, b)` if `choice = 0`. -/
 @[step]
-theorem conditional_swap_spec (a b : montgomery.ProjectivePoint.«i686-tables»)
+theorem conditional_swap_spec (a b : montgomery.ProjectivePoint.«32bit-tables»)
     (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
     subtle.ConditionallySelectable.conditional_swap.default
-      montgomery.ProjectivePoint.«i686-tables».Insts.SubtleConditionallySelectable a b choice
-      ⦃ (r : montgomery.ProjectivePoint.«i686-tables» ×
-          montgomery.ProjectivePoint.«i686-tables») =>
+      montgomery.ProjectivePoint.«32bit-tables».Insts.SubtleConditionallySelectable a b choice
+      ⦃ (r : montgomery.ProjectivePoint.«32bit-tables» ×
+          montgomery.ProjectivePoint.«32bit-tables») =>
         (choice = 0#u8 → r = (a, b)) ∧ (choice = 1#u8 → r = (b, a)) ⦄ :=
   subtle.ConditionallySelectable.conditional_swap.default_spec
-    montgomery.ProjectivePoint.«i686-tables».Insts.SubtleConditionallySelectable a b choice fun x
+    montgomery.ProjectivePoint.«32bit-tables».Insts.SubtleConditionallySelectable a b choice fun x
         y =>
       subtle.ConditionallySelectable.conditional_assign.default_spec
-        montgomery.ProjectivePoint.«i686-tables».Insts.SubtleConditionallySelectable x y choice
+        montgomery.ProjectivePoint.«32bit-tables».Insts.SubtleConditionallySelectable x y choice
         (conditional_select_spec x y choice hchoice)
 
-end montgomery.ProjectivePoint.«i686-tables».Insts.SubtleConditionallySelectable
+end montgomery.ProjectivePoint.«32bit-tables».Insts.SubtleConditionallySelectable
 
-namespace montgomery.ProjectivePoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable
+namespace montgomery.ProjectivePoint.«64bit-notables».Insts.SubtleConditionallySelectable
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `ConditionallySelectable for ProjectivePoint`: `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : montgomery.ProjectivePoint.«x86_64-no-tables»)
+theorem conditional_select_spec (a b : montgomery.ProjectivePoint.«64bit-notables»)
     (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : montgomery.ProjectivePoint.«x86_64-no-tables») =>
+    conditional_select a b choice ⦃ (r : montgomery.ProjectivePoint.«64bit-notables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step as ⟨U, hU0, hU1⟩
@@ -119,33 +119,33 @@ theorem conditional_select_spec (a b : montgomery.ProjectivePoint.«x86_64-no-ta
 /-- `conditional_swap` (the trait's default, through `conditional_select`): `(b, a)` if
 `choice = 1`, `(a, b)` if `choice = 0`. -/
 @[step]
-theorem conditional_swap_spec (a b : montgomery.ProjectivePoint.«x86_64-no-tables»)
+theorem conditional_swap_spec (a b : montgomery.ProjectivePoint.«64bit-notables»)
     (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
     subtle.ConditionallySelectable.conditional_swap.default
-      montgomery.ProjectivePoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable a b choice
-      ⦃ (r : montgomery.ProjectivePoint.«x86_64-no-tables» ×
-          montgomery.ProjectivePoint.«x86_64-no-tables») =>
+      montgomery.ProjectivePoint.«64bit-notables».Insts.SubtleConditionallySelectable a b choice
+      ⦃ (r : montgomery.ProjectivePoint.«64bit-notables» ×
+          montgomery.ProjectivePoint.«64bit-notables») =>
         (choice = 0#u8 → r = (a, b)) ∧ (choice = 1#u8 → r = (b, a)) ⦄ :=
   subtle.ConditionallySelectable.conditional_swap.default_spec
-    montgomery.ProjectivePoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable a b choice fun
+    montgomery.ProjectivePoint.«64bit-notables».Insts.SubtleConditionallySelectable a b choice fun
         x y =>
       subtle.ConditionallySelectable.conditional_assign.default_spec
-        montgomery.ProjectivePoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable x y choice
+        montgomery.ProjectivePoint.«64bit-notables».Insts.SubtleConditionallySelectable x y choice
         (conditional_select_spec x y choice hchoice)
 
-end montgomery.ProjectivePoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable
+end montgomery.ProjectivePoint.«64bit-notables».Insts.SubtleConditionallySelectable
 
-namespace montgomery.ProjectivePoint.«i686-no-tables».Insts.SubtleConditionallySelectable
+namespace montgomery.ProjectivePoint.«32bit-notables».Insts.SubtleConditionallySelectable
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `ConditionallySelectable for ProjectivePoint`: `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : montgomery.ProjectivePoint.«i686-no-tables»)
+theorem conditional_select_spec (a b : montgomery.ProjectivePoint.«32bit-notables»)
     (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : montgomery.ProjectivePoint.«i686-no-tables») =>
+    conditional_select a b choice ⦃ (r : montgomery.ProjectivePoint.«32bit-notables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step as ⟨U, hU0, hU1⟩
@@ -158,21 +158,21 @@ theorem conditional_select_spec (a b : montgomery.ProjectivePoint.«i686-no-tabl
 /-- `conditional_swap` (the trait's default, through `conditional_select`): `(b, a)` if
 `choice = 1`, `(a, b)` if `choice = 0`. -/
 @[step]
-theorem conditional_swap_spec (a b : montgomery.ProjectivePoint.«i686-no-tables»)
+theorem conditional_swap_spec (a b : montgomery.ProjectivePoint.«32bit-notables»)
     (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
     subtle.ConditionallySelectable.conditional_swap.default
-      montgomery.ProjectivePoint.«i686-no-tables».Insts.SubtleConditionallySelectable a b choice
-      ⦃ (r : montgomery.ProjectivePoint.«i686-no-tables» ×
-          montgomery.ProjectivePoint.«i686-no-tables») =>
+      montgomery.ProjectivePoint.«32bit-notables».Insts.SubtleConditionallySelectable a b choice
+      ⦃ (r : montgomery.ProjectivePoint.«32bit-notables» ×
+          montgomery.ProjectivePoint.«32bit-notables») =>
         (choice = 0#u8 → r = (a, b)) ∧ (choice = 1#u8 → r = (b, a)) ⦄ :=
   subtle.ConditionallySelectable.conditional_swap.default_spec
-    montgomery.ProjectivePoint.«i686-no-tables».Insts.SubtleConditionallySelectable a b choice fun
+    montgomery.ProjectivePoint.«32bit-notables».Insts.SubtleConditionallySelectable a b choice fun
         x y =>
       subtle.ConditionallySelectable.conditional_assign.default_spec
-        montgomery.ProjectivePoint.«i686-no-tables».Insts.SubtleConditionallySelectable x y choice
+        montgomery.ProjectivePoint.«32bit-notables».Insts.SubtleConditionallySelectable x y choice
         (conditional_select_spec x y choice hchoice)
 
-end montgomery.ProjectivePoint.«i686-no-tables».Insts.SubtleConditionallySelectable
+end montgomery.ProjectivePoint.«32bit-notables».Insts.SubtleConditionallySelectable
 
 end Curve25519Dalek

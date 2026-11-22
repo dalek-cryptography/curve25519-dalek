@@ -20,10 +20,10 @@ open Curve25519Dalek.backend.serial.u64.scalar (montgomeryRadix)
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem unpack.«x86_64-tables_spec» (self : Scalar) :
-    unpack.«x86_64-tables» self ⦃ (r : backend.serial.u64.scalar.Scalar52) =>
+theorem unpack.«64bit-tables_spec» (self : Scalar) :
+    unpack.«64bit-tables» self ⦃ (r : backend.serial.u64.scalar.Scalar52) =>
       r.asNat = self.asNat ∧ r.LimbsLt 52 ⦄ := by
-  unfold unpack.«x86_64-tables»
+  unfold unpack.«64bit-tables»
   step as ⟨r, hr, hrb⟩
   refine ⟨?_, hrb⟩
   simpa only [scalar.Scalar.asNat_def, backend.serial.u64.scalar.Scalar52.asNat_def] using hr
@@ -33,10 +33,10 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem unpack.«x86_64-no-tables_spec» (self : Scalar) :
-    unpack.«x86_64-no-tables» self ⦃ (r : backend.serial.u64.scalar.Scalar52) =>
+theorem unpack.«64bit-notables_spec» (self : Scalar) :
+    unpack.«64bit-notables» self ⦃ (r : backend.serial.u64.scalar.Scalar52) =>
       r.asNat = self.asNat ∧ r.LimbsLt 52 ⦄ := by
-  unfold unpack.«x86_64-no-tables»
+  unfold unpack.«64bit-notables»
   step as ⟨r, hr, hrb⟩
   refine ⟨?_, hrb⟩
   simpa only [scalar.Scalar.asNat_def, backend.serial.u64.scalar.Scalar52.asNat_def] using hr
@@ -46,10 +46,10 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem unpack.«i686-tables_spec» (self : Scalar) :
-    unpack.«i686-tables» self ⦃ (r : backend.serial.u32.scalar.Scalar29) =>
+theorem unpack.«32bit-tables_spec» (self : Scalar) :
+    unpack.«32bit-tables» self ⦃ (r : backend.serial.u32.scalar.Scalar29) =>
       r.asNat = self.asNat ∧ r.LimbsLt 29 ⦄ := by
-  unfold unpack.«i686-tables»
+  unfold unpack.«32bit-tables»
   step as ⟨r, hr, hrb⟩
   refine ⟨?_, hrb⟩
   simpa only [scalar.Scalar.asNat_def, backend.serial.u32.scalar.Scalar29.asNat_def] using hr
@@ -59,10 +59,10 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem unpack.«i686-no-tables_spec» (self : Scalar) :
-    unpack.«i686-no-tables» self ⦃ (r : backend.serial.u32.scalar.Scalar29) =>
+theorem unpack.«32bit-notables_spec» (self : Scalar) :
+    unpack.«32bit-notables» self ⦃ (r : backend.serial.u32.scalar.Scalar29) =>
       r.asNat = self.asNat ∧ r.LimbsLt 29 ⦄ := by
-  unfold unpack.«i686-no-tables»
+  unfold unpack.«32bit-notables»
   step as ⟨r, hr, hrb⟩
   refine ⟨?_, hrb⟩
   simpa only [scalar.Scalar.asNat_def, backend.serial.u32.scalar.Scalar29.asNat_def] using hr

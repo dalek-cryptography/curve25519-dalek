@@ -62,23 +62,23 @@ end Curve25519Dalek.Backend
 
 namespace Curve25519Dalek
 
-namespace «Shared0EdwardsPointx86_64-tables».Insts
+namespace «Shared0EdwardsPoint64bit-tables».Insts
 
-namespace «CoreOpsArithAddSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables»
+namespace «CoreOpsArithAddSharedAAffineNielsPoint64bit-tablesCompletedPoint64bit-tables»
 
-theorem add_eq (self : edwards.EdwardsPoint.«x86_64-tables»)
-    (other : AffineNielsPoint.«x86_64-tables») :
+theorem add_eq (self : edwards.EdwardsPoint.«64bit-tables»)
+    (other : AffineNielsPoint.«64bit-tables») :
     add self other = Backend.addAffineNiels Backend.U64
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«x86_64-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«64bit-tables»))
       self.X self.Y self.Z self.T other.y_plus_x other.y_minus_x other.xy2d := rfl
 
 /-- `Add<&AffineNielsPoint> for &EdwardsPoint`: the mixed formula
 `Extended.addAffineNiels`; limbs `< 2^52` and `< 2^54` in, `< 2^54` out. -/
 @[step]
-theorem add_toCompleted (self : edwards.EdwardsPoint.«x86_64-tables»)
-    (other : AffineNielsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem add_toCompleted (self : edwards.EdwardsPoint.«64bit-tables»)
+    (other : AffineNielsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 54) :
-    add self other ⦃ (r : CompletedPoint.«x86_64-tables») =>
+    add self other ⦃ (r : CompletedPoint.«64bit-tables») =>
       r.toCompleted = self.toExtended.addAffineNiels other.toAffineNiels ∧
         r.LimbsLt 54 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
@@ -88,44 +88,44 @@ theorem add_toCompleted (self : edwards.EdwardsPoint.«x86_64-tables»)
     Backend.U64.add_spec Backend.U64.add_sum2_spec Backend.U64.sub_spec Backend.U64.mul_spec _ _ _ _
     _ _ _ _ h1 h2 h3 h4 h5 h6 h7)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [CompletedPoint.«x86_64-tables».toCompleted_def,
-    edwards.EdwardsPoint.«x86_64-tables».toExtended_def,
-    AffineNielsPoint.«x86_64-tables».toAffineNiels_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [CompletedPoint.«64bit-tables».toCompleted_def,
+    edwards.EdwardsPoint.«64bit-tables».toExtended_def,
+    AffineNielsPoint.«64bit-tables».toAffineNiels_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `Add<&AffineNielsPoint> for &EdwardsPoint` adds the represented points. -/
-theorem add_spec (self : edwards.EdwardsPoint.«x86_64-tables»)
-    (other : AffineNielsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem add_spec (self : edwards.EdwardsPoint.«64bit-tables»)
+    (other : AffineNielsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 54) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    add self other ⦃ (r : CompletedPoint.«x86_64-tables») =>
+    add self other ⦃ (r : CompletedPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + other.toPoint ∧ r.LimbsLt 54 ⦄ :=
   spec_mono (add_toCompleted self other hself hother) fun r ⟨hr, hb⟩ => by
-    rw [CompletedPoint.«x86_64-tables».onCurve_iff,
-      CompletedPoint.«x86_64-tables».toPoint_def, hr,
-      edwards.EdwardsPoint.«x86_64-tables».toPoint_def,
-      AffineNielsPoint.«x86_64-tables».toPoint_def]
+    rw [CompletedPoint.«64bit-tables».onCurve_iff,
+      CompletedPoint.«64bit-tables».toPoint_def, hr,
+      edwards.EdwardsPoint.«64bit-tables».toPoint_def,
+      AffineNielsPoint.«64bit-tables».toPoint_def]
     exact ⟨Extended.addAffineNiels_onCurve edwards_a_eq_neg_one hself_on hother_on,
       Extended.toPoint_addAffineNiels edwards_a_eq_neg_one hself_on hother_on, hb⟩
 
-end «CoreOpsArithAddSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables»
-end «Shared0EdwardsPointx86_64-tables».Insts
+end «CoreOpsArithAddSharedAAffineNielsPoint64bit-tablesCompletedPoint64bit-tables»
+end «Shared0EdwardsPoint64bit-tables».Insts
 
-namespace «Shared0EdwardsPointi686-tables».Insts
+namespace «Shared0EdwardsPoint32bit-tables».Insts
 
-namespace «CoreOpsArithAddSharedAAffineNielsPointi686-tablesCompletedPointi686-tables»
+namespace «CoreOpsArithAddSharedAAffineNielsPoint32bit-tablesCompletedPoint32bit-tables»
 
-theorem add_eq (self : edwards.EdwardsPoint.«i686-tables»)
-    (other : AffineNielsPoint.«i686-tables») :
+theorem add_eq (self : edwards.EdwardsPoint.«32bit-tables»)
+    (other : AffineNielsPoint.«32bit-tables») :
     add self other = Backend.addAffineNiels Backend.U32
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«i686-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«32bit-tables»))
       self.X self.Y self.Z self.T other.y_plus_x other.y_minus_x other.xy2d := rfl
 
 /-- `Add<&AffineNielsPoint> for &EdwardsPoint`: the mixed formula
 `Extended.addAffineNiels`; limbs `< 2^26` and `< 2^27` in, `< 3 · 2^26` out. -/
 @[step]
-theorem add_toCompleted (self : edwards.EdwardsPoint.«i686-tables»)
-    (other : AffineNielsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem add_toCompleted (self : edwards.EdwardsPoint.«32bit-tables»)
+    (other : AffineNielsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 27) :
-    add self other ⦃ (r : CompletedPoint.«i686-tables») =>
+    add self other ⦃ (r : CompletedPoint.«32bit-tables») =>
       r.toCompleted = self.toExtended.addAffineNiels other.toAffineNiels ∧
         r.MulBounded ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
@@ -135,44 +135,44 @@ theorem add_toCompleted (self : edwards.EdwardsPoint.«i686-tables»)
     Backend.U32.add_spec Backend.U32.add_sum2_spec Backend.U32.sub_spec Backend.U32.mul_spec _ _ _ _
     _ _ _ _ h1 h2 h3 h4 h5 h6 h7)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [CompletedPoint.«i686-tables».toCompleted_def,
-    edwards.EdwardsPoint.«i686-tables».toExtended_def,
-    AffineNielsPoint.«i686-tables».toAffineNiels_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [CompletedPoint.«32bit-tables».toCompleted_def,
+    edwards.EdwardsPoint.«32bit-tables».toExtended_def,
+    AffineNielsPoint.«32bit-tables».toAffineNiels_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `Add<&AffineNielsPoint> for &EdwardsPoint` adds the represented points. -/
-theorem add_spec (self : edwards.EdwardsPoint.«i686-tables»)
-    (other : AffineNielsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem add_spec (self : edwards.EdwardsPoint.«32bit-tables»)
+    (other : AffineNielsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 27) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    add self other ⦃ (r : CompletedPoint.«i686-tables») =>
+    add self other ⦃ (r : CompletedPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + other.toPoint ∧ r.MulBounded ⦄ :=
   spec_mono (add_toCompleted self other hself hother) fun r ⟨hr, hb⟩ => by
-    rw [CompletedPoint.«i686-tables».onCurve_iff,
-      CompletedPoint.«i686-tables».toPoint_def, hr,
-      edwards.EdwardsPoint.«i686-tables».toPoint_def,
-      AffineNielsPoint.«i686-tables».toPoint_def]
+    rw [CompletedPoint.«32bit-tables».onCurve_iff,
+      CompletedPoint.«32bit-tables».toPoint_def, hr,
+      edwards.EdwardsPoint.«32bit-tables».toPoint_def,
+      AffineNielsPoint.«32bit-tables».toPoint_def]
     exact ⟨Extended.addAffineNiels_onCurve edwards_a_eq_neg_one hself_on hother_on,
       Extended.toPoint_addAffineNiels edwards_a_eq_neg_one hself_on hother_on, hb⟩
 
-end «CoreOpsArithAddSharedAAffineNielsPointi686-tablesCompletedPointi686-tables»
-end «Shared0EdwardsPointi686-tables».Insts
+end «CoreOpsArithAddSharedAAffineNielsPoint32bit-tablesCompletedPoint32bit-tables»
+end «Shared0EdwardsPoint32bit-tables».Insts
 
-namespace «Shared0EdwardsPointx86_64-no-tables».Insts
+namespace «Shared0EdwardsPoint64bit-notables».Insts
 
-namespace «CoreOpsArithAddSharedAAffineNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
+namespace «CoreOpsArithAddSharedAAffineNielsPoint64bit-notablesCompletedPoint64bit-notables»
 
-theorem add_eq (self : edwards.EdwardsPoint.«x86_64-no-tables»)
-    (other : AffineNielsPoint.«x86_64-no-tables») :
+theorem add_eq (self : edwards.EdwardsPoint.«64bit-notables»)
+    (other : AffineNielsPoint.«64bit-notables») :
     add self other = Backend.addAffineNiels Backend.U64
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«x86_64-no-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«64bit-notables»))
       self.X self.Y self.Z self.T other.y_plus_x other.y_minus_x other.xy2d := rfl
 
 /-- `Add<&AffineNielsPoint> for &EdwardsPoint`: the mixed formula
 `Extended.addAffineNiels`; limbs `< 2^52` and `< 2^54` in, `< 2^54` out. -/
 @[step]
-theorem add_toCompleted (self : edwards.EdwardsPoint.«x86_64-no-tables»)
-    (other : AffineNielsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem add_toCompleted (self : edwards.EdwardsPoint.«64bit-notables»)
+    (other : AffineNielsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 54) :
-    add self other ⦃ (r : CompletedPoint.«x86_64-no-tables») =>
+    add self other ⦃ (r : CompletedPoint.«64bit-notables») =>
       r.toCompleted = self.toExtended.addAffineNiels other.toAffineNiels ∧
         r.LimbsLt 54 ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
@@ -182,44 +182,44 @@ theorem add_toCompleted (self : edwards.EdwardsPoint.«x86_64-no-tables»)
     Backend.U64.add_spec Backend.U64.add_sum2_spec Backend.U64.sub_spec Backend.U64.mul_spec _ _ _ _
     _ _ _ _ h1 h2 h3 h4 h5 h6 h7)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [CompletedPoint.«x86_64-no-tables».toCompleted_def,
-    edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def,
-    AffineNielsPoint.«x86_64-no-tables».toAffineNiels_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [CompletedPoint.«64bit-notables».toCompleted_def,
+    edwards.EdwardsPoint.«64bit-notables».toExtended_def,
+    AffineNielsPoint.«64bit-notables».toAffineNiels_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `Add<&AffineNielsPoint> for &EdwardsPoint` adds the represented points. -/
-theorem add_spec (self : edwards.EdwardsPoint.«x86_64-no-tables»)
-    (other : AffineNielsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem add_spec (self : edwards.EdwardsPoint.«64bit-notables»)
+    (other : AffineNielsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hother : other.LimbsLt 54) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    add self other ⦃ (r : CompletedPoint.«x86_64-no-tables») =>
+    add self other ⦃ (r : CompletedPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + other.toPoint ∧ r.LimbsLt 54 ⦄ :=
   spec_mono (add_toCompleted self other hself hother) fun r ⟨hr, hb⟩ => by
-    rw [CompletedPoint.«x86_64-no-tables».onCurve_iff,
-      CompletedPoint.«x86_64-no-tables».toPoint_def, hr,
-      edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def,
-      AffineNielsPoint.«x86_64-no-tables».toPoint_def]
+    rw [CompletedPoint.«64bit-notables».onCurve_iff,
+      CompletedPoint.«64bit-notables».toPoint_def, hr,
+      edwards.EdwardsPoint.«64bit-notables».toPoint_def,
+      AffineNielsPoint.«64bit-notables».toPoint_def]
     exact ⟨Extended.addAffineNiels_onCurve edwards_a_eq_neg_one hself_on hother_on,
       Extended.toPoint_addAffineNiels edwards_a_eq_neg_one hself_on hother_on, hb⟩
 
-end «CoreOpsArithAddSharedAAffineNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
-end «Shared0EdwardsPointx86_64-no-tables».Insts
+end «CoreOpsArithAddSharedAAffineNielsPoint64bit-notablesCompletedPoint64bit-notables»
+end «Shared0EdwardsPoint64bit-notables».Insts
 
-namespace «Shared0EdwardsPointi686-no-tables».Insts
+namespace «Shared0EdwardsPoint32bit-notables».Insts
 
-namespace «CoreOpsArithAddSharedAAffineNielsPointi686-no-tablesCompletedPointi686-no-tables»
+namespace «CoreOpsArithAddSharedAAffineNielsPoint32bit-notablesCompletedPoint32bit-notables»
 
-theorem add_eq (self : edwards.EdwardsPoint.«i686-no-tables»)
-    (other : AffineNielsPoint.«i686-no-tables») :
+theorem add_eq (self : edwards.EdwardsPoint.«32bit-notables»)
+    (other : AffineNielsPoint.«32bit-notables») :
     add self other = Backend.addAffineNiels Backend.U32
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«i686-no-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : CompletedPoint.«32bit-notables»))
       self.X self.Y self.Z self.T other.y_plus_x other.y_minus_x other.xy2d := rfl
 
 /-- `Add<&AffineNielsPoint> for &EdwardsPoint`: the mixed formula
 `Extended.addAffineNiels`; limbs `< 2^26` and `< 2^27` in, `< 3 · 2^26` out. -/
 @[step]
-theorem add_toCompleted (self : edwards.EdwardsPoint.«i686-no-tables»)
-    (other : AffineNielsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem add_toCompleted (self : edwards.EdwardsPoint.«32bit-notables»)
+    (other : AffineNielsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 27) :
-    add self other ⦃ (r : CompletedPoint.«i686-no-tables») =>
+    add self other ⦃ (r : CompletedPoint.«32bit-notables») =>
       r.toCompleted = self.toExtended.addAffineNiels other.toAffineNiels ∧
         r.MulBounded ⦄ := by
   obtain ⟨h1, h2, h3, h4⟩ := hself
@@ -229,25 +229,25 @@ theorem add_toCompleted (self : edwards.EdwardsPoint.«i686-no-tables»)
     Backend.U32.add_spec Backend.U32.add_sum2_spec Backend.U32.sub_spec Backend.U32.mul_spec _ _ _ _
     _ _ _ _ h1 h2 h3 h4 h5 h6 h7)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [CompletedPoint.«i686-no-tables».toCompleted_def,
-    edwards.EdwardsPoint.«i686-no-tables».toExtended_def,
-    AffineNielsPoint.«i686-no-tables».toAffineNiels_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [CompletedPoint.«32bit-notables».toCompleted_def,
+    edwards.EdwardsPoint.«32bit-notables».toExtended_def,
+    AffineNielsPoint.«32bit-notables».toAffineNiels_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `Add<&AffineNielsPoint> for &EdwardsPoint` adds the represented points. -/
-theorem add_spec (self : edwards.EdwardsPoint.«i686-no-tables»)
-    (other : AffineNielsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem add_spec (self : edwards.EdwardsPoint.«32bit-notables»)
+    (other : AffineNielsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hother : other.LimbsLt 27) (hself_on : self.OnCurve) (hother_on : other.OnCurve) :
-    add self other ⦃ (r : CompletedPoint.«i686-no-tables») =>
+    add self other ⦃ (r : CompletedPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + other.toPoint ∧ r.MulBounded ⦄ :=
   spec_mono (add_toCompleted self other hself hother) fun r ⟨hr, hb⟩ => by
-    rw [CompletedPoint.«i686-no-tables».onCurve_iff,
-      CompletedPoint.«i686-no-tables».toPoint_def, hr,
-      edwards.EdwardsPoint.«i686-no-tables».toPoint_def,
-      AffineNielsPoint.«i686-no-tables».toPoint_def]
+    rw [CompletedPoint.«32bit-notables».onCurve_iff,
+      CompletedPoint.«32bit-notables».toPoint_def, hr,
+      edwards.EdwardsPoint.«32bit-notables».toPoint_def,
+      AffineNielsPoint.«32bit-notables».toPoint_def]
     exact ⟨Extended.addAffineNiels_onCurve edwards_a_eq_neg_one hself_on hother_on,
       Extended.toPoint_addAffineNiels edwards_a_eq_neg_one hself_on hother_on, hb⟩
 
-end «CoreOpsArithAddSharedAAffineNielsPointi686-no-tablesCompletedPointi686-no-tables»
-end «Shared0EdwardsPointi686-no-tables».Insts
+end «CoreOpsArithAddSharedAAffineNielsPoint32bit-notablesCompletedPoint32bit-notables»
+end «Shared0EdwardsPoint32bit-notables».Insts
 
 end Curve25519Dalek

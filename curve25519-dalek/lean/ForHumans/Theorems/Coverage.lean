@@ -10,7 +10,7 @@ open Lean Meta Elab Command
 namespace Coverage
 
 /-- The four configurations of the translation. -/
-def configs : List String := ["x86_64-tables", "i686-tables", "x86_64-no-tables", "i686-no-tables"]
+def configs : List String := ["64bit-tables", "32bit-tables", "64bit-notables", "32bit-notables"]
 
 /-- The types with invariants, in configuration `c`, each with its invariants. -/
 def watched (c : String) : List (Name × List Name) :=
@@ -40,41 +40,41 @@ def exemptFiles : List (String × String) := [
     "`mod affine` is private; `AffinePoint` is returned only by `pub(crate) fn to_affine`")]
 
 /-- Functions not callable from outside the crate, or whose result is one of their arguments,
-by their name for `x86_64-tables` (the other configurations are matched by renaming). -/
+by their name for `64bit-tables` (the other configurations are matched by renaming). -/
 def exemptNames : List (String × String) := [
-  ("edwards.«EdwardsPointx86_64-tables».double", "`pub(crate) fn double`"),
-  ("edwards.«EdwardsPointx86_64-tables».mul_by_pow_2", "`pub(crate) fn mul_by_pow_2`"),
-  ("edwards.decompress.step_2.«x86_64-tables»", "private `mod decompress`"),
-  ("ristretto.decompress.step_2.«x86_64-tables»", "private `mod decompress`"),
-  ("ristretto.«RistrettoPointx86_64-tables».coset4", "private `fn coset4`"),
-  ("ristretto.elligator.«RistrettoPointx86_64-tables».elligator_ristretto_flavor",
+  ("edwards.«EdwardsPoint64bit-tables».double", "`pub(crate) fn double`"),
+  ("edwards.«EdwardsPoint64bit-tables».mul_by_pow_2", "`pub(crate) fn mul_by_pow_2`"),
+  ("edwards.decompress.step_2.«64bit-tables»", "private `mod decompress`"),
+  ("ristretto.decompress.step_2.«64bit-tables»", "private `mod decompress`"),
+  ("ristretto.«RistrettoPoint64bit-tables».coset4", "private `fn coset4`"),
+  ("ristretto.elligator.«RistrettoPoint64bit-tables».elligator_ristretto_flavor",
     "`pub(crate) fn elligator_ristretto_flavor`"),
-  ("P.Insts.«CoreOpsFunctionFnOnceTupleEdwardsPointx86_64-tablesRistrettoPointx86_64-tables»\
+  ("P.Insts.«CoreOpsFunctionFnOnceTupleEdwardsPoint64bit-tablesRistrettoPoint64bit-tables»\
       .call_once",
     "the constructor `RistrettoPoint(·)` as a function; its field is `pub(crate)`"),
-  ("ristretto.«VartimeMultiscalarMulRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»\
+  ("ristretto.«VartimeMultiscalarMulRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»\
       .optional_multiscalar_mul.closure.Insts\
-      .«CoreOpsFunctionFnOnceTupleRistrettoPointx86_64-tablesEdwardsPointx86_64-tables».call_once",
+      .«CoreOpsFunctionFnOnceTupleRistrettoPoint64bit-tablesEdwardsPoint64bit-tables».call_once",
     "a closure inside `optional_multiscalar_mul`"),
   ("ristretto.«VartimePrecomputedMultiscalarMul\
-      VartimeRistrettoPrecomputationx86_64-tablesRistrettoPointx86_64-tables»\
+      VartimeRistrettoPrecomputation64bit-tablesRistrettoPoint64bit-tables»\
       .optional_mixed_multiscalar_mul.closure.Insts\
-      .«CoreOpsFunctionFnOnceTupleRistrettoPointx86_64-tablesEdwardsPointx86_64-tables».call_once",
+      .«CoreOpsFunctionFnOnceTupleRistrettoPoint64bit-tablesEdwardsPoint64bit-tables».call_once",
     "a closure inside `optional_mixed_multiscalar_mul`"),
   ("scalar.Scalar.reduce", "private `fn reduce`"),
-  ("scalar.Scalar.invert_batch_internal.«x86_64-tables»", "private `fn invert_batch_internal`"),
+  ("scalar.Scalar.invert_batch_internal.«64bit-tables»", "private `fn invert_batch_internal`"),
   ("scalar.Scalar29.pack", "private `fn pack` of the internal `UnpackedScalar`"),
   ("scalar.Scalar52.pack", "private `fn pack` of the internal `UnpackedScalar`"),
-  ("edwards.EdwardsPoint.«x86_64-tables».Insts.SubtleConditionallySelectable.conditional_select",
+  ("edwards.EdwardsPoint.«64bit-tables».Insts.SubtleConditionallySelectable.conditional_select",
     "the result is `a` or `b` (theorem `conditional_select`)"),
-  ("ristretto.RistrettoPoint.«x86_64-tables».Insts.SubtleConditionallySelectable\
+  ("ristretto.RistrettoPoint.«64bit-tables».Insts.SubtleConditionallySelectable\
       .conditional_select",
     "the result is `a` or `b` (theorem `conditional_select`)")]
 
-/-- `n` with every configuration renamed to `x86_64-tables`. -/
+/-- `n` with every configuration renamed to `64bit-tables`. -/
 def normalize (n : Name) : String :=
   let s := (n.toString.drop "Curve25519Dalek.".length).toString
-  configs.foldl (fun s c => s.replace c "x86_64-tables") s
+  configs.foldl (fun s c => s.replace c "64bit-tables") s
 
 /-- The Rust source file of a translated function, from the docstring Aeneas writes. -/
 def sourceFile (env : Environment) (n : Name) : IO (Option String) := do

@@ -242,12 +242,12 @@ end Curve25519Dalek.Backend
 
 namespace Curve25519Dalek.edwards
 
-namespace «EdwardsPointx86_64-tables»
+namespace «EdwardsPoint64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 private theorem to_montgomery_batch_loop0_eq
-    (iter : core.slice.iter.Iter EdwardsPoint.«x86_64-tables»)
+    (iter : core.slice.iter.Iter EdwardsPoint.«64bit-tables»)
     (den : alloc.vec.Vec FieldElement51) :
     to_montgomery_batch_loop0 iter den = Backend.U64.tmbLoop0 (·.Z) (·.Y) iter den := by
   unfold to_montgomery_batch_loop0 Backend.tmbLoop0
@@ -259,7 +259,7 @@ private theorem to_montgomery_batch_loop0_eq
   funext ⟨o, it1⟩
   cases o <;> rfl
 
-private theorem to_montgomery_batch_eq (eds : Slice EdwardsPoint.«x86_64-tables») :
+private theorem to_montgomery_batch_eq (eds : Slice EdwardsPoint.«64bit-tables») :
     to_montgomery_batch eds = Backend.U64.toMontgomeryBatch (·.Z) (·.Y) eds := by
   unfold to_montgomery_batch Backend.toMontgomeryBatch
   simp only [to_montgomery_batch_loop0_eq]
@@ -268,7 +268,7 @@ private theorem to_montgomery_batch_eq (eds : Slice EdwardsPoint.«x86_64-tables
 /-- `EdwardsPoint::to_montgomery_batch`: entry `i` is the canonical bytes of
 `(Z + Y) / (Z - Y)` of point `i` (`0` if `Z = Y`); limbs `< 2^52`. -/
 @[step]
-theorem to_montgomery_batch_asNat (eds : Slice EdwardsPoint.«x86_64-tables»)
+theorem to_montgomery_batch_asNat (eds : Slice EdwardsPoint.«64bit-tables»)
     (heds : ∀ i < eds.length, eds[i]!.LimbsLt 52) :
     to_montgomery_batch eds ⦃ (r : alloc.vec.Vec montgomery.MontgomeryPoint) =>
       r.length = eds.length ∧ ∀ i < eds.length, r[i]!.asNat =
@@ -281,7 +281,7 @@ theorem to_montgomery_batch_asNat (eds : Slice EdwardsPoint.«x86_64-tables»)
 
 /-- `EdwardsPoint::to_montgomery_batch`: entry `i` is RFC 7748's encoding of the
 `u`-coordinate of the Montgomery image of point `i` (`0` for the identity). -/
-theorem to_montgomery_batch_spec (eds : Slice EdwardsPoint.«x86_64-tables»)
+theorem to_montgomery_batch_spec (eds : Slice EdwardsPoint.«64bit-tables»)
     (heds : ∀ i < eds.length, eds[i]!.LimbsLt 52) (heds_on : ∀ i < eds.length, eds[i]!.OnCurve) :
     to_montgomery_batch eds ⦃ (r : alloc.vec.Vec montgomery.MontgomeryPoint) =>
       r.length = eds.length ∧
@@ -289,17 +289,17 @@ theorem to_montgomery_batch_spec (eds : Slice EdwardsPoint.«x86_64-tables»)
             (edwardsToMontgomery eds[i]!.toPoint).u ⦄ := by
   simp only [Curve25519Dalek.montgomery.MontgomeryPoint.toVector_eq_encodeUCoordinate_iff]
   exact spec_mono (to_montgomery_batch_asNat eds heds) fun r ⟨hlen, hr⟩ => ⟨hlen, fun i hi => by
-      rw [hr i hi, EdwardsPoint.«x86_64-tables».u_edwardsToMontgomery (heds_on i hi)]
+      rw [hr i hi, EdwardsPoint.«64bit-tables».u_edwardsToMontgomery (heds_on i hi)]
       rfl⟩
 
-end «EdwardsPointx86_64-tables»
+end «EdwardsPoint64bit-tables»
 
-namespace «EdwardsPointi686-tables»
+namespace «EdwardsPoint32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 private theorem to_montgomery_batch_loop0_eq
-    (iter : core.slice.iter.Iter EdwardsPoint.«i686-tables»)
+    (iter : core.slice.iter.Iter EdwardsPoint.«32bit-tables»)
     (den : alloc.vec.Vec FieldElement2625) :
     to_montgomery_batch_loop0 iter den = Backend.U32.tmbLoop0 (·.Z) (·.Y) iter den := by
   unfold to_montgomery_batch_loop0 Backend.tmbLoop0
@@ -311,7 +311,7 @@ private theorem to_montgomery_batch_loop0_eq
   funext ⟨o, it1⟩
   cases o <;> rfl
 
-private theorem to_montgomery_batch_eq (eds : Slice EdwardsPoint.«i686-tables») :
+private theorem to_montgomery_batch_eq (eds : Slice EdwardsPoint.«32bit-tables») :
     to_montgomery_batch eds = Backend.U32.toMontgomeryBatch (·.Z) (·.Y) eds := by
   unfold to_montgomery_batch Backend.toMontgomeryBatch
   simp only [to_montgomery_batch_loop0_eq]
@@ -320,7 +320,7 @@ private theorem to_montgomery_batch_eq (eds : Slice EdwardsPoint.«i686-tables»
 /-- `EdwardsPoint::to_montgomery_batch`: entry `i` is the canonical bytes of
 `(Z + Y) / (Z - Y)` of point `i` (`0` if `Z = Y`); limbs `< 2^26`. -/
 @[step]
-theorem to_montgomery_batch_asNat (eds : Slice EdwardsPoint.«i686-tables»)
+theorem to_montgomery_batch_asNat (eds : Slice EdwardsPoint.«32bit-tables»)
     (heds : ∀ i < eds.length, eds[i]!.LimbsLt 26) :
     to_montgomery_batch eds ⦃ (r : alloc.vec.Vec montgomery.MontgomeryPoint) =>
       r.length = eds.length ∧ ∀ i < eds.length, r[i]!.asNat =
@@ -333,7 +333,7 @@ theorem to_montgomery_batch_asNat (eds : Slice EdwardsPoint.«i686-tables»)
 
 /-- `EdwardsPoint::to_montgomery_batch`: entry `i` is RFC 7748's encoding of the
 `u`-coordinate of the Montgomery image of point `i` (`0` for the identity). -/
-theorem to_montgomery_batch_spec (eds : Slice EdwardsPoint.«i686-tables»)
+theorem to_montgomery_batch_spec (eds : Slice EdwardsPoint.«32bit-tables»)
     (heds : ∀ i < eds.length, eds[i]!.LimbsLt 26) (heds_on : ∀ i < eds.length, eds[i]!.OnCurve) :
     to_montgomery_batch eds ⦃ (r : alloc.vec.Vec montgomery.MontgomeryPoint) =>
       r.length = eds.length ∧
@@ -341,17 +341,17 @@ theorem to_montgomery_batch_spec (eds : Slice EdwardsPoint.«i686-tables»)
             (edwardsToMontgomery eds[i]!.toPoint).u ⦄ := by
   simp only [Curve25519Dalek.montgomery.MontgomeryPoint.toVector_eq_encodeUCoordinate_iff]
   exact spec_mono (to_montgomery_batch_asNat eds heds) fun r ⟨hlen, hr⟩ => ⟨hlen, fun i hi => by
-      rw [hr i hi, EdwardsPoint.«i686-tables».u_edwardsToMontgomery (heds_on i hi)]
+      rw [hr i hi, EdwardsPoint.«32bit-tables».u_edwardsToMontgomery (heds_on i hi)]
       rfl⟩
 
-end «EdwardsPointi686-tables»
+end «EdwardsPoint32bit-tables»
 
-namespace «EdwardsPointx86_64-no-tables»
+namespace «EdwardsPoint64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 private theorem to_montgomery_batch_loop0_eq
-    (iter : core.slice.iter.Iter EdwardsPoint.«x86_64-no-tables»)
+    (iter : core.slice.iter.Iter EdwardsPoint.«64bit-notables»)
     (den : alloc.vec.Vec FieldElement51) :
     to_montgomery_batch_loop0 iter den = Backend.U64.tmbLoop0 (·.Z) (·.Y) iter den := by
   unfold to_montgomery_batch_loop0 Backend.tmbLoop0
@@ -363,7 +363,7 @@ private theorem to_montgomery_batch_loop0_eq
   funext ⟨o, it1⟩
   cases o <;> rfl
 
-private theorem to_montgomery_batch_eq (eds : Slice EdwardsPoint.«x86_64-no-tables») :
+private theorem to_montgomery_batch_eq (eds : Slice EdwardsPoint.«64bit-notables») :
     to_montgomery_batch eds = Backend.U64.toMontgomeryBatch (·.Z) (·.Y) eds := by
   unfold to_montgomery_batch Backend.toMontgomeryBatch
   simp only [to_montgomery_batch_loop0_eq]
@@ -372,7 +372,7 @@ private theorem to_montgomery_batch_eq (eds : Slice EdwardsPoint.«x86_64-no-tab
 /-- `EdwardsPoint::to_montgomery_batch`: entry `i` is the canonical bytes of
 `(Z + Y) / (Z - Y)` of point `i` (`0` if `Z = Y`); limbs `< 2^52`. -/
 @[step]
-theorem to_montgomery_batch_asNat (eds : Slice EdwardsPoint.«x86_64-no-tables»)
+theorem to_montgomery_batch_asNat (eds : Slice EdwardsPoint.«64bit-notables»)
     (heds : ∀ i < eds.length, eds[i]!.LimbsLt 52) :
     to_montgomery_batch eds ⦃ (r : alloc.vec.Vec montgomery.MontgomeryPoint) =>
       r.length = eds.length ∧ ∀ i < eds.length, r[i]!.asNat =
@@ -385,7 +385,7 @@ theorem to_montgomery_batch_asNat (eds : Slice EdwardsPoint.«x86_64-no-tables»
 
 /-- `EdwardsPoint::to_montgomery_batch`: entry `i` is RFC 7748's encoding of the
 `u`-coordinate of the Montgomery image of point `i` (`0` for the identity). -/
-theorem to_montgomery_batch_spec (eds : Slice EdwardsPoint.«x86_64-no-tables»)
+theorem to_montgomery_batch_spec (eds : Slice EdwardsPoint.«64bit-notables»)
     (heds : ∀ i < eds.length, eds[i]!.LimbsLt 52) (heds_on : ∀ i < eds.length, eds[i]!.OnCurve) :
     to_montgomery_batch eds ⦃ (r : alloc.vec.Vec montgomery.MontgomeryPoint) =>
       r.length = eds.length ∧
@@ -393,17 +393,17 @@ theorem to_montgomery_batch_spec (eds : Slice EdwardsPoint.«x86_64-no-tables»)
             (edwardsToMontgomery eds[i]!.toPoint).u ⦄ := by
   simp only [Curve25519Dalek.montgomery.MontgomeryPoint.toVector_eq_encodeUCoordinate_iff]
   exact spec_mono (to_montgomery_batch_asNat eds heds) fun r ⟨hlen, hr⟩ => ⟨hlen, fun i hi => by
-      rw [hr i hi, EdwardsPoint.«x86_64-no-tables».u_edwardsToMontgomery (heds_on i hi)]
+      rw [hr i hi, EdwardsPoint.«64bit-notables».u_edwardsToMontgomery (heds_on i hi)]
       rfl⟩
 
-end «EdwardsPointx86_64-no-tables»
+end «EdwardsPoint64bit-notables»
 
-namespace «EdwardsPointi686-no-tables»
+namespace «EdwardsPoint32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 private theorem to_montgomery_batch_loop0_eq
-    (iter : core.slice.iter.Iter EdwardsPoint.«i686-no-tables»)
+    (iter : core.slice.iter.Iter EdwardsPoint.«32bit-notables»)
     (den : alloc.vec.Vec FieldElement2625) :
     to_montgomery_batch_loop0 iter den = Backend.U32.tmbLoop0 (·.Z) (·.Y) iter den := by
   unfold to_montgomery_batch_loop0 Backend.tmbLoop0
@@ -415,7 +415,7 @@ private theorem to_montgomery_batch_loop0_eq
   funext ⟨o, it1⟩
   cases o <;> rfl
 
-private theorem to_montgomery_batch_eq (eds : Slice EdwardsPoint.«i686-no-tables») :
+private theorem to_montgomery_batch_eq (eds : Slice EdwardsPoint.«32bit-notables») :
     to_montgomery_batch eds = Backend.U32.toMontgomeryBatch (·.Z) (·.Y) eds := by
   unfold to_montgomery_batch Backend.toMontgomeryBatch
   simp only [to_montgomery_batch_loop0_eq]
@@ -424,7 +424,7 @@ private theorem to_montgomery_batch_eq (eds : Slice EdwardsPoint.«i686-no-table
 /-- `EdwardsPoint::to_montgomery_batch`: entry `i` is the canonical bytes of
 `(Z + Y) / (Z - Y)` of point `i` (`0` if `Z = Y`); limbs `< 2^26`. -/
 @[step]
-theorem to_montgomery_batch_asNat (eds : Slice EdwardsPoint.«i686-no-tables»)
+theorem to_montgomery_batch_asNat (eds : Slice EdwardsPoint.«32bit-notables»)
     (heds : ∀ i < eds.length, eds[i]!.LimbsLt 26) :
     to_montgomery_batch eds ⦃ (r : alloc.vec.Vec montgomery.MontgomeryPoint) =>
       r.length = eds.length ∧ ∀ i < eds.length, r[i]!.asNat =
@@ -437,7 +437,7 @@ theorem to_montgomery_batch_asNat (eds : Slice EdwardsPoint.«i686-no-tables»)
 
 /-- `EdwardsPoint::to_montgomery_batch`: entry `i` is RFC 7748's encoding of the
 `u`-coordinate of the Montgomery image of point `i` (`0` for the identity). -/
-theorem to_montgomery_batch_spec (eds : Slice EdwardsPoint.«i686-no-tables»)
+theorem to_montgomery_batch_spec (eds : Slice EdwardsPoint.«32bit-notables»)
     (heds : ∀ i < eds.length, eds[i]!.LimbsLt 26) (heds_on : ∀ i < eds.length, eds[i]!.OnCurve) :
     to_montgomery_batch eds ⦃ (r : alloc.vec.Vec montgomery.MontgomeryPoint) =>
       r.length = eds.length ∧
@@ -445,9 +445,9 @@ theorem to_montgomery_batch_spec (eds : Slice EdwardsPoint.«i686-no-tables»)
             (edwardsToMontgomery eds[i]!.toPoint).u ⦄ := by
   simp only [Curve25519Dalek.montgomery.MontgomeryPoint.toVector_eq_encodeUCoordinate_iff]
   exact spec_mono (to_montgomery_batch_asNat eds heds) fun r ⟨hlen, hr⟩ => ⟨hlen, fun i hi => by
-      rw [hr i hi, EdwardsPoint.«i686-no-tables».u_edwardsToMontgomery (heds_on i hi)]
+      rw [hr i hi, EdwardsPoint.«32bit-notables».u_edwardsToMontgomery (heds_on i hi)]
       rfl⟩
 
-end «EdwardsPointi686-no-tables»
+end «EdwardsPoint32bit-notables»
 
 end Curve25519Dalek.edwards

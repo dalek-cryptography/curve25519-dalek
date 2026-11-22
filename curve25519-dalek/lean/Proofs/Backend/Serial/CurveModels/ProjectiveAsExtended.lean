@@ -45,137 +45,137 @@ end Curve25519Dalek.Backend
 
 namespace Curve25519Dalek.backend.serial.curve_models
 
-namespace «ProjectivePointx86_64-tables»
+namespace «ProjectivePoint64bit-tables»
 
-theorem as_extended_eq (self : ProjectivePoint.«x86_64-tables») :
+theorem as_extended_eq (self : ProjectivePoint.«64bit-tables») :
     as_extended self = Backend.projectiveAsExtended Backend.U64
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«x86_64-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«64bit-tables»))
       self.X self.Y self.Z := rfl
 
 /-- `ProjectivePoint::as_extended`: `(X Z : Y Z : Z² : X Y)`, limbs `< 2^52`. -/
 @[step]
-theorem as_extended_toExtended (self : ProjectivePoint.«x86_64-tables») (hself : self.LimbsLt 52) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+theorem as_extended_toExtended (self : ProjectivePoint.«64bit-tables») (hself : self.LimbsLt 52) :
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.toExtended = self.toProjective.toExtended ∧ r.LimbsLt 52 ⦄ := by
   obtain ⟨h1, h2, h3⟩ := hself
   rw [as_extended_eq]
   apply spec_mono (Backend.projectiveAsExtended_spec Backend.U64
     Backend.U64.mul_spec Backend.U64.square_spec _ _ _ _ h1 h2 h3)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [edwards.EdwardsPoint.«x86_64-tables».toExtended_def,
-    ProjectivePoint.«x86_64-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [edwards.EdwardsPoint.«64bit-tables».toExtended_def,
+    ProjectivePoint.«64bit-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `ProjectivePoint::as_extended` represents the same point. -/
-theorem as_extended_spec (self : ProjectivePoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem as_extended_spec (self : ProjectivePoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
-    rw [edwards.EdwardsPoint.«x86_64-tables».onCurve_iff,
-      edwards.EdwardsPoint.«x86_64-tables».toPoint_def, hr,
-      ProjectivePoint.«x86_64-tables».toPoint_def]
+    rw [edwards.EdwardsPoint.«64bit-tables».onCurve_iff,
+      edwards.EdwardsPoint.«64bit-tables».toPoint_def, hr,
+      ProjectivePoint.«64bit-tables».toPoint_def]
     exact ⟨Projective.onCurve_toExtended hon, Projective.toPoint_toExtended hon, hb⟩
 
-end «ProjectivePointx86_64-tables»
+end «ProjectivePoint64bit-tables»
 
-namespace «ProjectivePointi686-tables»
+namespace «ProjectivePoint32bit-tables»
 
-theorem as_extended_eq (self : ProjectivePoint.«i686-tables») :
+theorem as_extended_eq (self : ProjectivePoint.«32bit-tables») :
     as_extended self = Backend.projectiveAsExtended Backend.U32
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«i686-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«32bit-tables»))
       self.X self.Y self.Z := rfl
 
 /-- `ProjectivePoint::as_extended`: `(X Z : Y Z : Z² : X Y)`, limbs `< 2^26`. -/
 @[step]
-theorem as_extended_toExtended (self : ProjectivePoint.«i686-tables») (hself : self.LimbsLt 26) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+theorem as_extended_toExtended (self : ProjectivePoint.«32bit-tables») (hself : self.LimbsLt 26) :
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.toExtended = self.toProjective.toExtended ∧ r.LimbsLt 26 ⦄ := by
   obtain ⟨h1, h2, h3⟩ := hself
   rw [as_extended_eq]
   apply spec_mono (Backend.projectiveAsExtended_spec Backend.U32
     Backend.U32.mul_spec Backend.U32.square_spec _ _ _ _ h1 h2 h3)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [edwards.EdwardsPoint.«i686-tables».toExtended_def,
-    ProjectivePoint.«i686-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [edwards.EdwardsPoint.«32bit-tables».toExtended_def,
+    ProjectivePoint.«32bit-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `ProjectivePoint::as_extended` represents the same point. -/
-theorem as_extended_spec (self : ProjectivePoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem as_extended_spec (self : ProjectivePoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
-    rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff,
-      edwards.EdwardsPoint.«i686-tables».toPoint_def, hr,
-      ProjectivePoint.«i686-tables».toPoint_def]
+    rw [edwards.EdwardsPoint.«32bit-tables».onCurve_iff,
+      edwards.EdwardsPoint.«32bit-tables».toPoint_def, hr,
+      ProjectivePoint.«32bit-tables».toPoint_def]
     exact ⟨Projective.onCurve_toExtended hon, Projective.toPoint_toExtended hon, hb⟩
 
-end «ProjectivePointi686-tables»
+end «ProjectivePoint32bit-tables»
 
-namespace «ProjectivePointx86_64-no-tables»
+namespace «ProjectivePoint64bit-notables»
 
-theorem as_extended_eq (self : ProjectivePoint.«x86_64-no-tables») :
+theorem as_extended_eq (self : ProjectivePoint.«64bit-notables») :
     as_extended self = Backend.projectiveAsExtended Backend.U64
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«x86_64-no-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«64bit-notables»))
       self.X self.Y self.Z := rfl
 
 /-- `ProjectivePoint::as_extended`: `(X Z : Y Z : Z² : X Y)`, limbs `< 2^52`. -/
 @[step]
-theorem as_extended_toExtended (self : ProjectivePoint.«x86_64-no-tables») (hself : self.LimbsLt
+theorem as_extended_toExtended (self : ProjectivePoint.«64bit-notables») (hself : self.LimbsLt
     52) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.toExtended = self.toProjective.toExtended ∧ r.LimbsLt 52 ⦄ := by
   obtain ⟨h1, h2, h3⟩ := hself
   rw [as_extended_eq]
   apply spec_mono (Backend.projectiveAsExtended_spec Backend.U64
     Backend.U64.mul_spec Backend.U64.square_spec _ _ _ _ h1 h2 h3)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def,
-    ProjectivePoint.«x86_64-no-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [edwards.EdwardsPoint.«64bit-notables».toExtended_def,
+    ProjectivePoint.«64bit-notables».toProjective_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `ProjectivePoint::as_extended` represents the same point. -/
-theorem as_extended_spec (self : ProjectivePoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem as_extended_spec (self : ProjectivePoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 52 ⦄ :=
   spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
-    rw [edwards.EdwardsPoint.«x86_64-no-tables».onCurve_iff,
-      edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def, hr,
-      ProjectivePoint.«x86_64-no-tables».toPoint_def]
+    rw [edwards.EdwardsPoint.«64bit-notables».onCurve_iff,
+      edwards.EdwardsPoint.«64bit-notables».toPoint_def, hr,
+      ProjectivePoint.«64bit-notables».toPoint_def]
     exact ⟨Projective.onCurve_toExtended hon, Projective.toPoint_toExtended hon, hb⟩
 
-end «ProjectivePointx86_64-no-tables»
+end «ProjectivePoint64bit-notables»
 
-namespace «ProjectivePointi686-no-tables»
+namespace «ProjectivePoint32bit-notables»
 
-theorem as_extended_eq (self : ProjectivePoint.«i686-no-tables») :
+theorem as_extended_eq (self : ProjectivePoint.«32bit-notables») :
     as_extended self = Backend.projectiveAsExtended Backend.U32
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«i686-no-tables»))
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«32bit-notables»))
       self.X self.Y self.Z := rfl
 
 /-- `ProjectivePoint::as_extended`: `(X Z : Y Z : Z² : X Y)`, limbs `< 2^26`. -/
 @[step]
-theorem as_extended_toExtended (self : ProjectivePoint.«i686-no-tables») (hself : self.LimbsLt 26) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+theorem as_extended_toExtended (self : ProjectivePoint.«32bit-notables») (hself : self.LimbsLt 26) :
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.toExtended = self.toProjective.toExtended ∧ r.LimbsLt 26 ⦄ := by
   obtain ⟨h1, h2, h3⟩ := hself
   rw [as_extended_eq]
   apply spec_mono (Backend.projectiveAsExtended_spec Backend.U32
     Backend.U32.mul_spec Backend.U32.square_spec _ _ _ _ h1 h2 h3)
   rintro _ ⟨a, b, c, d, rfl, h, ha, hb, hc, hd⟩
-  exact ⟨by rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def,
-    ProjectivePoint.«i686-no-tables».toProjective_def]; exact h, ha, hb, hc, hd⟩
+  exact ⟨by rw [edwards.EdwardsPoint.«32bit-notables».toExtended_def,
+    ProjectivePoint.«32bit-notables».toProjective_def]; exact h, ha, hb, hc, hd⟩
 
 /-- `ProjectivePoint::as_extended` represents the same point. -/
-theorem as_extended_spec (self : ProjectivePoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem as_extended_spec (self : ProjectivePoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
-    as_extended self ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    as_extended self ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono (as_extended_toExtended self hself) fun r ⟨hr, hb⟩ => by
-    rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff,
-      edwards.EdwardsPoint.«i686-no-tables».toPoint_def, hr,
-      ProjectivePoint.«i686-no-tables».toPoint_def]
+    rw [edwards.EdwardsPoint.«32bit-notables».onCurve_iff,
+      edwards.EdwardsPoint.«32bit-notables».toPoint_def, hr,
+      ProjectivePoint.«32bit-notables».toPoint_def]
     exact ⟨Projective.onCurve_toExtended hon, Projective.toPoint_toExtended hon, hb⟩
 
-end «ProjectivePointi686-no-tables»
+end «ProjectivePoint32bit-notables»
 
 end Curve25519Dalek.backend.serial.curve_models

@@ -32,11 +32,11 @@ public import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.IsEmpty
 public import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.Len
 public import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.New
 public import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.OptionalMixedMultiscalarMul
-public import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.OptionalMixedMultiscalarMul.I686NoTables
-public import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.OptionalMixedMultiscalarMul.I686Tables
+public import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.OptionalMixedMultiscalarMul.Bits32NoTables
+public import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.OptionalMixedMultiscalarMul.Bits32Tables
 public import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.OptionalMixedMultiscalarMul.Lemmas
-public import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.OptionalMixedMultiscalarMul.X86NoTables
-public import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.OptionalMixedMultiscalarMul.X86Tables
+public import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.OptionalMixedMultiscalarMul.Bits64NoTables
+public import Proofs.Backend.Serial.ScalarMul.PrecomputedStraus.OptionalMixedMultiscalarMul.Bits64Tables
 public import Proofs.Backend.Serial.ScalarMul.Straus.MultiscalarMul
 public import Proofs.Backend.Serial.ScalarMul.Straus.OptionalMultiscalarMul
 public import Proofs.Backend.Serial.ScalarMul.VariableBase.Mul

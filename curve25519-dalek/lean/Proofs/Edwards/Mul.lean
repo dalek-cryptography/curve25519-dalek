@@ -19,468 +19,468 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek
 
-namespace «Shared0EdwardsPointx86_64-tables».Insts
-namespace «CoreOpsArithMulSharedAScalarEdwardsPointx86_64-tables»
+namespace «Shared0EdwardsPoint64bit-tables».Insts
+namespace «CoreOpsArithMulSharedAScalarEdwardsPoint64bit-tables»
 
 /-- `Mul<&Scalar> for &EdwardsPoint`: `scalar • self` (unreduced, `< 2^255`); limbs `< 2^52`. -/
 @[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«x86_64-tables») (scalar : scalar.Scalar)
+theorem mul_spec (self : edwards.EdwardsPoint.«64bit-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul self scalar ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    mul self scalar ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedAScalarEdwardsPointx86_64-tables»
-end «Shared0EdwardsPointx86_64-tables».Insts
+end «CoreOpsArithMulSharedAScalarEdwardsPoint64bit-tables»
+end «Shared0EdwardsPoint64bit-tables».Insts
 
-namespace «Shared0EdwardsPointi686-tables».Insts
-namespace «CoreOpsArithMulSharedAScalarEdwardsPointi686-tables»
+namespace «Shared0EdwardsPoint32bit-tables».Insts
+namespace «CoreOpsArithMulSharedAScalarEdwardsPoint32bit-tables»
 
 /-- `Mul<&Scalar> for &EdwardsPoint`: `scalar • self` (unreduced, `< 2^255`); limbs `< 2^26`. -/
 @[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«i686-tables») (scalar : scalar.Scalar)
+theorem mul_spec (self : edwards.EdwardsPoint.«32bit-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul self scalar ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    mul self scalar ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedAScalarEdwardsPointi686-tables»
-end «Shared0EdwardsPointi686-tables».Insts
+end «CoreOpsArithMulSharedAScalarEdwardsPoint32bit-tables»
+end «Shared0EdwardsPoint32bit-tables».Insts
 
-namespace edwards.EdwardsPoint.«x86_64-tables».Insts
-namespace «CoreOpsArithMulScalarEdwardsPointx86_64-tables»
-
-/-- `Mul<Scalar> for EdwardsPoint`: as the borrowed form. -/
-@[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«x86_64-tables») (rhs : scalar.Scalar)
-    (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
-      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold mul
-  step*
-
-end «CoreOpsArithMulScalarEdwardsPointx86_64-tables»
-end edwards.EdwardsPoint.«x86_64-tables».Insts
-
-namespace edwards.EdwardsPoint.«i686-tables».Insts
-namespace «CoreOpsArithMulScalarEdwardsPointi686-tables»
+namespace edwards.EdwardsPoint.«64bit-tables».Insts
+namespace «CoreOpsArithMulScalarEdwardsPoint64bit-tables»
 
 /-- `Mul<Scalar> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«i686-tables») (rhs : scalar.Scalar)
-    (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
-      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
-  unfold mul
-  step*
-
-end «CoreOpsArithMulScalarEdwardsPointi686-tables»
-end edwards.EdwardsPoint.«i686-tables».Insts
-
-namespace edwards.EdwardsPoint.«x86_64-tables».Insts
-namespace «CoreOpsArithMulSharedBScalarEdwardsPointx86_64-tables»
-
-/-- `Mul<&Scalar> for EdwardsPoint`: as the borrowed form. -/
-@[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«x86_64-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : edwards.EdwardsPoint.«64bit-tables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedBScalarEdwardsPointx86_64-tables»
-end edwards.EdwardsPoint.«x86_64-tables».Insts
+end «CoreOpsArithMulScalarEdwardsPoint64bit-tables»
+end edwards.EdwardsPoint.«64bit-tables».Insts
 
-namespace edwards.EdwardsPoint.«i686-tables».Insts
-namespace «CoreOpsArithMulSharedBScalarEdwardsPointi686-tables»
+namespace edwards.EdwardsPoint.«32bit-tables».Insts
+namespace «CoreOpsArithMulScalarEdwardsPoint32bit-tables»
 
-/-- `Mul<&Scalar> for EdwardsPoint`: as the borrowed form. -/
+/-- `Mul<Scalar> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«i686-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : edwards.EdwardsPoint.«32bit-tables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedBScalarEdwardsPointi686-tables»
-end edwards.EdwardsPoint.«i686-tables».Insts
+end «CoreOpsArithMulScalarEdwardsPoint32bit-tables»
+end edwards.EdwardsPoint.«32bit-tables».Insts
 
-namespace «SharedAEdwardsPointx86_64-tables».Insts
-namespace «CoreOpsArithMulScalarEdwardsPointx86_64-tables»
+namespace edwards.EdwardsPoint.«64bit-tables».Insts
+namespace «CoreOpsArithMulSharedBScalarEdwardsPoint64bit-tables»
 
-/-- `Mul<Scalar> for &EdwardsPoint`: as the borrowed form. -/
+/-- `Mul<&Scalar> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«x86_64-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : edwards.EdwardsPoint.«64bit-tables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulScalarEdwardsPointx86_64-tables»
-end «SharedAEdwardsPointx86_64-tables».Insts
+end «CoreOpsArithMulSharedBScalarEdwardsPoint64bit-tables»
+end edwards.EdwardsPoint.«64bit-tables».Insts
 
-namespace «SharedAEdwardsPointi686-tables».Insts
-namespace «CoreOpsArithMulScalarEdwardsPointi686-tables»
+namespace edwards.EdwardsPoint.«32bit-tables».Insts
+namespace «CoreOpsArithMulSharedBScalarEdwardsPoint32bit-tables»
 
-/-- `Mul<Scalar> for &EdwardsPoint`: as the borrowed form. -/
+/-- `Mul<&Scalar> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«i686-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : edwards.EdwardsPoint.«32bit-tables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulScalarEdwardsPointi686-tables»
-end «SharedAEdwardsPointi686-tables».Insts
+end «CoreOpsArithMulSharedBScalarEdwardsPoint32bit-tables»
+end edwards.EdwardsPoint.«32bit-tables».Insts
+
+namespace «SharedAEdwardsPoint64bit-tables».Insts
+namespace «CoreOpsArithMulScalarEdwardsPoint64bit-tables»
+
+/-- `Mul<Scalar> for &EdwardsPoint`: as the borrowed form. -/
+@[step]
+theorem mul_spec (self : edwards.EdwardsPoint.«64bit-tables») (rhs : scalar.Scalar)
+    (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
+      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
+  unfold mul
+  step*
+
+end «CoreOpsArithMulScalarEdwardsPoint64bit-tables»
+end «SharedAEdwardsPoint64bit-tables».Insts
+
+namespace «SharedAEdwardsPoint32bit-tables».Insts
+namespace «CoreOpsArithMulScalarEdwardsPoint32bit-tables»
+
+/-- `Mul<Scalar> for &EdwardsPoint`: as the borrowed form. -/
+@[step]
+theorem mul_spec (self : edwards.EdwardsPoint.«32bit-tables») (rhs : scalar.Scalar)
+    (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
+      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
+  unfold mul
+  step*
+
+end «CoreOpsArithMulScalarEdwardsPoint32bit-tables»
+end «SharedAEdwardsPoint32bit-tables».Insts
 
 namespace Shared0Scalar.Insts
-namespace «CoreOpsArithMulSharedAEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+namespace «CoreOpsArithMulSharedAEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
 
 /-- `Mul<&EdwardsPoint> for &Scalar`: as `&EdwardsPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (point : edwards.EdwardsPoint.«x86_64-tables»)
+theorem mul_spec (self : scalar.Scalar) (point : edwards.EdwardsPoint.«64bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hpoint : point.LimbsLt 52) (hpoint_on : point.OnCurve) :
-    mul self point ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    mul self point ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • point.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedAEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+end «CoreOpsArithMulSharedAEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
 
-namespace «CoreOpsArithMulSharedAEdwardsPointi686-tablesEdwardsPointi686-tables»
+namespace «CoreOpsArithMulSharedAEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
 
 /-- `Mul<&EdwardsPoint> for &Scalar`: as `&EdwardsPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (point : edwards.EdwardsPoint.«i686-tables»)
+theorem mul_spec (self : scalar.Scalar) (point : edwards.EdwardsPoint.«32bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hpoint : point.LimbsLt 26) (hpoint_on : point.OnCurve) :
-    mul self point ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    mul self point ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • point.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedAEdwardsPointi686-tablesEdwardsPointi686-tables»
+end «CoreOpsArithMulSharedAEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
 end Shared0Scalar.Insts
 
 namespace scalar.Scalar.Insts
-namespace «CoreOpsArithMulEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+namespace «CoreOpsArithMulEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
 
 /-- `Mul<EdwardsPoint> for Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«x86_64-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«64bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+end «CoreOpsArithMulEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
 
-namespace «CoreOpsArithMulEdwardsPointi686-tablesEdwardsPointi686-tables»
+namespace «CoreOpsArithMulEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
 
 /-- `Mul<EdwardsPoint> for Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«i686-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«32bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulEdwardsPointi686-tablesEdwardsPointi686-tables»
+end «CoreOpsArithMulEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
 end scalar.Scalar.Insts
 
 namespace scalar.Scalar.Insts
-namespace «CoreOpsArithMulSharedBEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+namespace «CoreOpsArithMulSharedBEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
 
 /-- `Mul<&EdwardsPoint> for Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«x86_64-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«64bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedBEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+end «CoreOpsArithMulSharedBEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
 
-namespace «CoreOpsArithMulSharedBEdwardsPointi686-tablesEdwardsPointi686-tables»
+namespace «CoreOpsArithMulSharedBEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
 
 /-- `Mul<&EdwardsPoint> for Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«i686-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«32bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedBEdwardsPointi686-tablesEdwardsPointi686-tables»
+end «CoreOpsArithMulSharedBEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
 end scalar.Scalar.Insts
 
 namespace SharedAScalar.Insts
-namespace «CoreOpsArithMulEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+namespace «CoreOpsArithMulEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
 
 /-- `Mul<EdwardsPoint> for &Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«x86_64-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«64bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+end «CoreOpsArithMulEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
 
-namespace «CoreOpsArithMulEdwardsPointi686-tablesEdwardsPointi686-tables»
+namespace «CoreOpsArithMulEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
 
 /-- `Mul<EdwardsPoint> for &Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«i686-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«32bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulEdwardsPointi686-tablesEdwardsPointi686-tables»
+end «CoreOpsArithMulEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
 end SharedAScalar.Insts
 
-namespace «Shared0EdwardsPointx86_64-no-tables».Insts
-namespace «CoreOpsArithMulSharedAScalarEdwardsPointx86_64-no-tables»
+namespace «Shared0EdwardsPoint64bit-notables».Insts
+namespace «CoreOpsArithMulSharedAScalarEdwardsPoint64bit-notables»
 
 /-- `Mul<&Scalar> for &EdwardsPoint`: `scalar • self` (unreduced, `< 2^255`); limbs `< 2^52`. -/
 @[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«x86_64-no-tables») (scalar : scalar.Scalar)
+theorem mul_spec (self : edwards.EdwardsPoint.«64bit-notables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul self scalar ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    mul self scalar ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedAScalarEdwardsPointx86_64-no-tables»
-end «Shared0EdwardsPointx86_64-no-tables».Insts
+end «CoreOpsArithMulSharedAScalarEdwardsPoint64bit-notables»
+end «Shared0EdwardsPoint64bit-notables».Insts
 
-namespace «Shared0EdwardsPointi686-no-tables».Insts
-namespace «CoreOpsArithMulSharedAScalarEdwardsPointi686-no-tables»
+namespace «Shared0EdwardsPoint32bit-notables».Insts
+namespace «CoreOpsArithMulSharedAScalarEdwardsPoint32bit-notables»
 
 /-- `Mul<&Scalar> for &EdwardsPoint`: `scalar • self` (unreduced, `< 2^255`); limbs `< 2^26`. -/
 @[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«i686-no-tables») (scalar : scalar.Scalar)
+theorem mul_spec (self : edwards.EdwardsPoint.«32bit-notables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul self scalar ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    mul self scalar ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedAScalarEdwardsPointi686-no-tables»
-end «Shared0EdwardsPointi686-no-tables».Insts
+end «CoreOpsArithMulSharedAScalarEdwardsPoint32bit-notables»
+end «Shared0EdwardsPoint32bit-notables».Insts
 
-namespace edwards.EdwardsPoint.«x86_64-no-tables».Insts
-namespace «CoreOpsArithMulScalarEdwardsPointx86_64-no-tables»
-
-/-- `Mul<Scalar> for EdwardsPoint`: as the borrowed form. -/
-@[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«x86_64-no-tables») (rhs : scalar.Scalar)
-    (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold mul
-  step*
-
-end «CoreOpsArithMulScalarEdwardsPointx86_64-no-tables»
-end edwards.EdwardsPoint.«x86_64-no-tables».Insts
-
-namespace edwards.EdwardsPoint.«i686-no-tables».Insts
-namespace «CoreOpsArithMulScalarEdwardsPointi686-no-tables»
+namespace edwards.EdwardsPoint.«64bit-notables».Insts
+namespace «CoreOpsArithMulScalarEdwardsPoint64bit-notables»
 
 /-- `Mul<Scalar> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«i686-no-tables») (rhs : scalar.Scalar)
-    (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
-      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
-  unfold mul
-  step*
-
-end «CoreOpsArithMulScalarEdwardsPointi686-no-tables»
-end edwards.EdwardsPoint.«i686-no-tables».Insts
-
-namespace edwards.EdwardsPoint.«x86_64-no-tables».Insts
-namespace «CoreOpsArithMulSharedBScalarEdwardsPointx86_64-no-tables»
-
-/-- `Mul<&Scalar> for EdwardsPoint`: as the borrowed form. -/
-@[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«x86_64-no-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : edwards.EdwardsPoint.«64bit-notables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedBScalarEdwardsPointx86_64-no-tables»
-end edwards.EdwardsPoint.«x86_64-no-tables».Insts
+end «CoreOpsArithMulScalarEdwardsPoint64bit-notables»
+end edwards.EdwardsPoint.«64bit-notables».Insts
 
-namespace edwards.EdwardsPoint.«i686-no-tables».Insts
-namespace «CoreOpsArithMulSharedBScalarEdwardsPointi686-no-tables»
+namespace edwards.EdwardsPoint.«32bit-notables».Insts
+namespace «CoreOpsArithMulScalarEdwardsPoint32bit-notables»
 
-/-- `Mul<&Scalar> for EdwardsPoint`: as the borrowed form. -/
+/-- `Mul<Scalar> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«i686-no-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : edwards.EdwardsPoint.«32bit-notables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedBScalarEdwardsPointi686-no-tables»
-end edwards.EdwardsPoint.«i686-no-tables».Insts
+end «CoreOpsArithMulScalarEdwardsPoint32bit-notables»
+end edwards.EdwardsPoint.«32bit-notables».Insts
 
-namespace «SharedAEdwardsPointx86_64-no-tables».Insts
-namespace «CoreOpsArithMulScalarEdwardsPointx86_64-no-tables»
+namespace edwards.EdwardsPoint.«64bit-notables».Insts
+namespace «CoreOpsArithMulSharedBScalarEdwardsPoint64bit-notables»
 
-/-- `Mul<Scalar> for &EdwardsPoint`: as the borrowed form. -/
+/-- `Mul<&Scalar> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«x86_64-no-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : edwards.EdwardsPoint.«64bit-notables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulScalarEdwardsPointx86_64-no-tables»
-end «SharedAEdwardsPointx86_64-no-tables».Insts
+end «CoreOpsArithMulSharedBScalarEdwardsPoint64bit-notables»
+end edwards.EdwardsPoint.«64bit-notables».Insts
 
-namespace «SharedAEdwardsPointi686-no-tables».Insts
-namespace «CoreOpsArithMulScalarEdwardsPointi686-no-tables»
+namespace edwards.EdwardsPoint.«32bit-notables».Insts
+namespace «CoreOpsArithMulSharedBScalarEdwardsPoint32bit-notables»
 
-/-- `Mul<Scalar> for &EdwardsPoint`: as the borrowed form. -/
+/-- `Mul<&Scalar> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : edwards.EdwardsPoint.«i686-no-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : edwards.EdwardsPoint.«32bit-notables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulScalarEdwardsPointi686-no-tables»
-end «SharedAEdwardsPointi686-no-tables».Insts
+end «CoreOpsArithMulSharedBScalarEdwardsPoint32bit-notables»
+end edwards.EdwardsPoint.«32bit-notables».Insts
+
+namespace «SharedAEdwardsPoint64bit-notables».Insts
+namespace «CoreOpsArithMulScalarEdwardsPoint64bit-notables»
+
+/-- `Mul<Scalar> for &EdwardsPoint`: as the borrowed form. -/
+@[step]
+theorem mul_spec (self : edwards.EdwardsPoint.«64bit-notables») (rhs : scalar.Scalar)
+    (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
+      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
+  unfold mul
+  step*
+
+end «CoreOpsArithMulScalarEdwardsPoint64bit-notables»
+end «SharedAEdwardsPoint64bit-notables».Insts
+
+namespace «SharedAEdwardsPoint32bit-notables».Insts
+namespace «CoreOpsArithMulScalarEdwardsPoint32bit-notables»
+
+/-- `Mul<Scalar> for &EdwardsPoint`: as the borrowed form. -/
+@[step]
+theorem mul_spec (self : edwards.EdwardsPoint.«32bit-notables») (rhs : scalar.Scalar)
+    (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
+      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
+  unfold mul
+  step*
+
+end «CoreOpsArithMulScalarEdwardsPoint32bit-notables»
+end «SharedAEdwardsPoint32bit-notables».Insts
 
 namespace Shared0Scalar.Insts
-namespace «CoreOpsArithMulSharedAEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+namespace «CoreOpsArithMulSharedAEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
 
 /-- `Mul<&EdwardsPoint> for &Scalar`: as `&EdwardsPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (point : edwards.EdwardsPoint.«x86_64-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (point : edwards.EdwardsPoint.«64bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hpoint : point.LimbsLt 52) (hpoint_on : point.OnCurve) :
-    mul self point ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    mul self point ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • point.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedAEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+end «CoreOpsArithMulSharedAEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
 
-namespace «CoreOpsArithMulSharedAEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+namespace «CoreOpsArithMulSharedAEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
 
 /-- `Mul<&EdwardsPoint> for &Scalar`: as `&EdwardsPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (point : edwards.EdwardsPoint.«i686-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (point : edwards.EdwardsPoint.«32bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hpoint : point.LimbsLt 26) (hpoint_on : point.OnCurve) :
-    mul self point ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    mul self point ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • point.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedAEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+end «CoreOpsArithMulSharedAEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
 end Shared0Scalar.Insts
 
 namespace scalar.Scalar.Insts
-namespace «CoreOpsArithMulEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+namespace «CoreOpsArithMulEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
 
 /-- `Mul<EdwardsPoint> for Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«x86_64-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«64bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+end «CoreOpsArithMulEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
 
-namespace «CoreOpsArithMulEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+namespace «CoreOpsArithMulEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
 
 /-- `Mul<EdwardsPoint> for Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«i686-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«32bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+end «CoreOpsArithMulEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
 end scalar.Scalar.Insts
 
 namespace scalar.Scalar.Insts
-namespace «CoreOpsArithMulSharedBEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+namespace «CoreOpsArithMulSharedBEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
 
 /-- `Mul<&EdwardsPoint> for Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«x86_64-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«64bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedBEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+end «CoreOpsArithMulSharedBEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
 
-namespace «CoreOpsArithMulSharedBEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+namespace «CoreOpsArithMulSharedBEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
 
 /-- `Mul<&EdwardsPoint> for Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«i686-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«32bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulSharedBEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+end «CoreOpsArithMulSharedBEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
 end scalar.Scalar.Insts
 
 namespace SharedAScalar.Insts
-namespace «CoreOpsArithMulEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+namespace «CoreOpsArithMulEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
 
 /-- `Mul<EdwardsPoint> for &Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«x86_64-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«64bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+end «CoreOpsArithMulEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
 
-namespace «CoreOpsArithMulEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+namespace «CoreOpsArithMulEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
 
 /-- `Mul<EdwardsPoint> for &Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«i686-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.EdwardsPoint.«32bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+end «CoreOpsArithMulEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
 end SharedAScalar.Insts
 
 end Curve25519Dalek

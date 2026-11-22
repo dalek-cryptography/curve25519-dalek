@@ -17,10 +17,10 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek.backend
 
-namespace «x86_64-tables»
+namespace «64bit-tables»
 
 open serial.scalar_mul.pippenger.Pippenger.Insts in
-open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-tables» in
+open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint64bit-tables» in
 /-- `pippenger_optional_multiscalar_mul`: the serial `Pippenger::optional_multiscalar_mul`. -/
 @[step]
 theorem pippenger_optional_multiscalar_mul_spec
@@ -28,33 +28,33 @@ theorem pippenger_optional_multiscalar_mul_spec
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-        (Option edwards.EdwardsPoint.«x86_64-tables»)
+        (Option edwards.EdwardsPoint.«64bit-tables»)
       Clause2_IntoIter)
     (scalars : I) (points : J) (xs : List Clause0_Item)
-    (ops : List (Option edwards.EdwardsPoint.«x86_64-tables»)) (ss : List scalar.Scalar)
+    (ops : List (Option edwards.EdwardsPoint.«64bit-tables»)) (ss : List scalar.Scalar)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 52 ∧ P.OnCurve)
     (hxs : xs.length ≤ Usize.max) :
-    pippenger_optional_multiscalar_mul.«x86_64-tables» scalarsInst borrowScalarInst pointsInst
+    pippenger_optional_multiscalar_mul.«64bit-tables» scalarsInst borrowScalarInst pointsInst
         scalars
-      points ⦃ (r : Option edwards.EdwardsPoint.«x86_64-tables») =>
+      points ⦃ (r : Option edwards.EdwardsPoint.«64bit-tables») =>
         (r = none ↔ none ∈ ops.take ss.length) ∧
         ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧
           R.LimbsLt 52 ⦄ := by
-  unfold pippenger_optional_multiscalar_mul.«x86_64-tables»
+  unfold pippenger_optional_multiscalar_mul.«64bit-tables»
   step
   exact optional_multiscalar_mul_spec
     _ _ _ _ _ xs ops ss hscalars hpoints hborrow_scalars hss hps hxs
 
-end «x86_64-tables»
+end «64bit-tables»
 
-namespace «i686-tables»
+namespace «32bit-tables»
 
 open serial.scalar_mul.pippenger.Pippenger.Insts in
-open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-tables» in
+open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint32bit-tables» in
 /-- `pippenger_optional_multiscalar_mul`: the serial `Pippenger::optional_multiscalar_mul`. -/
 @[step]
 theorem pippenger_optional_multiscalar_mul_spec
@@ -62,33 +62,33 @@ theorem pippenger_optional_multiscalar_mul_spec
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-        (Option edwards.EdwardsPoint.«i686-tables»)
+        (Option edwards.EdwardsPoint.«32bit-tables»)
       Clause2_IntoIter)
     (scalars : I) (points : J) (xs : List Clause0_Item)
-    (ops : List (Option edwards.EdwardsPoint.«i686-tables»)) (ss : List scalar.Scalar)
+    (ops : List (Option edwards.EdwardsPoint.«32bit-tables»)) (ss : List scalar.Scalar)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 26 ∧ P.OnCurve)
     (hxs : xs.length ≤ Usize.max) :
-    pippenger_optional_multiscalar_mul.«i686-tables» scalarsInst borrowScalarInst pointsInst
+    pippenger_optional_multiscalar_mul.«32bit-tables» scalarsInst borrowScalarInst pointsInst
         scalars
-      points ⦃ (r : Option edwards.EdwardsPoint.«i686-tables») =>
+      points ⦃ (r : Option edwards.EdwardsPoint.«32bit-tables») =>
         (r = none ↔ none ∈ ops.take ss.length) ∧
         ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧
           R.LimbsLt 26 ⦄ := by
-  unfold pippenger_optional_multiscalar_mul.«i686-tables»
+  unfold pippenger_optional_multiscalar_mul.«32bit-tables»
   step
   exact optional_multiscalar_mul_spec
     _ _ _ _ _ xs ops ss hscalars hpoints hborrow_scalars hss hps hxs
 
-end «i686-tables»
+end «32bit-tables»
 
-namespace «x86_64-no-tables»
+namespace «64bit-notables»
 
 open serial.scalar_mul.pippenger.Pippenger.Insts in
-open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointx86_64-no-tables» in
+open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint64bit-notables» in
 /-- `pippenger_optional_multiscalar_mul`: the serial `Pippenger::optional_multiscalar_mul`. -/
 @[step]
 theorem pippenger_optional_multiscalar_mul_spec
@@ -96,33 +96,33 @@ theorem pippenger_optional_multiscalar_mul_spec
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-        (Option edwards.EdwardsPoint.«x86_64-no-tables»)
+        (Option edwards.EdwardsPoint.«64bit-notables»)
       Clause2_IntoIter)
     (scalars : I) (points : J) (xs : List Clause0_Item)
-    (ops : List (Option edwards.EdwardsPoint.«x86_64-no-tables»)) (ss : List scalar.Scalar)
+    (ops : List (Option edwards.EdwardsPoint.«64bit-notables»)) (ss : List scalar.Scalar)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 52 ∧ P.OnCurve)
     (hxs : xs.length ≤ Usize.max) :
-    pippenger_optional_multiscalar_mul.«x86_64-no-tables» scalarsInst borrowScalarInst pointsInst
+    pippenger_optional_multiscalar_mul.«64bit-notables» scalarsInst borrowScalarInst pointsInst
         scalars
-      points ⦃ (r : Option edwards.EdwardsPoint.«x86_64-no-tables») =>
+      points ⦃ (r : Option edwards.EdwardsPoint.«64bit-notables») =>
         (r = none ↔ none ∈ ops.take ss.length) ∧
         ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧
           R.LimbsLt 52 ⦄ := by
-  unfold pippenger_optional_multiscalar_mul.«x86_64-no-tables»
+  unfold pippenger_optional_multiscalar_mul.«64bit-notables»
   step
   exact optional_multiscalar_mul_spec
     _ _ _ _ _ xs ops ss hscalars hpoints hborrow_scalars hss hps hxs
 
-end «x86_64-no-tables»
+end «64bit-notables»
 
-namespace «i686-no-tables»
+namespace «32bit-notables»
 
 open serial.scalar_mul.pippenger.Pippenger.Insts in
-open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-no-tables» in
+open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint32bit-notables» in
 /-- `pippenger_optional_multiscalar_mul`: the serial `Pippenger::optional_multiscalar_mul`. -/
 @[step]
 theorem pippenger_optional_multiscalar_mul_spec
@@ -130,27 +130,27 @@ theorem pippenger_optional_multiscalar_mul_spec
     (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
     (borrowScalarInst : core.borrow.Borrow Clause0_Item scalar.Scalar)
     (pointsInst : core.iter.traits.collect.IntoIterator J
-        (Option edwards.EdwardsPoint.«i686-no-tables»)
+        (Option edwards.EdwardsPoint.«32bit-notables»)
       Clause2_IntoIter)
     (scalars : I) (points : J) (xs : List Clause0_Item)
-    (ops : List (Option edwards.EdwardsPoint.«i686-no-tables»)) (ss : List scalar.Scalar)
+    (ops : List (Option edwards.EdwardsPoint.«32bit-notables»)) (ss : List scalar.Scalar)
     (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ops)
     (hborrow_scalars : List.Forall₂
       (fun x s => borrowScalarInst.borrow x ⦃ (s' : scalar.Scalar) => s' = s ⦄) xs ss)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hps : ∀ P, some P ∈ ops → P.LimbsLt 26 ∧ P.OnCurve)
     (hxs : xs.length ≤ Usize.max) :
-    pippenger_optional_multiscalar_mul.«i686-no-tables» scalarsInst borrowScalarInst pointsInst
+    pippenger_optional_multiscalar_mul.«32bit-notables» scalarsInst borrowScalarInst pointsInst
         scalars
-      points ⦃ (r : Option edwards.EdwardsPoint.«i686-no-tables») =>
+      points ⦃ (r : Option edwards.EdwardsPoint.«32bit-notables») =>
         (r = none ↔ none ∈ ops.take ss.length) ∧
         ∀ R, r = some R → R.OnCurve ∧ R.toPoint =
           (List.zipWith (fun s P => s.asNat • P.toPoint) ss (ops.filterMap id)).sum ∧
           R.LimbsLt 26 ⦄ := by
-  unfold pippenger_optional_multiscalar_mul.«i686-no-tables»
+  unfold pippenger_optional_multiscalar_mul.«32bit-notables»
   step
   exact optional_multiscalar_mul_spec
     _ _ _ _ _ xs ops ss hscalars hpoints hborrow_scalars hss hps hxs
 
-end «i686-no-tables»
+end «32bit-notables»
 
 end Curve25519Dalek.backend

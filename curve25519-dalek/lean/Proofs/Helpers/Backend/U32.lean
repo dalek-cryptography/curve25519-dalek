@@ -30,7 +30,7 @@ public section
 
 /-! # The `u32` field backend
 
-`FieldElement2625`, the backend of `«i686-tables»` and `«i686-no-tables»`, as a `Backend`:
+`FieldElement2625`, the backend of `«32bit-tables»` and `«32bit-notables»`, as a `Backend`:
 `Red`, `Sum2`, `MulIn`, `Niels` are `LimbsLt 26`, `27`, `MulBounded`, `LimbsLt 27`. The specs
 are stated first on `FieldElement2625` (their proofs use the field specs, imported privately),
 then bundled; those through the encoding (`eq`, `ct_eq`, `is_negative`, `is_zero`, `to_bytes`)

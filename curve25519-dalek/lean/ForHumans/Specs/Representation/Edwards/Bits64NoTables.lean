@@ -5,42 +5,42 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 public import Proofs.Curve25519.Edwards.Basic
-public import ForHumans.Specs.Representation.CurveModels.I686NoTables
+public import ForHumans.Specs.Representation.CurveModels.Bits64NoTables
 public section
 
 set_option linter.style.longLine false
 
-/-! # `Edwards` for `i686-no-tables`, generated from `ForHumans/Specs/Representation/Edwards.lean` -/
+/-! # `Edwards` for `64bit-notables`, generated from `ForHumans/Specs/Representation/Edwards.lean` -/
 
 open Aeneas Aeneas.Std
 
-namespace Curve25519Dalek.edwards.EdwardsPoint.«i686-no-tables»
+namespace Curve25519Dalek.edwards.EdwardsPoint.«64bit-notables»
 
 /-- The extended coordinates `(X : Y : Z : T)` as field elements. -/
-noncomputable def toExtended (self : EdwardsPoint.«i686-no-tables») :
+noncomputable def toExtended (self : EdwardsPoint.«64bit-notables») :
     curve25519.edwards.Extended :=
   ⟨self.X.toField, self.Y.toField, self.Z.toField, self.T.toField⟩
 
 /-- `self` represents a point: `Z ≠ 0`, `X Y = Z T` and `(X / Z, Y / Z)` is on the curve. -/
-@[expose] def OnCurve (self : EdwardsPoint.«i686-no-tables») : Prop :=
+@[expose] def OnCurve (self : EdwardsPoint.«64bit-notables») : Prop :=
   self.toExtended.OnCurve
 
 /-- The point represented by `self` (`0` if `¬ self.OnCurve`). -/
-noncomputable def toPoint (self : EdwardsPoint.«i686-no-tables») : curve25519.edwards.Point :=
+noncomputable def toPoint (self : EdwardsPoint.«64bit-notables») : curve25519.edwards.Point :=
   self.toExtended.toPoint
 
 /-- Every limb of an `EdwardsPoint` is `< 2^n`. -/
-@[expose] def LimbsLt (n : ℕ) (self : EdwardsPoint.«i686-no-tables») : Prop :=
+@[expose] def LimbsLt (n : ℕ) (self : EdwardsPoint.«64bit-notables») : Prop :=
   self.X.LimbsLt n ∧ self.Y.LimbsLt n ∧ self.Z.LimbsLt n ∧ self.T.LimbsLt n
 
 /-- The bound on the limbs of an `EdwardsPoint` that every public function assumes and preserves:
-every limb is `< 2^52` (`< 2^26` on i686). -/
-@[expose] def IsBounded (self : EdwardsPoint.«i686-no-tables») : Prop :=
-  self.LimbsLt 26
+every limb is `< 2^52` (`< 2^26` on 32-bit). -/
+@[expose] def IsBounded (self : EdwardsPoint.«64bit-notables») : Prop :=
+  self.LimbsLt 52
 
 /-- Needed for `a[i]!` on arrays of points; the default is never observed for in-range
 indices. -/
-instance instInhabited : Inhabited (EdwardsPoint.«i686-no-tables») :=
+instance instInhabited : Inhabited (EdwardsPoint.«64bit-notables») :=
   ⟨⟨default, default, default, default⟩⟩
 
-end Curve25519Dalek.edwards.EdwardsPoint.«i686-no-tables»
+end Curve25519Dalek.edwards.EdwardsPoint.«64bit-notables»

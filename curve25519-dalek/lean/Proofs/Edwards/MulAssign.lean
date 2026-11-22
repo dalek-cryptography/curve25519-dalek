@@ -13,108 +13,108 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek
 
-namespace edwards.EdwardsPoint.«x86_64-tables».Insts.CoreOpsArithMulAssignSharedAScalar
+namespace edwards.EdwardsPoint.«64bit-tables».Insts.CoreOpsArithMulAssignSharedAScalar
 
 /-- `MulAssign<&Scalar> for EdwardsPoint`: as `Mul`, `scalar • self` (unreduced, `< 2^255`). -/
 @[step]
-theorem mul_assign_spec (self : edwards.EdwardsPoint.«x86_64-tables») (scalar : scalar.Scalar)
+theorem mul_assign_spec (self : edwards.EdwardsPoint.«64bit-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul_assign self scalar ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    mul_assign self scalar ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul_assign
   step*
 
-end edwards.EdwardsPoint.«x86_64-tables».Insts.CoreOpsArithMulAssignSharedAScalar
+end edwards.EdwardsPoint.«64bit-tables».Insts.CoreOpsArithMulAssignSharedAScalar
 
-namespace edwards.EdwardsPoint.«i686-tables».Insts.CoreOpsArithMulAssignSharedAScalar
+namespace edwards.EdwardsPoint.«32bit-tables».Insts.CoreOpsArithMulAssignSharedAScalar
 
 /-- `MulAssign<&Scalar> for EdwardsPoint`: as `Mul`, `scalar • self` (unreduced, `< 2^255`). -/
 @[step]
-theorem mul_assign_spec (self : edwards.EdwardsPoint.«i686-tables») (scalar : scalar.Scalar)
+theorem mul_assign_spec (self : edwards.EdwardsPoint.«32bit-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul_assign self scalar ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    mul_assign self scalar ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul_assign
   step*
 
-end edwards.EdwardsPoint.«i686-tables».Insts.CoreOpsArithMulAssignSharedAScalar
+end edwards.EdwardsPoint.«32bit-tables».Insts.CoreOpsArithMulAssignSharedAScalar
 
-namespace edwards.EdwardsPoint.«x86_64-tables».Insts.CoreOpsArithMulAssignScalar
+namespace edwards.EdwardsPoint.«64bit-tables».Insts.CoreOpsArithMulAssignScalar
 
 /-- `MulAssign<Scalar> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem mul_assign_spec (self : edwards.EdwardsPoint.«x86_64-tables») (rhs : scalar.Scalar)
+theorem mul_assign_spec (self : edwards.EdwardsPoint.«64bit-tables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul_assign self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    mul_assign self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul_assign
   step*
 
-end edwards.EdwardsPoint.«x86_64-tables».Insts.CoreOpsArithMulAssignScalar
+end edwards.EdwardsPoint.«64bit-tables».Insts.CoreOpsArithMulAssignScalar
 
-namespace edwards.EdwardsPoint.«i686-tables».Insts.CoreOpsArithMulAssignScalar
+namespace edwards.EdwardsPoint.«32bit-tables».Insts.CoreOpsArithMulAssignScalar
 
 /-- `MulAssign<Scalar> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem mul_assign_spec (self : edwards.EdwardsPoint.«i686-tables») (rhs : scalar.Scalar)
+theorem mul_assign_spec (self : edwards.EdwardsPoint.«32bit-tables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul_assign self rhs ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    mul_assign self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul_assign
   step*
 
-end edwards.EdwardsPoint.«i686-tables».Insts.CoreOpsArithMulAssignScalar
+end edwards.EdwardsPoint.«32bit-tables».Insts.CoreOpsArithMulAssignScalar
 
-namespace edwards.EdwardsPoint.«x86_64-no-tables».Insts.CoreOpsArithMulAssignSharedAScalar
+namespace edwards.EdwardsPoint.«64bit-notables».Insts.CoreOpsArithMulAssignSharedAScalar
 
 /-- `MulAssign<&Scalar> for EdwardsPoint`: as `Mul`, `scalar • self` (unreduced, `< 2^255`). -/
 @[step]
-theorem mul_assign_spec (self : edwards.EdwardsPoint.«x86_64-no-tables») (scalar : scalar.Scalar)
+theorem mul_assign_spec (self : edwards.EdwardsPoint.«64bit-notables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul_assign self scalar ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    mul_assign self scalar ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul_assign
   step*
 
-end edwards.EdwardsPoint.«x86_64-no-tables».Insts.CoreOpsArithMulAssignSharedAScalar
+end edwards.EdwardsPoint.«64bit-notables».Insts.CoreOpsArithMulAssignSharedAScalar
 
-namespace edwards.EdwardsPoint.«i686-no-tables».Insts.CoreOpsArithMulAssignSharedAScalar
+namespace edwards.EdwardsPoint.«32bit-notables».Insts.CoreOpsArithMulAssignSharedAScalar
 
 /-- `MulAssign<&Scalar> for EdwardsPoint`: as `Mul`, `scalar • self` (unreduced, `< 2^255`). -/
 @[step]
-theorem mul_assign_spec (self : edwards.EdwardsPoint.«i686-no-tables») (scalar : scalar.Scalar)
+theorem mul_assign_spec (self : edwards.EdwardsPoint.«32bit-notables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul_assign self scalar ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    mul_assign self scalar ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul_assign
   step*
 
-end edwards.EdwardsPoint.«i686-no-tables».Insts.CoreOpsArithMulAssignSharedAScalar
+end edwards.EdwardsPoint.«32bit-notables».Insts.CoreOpsArithMulAssignSharedAScalar
 
-namespace edwards.EdwardsPoint.«x86_64-no-tables».Insts.CoreOpsArithMulAssignScalar
+namespace edwards.EdwardsPoint.«64bit-notables».Insts.CoreOpsArithMulAssignScalar
 
 /-- `MulAssign<Scalar> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem mul_assign_spec (self : edwards.EdwardsPoint.«x86_64-no-tables») (rhs : scalar.Scalar)
+theorem mul_assign_spec (self : edwards.EdwardsPoint.«64bit-notables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul_assign self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    mul_assign self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul_assign
   step*
 
-end edwards.EdwardsPoint.«x86_64-no-tables».Insts.CoreOpsArithMulAssignScalar
+end edwards.EdwardsPoint.«64bit-notables».Insts.CoreOpsArithMulAssignScalar
 
-namespace edwards.EdwardsPoint.«i686-no-tables».Insts.CoreOpsArithMulAssignScalar
+namespace edwards.EdwardsPoint.«32bit-notables».Insts.CoreOpsArithMulAssignScalar
 
 /-- `MulAssign<Scalar> for EdwardsPoint`: as the borrowed form. -/
 @[step]
-theorem mul_assign_spec (self : edwards.EdwardsPoint.«i686-no-tables») (rhs : scalar.Scalar)
+theorem mul_assign_spec (self : edwards.EdwardsPoint.«32bit-notables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul_assign self rhs ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    mul_assign self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul_assign
   step*
 
-end edwards.EdwardsPoint.«i686-no-tables».Insts.CoreOpsArithMulAssignScalar
+end edwards.EdwardsPoint.«32bit-notables».Insts.CoreOpsArithMulAssignScalar
 
 end Curve25519Dalek

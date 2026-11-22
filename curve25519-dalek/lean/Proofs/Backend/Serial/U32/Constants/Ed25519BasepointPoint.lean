@@ -23,15 +23,15 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 namespace Curve25519Dalek.backend.serial.u32.constants
 
-namespace «i686-tables»
+namespace «32bit-tables»
 
 /-- `ED25519_BASEPOINT_POINT`: the extended coordinates `(x : y : 1 : x y)` of the basepoint;
 limbs `< 2^26`. -/
 @[step]
 theorem ED25519_BASEPOINT_POINT_toExtended :
-    ED25519_BASEPOINT_POINT.«i686-tables» ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    ED25519_BASEPOINT_POINT.«32bit-tables» ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.toExtended = basepoint.toExtended ∧ r.LimbsLt 26 ⦄ := by
-  unfold ED25519_BASEPOINT_POINT.«i686-tables»
+  unfold ED25519_BASEPOINT_POINT.«32bit-tables»
   step as ⟨X, hX⟩
   step as ⟨Y, hY⟩
   step as ⟨Z, hZ⟩
@@ -46,33 +46,33 @@ theorem ED25519_BASEPOINT_POINT_toExtended :
   have hTn : T.asNat % p = X.asNat * Y.asNat % p := by
     rw [hXn, hYn, hT, asNat_def, Array.asNat2625_make, p_eq_numeral]; decide
   refine ⟨?_, ?_⟩
-  · rw [edwards.EdwardsPoint.«i686-tables».toExtended_def, Point.toExtended,
+  · rw [edwards.EdwardsPoint.«32bit-tables».toExtended_def, Point.toExtended,
       toField_mul_of_mod hTn, toField_eq_ofNat_of_asNat hXn, toField_eq_ofNat_of_asNat hYn,
       toField_eq_one_of_asNat hZn, basepoint_x_eq, basepoint_y_eq]
-  · unfold edwards.EdwardsPoint.«i686-tables».LimbsLt
+  · unfold edwards.EdwardsPoint.«32bit-tables».LimbsLt
     subst hX hY hZ hT
     decide
 
 /-- `ED25519_BASEPOINT_POINT` represents the basepoint. -/
 theorem ED25519_BASEPOINT_POINT_spec :
-    ED25519_BASEPOINT_POINT.«i686-tables» ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    ED25519_BASEPOINT_POINT.«32bit-tables» ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = basepoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono ED25519_BASEPOINT_POINT_toExtended fun r ⟨hr, hb⟩ => by
-    rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff,
-      edwards.EdwardsPoint.«i686-tables».toPoint_def, hr]
+    rw [edwards.EdwardsPoint.«32bit-tables».onCurve_iff,
+      edwards.EdwardsPoint.«32bit-tables».toPoint_def, hr]
     exact ⟨Point.onCurve_toExtended _, Point.toPoint_toExtended _, hb⟩
 
-end «i686-tables»
+end «32bit-tables»
 
-namespace «i686-no-tables»
+namespace «32bit-notables»
 
 /-- `ED25519_BASEPOINT_POINT`: the extended coordinates `(x : y : 1 : x y)` of the basepoint;
 limbs `< 2^26`. -/
 @[step]
 theorem ED25519_BASEPOINT_POINT_toExtended :
-    ED25519_BASEPOINT_POINT.«i686-no-tables» ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    ED25519_BASEPOINT_POINT.«32bit-notables» ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.toExtended = basepoint.toExtended ∧ r.LimbsLt 26 ⦄ := by
-  unfold ED25519_BASEPOINT_POINT.«i686-no-tables»
+  unfold ED25519_BASEPOINT_POINT.«32bit-notables»
   step as ⟨X, hX⟩
   step as ⟨Y, hY⟩
   step as ⟨Z, hZ⟩
@@ -87,22 +87,22 @@ theorem ED25519_BASEPOINT_POINT_toExtended :
   have hTn : T.asNat % p = X.asNat * Y.asNat % p := by
     rw [hXn, hYn, hT, asNat_def, Array.asNat2625_make, p_eq_numeral]; decide
   refine ⟨?_, ?_⟩
-  · rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def, Point.toExtended,
+  · rw [edwards.EdwardsPoint.«32bit-notables».toExtended_def, Point.toExtended,
       toField_mul_of_mod hTn, toField_eq_ofNat_of_asNat hXn, toField_eq_ofNat_of_asNat hYn,
       toField_eq_one_of_asNat hZn, basepoint_x_eq, basepoint_y_eq]
-  · unfold edwards.EdwardsPoint.«i686-no-tables».LimbsLt
+  · unfold edwards.EdwardsPoint.«32bit-notables».LimbsLt
     subst hX hY hZ hT
     decide
 
 /-- `ED25519_BASEPOINT_POINT` represents the basepoint. -/
 theorem ED25519_BASEPOINT_POINT_spec :
-    ED25519_BASEPOINT_POINT.«i686-no-tables» ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    ED25519_BASEPOINT_POINT.«32bit-notables» ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = basepoint ∧ r.LimbsLt 26 ⦄ :=
   spec_mono ED25519_BASEPOINT_POINT_toExtended fun r ⟨hr, hb⟩ => by
-    rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff,
-      edwards.EdwardsPoint.«i686-no-tables».toPoint_def, hr]
+    rw [edwards.EdwardsPoint.«32bit-notables».onCurve_iff,
+      edwards.EdwardsPoint.«32bit-notables».toPoint_def, hr]
     exact ⟨Point.onCurve_toExtended _, Point.toPoint_toExtended _, hb⟩
 
-end «i686-no-tables»
+end «32bit-notables»
 
 end Curve25519Dalek.backend.serial.u32.constants

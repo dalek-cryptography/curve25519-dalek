@@ -24,11 +24,11 @@ open Curve25519Dalek.backend.serial.u64.scalar (montgomeryRadix)
 namespace Curve25519Dalek.scalar.AddShared0ScalarSharedAScalarScalar
 
 @[step]
-theorem add.«x86_64-tables_spec» (self rhs : Scalar) (hself : self.asNat < L)
+theorem add.«64bit-tables_spec» (self rhs : Scalar) (hself : self.asNat < L)
     (hrhs : rhs.asNat < L) :
-    add.«x86_64-tables» self rhs ⦃ (r : Scalar) =>
+    add.«64bit-tables» self rhs ⦃ (r : Scalar) =>
       r.asNat = (self.asNat + rhs.asNat) % L ⦄ := by
-  unfold add.«x86_64-tables»
+  unfold add.«64bit-tables»
   step as ⟨a, ha, hab⟩
   step as ⟨b, hb, hbb⟩
   step with backend.serial.u64.scalar.Scalar52.add_spec a b hab hbb (ha ▸ hself) (hb ▸ hrhs)
@@ -42,11 +42,11 @@ end Curve25519Dalek.scalar.AddShared0ScalarSharedAScalarScalar
 namespace Curve25519Dalek.scalar.AddShared0ScalarSharedAScalarScalar
 
 @[step]
-theorem add.«x86_64-no-tables_spec» (self rhs : Scalar) (hself : self.asNat < L)
+theorem add.«64bit-notables_spec» (self rhs : Scalar) (hself : self.asNat < L)
     (hrhs : rhs.asNat < L) :
-    add.«x86_64-no-tables» self rhs ⦃ (r : Scalar) =>
+    add.«64bit-notables» self rhs ⦃ (r : Scalar) =>
       r.asNat = (self.asNat + rhs.asNat) % L ⦄ :=
-  add.«x86_64-tables_spec» self rhs hself hrhs
+  add.«64bit-tables_spec» self rhs hself hrhs
 
 end Curve25519Dalek.scalar.AddShared0ScalarSharedAScalarScalar
 
@@ -54,11 +54,11 @@ end Curve25519Dalek.scalar.AddShared0ScalarSharedAScalarScalar
 namespace Curve25519Dalek.scalar.AddShared0ScalarSharedAScalarScalar
 
 @[step]
-theorem add.«i686-tables_spec» (self rhs : Scalar) (hself : self.asNat < L)
+theorem add.«32bit-tables_spec» (self rhs : Scalar) (hself : self.asNat < L)
     (hrhs : rhs.asNat < L) :
-    add.«i686-tables» self rhs ⦃ (r : Scalar) =>
+    add.«32bit-tables» self rhs ⦃ (r : Scalar) =>
       r.asNat = (self.asNat + rhs.asNat) % L ⦄ := by
-  unfold add.«i686-tables»
+  unfold add.«32bit-tables»
   step as ⟨a, ha, hab⟩
   step as ⟨b, hb, hbb⟩
   step with backend.serial.u32.scalar.Scalar29.add_spec a b hab hbb (ha ▸ hself) (hb ▸ hrhs)
@@ -72,11 +72,11 @@ end Curve25519Dalek.scalar.AddShared0ScalarSharedAScalarScalar
 namespace Curve25519Dalek.scalar.AddShared0ScalarSharedAScalarScalar
 
 @[step]
-theorem add.«i686-no-tables_spec» (self rhs : Scalar) (hself : self.asNat < L)
+theorem add.«32bit-notables_spec» (self rhs : Scalar) (hself : self.asNat < L)
     (hrhs : rhs.asNat < L) :
-    add.«i686-no-tables» self rhs ⦃ (r : Scalar) =>
+    add.«32bit-notables» self rhs ⦃ (r : Scalar) =>
       r.asNat = (self.asNat + rhs.asNat) % L ⦄ :=
-  add.«i686-tables_spec» self rhs hself hrhs
+  add.«32bit-tables_spec» self rhs hself hrhs
 
 end Curve25519Dalek.scalar.AddShared0ScalarSharedAScalarScalar
 namespace Curve25519Dalek.Shared0Scalar.Insts.CoreOpsArithAddSharedAScalarScalar
@@ -88,10 +88,10 @@ theorem add_spec (self rhs : Scalar) (hself : self.asNat < L)
       r.asNat = (self.asNat + rhs.asNat) % L ⦄ := by
   unfold add
   exact dispatch_all_spec
-    (scalar.AddShared0ScalarSharedAScalarScalar.add.«x86_64-tables_spec» self rhs hself hrhs)
-    (scalar.AddShared0ScalarSharedAScalarScalar.add.«x86_64-no-tables_spec» self rhs hself hrhs)
-    (scalar.AddShared0ScalarSharedAScalarScalar.add.«i686-tables_spec» self rhs hself hrhs)
-    (scalar.AddShared0ScalarSharedAScalarScalar.add.«i686-no-tables_spec» self rhs hself hrhs)
+    (scalar.AddShared0ScalarSharedAScalarScalar.add.«64bit-tables_spec» self rhs hself hrhs)
+    (scalar.AddShared0ScalarSharedAScalarScalar.add.«64bit-notables_spec» self rhs hself hrhs)
+    (scalar.AddShared0ScalarSharedAScalarScalar.add.«32bit-tables_spec» self rhs hself hrhs)
+    (scalar.AddShared0ScalarSharedAScalarScalar.add.«32bit-notables_spec» self rhs hself hrhs)
 
 end Curve25519Dalek.Shared0Scalar.Insts.CoreOpsArithAddSharedAScalarScalar
 

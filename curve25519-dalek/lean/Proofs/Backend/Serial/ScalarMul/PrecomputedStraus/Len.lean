@@ -16,56 +16,56 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek.backend.serial.scalar_mul.precomputed_straus
 
-namespace VartimePrecomputedStraus.«x86_64-tables».Insts
-namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-tables»
+namespace VartimePrecomputedStraus.«64bit-tables».Insts
+namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint64bit-tables»
 
 /-- `VartimePrecomputedStraus::len`: the number of static points. -/
 @[step]
-theorem len_spec (self : VartimePrecomputedStraus.«x86_64-tables») :
+theorem len_spec (self : VartimePrecomputedStraus.«64bit-tables») :
     len self ⦃ (r : Usize) => r.val = self.static_lookup_tables.val.length ⦄ := by
   unfold len
   rw [WP.spec_ok, alloc.vec.Vec.len_val]
 
-end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-tables»
-end VartimePrecomputedStraus.«x86_64-tables».Insts
+end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint64bit-tables»
+end VartimePrecomputedStraus.«64bit-tables».Insts
 
-namespace VartimePrecomputedStraus.«i686-tables».Insts
-namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-tables»
+namespace VartimePrecomputedStraus.«32bit-tables».Insts
+namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-tables»
 
 /-- `VartimePrecomputedStraus::len`: the number of static points. -/
 @[step]
-theorem len_spec (self : VartimePrecomputedStraus.«i686-tables») :
+theorem len_spec (self : VartimePrecomputedStraus.«32bit-tables») :
     len self ⦃ (r : Usize) => r.val = self.static_lookup_tables.val.length ⦄ := by
   unfold len
   rw [WP.spec_ok, alloc.vec.Vec.len_val]
 
-end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-tables»
-end VartimePrecomputedStraus.«i686-tables».Insts
+end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-tables»
+end VartimePrecomputedStraus.«32bit-tables».Insts
 
-namespace VartimePrecomputedStraus.«x86_64-no-tables».Insts
-namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-no-tables»
+namespace VartimePrecomputedStraus.«64bit-notables».Insts
+namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint64bit-notables»
 
 /-- `VartimePrecomputedStraus::len`: the number of static points. -/
 @[step]
-theorem len_spec (self : VartimePrecomputedStraus.«x86_64-no-tables») :
+theorem len_spec (self : VartimePrecomputedStraus.«64bit-notables») :
     len self ⦃ (r : Usize) => r.val = self.static_lookup_tables.val.length ⦄ := by
   unfold len
   rw [WP.spec_ok, alloc.vec.Vec.len_val]
 
-end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointx86_64-no-tables»
-end VartimePrecomputedStraus.«x86_64-no-tables».Insts
+end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint64bit-notables»
+end VartimePrecomputedStraus.«64bit-notables».Insts
 
-namespace VartimePrecomputedStraus.«i686-no-tables».Insts
-namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-no-tables»
+namespace VartimePrecomputedStraus.«32bit-notables».Insts
+namespace «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-notables»
 
 /-- `VartimePrecomputedStraus::len`: the number of static points. -/
 @[step]
-theorem len_spec (self : VartimePrecomputedStraus.«i686-no-tables») :
+theorem len_spec (self : VartimePrecomputedStraus.«32bit-notables») :
     len self ⦃ (r : Usize) => r.val = self.static_lookup_tables.val.length ⦄ := by
   unfold len
   rw [WP.spec_ok, alloc.vec.Vec.len_val]
 
-end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-no-tables»
-end VartimePrecomputedStraus.«i686-no-tables».Insts
+end «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-notables»
+end VartimePrecomputedStraus.«32bit-notables».Insts
 
 end Curve25519Dalek.backend.serial.scalar_mul.precomputed_straus

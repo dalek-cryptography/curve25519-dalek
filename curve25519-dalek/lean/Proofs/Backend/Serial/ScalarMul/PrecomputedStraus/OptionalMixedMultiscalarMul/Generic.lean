@@ -20,7 +20,7 @@ public section
 
 The three loops of `VartimePrecomputedStraus::optional_mixed_multiscalar_mul`, over the
 `EdwardsOps` of a configuration: the four configurations' loops are `rfl`-equal to these, and their
-specs follow (`OptionalMixedMultiscalarMul/X86Tables.lean`, …). -/
+specs follow (`OptionalMixedMultiscalarMul/Bits64Tables.lean`, …). -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 

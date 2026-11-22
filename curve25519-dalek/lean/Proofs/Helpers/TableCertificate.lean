@@ -182,8 +182,8 @@ theorem toPoint_pow2 {P : edwards.Extended} (h : P.OnCurve) (n : ℕ) :
 /-- An entry passing `checkEntry` against `Q` on the curve represents `Q`. -/
 theorem checkEntry_sound {Q : edwards.Extended} (hQ : Q.OnCurve) {ya yb c : FieldElement51}
     (h : checkEntry edwards Q ya yb c = true) :
-    (⟨ya, yb, c⟩ : AffineNielsPoint.«x86_64-tables»).OnCurve ∧
-      (⟨ya, yb, c⟩ : AffineNielsPoint.«x86_64-tables»).toPoint = Q.toPoint := by
+    (⟨ya, yb, c⟩ : AffineNielsPoint.«64bit-tables»).OnCurve ∧
+      (⟨ya, yb, c⟩ : AffineNielsPoint.«64bit-tables»).toPoint = Q.toPoint := by
   simp only [checkEntry, decide_eq_true_eq, limbsNat_eq_asNat, ← toField_def] at h
   obtain ⟨h1, h2, h3⟩ := h
   have hZ : Q.Z ≠ 0 := hQ.1
@@ -204,28 +204,28 @@ theorem checkEntry_sound {Q : edwards.Extended} (hQ : Q.OnCurve) {ya yb c : Fiel
     rcases mul_eq_zero.mp h0 with h0 | h0
     · exact sub_eq_zero.mp h0
     · exact absurd (mul_self_eq_zero.mp h0) hZ
-  have hx' : (⟨ya, yb, c⟩ : AffineNielsPoint.«x86_64-tables»).toAffineNiels.x = x := by
-    rw [AffineNielsPoint.«x86_64-tables».toAffineNiels_x]
+  have hx' : (⟨ya, yb, c⟩ : AffineNielsPoint.«64bit-tables»).toAffineNiels.x = x := by
+    rw [AffineNielsPoint.«64bit-tables».toAffineNiels_x]
     simp only
     rw [ha, hb, show y + x - (y - x) = 2 * x by ring, mul_div_cancel_left₀ x two_ne_zero']
-  have hy' : (⟨ya, yb, c⟩ : AffineNielsPoint.«x86_64-tables»).toAffineNiels.y = y := by
-    rw [AffineNielsPoint.«x86_64-tables».toAffineNiels_y]
+  have hy' : (⟨ya, yb, c⟩ : AffineNielsPoint.«64bit-tables»).toAffineNiels.y = y := by
+    rw [AffineNielsPoint.«64bit-tables».toAffineNiels_y]
     simp only
     rw [ha, hb, show y + x + (y - x) = 2 * y by ring, mul_div_cancel_left₀ y two_ne_zero']
-  have hon : (⟨ya, yb, c⟩ : AffineNielsPoint.«x86_64-tables»).OnCurve := by
-    rw [AffineNielsPoint.«x86_64-tables».onCurve_iff_equation, hx', hy']
+  have hon : (⟨ya, yb, c⟩ : AffineNielsPoint.«64bit-tables»).OnCurve := by
+    rw [AffineNielsPoint.«64bit-tables».onCurve_iff_equation, hx', hy']
     exact ⟨Q.toPoint.equation, hc⟩
   refine ⟨hon, Point.ext ?_ ?_⟩
-  · rw [AffineNielsPoint.«x86_64-tables».toPoint_x hon, hx']
-  · rw [AffineNielsPoint.«x86_64-tables».toPoint_y hon, hy']
+  · rw [AffineNielsPoint.«64bit-tables».toPoint_x hon, hx']
+  · rw [AffineNielsPoint.«64bit-tables».toPoint_y hon, hy']
 
 /-- Entry `j` of a list passing `checkRow S Q` represents `Q + j • S`. -/
 theorem checkRow_sound {S : edwards.Extended} (hS : S.OnCurve) :
     ∀ {Q : edwards.Extended} {l : List FieldElement51}, Q.OnCurve →
       checkRow edwards S Q l = true → ∀ j, 3 * j + 2 < l.length →
-      (⟨l[3 * j]!, l[3 * j + 1]!, l[3 * j + 2]!⟩ : AffineNielsPoint.«x86_64-tables»).OnCurve ∧
+      (⟨l[3 * j]!, l[3 * j + 1]!, l[3 * j + 2]!⟩ : AffineNielsPoint.«64bit-tables»).OnCurve ∧
         (⟨l[3 * j]!, l[3 * j + 1]!, l[3 * j + 2]!⟩ :
-          AffineNielsPoint.«x86_64-tables»).toPoint = Q.toPoint + j • S.toPoint
+          AffineNielsPoint.«64bit-tables»).toPoint = Q.toPoint + j • S.toPoint
   | _, [], _, _, j, hj => absurd hj (by simp)
   | _, [_], _, h, _, _ => by simp [checkRow] at h
   | _, [_, _], _, h, _, _ => by simp [checkRow] at h
@@ -255,9 +255,9 @@ theorem checkTable_sound :
     ∀ {n : ℕ} {P : edwards.Extended} {fes : List FieldElement51}, P.OnCurve →
       checkTable edwards P fes n = true → fes.length = 24 * n → ∀ i < n, ∀ j : ℕ, j < 8 →
       (⟨fes[24 * i + 3 * j]!, fes[24 * i + 3 * j + 1]!, fes[24 * i + 3 * j + 2]!⟩ :
-        AffineNielsPoint.«x86_64-tables»).OnCurve ∧
+        AffineNielsPoint.«64bit-tables»).OnCurve ∧
       (⟨fes[24 * i + 3 * j]!, fes[24 * i + 3 * j + 1]!, fes[24 * i + 3 * j + 2]!⟩ :
-        AffineNielsPoint.«x86_64-tables»).toPoint = (j + 1) • 2 ^ (8 * i) • P.toPoint
+        AffineNielsPoint.«64bit-tables»).toPoint = (j + 1) • 2 ^ (8 * i) • P.toPoint
   | 0, _, _, _, _, _, i, hi, _, _ => absurd hi (Nat.not_lt_zero _)
   | n + 1, P, fes, hP, h, hlen, i, hi, j, hj => by
     simp only [checkTable, Bool.and_eq_true] at h
@@ -302,8 +302,8 @@ theorem checkTable_sound :
 /-- An entry passing `checkEntryProj` against `Q` on the curve represents `Q`. -/
 theorem checkEntryProj_sound {Q : edwards.Extended} (hQ : Q.OnCurve)
     {ya yb z t : FieldElement51} (h : checkEntryProj edwards Q ya yb z t = true) :
-    (⟨ya, yb, z, t⟩ : ProjectiveNielsPoint.«x86_64-tables»).OnCurve ∧
-      (⟨ya, yb, z, t⟩ : ProjectiveNielsPoint.«x86_64-tables»).toPoint = Q.toPoint := by
+    (⟨ya, yb, z, t⟩ : ProjectiveNielsPoint.«64bit-tables»).OnCurve ∧
+      (⟨ya, yb, z, t⟩ : ProjectiveNielsPoint.«64bit-tables»).toPoint = Q.toPoint := by
   simp only [checkEntryProj, decide_eq_true_eq, limbsNat_eq_asNat, ← toField_def] at h
   obtain ⟨hz, h1, h2, h3⟩ := h
   have hZ : Q.Z ≠ 0 := hQ.1
@@ -319,15 +319,15 @@ theorem checkEntryProj_sound {Q : edwards.Extended} (hQ : Q.OnCurve)
     mul_left_cancel₀ two_ne_zero' (by linear_combination -e1 - e2)
   have hb : yb.toField = (y - x) * z.toField :=
     mul_left_cancel₀ two_ne_zero' (by linear_combination -e2 + e1)
-  have hX' : (⟨ya, yb, z, t⟩ : ProjectiveNielsPoint.«x86_64-tables»).toProjectiveNiels.X =
+  have hX' : (⟨ya, yb, z, t⟩ : ProjectiveNielsPoint.«64bit-tables»).toProjectiveNiels.X =
       x * z.toField := by
-    rw [ProjectiveNielsPoint.«x86_64-tables».toProjectiveNiels_X]
+    rw [ProjectiveNielsPoint.«64bit-tables».toProjectiveNiels_X]
     simp only
     rw [ha, hb, show (y + x) * z.toField - (y - x) * z.toField = 2 * (x * z.toField) by ring,
       mul_div_cancel_left₀ _ two_ne_zero']
-  have hY' : (⟨ya, yb, z, t⟩ : ProjectiveNielsPoint.«x86_64-tables»).toProjectiveNiels.Y =
+  have hY' : (⟨ya, yb, z, t⟩ : ProjectiveNielsPoint.«64bit-tables»).toProjectiveNiels.Y =
       y * z.toField := by
-    rw [ProjectiveNielsPoint.«x86_64-tables».toProjectiveNiels_Y]
+    rw [ProjectiveNielsPoint.«64bit-tables».toProjectiveNiels_Y]
     simp only
     rw [ha, hb, show (y + x) * z.toField + (y - x) * z.toField = 2 * (y * z.toField) by ring,
       mul_div_cancel_left₀ _ two_ne_zero']
@@ -335,15 +335,15 @@ theorem checkEntryProj_sound {Q : edwards.Extended} (hQ : Q.OnCurve)
     refine mul_left_cancel₀ two_ne_zero' ?_
     rw [ha, hb, edwards_d] at h3
     linear_combination h3
-  have hon : (⟨ya, yb, z, t⟩ : ProjectiveNielsPoint.«x86_64-tables»).OnCurve := by
-    rw [ProjectiveNielsPoint.«x86_64-tables».onCurve_iff_equation, hX', hY']
+  have hon : (⟨ya, yb, z, t⟩ : ProjectiveNielsPoint.«64bit-tables»).OnCurve := by
+    rw [ProjectiveNielsPoint.«64bit-tables».onCurve_iff_equation, hX', hY']
     refine ⟨hz, ?_, ht⟩
     rw [mul_div_cancel_right₀ x hz, mul_div_cancel_right₀ y hz]
     exact Q.toPoint.equation
   refine ⟨hon, Point.ext ?_ ?_⟩
-  · rw [ProjectiveNielsPoint.«x86_64-tables».toPoint_x hon, hX']
+  · rw [ProjectiveNielsPoint.«64bit-tables».toPoint_x hon, hX']
     exact mul_div_cancel_right₀ x hz
-  · rw [ProjectiveNielsPoint.«x86_64-tables».toPoint_y hon, hY']
+  · rw [ProjectiveNielsPoint.«64bit-tables».toPoint_y hon, hY']
     exact mul_div_cancel_right₀ y hz
 
 /-- Entry `k` of a list passing `checkRowProj S Q` represents `Q + k • S`. -/
@@ -351,9 +351,9 @@ theorem checkRowProj_sound {S : edwards.Extended} (hS : S.OnCurve) :
     ∀ {Q : edwards.Extended} {l : List FieldElement51}, Q.OnCurve →
       checkRowProj edwards S Q l = true → ∀ k, 4 * k + 3 < l.length →
       (⟨l[4 * k]!, l[4 * k + 1]!, l[4 * k + 2]!, l[4 * k + 3]!⟩ :
-        ProjectiveNielsPoint.«x86_64-tables»).OnCurve ∧
+        ProjectiveNielsPoint.«64bit-tables»).OnCurve ∧
         (⟨l[4 * k]!, l[4 * k + 1]!, l[4 * k + 2]!, l[4 * k + 3]!⟩ :
-          ProjectiveNielsPoint.«x86_64-tables»).toPoint = Q.toPoint + k • S.toPoint
+          ProjectiveNielsPoint.«64bit-tables»).toPoint = Q.toPoint + k • S.toPoint
   | _, [], _, _, k, hk => absurd hk (by simp)
   | _, [_], _, h, _, _ => by simp [checkRowProj] at h
   | _, [_, _], _, h, _, _ => by simp [checkRowProj] at h
@@ -402,12 +402,12 @@ translated structure in linear time (indexing into `fes` there cost 8 s for 768 
 index lemmas serve the proofs. -/
 
 /-- Affine Niels entries, three limb arrays each. -/
-@[expose] def entries : List FieldElement51 → List AffineNielsPoint.«x86_64-tables»
+@[expose] def entries : List FieldElement51 → List AffineNielsPoint.«64bit-tables»
   | ya :: yb :: c :: rest => ⟨ya, yb, c⟩ :: entries rest
   | _ => []
 
 /-- Projective Niels entries, four limb arrays each. -/
-@[expose] def entriesProj : List FieldElement51 → List ProjectiveNielsPoint.«x86_64-tables»
+@[expose] def entriesProj : List FieldElement51 → List ProjectiveNielsPoint.«64bit-tables»
   | ya :: yb :: z :: t :: rest => ⟨ya, yb, z, t⟩ :: entriesProj rest
   | _ => []
 
@@ -425,7 +425,7 @@ theorem entries_length : ∀ l : List FieldElement51, (entries l).length = l.len
 
 theorem entries_getElem! : ∀ (l : List FieldElement51) (k : ℕ), 3 * k + 2 < l.length →
     (entries l)[k]! =
-      (⟨l[3 * k]!, l[3 * k + 1]!, l[3 * k + 2]!⟩ : AffineNielsPoint.«x86_64-tables»)
+      (⟨l[3 * k]!, l[3 * k + 1]!, l[3 * k + 2]!⟩ : AffineNielsPoint.«64bit-tables»)
   | [], _, h | [_], _, h | [_, _], _, h =>
     absurd h (by simp only [List.length_cons, List.length_nil]; omega)
   | _ :: _ :: _ :: _, 0, _ => by simp [entries]
@@ -443,7 +443,7 @@ theorem entriesProj_length : ∀ l : List FieldElement51, (entriesProj l).length
 theorem entriesProj_getElem! : ∀ (l : List FieldElement51) (k : ℕ), 4 * k + 3 < l.length →
     (entriesProj l)[k]! =
       (⟨l[4 * k]!, l[4 * k + 1]!, l[4 * k + 2]!, l[4 * k + 3]!⟩ :
-        ProjectiveNielsPoint.«x86_64-tables»)
+        ProjectiveNielsPoint.«64bit-tables»)
   | [], _, h | [_], _, h | [_, _], _, h | [_, _, _], _, h =>
     absurd h (by simp only [List.length_cons, List.length_nil]; omega)
   | _ :: _ :: _ :: _ :: _, 0, _ => by simp [entriesProj]

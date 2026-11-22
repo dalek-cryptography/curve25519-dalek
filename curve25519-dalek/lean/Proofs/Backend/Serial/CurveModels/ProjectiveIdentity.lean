@@ -20,120 +20,120 @@ open Curve25519Dalek.backend.serial.u32.field (FieldElement2625)
 
 namespace Curve25519Dalek.backend.serial.curve_models
 
-namespace ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace ProjectivePoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `Identity for ProjectivePoint`: `(0 : 1 : 1)`, limbs `< 2^52`. -/
 @[step]
 theorem identity_toProjective :
-    identity ⦃ (r : ProjectivePoint.«x86_64-tables») =>
+    identity ⦃ (r : ProjectivePoint.«64bit-tables») =>
       r.toProjective = Projective.identity ∧ r.LimbsLt 52 ⦄ := by
   unfold identity
   step as ⟨zero, hzero, hzero_lt⟩
   step as ⟨one, hone, hone_lt⟩
   refine ⟨?_, ?_⟩
-  · simp only [ProjectivePoint.«x86_64-tables».toProjective_def, Projective.identity,
+  · simp only [ProjectivePoint.«64bit-tables».toProjective_def, Projective.identity,
       toField_eq_zero_of_asNat hzero, toField_eq_one_of_asNat hone]
   · exact ⟨limbs_lt_of_le (by decide) hzero_lt, limbs_lt_of_le (by decide) hone_lt,
       limbs_lt_of_le (by decide) hone_lt⟩
 
 /-- `Identity for ProjectivePoint` represents the neutral element. -/
 theorem identity_spec :
-    identity ⦃ (r : ProjectivePoint.«x86_64-tables») =>
+    identity ⦃ (r : ProjectivePoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ :=
   spec_mono identity_toProjective fun r ⟨hr, hb⟩ => by
-    rw [ProjectivePoint.«x86_64-tables».onCurve_iff,
-      ProjectivePoint.«x86_64-tables».toPoint_def, hr]
+    rw [ProjectivePoint.«64bit-tables».onCurve_iff,
+      ProjectivePoint.«64bit-tables».toPoint_def, hr]
     exact ⟨Projective.onCurve_identity, Projective.toPoint_identity, hb⟩
 
-end ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity
+end ProjectivePoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
-namespace ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace ProjectivePoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `Identity for ProjectivePoint`: `(0 : 1 : 1)`, limbs `< 2^26`. -/
 @[step]
 theorem identity_toProjective :
-    identity ⦃ (r : ProjectivePoint.«i686-tables») =>
+    identity ⦃ (r : ProjectivePoint.«32bit-tables») =>
       r.toProjective = Projective.identity ∧ r.LimbsLt 26 ⦄ := by
   unfold identity
   step as ⟨zero, hzero, hzero_lt⟩
   step as ⟨one, hone, hone_lt⟩
   refine ⟨?_, ?_⟩
-  · simp only [ProjectivePoint.«i686-tables».toProjective_def, Projective.identity,
+  · simp only [ProjectivePoint.«32bit-tables».toProjective_def, Projective.identity,
       toField_eq_zero_of_asNat hzero, toField_eq_one_of_asNat hone]
   · exact ⟨limbs_lt_of_le (by decide) hzero_lt, limbs_lt_of_le (by decide) hone_lt,
       limbs_lt_of_le (by decide) hone_lt⟩
 
 /-- `Identity for ProjectivePoint` represents the neutral element. -/
 theorem identity_spec :
-    identity ⦃ (r : ProjectivePoint.«i686-tables») =>
+    identity ⦃ (r : ProjectivePoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ :=
   spec_mono identity_toProjective fun r ⟨hr, hb⟩ => by
-    rw [ProjectivePoint.«i686-tables».onCurve_iff,
-      ProjectivePoint.«i686-tables».toPoint_def, hr]
+    rw [ProjectivePoint.«32bit-tables».onCurve_iff,
+      ProjectivePoint.«32bit-tables».toPoint_def, hr]
     exact ⟨Projective.onCurve_identity, Projective.toPoint_identity, hb⟩
 
-end ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity
+end ProjectivePoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
-namespace ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace ProjectivePoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `Identity for ProjectivePoint`: `(0 : 1 : 1)`, limbs `< 2^52`. -/
 @[step]
 theorem identity_toProjective :
-    identity ⦃ (r : ProjectivePoint.«x86_64-no-tables») =>
+    identity ⦃ (r : ProjectivePoint.«64bit-notables») =>
       r.toProjective = Projective.identity ∧ r.LimbsLt 52 ⦄ := by
   unfold identity
   step as ⟨zero, hzero, hzero_lt⟩
   step as ⟨one, hone, hone_lt⟩
   refine ⟨?_, ?_⟩
-  · simp only [ProjectivePoint.«x86_64-no-tables».toProjective_def, Projective.identity,
+  · simp only [ProjectivePoint.«64bit-notables».toProjective_def, Projective.identity,
       toField_eq_zero_of_asNat hzero, toField_eq_one_of_asNat hone]
   · exact ⟨limbs_lt_of_le (by decide) hzero_lt, limbs_lt_of_le (by decide) hone_lt,
       limbs_lt_of_le (by decide) hone_lt⟩
 
 /-- `Identity for ProjectivePoint` represents the neutral element. -/
 theorem identity_spec :
-    identity ⦃ (r : ProjectivePoint.«x86_64-no-tables») =>
+    identity ⦃ (r : ProjectivePoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ :=
   spec_mono identity_toProjective fun r ⟨hr, hb⟩ => by
-    rw [ProjectivePoint.«x86_64-no-tables».onCurve_iff,
-      ProjectivePoint.«x86_64-no-tables».toPoint_def, hr]
+    rw [ProjectivePoint.«64bit-notables».onCurve_iff,
+      ProjectivePoint.«64bit-notables».toPoint_def, hr]
     exact ⟨Projective.onCurve_identity, Projective.toPoint_identity, hb⟩
 
-end ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity
+end ProjectivePoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity
 
-namespace ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace ProjectivePoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `Identity for ProjectivePoint`: `(0 : 1 : 1)`, limbs `< 2^26`. -/
 @[step]
 theorem identity_toProjective :
-    identity ⦃ (r : ProjectivePoint.«i686-no-tables») =>
+    identity ⦃ (r : ProjectivePoint.«32bit-notables») =>
       r.toProjective = Projective.identity ∧ r.LimbsLt 26 ⦄ := by
   unfold identity
   step as ⟨zero, hzero, hzero_lt⟩
   step as ⟨one, hone, hone_lt⟩
   refine ⟨?_, ?_⟩
-  · simp only [ProjectivePoint.«i686-no-tables».toProjective_def, Projective.identity,
+  · simp only [ProjectivePoint.«32bit-notables».toProjective_def, Projective.identity,
       toField_eq_zero_of_asNat hzero, toField_eq_one_of_asNat hone]
   · exact ⟨limbs_lt_of_le (by decide) hzero_lt, limbs_lt_of_le (by decide) hone_lt,
       limbs_lt_of_le (by decide) hone_lt⟩
 
 /-- `Identity for ProjectivePoint` represents the neutral element. -/
 theorem identity_spec :
-    identity ⦃ (r : ProjectivePoint.«i686-no-tables») =>
+    identity ⦃ (r : ProjectivePoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ :=
   spec_mono identity_toProjective fun r ⟨hr, hb⟩ => by
-    rw [ProjectivePoint.«i686-no-tables».onCurve_iff,
-      ProjectivePoint.«i686-no-tables».toPoint_def, hr]
+    rw [ProjectivePoint.«32bit-notables».onCurve_iff,
+      ProjectivePoint.«32bit-notables».toPoint_def, hr]
     exact ⟨Projective.onCurve_identity, Projective.toPoint_identity, hb⟩
 
-end ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity
+end ProjectivePoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity
 
 end Curve25519Dalek.backend.serial.curve_models

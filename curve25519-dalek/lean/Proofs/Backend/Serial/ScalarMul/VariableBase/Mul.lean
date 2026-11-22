@@ -33,134 +33,134 @@ open Curve25519Dalek.backend.serial.curve_models
 namespace Curve25519Dalek.backend.serial.scalar_mul.variable_base
 
 section
-open «Shared0EdwardsPointx86_64-tables».Insts
-open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
+open «Shared0EdwardsPoint64bit-tables».Insts
+open «CoreOpsArithAddSharedAProjectiveNielsPoint64bit-tablesCompletedPoint64bit-tables»
   (add_spec)
-open edwards.EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity
+open edwards.EdwardsPoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity
   (identity_spec)
 
-namespace «x86_64-tables»
+namespace «64bit-tables»
 
-private theorem mul_eq (point : edwards.EdwardsPoint.«x86_64-tables») (s : scalar.Scalar) :
-    mul.«x86_64-tables» point s = EdwardsOps.X86Tables.vbMul point s := by
-  unfold mul.«x86_64-tables» EdwardsOps.vbMul
+private theorem mul_eq (point : edwards.EdwardsPoint.«64bit-tables») (s : scalar.Scalar) :
+    mul.«64bit-tables» point s = EdwardsOps.Bits64Tables.vbMul point s := by
+  unfold mul.«64bit-tables» EdwardsOps.vbMul
   congr 1
 
 open scoped Helpers.IndexStep in
 /-- `variable_base::mul`: `s • P` for the unreduced value of `s` (`s.asNat < 2^255`, the
 precondition of `as_radix_16`); limbs `< 2^52`. -/
 @[step]
-theorem mul_spec (point : edwards.EdwardsPoint.«x86_64-tables») (s : scalar.Scalar)
+theorem mul_spec (point : edwards.EdwardsPoint.«64bit-tables») (s : scalar.Scalar)
     (hpoint : point.LimbsLt 52) (hon : point.OnCurve) (hs : s.asNat < 2 ^ 255) :
-    mul.«x86_64-tables» point s ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    mul.«64bit-tables» point s ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = s.asNat • point.toPoint ∧ r.LimbsLt 52 ⦄ := by
   rw [mul_eq]
-  exact EdwardsOps.X86Tables.vbMul_spec
-    EdwardsOps.X86Tables.identity_spec EdwardsOps.X86Tables.addN_spec
-    EdwardsOps.X86Tables.asExtended_spec EdwardsOps.X86Tables.ltSelect_spec
-    EdwardsOps.X86Tables.ltFrom_spec EdwardsOps.X86Tables.pDouble_spec
-    EdwardsOps.X86Tables.cAsProjective_spec point s hpoint hon hs
+  exact EdwardsOps.Bits64Tables.vbMul_spec
+    EdwardsOps.Bits64Tables.identity_spec EdwardsOps.Bits64Tables.addN_spec
+    EdwardsOps.Bits64Tables.asExtended_spec EdwardsOps.Bits64Tables.ltSelect_spec
+    EdwardsOps.Bits64Tables.ltFrom_spec EdwardsOps.Bits64Tables.pDouble_spec
+    EdwardsOps.Bits64Tables.cAsProjective_spec point s hpoint hon hs
 
-end «x86_64-tables»
+end «64bit-tables»
 
 end
 
 section
-open «Shared0EdwardsPointi686-tables».Insts
-open «CoreOpsArithAddSharedAProjectiveNielsPointi686-tablesCompletedPointi686-tables»
+open «Shared0EdwardsPoint32bit-tables».Insts
+open «CoreOpsArithAddSharedAProjectiveNielsPoint32bit-tablesCompletedPoint32bit-tables»
   (add_spec)
-open edwards.EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity
+open edwards.EdwardsPoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity
   (identity_spec)
 
-namespace «i686-tables»
+namespace «32bit-tables»
 
-private theorem mul_eq (point : edwards.EdwardsPoint.«i686-tables») (s : scalar.Scalar) :
-    mul.«i686-tables» point s = EdwardsOps.I686Tables.vbMul point s := by
-  unfold mul.«i686-tables» EdwardsOps.vbMul
+private theorem mul_eq (point : edwards.EdwardsPoint.«32bit-tables») (s : scalar.Scalar) :
+    mul.«32bit-tables» point s = EdwardsOps.Bits32Tables.vbMul point s := by
+  unfold mul.«32bit-tables» EdwardsOps.vbMul
   congr 1
 
 open scoped Helpers.IndexStep in
 /-- `variable_base::mul`: `s • P` for the unreduced value of `s` (`s.asNat < 2^255`, the
 precondition of `as_radix_16`); limbs `< 2^26`. -/
 @[step]
-theorem mul_spec (point : edwards.EdwardsPoint.«i686-tables») (s : scalar.Scalar)
+theorem mul_spec (point : edwards.EdwardsPoint.«32bit-tables») (s : scalar.Scalar)
     (hpoint : point.LimbsLt 26) (hon : point.OnCurve) (hs : s.asNat < 2 ^ 255) :
-    mul.«i686-tables» point s ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    mul.«32bit-tables» point s ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = s.asNat • point.toPoint ∧ r.LimbsLt 26 ⦄ := by
   rw [mul_eq]
-  exact EdwardsOps.I686Tables.vbMul_spec
-    EdwardsOps.I686Tables.identity_spec EdwardsOps.I686Tables.addN_spec
-    EdwardsOps.I686Tables.asExtended_spec EdwardsOps.I686Tables.ltSelect_spec
-    EdwardsOps.I686Tables.ltFrom_spec EdwardsOps.I686Tables.pDouble_spec
-    EdwardsOps.I686Tables.cAsProjective_spec point s hpoint hon hs
+  exact EdwardsOps.Bits32Tables.vbMul_spec
+    EdwardsOps.Bits32Tables.identity_spec EdwardsOps.Bits32Tables.addN_spec
+    EdwardsOps.Bits32Tables.asExtended_spec EdwardsOps.Bits32Tables.ltSelect_spec
+    EdwardsOps.Bits32Tables.ltFrom_spec EdwardsOps.Bits32Tables.pDouble_spec
+    EdwardsOps.Bits32Tables.cAsProjective_spec point s hpoint hon hs
 
-end «i686-tables»
+end «32bit-tables»
 
 end
 
 section
-open «Shared0EdwardsPointx86_64-no-tables».Insts
-open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
+open «Shared0EdwardsPoint64bit-notables».Insts
+open «CoreOpsArithAddSharedAProjectiveNielsPoint64bit-notablesCompletedPoint64bit-notables»
   (add_spec)
-open edwards.EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity
+open edwards.EdwardsPoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity
   (identity_spec)
 
-namespace «x86_64-no-tables»
+namespace «64bit-notables»
 
-private theorem mul_eq (point : edwards.EdwardsPoint.«x86_64-no-tables») (s : scalar.Scalar) :
-    mul.«x86_64-no-tables» point s = EdwardsOps.X86NoTables.vbMul point s := by
-  unfold mul.«x86_64-no-tables» EdwardsOps.vbMul
+private theorem mul_eq (point : edwards.EdwardsPoint.«64bit-notables») (s : scalar.Scalar) :
+    mul.«64bit-notables» point s = EdwardsOps.Bits64NoTables.vbMul point s := by
+  unfold mul.«64bit-notables» EdwardsOps.vbMul
   congr 1
 
 open scoped Helpers.IndexStep in
 /-- `variable_base::mul`: `s • P` for the unreduced value of `s` (`s.asNat < 2^255`, the
 precondition of `as_radix_16`); limbs `< 2^52`. -/
 @[step]
-theorem mul_spec (point : edwards.EdwardsPoint.«x86_64-no-tables») (s : scalar.Scalar)
+theorem mul_spec (point : edwards.EdwardsPoint.«64bit-notables») (s : scalar.Scalar)
     (hpoint : point.LimbsLt 52) (hon : point.OnCurve) (hs : s.asNat < 2 ^ 255) :
-    mul.«x86_64-no-tables» point s ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    mul.«64bit-notables» point s ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = s.asNat • point.toPoint ∧ r.LimbsLt 52 ⦄ := by
   rw [mul_eq]
-  exact EdwardsOps.X86NoTables.vbMul_spec
-    EdwardsOps.X86NoTables.identity_spec EdwardsOps.X86NoTables.addN_spec
-    EdwardsOps.X86NoTables.asExtended_spec EdwardsOps.X86NoTables.ltSelect_spec
-    EdwardsOps.X86NoTables.ltFrom_spec EdwardsOps.X86NoTables.pDouble_spec
-    EdwardsOps.X86NoTables.cAsProjective_spec point s hpoint hon hs
+  exact EdwardsOps.Bits64NoTables.vbMul_spec
+    EdwardsOps.Bits64NoTables.identity_spec EdwardsOps.Bits64NoTables.addN_spec
+    EdwardsOps.Bits64NoTables.asExtended_spec EdwardsOps.Bits64NoTables.ltSelect_spec
+    EdwardsOps.Bits64NoTables.ltFrom_spec EdwardsOps.Bits64NoTables.pDouble_spec
+    EdwardsOps.Bits64NoTables.cAsProjective_spec point s hpoint hon hs
 
-end «x86_64-no-tables»
+end «64bit-notables»
 
 end
 
 section
-open «Shared0EdwardsPointi686-no-tables».Insts
-open «CoreOpsArithAddSharedAProjectiveNielsPointi686-no-tablesCompletedPointi686-no-tables»
+open «Shared0EdwardsPoint32bit-notables».Insts
+open «CoreOpsArithAddSharedAProjectiveNielsPoint32bit-notablesCompletedPoint32bit-notables»
   (add_spec)
-open edwards.EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity
+open edwards.EdwardsPoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity
   (identity_spec)
 
-namespace «i686-no-tables»
+namespace «32bit-notables»
 
-private theorem mul_eq (point : edwards.EdwardsPoint.«i686-no-tables») (s : scalar.Scalar) :
-    mul.«i686-no-tables» point s = EdwardsOps.I686NoTables.vbMul point s := by
-  unfold mul.«i686-no-tables» EdwardsOps.vbMul
+private theorem mul_eq (point : edwards.EdwardsPoint.«32bit-notables») (s : scalar.Scalar) :
+    mul.«32bit-notables» point s = EdwardsOps.Bits32NoTables.vbMul point s := by
+  unfold mul.«32bit-notables» EdwardsOps.vbMul
   congr 1
 
 open scoped Helpers.IndexStep in
 /-- `variable_base::mul`: `s • P` for the unreduced value of `s` (`s.asNat < 2^255`, the
 precondition of `as_radix_16`); limbs `< 2^26`. -/
 @[step]
-theorem mul_spec (point : edwards.EdwardsPoint.«i686-no-tables») (s : scalar.Scalar)
+theorem mul_spec (point : edwards.EdwardsPoint.«32bit-notables») (s : scalar.Scalar)
     (hpoint : point.LimbsLt 26) (hon : point.OnCurve) (hs : s.asNat < 2 ^ 255) :
-    mul.«i686-no-tables» point s ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    mul.«32bit-notables» point s ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = s.asNat • point.toPoint ∧ r.LimbsLt 26 ⦄ := by
   rw [mul_eq]
-  exact EdwardsOps.I686NoTables.vbMul_spec
-    EdwardsOps.I686NoTables.identity_spec EdwardsOps.I686NoTables.addN_spec
-    EdwardsOps.I686NoTables.asExtended_spec EdwardsOps.I686NoTables.ltSelect_spec
-    EdwardsOps.I686NoTables.ltFrom_spec EdwardsOps.I686NoTables.pDouble_spec
-    EdwardsOps.I686NoTables.cAsProjective_spec point s hpoint hon hs
+  exact EdwardsOps.Bits32NoTables.vbMul_spec
+    EdwardsOps.Bits32NoTables.identity_spec EdwardsOps.Bits32NoTables.addN_spec
+    EdwardsOps.Bits32NoTables.asExtended_spec EdwardsOps.Bits32NoTables.ltSelect_spec
+    EdwardsOps.Bits32NoTables.ltFrom_spec EdwardsOps.Bits32NoTables.pDouble_spec
+    EdwardsOps.Bits32NoTables.cAsProjective_spec point s hpoint hon hs
 
-end «i686-no-tables»
+end «32bit-notables»
 
 end
 

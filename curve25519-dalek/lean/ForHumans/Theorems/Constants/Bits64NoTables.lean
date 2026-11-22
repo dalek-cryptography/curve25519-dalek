@@ -9,7 +9,7 @@ public import ForHumans.Specs.Representation.Array
 import Proofs -- shake: keep
 public import ForHumans.Specs.Edwards
 public import ForHumans.Specs.Montgomery
-public import ForHumans.Specs.Representation.Edwards.I686NoTables
+public import ForHumans.Specs.Representation.Edwards.Bits64NoTables
 public import ForHumans.Specs.Representation.Montgomery
 public import ForHumans.Specs.Ristretto
 public import ForHumans.Specs.X25519
@@ -17,41 +17,41 @@ public section
 
 set_option linter.style.longLine false
 
-/-! # `Constants` for `i686-no-tables`, generated from `ForHumans/Theorems/Constants.lean` -/
+/-! # `Constants` for `64bit-notables`, generated from `ForHumans/Theorems/Constants.lean` -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek
 open curve25519 (Ristretto.encodeRep X25519 basepoint decodeUCoordinate edwards encode
     encodeUCoordinate montgomery montgomeryBasepoint torsion8)
 
-namespace Theorems.constants.«i686-no-tables»
+namespace Theorems.constants.«64bit-notables»
 
 /-- `ED25519_BASEPOINT_POINT` represents the basepoint. -/
 theorem ED25519_BASEPOINT_POINT :
-    backend.serial.u32.constants.ED25519_BASEPOINT_POINT.«i686-no-tables»
-      ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    backend.serial.u64.constants.ED25519_BASEPOINT_POINT.«64bit-notables»
+      ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
         r.OnCurve ∧ r.toPoint = basepoint ∧ r.IsBounded ⦄ :=
-  backend.serial.u32.constants.«i686-no-tables».ED25519_BASEPOINT_POINT_spec
+  backend.serial.u64.constants.«64bit-notables».ED25519_BASEPOINT_POINT_spec
 
 /-- `ED25519_BASEPOINT_128_POINT` represents `2^128 • B`. -/
 theorem ED25519_BASEPOINT_128_POINT :
-    backend.serial.u32.constants.ED25519_BASEPOINT_128_POINT.«i686-no-tables»
-      ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    backend.serial.u64.constants.ED25519_BASEPOINT_128_POINT.«64bit-notables»
+      ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
         r.OnCurve ∧ r.toPoint = 2 ^ 128 • basepoint ∧ r.IsBounded ⦄ :=
-  backend.serial.u32.constants.«i686-no-tables».ED25519_BASEPOINT_128_POINT_spec
+  backend.serial.u64.constants.«64bit-notables».ED25519_BASEPOINT_128_POINT_spec
 
 /-- `EIGHT_TORSION`: entry `i` represents `i • torsion8`. -/
 theorem EIGHT_TORSION :
-    backend.serial.u32.constants.EIGHT_TORSION.«i686-no-tables»
-      ⦃ (r : Array edwards.EdwardsPoint.«i686-no-tables» 8#usize) =>
+    backend.serial.u64.constants.EIGHT_TORSION.«64bit-notables»
+      ⦃ (r : Array edwards.EdwardsPoint.«64bit-notables» 8#usize) =>
         ∀ i : Fin 8, r[i.val]!.OnCurve ∧ r[i.val]!.toPoint = (i : ℕ) • torsion8 ∧
           r[i.val]!.IsBounded ⦄ :=
-  backend.serial.u32.constants.«i686-no-tables».EIGHT_TORSION_spec
+  backend.serial.u64.constants.«64bit-notables».EIGHT_TORSION_spec
 
 /-- `RISTRETTO_BASEPOINT_POINT`: the basepoint, an even point (a ristretto255 representative). -/
 theorem RISTRETTO_BASEPOINT_POINT :
-    constants.RISTRETTO_BASEPOINT_POINT.«i686-no-tables»
-      ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    constants.RISTRETTO_BASEPOINT_POINT.«64bit-notables»
+      ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
         r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = basepoint ∧ r.IsBounded ⦄ :=
-  constants.«i686-no-tables».RISTRETTO_BASEPOINT_POINT_spec
+  constants.«64bit-notables».RISTRETTO_BASEPOINT_POINT_spec
 
-end Theorems.constants.«i686-no-tables»
+end Theorems.constants.«64bit-notables»

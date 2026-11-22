@@ -204,18 +204,18 @@ private theorem step2Body_spec (B : Backend) (hadd : B.AddSpec) (hsub : B.SubSpe
 
 end decompress
 
-namespace decompress.«x86_64-tables»
+namespace decompress.«64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `decompress::step_1`: `s` from the low `255` bits; the first choice is `1` iff the bytes are
 canonical (value `< p`), the second iff `s` is negative. -/
 private theorem step_1_spec (repr : CompressedRistretto) :
-    step_1.«x86_64-tables» repr
+    step_1.«64bit-tables» repr
       ⦃ (c1 : subtle.Choice) (c2 : subtle.Choice) (s : FieldElement51) =>
       c1.IsValid ∧ (c1 = 1#u8 ↔ repr.asNat < p) ∧ c2.IsValid ∧ (c2 = 1#u8 ↔ s.toField.IsNeg) ∧
       s.toField = ((repr.asNat % 2 ^ 255 : ℕ) : ZMod p) ∧ s.LimbsLt 51 ⦄ := by
-  unfold step_1.«x86_64-tables»
+  unfold step_1.«64bit-tables»
   step as ⟨a, ha⟩
   step as ⟨s, hs, hsb⟩
   step as ⟨sb, hsb'⟩
@@ -239,15 +239,15 @@ private theorem step_1_spec (repr : CompressedRistretto) :
   · rw [toField_def, hs, CompressedRistretto.asNat_def]
 
 private theorem step_2_eq (s : FieldElement51) :
-    step_2.«x86_64-tables» s = decompress.step2Body Backend.U64
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«x86_64-tables»)) s := rfl
+    step_2.«64bit-tables» s = decompress.step2Body Backend.U64
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«64bit-tables»)) s := rfl
 
 open decompress in
 /-- `decompress::step_2`: the candidate point `(x, y, 1, x y)` of RFC 9496 §4.3.1 and its three
 tests (`was_square`, `x y` negative, `y = 0`); limbs `< 2^52`. -/
 private theorem step_2_spec (s : FieldElement51) (hs : s.LimbsLt 52) :
-    step_2.«x86_64-tables» s ⦃ (ok1 : subtle.Choice) (tn : subtle.Choice) (yz : subtle.Choice)
-        (res : RistrettoPoint.«x86_64-tables») =>
+    step_2.«64bit-tables» s ⦃ (ok1 : subtle.Choice) (tn : subtle.Choice) (yz : subtle.Choice)
+        (res : RistrettoPoint.«64bit-tables») =>
       ok1.IsValid ∧ (ok1 = 1#u8 ↔ (sqrtRatioM1 1 (dW s.toField)).1 = true) ∧
       tn.IsValid ∧ (tn = 1#u8 ↔ (dX s.toField * dY s.toField).IsNeg) ∧
       yz.IsValid ∧ (yz = 1#u8 ↔ dY s.toField = 0) ∧
@@ -261,41 +261,41 @@ private theorem step_2_spec (s : FieldElement51) (hs : s.LimbsLt 52) :
     hs)
   rintro ⟨ok1, tn, yz, res⟩ ⟨h1, h2, h3, h4, h5, h6, a, b, c, d, rfl, he, ha, hb, hc, hd⟩
   refine ⟨h1, h2, h3, h4, h5, h6, ?_, ha, hb, hc, hd⟩
-  rw [edwards.EdwardsPoint.«x86_64-tables».toExtended_def]
+  rw [edwards.EdwardsPoint.«64bit-tables».toExtended_def]
   exact he
 
 /-- The point `(x : y : 1 : x y)` with `(x, y)` on the curve: on the curve, with these
 coordinates. -/
-private theorem onCurve_and_toPoint {ep : RistrettoPoint.«x86_64-tables»} {x y : ZMod p}
+private theorem onCurve_and_toPoint {ep : RistrettoPoint.«64bit-tables»} {x y : ZMod p}
     (hxy : curve25519.edwards.Equation x y) (h : ep.toExtended = ⟨x, y, 1, x * y⟩) :
     ep.OnCurve ∧ ep.toPoint.x = x ∧ ep.toPoint.y = y := by
   have hon : ep.OnCurve := by
-    rw [edwards.EdwardsPoint.«x86_64-tables».onCurve_iff, h]
+    rw [edwards.EdwardsPoint.«64bit-tables».onCurve_iff, h]
     refine ⟨one_ne_zero, (one_mul _).symm, ?_⟩
     rw [div_one, div_one]
     exact hxy
   refine ⟨hon, ?_, ?_⟩
-  · rw [edwards.EdwardsPoint.«x86_64-tables».toPoint_x hon]
-    simp only [edwards.EdwardsPoint.«x86_64-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [edwards.EdwardsPoint.«64bit-tables».toPoint_x hon]
+    simp only [edwards.EdwardsPoint.«64bit-tables».toExtended_def, Extended.mk.injEq] at h
     rw [h.1, h.2.2.1, div_one]
-  · rw [edwards.EdwardsPoint.«x86_64-tables».toPoint_y hon]
-    simp only [edwards.EdwardsPoint.«x86_64-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [edwards.EdwardsPoint.«64bit-tables».toPoint_y hon]
+    simp only [edwards.EdwardsPoint.«64bit-tables».toExtended_def, Extended.mk.injEq] at h
     rw [h.2.1, h.2.2.1, div_one]
 
-end decompress.«x86_64-tables»
+end decompress.«64bit-tables»
 
-namespace decompress.«i686-tables»
+namespace decompress.«32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `decompress::step_1`: `s` from the low `255` bits; the first choice is `1` iff the bytes are
 canonical (value `< p`), the second iff `s` is negative. -/
 private theorem step_1_spec (repr : CompressedRistretto) :
-    step_1.«i686-tables» repr
+    step_1.«32bit-tables» repr
       ⦃ (c1 : subtle.Choice) (c2 : subtle.Choice) (s : FieldElement2625) =>
       c1.IsValid ∧ (c1 = 1#u8 ↔ repr.asNat < p) ∧ c2.IsValid ∧ (c2 = 1#u8 ↔ s.toField.IsNeg) ∧
       s.toField = ((repr.asNat % 2 ^ 255 : ℕ) : ZMod p) ∧ s.LimbsLt 26 ⦄ := by
-  unfold step_1.«i686-tables»
+  unfold step_1.«32bit-tables»
   step as ⟨a, ha⟩
   step as ⟨s, hs, hsb⟩
   step as ⟨sb, hsb'⟩
@@ -320,15 +320,15 @@ private theorem step_1_spec (repr : CompressedRistretto) :
     exact (ZMod.natCast_eq_natCast_iff' _ _ _).mpr hs
 
 private theorem step_2_eq (s : FieldElement2625) :
-    step_2.«i686-tables» s = decompress.step2Body Backend.U32
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«i686-tables»)) s := rfl
+    step_2.«32bit-tables» s = decompress.step2Body Backend.U32
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«32bit-tables»)) s := rfl
 
 open decompress in
 /-- `decompress::step_2`: the candidate point `(x, y, 1, x y)` of RFC 9496 §4.3.1 and its three
 tests (`was_square`, `x y` negative, `y = 0`); limbs `< 2^26`. -/
 private theorem step_2_spec (s : FieldElement2625) (hs : s.LimbsLt 26) :
-    step_2.«i686-tables» s ⦃ (ok1 : subtle.Choice) (tn : subtle.Choice) (yz : subtle.Choice)
-        (res : RistrettoPoint.«i686-tables») =>
+    step_2.«32bit-tables» s ⦃ (ok1 : subtle.Choice) (tn : subtle.Choice) (yz : subtle.Choice)
+        (res : RistrettoPoint.«32bit-tables») =>
       ok1.IsValid ∧ (ok1 = 1#u8 ↔ (sqrtRatioM1 1 (dW s.toField)).1 = true) ∧
       tn.IsValid ∧ (tn = 1#u8 ↔ (dX s.toField * dY s.toField).IsNeg) ∧
       yz.IsValid ∧ (yz = 1#u8 ↔ dY s.toField = 0) ∧
@@ -342,41 +342,41 @@ private theorem step_2_spec (s : FieldElement2625) (hs : s.LimbsLt 26) :
     hs)
   rintro ⟨ok1, tn, yz, res⟩ ⟨h1, h2, h3, h4, h5, h6, a, b, c, d, rfl, he, ha, hb, hc, hd⟩
   refine ⟨h1, h2, h3, h4, h5, h6, ?_, ha, hb, hc, hd⟩
-  rw [edwards.EdwardsPoint.«i686-tables».toExtended_def]
+  rw [edwards.EdwardsPoint.«32bit-tables».toExtended_def]
   exact he
 
 /-- The point `(x : y : 1 : x y)` with `(x, y)` on the curve: on the curve, with these
 coordinates. -/
-private theorem onCurve_and_toPoint {ep : RistrettoPoint.«i686-tables»} {x y : ZMod p}
+private theorem onCurve_and_toPoint {ep : RistrettoPoint.«32bit-tables»} {x y : ZMod p}
     (hxy : curve25519.edwards.Equation x y) (h : ep.toExtended = ⟨x, y, 1, x * y⟩) :
     ep.OnCurve ∧ ep.toPoint.x = x ∧ ep.toPoint.y = y := by
   have hon : ep.OnCurve := by
-    rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff, h]
+    rw [edwards.EdwardsPoint.«32bit-tables».onCurve_iff, h]
     refine ⟨one_ne_zero, (one_mul _).symm, ?_⟩
     rw [div_one, div_one]
     exact hxy
   refine ⟨hon, ?_, ?_⟩
-  · rw [edwards.EdwardsPoint.«i686-tables».toPoint_x hon]
-    simp only [edwards.EdwardsPoint.«i686-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [edwards.EdwardsPoint.«32bit-tables».toPoint_x hon]
+    simp only [edwards.EdwardsPoint.«32bit-tables».toExtended_def, Extended.mk.injEq] at h
     rw [h.1, h.2.2.1, div_one]
-  · rw [edwards.EdwardsPoint.«i686-tables».toPoint_y hon]
-    simp only [edwards.EdwardsPoint.«i686-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [edwards.EdwardsPoint.«32bit-tables».toPoint_y hon]
+    simp only [edwards.EdwardsPoint.«32bit-tables».toExtended_def, Extended.mk.injEq] at h
     rw [h.2.1, h.2.2.1, div_one]
 
-end decompress.«i686-tables»
+end decompress.«32bit-tables»
 
-namespace decompress.«x86_64-no-tables»
+namespace decompress.«64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `decompress::step_1`: `s` from the low `255` bits; the first choice is `1` iff the bytes are
 canonical (value `< p`), the second iff `s` is negative. -/
 private theorem step_1_spec (repr : CompressedRistretto) :
-    step_1.«x86_64-no-tables» repr
+    step_1.«64bit-notables» repr
       ⦃ (c1 : subtle.Choice) (c2 : subtle.Choice) (s : FieldElement51) =>
       c1.IsValid ∧ (c1 = 1#u8 ↔ repr.asNat < p) ∧ c2.IsValid ∧ (c2 = 1#u8 ↔ s.toField.IsNeg) ∧
       s.toField = ((repr.asNat % 2 ^ 255 : ℕ) : ZMod p) ∧ s.LimbsLt 51 ⦄ := by
-  unfold step_1.«x86_64-no-tables»
+  unfold step_1.«64bit-notables»
   step as ⟨a, ha⟩
   step as ⟨s, hs, hsb⟩
   step as ⟨sb, hsb'⟩
@@ -400,15 +400,15 @@ private theorem step_1_spec (repr : CompressedRistretto) :
   · rw [toField_def, hs, CompressedRistretto.asNat_def]
 
 private theorem step_2_eq (s : FieldElement51) :
-    step_2.«x86_64-no-tables» s = decompress.step2Body Backend.U64
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«x86_64-no-tables»)) s := rfl
+    step_2.«64bit-notables» s = decompress.step2Body Backend.U64
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«64bit-notables»)) s := rfl
 
 open decompress in
 /-- `decompress::step_2`: the candidate point `(x, y, 1, x y)` of RFC 9496 §4.3.1 and its three
 tests (`was_square`, `x y` negative, `y = 0`); limbs `< 2^52`. -/
 private theorem step_2_spec (s : FieldElement51) (hs : s.LimbsLt 52) :
-    step_2.«x86_64-no-tables» s ⦃ (ok1 : subtle.Choice) (tn : subtle.Choice) (yz : subtle.Choice)
-        (res : RistrettoPoint.«x86_64-no-tables») =>
+    step_2.«64bit-notables» s ⦃ (ok1 : subtle.Choice) (tn : subtle.Choice) (yz : subtle.Choice)
+        (res : RistrettoPoint.«64bit-notables») =>
       ok1.IsValid ∧ (ok1 = 1#u8 ↔ (sqrtRatioM1 1 (dW s.toField)).1 = true) ∧
       tn.IsValid ∧ (tn = 1#u8 ↔ (dX s.toField * dY s.toField).IsNeg) ∧
       yz.IsValid ∧ (yz = 1#u8 ↔ dY s.toField = 0) ∧
@@ -422,41 +422,41 @@ private theorem step_2_spec (s : FieldElement51) (hs : s.LimbsLt 52) :
     hs)
   rintro ⟨ok1, tn, yz, res⟩ ⟨h1, h2, h3, h4, h5, h6, a, b, c, d, rfl, he, ha, hb, hc, hd⟩
   refine ⟨h1, h2, h3, h4, h5, h6, ?_, ha, hb, hc, hd⟩
-  rw [edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def]
+  rw [edwards.EdwardsPoint.«64bit-notables».toExtended_def]
   exact he
 
 /-- The point `(x : y : 1 : x y)` with `(x, y)` on the curve: on the curve, with these
 coordinates. -/
-private theorem onCurve_and_toPoint {ep : RistrettoPoint.«x86_64-no-tables»} {x y : ZMod p}
+private theorem onCurve_and_toPoint {ep : RistrettoPoint.«64bit-notables»} {x y : ZMod p}
     (hxy : curve25519.edwards.Equation x y) (h : ep.toExtended = ⟨x, y, 1, x * y⟩) :
     ep.OnCurve ∧ ep.toPoint.x = x ∧ ep.toPoint.y = y := by
   have hon : ep.OnCurve := by
-    rw [edwards.EdwardsPoint.«x86_64-no-tables».onCurve_iff, h]
+    rw [edwards.EdwardsPoint.«64bit-notables».onCurve_iff, h]
     refine ⟨one_ne_zero, (one_mul _).symm, ?_⟩
     rw [div_one, div_one]
     exact hxy
   refine ⟨hon, ?_, ?_⟩
-  · rw [edwards.EdwardsPoint.«x86_64-no-tables».toPoint_x hon]
-    simp only [edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [edwards.EdwardsPoint.«64bit-notables».toPoint_x hon]
+    simp only [edwards.EdwardsPoint.«64bit-notables».toExtended_def, Extended.mk.injEq] at h
     rw [h.1, h.2.2.1, div_one]
-  · rw [edwards.EdwardsPoint.«x86_64-no-tables».toPoint_y hon]
-    simp only [edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [edwards.EdwardsPoint.«64bit-notables».toPoint_y hon]
+    simp only [edwards.EdwardsPoint.«64bit-notables».toExtended_def, Extended.mk.injEq] at h
     rw [h.2.1, h.2.2.1, div_one]
 
-end decompress.«x86_64-no-tables»
+end decompress.«64bit-notables»
 
-namespace decompress.«i686-no-tables»
+namespace decompress.«32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `decompress::step_1`: `s` from the low `255` bits; the first choice is `1` iff the bytes are
 canonical (value `< p`), the second iff `s` is negative. -/
 private theorem step_1_spec (repr : CompressedRistretto) :
-    step_1.«i686-no-tables» repr
+    step_1.«32bit-notables» repr
       ⦃ (c1 : subtle.Choice) (c2 : subtle.Choice) (s : FieldElement2625) =>
       c1.IsValid ∧ (c1 = 1#u8 ↔ repr.asNat < p) ∧ c2.IsValid ∧ (c2 = 1#u8 ↔ s.toField.IsNeg) ∧
       s.toField = ((repr.asNat % 2 ^ 255 : ℕ) : ZMod p) ∧ s.LimbsLt 26 ⦄ := by
-  unfold step_1.«i686-no-tables»
+  unfold step_1.«32bit-notables»
   step as ⟨a, ha⟩
   step as ⟨s, hs, hsb⟩
   step as ⟨sb, hsb'⟩
@@ -481,15 +481,15 @@ private theorem step_1_spec (repr : CompressedRistretto) :
     exact (ZMod.natCast_eq_natCast_iff' _ _ _).mpr hs
 
 private theorem step_2_eq (s : FieldElement2625) :
-    step_2.«i686-no-tables» s = decompress.step2Body Backend.U32
-      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«i686-no-tables»)) s := rfl
+    step_2.«32bit-notables» s = decompress.step2Body Backend.U32
+      (fun X Y Z T => (⟨X, Y, Z, T⟩ : edwards.EdwardsPoint.«32bit-notables»)) s := rfl
 
 open decompress in
 /-- `decompress::step_2`: the candidate point `(x, y, 1, x y)` of RFC 9496 §4.3.1 and its three
 tests (`was_square`, `x y` negative, `y = 0`); limbs `< 2^26`. -/
 private theorem step_2_spec (s : FieldElement2625) (hs : s.LimbsLt 26) :
-    step_2.«i686-no-tables» s ⦃ (ok1 : subtle.Choice) (tn : subtle.Choice) (yz : subtle.Choice)
-        (res : RistrettoPoint.«i686-no-tables») =>
+    step_2.«32bit-notables» s ⦃ (ok1 : subtle.Choice) (tn : subtle.Choice) (yz : subtle.Choice)
+        (res : RistrettoPoint.«32bit-notables») =>
       ok1.IsValid ∧ (ok1 = 1#u8 ↔ (sqrtRatioM1 1 (dW s.toField)).1 = true) ∧
       tn.IsValid ∧ (tn = 1#u8 ↔ (dX s.toField * dY s.toField).IsNeg) ∧
       yz.IsValid ∧ (yz = 1#u8 ↔ dY s.toField = 0) ∧
@@ -503,28 +503,28 @@ private theorem step_2_spec (s : FieldElement2625) (hs : s.LimbsLt 26) :
     hs)
   rintro ⟨ok1, tn, yz, res⟩ ⟨h1, h2, h3, h4, h5, h6, a, b, c, d, rfl, he, ha, hb, hc, hd⟩
   refine ⟨h1, h2, h3, h4, h5, h6, ?_, ha, hb, hc, hd⟩
-  rw [edwards.EdwardsPoint.«i686-no-tables».toExtended_def]
+  rw [edwards.EdwardsPoint.«32bit-notables».toExtended_def]
   exact he
 
 /-- The point `(x : y : 1 : x y)` with `(x, y)` on the curve: on the curve, with these
 coordinates. -/
-private theorem onCurve_and_toPoint {ep : RistrettoPoint.«i686-no-tables»} {x y : ZMod p}
+private theorem onCurve_and_toPoint {ep : RistrettoPoint.«32bit-notables»} {x y : ZMod p}
     (hxy : curve25519.edwards.Equation x y) (h : ep.toExtended = ⟨x, y, 1, x * y⟩) :
     ep.OnCurve ∧ ep.toPoint.x = x ∧ ep.toPoint.y = y := by
   have hon : ep.OnCurve := by
-    rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff, h]
+    rw [edwards.EdwardsPoint.«32bit-notables».onCurve_iff, h]
     refine ⟨one_ne_zero, (one_mul _).symm, ?_⟩
     rw [div_one, div_one]
     exact hxy
   refine ⟨hon, ?_, ?_⟩
-  · rw [edwards.EdwardsPoint.«i686-no-tables».toPoint_x hon]
-    simp only [edwards.EdwardsPoint.«i686-no-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [edwards.EdwardsPoint.«32bit-notables».toPoint_x hon]
+    simp only [edwards.EdwardsPoint.«32bit-notables».toExtended_def, Extended.mk.injEq] at h
     rw [h.1, h.2.2.1, div_one]
-  · rw [edwards.EdwardsPoint.«i686-no-tables».toPoint_y hon]
-    simp only [edwards.EdwardsPoint.«i686-no-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [edwards.EdwardsPoint.«32bit-notables».toPoint_y hon]
+    simp only [edwards.EdwardsPoint.«32bit-notables».toExtended_def, Extended.mk.injEq] at h
     rw [h.2.1, h.2.2.1, div_one]
 
-end decompress.«i686-no-tables»
+end decompress.«32bit-notables»
 
 namespace CompressedRistretto
 
@@ -534,13 +534,13 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 is the canonical, non-negative encoding of a point of the class); the point is on the curve,
 even (a ristretto255 representative) and has limbs `< 2^52`. -/
 @[step]
-theorem «x86_64-tables».decompress_spec (self : CompressedRistretto) :
-    decompress.«x86_64-tables» self ⦃ (r : Option RistrettoPoint.«x86_64-tables») =>
-      r.map edwards.EdwardsPoint.«x86_64-tables».toPoint = Ristretto.decodeRep self.toVector ∧
+theorem «64bit-tables».decompress_spec (self : CompressedRistretto) :
+    decompress.«64bit-tables» self ⦃ (r : Option RistrettoPoint.«64bit-tables») =>
+      r.map edwards.EdwardsPoint.«64bit-tables».toPoint = Ristretto.decodeRep self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.LimbsLt 52 ⦄ := by
   simp only [Curve25519Dalek.ristretto.CompressedRistretto.decodeRep_toVector]
-  unfold decompress.«x86_64-tables»
-  step with decompress.«x86_64-tables».step_1_spec
+  unfold decompress.«64bit-tables»
+  step with decompress.«64bit-tables».step_1_spec
     as ⟨c1, c2, s, hc1v, hc1, hc2v, hc2, hsf, hsb⟩
   step as ⟨c, hcv, hc⟩
   step as ⟨cc, hccv, hcc⟩
@@ -557,7 +557,7 @@ theorem «x86_64-tables».decompress_spec (self : CompressedRistretto) :
     have hs' : s.toField = (self.asNat : ZMod p) := by rw [hsf, Nat.mod_eq_of_lt
       (hgood1.1.trans p_lt_two_pow_255)]
     simp only [hb', Bool.false_eq_true, ite_false]
-    step with decompress.«x86_64-tables».step_2_spec s (limbs_lt_of_le (by decide) hsb)
+    step with decompress.«64bit-tables».step_2_spec s (limbs_lt_of_le (by decide) hsb)
       as ⟨ok1, tn, yz, res, hokv, hok, htnv, htn, hyzv, hyz, hres, hresb⟩
     step as ⟨c2', hc2'v, hc2'⟩
     step as ⟨c3, hc3v, hc3⟩
@@ -580,9 +580,9 @@ theorem «x86_64-tables».decompress_spec (self : CompressedRistretto) :
         · exact absurd hgood2 (hb1iff.mp rfl)
       simp only [hb1', Bool.false_eq_true, ite_false, WP.spec_ok]
       obtain ⟨heq, hy⟩ := candidate_facts hgood2.1
-      obtain ⟨hon, hpx, hpy⟩ := decompress.«x86_64-tables».onCurve_and_toPoint heq hres
+      obtain ⟨hon, hpx, hpy⟩ := decompress.«64bit-tables».onCurve_and_toPoint heq hres
       have hdec : Ristretto.decodeRepNat self.asNat =
-          some (edwards.EdwardsPoint.«x86_64-tables».toPoint res) := by
+          some (edwards.EdwardsPoint.«64bit-tables».toPoint res) := by
         rw [Ristretto.decodeRepNat_eq_some_iff]
         refine ⟨hgood1.1, by rw [← hs']; exact hgood1.2, by rw [hpy, hy], ?_, ?_, ?_⟩
         · rw [hpx]
@@ -621,13 +621,13 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
 is the canonical, non-negative encoding of a point of the class); the point is on the curve,
 even (a ristretto255 representative) and has limbs `< 2^26`. -/
 @[step]
-theorem «i686-tables».decompress_spec (self : CompressedRistretto) :
-    decompress.«i686-tables» self ⦃ (r : Option RistrettoPoint.«i686-tables») =>
-      r.map edwards.EdwardsPoint.«i686-tables».toPoint = Ristretto.decodeRep self.toVector ∧
+theorem «32bit-tables».decompress_spec (self : CompressedRistretto) :
+    decompress.«32bit-tables» self ⦃ (r : Option RistrettoPoint.«32bit-tables») =>
+      r.map edwards.EdwardsPoint.«32bit-tables».toPoint = Ristretto.decodeRep self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.LimbsLt 26 ⦄ := by
   simp only [Curve25519Dalek.ristretto.CompressedRistretto.decodeRep_toVector]
-  unfold decompress.«i686-tables»
-  step with decompress.«i686-tables».step_1_spec
+  unfold decompress.«32bit-tables»
+  step with decompress.«32bit-tables».step_1_spec
     as ⟨c1, c2, s, hc1v, hc1, hc2v, hc2, hsf, hsb⟩
   step as ⟨c, hcv, hc⟩
   step as ⟨cc, hccv, hcc⟩
@@ -644,7 +644,7 @@ theorem «i686-tables».decompress_spec (self : CompressedRistretto) :
     have hs' : s.toField = (self.asNat : ZMod p) := by rw [hsf, Nat.mod_eq_of_lt
       (hgood1.1.trans p_lt_two_pow_255)]
     simp only [hb', Bool.false_eq_true, ite_false]
-    step with decompress.«i686-tables».step_2_spec s (limbs_lt_of_le (by decide) hsb)
+    step with decompress.«32bit-tables».step_2_spec s (limbs_lt_of_le (by decide) hsb)
       as ⟨ok1, tn, yz, res, hokv, hok, htnv, htn, hyzv, hyz, hres, hresb⟩
     step as ⟨c2', hc2'v, hc2'⟩
     step as ⟨c3, hc3v, hc3⟩
@@ -667,9 +667,9 @@ theorem «i686-tables».decompress_spec (self : CompressedRistretto) :
         · exact absurd hgood2 (hb1iff.mp rfl)
       simp only [hb1', Bool.false_eq_true, ite_false, WP.spec_ok]
       obtain ⟨heq, hy⟩ := candidate_facts hgood2.1
-      obtain ⟨hon, hpx, hpy⟩ := decompress.«i686-tables».onCurve_and_toPoint heq hres
+      obtain ⟨hon, hpx, hpy⟩ := decompress.«32bit-tables».onCurve_and_toPoint heq hres
       have hdec : Ristretto.decodeRepNat self.asNat =
-          some (edwards.EdwardsPoint.«i686-tables».toPoint res) := by
+          some (edwards.EdwardsPoint.«32bit-tables».toPoint res) := by
         rw [Ristretto.decodeRepNat_eq_some_iff]
         refine ⟨hgood1.1, by rw [← hs']; exact hgood1.2, by rw [hpy, hy], ?_, ?_, ?_⟩
         · rw [hpx]
@@ -709,13 +709,13 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
 is the canonical, non-negative encoding of a point of the class); the point is on the curve,
 even (a ristretto255 representative) and has limbs `< 2^52`. -/
 @[step]
-theorem «x86_64-no-tables».decompress_spec (self : CompressedRistretto) :
-    decompress.«x86_64-no-tables» self ⦃ (r : Option RistrettoPoint.«x86_64-no-tables») =>
-      r.map edwards.EdwardsPoint.«x86_64-no-tables».toPoint = Ristretto.decodeRep self.toVector ∧
+theorem «64bit-notables».decompress_spec (self : CompressedRistretto) :
+    decompress.«64bit-notables» self ⦃ (r : Option RistrettoPoint.«64bit-notables») =>
+      r.map edwards.EdwardsPoint.«64bit-notables».toPoint = Ristretto.decodeRep self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.LimbsLt 52 ⦄ := by
   simp only [Curve25519Dalek.ristretto.CompressedRistretto.decodeRep_toVector]
-  unfold decompress.«x86_64-no-tables»
-  step with decompress.«x86_64-no-tables».step_1_spec
+  unfold decompress.«64bit-notables»
+  step with decompress.«64bit-notables».step_1_spec
     as ⟨c1, c2, s, hc1v, hc1, hc2v, hc2, hsf, hsb⟩
   step as ⟨c, hcv, hc⟩
   step as ⟨cc, hccv, hcc⟩
@@ -732,7 +732,7 @@ theorem «x86_64-no-tables».decompress_spec (self : CompressedRistretto) :
     have hs' : s.toField = (self.asNat : ZMod p) := by rw [hsf, Nat.mod_eq_of_lt
       (hgood1.1.trans p_lt_two_pow_255)]
     simp only [hb', Bool.false_eq_true, ite_false]
-    step with decompress.«x86_64-no-tables».step_2_spec s (limbs_lt_of_le (by decide) hsb)
+    step with decompress.«64bit-notables».step_2_spec s (limbs_lt_of_le (by decide) hsb)
       as ⟨ok1, tn, yz, res, hokv, hok, htnv, htn, hyzv, hyz, hres, hresb⟩
     step as ⟨c2', hc2'v, hc2'⟩
     step as ⟨c3, hc3v, hc3⟩
@@ -755,9 +755,9 @@ theorem «x86_64-no-tables».decompress_spec (self : CompressedRistretto) :
         · exact absurd hgood2 (hb1iff.mp rfl)
       simp only [hb1', Bool.false_eq_true, ite_false, WP.spec_ok]
       obtain ⟨heq, hy⟩ := candidate_facts hgood2.1
-      obtain ⟨hon, hpx, hpy⟩ := decompress.«x86_64-no-tables».onCurve_and_toPoint heq hres
+      obtain ⟨hon, hpx, hpy⟩ := decompress.«64bit-notables».onCurve_and_toPoint heq hres
       have hdec : Ristretto.decodeRepNat self.asNat =
-          some (edwards.EdwardsPoint.«x86_64-no-tables».toPoint res) := by
+          some (edwards.EdwardsPoint.«64bit-notables».toPoint res) := by
         rw [Ristretto.decodeRepNat_eq_some_iff]
         refine ⟨hgood1.1, by rw [← hs']; exact hgood1.2, by rw [hpy, hy], ?_, ?_, ?_⟩
         · rw [hpx]
@@ -796,13 +796,13 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
 is the canonical, non-negative encoding of a point of the class); the point is on the curve,
 even (a ristretto255 representative) and has limbs `< 2^26`. -/
 @[step]
-theorem «i686-no-tables».decompress_spec (self : CompressedRistretto) :
-    decompress.«i686-no-tables» self ⦃ (r : Option RistrettoPoint.«i686-no-tables») =>
-      r.map edwards.EdwardsPoint.«i686-no-tables».toPoint = Ristretto.decodeRep self.toVector ∧
+theorem «32bit-notables».decompress_spec (self : CompressedRistretto) :
+    decompress.«32bit-notables» self ⦃ (r : Option RistrettoPoint.«32bit-notables») =>
+      r.map edwards.EdwardsPoint.«32bit-notables».toPoint = Ristretto.decodeRep self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ Even q.toPoint ∧ q.LimbsLt 26 ⦄ := by
   simp only [Curve25519Dalek.ristretto.CompressedRistretto.decodeRep_toVector]
-  unfold decompress.«i686-no-tables»
-  step with decompress.«i686-no-tables».step_1_spec
+  unfold decompress.«32bit-notables»
+  step with decompress.«32bit-notables».step_1_spec
     as ⟨c1, c2, s, hc1v, hc1, hc2v, hc2, hsf, hsb⟩
   step as ⟨c, hcv, hc⟩
   step as ⟨cc, hccv, hcc⟩
@@ -819,7 +819,7 @@ theorem «i686-no-tables».decompress_spec (self : CompressedRistretto) :
     have hs' : s.toField = (self.asNat : ZMod p) := by rw [hsf, Nat.mod_eq_of_lt
       (hgood1.1.trans p_lt_two_pow_255)]
     simp only [hb', Bool.false_eq_true, ite_false]
-    step with decompress.«i686-no-tables».step_2_spec s (limbs_lt_of_le (by decide) hsb)
+    step with decompress.«32bit-notables».step_2_spec s (limbs_lt_of_le (by decide) hsb)
       as ⟨ok1, tn, yz, res, hokv, hok, htnv, htn, hyzv, hyz, hres, hresb⟩
     step as ⟨c2', hc2'v, hc2'⟩
     step as ⟨c3, hc3v, hc3⟩
@@ -842,9 +842,9 @@ theorem «i686-no-tables».decompress_spec (self : CompressedRistretto) :
         · exact absurd hgood2 (hb1iff.mp rfl)
       simp only [hb1', Bool.false_eq_true, ite_false, WP.spec_ok]
       obtain ⟨heq, hy⟩ := candidate_facts hgood2.1
-      obtain ⟨hon, hpx, hpy⟩ := decompress.«i686-no-tables».onCurve_and_toPoint heq hres
+      obtain ⟨hon, hpx, hpy⟩ := decompress.«32bit-notables».onCurve_and_toPoint heq hres
       have hdec : Ristretto.decodeRepNat self.asNat =
-          some (edwards.EdwardsPoint.«i686-no-tables».toPoint res) := by
+          some (edwards.EdwardsPoint.«32bit-notables».toPoint res) := by
         rw [Ristretto.decodeRepNat_eq_some_iff]
         refine ⟨hgood1.1, by rw [← hs']; exact hgood1.2, by rw [hpy, hy], ?_, ?_, ?_⟩
         · rw [hpx]

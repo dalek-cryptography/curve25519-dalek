@@ -19,120 +19,120 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek.scalar.Scalar.Insts
 
-namespace «CoreOpsArithMulShared0AffinePointx86_64-tablesEdwardsPointx86_64-tables»
+namespace «CoreOpsArithMulShared0AffinePoint64bit-tablesEdwardsPoint64bit-tables»
 
 /-- `Mul<&AffinePoint> for Scalar`: `self • P` (unreduced, `< 2^255`); limbs `< 2^52`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«x86_64-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«64bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
-  step with edwards.affine.«AffinePointx86_64-tables».to_edwards_spec
+  step with edwards.affine.«AffinePoint64bit-tables».to_edwards_spec
     as ⟨ep, hepon, hep, hepb⟩
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hep ▸ hr, hrb⟩
 
-end «CoreOpsArithMulShared0AffinePointx86_64-tablesEdwardsPointx86_64-tables»
+end «CoreOpsArithMulShared0AffinePoint64bit-tablesEdwardsPoint64bit-tables»
 
-namespace «CoreOpsArithMulShared0AffinePointi686-tablesEdwardsPointi686-tables»
+namespace «CoreOpsArithMulShared0AffinePoint32bit-tablesEdwardsPoint32bit-tables»
 
 /-- `Mul<&AffinePoint> for Scalar`: `self • P` (unreduced, `< 2^255`); limbs `< 2^26`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«i686-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«32bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
-  step with edwards.affine.«AffinePointi686-tables».to_edwards_spec
+  step with edwards.affine.«AffinePoint32bit-tables».to_edwards_spec
     as ⟨ep, hepon, hep, hepb⟩
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hep ▸ hr, hrb⟩
 
-end «CoreOpsArithMulShared0AffinePointi686-tablesEdwardsPointi686-tables»
+end «CoreOpsArithMulShared0AffinePoint32bit-tablesEdwardsPoint32bit-tables»
 
-namespace «CoreOpsArithMulAffinePointx86_64-tablesEdwardsPointx86_64-tables»
+namespace «CoreOpsArithMulAffinePoint64bit-tablesEdwardsPoint64bit-tables»
 
 /-- `Mul<AffinePoint> for Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«x86_64-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«64bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulAffinePointx86_64-tablesEdwardsPointx86_64-tables»
+end «CoreOpsArithMulAffinePoint64bit-tablesEdwardsPoint64bit-tables»
 
-namespace «CoreOpsArithMulAffinePointi686-tablesEdwardsPointi686-tables»
+namespace «CoreOpsArithMulAffinePoint32bit-tablesEdwardsPoint32bit-tables»
 
 /-- `Mul<AffinePoint> for Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«i686-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«32bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulAffinePointi686-tablesEdwardsPointi686-tables»
+end «CoreOpsArithMulAffinePoint32bit-tablesEdwardsPoint32bit-tables»
 
-namespace «CoreOpsArithMulShared0AffinePointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+namespace «CoreOpsArithMulShared0AffinePoint64bit-notablesEdwardsPoint64bit-notables»
 
 /-- `Mul<&AffinePoint> for Scalar`: `self • P` (unreduced, `< 2^255`); limbs `< 2^52`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«x86_64-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«64bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
-  step with edwards.affine.«AffinePointx86_64-no-tables».to_edwards_spec
+  step with edwards.affine.«AffinePoint64bit-notables».to_edwards_spec
     as ⟨ep, hepon, hep, hepb⟩
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hep ▸ hr, hrb⟩
 
-end «CoreOpsArithMulShared0AffinePointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+end «CoreOpsArithMulShared0AffinePoint64bit-notablesEdwardsPoint64bit-notables»
 
-namespace «CoreOpsArithMulShared0AffinePointi686-no-tablesEdwardsPointi686-no-tables»
+namespace «CoreOpsArithMulShared0AffinePoint32bit-notablesEdwardsPoint32bit-notables»
 
 /-- `Mul<&AffinePoint> for Scalar`: `self • P` (unreduced, `< 2^255`); limbs `< 2^26`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«i686-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«32bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
-  step with edwards.affine.«AffinePointi686-no-tables».to_edwards_spec
+  step with edwards.affine.«AffinePoint32bit-notables».to_edwards_spec
     as ⟨ep, hepon, hep, hepb⟩
   step as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hep ▸ hr, hrb⟩
 
-end «CoreOpsArithMulShared0AffinePointi686-no-tablesEdwardsPointi686-no-tables»
+end «CoreOpsArithMulShared0AffinePoint32bit-notablesEdwardsPoint32bit-notables»
 
-namespace «CoreOpsArithMulAffinePointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+namespace «CoreOpsArithMulAffinePoint64bit-notablesEdwardsPoint64bit-notables»
 
 /-- `Mul<AffinePoint> for Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«x86_64-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«64bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulAffinePointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+end «CoreOpsArithMulAffinePoint64bit-notablesEdwardsPoint64bit-notables»
 
-namespace «CoreOpsArithMulAffinePointi686-no-tablesEdwardsPointi686-no-tables»
+namespace «CoreOpsArithMulAffinePoint32bit-notablesEdwardsPoint32bit-notables»
 
 /-- `Mul<AffinePoint> for Scalar`: as the borrowed form. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«i686-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : edwards.affine.AffinePoint.«32bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    mul self rhs ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step*
 
-end «CoreOpsArithMulAffinePointi686-no-tablesEdwardsPointi686-no-tables»
+end «CoreOpsArithMulAffinePoint32bit-notablesEdwardsPoint32bit-notables»
 
 end Curve25519Dalek.scalar.Scalar.Insts

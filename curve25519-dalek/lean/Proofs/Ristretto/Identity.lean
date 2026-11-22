@@ -17,116 +17,116 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 
 namespace Curve25519Dalek
 
-namespace ristretto.RistrettoPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace ristretto.RistrettoPoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
 /-- `Identity for RistrettoPoint` represents the neutral element. -/
 @[step]
 theorem identity_spec :
-    identity ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    identity ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ := by
   unfold identity
   step with
-    edwards.EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+    edwards.EdwardsPoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, h1, h2, h3⟩
   exact ⟨h1, by rw [h2]; exact Even.zero, h2, h3⟩
 
-end ristretto.RistrettoPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity
+end ristretto.RistrettoPoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
-namespace ristretto.RistrettoPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace ristretto.RistrettoPoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
 /-- `Identity for RistrettoPoint` represents the neutral element. -/
 @[step]
 theorem identity_spec :
-    identity ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    identity ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ := by
   unfold identity
   step with
-    edwards.EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+    edwards.EdwardsPoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, h1, h2, h3⟩
   exact ⟨h1, by rw [h2]; exact Even.zero, h2, h3⟩
 
-end ristretto.RistrettoPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity
+end ristretto.RistrettoPoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
-namespace ristretto.RistrettoPoint.«x86_64-tables».Insts.CoreDefaultDefault
+namespace ristretto.RistrettoPoint.«64bit-tables».Insts.CoreDefaultDefault
 
 /-- `Default for RistrettoPoint` represents the neutral element. -/
 @[step]
 theorem default_spec :
-    default ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
-      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ := by
-  unfold default
-  step as ⟨r, h1, h2, h3, h4⟩
-  exact ⟨h1, h2, h3, h4⟩
-
-end ristretto.RistrettoPoint.«x86_64-tables».Insts.CoreDefaultDefault
-
-namespace ristretto.RistrettoPoint.«i686-tables».Insts.CoreDefaultDefault
-
-/-- `Default for RistrettoPoint` represents the neutral element. -/
-@[step]
-theorem default_spec :
-    default ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
-      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ := by
-  unfold default
-  step as ⟨r, h1, h2, h3, h4⟩
-  exact ⟨h1, h2, h3, h4⟩
-
-end ristretto.RistrettoPoint.«i686-tables».Insts.CoreDefaultDefault
-
-namespace ristretto.RistrettoPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity
-
-/-- `Identity for RistrettoPoint` represents the neutral element. -/
-@[step]
-theorem identity_spec :
-    identity ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ := by
-  unfold identity
-  step with
-    edwards.EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
-    as ⟨r, h1, h2, h3⟩
-  exact ⟨h1, by rw [h2]; exact Even.zero, h2, h3⟩
-
-end ristretto.RistrettoPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity
-
-namespace ristretto.RistrettoPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity
-
-/-- `Identity for RistrettoPoint` represents the neutral element. -/
-@[step]
-theorem identity_spec :
-    identity ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
-      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ := by
-  unfold identity
-  step with
-    edwards.EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
-    as ⟨r, h1, h2, h3⟩
-  exact ⟨h1, by rw [h2]; exact Even.zero, h2, h3⟩
-
-end ristretto.RistrettoPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity
-
-namespace ristretto.RistrettoPoint.«x86_64-no-tables».Insts.CoreDefaultDefault
-
-/-- `Default for RistrettoPoint` represents the neutral element. -/
-@[step]
-theorem default_spec :
-    default ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    default ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ := by
   unfold default
   step as ⟨r, h1, h2, h3, h4⟩
   exact ⟨h1, h2, h3, h4⟩
 
-end ristretto.RistrettoPoint.«x86_64-no-tables».Insts.CoreDefaultDefault
+end ristretto.RistrettoPoint.«64bit-tables».Insts.CoreDefaultDefault
 
-namespace ristretto.RistrettoPoint.«i686-no-tables».Insts.CoreDefaultDefault
+namespace ristretto.RistrettoPoint.«32bit-tables».Insts.CoreDefaultDefault
 
 /-- `Default for RistrettoPoint` represents the neutral element. -/
 @[step]
 theorem default_spec :
-    default ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    default ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ := by
   unfold default
   step as ⟨r, h1, h2, h3, h4⟩
   exact ⟨h1, h2, h3, h4⟩
 
-end ristretto.RistrettoPoint.«i686-no-tables».Insts.CoreDefaultDefault
+end ristretto.RistrettoPoint.«32bit-tables».Insts.CoreDefaultDefault
+
+namespace ristretto.RistrettoPoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity
+
+/-- `Identity for RistrettoPoint` represents the neutral element. -/
+@[step]
+theorem identity_spec :
+    identity ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ := by
+  unfold identity
+  step with
+    edwards.EdwardsPoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+    as ⟨r, h1, h2, h3⟩
+  exact ⟨h1, by rw [h2]; exact Even.zero, h2, h3⟩
+
+end ristretto.RistrettoPoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity
+
+namespace ristretto.RistrettoPoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity
+
+/-- `Identity for RistrettoPoint` represents the neutral element. -/
+@[step]
+theorem identity_spec :
+    identity ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ := by
+  unfold identity
+  step with
+    edwards.EdwardsPoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+    as ⟨r, h1, h2, h3⟩
+  exact ⟨h1, by rw [h2]; exact Even.zero, h2, h3⟩
+
+end ristretto.RistrettoPoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity
+
+namespace ristretto.RistrettoPoint.«64bit-notables».Insts.CoreDefaultDefault
+
+/-- `Default for RistrettoPoint` represents the neutral element. -/
+@[step]
+theorem default_spec :
+    default ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 52 ⦄ := by
+  unfold default
+  step as ⟨r, h1, h2, h3, h4⟩
+  exact ⟨h1, h2, h3, h4⟩
+
+end ristretto.RistrettoPoint.«64bit-notables».Insts.CoreDefaultDefault
+
+namespace ristretto.RistrettoPoint.«32bit-notables».Insts.CoreDefaultDefault
+
+/-- `Default for RistrettoPoint` represents the neutral element. -/
+@[step]
+theorem default_spec :
+    default ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
+      r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = 0 ∧ r.LimbsLt 26 ⦄ := by
+  unfold default
+  step as ⟨r, h1, h2, h3, h4⟩
+  exact ⟨h1, h2, h3, h4⟩
+
+end ristretto.RistrettoPoint.«32bit-notables».Insts.CoreDefaultDefault
 
 end Curve25519Dalek

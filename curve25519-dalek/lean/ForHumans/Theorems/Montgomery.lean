@@ -136,23 +136,23 @@ theorem mul_left (s : Scalar) (P : MontgomeryPoint) :
 end Theorems.montgomery.MontgomeryPoint
 
 -- BEGIN PER-CONFIG
-namespace Theorems.montgomery.«x86_64-tables».MontgomeryPoint
+namespace Theorems.montgomery.«64bit-tables».MontgomeryPoint
 
 /-- `MontgomeryPoint::to_edwards`: `none` for `u = -1`; otherwise the lenient decoding (as
 `CompressedEdwardsY::decompress`) of the bytes of `y = (u - 1) / (u + 1)` with `y_bytes[31] ^= sign
 << 7`. -/
 theorem to_edwards (P : MontgomeryPoint) (sign : U8) :
-    MontgomeryPoint.to_edwards.«x86_64-tables» P sign
-      ⦃ (r : Option (edwards.EdwardsPoint.«x86_64-tables»)) =>
+    MontgomeryPoint.to_edwards.«64bit-tables» P sign
+      ⦃ (r : Option (edwards.EdwardsPoint.«64bit-tables»)) =>
         let u := decodeUCoordinate P.toVector
-        r.map edwards.EdwardsPoint.«x86_64-tables».toPoint =
+        r.map edwards.EdwardsPoint.«64bit-tables».toPoint =
           (if u = -1 then none
           else curve25519.decodeLenient
             ((encodeUCoordinate ((u - 1) / (u + 1))).set 31
               ((encodeUCoordinate ((u - 1) / (u + 1)))[31] ^^^
                 (UInt8.ofNat sign.val <<< 7)))) ∧
         ∀ q, r = some q → q.OnCurve ∧ q.IsBounded ⦄ :=
-  MontgomeryPoint.«x86_64-tables».to_edwards_spec P sign
+  MontgomeryPoint.«64bit-tables».to_edwards_spec P sign
 
-end Theorems.montgomery.«x86_64-tables».MontgomeryPoint
+end Theorems.montgomery.«64bit-tables».MontgomeryPoint
 -- END PER-CONFIG

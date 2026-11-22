@@ -17,60 +17,60 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek.backend
 
-namespace «VartimePrecomputedStrausx86_64-tables»
+namespace «VartimePrecomputedStraus64bit-tables»
 
-open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«x86_64-tables».Insts in
+open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«64bit-tables».Insts in
 /-- `VartimePrecomputedStraus::len` (backend): the number of static points. -/
 @[step]
-theorem len_spec (self : VartimePrecomputedStraus.«x86_64-tables») :
+theorem len_spec (self : VartimePrecomputedStraus.«64bit-tables») :
     len self ⦃ (r : Usize) => r.val = self.points.length ⦄ := by
   rcases self with ⟨inner⟩
   unfold len
   step as ⟨r, h⟩
-  simp only [h, VartimePrecomputedStraus.«x86_64-tables».points, List.length_map]
+  simp only [h, VartimePrecomputedStraus.«64bit-tables».points, List.length_map]
 
-end «VartimePrecomputedStrausx86_64-tables»
+end «VartimePrecomputedStraus64bit-tables»
 
-namespace «VartimePrecomputedStrausi686-tables»
+namespace «VartimePrecomputedStraus32bit-tables»
 
-open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«i686-tables».Insts in
+open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«32bit-tables».Insts in
 /-- `VartimePrecomputedStraus::len` (backend): the number of static points. -/
 @[step]
-theorem len_spec (self : VartimePrecomputedStraus.«i686-tables») :
+theorem len_spec (self : VartimePrecomputedStraus.«32bit-tables») :
     len self ⦃ (r : Usize) => r.val = self.points.length ⦄ := by
   rcases self with ⟨inner⟩
   unfold len
   step as ⟨r, h⟩
-  simp only [h, VartimePrecomputedStraus.«i686-tables».points, List.length_map]
+  simp only [h, VartimePrecomputedStraus.«32bit-tables».points, List.length_map]
 
-end «VartimePrecomputedStrausi686-tables»
+end «VartimePrecomputedStraus32bit-tables»
 
-namespace «VartimePrecomputedStrausx86_64-no-tables»
+namespace «VartimePrecomputedStraus64bit-notables»
 
-open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«x86_64-no-tables».Insts in
+open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«64bit-notables».Insts in
 /-- `VartimePrecomputedStraus::len` (backend): the number of static points. -/
 @[step]
-theorem len_spec (self : VartimePrecomputedStraus.«x86_64-no-tables») :
+theorem len_spec (self : VartimePrecomputedStraus.«64bit-notables») :
     len self ⦃ (r : Usize) => r.val = self.points.length ⦄ := by
   rcases self with ⟨inner⟩
   unfold len
   step as ⟨r, h⟩
-  simp only [h, VartimePrecomputedStraus.«x86_64-no-tables».points, List.length_map]
+  simp only [h, VartimePrecomputedStraus.«64bit-notables».points, List.length_map]
 
-end «VartimePrecomputedStrausx86_64-no-tables»
+end «VartimePrecomputedStraus64bit-notables»
 
-namespace «VartimePrecomputedStrausi686-no-tables»
+namespace «VartimePrecomputedStraus32bit-notables»
 
-open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«i686-no-tables».Insts in
+open serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«32bit-notables».Insts in
 /-- `VartimePrecomputedStraus::len` (backend): the number of static points. -/
 @[step]
-theorem len_spec (self : VartimePrecomputedStraus.«i686-no-tables») :
+theorem len_spec (self : VartimePrecomputedStraus.«32bit-notables») :
     len self ⦃ (r : Usize) => r.val = self.points.length ⦄ := by
   rcases self with ⟨inner⟩
   unfold len
   step as ⟨r, h⟩
-  simp only [h, VartimePrecomputedStraus.«i686-no-tables».points, List.length_map]
+  simp only [h, VartimePrecomputedStraus.«32bit-notables».points, List.length_map]
 
-end «VartimePrecomputedStrausi686-no-tables»
+end «VartimePrecomputedStraus32bit-notables»
 
 end Curve25519Dalek.backend

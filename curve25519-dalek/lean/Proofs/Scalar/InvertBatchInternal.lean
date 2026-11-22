@@ -98,13 +98,13 @@ private theorem loop0_body_spec (inputs ins : Slice Scalar) (sc : Slice Scalar52
     (n i : Usize) (hlt : i < n) (hn : n.val = inputs.length) (hinl : ins.length = inputs.length)
     (hscl : sc.length = inputs.length) (ha : MontVal a (pre inputs i.val))
     (hx : ins[i.val]! = inputs[i.val]!) :
-    invert_batch_internal.«x86_64-tables_loop0».body { start := i, «end» := n } ins sc a
+    invert_batch_internal.«64bit-tables_loop0».body { start := i, «end» := n } ins sc a
       ⦃ r =>
       ∃ y a1 i1, r = .cont ({ start := i1, «end» := n }, ins.set i y, sc.set i a, a1) ∧
         i1.val = i.val + 1 ∧
         (y.asNat : ZMod L) = inputs[i.val]!.asNat * montgomeryRadix ∧
         MontVal a1 (pre inputs (i.val + 1)) ⦄ := by
-  unfold invert_batch_internal.«x86_64-tables_loop0».body
+  unfold invert_batch_internal.«64bit-tables_loop0».body
   have hil : i.val < ins.length := hinl ▸ hn ▸ hlt
   have hab := ha.2.2
   step with core.iter.range.IteratorRange.next_Usize_some_spec
@@ -137,14 +137,14 @@ private theorem loop0_body_spec (inputs ins : Slice Scalar) (sc : Slice Scalar52
 private theorem loop0_spec (inputs : Slice Scalar) (scratch : Slice Scalar52) (acc : Scalar52)
     (n : Usize) (hn : n.val = inputs.length) (hlen : scratch.length = inputs.length)
     (hacc : MontVal acc 1) :
-    invert_batch_internal.«x86_64-tables_loop0» { start := 0#usize, «end» := n } inputs scratch acc
+    invert_batch_internal.«64bit-tables_loop0» { start := 0#usize, «end» := n } inputs scratch acc
       ⦃ (inputs1 : Slice Scalar) (scratch1 : Slice Scalar52) (acc1 : Scalar52) =>
       inputs1.length = inputs.length ∧ scratch1.length = inputs.length ∧
       MontVal acc1 (pre inputs inputs.length) ∧
       (∀ k < inputs.length, MontVal scratch1[k]! (pre inputs k)) ∧
       ∀ k < inputs.length,
         (inputs1[k]!.asNat : ZMod L) = inputs[k]!.asNat * montgomeryRadix ⦄ := by
-  unfold invert_batch_internal.«x86_64-tables_loop0»
+  unfold invert_batch_internal.«64bit-tables_loop0»
   apply loop.spec_decr_nat (measure := fun x => n.val - x.1.start.val)
     (inv := fun x => x.1.end = n ∧ x.1.start.val ≤ n.val ∧
       x.2.1.length = inputs.length ∧ x.2.2.1.length = inputs.length ∧
@@ -174,7 +174,7 @@ private theorem loop0_spec (inputs : Slice Scalar) (scratch : Slice Scalar52) (a
       · dsimp only
         rw [hi1]
         exact Nat.sub_lt_sub_left hlt (Nat.lt_succ_self _)
-    · unfold invert_batch_internal.«x86_64-tables_loop0».body
+    · unfold invert_batch_internal.«64bit-tables_loop0».body
       step with core.iter.range.IteratorRange.next_Usize_none_spec as ⟨o, it1, ho, hit1⟩
       subst ho
       simp only [WP.spec_ok]
@@ -196,14 +196,14 @@ private theorem loop1_body_spec (inputs inputs1 ins : Slice Scalar) (scratch : S
     (hinl : ins.length = inputs.length) (hslen : scratch.length = inputs.length)
     (ha : (a.asNat : ZMod L) * pre inputs k.val = 1) (haL : a.asNat < L)
     (hab : a.LimbsLt 52) (hlow : ∀ j < k.val, ins[j]! = inputs1[j]!) :
-    invert_batch_internal.«x86_64-tables_loop1».body scratch
+    invert_batch_internal.«64bit-tables_loop1».body scratch
       { iter := { start := 0#usize, «end» := k } } ins a ⦃ r =>
       ∃ y t k1, r = .cont ({ iter := { start := 0#usize, «end» := k1 } }, ins.set k1 y, t) ∧
         k1.val + 1 = k.val ∧
         (t.asNat : ZMod L) * pre inputs k1.val = 1 ∧ t.asNat < L ∧
         t.LimbsLt 52 ∧
         (y.asNat : ZMod L) * inputs[k1.val]!.asNat = 1 ∧ y.asNat < L ⦄ := by
-  unfold invert_batch_internal.«x86_64-tables_loop1».body
+  unfold invert_batch_internal.«64bit-tables_loop1».body
   step with core.iter.adapters.rev.Rev.next_Usize_some_spec
     as ⟨o, it1, k1, ho, hk1, hstart, hend⟩
   subst ho
@@ -247,12 +247,12 @@ private theorem loop1_spec (inputs inputs1 : Slice Scalar) (scratch : Slice Scal
       (inputs1[k]!.asNat : ZMod L) = inputs[k]!.asNat * montgomeryRadix)
     (hacc : (acc.asNat : ZMod L) * pre inputs inputs.length = 1) (haccL : acc.asNat < L)
     (haccb : acc.LimbsLt 52) :
-    invert_batch_internal.«x86_64-tables_loop1» { iter := { start := 0#usize, «end» := n } }
+    invert_batch_internal.«64bit-tables_loop1» { iter := { start := 0#usize, «end» := n } }
       inputs1 scratch acc
       ⦃ (r : Slice Scalar) =>
       r.length = inputs.length ∧
       ∀ j < inputs.length, (r[j]!.asNat : ZMod L) * inputs[j]!.asNat = 1 ∧ r[j]!.asNat < L ⦄ := by
-  unfold invert_batch_internal.«x86_64-tables_loop1»
+  unfold invert_batch_internal.«64bit-tables_loop1»
   apply loop.spec_decr_nat (measure := fun x => x.1.iter.end.val)
     (inv := fun x => x.1.iter.start = 0#usize ∧ x.1.iter.end.val ≤ inputs.length ∧
       x.2.1.length = inputs.length ∧
@@ -274,7 +274,7 @@ private theorem loop1_spec (inputs inputs1 : Slice Scalar) (scratch : Slice Scal
       exact ⟨⟨rfl, Nat.le_of_lt (Nat.lt_of_lt_of_le hk1k hk),
         by rw [Slice.set_length, hinl], ht, htL,
         htb, fun j hj => (hl1 j hj).trans (hlow j (Nat.lt_trans hj hk1k)), hh1⟩, hk1k⟩
-    · unfold invert_batch_internal.«x86_64-tables_loop1».body
+    · unfold invert_batch_internal.«64bit-tables_loop1».body
       step with core.iter.adapters.rev.Rev.next_Usize_none_spec as ⟨o, it1, ho⟩
       subst ho
       simp only [WP.spec_ok]
@@ -284,7 +284,7 @@ private theorem loop1_spec (inputs inputs1 : Slice Scalar) (scratch : Slice Scal
   · exact ⟨rfl, by scalar_tac, hlen, hn ▸ hacc, haccL, haccb, fun j _ => rfl,
       fun j hj hkj => absurd hj (by scalar_tac)⟩
 
-/-! ## The same, for the 29-bit limbs of the i686 targets -/
+/-! ## The same, for the 29-bit limbs of the 32-bit targets -/
 
 open backend.serial.u32.scalar (Scalar29)
 
@@ -324,13 +324,13 @@ private theorem loop0_body29_spec (inputs ins : Slice Scalar) (sc : Slice Scalar
     (n i : Usize) (hlt : i < n) (hn : n.val = inputs.length) (hinl : ins.length = inputs.length)
     (hscl : sc.length = inputs.length) (ha : MontVal29 a (pre inputs i.val))
     (hx : ins[i.val]! = inputs[i.val]!) :
-    invert_batch_internal.«i686-tables_loop0».body { start := i, «end» := n } ins sc a
+    invert_batch_internal.«32bit-tables_loop0».body { start := i, «end» := n } ins sc a
       ⦃ r =>
       ∃ y a1 i1, r = .cont ({ start := i1, «end» := n }, ins.set i y, sc.set i a, a1) ∧
         i1.val = i.val + 1 ∧
         (y.asNat : ZMod L) = inputs[i.val]!.asNat * backend.serial.u32.scalar.montgomeryRadix ∧
         MontVal29 a1 (pre inputs (i.val + 1)) ⦄ := by
-  unfold invert_batch_internal.«i686-tables_loop0».body
+  unfold invert_batch_internal.«32bit-tables_loop0».body
   have hil : i.val < ins.length := hinl ▸ hn ▸ hlt
   have hab := ha.2.2
   step with core.iter.range.IteratorRange.next_Usize_some_spec
@@ -364,7 +364,7 @@ private theorem loop0_body29_spec (inputs ins : Slice Scalar) (sc : Slice Scalar
 private theorem loop029_spec (inputs : Slice Scalar) (scratch : Slice Scalar29) (acc : Scalar29)
     (n : Usize) (hn : n.val = inputs.length) (hlen : scratch.length = inputs.length)
     (hacc : MontVal29 acc 1) :
-    invert_batch_internal.«i686-tables_loop0» { start := 0#usize, «end» := n } inputs scratch acc
+    invert_batch_internal.«32bit-tables_loop0» { start := 0#usize, «end» := n } inputs scratch acc
       ⦃ (inputs1 : Slice Scalar) (scratch1 : Slice Scalar29) (acc1 : Scalar29) =>
       inputs1.length = inputs.length ∧ scratch1.length = inputs.length ∧
       MontVal29 acc1 (pre inputs inputs.length) ∧
@@ -372,7 +372,7 @@ private theorem loop029_spec (inputs : Slice Scalar) (scratch : Slice Scalar29) 
       ∀ k < inputs.length,
         (inputs1[k]!.asNat : ZMod L) =
             inputs[k]!.asNat * backend.serial.u32.scalar.montgomeryRadix ⦄ := by
-  unfold invert_batch_internal.«i686-tables_loop0»
+  unfold invert_batch_internal.«32bit-tables_loop0»
   apply loop.spec_decr_nat (measure := fun x => n.val - x.1.start.val)
     (inv := fun x => x.1.end = n ∧ x.1.start.val ≤ n.val ∧
       x.2.1.length = inputs.length ∧ x.2.2.1.length = inputs.length ∧
@@ -403,7 +403,7 @@ private theorem loop029_spec (inputs : Slice Scalar) (scratch : Slice Scalar29) 
       · dsimp only
         rw [hi1]
         exact Nat.sub_lt_sub_left hlt (Nat.lt_succ_self _)
-    · unfold invert_batch_internal.«i686-tables_loop0».body
+    · unfold invert_batch_internal.«32bit-tables_loop0».body
       step with core.iter.range.IteratorRange.next_Usize_none_spec as ⟨o, it1, ho, hit1⟩
       subst ho
       simp only [WP.spec_ok]
@@ -425,14 +425,14 @@ private theorem loop1_body29_spec (inputs inputs1 ins : Slice Scalar) (scratch :
     (hinl : ins.length = inputs.length) (hslen : scratch.length = inputs.length)
     (ha : (a.asNat : ZMod L) * pre inputs k.val = 1) (haL : a.asNat < L)
     (hab : a.LimbsLt 29) (hlow : ∀ j < k.val, ins[j]! = inputs1[j]!) :
-    invert_batch_internal.«i686-tables_loop1».body scratch
+    invert_batch_internal.«32bit-tables_loop1».body scratch
       { iter := { start := 0#usize, «end» := k } } ins a ⦃ r =>
       ∃ y t k1, r = .cont ({ iter := { start := 0#usize, «end» := k1 } }, ins.set k1 y, t) ∧
         k1.val + 1 = k.val ∧
         (t.asNat : ZMod L) * pre inputs k1.val = 1 ∧ t.asNat < L ∧
         t.LimbsLt 29 ∧
         (y.asNat : ZMod L) * inputs[k1.val]!.asNat = 1 ∧ y.asNat < L ⦄ := by
-  unfold invert_batch_internal.«i686-tables_loop1».body
+  unfold invert_batch_internal.«32bit-tables_loop1».body
   step with core.iter.adapters.rev.Rev.next_Usize_some_spec
     as ⟨o, it1, k1, ho, hk1, hstart, hend⟩
   subst ho
@@ -477,12 +477,12 @@ private theorem loop129_spec (inputs inputs1 : Slice Scalar) (scratch : Slice Sc
       (inputs1[k]!.asNat : ZMod L) = inputs[k]!.asNat * backend.serial.u32.scalar.montgomeryRadix)
     (hacc : (acc.asNat : ZMod L) * pre inputs inputs.length = 1) (haccL : acc.asNat < L)
     (haccb : acc.LimbsLt 29) :
-    invert_batch_internal.«i686-tables_loop1» { iter := { start := 0#usize, «end» := n } }
+    invert_batch_internal.«32bit-tables_loop1» { iter := { start := 0#usize, «end» := n } }
       inputs1 scratch acc
       ⦃ (r : Slice Scalar) =>
       r.length = inputs.length ∧
       ∀ j < inputs.length, (r[j]!.asNat : ZMod L) * inputs[j]!.asNat = 1 ∧ r[j]!.asNat < L ⦄ := by
-  unfold invert_batch_internal.«i686-tables_loop1»
+  unfold invert_batch_internal.«32bit-tables_loop1»
   apply loop.spec_decr_nat (measure := fun x => x.1.iter.end.val)
     (inv := fun x => x.1.iter.start = 0#usize ∧ x.1.iter.end.val ≤ inputs.length ∧
       x.2.1.length = inputs.length ∧
@@ -504,7 +504,7 @@ private theorem loop129_spec (inputs inputs1 : Slice Scalar) (scratch : Slice Sc
       exact ⟨⟨rfl, Nat.le_of_lt (Nat.lt_of_lt_of_le hk1k hk),
         by rw [Slice.set_length, hinl], ht, htL,
         htb, fun j hj => (hl1 j hj).trans (hlow j (Nat.lt_trans hj hk1k)), hh1⟩, hk1k⟩
-    · unfold invert_batch_internal.«i686-tables_loop1».body
+    · unfold invert_batch_internal.«32bit-tables_loop1».body
       step with core.iter.adapters.rev.Rev.next_Usize_none_spec as ⟨o, it1, ho⟩
       subst ho
       simp only [WP.spec_ok]
@@ -519,17 +519,17 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert_batch_internal.«x86_64-tables_spec» (inputs : Slice Scalar)
+theorem invert_batch_internal.«64bit-tables_spec» (inputs : Slice Scalar)
     (scratch : Slice backend.serial.u64.scalar.Scalar52) (hlen : scratch.length = inputs.length)
     (hinputs : ∀ i < inputs.length, inputs[i]!.asNat % L ≠ 0) :
-    invert_batch_internal.«x86_64-tables» inputs scratch
+    invert_batch_internal.«64bit-tables» inputs scratch
       ⦃ (ret : Scalar) (r : Slice Scalar)
       (_scratch : Slice backend.serial.u64.scalar.Scalar52) =>
       r.length = inputs.length ∧
       (∀ i < inputs.length, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
       ret.asNat * (∏ i ∈ Finset.range inputs.length, inputs[i]!.asNat) % L = 1 ∧
       ret.asNat < L ⦄ := by
-  unfold invert_batch_internal.«x86_64-tables»
+  unfold invert_batch_internal.«64bit-tables»
   have hR := montgomeryRadix_natCast_ne_zero
   step as ⟨one, hone, honeb⟩
   step as ⟨acc, hacc, haccb⟩
@@ -589,34 +589,34 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert_batch_internal.«x86_64-no-tables_spec» (inputs : Slice Scalar)
+theorem invert_batch_internal.«64bit-notables_spec» (inputs : Slice Scalar)
     (scratch : Slice backend.serial.u64.scalar.Scalar52) (hlen : scratch.length = inputs.length)
     (hinputs : ∀ i < inputs.length, inputs[i]!.asNat % L ≠ 0) :
-    invert_batch_internal.«x86_64-no-tables» inputs scratch
+    invert_batch_internal.«64bit-notables» inputs scratch
       ⦃ (ret : Scalar) (r : Slice Scalar)
       (_scratch : Slice backend.serial.u64.scalar.Scalar52) =>
       r.length = inputs.length ∧
       (∀ i < inputs.length, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
       ret.asNat * (∏ i ∈ Finset.range inputs.length, inputs[i]!.asNat) % L = 1 ∧
       ret.asNat < L ⦄ :=
-  invert_batch_internal.«x86_64-tables_spec» inputs scratch hlen hinputs
+  invert_batch_internal.«64bit-tables_spec» inputs scratch hlen hinputs
 
 end Curve25519Dalek.scalar.Scalar
 
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert_batch_internal.«i686-tables_spec» (inputs : Slice Scalar)
+theorem invert_batch_internal.«32bit-tables_spec» (inputs : Slice Scalar)
     (scratch : Slice backend.serial.u32.scalar.Scalar29) (hlen : scratch.length = inputs.length)
     (hinputs : ∀ i < inputs.length, inputs[i]!.asNat % L ≠ 0) :
-    invert_batch_internal.«i686-tables» inputs scratch
+    invert_batch_internal.«32bit-tables» inputs scratch
       ⦃ (ret : Scalar) (r : Slice Scalar)
       (_scratch : Slice backend.serial.u32.scalar.Scalar29) =>
       r.length = inputs.length ∧
       (∀ i < inputs.length, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
       ret.asNat * (∏ i ∈ Finset.range inputs.length, inputs[i]!.asNat) % L = 1 ∧
       ret.asNat < L ⦄ := by
-  unfold invert_batch_internal.«i686-tables»
+  unfold invert_batch_internal.«32bit-tables»
   have hR := backend.serial.u32.scalar.montgomeryRadix_natCast_ne_zero
   step as ⟨one, hone, honeb⟩
   step as ⟨acc, hacc, haccb⟩
@@ -676,16 +676,16 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert_batch_internal.«i686-no-tables_spec» (inputs : Slice Scalar)
+theorem invert_batch_internal.«32bit-notables_spec» (inputs : Slice Scalar)
     (scratch : Slice backend.serial.u32.scalar.Scalar29) (hlen : scratch.length = inputs.length)
     (hinputs : ∀ i < inputs.length, inputs[i]!.asNat % L ≠ 0) :
-    invert_batch_internal.«i686-no-tables» inputs scratch
+    invert_batch_internal.«32bit-notables» inputs scratch
       ⦃ (ret : Scalar) (r : Slice Scalar)
       (_scratch : Slice backend.serial.u32.scalar.Scalar29) =>
       r.length = inputs.length ∧
       (∀ i < inputs.length, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
       ret.asNat * (∏ i ∈ Finset.range inputs.length, inputs[i]!.asNat) % L = 1 ∧
       ret.asNat < L ⦄ :=
-  invert_batch_internal.«i686-tables_spec» inputs scratch hlen hinputs
+  invert_batch_internal.«32bit-tables_spec» inputs scratch hlen hinputs
 
 end Curve25519Dalek.scalar.Scalar

@@ -13,64 +13,64 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek.backend.serial.curve_models
 
-namespace ProjectiveNielsPoint.«x86_64-tables».Insts.SubtleConditionallySelectable
+namespace ProjectiveNielsPoint.«64bit-tables».Insts.SubtleConditionallySelectable
 
 /-- `ConditionallySelectable::conditional_select` for `ProjectiveNielsPoint`:
 `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : ProjectiveNielsPoint.«x86_64-tables»)
+theorem conditional_select_spec (a b : ProjectiveNielsPoint.«64bit-tables»)
     (choice : subtle.Choice) (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : ProjectiveNielsPoint.«x86_64-tables») =>
+    conditional_select a b choice ⦃ (r : ProjectiveNielsPoint.«64bit-tables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step*
   constructor <;> intro hc <;> simp [*]
 
-end ProjectiveNielsPoint.«x86_64-tables».Insts.SubtleConditionallySelectable
+end ProjectiveNielsPoint.«64bit-tables».Insts.SubtleConditionallySelectable
 
-namespace ProjectiveNielsPoint.«i686-tables».Insts.SubtleConditionallySelectable
+namespace ProjectiveNielsPoint.«32bit-tables».Insts.SubtleConditionallySelectable
 
 /-- `ConditionallySelectable::conditional_select` for `ProjectiveNielsPoint`:
 `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : ProjectiveNielsPoint.«i686-tables»)
+theorem conditional_select_spec (a b : ProjectiveNielsPoint.«32bit-tables»)
     (choice : subtle.Choice) (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : ProjectiveNielsPoint.«i686-tables») =>
+    conditional_select a b choice ⦃ (r : ProjectiveNielsPoint.«32bit-tables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step*
   constructor <;> intro hc <;> simp [*]
 
-end ProjectiveNielsPoint.«i686-tables».Insts.SubtleConditionallySelectable
+end ProjectiveNielsPoint.«32bit-tables».Insts.SubtleConditionallySelectable
 
-namespace ProjectiveNielsPoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable
+namespace ProjectiveNielsPoint.«64bit-notables».Insts.SubtleConditionallySelectable
 
 /-- `ConditionallySelectable::conditional_select` for `ProjectiveNielsPoint`:
 `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : ProjectiveNielsPoint.«x86_64-no-tables»)
+theorem conditional_select_spec (a b : ProjectiveNielsPoint.«64bit-notables»)
     (choice : subtle.Choice) (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : ProjectiveNielsPoint.«x86_64-no-tables») =>
+    conditional_select a b choice ⦃ (r : ProjectiveNielsPoint.«64bit-notables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step*
   constructor <;> intro hc <;> simp [*]
 
-end ProjectiveNielsPoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable
+end ProjectiveNielsPoint.«64bit-notables».Insts.SubtleConditionallySelectable
 
-namespace ProjectiveNielsPoint.«i686-no-tables».Insts.SubtleConditionallySelectable
+namespace ProjectiveNielsPoint.«32bit-notables».Insts.SubtleConditionallySelectable
 
 /-- `ConditionallySelectable::conditional_select` for `ProjectiveNielsPoint`:
 `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : ProjectiveNielsPoint.«i686-no-tables»)
+theorem conditional_select_spec (a b : ProjectiveNielsPoint.«32bit-notables»)
     (choice : subtle.Choice) (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : ProjectiveNielsPoint.«i686-no-tables») =>
+    conditional_select a b choice ⦃ (r : ProjectiveNielsPoint.«32bit-notables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step*
   constructor <;> intro hc <;> simp [*]
 
-end ProjectiveNielsPoint.«i686-no-tables».Insts.SubtleConditionallySelectable
+end ProjectiveNielsPoint.«32bit-notables».Insts.SubtleConditionallySelectable
 
 end Curve25519Dalek.backend.serial.curve_models

@@ -17,84 +17,84 @@ open Curve25519Dalek.backend.serial.curve_models
 
 namespace Curve25519Dalek.edwards
 
-namespace EdwardsPoint.«x86_64-tables»
+namespace EdwardsPoint.«64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `IsIdentity::is_identity` (the blanket implementation of `traits.rs`) at `EdwardsPoint`:
 `ct_eq` with the identity; limbs `< 2^52`. -/
 @[step]
-theorem is_identity_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem is_identity_spec (self : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     traits.IsIdentity.Blanket.is_identity
-      EdwardsPoint.«x86_64-tables».Insts.SubtleConstantTimeEq
-      EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (r : Bool) =>
+      EdwardsPoint.«64bit-tables».Insts.SubtleConstantTimeEq
+      EdwardsPoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (r : Bool) =>
       r = true ↔ self.toPoint = 0 ⦄ :=
   traits.IsIdentity.Blanket.is_identity_spec _ _ self _ _
     Insts.Curve25519_dalekTraitsIdentity.identity_spec fun e ⟨heon, he, heb⟩ =>
       spec_mono (Insts.SubtleConstantTimeEq.ct_eq_spec self e hself heb hon heon)
         fun _ ⟨hcv, hc⟩ => ⟨hcv, he ▸ hc⟩
 
-end EdwardsPoint.«x86_64-tables»
+end EdwardsPoint.«64bit-tables»
 
-namespace EdwardsPoint.«i686-tables»
+namespace EdwardsPoint.«32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `IsIdentity::is_identity` (the blanket implementation of `traits.rs`) at `EdwardsPoint`:
 `ct_eq` with the identity; limbs `< 2^26`. -/
 @[step]
-theorem is_identity_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem is_identity_spec (self : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     traits.IsIdentity.Blanket.is_identity
-      EdwardsPoint.«i686-tables».Insts.SubtleConstantTimeEq
-      EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (r : Bool) =>
+      EdwardsPoint.«32bit-tables».Insts.SubtleConstantTimeEq
+      EdwardsPoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (r : Bool) =>
       r = true ↔ self.toPoint = 0 ⦄ :=
   traits.IsIdentity.Blanket.is_identity_spec _ _ self _ _
     Insts.Curve25519_dalekTraitsIdentity.identity_spec fun e ⟨heon, he, heb⟩ =>
       spec_mono (Insts.SubtleConstantTimeEq.ct_eq_spec self e hself heb hon heon)
         fun _ ⟨hcv, hc⟩ => ⟨hcv, he ▸ hc⟩
 
-end EdwardsPoint.«i686-tables»
+end EdwardsPoint.«32bit-tables»
 
-namespace EdwardsPoint.«x86_64-no-tables»
+namespace EdwardsPoint.«64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `IsIdentity::is_identity` (the blanket implementation of `traits.rs`) at `EdwardsPoint`:
 `ct_eq` with the identity; limbs `< 2^52`. -/
 @[step]
-theorem is_identity_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem is_identity_spec (self : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     traits.IsIdentity.Blanket.is_identity
-      EdwardsPoint.«x86_64-no-tables».Insts.SubtleConstantTimeEq
-      EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (r : Bool) =>
+      EdwardsPoint.«64bit-notables».Insts.SubtleConstantTimeEq
+      EdwardsPoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (r : Bool) =>
       r = true ↔ self.toPoint = 0 ⦄ :=
   traits.IsIdentity.Blanket.is_identity_spec _ _ self _ _
     Insts.Curve25519_dalekTraitsIdentity.identity_spec fun e ⟨heon, he, heb⟩ =>
       spec_mono (Insts.SubtleConstantTimeEq.ct_eq_spec self e hself heb hon heon)
         fun _ ⟨hcv, hc⟩ => ⟨hcv, he ▸ hc⟩
 
-end EdwardsPoint.«x86_64-no-tables»
+end EdwardsPoint.«64bit-notables»
 
-namespace EdwardsPoint.«i686-no-tables»
+namespace EdwardsPoint.«32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `IsIdentity::is_identity` (the blanket implementation of `traits.rs`) at `EdwardsPoint`:
 `ct_eq` with the identity; limbs `< 2^26`. -/
 @[step]
-theorem is_identity_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem is_identity_spec (self : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     traits.IsIdentity.Blanket.is_identity
-      EdwardsPoint.«i686-no-tables».Insts.SubtleConstantTimeEq
-      EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (r : Bool) =>
+      EdwardsPoint.«32bit-notables».Insts.SubtleConstantTimeEq
+      EdwardsPoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity self ⦃ (r : Bool) =>
       r = true ↔ self.toPoint = 0 ⦄ :=
   traits.IsIdentity.Blanket.is_identity_spec _ _ self _ _
     Insts.Curve25519_dalekTraitsIdentity.identity_spec fun e ⟨heon, he, heb⟩ =>
       spec_mono (Insts.SubtleConstantTimeEq.ct_eq_spec self e hself heb hon heon)
         fun _ ⟨hcv, hc⟩ => ⟨hcv, he ▸ hc⟩
 
-end EdwardsPoint.«i686-no-tables»
+end EdwardsPoint.«32bit-notables»
 
 end Curve25519Dalek.edwards

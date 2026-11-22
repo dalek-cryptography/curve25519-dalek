@@ -36,7 +36,7 @@ public section
 
 `a • A + b • B` for the basepoint `B`, in variable time: the non-adjacent forms of `a` (width
 `5`) and `b` (width `8` with the precomputed table `AFFINE_ODD_MULTIPLES_OF_BASEPOINT` in the
-`x86_64-tables` configuration, width `5` with a table built from `ED25519_BASEPOINT_POINT`
+`64bit-tables` configuration, width `5` with a table built from `ED25519_BASEPOINT_POINT`
 otherwise), Horner's rule from the highest nonzero digit down, adding `d • A` and `d • B` for
 each nonzero digit from the tables of odd multiples. -/
 
@@ -46,28 +46,28 @@ open Curve25519Dalek.backend.serial.curve_models
 namespace Curve25519Dalek.backend.serial.scalar_mul.vartime_double_base
 
 section
-open «Shared0EdwardsPointx86_64-tables».Insts
-open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
+open «Shared0EdwardsPoint64bit-tables».Insts
+open «CoreOpsArithAddSharedAProjectiveNielsPoint64bit-tablesCompletedPoint64bit-tables»
   (add_spec)
-open «CoreOpsArithSubSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
+open «CoreOpsArithSubSharedAProjectiveNielsPoint64bit-tablesCompletedPoint64bit-tables»
   (sub_spec)
 
-namespace «x86_64-tables»
+namespace «64bit-tables»
 
 private theorem mul_loop0_eq
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
     (a_naf b_naf : Array I8 256#usize) (i : Usize) :
-    mul.«x86_64-tables_loop0» iter a_naf b_naf i = EdwardsOps.vdbLoop0 iter a_naf b_naf i := by
-  unfold mul.«x86_64-tables_loop0» EdwardsOps.vdbLoop0
+    mul.«64bit-tables_loop0» iter a_naf b_naf i = EdwardsOps.vdbLoop0 iter a_naf b_naf i := by
+  unfold mul.«64bit-tables_loop0» EdwardsOps.vdbLoop0
   congr 1
 
 private theorem mul_loop1_eq (a_naf b_naf : Array I8 256#usize) (i : Usize)
-    (table_A : window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables»)
-    (table_B : window.NafLookupTable8 AffineNielsPoint.«x86_64-tables»)
-    (r : ProjectivePoint.«x86_64-tables») :
-    mul.«x86_64-tables_loop1» a_naf b_naf i table_A table_B r =
-      EdwardsOps.X86Tables.vdbLoop1T a_naf b_naf i table_A table_B r := by
-  unfold mul.«x86_64-tables_loop1» EdwardsOps.vdbLoop1T
+    (table_A : window.NafLookupTable5 ProjectiveNielsPoint.«64bit-tables»)
+    (table_B : window.NafLookupTable8 AffineNielsPoint.«64bit-tables»)
+    (r : ProjectivePoint.«64bit-tables») :
+    mul.«64bit-tables_loop1» a_naf b_naf i table_A table_B r =
+      EdwardsOps.Bits64Tables.vdbLoop1T a_naf b_naf i table_A table_B r := by
+  unfold mul.«64bit-tables_loop1» EdwardsOps.vdbLoop1T
   congr 1
 
 /-- The first loop of `mul`: the highest index at which a digit of `a` or `b` is nonzero (`0` if
@@ -77,7 +77,7 @@ private theorem mul_loop0_spec (iter : core.iter.adapters.rev.Rev (core.ops.rang
     (a_naf b_naf : Array I8 256#usize) (i : Usize) (hstart : iter.iter.start.val = 0)
     (hend : iter.iter.end.val ≤ 256) (hi : i.val < 256)
     (hz : ∀ k, iter.iter.end.val ≤ k → k < 256 → a_naf[k]!.val = 0 ∧ b_naf[k]!.val = 0) :
-    mul.«x86_64-tables_loop0» iter a_naf b_naf i ⦃ (r : Usize) =>
+    mul.«64bit-tables_loop0» iter a_naf b_naf i ⦃ (r : Usize) =>
       r.val < 256 ∧ ∀ k, r.val < k → k < 256 → a_naf[k]!.val = 0 ∧ b_naf[k]!.val = 0 ⦄ := by
   rw [mul_loop0_eq]
   exact EdwardsOps.vdbLoop0_spec iter a_naf b_naf i hstart hend hi hz
@@ -86,9 +86,9 @@ private theorem mul_loop0_spec (iter : core.iter.adapters.rev.Rev (core.ops.rang
 `nafTail a i • A + nafTail b i • B`. -/
 @[local step]
 private theorem mul_loop1_spec (a_naf b_naf : Array I8 256#usize) (i : Usize)
-    (table_A : window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-tables»)
-    (table_B : window.NafLookupTable8 AffineNielsPoint.«x86_64-tables»)
-    (r : ProjectivePoint.«x86_64-tables») (A B : curve25519.edwards.Point)
+    (table_A : window.NafLookupTable5 ProjectiveNielsPoint.«64bit-tables»)
+    (table_B : window.NafLookupTable8 AffineNielsPoint.«64bit-tables»)
+    (r : ProjectivePoint.«64bit-tables») (A B : curve25519.edwards.Point)
     (hA : table_A.Represents A) (hAb : table_A.LimbsLt 54)
     (hB : table_B.Represents B) (hBb : table_B.LimbsLt 54)
     (ha : ∀ k : ℕ, k < 256 → a_naf[k]!.val ≠ 0 → a_naf[k]!.val % 2 = 1 ∧
@@ -97,38 +97,39 @@ private theorem mul_loop1_spec (a_naf b_naf : Array I8 256#usize) (i : Usize)
       2 * |b_naf[k]!.val| < 2 ^ 8)
     (hi : i.val < 256) (hr : r.OnCurve) (hrb : r.LimbsLt 52)
     (hrp : r.toPoint = nafTail a_naf (i.val + 1) • A + nafTail b_naf (i.val + 1) • B) :
-    mul.«x86_64-tables_loop1» a_naf b_naf i table_A table_B r
-      ⦃ (res : ProjectivePoint.«x86_64-tables») => res.OnCurve ∧
+    mul.«64bit-tables_loop1» a_naf b_naf i table_A table_B r
+      ⦃ (res : ProjectivePoint.«64bit-tables») => res.OnCurve ∧
         res.toPoint = nafTail a_naf 0 • A + nafTail b_naf 0 • B ∧ res.LimbsLt 52 ⦄ := by
   rw [mul_loop1_eq]
-  exact EdwardsOps.X86Tables.vdbLoop1T_spec
-    EdwardsOps.X86Tables.addN_spec EdwardsOps.X86Tables.subN_spec EdwardsOps.X86Tables.addA_spec
-    EdwardsOps.X86Tables.subA_spec EdwardsOps.X86Tables.asExtended_spec
-    EdwardsOps.X86Tables.pDouble_spec EdwardsOps.X86Tables.cAsProjective_spec
+  exact EdwardsOps.Bits64Tables.vdbLoop1T_spec
+    EdwardsOps.Bits64Tables.addN_spec EdwardsOps.Bits64Tables.subN_spec
+      EdwardsOps.Bits64Tables.addA_spec
+    EdwardsOps.Bits64Tables.subA_spec EdwardsOps.Bits64Tables.asExtended_spec
+    EdwardsOps.Bits64Tables.pDouble_spec EdwardsOps.Bits64Tables.cAsProjective_spec
     a_naf b_naf i table_A table_B r A B hA hAb hB hBb ha hb hi
     hr hrb hrp
 
-open window.«NafLookupTable5ProjectiveNielsPointx86_64-tables».Insts in
+open window.«NafLookupTable5ProjectiveNielsPoint64bit-tables».Insts in
 open scoped Helpers.IndexStep in
 /-- `vartime_double_base::mul`: `a • A + b • B` for the basepoint `B` (unreduced scalars
 `< 2^255`, the precondition of `non_adjacent_form`); limbs `< 2^52`. -/
 @[step]
-theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«x86_64-tables»)
+theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«64bit-tables»)
     (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255) (hA : A.LimbsLt 52) (hon : A.OnCurve)
     (hb : b.asNat < 2 ^ 255) :
-    mul.«x86_64-tables» a A b ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    mul.«64bit-tables» a A b ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold mul.«x86_64-tables»
+  unfold mul.«64bit-tables»
   step as ⟨a_naf, haval, hadig, hanaf⟩
   step as ⟨b_naf, hbval, hbdig, hbnaf⟩
   step as ⟨iter, hiter⟩
   step with mul_loop0_spec iter a_naf b_naf 255#usize (by rw [hiter]; rfl) (by rw [hiter]; decide)
     (by decide) (fun k hk hk' => absurd hk' (by rw [hiter] at hk; simp at hk; omega))
     as ⟨i, hi, hz⟩
-  step with «CoreConvertFromSharedAEdwardsPointx86_64-tables».from_spec
+  step with «CoreConvertFromSharedAEdwardsPoint64bit-tables».from_spec
     as ⟨tA, htA, htAb⟩
   step as ⟨tB, htB, htBb⟩
-  step with ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+  step with ProjectivePoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, hron, hrp, hrb⟩
   have hr' : r.toPoint = nafTail a_naf (i.val + 1) • A.toPoint +
       nafTail b_naf (i.val + 1) • basepoint := by
@@ -137,37 +138,37 @@ theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«x86_64-tables»
   step with mul_loop1_spec a_naf b_naf i tA tB r A.toPoint basepoint htA htAb htB htBb
     (fun k hk h => hadig k hk h) (fun k hk h => hbdig k hk h) hi hron hrb hr'
     as ⟨res, hreson, hresp, hresb⟩
-  step with «ProjectivePointx86_64-tables».as_extended_spec res hresb hreson as ⟨e, heon, hep, heb⟩
+  step with «ProjectivePoint64bit-tables».as_extended_spec res hresb hreson as ⟨e, heon, hep, heb⟩
   refine ⟨heon, ?_, heb⟩
   rw [hep, hresp, nafTail_zero, nafTail_zero, haval, hbval, natCast_zsmul, natCast_zsmul]
 
-end «x86_64-tables»
+end «64bit-tables»
 
 end
 
 section
-open «Shared0EdwardsPointi686-tables».Insts
-open «CoreOpsArithAddSharedAProjectiveNielsPointi686-tablesCompletedPointi686-tables»
+open «Shared0EdwardsPoint32bit-tables».Insts
+open «CoreOpsArithAddSharedAProjectiveNielsPoint32bit-tablesCompletedPoint32bit-tables»
   (add_spec)
-open «CoreOpsArithSubSharedAProjectiveNielsPointi686-tablesCompletedPointi686-tables»
+open «CoreOpsArithSubSharedAProjectiveNielsPoint32bit-tablesCompletedPoint32bit-tables»
   (sub_spec)
 
-namespace «i686-tables»
+namespace «32bit-tables»
 
 private theorem mul_loop0_eq
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
     (a_naf b_naf : Array I8 256#usize) (i : Usize) :
-    mul.«i686-tables_loop0» iter a_naf b_naf i = EdwardsOps.vdbLoop0 iter a_naf b_naf i := by
-  unfold mul.«i686-tables_loop0» EdwardsOps.vdbLoop0
+    mul.«32bit-tables_loop0» iter a_naf b_naf i = EdwardsOps.vdbLoop0 iter a_naf b_naf i := by
+  unfold mul.«32bit-tables_loop0» EdwardsOps.vdbLoop0
   congr 1
 
 private theorem mul_loop1_eq (a_naf b_naf : Array I8 256#usize) (i : Usize)
-    (table_A : window.NafLookupTable5 ProjectiveNielsPoint.«i686-tables»)
-    (table_B : window.NafLookupTable8 AffineNielsPoint.«i686-tables»)
-    (r : ProjectivePoint.«i686-tables») :
-    mul.«i686-tables_loop1» a_naf b_naf i table_A table_B r =
-      EdwardsOps.I686Tables.vdbLoop1T a_naf b_naf i table_A table_B r := by
-  unfold mul.«i686-tables_loop1» EdwardsOps.vdbLoop1T
+    (table_A : window.NafLookupTable5 ProjectiveNielsPoint.«32bit-tables»)
+    (table_B : window.NafLookupTable8 AffineNielsPoint.«32bit-tables»)
+    (r : ProjectivePoint.«32bit-tables») :
+    mul.«32bit-tables_loop1» a_naf b_naf i table_A table_B r =
+      EdwardsOps.Bits32Tables.vdbLoop1T a_naf b_naf i table_A table_B r := by
+  unfold mul.«32bit-tables_loop1» EdwardsOps.vdbLoop1T
   congr 1
 
 /-- The first loop of `mul`: the highest index at which a digit of `a` or `b` is nonzero (`0` if
@@ -177,7 +178,7 @@ private theorem mul_loop0_spec (iter : core.iter.adapters.rev.Rev (core.ops.rang
     (a_naf b_naf : Array I8 256#usize) (i : Usize) (hstart : iter.iter.start.val = 0)
     (hend : iter.iter.end.val ≤ 256) (hi : i.val < 256)
     (hz : ∀ k, iter.iter.end.val ≤ k → k < 256 → a_naf[k]!.val = 0 ∧ b_naf[k]!.val = 0) :
-    mul.«i686-tables_loop0» iter a_naf b_naf i ⦃ (r : Usize) =>
+    mul.«32bit-tables_loop0» iter a_naf b_naf i ⦃ (r : Usize) =>
       r.val < 256 ∧ ∀ k, r.val < k → k < 256 → a_naf[k]!.val = 0 ∧ b_naf[k]!.val = 0 ⦄ := by
   rw [mul_loop0_eq]
   exact EdwardsOps.vdbLoop0_spec iter a_naf b_naf i hstart hend hi hz
@@ -186,9 +187,9 @@ private theorem mul_loop0_spec (iter : core.iter.adapters.rev.Rev (core.ops.rang
 `nafTail a i • A + nafTail b i • B`. -/
 @[local step]
 private theorem mul_loop1_spec (a_naf b_naf : Array I8 256#usize) (i : Usize)
-    (table_A : window.NafLookupTable5 ProjectiveNielsPoint.«i686-tables»)
-    (table_B : window.NafLookupTable8 AffineNielsPoint.«i686-tables»)
-    (r : ProjectivePoint.«i686-tables») (A B : curve25519.edwards.Point)
+    (table_A : window.NafLookupTable5 ProjectiveNielsPoint.«32bit-tables»)
+    (table_B : window.NafLookupTable8 AffineNielsPoint.«32bit-tables»)
+    (r : ProjectivePoint.«32bit-tables») (A B : curve25519.edwards.Point)
     (hA : table_A.Represents A) (hAb : table_A.LimbsLt 27)
     (hB : table_B.Represents B) (hBb : table_B.LimbsLt 27)
     (ha : ∀ k : ℕ, k < 256 → a_naf[k]!.val ≠ 0 → a_naf[k]!.val % 2 = 1 ∧
@@ -197,38 +198,39 @@ private theorem mul_loop1_spec (a_naf b_naf : Array I8 256#usize) (i : Usize)
       2 * |b_naf[k]!.val| < 2 ^ 8)
     (hi : i.val < 256) (hr : r.OnCurve) (hrb : r.LimbsLt 26)
     (hrp : r.toPoint = nafTail a_naf (i.val + 1) • A + nafTail b_naf (i.val + 1) • B) :
-    mul.«i686-tables_loop1» a_naf b_naf i table_A table_B r
-      ⦃ (res : ProjectivePoint.«i686-tables») => res.OnCurve ∧
+    mul.«32bit-tables_loop1» a_naf b_naf i table_A table_B r
+      ⦃ (res : ProjectivePoint.«32bit-tables») => res.OnCurve ∧
         res.toPoint = nafTail a_naf 0 • A + nafTail b_naf 0 • B ∧ res.LimbsLt 26 ⦄ := by
   rw [mul_loop1_eq]
-  exact EdwardsOps.I686Tables.vdbLoop1T_spec
-    EdwardsOps.I686Tables.addN_spec EdwardsOps.I686Tables.subN_spec EdwardsOps.I686Tables.addA_spec
-    EdwardsOps.I686Tables.subA_spec EdwardsOps.I686Tables.asExtended_spec
-    EdwardsOps.I686Tables.pDouble_spec EdwardsOps.I686Tables.cAsProjective_spec
+  exact EdwardsOps.Bits32Tables.vdbLoop1T_spec
+    EdwardsOps.Bits32Tables.addN_spec EdwardsOps.Bits32Tables.subN_spec
+      EdwardsOps.Bits32Tables.addA_spec
+    EdwardsOps.Bits32Tables.subA_spec EdwardsOps.Bits32Tables.asExtended_spec
+    EdwardsOps.Bits32Tables.pDouble_spec EdwardsOps.Bits32Tables.cAsProjective_spec
     a_naf b_naf i table_A table_B r A B hA hAb hB hBb ha hb
     hi hr hrb hrp
 
-open window.«NafLookupTable5ProjectiveNielsPointi686-tables».Insts in
+open window.«NafLookupTable5ProjectiveNielsPoint32bit-tables».Insts in
 open scoped Helpers.IndexStep in
 /-- `vartime_double_base::mul`: `a • A + b • B` for the basepoint `B` (unreduced scalars
 `< 2^255`, the precondition of `non_adjacent_form`); limbs `< 2^26`. -/
 @[step]
-theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«i686-tables»)
+theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«32bit-tables»)
     (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255) (hA : A.LimbsLt 26) (hon : A.OnCurve)
     (hb : b.asNat < 2 ^ 255) :
-    mul.«i686-tables» a A b ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    mul.«32bit-tables» a A b ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.LimbsLt 26 ⦄ := by
-  unfold mul.«i686-tables»
+  unfold mul.«32bit-tables»
   step as ⟨a_naf, haval, hadig, hanaf⟩
   step as ⟨b_naf, hbval, hbdig, hbnaf⟩
   step as ⟨iter, hiter⟩
   step with mul_loop0_spec iter a_naf b_naf 255#usize (by rw [hiter]; rfl) (by rw [hiter]; decide)
     (by decide) (fun k hk hk' => absurd hk' (by rw [hiter] at hk; simp at hk; omega))
     as ⟨i, hi, hz⟩
-  step with «CoreConvertFromSharedAEdwardsPointi686-tables».from_spec
+  step with «CoreConvertFromSharedAEdwardsPoint32bit-tables».from_spec
     as ⟨tA, htA, htAb⟩
   step as ⟨tB, htB, htBb⟩
-  step with ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+  step with ProjectivePoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, hron, hrp, hrb⟩
   have hr' : r.toPoint = nafTail a_naf (i.val + 1) • A.toPoint +
       nafTail b_naf (i.val + 1) • basepoint := by
@@ -237,37 +239,37 @@ theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«i686-tables»)
   step with mul_loop1_spec a_naf b_naf i tA tB r A.toPoint basepoint htA htAb htB htBb
     (fun k hk h => hadig k hk h) (fun k hk h => hbdig k hk h) hi hron hrb hr'
     as ⟨res, hreson, hresp, hresb⟩
-  step with «ProjectivePointi686-tables».as_extended_spec res hresb hreson as ⟨e, heon, hep, heb⟩
+  step with «ProjectivePoint32bit-tables».as_extended_spec res hresb hreson as ⟨e, heon, hep, heb⟩
   refine ⟨heon, ?_, heb⟩
   rw [hep, hresp, nafTail_zero, nafTail_zero, haval, hbval, natCast_zsmul, natCast_zsmul]
 
-end «i686-tables»
+end «32bit-tables»
 
 end
 
 section
-open «Shared0EdwardsPointx86_64-no-tables».Insts
-open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
+open «Shared0EdwardsPoint64bit-notables».Insts
+open «CoreOpsArithAddSharedAProjectiveNielsPoint64bit-notablesCompletedPoint64bit-notables»
   (add_spec)
-open «CoreOpsArithSubSharedAProjectiveNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
+open «CoreOpsArithSubSharedAProjectiveNielsPoint64bit-notablesCompletedPoint64bit-notables»
   (sub_spec)
 
-namespace «x86_64-no-tables»
+namespace «64bit-notables»
 
 private theorem mul_loop0_eq
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
     (a_naf b_naf : Array I8 256#usize) (i : Usize) :
-    mul.«x86_64-no-tables_loop0» iter a_naf b_naf i = EdwardsOps.vdbLoop0 iter a_naf b_naf i := by
-  unfold mul.«x86_64-no-tables_loop0» EdwardsOps.vdbLoop0
+    mul.«64bit-notables_loop0» iter a_naf b_naf i = EdwardsOps.vdbLoop0 iter a_naf b_naf i := by
+  unfold mul.«64bit-notables_loop0» EdwardsOps.vdbLoop0
   congr 1
 
 private theorem mul_loop1_eq (a_naf b_naf : Array I8 256#usize) (i : Usize)
-    (table_A : window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-no-tables»)
-    (table_B : window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-no-tables»)
-    (r : ProjectivePoint.«x86_64-no-tables») :
-    mul.«x86_64-no-tables_loop1» a_naf b_naf i table_A table_B r =
-      EdwardsOps.X86NoTables.vdbLoop1N a_naf b_naf i table_A table_B r := by
-  unfold mul.«x86_64-no-tables_loop1» EdwardsOps.vdbLoop1N
+    (table_A : window.NafLookupTable5 ProjectiveNielsPoint.«64bit-notables»)
+    (table_B : window.NafLookupTable5 ProjectiveNielsPoint.«64bit-notables»)
+    (r : ProjectivePoint.«64bit-notables») :
+    mul.«64bit-notables_loop1» a_naf b_naf i table_A table_B r =
+      EdwardsOps.Bits64NoTables.vdbLoop1N a_naf b_naf i table_A table_B r := by
+  unfold mul.«64bit-notables_loop1» EdwardsOps.vdbLoop1N
   congr 1
 
 /-- The first loop of `mul`: the highest index at which a digit of `a` or `b` is nonzero (`0` if
@@ -277,7 +279,7 @@ private theorem mul_loop0_spec (iter : core.iter.adapters.rev.Rev (core.ops.rang
     (a_naf b_naf : Array I8 256#usize) (i : Usize) (hstart : iter.iter.start.val = 0)
     (hend : iter.iter.end.val ≤ 256) (hi : i.val < 256)
     (hz : ∀ k, iter.iter.end.val ≤ k → k < 256 → a_naf[k]!.val = 0 ∧ b_naf[k]!.val = 0) :
-    mul.«x86_64-no-tables_loop0» iter a_naf b_naf i ⦃ (r : Usize) =>
+    mul.«64bit-notables_loop0» iter a_naf b_naf i ⦃ (r : Usize) =>
       r.val < 256 ∧ ∀ k, r.val < k → k < 256 → a_naf[k]!.val = 0 ∧ b_naf[k]!.val = 0 ⦄ := by
   rw [mul_loop0_eq]
   exact EdwardsOps.vdbLoop0_spec iter a_naf b_naf i hstart hend hi hz
@@ -286,8 +288,8 @@ private theorem mul_loop0_spec (iter : core.iter.adapters.rev.Rev (core.ops.rang
 `nafTail a i • A + nafTail b i • B`. -/
 @[local step]
 private theorem mul_loop1_spec (a_naf b_naf : Array I8 256#usize) (i : Usize)
-    (table_A table_B : window.NafLookupTable5 ProjectiveNielsPoint.«x86_64-no-tables»)
-    (r : ProjectivePoint.«x86_64-no-tables») (A B : curve25519.edwards.Point)
+    (table_A table_B : window.NafLookupTable5 ProjectiveNielsPoint.«64bit-notables»)
+    (r : ProjectivePoint.«64bit-notables») (A B : curve25519.edwards.Point)
     (hA : table_A.Represents A) (hAb : table_A.LimbsLt 54)
     (hB : table_B.Represents B) (hBb : table_B.LimbsLt 54)
     (ha : ∀ k : ℕ, k < 256 → a_naf[k]!.val ≠ 0 → a_naf[k]!.val % 2 = 1 ∧
@@ -296,41 +298,41 @@ private theorem mul_loop1_spec (a_naf b_naf : Array I8 256#usize) (i : Usize)
       2 * |b_naf[k]!.val| < 2 ^ 5)
     (hi : i.val < 256) (hr : r.OnCurve) (hrb : r.LimbsLt 52)
     (hrp : r.toPoint = nafTail a_naf (i.val + 1) • A + nafTail b_naf (i.val + 1) • B) :
-    mul.«x86_64-no-tables_loop1» a_naf b_naf i table_A table_B r
-      ⦃ (res : ProjectivePoint.«x86_64-no-tables») => res.OnCurve ∧
+    mul.«64bit-notables_loop1» a_naf b_naf i table_A table_B r
+      ⦃ (res : ProjectivePoint.«64bit-notables») => res.OnCurve ∧
         res.toPoint = nafTail a_naf 0 • A + nafTail b_naf 0 • B ∧ res.LimbsLt 52 ⦄ := by
   rw [mul_loop1_eq]
-  exact EdwardsOps.X86NoTables.vdbLoop1N_spec
-    EdwardsOps.X86NoTables.addN_spec EdwardsOps.X86NoTables.subN_spec
-    EdwardsOps.X86NoTables.asExtended_spec EdwardsOps.X86NoTables.pDouble_spec
-    EdwardsOps.X86NoTables.cAsProjective_spec a_naf b_naf i
+  exact EdwardsOps.Bits64NoTables.vdbLoop1N_spec
+    EdwardsOps.Bits64NoTables.addN_spec EdwardsOps.Bits64NoTables.subN_spec
+    EdwardsOps.Bits64NoTables.asExtended_spec EdwardsOps.Bits64NoTables.pDouble_spec
+    EdwardsOps.Bits64NoTables.cAsProjective_spec a_naf b_naf i
     table_A table_B r A B hA hAb hB hBb ha hb hi hr hrb hrp
 
-open window.«NafLookupTable5ProjectiveNielsPointx86_64-no-tables».Insts in
+open window.«NafLookupTable5ProjectiveNielsPoint64bit-notables».Insts in
 open scoped Helpers.IndexStep in
 /-- `vartime_double_base::mul`: `a • A + b • B` for the basepoint `B` (unreduced scalars
 `< 2^255`, the precondition of `non_adjacent_form`); limbs `< 2^52`. -/
 @[step]
-theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«x86_64-no-tables»)
+theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«64bit-notables»)
     (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255) (hA : A.LimbsLt 52) (hon : A.OnCurve)
     (hb : b.asNat < 2 ^ 255) :
-    mul.«x86_64-no-tables» a A b ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    mul.«64bit-notables» a A b ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold mul.«x86_64-no-tables»
+  unfold mul.«64bit-notables»
   step as ⟨a_naf, haval, hadig, hanaf⟩
   step as ⟨b_naf, hbval, hbdig, hbnaf⟩
   step as ⟨iter, hiter⟩
   step with mul_loop0_spec iter a_naf b_naf 255#usize (by rw [hiter]; rfl) (by rw [hiter]; decide)
     (by decide) (fun k hk hk' => absurd hk' (by rw [hiter] at hk; simp at hk; omega))
     as ⟨i, hi, hz⟩
-  step with «CoreConvertFromSharedAEdwardsPointx86_64-no-tables».from_spec
+  step with «CoreConvertFromSharedAEdwardsPoint64bit-notables».from_spec
     as ⟨tA, htA, htAb⟩
-  step with backend.serial.u64.constants.«x86_64-no-tables».ED25519_BASEPOINT_POINT_spec
+  step with backend.serial.u64.constants.«64bit-notables».ED25519_BASEPOINT_POINT_spec
     as ⟨bp, hbpon, hbp, hbpb⟩
-  step with «CoreConvertFromSharedAEdwardsPointx86_64-no-tables».from_spec
+  step with «CoreConvertFromSharedAEdwardsPoint64bit-notables».from_spec
     as ⟨tB, htB, htBb⟩
   step with
-      ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+      ProjectivePoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, hron, hrp, hrb⟩
   have hr' : r.toPoint = nafTail a_naf (i.val + 1) • A.toPoint +
       nafTail b_naf (i.val + 1) • bp.toPoint := by
@@ -339,38 +341,38 @@ theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«x86_64-no-table
   step with mul_loop1_spec a_naf b_naf i tA tB r A.toPoint bp.toPoint htA htAb htB htBb
     (fun k hk h => hadig k hk h) (fun k hk h => hbdig k hk h) hi hron hrb hr'
     as ⟨res, hreson, hresp, hresb⟩
-  step with «ProjectivePointx86_64-no-tables».as_extended_spec res hresb hreson
+  step with «ProjectivePoint64bit-notables».as_extended_spec res hresb hreson
     as ⟨e, heon, hep, heb⟩
   refine ⟨heon, ?_, heb⟩
   rw [hep, hresp, nafTail_zero, nafTail_zero, haval, hbval, hbp, natCast_zsmul, natCast_zsmul]
 
-end «x86_64-no-tables»
+end «64bit-notables»
 
 end
 
 section
-open «Shared0EdwardsPointi686-no-tables».Insts
-open «CoreOpsArithAddSharedAProjectiveNielsPointi686-no-tablesCompletedPointi686-no-tables»
+open «Shared0EdwardsPoint32bit-notables».Insts
+open «CoreOpsArithAddSharedAProjectiveNielsPoint32bit-notablesCompletedPoint32bit-notables»
   (add_spec)
-open «CoreOpsArithSubSharedAProjectiveNielsPointi686-no-tablesCompletedPointi686-no-tables»
+open «CoreOpsArithSubSharedAProjectiveNielsPoint32bit-notablesCompletedPoint32bit-notables»
   (sub_spec)
 
-namespace «i686-no-tables»
+namespace «32bit-notables»
 
 private theorem mul_loop0_eq
     (iter : core.iter.adapters.rev.Rev (core.ops.range.Range Usize))
     (a_naf b_naf : Array I8 256#usize) (i : Usize) :
-    mul.«i686-no-tables_loop0» iter a_naf b_naf i = EdwardsOps.vdbLoop0 iter a_naf b_naf i := by
-  unfold mul.«i686-no-tables_loop0» EdwardsOps.vdbLoop0
+    mul.«32bit-notables_loop0» iter a_naf b_naf i = EdwardsOps.vdbLoop0 iter a_naf b_naf i := by
+  unfold mul.«32bit-notables_loop0» EdwardsOps.vdbLoop0
   congr 1
 
 private theorem mul_loop1_eq (a_naf b_naf : Array I8 256#usize) (i : Usize)
-    (table_A : window.NafLookupTable5 ProjectiveNielsPoint.«i686-no-tables»)
-    (table_B : window.NafLookupTable5 ProjectiveNielsPoint.«i686-no-tables»)
-    (r : ProjectivePoint.«i686-no-tables») :
-    mul.«i686-no-tables_loop1» a_naf b_naf i table_A table_B r =
-      EdwardsOps.I686NoTables.vdbLoop1N a_naf b_naf i table_A table_B r := by
-  unfold mul.«i686-no-tables_loop1» EdwardsOps.vdbLoop1N
+    (table_A : window.NafLookupTable5 ProjectiveNielsPoint.«32bit-notables»)
+    (table_B : window.NafLookupTable5 ProjectiveNielsPoint.«32bit-notables»)
+    (r : ProjectivePoint.«32bit-notables») :
+    mul.«32bit-notables_loop1» a_naf b_naf i table_A table_B r =
+      EdwardsOps.Bits32NoTables.vdbLoop1N a_naf b_naf i table_A table_B r := by
+  unfold mul.«32bit-notables_loop1» EdwardsOps.vdbLoop1N
   congr 1
 
 /-- The first loop of `mul`: the highest index at which a digit of `a` or `b` is nonzero (`0` if
@@ -380,7 +382,7 @@ private theorem mul_loop0_spec (iter : core.iter.adapters.rev.Rev (core.ops.rang
     (a_naf b_naf : Array I8 256#usize) (i : Usize) (hstart : iter.iter.start.val = 0)
     (hend : iter.iter.end.val ≤ 256) (hi : i.val < 256)
     (hz : ∀ k, iter.iter.end.val ≤ k → k < 256 → a_naf[k]!.val = 0 ∧ b_naf[k]!.val = 0) :
-    mul.«i686-no-tables_loop0» iter a_naf b_naf i ⦃ (r : Usize) =>
+    mul.«32bit-notables_loop0» iter a_naf b_naf i ⦃ (r : Usize) =>
       r.val < 256 ∧ ∀ k, r.val < k → k < 256 → a_naf[k]!.val = 0 ∧ b_naf[k]!.val = 0 ⦄ := by
   rw [mul_loop0_eq]
   exact EdwardsOps.vdbLoop0_spec iter a_naf b_naf i hstart hend hi hz
@@ -389,8 +391,8 @@ private theorem mul_loop0_spec (iter : core.iter.adapters.rev.Rev (core.ops.rang
 `nafTail a i • A + nafTail b i • B`. -/
 @[local step]
 private theorem mul_loop1_spec (a_naf b_naf : Array I8 256#usize) (i : Usize)
-    (table_A table_B : window.NafLookupTable5 ProjectiveNielsPoint.«i686-no-tables»)
-    (r : ProjectivePoint.«i686-no-tables») (A B : curve25519.edwards.Point)
+    (table_A table_B : window.NafLookupTable5 ProjectiveNielsPoint.«32bit-notables»)
+    (r : ProjectivePoint.«32bit-notables») (A B : curve25519.edwards.Point)
     (hA : table_A.Represents A) (hAb : table_A.LimbsLt 27)
     (hB : table_B.Represents B) (hBb : table_B.LimbsLt 27)
     (ha : ∀ k : ℕ, k < 256 → a_naf[k]!.val ≠ 0 → a_naf[k]!.val % 2 = 1 ∧
@@ -399,41 +401,41 @@ private theorem mul_loop1_spec (a_naf b_naf : Array I8 256#usize) (i : Usize)
       2 * |b_naf[k]!.val| < 2 ^ 5)
     (hi : i.val < 256) (hr : r.OnCurve) (hrb : r.LimbsLt 26)
     (hrp : r.toPoint = nafTail a_naf (i.val + 1) • A + nafTail b_naf (i.val + 1) • B) :
-    mul.«i686-no-tables_loop1» a_naf b_naf i table_A table_B r
-      ⦃ (res : ProjectivePoint.«i686-no-tables») => res.OnCurve ∧
+    mul.«32bit-notables_loop1» a_naf b_naf i table_A table_B r
+      ⦃ (res : ProjectivePoint.«32bit-notables») => res.OnCurve ∧
         res.toPoint = nafTail a_naf 0 • A + nafTail b_naf 0 • B ∧ res.LimbsLt 26 ⦄ := by
   rw [mul_loop1_eq]
-  exact EdwardsOps.I686NoTables.vdbLoop1N_spec
-    EdwardsOps.I686NoTables.addN_spec EdwardsOps.I686NoTables.subN_spec
-    EdwardsOps.I686NoTables.asExtended_spec EdwardsOps.I686NoTables.pDouble_spec
-    EdwardsOps.I686NoTables.cAsProjective_spec a_naf b_naf
+  exact EdwardsOps.Bits32NoTables.vdbLoop1N_spec
+    EdwardsOps.Bits32NoTables.addN_spec EdwardsOps.Bits32NoTables.subN_spec
+    EdwardsOps.Bits32NoTables.asExtended_spec EdwardsOps.Bits32NoTables.pDouble_spec
+    EdwardsOps.Bits32NoTables.cAsProjective_spec a_naf b_naf
     i table_A table_B r A B hA hAb hB hBb ha hb hi hr hrb hrp
 
-open window.«NafLookupTable5ProjectiveNielsPointi686-no-tables».Insts in
+open window.«NafLookupTable5ProjectiveNielsPoint32bit-notables».Insts in
 open scoped Helpers.IndexStep in
 /-- `vartime_double_base::mul`: `a • A + b • B` for the basepoint `B` (unreduced scalars
 `< 2^255`, the precondition of `non_adjacent_form`); limbs `< 2^26`. -/
 @[step]
-theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«i686-no-tables»)
+theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«32bit-notables»)
     (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255) (hA : A.LimbsLt 26) (hon : A.OnCurve)
     (hb : b.asNat < 2 ^ 255) :
-    mul.«i686-no-tables» a A b ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    mul.«32bit-notables» a A b ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.LimbsLt 26 ⦄ := by
-  unfold mul.«i686-no-tables»
+  unfold mul.«32bit-notables»
   step as ⟨a_naf, haval, hadig, hanaf⟩
   step as ⟨b_naf, hbval, hbdig, hbnaf⟩
   step as ⟨iter, hiter⟩
   step with mul_loop0_spec iter a_naf b_naf 255#usize (by rw [hiter]; rfl) (by rw [hiter]; decide)
     (by decide) (fun k hk hk' => absurd hk' (by rw [hiter] at hk; simp at hk; omega))
     as ⟨i, hi, hz⟩
-  step with «CoreConvertFromSharedAEdwardsPointi686-no-tables».from_spec
+  step with «CoreConvertFromSharedAEdwardsPoint32bit-notables».from_spec
     as ⟨tA, htA, htAb⟩
-  step with backend.serial.u32.constants.«i686-no-tables».ED25519_BASEPOINT_POINT_spec
+  step with backend.serial.u32.constants.«32bit-notables».ED25519_BASEPOINT_POINT_spec
     as ⟨bp, hbpon, hbp, hbpb⟩
-  step with «CoreConvertFromSharedAEdwardsPointi686-no-tables».from_spec
+  step with «CoreConvertFromSharedAEdwardsPoint32bit-notables».from_spec
     as ⟨tB, htB, htBb⟩
   step with
-      ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+      ProjectivePoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
     as ⟨r, hron, hrp, hrb⟩
   have hr' : r.toPoint = nafTail a_naf (i.val + 1) • A.toPoint +
       nafTail b_naf (i.val + 1) • bp.toPoint := by
@@ -442,12 +444,12 @@ theorem mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«i686-no-tables�
   step with mul_loop1_spec a_naf b_naf i tA tB r A.toPoint bp.toPoint htA htAb htB htBb
     (fun k hk h => hadig k hk h) (fun k hk h => hbdig k hk h) hi hron hrb hr'
     as ⟨res, hreson, hresp, hresb⟩
-  step with «ProjectivePointi686-no-tables».as_extended_spec res hresb hreson
+  step with «ProjectivePoint32bit-notables».as_extended_spec res hresb hreson
     as ⟨e, heon, hep, heb⟩
   refine ⟨heon, ?_, heb⟩
   rw [hep, hresp, nafTail_zero, nafTail_zero, haval, hbval, hbp, natCast_zsmul, natCast_zsmul]
 
-end «i686-no-tables»
+end «32bit-notables»
 
 end
 end Curve25519Dalek.backend.serial.scalar_mul.vartime_double_base

@@ -14,64 +14,64 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek.edwards
 
-namespace EdwardsPoint.«x86_64-tables».Insts.SubtleConditionallySelectable
+namespace EdwardsPoint.«64bit-tables».Insts.SubtleConditionallySelectable
 
 /-- `ConditionallySelectable::conditional_select` for `EdwardsPoint`:
 `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : EdwardsPoint.«x86_64-tables») (choice : subtle.Choice)
+theorem conditional_select_spec (a b : EdwardsPoint.«64bit-tables») (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : EdwardsPoint.«x86_64-tables») =>
+    conditional_select a b choice ⦃ (r : EdwardsPoint.«64bit-tables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step*
   constructor <;> intro hc <;> simp [*]
 
-end EdwardsPoint.«x86_64-tables».Insts.SubtleConditionallySelectable
+end EdwardsPoint.«64bit-tables».Insts.SubtleConditionallySelectable
 
-namespace EdwardsPoint.«i686-tables».Insts.SubtleConditionallySelectable
+namespace EdwardsPoint.«32bit-tables».Insts.SubtleConditionallySelectable
 
 /-- `ConditionallySelectable::conditional_select` for `EdwardsPoint`:
 `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : EdwardsPoint.«i686-tables») (choice : subtle.Choice)
+theorem conditional_select_spec (a b : EdwardsPoint.«32bit-tables») (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : EdwardsPoint.«i686-tables») =>
+    conditional_select a b choice ⦃ (r : EdwardsPoint.«32bit-tables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step*
   constructor <;> intro hc <;> simp [*]
 
-end EdwardsPoint.«i686-tables».Insts.SubtleConditionallySelectable
+end EdwardsPoint.«32bit-tables».Insts.SubtleConditionallySelectable
 
-namespace EdwardsPoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable
+namespace EdwardsPoint.«64bit-notables».Insts.SubtleConditionallySelectable
 
 /-- `ConditionallySelectable::conditional_select` for `EdwardsPoint`:
 `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : EdwardsPoint.«x86_64-no-tables») (choice : subtle.Choice)
+theorem conditional_select_spec (a b : EdwardsPoint.«64bit-notables») (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
+    conditional_select a b choice ⦃ (r : EdwardsPoint.«64bit-notables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step*
   constructor <;> intro hc <;> simp [*]
 
-end EdwardsPoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable
+end EdwardsPoint.«64bit-notables».Insts.SubtleConditionallySelectable
 
-namespace EdwardsPoint.«i686-no-tables».Insts.SubtleConditionallySelectable
+namespace EdwardsPoint.«32bit-notables».Insts.SubtleConditionallySelectable
 
 /-- `ConditionallySelectable::conditional_select` for `EdwardsPoint`:
 `a` if `choice = 0`, `b` if `choice = 1`. -/
 @[step]
-theorem conditional_select_spec (a b : EdwardsPoint.«i686-no-tables») (choice : subtle.Choice)
+theorem conditional_select_spec (a b : EdwardsPoint.«32bit-notables») (choice : subtle.Choice)
     (hchoice : choice.IsValid) :
-    conditional_select a b choice ⦃ (r : EdwardsPoint.«i686-no-tables») =>
+    conditional_select a b choice ⦃ (r : EdwardsPoint.«32bit-notables») =>
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ := by
   unfold conditional_select
   step*
   constructor <;> intro hc <;> simp [*]
 
-end EdwardsPoint.«i686-no-tables».Insts.SubtleConditionallySelectable
+end EdwardsPoint.«32bit-notables».Insts.SubtleConditionallySelectable
 
 end Curve25519Dalek.edwards

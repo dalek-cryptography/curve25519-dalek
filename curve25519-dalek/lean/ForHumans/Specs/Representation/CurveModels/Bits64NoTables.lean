@@ -11,39 +11,39 @@ public section
 
 set_option linter.style.longLine false
 
-/-! # `CurveModels` for `x86_64-no-tables`, generated from `ForHumans/Specs/Representation/CurveModels.lean` -/
+/-! # `CurveModels` for `64bit-notables`, generated from `ForHumans/Specs/Representation/CurveModels.lean` -/
 
 open Aeneas Aeneas.Std
 
-namespace Curve25519Dalek.backend.serial.curve_models.AffineNielsPoint.«x86_64-no-tables»
+namespace Curve25519Dalek.backend.serial.curve_models.AffineNielsPoint.«64bit-notables»
 
 /-- The affine Niels coordinates `(y + x, y - x, 2 d x y)` as field elements. -/
-noncomputable def toAffineNiels (self : AffineNielsPoint.«x86_64-no-tables») :
+noncomputable def toAffineNiels (self : AffineNielsPoint.«64bit-notables») :
     curve25519.edwards.AffineNiels :=
   ⟨self.y_plus_x.toField, self.y_minus_x.toField, self.xy2d.toField⟩
 
 /-- `self` represents a point: with `x := ((y + x) - (y - x)) / 2` and
 `y := ((y + x) + (y - x)) / 2`, `(x, y)` is on the curve and `xy2d = 2 d x y`. -/
-@[expose] def OnCurve (self : AffineNielsPoint.«x86_64-no-tables») : Prop :=
+@[expose] def OnCurve (self : AffineNielsPoint.«64bit-notables») : Prop :=
   self.toAffineNiels.OnCurve
 
 /-- The point represented by `self` (`0` if `¬ self.OnCurve`). -/
-noncomputable def toPoint (self : AffineNielsPoint.«x86_64-no-tables») :
+noncomputable def toPoint (self : AffineNielsPoint.«64bit-notables») :
     curve25519.edwards.Point :=
   self.toAffineNiels.toPoint
 
 /-- Every limb of an `AffineNielsPoint` is `< 2^n`. -/
-@[expose] def LimbsLt (n : ℕ) (self : AffineNielsPoint.«x86_64-no-tables») : Prop :=
+@[expose] def LimbsLt (n : ℕ) (self : AffineNielsPoint.«64bit-notables») : Prop :=
   self.y_plus_x.LimbsLt n ∧ self.y_minus_x.LimbsLt n ∧ self.xy2d.LimbsLt n
 
 /-- Needed for `t[j]!` on tables of `AffineNielsPoint`s; the default is never observed for
 in-range indices. -/
-instance instInhabited : Inhabited (AffineNielsPoint.«x86_64-no-tables») :=
+instance instInhabited : Inhabited (AffineNielsPoint.«64bit-notables») :=
   ⟨⟨default, default, default⟩⟩
 
-noncomputable instance instPointRepr : PointRepr AffineNielsPoint.«x86_64-no-tables» where
+noncomputable instance instPointRepr : PointRepr AffineNielsPoint.«64bit-notables» where
   OnCurve := OnCurve
   toPoint := toPoint
   LimbsLt := LimbsLt
 
-end Curve25519Dalek.backend.serial.curve_models.AffineNielsPoint.«x86_64-no-tables»
+end Curve25519Dalek.backend.serial.curve_models.AffineNielsPoint.«64bit-notables»

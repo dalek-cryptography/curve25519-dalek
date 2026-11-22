@@ -30,7 +30,7 @@ public section
 
 /-! # The `u64` field backend
 
-`FieldElement51`, the backend of `«x86_64-tables»` and `«x86_64-no-tables»`, as a `Backend`:
+`FieldElement51`, the backend of `«64bit-tables»` and `«64bit-notables»`, as a `Backend`:
 `Red`, `Sum2`, `MulIn`, `Niels` are `LimbsLt 52`, `53`, `54`, `54`. The specs are stated first on
 `FieldElement51` (their proofs use the field specs, imported privately), then bundled; those
 through the encoding (`eq`, `ct_eq`, `is_negative`, `is_zero`, `to_bytes`) are in

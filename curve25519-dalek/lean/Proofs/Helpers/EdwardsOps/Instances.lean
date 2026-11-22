@@ -38,41 +38,41 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 open Curve25519Dalek.backend.serial.curve_models
 
 section
-open Curve25519Dalek.«Shared0EdwardsPointx86_64-tables».Insts
-open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
+open Curve25519Dalek.«Shared0EdwardsPoint64bit-tables».Insts
+open «CoreOpsArithAddSharedAProjectiveNielsPoint64bit-tablesCompletedPoint64bit-tables»
     renaming add → nielsAdd, add_spec → nielsAdd_spec
-open «CoreOpsArithSubSharedAProjectiveNielsPointx86_64-tablesCompletedPointx86_64-tables»
+open «CoreOpsArithSubSharedAProjectiveNielsPoint64bit-tablesCompletedPoint64bit-tables»
     renaming sub → nielsSub, sub_spec → nielsSub_spec
-open Curve25519Dalek.edwards.EdwardsPoint.«x86_64-tables».Insts
-open Curve25519Dalek.window.«NafLookupTable5ProjectiveNielsPointx86_64-tables».Insts
-open Curve25519Dalek.«Shared0ProjectiveNielsPointx86_64-tables».Insts
+open Curve25519Dalek.edwards.EdwardsPoint.«64bit-tables».Insts
+open Curve25519Dalek.window.«NafLookupTable5ProjectiveNielsPoint64bit-tables».Insts
+open Curve25519Dalek.«Shared0ProjectiveNielsPoint64bit-tables».Insts
 set_option linter.style.longLine false
-open Curve25519Dalek.window.«LookupTableProjectiveNielsPointx86_64-tables».Insts.«CoreConvertFromSharedAEdwardsPointx86_64-tables»
+open Curve25519Dalek.window.«LookupTableProjectiveNielsPoint64bit-tables».Insts.«CoreConvertFromSharedAEdwardsPoint64bit-tables»
     renaming «from» → ltFromFn, from_spec → ltFromFn_spec
 set_option linter.style.longLine true
-open «CoreOpsArithAddSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables»
+open «CoreOpsArithAddSharedAAffineNielsPoint64bit-tablesCompletedPoint64bit-tables»
     renaming add → affineAdd, add_spec → affineAdd_spec
-open «CoreOpsArithSubSharedAAffineNielsPointx86_64-tablesCompletedPointx86_64-tables»
+open «CoreOpsArithSubSharedAAffineNielsPoint64bit-tablesCompletedPoint64bit-tables»
     renaming sub → affineSub, sub_spec → affineSub_spec
-open «CoreOpsArithAddEdwardsPointx86_64-tablesEdwardsPointx86_64-tables»
+open «CoreOpsArithAddEdwardsPoint64bit-tablesEdwardsPoint64bit-tables»
     renaming add → edwardsAdd, add_spec → edwardsAdd_spec
 
 namespace Curve25519Dalek.EdwardsOps
 
-/-- The `«x86_64-tables»` point operations. -/
-@[expose] noncomputable def X86Tables : EdwardsOps where
-  E := edwards.EdwardsPoint.«x86_64-tables»
-  N := ProjectiveNielsPoint.«x86_64-tables»
-  C := CompletedPoint.«x86_64-tables»
-  Pr := ProjectivePoint.«x86_64-tables»
-  An := AffineNielsPoint.«x86_64-tables»
+/-- The `«64bit-tables»` point operations. -/
+@[expose] noncomputable def Bits64Tables : EdwardsOps where
+  E := edwards.EdwardsPoint.«64bit-tables»
+  N := ProjectiveNielsPoint.«64bit-tables»
+  C := CompletedPoint.«64bit-tables»
+  Pr := ProjectivePoint.«64bit-tables»
+  An := AffineNielsPoint.«64bit-tables»
   inhE := inferInstance
   inhN := inferInstance
   inhA := inferInstance
   reprN := inferInstance
-  copyN := ProjectiveNielsPoint.«x86_64-tables».Insts.CoreMarkerCopy
+  copyN := ProjectiveNielsPoint.«64bit-tables».Insts.CoreMarkerCopy
   reprA := inferInstance
-  copyA := AffineNielsPoint.«x86_64-tables».Insts.CoreMarkerCopy
+  copyA := AffineNielsPoint.«64bit-tables».Insts.CoreMarkerCopy
   aB := 54
   OnCurve r := r.OnCurve
   toPoint r := r.toPoint
@@ -84,77 +84,77 @@ namespace Curve25519Dalek.EdwardsOps
   pOnCurve r := r.OnCurve
   pToPoint r := r.toPoint
   pBnd r := r.LimbsLt 52
-  identity := edwards.EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity
+  identity := edwards.EdwardsPoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity.identity
   add := edwardsAdd
-  addAssign := «CoreOpsArithAddAssignEdwardsPointx86_64-tables».add_assign
-  mulByPow2 := edwards.«EdwardsPointx86_64-tables».mul_by_pow_2
+  addAssign := «CoreOpsArithAddAssignEdwardsPoint64bit-tables».add_assign
+  mulByPow2 := edwards.«EdwardsPoint64bit-tables».mul_by_pow_2
   addN := nielsAdd
   subN := nielsSub
-  asExtended := «CompletedPointx86_64-tables».as_extended
+  asExtended := «CompletedPoint64bit-tables».as_extended
   addA := affineAdd
   subA := affineSub
-  asProjectiveNiels := edwards.«EdwardsPointx86_64-tables».as_projective_niels
-  pIdentity := ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity
-  pDouble := «ProjectivePointx86_64-tables».double
-  cAsProjective := «CompletedPointx86_64-tables».as_projective
-  pAsExtended := «ProjectivePointx86_64-tables».as_extended
+  asProjectiveNiels := edwards.«EdwardsPoint64bit-tables».as_projective_niels
+  pIdentity := ProjectivePoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity.identity
+  pDouble := «ProjectivePoint64bit-tables».double
+  cAsProjective := «CompletedPoint64bit-tables».as_projective
+  pAsExtended := «ProjectivePoint64bit-tables».as_extended
   nafTable5 :=
-    «CoreConvertFromSharedAEdwardsPointx86_64-tables».from
+    «CoreConvertFromSharedAEdwardsPoint64bit-tables».from
   ltSelect := window.LookupTable.select
-    ProjectiveNielsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity
-    ProjectiveNielsPoint.«x86_64-tables».Insts.SubtleConditionallySelectable
+    ProjectiveNielsPoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity
+    ProjectiveNielsPoint.«64bit-tables».Insts.SubtleConditionallySelectable
     (subtle.ConditionallyNegatable.Blanket
-      ProjectiveNielsPoint.«x86_64-tables».Insts.SubtleConditionallySelectable
-      «CoreOpsArithNegProjectiveNielsPointx86_64-tables»)
+      ProjectiveNielsPoint.«64bit-tables».Insts.SubtleConditionallySelectable
+      «CoreOpsArithNegProjectiveNielsPoint64bit-tables»)
   ltFrom := ltFromFn
 
-theorem X86Tables.identity_spec : X86Tables.IdentitySpec :=
-  edwards.EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+theorem Bits64Tables.identity_spec : Bits64Tables.IdentitySpec :=
+  edwards.EdwardsPoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
-theorem X86Tables.add_spec : X86Tables.AddSpec :=
+theorem Bits64Tables.add_spec : Bits64Tables.AddSpec :=
   edwardsAdd_spec
 
-theorem X86Tables.addAssign_spec : X86Tables.AddAssignSpec :=
-  «CoreOpsArithAddAssignEdwardsPointx86_64-tables».add_assign_spec
+theorem Bits64Tables.addAssign_spec : Bits64Tables.AddAssignSpec :=
+  «CoreOpsArithAddAssignEdwardsPoint64bit-tables».add_assign_spec
 
-theorem X86Tables.mulByPow2_spec : X86Tables.MulByPow2Spec :=
-  edwards.«EdwardsPointx86_64-tables».mul_by_pow_2_spec
+theorem Bits64Tables.mulByPow2_spec : Bits64Tables.MulByPow2Spec :=
+  edwards.«EdwardsPoint64bit-tables».mul_by_pow_2_spec
 
-theorem X86Tables.addN_spec : X86Tables.AddNSpec :=
+theorem Bits64Tables.addN_spec : Bits64Tables.AddNSpec :=
   nielsAdd_spec
 
-theorem X86Tables.subN_spec : X86Tables.SubNSpec :=
+theorem Bits64Tables.subN_spec : Bits64Tables.SubNSpec :=
   nielsSub_spec
 
-theorem X86Tables.addA_spec : X86Tables.AddASpec := affineAdd_spec
+theorem Bits64Tables.addA_spec : Bits64Tables.AddASpec := affineAdd_spec
 
-theorem X86Tables.subA_spec : X86Tables.SubASpec := affineSub_spec
+theorem Bits64Tables.subA_spec : Bits64Tables.SubASpec := affineSub_spec
 
-theorem X86Tables.asExtended_spec : X86Tables.AsExtendedSpec :=
-  «CompletedPointx86_64-tables».as_extended_spec
+theorem Bits64Tables.asExtended_spec : Bits64Tables.AsExtendedSpec :=
+  «CompletedPoint64bit-tables».as_extended_spec
 
-theorem X86Tables.asProjectiveNiels_spec : X86Tables.AsProjectiveNielsSpec :=
-  edwards.«EdwardsPointx86_64-tables».as_projective_niels_spec
+theorem Bits64Tables.asProjectiveNiels_spec : Bits64Tables.AsProjectiveNielsSpec :=
+  edwards.«EdwardsPoint64bit-tables».as_projective_niels_spec
 
-theorem X86Tables.pIdentity_spec : X86Tables.PIdentitySpec :=
-  ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+theorem Bits64Tables.pIdentity_spec : Bits64Tables.PIdentitySpec :=
+  ProjectivePoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
-theorem X86Tables.pDouble_spec : X86Tables.PDoubleSpec :=
-  «ProjectivePointx86_64-tables».double_spec
+theorem Bits64Tables.pDouble_spec : Bits64Tables.PDoubleSpec :=
+  «ProjectivePoint64bit-tables».double_spec
 
-theorem X86Tables.cAsProjective_spec : X86Tables.CAsProjectiveSpec :=
-  «CompletedPointx86_64-tables».as_projective_spec
+theorem Bits64Tables.cAsProjective_spec : Bits64Tables.CAsProjectiveSpec :=
+  «CompletedPoint64bit-tables».as_projective_spec
 
-theorem X86Tables.pAsExtended_spec : X86Tables.PAsExtendedSpec :=
-  «ProjectivePointx86_64-tables».as_extended_spec
+theorem Bits64Tables.pAsExtended_spec : Bits64Tables.PAsExtendedSpec :=
+  «ProjectivePoint64bit-tables».as_extended_spec
 
-theorem X86Tables.nafTable5_spec : X86Tables.NafTable5Spec :=
-  «CoreConvertFromSharedAEdwardsPointx86_64-tables».from_spec
+theorem Bits64Tables.nafTable5_spec : Bits64Tables.NafTable5Spec :=
+  «CoreConvertFromSharedAEdwardsPoint64bit-tables».from_spec
 
-theorem X86Tables.ltSelect_spec : X86Tables.LtSelectSpec :=
-  window.«LookupTableProjectiveNielsPointx86_64-tables».select_spec
+theorem Bits64Tables.ltSelect_spec : Bits64Tables.LtSelectSpec :=
+  window.«LookupTableProjectiveNielsPoint64bit-tables».select_spec
 
-theorem X86Tables.ltFrom_spec : X86Tables.LtFromSpec :=
+theorem Bits64Tables.ltFrom_spec : Bits64Tables.LtFromSpec :=
   ltFromFn_spec
 
 end Curve25519Dalek.EdwardsOps
@@ -162,41 +162,41 @@ end Curve25519Dalek.EdwardsOps
 end
 
 section
-open Curve25519Dalek.«Shared0EdwardsPointx86_64-no-tables».Insts
-open «CoreOpsArithAddSharedAProjectiveNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
+open Curve25519Dalek.«Shared0EdwardsPoint64bit-notables».Insts
+open «CoreOpsArithAddSharedAProjectiveNielsPoint64bit-notablesCompletedPoint64bit-notables»
     renaming add → nielsAdd, add_spec → nielsAdd_spec
-open «CoreOpsArithSubSharedAProjectiveNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
+open «CoreOpsArithSubSharedAProjectiveNielsPoint64bit-notablesCompletedPoint64bit-notables»
     renaming sub → nielsSub, sub_spec → nielsSub_spec
-open Curve25519Dalek.edwards.EdwardsPoint.«x86_64-no-tables».Insts
-open Curve25519Dalek.window.«NafLookupTable5ProjectiveNielsPointx86_64-no-tables».Insts
-open Curve25519Dalek.«Shared0ProjectiveNielsPointx86_64-no-tables».Insts
+open Curve25519Dalek.edwards.EdwardsPoint.«64bit-notables».Insts
+open Curve25519Dalek.window.«NafLookupTable5ProjectiveNielsPoint64bit-notables».Insts
+open Curve25519Dalek.«Shared0ProjectiveNielsPoint64bit-notables».Insts
 set_option linter.style.longLine false
-open Curve25519Dalek.window.«LookupTableProjectiveNielsPointx86_64-no-tables».Insts.«CoreConvertFromSharedAEdwardsPointx86_64-no-tables»
+open Curve25519Dalek.window.«LookupTableProjectiveNielsPoint64bit-notables».Insts.«CoreConvertFromSharedAEdwardsPoint64bit-notables»
     renaming «from» → ltFromFn, from_spec → ltFromFn_spec
 set_option linter.style.longLine true
-open «CoreOpsArithAddSharedAAffineNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
+open «CoreOpsArithAddSharedAAffineNielsPoint64bit-notablesCompletedPoint64bit-notables»
     renaming add → affineAdd, add_spec → affineAdd_spec
-open «CoreOpsArithSubSharedAAffineNielsPointx86_64-no-tablesCompletedPointx86_64-no-tables»
+open «CoreOpsArithSubSharedAAffineNielsPoint64bit-notablesCompletedPoint64bit-notables»
     renaming sub → affineSub, sub_spec → affineSub_spec
-open «CoreOpsArithAddEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables»
+open «CoreOpsArithAddEdwardsPoint64bit-notablesEdwardsPoint64bit-notables»
     renaming add → edwardsAdd, add_spec → edwardsAdd_spec
 
 namespace Curve25519Dalek.EdwardsOps
 
-/-- The `«x86_64-no-tables»` point operations. -/
-@[expose] noncomputable def X86NoTables : EdwardsOps where
-  E := edwards.EdwardsPoint.«x86_64-no-tables»
-  N := ProjectiveNielsPoint.«x86_64-no-tables»
-  C := CompletedPoint.«x86_64-no-tables»
-  Pr := ProjectivePoint.«x86_64-no-tables»
-  An := AffineNielsPoint.«x86_64-no-tables»
+/-- The `«64bit-notables»` point operations. -/
+@[expose] noncomputable def Bits64NoTables : EdwardsOps where
+  E := edwards.EdwardsPoint.«64bit-notables»
+  N := ProjectiveNielsPoint.«64bit-notables»
+  C := CompletedPoint.«64bit-notables»
+  Pr := ProjectivePoint.«64bit-notables»
+  An := AffineNielsPoint.«64bit-notables»
   inhE := inferInstance
   inhN := inferInstance
   inhA := inferInstance
   reprN := inferInstance
-  copyN := ProjectiveNielsPoint.«x86_64-no-tables».Insts.CoreMarkerCopy
+  copyN := ProjectiveNielsPoint.«64bit-notables».Insts.CoreMarkerCopy
   reprA := inferInstance
-  copyA := AffineNielsPoint.«x86_64-no-tables».Insts.CoreMarkerCopy
+  copyA := AffineNielsPoint.«64bit-notables».Insts.CoreMarkerCopy
   aB := 54
   OnCurve r := r.OnCurve
   toPoint r := r.toPoint
@@ -208,77 +208,77 @@ namespace Curve25519Dalek.EdwardsOps
   pOnCurve r := r.OnCurve
   pToPoint r := r.toPoint
   pBnd r := r.LimbsLt 52
-  identity := edwards.EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity
+  identity := edwards.EdwardsPoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity.identity
   add := edwardsAdd
-  addAssign := «CoreOpsArithAddAssignEdwardsPointx86_64-no-tables».add_assign
-  mulByPow2 := edwards.«EdwardsPointx86_64-no-tables».mul_by_pow_2
+  addAssign := «CoreOpsArithAddAssignEdwardsPoint64bit-notables».add_assign
+  mulByPow2 := edwards.«EdwardsPoint64bit-notables».mul_by_pow_2
   addN := nielsAdd
   subN := nielsSub
-  asExtended := «CompletedPointx86_64-no-tables».as_extended
+  asExtended := «CompletedPoint64bit-notables».as_extended
   addA := affineAdd
   subA := affineSub
-  asProjectiveNiels := edwards.«EdwardsPointx86_64-no-tables».as_projective_niels
-  pIdentity := ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity
-  pDouble := «ProjectivePointx86_64-no-tables».double
-  cAsProjective := «CompletedPointx86_64-no-tables».as_projective
-  pAsExtended := «ProjectivePointx86_64-no-tables».as_extended
+  asProjectiveNiels := edwards.«EdwardsPoint64bit-notables».as_projective_niels
+  pIdentity := ProjectivePoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity.identity
+  pDouble := «ProjectivePoint64bit-notables».double
+  cAsProjective := «CompletedPoint64bit-notables».as_projective
+  pAsExtended := «ProjectivePoint64bit-notables».as_extended
   nafTable5 :=
-    «CoreConvertFromSharedAEdwardsPointx86_64-no-tables».from
+    «CoreConvertFromSharedAEdwardsPoint64bit-notables».from
   ltSelect := window.LookupTable.select
-    ProjectiveNielsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity
-    ProjectiveNielsPoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable
+    ProjectiveNielsPoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity
+    ProjectiveNielsPoint.«64bit-notables».Insts.SubtleConditionallySelectable
     (subtle.ConditionallyNegatable.Blanket
-      ProjectiveNielsPoint.«x86_64-no-tables».Insts.SubtleConditionallySelectable
-      «CoreOpsArithNegProjectiveNielsPointx86_64-no-tables»)
+      ProjectiveNielsPoint.«64bit-notables».Insts.SubtleConditionallySelectable
+      «CoreOpsArithNegProjectiveNielsPoint64bit-notables»)
   ltFrom := ltFromFn
 
-theorem X86NoTables.identity_spec : X86NoTables.IdentitySpec :=
-  edwards.EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+theorem Bits64NoTables.identity_spec : Bits64NoTables.IdentitySpec :=
+  edwards.EdwardsPoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
-theorem X86NoTables.add_spec : X86NoTables.AddSpec :=
+theorem Bits64NoTables.add_spec : Bits64NoTables.AddSpec :=
   edwardsAdd_spec
 
-theorem X86NoTables.addAssign_spec : X86NoTables.AddAssignSpec :=
-  «CoreOpsArithAddAssignEdwardsPointx86_64-no-tables».add_assign_spec
+theorem Bits64NoTables.addAssign_spec : Bits64NoTables.AddAssignSpec :=
+  «CoreOpsArithAddAssignEdwardsPoint64bit-notables».add_assign_spec
 
-theorem X86NoTables.mulByPow2_spec : X86NoTables.MulByPow2Spec :=
-  edwards.«EdwardsPointx86_64-no-tables».mul_by_pow_2_spec
+theorem Bits64NoTables.mulByPow2_spec : Bits64NoTables.MulByPow2Spec :=
+  edwards.«EdwardsPoint64bit-notables».mul_by_pow_2_spec
 
-theorem X86NoTables.addN_spec : X86NoTables.AddNSpec :=
+theorem Bits64NoTables.addN_spec : Bits64NoTables.AddNSpec :=
   nielsAdd_spec
 
-theorem X86NoTables.subN_spec : X86NoTables.SubNSpec :=
+theorem Bits64NoTables.subN_spec : Bits64NoTables.SubNSpec :=
   nielsSub_spec
 
-theorem X86NoTables.addA_spec : X86NoTables.AddASpec := affineAdd_spec
+theorem Bits64NoTables.addA_spec : Bits64NoTables.AddASpec := affineAdd_spec
 
-theorem X86NoTables.subA_spec : X86NoTables.SubASpec := affineSub_spec
+theorem Bits64NoTables.subA_spec : Bits64NoTables.SubASpec := affineSub_spec
 
-theorem X86NoTables.asExtended_spec : X86NoTables.AsExtendedSpec :=
-  «CompletedPointx86_64-no-tables».as_extended_spec
+theorem Bits64NoTables.asExtended_spec : Bits64NoTables.AsExtendedSpec :=
+  «CompletedPoint64bit-notables».as_extended_spec
 
-theorem X86NoTables.asProjectiveNiels_spec : X86NoTables.AsProjectiveNielsSpec :=
-  edwards.«EdwardsPointx86_64-no-tables».as_projective_niels_spec
+theorem Bits64NoTables.asProjectiveNiels_spec : Bits64NoTables.AsProjectiveNielsSpec :=
+  edwards.«EdwardsPoint64bit-notables».as_projective_niels_spec
 
-theorem X86NoTables.pIdentity_spec : X86NoTables.PIdentitySpec :=
-  ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+theorem Bits64NoTables.pIdentity_spec : Bits64NoTables.PIdentitySpec :=
+  ProjectivePoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
-theorem X86NoTables.pDouble_spec : X86NoTables.PDoubleSpec :=
-  «ProjectivePointx86_64-no-tables».double_spec
+theorem Bits64NoTables.pDouble_spec : Bits64NoTables.PDoubleSpec :=
+  «ProjectivePoint64bit-notables».double_spec
 
-theorem X86NoTables.cAsProjective_spec : X86NoTables.CAsProjectiveSpec :=
-  «CompletedPointx86_64-no-tables».as_projective_spec
+theorem Bits64NoTables.cAsProjective_spec : Bits64NoTables.CAsProjectiveSpec :=
+  «CompletedPoint64bit-notables».as_projective_spec
 
-theorem X86NoTables.pAsExtended_spec : X86NoTables.PAsExtendedSpec :=
-  «ProjectivePointx86_64-no-tables».as_extended_spec
+theorem Bits64NoTables.pAsExtended_spec : Bits64NoTables.PAsExtendedSpec :=
+  «ProjectivePoint64bit-notables».as_extended_spec
 
-theorem X86NoTables.nafTable5_spec : X86NoTables.NafTable5Spec :=
-  «CoreConvertFromSharedAEdwardsPointx86_64-no-tables».from_spec
+theorem Bits64NoTables.nafTable5_spec : Bits64NoTables.NafTable5Spec :=
+  «CoreConvertFromSharedAEdwardsPoint64bit-notables».from_spec
 
-theorem X86NoTables.ltSelect_spec : X86NoTables.LtSelectSpec :=
-  window.«LookupTableProjectiveNielsPointx86_64-no-tables».select_spec
+theorem Bits64NoTables.ltSelect_spec : Bits64NoTables.LtSelectSpec :=
+  window.«LookupTableProjectiveNielsPoint64bit-notables».select_spec
 
-theorem X86NoTables.ltFrom_spec : X86NoTables.LtFromSpec :=
+theorem Bits64NoTables.ltFrom_spec : Bits64NoTables.LtFromSpec :=
   ltFromFn_spec
 
 end Curve25519Dalek.EdwardsOps
@@ -286,41 +286,41 @@ end Curve25519Dalek.EdwardsOps
 end
 
 section
-open Curve25519Dalek.«Shared0EdwardsPointi686-tables».Insts
-open «CoreOpsArithAddSharedAProjectiveNielsPointi686-tablesCompletedPointi686-tables»
+open Curve25519Dalek.«Shared0EdwardsPoint32bit-tables».Insts
+open «CoreOpsArithAddSharedAProjectiveNielsPoint32bit-tablesCompletedPoint32bit-tables»
     renaming add → nielsAdd, add_spec → nielsAdd_spec
-open «CoreOpsArithSubSharedAProjectiveNielsPointi686-tablesCompletedPointi686-tables»
+open «CoreOpsArithSubSharedAProjectiveNielsPoint32bit-tablesCompletedPoint32bit-tables»
     renaming sub → nielsSub, sub_spec → nielsSub_spec
-open Curve25519Dalek.edwards.EdwardsPoint.«i686-tables».Insts
-open Curve25519Dalek.window.«NafLookupTable5ProjectiveNielsPointi686-tables».Insts
-open Curve25519Dalek.«Shared0ProjectiveNielsPointi686-tables».Insts
+open Curve25519Dalek.edwards.EdwardsPoint.«32bit-tables».Insts
+open Curve25519Dalek.window.«NafLookupTable5ProjectiveNielsPoint32bit-tables».Insts
+open Curve25519Dalek.«Shared0ProjectiveNielsPoint32bit-tables».Insts
 set_option linter.style.longLine false
-open Curve25519Dalek.window.«LookupTableProjectiveNielsPointi686-tables».Insts.«CoreConvertFromSharedAEdwardsPointi686-tables»
+open Curve25519Dalek.window.«LookupTableProjectiveNielsPoint32bit-tables».Insts.«CoreConvertFromSharedAEdwardsPoint32bit-tables»
     renaming «from» → ltFromFn, from_spec → ltFromFn_spec
 set_option linter.style.longLine true
-open «CoreOpsArithAddSharedAAffineNielsPointi686-tablesCompletedPointi686-tables»
+open «CoreOpsArithAddSharedAAffineNielsPoint32bit-tablesCompletedPoint32bit-tables»
     renaming add → affineAdd, add_spec → affineAdd_spec
-open «CoreOpsArithSubSharedAAffineNielsPointi686-tablesCompletedPointi686-tables»
+open «CoreOpsArithSubSharedAAffineNielsPoint32bit-tablesCompletedPoint32bit-tables»
     renaming sub → affineSub, sub_spec → affineSub_spec
-open «CoreOpsArithAddEdwardsPointi686-tablesEdwardsPointi686-tables»
+open «CoreOpsArithAddEdwardsPoint32bit-tablesEdwardsPoint32bit-tables»
     renaming add → edwardsAdd, add_spec → edwardsAdd_spec
 
 namespace Curve25519Dalek.EdwardsOps
 
-/-- The `«i686-tables»` point operations. -/
-@[expose] noncomputable def I686Tables : EdwardsOps where
-  E := edwards.EdwardsPoint.«i686-tables»
-  N := ProjectiveNielsPoint.«i686-tables»
-  C := CompletedPoint.«i686-tables»
-  Pr := ProjectivePoint.«i686-tables»
-  An := AffineNielsPoint.«i686-tables»
+/-- The `«32bit-tables»` point operations. -/
+@[expose] noncomputable def Bits32Tables : EdwardsOps where
+  E := edwards.EdwardsPoint.«32bit-tables»
+  N := ProjectiveNielsPoint.«32bit-tables»
+  C := CompletedPoint.«32bit-tables»
+  Pr := ProjectivePoint.«32bit-tables»
+  An := AffineNielsPoint.«32bit-tables»
   inhE := inferInstance
   inhN := inferInstance
   inhA := inferInstance
   reprN := inferInstance
-  copyN := ProjectiveNielsPoint.«i686-tables».Insts.CoreMarkerCopy
+  copyN := ProjectiveNielsPoint.«32bit-tables».Insts.CoreMarkerCopy
   reprA := inferInstance
-  copyA := AffineNielsPoint.«i686-tables».Insts.CoreMarkerCopy
+  copyA := AffineNielsPoint.«32bit-tables».Insts.CoreMarkerCopy
   aB := 27
   OnCurve r := r.OnCurve
   toPoint r := r.toPoint
@@ -332,77 +332,77 @@ namespace Curve25519Dalek.EdwardsOps
   pOnCurve r := r.OnCurve
   pToPoint r := r.toPoint
   pBnd r := r.LimbsLt 26
-  identity := edwards.EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity
+  identity := edwards.EdwardsPoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity.identity
   add := edwardsAdd
-  addAssign := «CoreOpsArithAddAssignEdwardsPointi686-tables».add_assign
-  mulByPow2 := edwards.«EdwardsPointi686-tables».mul_by_pow_2
+  addAssign := «CoreOpsArithAddAssignEdwardsPoint32bit-tables».add_assign
+  mulByPow2 := edwards.«EdwardsPoint32bit-tables».mul_by_pow_2
   addN := nielsAdd
   subN := nielsSub
-  asExtended := «CompletedPointi686-tables».as_extended
+  asExtended := «CompletedPoint32bit-tables».as_extended
   addA := affineAdd
   subA := affineSub
-  asProjectiveNiels := edwards.«EdwardsPointi686-tables».as_projective_niels
-  pIdentity := ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity
-  pDouble := «ProjectivePointi686-tables».double
-  cAsProjective := «CompletedPointi686-tables».as_projective
-  pAsExtended := «ProjectivePointi686-tables».as_extended
+  asProjectiveNiels := edwards.«EdwardsPoint32bit-tables».as_projective_niels
+  pIdentity := ProjectivePoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity.identity
+  pDouble := «ProjectivePoint32bit-tables».double
+  cAsProjective := «CompletedPoint32bit-tables».as_projective
+  pAsExtended := «ProjectivePoint32bit-tables».as_extended
   nafTable5 :=
-    «CoreConvertFromSharedAEdwardsPointi686-tables».from
+    «CoreConvertFromSharedAEdwardsPoint32bit-tables».from
   ltSelect := window.LookupTable.select
-    ProjectiveNielsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity
-    ProjectiveNielsPoint.«i686-tables».Insts.SubtleConditionallySelectable
+    ProjectiveNielsPoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity
+    ProjectiveNielsPoint.«32bit-tables».Insts.SubtleConditionallySelectable
     (subtle.ConditionallyNegatable.Blanket
-      ProjectiveNielsPoint.«i686-tables».Insts.SubtleConditionallySelectable
-      «CoreOpsArithNegProjectiveNielsPointi686-tables»)
+      ProjectiveNielsPoint.«32bit-tables».Insts.SubtleConditionallySelectable
+      «CoreOpsArithNegProjectiveNielsPoint32bit-tables»)
   ltFrom := ltFromFn
 
-theorem I686Tables.identity_spec : I686Tables.IdentitySpec :=
-  edwards.EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+theorem Bits32Tables.identity_spec : Bits32Tables.IdentitySpec :=
+  edwards.EdwardsPoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
-theorem I686Tables.add_spec : I686Tables.AddSpec :=
+theorem Bits32Tables.add_spec : Bits32Tables.AddSpec :=
   edwardsAdd_spec
 
-theorem I686Tables.addAssign_spec : I686Tables.AddAssignSpec :=
-  «CoreOpsArithAddAssignEdwardsPointi686-tables».add_assign_spec
+theorem Bits32Tables.addAssign_spec : Bits32Tables.AddAssignSpec :=
+  «CoreOpsArithAddAssignEdwardsPoint32bit-tables».add_assign_spec
 
-theorem I686Tables.mulByPow2_spec : I686Tables.MulByPow2Spec :=
-  edwards.«EdwardsPointi686-tables».mul_by_pow_2_spec
+theorem Bits32Tables.mulByPow2_spec : Bits32Tables.MulByPow2Spec :=
+  edwards.«EdwardsPoint32bit-tables».mul_by_pow_2_spec
 
-theorem I686Tables.addN_spec : I686Tables.AddNSpec :=
+theorem Bits32Tables.addN_spec : Bits32Tables.AddNSpec :=
   nielsAdd_spec
 
-theorem I686Tables.subN_spec : I686Tables.SubNSpec :=
+theorem Bits32Tables.subN_spec : Bits32Tables.SubNSpec :=
   nielsSub_spec
 
-theorem I686Tables.addA_spec : I686Tables.AddASpec := affineAdd_spec
+theorem Bits32Tables.addA_spec : Bits32Tables.AddASpec := affineAdd_spec
 
-theorem I686Tables.subA_spec : I686Tables.SubASpec := affineSub_spec
+theorem Bits32Tables.subA_spec : Bits32Tables.SubASpec := affineSub_spec
 
-theorem I686Tables.asExtended_spec : I686Tables.AsExtendedSpec :=
-  «CompletedPointi686-tables».as_extended_spec
+theorem Bits32Tables.asExtended_spec : Bits32Tables.AsExtendedSpec :=
+  «CompletedPoint32bit-tables».as_extended_spec
 
-theorem I686Tables.asProjectiveNiels_spec : I686Tables.AsProjectiveNielsSpec :=
-  edwards.«EdwardsPointi686-tables».as_projective_niels_spec
+theorem Bits32Tables.asProjectiveNiels_spec : Bits32Tables.AsProjectiveNielsSpec :=
+  edwards.«EdwardsPoint32bit-tables».as_projective_niels_spec
 
-theorem I686Tables.pIdentity_spec : I686Tables.PIdentitySpec :=
-  ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+theorem Bits32Tables.pIdentity_spec : Bits32Tables.PIdentitySpec :=
+  ProjectivePoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
-theorem I686Tables.pDouble_spec : I686Tables.PDoubleSpec :=
-  «ProjectivePointi686-tables».double_spec
+theorem Bits32Tables.pDouble_spec : Bits32Tables.PDoubleSpec :=
+  «ProjectivePoint32bit-tables».double_spec
 
-theorem I686Tables.cAsProjective_spec : I686Tables.CAsProjectiveSpec :=
-  «CompletedPointi686-tables».as_projective_spec
+theorem Bits32Tables.cAsProjective_spec : Bits32Tables.CAsProjectiveSpec :=
+  «CompletedPoint32bit-tables».as_projective_spec
 
-theorem I686Tables.pAsExtended_spec : I686Tables.PAsExtendedSpec :=
-  «ProjectivePointi686-tables».as_extended_spec
+theorem Bits32Tables.pAsExtended_spec : Bits32Tables.PAsExtendedSpec :=
+  «ProjectivePoint32bit-tables».as_extended_spec
 
-theorem I686Tables.nafTable5_spec : I686Tables.NafTable5Spec :=
-  «CoreConvertFromSharedAEdwardsPointi686-tables».from_spec
+theorem Bits32Tables.nafTable5_spec : Bits32Tables.NafTable5Spec :=
+  «CoreConvertFromSharedAEdwardsPoint32bit-tables».from_spec
 
-theorem I686Tables.ltSelect_spec : I686Tables.LtSelectSpec :=
-  window.«LookupTableProjectiveNielsPointi686-tables».select_spec
+theorem Bits32Tables.ltSelect_spec : Bits32Tables.LtSelectSpec :=
+  window.«LookupTableProjectiveNielsPoint32bit-tables».select_spec
 
-theorem I686Tables.ltFrom_spec : I686Tables.LtFromSpec :=
+theorem Bits32Tables.ltFrom_spec : Bits32Tables.LtFromSpec :=
   ltFromFn_spec
 
 end Curve25519Dalek.EdwardsOps
@@ -410,41 +410,41 @@ end Curve25519Dalek.EdwardsOps
 end
 
 section
-open Curve25519Dalek.«Shared0EdwardsPointi686-no-tables».Insts
-open «CoreOpsArithAddSharedAProjectiveNielsPointi686-no-tablesCompletedPointi686-no-tables»
+open Curve25519Dalek.«Shared0EdwardsPoint32bit-notables».Insts
+open «CoreOpsArithAddSharedAProjectiveNielsPoint32bit-notablesCompletedPoint32bit-notables»
     renaming add → nielsAdd, add_spec → nielsAdd_spec
-open «CoreOpsArithSubSharedAProjectiveNielsPointi686-no-tablesCompletedPointi686-no-tables»
+open «CoreOpsArithSubSharedAProjectiveNielsPoint32bit-notablesCompletedPoint32bit-notables»
     renaming sub → nielsSub, sub_spec → nielsSub_spec
-open Curve25519Dalek.edwards.EdwardsPoint.«i686-no-tables».Insts
-open Curve25519Dalek.window.«NafLookupTable5ProjectiveNielsPointi686-no-tables».Insts
-open Curve25519Dalek.«Shared0ProjectiveNielsPointi686-no-tables».Insts
+open Curve25519Dalek.edwards.EdwardsPoint.«32bit-notables».Insts
+open Curve25519Dalek.window.«NafLookupTable5ProjectiveNielsPoint32bit-notables».Insts
+open Curve25519Dalek.«Shared0ProjectiveNielsPoint32bit-notables».Insts
 set_option linter.style.longLine false
-open Curve25519Dalek.window.«LookupTableProjectiveNielsPointi686-no-tables».Insts.«CoreConvertFromSharedAEdwardsPointi686-no-tables»
+open Curve25519Dalek.window.«LookupTableProjectiveNielsPoint32bit-notables».Insts.«CoreConvertFromSharedAEdwardsPoint32bit-notables»
     renaming «from» → ltFromFn, from_spec → ltFromFn_spec
 set_option linter.style.longLine true
-open «CoreOpsArithAddSharedAAffineNielsPointi686-no-tablesCompletedPointi686-no-tables»
+open «CoreOpsArithAddSharedAAffineNielsPoint32bit-notablesCompletedPoint32bit-notables»
     renaming add → affineAdd, add_spec → affineAdd_spec
-open «CoreOpsArithSubSharedAAffineNielsPointi686-no-tablesCompletedPointi686-no-tables»
+open «CoreOpsArithSubSharedAAffineNielsPoint32bit-notablesCompletedPoint32bit-notables»
     renaming sub → affineSub, sub_spec → affineSub_spec
-open «CoreOpsArithAddEdwardsPointi686-no-tablesEdwardsPointi686-no-tables»
+open «CoreOpsArithAddEdwardsPoint32bit-notablesEdwardsPoint32bit-notables»
     renaming add → edwardsAdd, add_spec → edwardsAdd_spec
 
 namespace Curve25519Dalek.EdwardsOps
 
-/-- The `«i686-no-tables»` point operations. -/
-@[expose] noncomputable def I686NoTables : EdwardsOps where
-  E := edwards.EdwardsPoint.«i686-no-tables»
-  N := ProjectiveNielsPoint.«i686-no-tables»
-  C := CompletedPoint.«i686-no-tables»
-  Pr := ProjectivePoint.«i686-no-tables»
-  An := AffineNielsPoint.«i686-no-tables»
+/-- The `«32bit-notables»` point operations. -/
+@[expose] noncomputable def Bits32NoTables : EdwardsOps where
+  E := edwards.EdwardsPoint.«32bit-notables»
+  N := ProjectiveNielsPoint.«32bit-notables»
+  C := CompletedPoint.«32bit-notables»
+  Pr := ProjectivePoint.«32bit-notables»
+  An := AffineNielsPoint.«32bit-notables»
   inhE := inferInstance
   inhN := inferInstance
   inhA := inferInstance
   reprN := inferInstance
-  copyN := ProjectiveNielsPoint.«i686-no-tables».Insts.CoreMarkerCopy
+  copyN := ProjectiveNielsPoint.«32bit-notables».Insts.CoreMarkerCopy
   reprA := inferInstance
-  copyA := AffineNielsPoint.«i686-no-tables».Insts.CoreMarkerCopy
+  copyA := AffineNielsPoint.«32bit-notables».Insts.CoreMarkerCopy
   aB := 27
   OnCurve r := r.OnCurve
   toPoint r := r.toPoint
@@ -456,77 +456,77 @@ namespace Curve25519Dalek.EdwardsOps
   pOnCurve r := r.OnCurve
   pToPoint r := r.toPoint
   pBnd r := r.LimbsLt 26
-  identity := edwards.EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity
+  identity := edwards.EdwardsPoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity.identity
   add := edwardsAdd
-  addAssign := «CoreOpsArithAddAssignEdwardsPointi686-no-tables».add_assign
-  mulByPow2 := edwards.«EdwardsPointi686-no-tables».mul_by_pow_2
+  addAssign := «CoreOpsArithAddAssignEdwardsPoint32bit-notables».add_assign
+  mulByPow2 := edwards.«EdwardsPoint32bit-notables».mul_by_pow_2
   addN := nielsAdd
   subN := nielsSub
-  asExtended := «CompletedPointi686-no-tables».as_extended
+  asExtended := «CompletedPoint32bit-notables».as_extended
   addA := affineAdd
   subA := affineSub
-  asProjectiveNiels := edwards.«EdwardsPointi686-no-tables».as_projective_niels
-  pIdentity := ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity
-  pDouble := «ProjectivePointi686-no-tables».double
-  cAsProjective := «CompletedPointi686-no-tables».as_projective
-  pAsExtended := «ProjectivePointi686-no-tables».as_extended
+  asProjectiveNiels := edwards.«EdwardsPoint32bit-notables».as_projective_niels
+  pIdentity := ProjectivePoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity.identity
+  pDouble := «ProjectivePoint32bit-notables».double
+  cAsProjective := «CompletedPoint32bit-notables».as_projective
+  pAsExtended := «ProjectivePoint32bit-notables».as_extended
   nafTable5 :=
-    «CoreConvertFromSharedAEdwardsPointi686-no-tables».from
+    «CoreConvertFromSharedAEdwardsPoint32bit-notables».from
   ltSelect := window.LookupTable.select
-    ProjectiveNielsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity
-    ProjectiveNielsPoint.«i686-no-tables».Insts.SubtleConditionallySelectable
+    ProjectiveNielsPoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity
+    ProjectiveNielsPoint.«32bit-notables».Insts.SubtleConditionallySelectable
     (subtle.ConditionallyNegatable.Blanket
-      ProjectiveNielsPoint.«i686-no-tables».Insts.SubtleConditionallySelectable
-      «CoreOpsArithNegProjectiveNielsPointi686-no-tables»)
+      ProjectiveNielsPoint.«32bit-notables».Insts.SubtleConditionallySelectable
+      «CoreOpsArithNegProjectiveNielsPoint32bit-notables»)
   ltFrom := ltFromFn
 
-theorem I686NoTables.identity_spec : I686NoTables.IdentitySpec :=
-  edwards.EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+theorem Bits32NoTables.identity_spec : Bits32NoTables.IdentitySpec :=
+  edwards.EdwardsPoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
-theorem I686NoTables.add_spec : I686NoTables.AddSpec :=
+theorem Bits32NoTables.add_spec : Bits32NoTables.AddSpec :=
   edwardsAdd_spec
 
-theorem I686NoTables.addAssign_spec : I686NoTables.AddAssignSpec :=
-  «CoreOpsArithAddAssignEdwardsPointi686-no-tables».add_assign_spec
+theorem Bits32NoTables.addAssign_spec : Bits32NoTables.AddAssignSpec :=
+  «CoreOpsArithAddAssignEdwardsPoint32bit-notables».add_assign_spec
 
-theorem I686NoTables.mulByPow2_spec : I686NoTables.MulByPow2Spec :=
-  edwards.«EdwardsPointi686-no-tables».mul_by_pow_2_spec
+theorem Bits32NoTables.mulByPow2_spec : Bits32NoTables.MulByPow2Spec :=
+  edwards.«EdwardsPoint32bit-notables».mul_by_pow_2_spec
 
-theorem I686NoTables.addN_spec : I686NoTables.AddNSpec :=
+theorem Bits32NoTables.addN_spec : Bits32NoTables.AddNSpec :=
   nielsAdd_spec
 
-theorem I686NoTables.subN_spec : I686NoTables.SubNSpec :=
+theorem Bits32NoTables.subN_spec : Bits32NoTables.SubNSpec :=
   nielsSub_spec
 
-theorem I686NoTables.addA_spec : I686NoTables.AddASpec := affineAdd_spec
+theorem Bits32NoTables.addA_spec : Bits32NoTables.AddASpec := affineAdd_spec
 
-theorem I686NoTables.subA_spec : I686NoTables.SubASpec := affineSub_spec
+theorem Bits32NoTables.subA_spec : Bits32NoTables.SubASpec := affineSub_spec
 
-theorem I686NoTables.asExtended_spec : I686NoTables.AsExtendedSpec :=
-  «CompletedPointi686-no-tables».as_extended_spec
+theorem Bits32NoTables.asExtended_spec : Bits32NoTables.AsExtendedSpec :=
+  «CompletedPoint32bit-notables».as_extended_spec
 
-theorem I686NoTables.asProjectiveNiels_spec : I686NoTables.AsProjectiveNielsSpec :=
-  edwards.«EdwardsPointi686-no-tables».as_projective_niels_spec
+theorem Bits32NoTables.asProjectiveNiels_spec : Bits32NoTables.AsProjectiveNielsSpec :=
+  edwards.«EdwardsPoint32bit-notables».as_projective_niels_spec
 
-theorem I686NoTables.pIdentity_spec : I686NoTables.PIdentitySpec :=
-  ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
+theorem Bits32NoTables.pIdentity_spec : Bits32NoTables.PIdentitySpec :=
+  ProjectivePoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity.identity_spec
 
-theorem I686NoTables.pDouble_spec : I686NoTables.PDoubleSpec :=
-  «ProjectivePointi686-no-tables».double_spec
+theorem Bits32NoTables.pDouble_spec : Bits32NoTables.PDoubleSpec :=
+  «ProjectivePoint32bit-notables».double_spec
 
-theorem I686NoTables.cAsProjective_spec : I686NoTables.CAsProjectiveSpec :=
-  «CompletedPointi686-no-tables».as_projective_spec
+theorem Bits32NoTables.cAsProjective_spec : Bits32NoTables.CAsProjectiveSpec :=
+  «CompletedPoint32bit-notables».as_projective_spec
 
-theorem I686NoTables.pAsExtended_spec : I686NoTables.PAsExtendedSpec :=
-  «ProjectivePointi686-no-tables».as_extended_spec
+theorem Bits32NoTables.pAsExtended_spec : Bits32NoTables.PAsExtendedSpec :=
+  «ProjectivePoint32bit-notables».as_extended_spec
 
-theorem I686NoTables.nafTable5_spec : I686NoTables.NafTable5Spec :=
-  «CoreConvertFromSharedAEdwardsPointi686-no-tables».from_spec
+theorem Bits32NoTables.nafTable5_spec : Bits32NoTables.NafTable5Spec :=
+  «CoreConvertFromSharedAEdwardsPoint32bit-notables».from_spec
 
-theorem I686NoTables.ltSelect_spec : I686NoTables.LtSelectSpec :=
-  window.«LookupTableProjectiveNielsPointi686-no-tables».select_spec
+theorem Bits32NoTables.ltSelect_spec : Bits32NoTables.LtSelectSpec :=
+  window.«LookupTableProjectiveNielsPoint32bit-notables».select_spec
 
-theorem I686NoTables.ltFrom_spec : I686NoTables.LtFromSpec :=
+theorem Bits32NoTables.ltFrom_spec : Bits32NoTables.LtFromSpec :=
   ltFromFn_spec
 
 end Curve25519Dalek.EdwardsOps

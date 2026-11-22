@@ -13,29 +13,29 @@ namespace Curve25519Dalek
 
 namespace backend.serial.curve_models
 
-noncomputable instance ProjectiveNielsPoint.«x86_64-tables».instPointRepr :
-    PointRepr ProjectiveNielsPoint.«x86_64-tables» where
-  OnCurve := ProjectiveNielsPoint.«x86_64-tables».OnCurve
-  toPoint := ProjectiveNielsPoint.«x86_64-tables».toPoint
-  LimbsLt := ProjectiveNielsPoint.«x86_64-tables».LimbsLt
+noncomputable instance ProjectiveNielsPoint.«64bit-tables».instPointRepr :
+    PointRepr ProjectiveNielsPoint.«64bit-tables» where
+  OnCurve := ProjectiveNielsPoint.«64bit-tables».OnCurve
+  toPoint := ProjectiveNielsPoint.«64bit-tables».toPoint
+  LimbsLt := ProjectiveNielsPoint.«64bit-tables».LimbsLt
 
-noncomputable instance ProjectiveNielsPoint.«i686-tables».instPointRepr :
-    PointRepr ProjectiveNielsPoint.«i686-tables» where
-  OnCurve := ProjectiveNielsPoint.«i686-tables».OnCurve
-  toPoint := ProjectiveNielsPoint.«i686-tables».toPoint
-  LimbsLt := ProjectiveNielsPoint.«i686-tables».LimbsLt
+noncomputable instance ProjectiveNielsPoint.«32bit-tables».instPointRepr :
+    PointRepr ProjectiveNielsPoint.«32bit-tables» where
+  OnCurve := ProjectiveNielsPoint.«32bit-tables».OnCurve
+  toPoint := ProjectiveNielsPoint.«32bit-tables».toPoint
+  LimbsLt := ProjectiveNielsPoint.«32bit-tables».LimbsLt
 
-noncomputable instance ProjectiveNielsPoint.«x86_64-no-tables».instPointRepr :
-    PointRepr ProjectiveNielsPoint.«x86_64-no-tables» where
-  OnCurve := ProjectiveNielsPoint.«x86_64-no-tables».OnCurve
-  toPoint := ProjectiveNielsPoint.«x86_64-no-tables».toPoint
-  LimbsLt := ProjectiveNielsPoint.«x86_64-no-tables».LimbsLt
+noncomputable instance ProjectiveNielsPoint.«64bit-notables».instPointRepr :
+    PointRepr ProjectiveNielsPoint.«64bit-notables» where
+  OnCurve := ProjectiveNielsPoint.«64bit-notables».OnCurve
+  toPoint := ProjectiveNielsPoint.«64bit-notables».toPoint
+  LimbsLt := ProjectiveNielsPoint.«64bit-notables».LimbsLt
 
-noncomputable instance ProjectiveNielsPoint.«i686-no-tables».instPointRepr :
-    PointRepr ProjectiveNielsPoint.«i686-no-tables» where
-  OnCurve := ProjectiveNielsPoint.«i686-no-tables».OnCurve
-  toPoint := ProjectiveNielsPoint.«i686-no-tables».toPoint
-  LimbsLt := ProjectiveNielsPoint.«i686-no-tables».LimbsLt
+noncomputable instance ProjectiveNielsPoint.«32bit-notables».instPointRepr :
+    PointRepr ProjectiveNielsPoint.«32bit-notables» where
+  OnCurve := ProjectiveNielsPoint.«32bit-notables».OnCurve
+  toPoint := ProjectiveNielsPoint.«32bit-notables».toPoint
+  LimbsLt := ProjectiveNielsPoint.«32bit-notables».LimbsLt
 
 end backend.serial.curve_models
 

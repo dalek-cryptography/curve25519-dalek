@@ -35,86 +35,86 @@ theorem RISTRETTO_BASEPOINT_COMPRESSED_spec :
     Ristretto.encodeRepNat_basepoint]
   decide
 
-namespace «x86_64-tables»
+namespace «64bit-tables»
 
 /-- `RISTRETTO_BASEPOINT_POINT`: the basepoint, an even point (a ristretto255 representative);
 limbs `< 2^52`. -/
 @[step]
 theorem RISTRETTO_BASEPOINT_POINT_spec :
-    RISTRETTO_BASEPOINT_POINT.«x86_64-tables» ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    RISTRETTO_BASEPOINT_POINT.«64bit-tables» ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = basepoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold RISTRETTO_BASEPOINT_POINT.«x86_64-tables»
-  step with backend.serial.u64.constants.«x86_64-tables».ED25519_BASEPOINT_POINT_spec
+  unfold RISTRETTO_BASEPOINT_POINT.«64bit-tables»
+  step with backend.serial.u64.constants.«64bit-tables».ED25519_BASEPOINT_POINT_spec
     as ⟨r, h1, h2, h3⟩
   exact ⟨h1, by rw [h2]; exact even_basepoint, h2, h3⟩
 
 /-- `RISTRETTO_BASEPOINT_TABLE`: a table representing the basepoint; limbs `< 2^54`. -/
 @[step]
 theorem RISTRETTO_BASEPOINT_TABLE_spec :
-    RISTRETTO_BASEPOINT_TABLE.«x86_64-tables»
-      ⦃ (r : ristretto.RistrettoBasepointTable.«x86_64-tables») =>
+    RISTRETTO_BASEPOINT_TABLE.«64bit-tables»
+      ⦃ (r : ristretto.RistrettoBasepointTable.«64bit-tables») =>
         r.IsTable ∧ r.point = basepoint ∧ r.LimbsLt 54 ⦄ := by
-  unfold RISTRETTO_BASEPOINT_TABLE.«x86_64-tables»
+  unfold RISTRETTO_BASEPOINT_TABLE.«64bit-tables»
   step with backend.serial.u64.constants.ED25519_BASEPOINT_TABLE_spec as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «x86_64-tables»
+end «64bit-tables»
 
-namespace «i686-tables»
+namespace «32bit-tables»
 
 /-- `RISTRETTO_BASEPOINT_POINT`: the basepoint, an even point (a ristretto255 representative);
 limbs `< 2^26`. -/
 @[step]
 theorem RISTRETTO_BASEPOINT_POINT_spec :
-    RISTRETTO_BASEPOINT_POINT.«i686-tables» ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    RISTRETTO_BASEPOINT_POINT.«32bit-tables» ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = basepoint ∧ r.LimbsLt 26 ⦄ := by
-  unfold RISTRETTO_BASEPOINT_POINT.«i686-tables»
-  step with backend.serial.u32.constants.«i686-tables».ED25519_BASEPOINT_POINT_spec
+  unfold RISTRETTO_BASEPOINT_POINT.«32bit-tables»
+  step with backend.serial.u32.constants.«32bit-tables».ED25519_BASEPOINT_POINT_spec
     as ⟨r, h1, h2, h3⟩
   exact ⟨h1, by rw [h2]; exact even_basepoint, h2, h3⟩
 
 /-- `RISTRETTO_BASEPOINT_TABLE`: a table representing the basepoint; limbs `< 2^27`. -/
 @[step]
 theorem RISTRETTO_BASEPOINT_TABLE_spec :
-    RISTRETTO_BASEPOINT_TABLE.«i686-tables»
-      ⦃ (r : ristretto.RistrettoBasepointTable.«i686-tables») =>
+    RISTRETTO_BASEPOINT_TABLE.«32bit-tables»
+      ⦃ (r : ristretto.RistrettoBasepointTable.«32bit-tables») =>
         r.IsTable ∧ r.point = basepoint ∧ r.LimbsLt 27 ⦄ := by
-  unfold RISTRETTO_BASEPOINT_TABLE.«i686-tables»
+  unfold RISTRETTO_BASEPOINT_TABLE.«32bit-tables»
   step with backend.serial.u32.constants.ED25519_BASEPOINT_TABLE_spec as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «i686-tables»
+end «32bit-tables»
 
-namespace «x86_64-no-tables»
+namespace «64bit-notables»
 
 /-- `RISTRETTO_BASEPOINT_POINT`: the basepoint, an even point (a ristretto255 representative);
 limbs `< 2^52`. -/
 @[step]
 theorem RISTRETTO_BASEPOINT_POINT_spec :
-    RISTRETTO_BASEPOINT_POINT.«x86_64-no-tables»
-      ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    RISTRETTO_BASEPOINT_POINT.«64bit-notables»
+      ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
         r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = basepoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold RISTRETTO_BASEPOINT_POINT.«x86_64-no-tables»
-  step with backend.serial.u64.constants.«x86_64-no-tables».ED25519_BASEPOINT_POINT_spec
+  unfold RISTRETTO_BASEPOINT_POINT.«64bit-notables»
+  step with backend.serial.u64.constants.«64bit-notables».ED25519_BASEPOINT_POINT_spec
     as ⟨r, h1, h2, h3⟩
   exact ⟨h1, by rw [h2]; exact even_basepoint, h2, h3⟩
 
-end «x86_64-no-tables»
+end «64bit-notables»
 
-namespace «i686-no-tables»
+namespace «32bit-notables»
 
 /-- `RISTRETTO_BASEPOINT_POINT`: the basepoint, an even point (a ristretto255 representative);
 limbs `< 2^26`. -/
 @[step]
 theorem RISTRETTO_BASEPOINT_POINT_spec :
-    RISTRETTO_BASEPOINT_POINT.«i686-no-tables»
-      ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    RISTRETTO_BASEPOINT_POINT.«32bit-notables»
+      ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
         r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = basepoint ∧ r.LimbsLt 26 ⦄ := by
-  unfold RISTRETTO_BASEPOINT_POINT.«i686-no-tables»
-  step with backend.serial.u32.constants.«i686-no-tables».ED25519_BASEPOINT_POINT_spec
+  unfold RISTRETTO_BASEPOINT_POINT.«32bit-notables»
+  step with backend.serial.u32.constants.«32bit-notables».ED25519_BASEPOINT_POINT_spec
     as ⟨r, h1, h2, h3⟩
   exact ⟨h1, by rw [h2]; exact even_basepoint, h2, h3⟩
 
-end «i686-no-tables»
+end «32bit-notables»
 
 end Curve25519Dalek.constants

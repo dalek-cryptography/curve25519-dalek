@@ -27,70 +27,70 @@ open Curve25519Dalek.TableCertificate
 
 namespace Curve25519Dalek.backend.serial.u64.constants
 
-namespace «x86_64-tables»
+namespace «64bit-tables»
 
-private theorem of_check (r : edwards.EdwardsPoint.«x86_64-tables»)
+private theorem of_check (r : edwards.EdwardsPoint.«64bit-tables»)
     (h : checkPoint edwards r.toExtended 128 = true) :
     r.OnCurve ∧ r.toPoint = 2 ^ 128 • basepoint := by
-  rw [edwards.EdwardsPoint.«x86_64-tables».onCurve_iff,
-    edwards.EdwardsPoint.«x86_64-tables».toPoint_def]
+  rw [edwards.EdwardsPoint.«64bit-tables».onCurve_iff,
+    edwards.EdwardsPoint.«64bit-tables».toPoint_def]
   exact checkPoint_sound h
 
 /-- `ED25519_BASEPOINT_128_POINT`: the point `2^128 • B`; limbs `< 2^52`. -/
 @[step]
 theorem ED25519_BASEPOINT_128_POINT_spec :
-    ED25519_BASEPOINT_128_POINT.«x86_64-tables»
-      ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    ED25519_BASEPOINT_128_POINT.«64bit-tables»
+      ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
         r.OnCurve ∧ r.toPoint = 2 ^ 128 • basepoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold ED25519_BASEPOINT_128_POINT.«x86_64-tables»
+  unfold ED25519_BASEPOINT_128_POINT.«64bit-tables»
   step as ⟨X, hX⟩
   step as ⟨Y, hY⟩
   step as ⟨Z, hZ⟩
   step as ⟨T, hT⟩
   have key := of_check { X := X, Y := Y, Z := Z, T := T } (by
-    rw [edwards.EdwardsPoint.«x86_64-tables».toExtended_def]
+    rw [edwards.EdwardsPoint.«64bit-tables».toExtended_def]
     subst hX hY hZ hT
     simp only [toField_def, asNat_def, Array.asNat_def, Array.make_val]
     rw [curve25519.Proofs.edwards_eq]
     decide +kernel)
   refine ⟨key.1, key.2, ?_⟩
-  unfold edwards.EdwardsPoint.«x86_64-tables».LimbsLt
+  unfold edwards.EdwardsPoint.«64bit-tables».LimbsLt
   subst hX hY hZ hT
   decide
 
-end «x86_64-tables»
+end «64bit-tables»
 
-namespace «x86_64-no-tables»
+namespace «64bit-notables»
 
-private theorem of_check (r : edwards.EdwardsPoint.«x86_64-no-tables»)
+private theorem of_check (r : edwards.EdwardsPoint.«64bit-notables»)
     (h : checkPoint edwards r.toExtended 128 = true) :
     r.OnCurve ∧ r.toPoint = 2 ^ 128 • basepoint := by
-  rw [edwards.EdwardsPoint.«x86_64-no-tables».onCurve_iff,
-    edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def]
+  rw [edwards.EdwardsPoint.«64bit-notables».onCurve_iff,
+    edwards.EdwardsPoint.«64bit-notables».toPoint_def]
   exact checkPoint_sound h
 
 /-- `ED25519_BASEPOINT_128_POINT`: the point `2^128 • B`; limbs `< 2^52`. -/
 @[step]
 theorem ED25519_BASEPOINT_128_POINT_spec :
-    ED25519_BASEPOINT_128_POINT.«x86_64-no-tables»
-      ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    ED25519_BASEPOINT_128_POINT.«64bit-notables»
+      ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
         r.OnCurve ∧ r.toPoint = 2 ^ 128 • basepoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold ED25519_BASEPOINT_128_POINT.«x86_64-no-tables»
+  unfold ED25519_BASEPOINT_128_POINT.«64bit-notables»
   step as ⟨X, hX⟩
   step as ⟨Y, hY⟩
   step as ⟨Z, hZ⟩
   step as ⟨T, hT⟩
   have key := of_check { X := X, Y := Y, Z := Z, T := T } (by
-    rw [edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def]
+    rw [edwards.EdwardsPoint.«64bit-notables».toExtended_def]
     subst hX hY hZ hT
     simp only [toField_def, asNat_def, Array.asNat_def, Array.make_val]
     rw [curve25519.Proofs.edwards_eq]
     decide +kernel)
   refine ⟨key.1, key.2, ?_⟩
-  unfold edwards.EdwardsPoint.«x86_64-no-tables».LimbsLt
+  unfold edwards.EdwardsPoint.«64bit-notables».LimbsLt
   subst hX hY hZ hT
   decide
 
-end «x86_64-no-tables»
+end «64bit-notables»
 
 end Curve25519Dalek.backend.serial.u64.constants

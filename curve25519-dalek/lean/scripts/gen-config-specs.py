@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Generate the per-configuration spec files from the hand-written `x86_64-tables` template.
+"""Generate the per-configuration spec files from the hand-written `64bit-tables` template.
 
-curve25519-dalek is translated in four configurations (`x86_64-tables`, `i686-tables`,
-`x86_64-no-tables`, `i686-no-tables`), and their specs are the same up to names. Each
+curve25519-dalek is translated in four configurations (`64bit-tables`, `32bit-tables`,
+`64bit-notables`, `32bit-notables`), and their specs are the same up to names. Each
 `<File>.lean` in `ForHumans/Theorems/` and `ForHumans/Specs/Representation/` states its
-per-configuration items once, for `x86_64-tables`, between the lines
+per-configuration items once, for `64bit-tables`, between the lines
 
     -- BEGIN PER-CONFIG
     -- END PER-CONFIG
 
 and this script writes the other three configurations' copies to `<File>/<Config>.lean` next to it
 by renaming. Lines between `-- BEGIN TABLES-ONLY` and `-- END TABLES-ONLY` (items that exist only with
-precomputed tables) are dropped from the `no-tables` copies. A line ending in `-- i686: <text>`
-(a limb bound, which differs on the 32-bit backend) becomes `<text>` in the `i686` copies, and
+precomputed tables) are dropped from the `notables` copies. A line ending in `-- 32bit: <text>`
+(a limb bound, which differs on the 32-bit backend) becomes `<text>` in the `32bit` copies, and
 loses the comment in the others.
 
     scripts/gen-config-specs.py           # regenerate
@@ -26,32 +26,32 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 # Directories whose files may be templates.
 DIRS = [ROOT / "ForHumans" / "Theorems", ROOT / "ForHumans" / "Specs" / "Representation"]
-TEMPLATE = "x86_64-tables"
+TEMPLATE = "64bit-tables"
 CONFIGS = {
-    "i686-tables": "I686Tables",
-    "x86_64-no-tables": "X86_64NoTables",
-    "i686-no-tables": "I686NoTables",
+    "32bit-tables": "Bits32Tables",
+    "64bit-notables": "Bits64NoTables",
+    "32bit-notables": "Bits32NoTables",
 }
 
 
 def rename(text: str, config: str) -> str:
     text = text.replace(TEMPLATE, config)
-    if config.startswith("i686"):
+    if config.startswith("32bit"):
         # The 32-bit backend: `u32` field elements and constants instead of `u64` ones.
         text = text.replace("FieldElement51", "FieldElement2625")
         text = text.replace("serial.u64.", "serial.u32.")
     return text
 
 
-I686_ALT = re.compile(r"^(\s*)(.*?)\s+-- i686: (.*)$")
+BITS32_ALT = re.compile(r"^(\s*)(.*?)\s+-- 32bit: (.*)$")
 
 
 def per_arch(line: str, config: str) -> str:
-    m = I686_ALT.match(line)
+    m = BITS32_ALT.match(line)
     if not m:
         return line
-    indent, x86, i686 = m.groups()
-    return indent + (i686 if config.startswith("i686") else x86)
+    indent, bits64, bits32 = m.groups()
+    return indent + (bits32 if config.startswith("32bit") else bits64)
 
 
 def generate(template: pathlib.Path, config: str) -> str:
@@ -62,7 +62,7 @@ def generate(template: pathlib.Path, config: str) -> str:
     body, skipping = [], False
     for line in lines[begin + 1 : end]:
         if line == "-- BEGIN TABLES-ONLY":
-            skipping = config.endswith("no-tables")
+            skipping = config.endswith("notables")
             continue
         if line == "-- END TABLES-ONLY":
             skipping = False

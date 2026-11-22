@@ -9,7 +9,7 @@ public import ForHumans.Specs.Representation.Array
 import Proofs -- shake: keep
 public import ForHumans.Specs.Edwards
 public import ForHumans.Specs.Montgomery
-public import ForHumans.Specs.Representation.Edwards.I686Tables
+public import ForHumans.Specs.Representation.Edwards.Bits32Tables
 public import ForHumans.Specs.Representation.Montgomery
 public import ForHumans.Specs.Ristretto
 public import ForHumans.Specs.X25519
@@ -17,55 +17,55 @@ public section
 
 set_option linter.style.longLine false
 
-/-! # `Constants` for `i686-tables`, generated from `ForHumans/Theorems/Constants.lean` -/
+/-! # `Constants` for `32bit-tables`, generated from `ForHumans/Theorems/Constants.lean` -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek
 open curve25519 (Ristretto.encodeRep X25519 basepoint decodeUCoordinate edwards encode
     encodeUCoordinate montgomery montgomeryBasepoint torsion8)
 
-namespace Theorems.constants.«i686-tables»
+namespace Theorems.constants.«32bit-tables»
 
 /-- `ED25519_BASEPOINT_POINT` represents the basepoint. -/
 theorem ED25519_BASEPOINT_POINT :
-    backend.serial.u32.constants.ED25519_BASEPOINT_POINT.«i686-tables»
-      ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    backend.serial.u32.constants.ED25519_BASEPOINT_POINT.«32bit-tables»
+      ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
         r.OnCurve ∧ r.toPoint = basepoint ∧ r.IsBounded ⦄ :=
-  backend.serial.u32.constants.«i686-tables».ED25519_BASEPOINT_POINT_spec
+  backend.serial.u32.constants.«32bit-tables».ED25519_BASEPOINT_POINT_spec
 
 /-- `ED25519_BASEPOINT_128_POINT` represents `2^128 • B`. -/
 theorem ED25519_BASEPOINT_128_POINT :
-    backend.serial.u32.constants.ED25519_BASEPOINT_128_POINT.«i686-tables»
-      ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    backend.serial.u32.constants.ED25519_BASEPOINT_128_POINT.«32bit-tables»
+      ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
         r.OnCurve ∧ r.toPoint = 2 ^ 128 • basepoint ∧ r.IsBounded ⦄ :=
-  backend.serial.u32.constants.«i686-tables».ED25519_BASEPOINT_128_POINT_spec
+  backend.serial.u32.constants.«32bit-tables».ED25519_BASEPOINT_128_POINT_spec
 
 /-- `EIGHT_TORSION`: entry `i` represents `i • torsion8`. -/
 theorem EIGHT_TORSION :
-    backend.serial.u32.constants.EIGHT_TORSION.«i686-tables»
-      ⦃ (r : Array edwards.EdwardsPoint.«i686-tables» 8#usize) =>
+    backend.serial.u32.constants.EIGHT_TORSION.«32bit-tables»
+      ⦃ (r : Array edwards.EdwardsPoint.«32bit-tables» 8#usize) =>
         ∀ i : Fin 8, r[i.val]!.OnCurve ∧ r[i.val]!.toPoint = (i : ℕ) • torsion8 ∧
           r[i.val]!.IsBounded ⦄ :=
-  backend.serial.u32.constants.«i686-tables».EIGHT_TORSION_spec
+  backend.serial.u32.constants.«32bit-tables».EIGHT_TORSION_spec
 
 /-- `RISTRETTO_BASEPOINT_POINT`: the basepoint, an even point (a ristretto255 representative). -/
 theorem RISTRETTO_BASEPOINT_POINT :
-    constants.RISTRETTO_BASEPOINT_POINT.«i686-tables»
-      ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    constants.RISTRETTO_BASEPOINT_POINT.«32bit-tables»
+      ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
         r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = basepoint ∧ r.IsBounded ⦄ :=
-  constants.«i686-tables».RISTRETTO_BASEPOINT_POINT_spec
+  constants.«32bit-tables».RISTRETTO_BASEPOINT_POINT_spec
 
 /-- `ED25519_BASEPOINT_TABLE`: a table representing the basepoint. -/
 theorem ED25519_BASEPOINT_TABLE :
     backend.serial.u32.constants.ED25519_BASEPOINT_TABLE
-      ⦃ (r : edwards.EdwardsBasepointTable.«i686-tables») =>
+      ⦃ (r : edwards.EdwardsBasepointTable.«32bit-tables») =>
         r.IsTable ∧ r.point = basepoint ∧ r.IsBounded ⦄ :=
   backend.serial.u32.constants.ED25519_BASEPOINT_TABLE_spec
 
 /-- `RISTRETTO_BASEPOINT_TABLE`: a table representing the basepoint. -/
 theorem RISTRETTO_BASEPOINT_TABLE :
-    constants.RISTRETTO_BASEPOINT_TABLE.«i686-tables»
-      ⦃ (r : ristretto.RistrettoBasepointTable.«i686-tables») =>
+    constants.RISTRETTO_BASEPOINT_TABLE.«32bit-tables»
+      ⦃ (r : ristretto.RistrettoBasepointTable.«32bit-tables») =>
         r.IsTable ∧ r.point = basepoint ∧ r.IsBounded ⦄ :=
-  constants.«i686-tables».RISTRETTO_BASEPOINT_TABLE_spec
+  constants.«32bit-tables».RISTRETTO_BASEPOINT_TABLE_spec
 
-end Theorems.constants.«i686-tables»
+end Theorems.constants.«32bit-tables»

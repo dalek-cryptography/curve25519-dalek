@@ -33,14 +33,14 @@ collect_limbs_u32 oddLimbs32 from AFFINE_ODD_MULTIPLES_OF_BASEPOINT
 
 /-- The table built from its 192 field elements in source order. -/
 private def mkOddTable (fes : List FieldElement2625) :
-    window.NafLookupTable8 AffineNielsPoint.«i686-tables» :=
+    window.NafLookupTable8 AffineNielsPoint.«32bit-tables» :=
   if h : (entries fes).length = (64#usize).val then Array.make 64#usize (entries fes) h
   else default
 
 private theorem mkOddTable_get {fes : List FieldElement2625} (hlen : fes.length = 192) {k : ℕ}
     (hk : k < 64) :
     (mkOddTable fes)[k]! =
-      (⟨fes[3 * k]!, fes[3 * k + 1]!, fes[3 * k + 2]!⟩ : AffineNielsPoint.«i686-tables») := by
+      (⟨fes[3 * k]!, fes[3 * k + 1]!, fes[3 * k + 2]!⟩ : AffineNielsPoint.«32bit-tables») := by
   have h64 : (entries fes).length = (64#usize).val := by
     rw [entries_length, hlen]
     rfl
@@ -73,7 +73,7 @@ limbs `< 2^27`. -/
 @[step]
 theorem AFFINE_ODD_MULTIPLES_OF_BASEPOINT_spec :
     AFFINE_ODD_MULTIPLES_OF_BASEPOINT
-      ⦃ (r : window.NafLookupTable8 AffineNielsPoint.«i686-tables») =>
+      ⦃ (r : window.NafLookupTable8 AffineNielsPoint.«32bit-tables») =>
         r.Represents basepoint ∧ r.LimbsLt 27 ⦄ := by
   rw [odd_eq, spec_ok]
   constructor

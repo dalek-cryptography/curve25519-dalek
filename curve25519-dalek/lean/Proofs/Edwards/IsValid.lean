@@ -23,7 +23,7 @@ open Curve25519Dalek.backend.serial.curve_models
 
 namespace Curve25519Dalek.edwards
 
-namespace EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsValidityCheck
+namespace EdwardsPoint.«64bit-tables».Insts.Curve25519_dalekTraitsValidityCheck
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
@@ -31,7 +31,7 @@ open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 `(Y² - X²) Z² = Z⁴ + d X² Y²` and `X Y = Z T` (it does not check `Z ≠ 0`);
 limbs `< 2^52`. -/
 @[step]
-theorem is_valid_homogeneous (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52) :
+theorem is_valid_homogeneous (self : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52) :
     is_valid self ⦃ (b : Bool) =>
       b = true ↔ (self.Y.toField ^ 2 - self.X.toField ^ 2) * self.Z.toField ^ 2 =
           self.Z.toField ^ 4 + d * self.X.toField ^ 2 * self.Y.toField ^ 2 ∧
@@ -40,13 +40,13 @@ theorem is_valid_homogeneous (self : EdwardsPoint.«x86_64-tables») (hself : se
   step as ⟨pp, hpp, hppb⟩
   obtain ⟨hX, hY, hZ, hT⟩ := hself
   have hspec :=
-    ProjectivePoint.«x86_64-tables».Insts.Curve25519_dalekTraitsValidityCheck.is_valid_homogeneous
+    ProjectivePoint.«64bit-tables».Insts.Curve25519_dalekTraitsValidityCheck.is_valid_homogeneous
   step with hspec as ⟨point_on_curve, hpoc⟩
   step as ⟨XY, hXY, hXY_lt⟩
   step as ⟨ZT, hZT, hZT_lt⟩
   step as ⟨on_segre_image, hseg⟩
-  rw [ProjectivePoint.«x86_64-tables».toProjective_def,
-    EdwardsPoint.«x86_64-tables».toExtended_def] at hpp
+  rw [ProjectivePoint.«64bit-tables».toProjective_def,
+    EdwardsPoint.«64bit-tables».toExtended_def] at hpp
   simp only [Extended.toProjective, Projective.mk.injEq] at hpp
   obtain ⟨hpX, hpY, hpZ⟩ := hpp
   rw [hpX, hpY, hpZ] at hpoc
@@ -59,20 +59,20 @@ theorem is_valid_homogeneous (self : EdwardsPoint.«x86_64-tables») (hself : se
     exact iff_of_false Bool.false_ne_true fun h => hb (hpoc.mpr h.1)
 
 /-- `ValidityCheck for EdwardsPoint` with `Z ≠ 0`: `OnCurve`. -/
-theorem is_valid_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem is_valid_spec (self : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hZ : self.Z.toField ≠ 0) :
     is_valid self ⦃ (r : Bool) => r = true ↔ self.OnCurve ⦄ :=
   spec_mono (is_valid_homogeneous self hself) fun b hb => by
-    rw [hb, EdwardsPoint.«x86_64-tables».onCurve_iff_homogeneous, a_def, and_iff_right hZ]
+    rw [hb, EdwardsPoint.«64bit-tables».onCurve_iff_homogeneous, a_def, and_iff_right hZ]
     constructor
     · rintro ⟨h1, h2⟩
       exact ⟨h2, by linear_combination h1⟩
     · rintro ⟨h1, h2⟩
       exact ⟨by linear_combination h2, h1⟩
 
-end EdwardsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsValidityCheck
+end EdwardsPoint.«64bit-tables».Insts.Curve25519_dalekTraitsValidityCheck
 
-namespace EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsValidityCheck
+namespace EdwardsPoint.«32bit-tables».Insts.Curve25519_dalekTraitsValidityCheck
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
@@ -80,7 +80,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 `(Y² - X²) Z² = Z⁴ + d X² Y²` and `X Y = Z T` (it does not check `Z ≠ 0`);
 limbs `< 2^26`. -/
 @[step]
-theorem is_valid_homogeneous (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26) :
+theorem is_valid_homogeneous (self : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26) :
     is_valid self ⦃ (b : Bool) =>
       b = true ↔ (self.Y.toField ^ 2 - self.X.toField ^ 2) * self.Z.toField ^ 2 =
           self.Z.toField ^ 4 + d * self.X.toField ^ 2 * self.Y.toField ^ 2 ∧
@@ -89,13 +89,13 @@ theorem is_valid_homogeneous (self : EdwardsPoint.«i686-tables») (hself : self
   step as ⟨pp, hpp, hppb⟩
   obtain ⟨hX, hY, hZ, hT⟩ := hself
   have hspec :=
-    ProjectivePoint.«i686-tables».Insts.Curve25519_dalekTraitsValidityCheck.is_valid_homogeneous
+    ProjectivePoint.«32bit-tables».Insts.Curve25519_dalekTraitsValidityCheck.is_valid_homogeneous
   step with hspec as ⟨point_on_curve, hpoc⟩
   step as ⟨XY, hXY, hXY_lt⟩
   step as ⟨ZT, hZT, hZT_lt⟩
   step as ⟨on_segre_image, hseg⟩
-  rw [ProjectivePoint.«i686-tables».toProjective_def,
-    EdwardsPoint.«i686-tables».toExtended_def] at hpp
+  rw [ProjectivePoint.«32bit-tables».toProjective_def,
+    EdwardsPoint.«32bit-tables».toExtended_def] at hpp
   simp only [Extended.toProjective, Projective.mk.injEq] at hpp
   obtain ⟨hpX, hpY, hpZ⟩ := hpp
   rw [hpX, hpY, hpZ] at hpoc
@@ -108,20 +108,20 @@ theorem is_valid_homogeneous (self : EdwardsPoint.«i686-tables») (hself : self
     exact iff_of_false Bool.false_ne_true fun h => hb (hpoc.mpr h.1)
 
 /-- `ValidityCheck for EdwardsPoint` with `Z ≠ 0`: `OnCurve`. -/
-theorem is_valid_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem is_valid_spec (self : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hZ : self.Z.toField ≠ 0) :
     is_valid self ⦃ (r : Bool) => r = true ↔ self.OnCurve ⦄ :=
   spec_mono (is_valid_homogeneous self hself) fun b hb => by
-    rw [hb, EdwardsPoint.«i686-tables».onCurve_iff_homogeneous, a_def, and_iff_right hZ]
+    rw [hb, EdwardsPoint.«32bit-tables».onCurve_iff_homogeneous, a_def, and_iff_right hZ]
     constructor
     · rintro ⟨h1, h2⟩
       exact ⟨h2, by linear_combination h1⟩
     · rintro ⟨h1, h2⟩
       exact ⟨by linear_combination h2, h1⟩
 
-end EdwardsPoint.«i686-tables».Insts.Curve25519_dalekTraitsValidityCheck
+end EdwardsPoint.«32bit-tables».Insts.Curve25519_dalekTraitsValidityCheck
 
-namespace EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsValidityCheck
+namespace EdwardsPoint.«64bit-notables».Insts.Curve25519_dalekTraitsValidityCheck
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
@@ -130,7 +130,7 @@ set_option linter.style.longLine false in
 `(Y² - X²) Z² = Z⁴ + d X² Y²` and `X Y = Z T` (it does not check `Z ≠ 0`);
 limbs `< 2^52`. -/
 @[step]
-theorem is_valid_homogeneous (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
+theorem is_valid_homogeneous (self : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52) :
     is_valid self ⦃ (b : Bool) =>
       b = true ↔ (self.Y.toField ^ 2 - self.X.toField ^ 2) * self.Z.toField ^ 2 =
           self.Z.toField ^ 4 + d * self.X.toField ^ 2 * self.Y.toField ^ 2 ∧
@@ -139,13 +139,13 @@ theorem is_valid_homogeneous (self : EdwardsPoint.«x86_64-no-tables») (hself :
   step as ⟨pp, hpp, hppb⟩
   obtain ⟨hX, hY, hZ, hT⟩ := hself
   have hspec :=
-    ProjectivePoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsValidityCheck.is_valid_homogeneous
+    ProjectivePoint.«64bit-notables».Insts.Curve25519_dalekTraitsValidityCheck.is_valid_homogeneous
   step with hspec as ⟨point_on_curve, hpoc⟩
   step as ⟨XY, hXY, hXY_lt⟩
   step as ⟨ZT, hZT, hZT_lt⟩
   step as ⟨on_segre_image, hseg⟩
-  rw [ProjectivePoint.«x86_64-no-tables».toProjective_def,
-    EdwardsPoint.«x86_64-no-tables».toExtended_def] at hpp
+  rw [ProjectivePoint.«64bit-notables».toProjective_def,
+    EdwardsPoint.«64bit-notables».toExtended_def] at hpp
   simp only [Extended.toProjective, Projective.mk.injEq] at hpp
   obtain ⟨hpX, hpY, hpZ⟩ := hpp
   rw [hpX, hpY, hpZ] at hpoc
@@ -158,20 +158,20 @@ theorem is_valid_homogeneous (self : EdwardsPoint.«x86_64-no-tables») (hself :
     exact iff_of_false Bool.false_ne_true fun h => hb (hpoc.mpr h.1)
 
 /-- `ValidityCheck for EdwardsPoint` with `Z ≠ 0`: `OnCurve`. -/
-theorem is_valid_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem is_valid_spec (self : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hZ : self.Z.toField ≠ 0) :
     is_valid self ⦃ (r : Bool) => r = true ↔ self.OnCurve ⦄ :=
   spec_mono (is_valid_homogeneous self hself) fun b hb => by
-    rw [hb, EdwardsPoint.«x86_64-no-tables».onCurve_iff_homogeneous, a_def, and_iff_right hZ]
+    rw [hb, EdwardsPoint.«64bit-notables».onCurve_iff_homogeneous, a_def, and_iff_right hZ]
     constructor
     · rintro ⟨h1, h2⟩
       exact ⟨h2, by linear_combination h1⟩
     · rintro ⟨h1, h2⟩
       exact ⟨by linear_combination h2, h1⟩
 
-end EdwardsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsValidityCheck
+end EdwardsPoint.«64bit-notables».Insts.Curve25519_dalekTraitsValidityCheck
 
-namespace EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsValidityCheck
+namespace EdwardsPoint.«32bit-notables».Insts.Curve25519_dalekTraitsValidityCheck
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
@@ -179,7 +179,7 @@ open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 `(Y² - X²) Z² = Z⁴ + d X² Y²` and `X Y = Z T` (it does not check `Z ≠ 0`);
 limbs `< 2^26`. -/
 @[step]
-theorem is_valid_homogeneous (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26) :
+theorem is_valid_homogeneous (self : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26) :
     is_valid self ⦃ (b : Bool) =>
       b = true ↔ (self.Y.toField ^ 2 - self.X.toField ^ 2) * self.Z.toField ^ 2 =
           self.Z.toField ^ 4 + d * self.X.toField ^ 2 * self.Y.toField ^ 2 ∧
@@ -188,13 +188,13 @@ theorem is_valid_homogeneous (self : EdwardsPoint.«i686-no-tables») (hself : s
   step as ⟨pp, hpp, hppb⟩
   obtain ⟨hX, hY, hZ, hT⟩ := hself
   have hspec :=
-    ProjectivePoint.«i686-no-tables».Insts.Curve25519_dalekTraitsValidityCheck.is_valid_homogeneous
+    ProjectivePoint.«32bit-notables».Insts.Curve25519_dalekTraitsValidityCheck.is_valid_homogeneous
   step with hspec as ⟨point_on_curve, hpoc⟩
   step as ⟨XY, hXY, hXY_lt⟩
   step as ⟨ZT, hZT, hZT_lt⟩
   step as ⟨on_segre_image, hseg⟩
-  rw [ProjectivePoint.«i686-no-tables».toProjective_def,
-    EdwardsPoint.«i686-no-tables».toExtended_def] at hpp
+  rw [ProjectivePoint.«32bit-notables».toProjective_def,
+    EdwardsPoint.«32bit-notables».toExtended_def] at hpp
   simp only [Extended.toProjective, Projective.mk.injEq] at hpp
   obtain ⟨hpX, hpY, hpZ⟩ := hpp
   rw [hpX, hpY, hpZ] at hpoc
@@ -207,17 +207,17 @@ theorem is_valid_homogeneous (self : EdwardsPoint.«i686-no-tables») (hself : s
     exact iff_of_false Bool.false_ne_true fun h => hb (hpoc.mpr h.1)
 
 /-- `ValidityCheck for EdwardsPoint` with `Z ≠ 0`: `OnCurve`. -/
-theorem is_valid_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem is_valid_spec (self : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hZ : self.Z.toField ≠ 0) :
     is_valid self ⦃ (r : Bool) => r = true ↔ self.OnCurve ⦄ :=
   spec_mono (is_valid_homogeneous self hself) fun b hb => by
-    rw [hb, EdwardsPoint.«i686-no-tables».onCurve_iff_homogeneous, a_def, and_iff_right hZ]
+    rw [hb, EdwardsPoint.«32bit-notables».onCurve_iff_homogeneous, a_def, and_iff_right hZ]
     constructor
     · rintro ⟨h1, h2⟩
       exact ⟨h2, by linear_combination h1⟩
     · rintro ⟨h1, h2⟩
       exact ⟨by linear_combination h2, h1⟩
 
-end EdwardsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsValidityCheck
+end EdwardsPoint.«32bit-notables».Insts.Curve25519_dalekTraitsValidityCheck
 
 end Curve25519Dalek.edwards

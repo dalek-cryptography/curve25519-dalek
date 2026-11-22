@@ -18,22 +18,22 @@ as for `Sum for Scalar`. -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 
-namespace Curve25519Dalek.ristretto.RistrettoPoint.«x86_64-tables».Insts
+namespace Curve25519Dalek.ristretto.RistrettoPoint.«64bit-tables».Insts
 namespace CoreIterTraitsAccumSum
 
-open «CoreOpsArithAddSharedBRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
+open «CoreOpsArithAddSharedBRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
   (add_spec)
 
 /-- The loop of `sum` adds the remaining items to the accumulator. -/
 private theorem sum_loop_spec {T I : Type}
-    (borrowInst : core.borrow.Borrow T RistrettoPoint.«x86_64-tables»)
+    (borrowInst : core.borrow.Borrow T RistrettoPoint.«64bit-tables»)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
-    (hiter : iterInst.Yields iter xs) (ps : List RistrettoPoint.«x86_64-tables»)
+    (hiter : iterInst.Yields iter xs) (ps : List RistrettoPoint.«64bit-tables»)
     (hborrow : List.Forall₂
-      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«x86_64-tables») => P' = P ⦄) xs ps)
+      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«64bit-tables») => P' = P ⦄) xs ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52) (hps_on : ∀ P ∈ ps, P.OnCurve)
-    (acc : RistrettoPoint.«x86_64-tables») (hacc : acc.LimbsLt 52) (hacc_on : acc.OnCurve) :
-    sum_loop borrowInst iterInst iter acc ⦃ (r : RistrettoPoint.«x86_64-tables») =>
+    (acc : RistrettoPoint.«64bit-tables») (hacc : acc.LimbsLt 52) (hacc_on : acc.OnCurve) :
+    sum_loop borrowInst iterInst iter acc ⦃ (r : RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = acc.toPoint + (ps.map (·.toPoint)).sum ∧ r.LimbsLt 52 ⦄ := by
   induction hiter generalizing acc ps with
   | nil hnext =>
@@ -64,13 +64,13 @@ private theorem sum_loop_spec {T I : Type}
 /-- `Sum for RistrettoPoint`: the sum of the points yielded by the iterator (through `borrow`);
 limbs `< 2^52`. -/
 @[step]
-theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.«x86_64-tables»)
+theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.«64bit-tables»)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
-    (ps : List RistrettoPoint.«x86_64-tables») (hiter : iterInst.Yields iter xs)
+    (ps : List RistrettoPoint.«64bit-tables») (hiter : iterInst.Yields iter xs)
     (hborrow : List.Forall₂
-      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«x86_64-tables») => P' = P ⦄) xs ps)
+      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«64bit-tables») => P' = P ⦄) xs ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52) (hps_on : ∀ P ∈ ps, P.OnCurve) :
-    sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«x86_64-tables») =>
+    sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.LimbsLt 52 ⦄ := by
   unfold sum
   step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, _, hacc, haccb⟩
@@ -80,24 +80,24 @@ theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.
   exact ⟨hron, by rw [hr, hacc, zero_add], hrb⟩
 
 end CoreIterTraitsAccumSum
-end Curve25519Dalek.ristretto.RistrettoPoint.«x86_64-tables».Insts
+end Curve25519Dalek.ristretto.RistrettoPoint.«64bit-tables».Insts
 
-namespace Curve25519Dalek.ristretto.RistrettoPoint.«i686-tables».Insts
+namespace Curve25519Dalek.ristretto.RistrettoPoint.«32bit-tables».Insts
 namespace CoreIterTraitsAccumSum
 
-open «CoreOpsArithAddSharedBRistrettoPointi686-tablesRistrettoPointi686-tables»
+open «CoreOpsArithAddSharedBRistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
   (add_spec)
 
 /-- The loop of `sum` adds the remaining items to the accumulator. -/
 private theorem sum_loop_spec {T I : Type}
-    (borrowInst : core.borrow.Borrow T RistrettoPoint.«i686-tables»)
+    (borrowInst : core.borrow.Borrow T RistrettoPoint.«32bit-tables»)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
-    (hiter : iterInst.Yields iter xs) (ps : List RistrettoPoint.«i686-tables»)
+    (hiter : iterInst.Yields iter xs) (ps : List RistrettoPoint.«32bit-tables»)
     (hborrow : List.Forall₂
-      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«i686-tables») => P' = P ⦄) xs ps)
+      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«32bit-tables») => P' = P ⦄) xs ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26) (hps_on : ∀ P ∈ ps, P.OnCurve)
-    (acc : RistrettoPoint.«i686-tables») (hacc : acc.LimbsLt 26) (hacc_on : acc.OnCurve) :
-    sum_loop borrowInst iterInst iter acc ⦃ (r : RistrettoPoint.«i686-tables») =>
+    (acc : RistrettoPoint.«32bit-tables») (hacc : acc.LimbsLt 26) (hacc_on : acc.OnCurve) :
+    sum_loop borrowInst iterInst iter acc ⦃ (r : RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = acc.toPoint + (ps.map (·.toPoint)).sum ∧ r.LimbsLt 26 ⦄ := by
   induction hiter generalizing acc ps with
   | nil hnext =>
@@ -128,13 +128,13 @@ private theorem sum_loop_spec {T I : Type}
 /-- `Sum for RistrettoPoint`: the sum of the points yielded by the iterator (through `borrow`);
 limbs `< 2^26`. -/
 @[step]
-theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.«i686-tables»)
+theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.«32bit-tables»)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
-    (ps : List RistrettoPoint.«i686-tables») (hiter : iterInst.Yields iter xs)
+    (ps : List RistrettoPoint.«32bit-tables») (hiter : iterInst.Yields iter xs)
     (hborrow : List.Forall₂
-      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«i686-tables») => P' = P ⦄) xs ps)
+      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«32bit-tables») => P' = P ⦄) xs ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26) (hps_on : ∀ P ∈ ps, P.OnCurve) :
-    sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«i686-tables») =>
+    sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.LimbsLt 26 ⦄ := by
   unfold sum
   step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, _, hacc, haccb⟩
@@ -144,24 +144,24 @@ theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.
   exact ⟨hron, by rw [hr, hacc, zero_add], hrb⟩
 
 end CoreIterTraitsAccumSum
-end Curve25519Dalek.ristretto.RistrettoPoint.«i686-tables».Insts
+end Curve25519Dalek.ristretto.RistrettoPoint.«32bit-tables».Insts
 
-namespace Curve25519Dalek.ristretto.RistrettoPoint.«x86_64-no-tables».Insts
+namespace Curve25519Dalek.ristretto.RistrettoPoint.«64bit-notables».Insts
 namespace CoreIterTraitsAccumSum
 
-open «CoreOpsArithAddSharedBRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
+open «CoreOpsArithAddSharedBRistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
   (add_spec)
 
 /-- The loop of `sum` adds the remaining items to the accumulator. -/
 private theorem sum_loop_spec {T I : Type}
-    (borrowInst : core.borrow.Borrow T RistrettoPoint.«x86_64-no-tables»)
+    (borrowInst : core.borrow.Borrow T RistrettoPoint.«64bit-notables»)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
-    (hiter : iterInst.Yields iter xs) (ps : List RistrettoPoint.«x86_64-no-tables»)
+    (hiter : iterInst.Yields iter xs) (ps : List RistrettoPoint.«64bit-notables»)
     (hborrow : List.Forall₂
-      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«x86_64-no-tables») => P' = P ⦄) xs ps)
+      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«64bit-notables») => P' = P ⦄) xs ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52) (hps_on : ∀ P ∈ ps, P.OnCurve)
-    (acc : RistrettoPoint.«x86_64-no-tables») (hacc : acc.LimbsLt 52) (hacc_on : acc.OnCurve) :
-    sum_loop borrowInst iterInst iter acc ⦃ (r : RistrettoPoint.«x86_64-no-tables») =>
+    (acc : RistrettoPoint.«64bit-notables») (hacc : acc.LimbsLt 52) (hacc_on : acc.OnCurve) :
+    sum_loop borrowInst iterInst iter acc ⦃ (r : RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = acc.toPoint + (ps.map (·.toPoint)).sum ∧ r.LimbsLt 52 ⦄ := by
   induction hiter generalizing acc ps with
   | nil hnext =>
@@ -192,13 +192,13 @@ private theorem sum_loop_spec {T I : Type}
 /-- `Sum for RistrettoPoint`: the sum of the points yielded by the iterator (through `borrow`);
 limbs `< 2^52`. -/
 @[step]
-theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.«x86_64-no-tables»)
+theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.«64bit-notables»)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
-    (ps : List RistrettoPoint.«x86_64-no-tables») (hiter : iterInst.Yields iter xs)
+    (ps : List RistrettoPoint.«64bit-notables») (hiter : iterInst.Yields iter xs)
     (hborrow : List.Forall₂
-      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«x86_64-no-tables») => P' = P ⦄) xs ps)
+      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«64bit-notables») => P' = P ⦄) xs ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52) (hps_on : ∀ P ∈ ps, P.OnCurve) :
-    sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«x86_64-no-tables») =>
+    sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.LimbsLt 52 ⦄ := by
   unfold sum
   step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, _, hacc, haccb⟩
@@ -208,24 +208,24 @@ theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.
   exact ⟨hron, by rw [hr, hacc, zero_add], hrb⟩
 
 end CoreIterTraitsAccumSum
-end Curve25519Dalek.ristretto.RistrettoPoint.«x86_64-no-tables».Insts
+end Curve25519Dalek.ristretto.RistrettoPoint.«64bit-notables».Insts
 
-namespace Curve25519Dalek.ristretto.RistrettoPoint.«i686-no-tables».Insts
+namespace Curve25519Dalek.ristretto.RistrettoPoint.«32bit-notables».Insts
 namespace CoreIterTraitsAccumSum
 
-open «CoreOpsArithAddSharedBRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
+open «CoreOpsArithAddSharedBRistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
   (add_spec)
 
 /-- The loop of `sum` adds the remaining items to the accumulator. -/
 private theorem sum_loop_spec {T I : Type}
-    (borrowInst : core.borrow.Borrow T RistrettoPoint.«i686-no-tables»)
+    (borrowInst : core.borrow.Borrow T RistrettoPoint.«32bit-notables»)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
-    (hiter : iterInst.Yields iter xs) (ps : List RistrettoPoint.«i686-no-tables»)
+    (hiter : iterInst.Yields iter xs) (ps : List RistrettoPoint.«32bit-notables»)
     (hborrow : List.Forall₂
-      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«i686-no-tables») => P' = P ⦄) xs ps)
+      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«32bit-notables») => P' = P ⦄) xs ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26) (hps_on : ∀ P ∈ ps, P.OnCurve)
-    (acc : RistrettoPoint.«i686-no-tables») (hacc : acc.LimbsLt 26) (hacc_on : acc.OnCurve) :
-    sum_loop borrowInst iterInst iter acc ⦃ (r : RistrettoPoint.«i686-no-tables») =>
+    (acc : RistrettoPoint.«32bit-notables») (hacc : acc.LimbsLt 26) (hacc_on : acc.OnCurve) :
+    sum_loop borrowInst iterInst iter acc ⦃ (r : RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = acc.toPoint + (ps.map (·.toPoint)).sum ∧ r.LimbsLt 26 ⦄ := by
   induction hiter generalizing acc ps with
   | nil hnext =>
@@ -256,13 +256,13 @@ private theorem sum_loop_spec {T I : Type}
 /-- `Sum for RistrettoPoint`: the sum of the points yielded by the iterator (through `borrow`);
 limbs `< 2^26`. -/
 @[step]
-theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.«i686-no-tables»)
+theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.«32bit-notables»)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
-    (ps : List RistrettoPoint.«i686-no-tables») (hiter : iterInst.Yields iter xs)
+    (ps : List RistrettoPoint.«32bit-notables») (hiter : iterInst.Yields iter xs)
     (hborrow : List.Forall₂
-      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«i686-no-tables») => P' = P ⦄) xs ps)
+      (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint.«32bit-notables») => P' = P ⦄) xs ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26) (hps_on : ∀ P ∈ ps, P.OnCurve) :
-    sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«i686-no-tables») =>
+    sum borrowInst iterInst iter ⦃ (r : RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = (ps.map (·.toPoint)).sum ∧ r.LimbsLt 26 ⦄ := by
   unfold sum
   step with Curve25519_dalekTraitsIdentity.identity_spec as ⟨acc, hacc_on, _, hacc, haccb⟩
@@ -272,6 +272,6 @@ theorem sum_spec {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint.
   exact ⟨hron, by rw [hr, hacc, zero_add], hrb⟩
 
 end CoreIterTraitsAccumSum
-end Curve25519Dalek.ristretto.RistrettoPoint.«i686-no-tables».Insts
+end Curve25519Dalek.ristretto.RistrettoPoint.«32bit-notables».Insts
 
 

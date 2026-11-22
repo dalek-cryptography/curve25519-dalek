@@ -15,76 +15,76 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP
 
 namespace Curve25519Dalek.backend
 
-namespace «x86_64-tables»
+namespace «64bit-tables»
 
 /-- `vartime_double_base_mul`: the serial `vartime_double_base::mul`, `a • A + b • B`;
 limbs `< 2^52`. -/
 @[step]
-theorem vartime_double_base_mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«x86_64-tables»)
+theorem vartime_double_base_mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«64bit-tables»)
     (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255) (hA : A.LimbsLt 52) (hon : A.OnCurve)
     (hb : b.asNat < 2 ^ 255) :
-    vartime_double_base_mul.«x86_64-tables» a A b ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    vartime_double_base_mul.«64bit-tables» a A b ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • curve25519.basepoint ∧
         r.LimbsLt 52 ⦄ := by
-  unfold vartime_double_base_mul.«x86_64-tables»
+  unfold vartime_double_base_mul.«64bit-tables»
   step
-  step with serial.scalar_mul.vartime_double_base.«x86_64-tables».mul_spec as ⟨r, hron, hr, hrb⟩
+  step with serial.scalar_mul.vartime_double_base.«64bit-tables».mul_spec as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hr, hrb⟩
 
-end «x86_64-tables»
+end «64bit-tables»
 
-namespace «i686-tables»
+namespace «32bit-tables»
 
 /-- `vartime_double_base_mul`: the serial `vartime_double_base::mul`, `a • A + b • B`;
 limbs `< 2^26`. -/
 @[step]
-theorem vartime_double_base_mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«i686-tables»)
+theorem vartime_double_base_mul_spec (a : scalar.Scalar) (A : edwards.EdwardsPoint.«32bit-tables»)
     (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255) (hA : A.LimbsLt 26) (hon : A.OnCurve)
     (hb : b.asNat < 2 ^ 255) :
-    vartime_double_base_mul.«i686-tables» a A b ⦃ (r : edwards.EdwardsPoint.«i686-tables») =>
+    vartime_double_base_mul.«32bit-tables» a A b ⦃ (r : edwards.EdwardsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • curve25519.basepoint ∧
         r.LimbsLt 26 ⦄ := by
-  unfold vartime_double_base_mul.«i686-tables»
+  unfold vartime_double_base_mul.«32bit-tables»
   step
-  step with serial.scalar_mul.vartime_double_base.«i686-tables».mul_spec as ⟨r, hron, hr, hrb⟩
+  step with serial.scalar_mul.vartime_double_base.«32bit-tables».mul_spec as ⟨r, hron, hr, hrb⟩
   exact ⟨hron, hr, hrb⟩
 
-end «i686-tables»
+end «32bit-tables»
 
-namespace «x86_64-no-tables»
+namespace «64bit-notables»
 
 /-- `vartime_double_base_mul`: the serial `vartime_double_base::mul`, `a • A + b • B`;
 limbs `< 2^52`. -/
 @[step]
 theorem vartime_double_base_mul_spec (a : scalar.Scalar)
-    (A : edwards.EdwardsPoint.«x86_64-no-tables»)
+    (A : edwards.EdwardsPoint.«64bit-notables»)
     (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255) (hA : A.LimbsLt 52) (hon : A.OnCurve)
     (hb : b.asNat < 2 ^ 255) :
-    vartime_double_base_mul.«x86_64-no-tables» a A b
-        ⦃ (r : edwards.EdwardsPoint.«x86_64-no-tables») =>
+    vartime_double_base_mul.«64bit-notables» a A b
+        ⦃ (r : edwards.EdwardsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • curve25519.basepoint ∧
         r.LimbsLt 52 ⦄ := by
-  unfold vartime_double_base_mul.«x86_64-no-tables»
+  unfold vartime_double_base_mul.«64bit-notables»
   step*
 
-end «x86_64-no-tables»
+end «64bit-notables»
 
-namespace «i686-no-tables»
+namespace «32bit-notables»
 
 /-- `vartime_double_base_mul`: the serial `vartime_double_base::mul`, `a • A + b • B`;
 limbs `< 2^26`. -/
 @[step]
 theorem vartime_double_base_mul_spec (a : scalar.Scalar)
-    (A : edwards.EdwardsPoint.«i686-no-tables»)
+    (A : edwards.EdwardsPoint.«32bit-notables»)
     (b : scalar.Scalar) (ha : a.asNat < 2 ^ 255) (hA : A.LimbsLt 26) (hon : A.OnCurve)
     (hb : b.asNat < 2 ^ 255) :
-    vartime_double_base_mul.«i686-no-tables» a A b
-        ⦃ (r : edwards.EdwardsPoint.«i686-no-tables») =>
+    vartime_double_base_mul.«32bit-notables» a A b
+        ⦃ (r : edwards.EdwardsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • curve25519.basepoint ∧
         r.LimbsLt 26 ⦄ := by
-  unfold vartime_double_base_mul.«i686-no-tables»
+  unfold vartime_double_base_mul.«32bit-notables»
   step*
 
-end «i686-no-tables»
+end «32bit-notables»
 
 end Curve25519Dalek.backend

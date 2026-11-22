@@ -132,19 +132,18 @@ structure zeroize.DefaultIsZeroes (Self : Type _) where
 @[reducible]
 def backend.serial.u64.field.FieldElement51 := Array Std.U64 5#usize
 
-/-- [curve25519_dalek::backend::serial::curve_models::ProjectivePoint::x86_64-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::ProjectivePoint::64bit-tables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 154:0-158:1
     Visibility: public -/
-structure backend.serial.curve_models.ProjectivePoint.«x86_64-tables» where
+structure backend.serial.curve_models.ProjectivePoint.«64bit-tables» where
   X : backend.serial.u64.field.FieldElement51
   Y : backend.serial.u64.field.FieldElement51
   Z : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::backend::serial::curve_models::ProjectivePoint::x86_64-no-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::ProjectivePoint::64bit-notables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 154:0-158:1
     Visibility: public -/
-structure backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables»
-  where
+structure backend.serial.curve_models.ProjectivePoint.«64bit-notables» where
   X : backend.serial.u64.field.FieldElement51
   Y : backend.serial.u64.field.FieldElement51
   Z : backend.serial.u64.field.FieldElement51
@@ -155,125 +154,124 @@ structure backend.serial.curve_models.ProjectivePoint.«x86_64-no-tables»
 @[reducible]
 def backend.serial.u32.field.FieldElement2625 := Array Std.U32 10#usize
 
-/-- [curve25519_dalek::backend::serial::curve_models::ProjectivePoint::i686-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::ProjectivePoint::32bit-tables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 154:0-158:1
     Visibility: public -/
-structure backend.serial.curve_models.ProjectivePoint.«i686-tables» where
+structure backend.serial.curve_models.ProjectivePoint.«32bit-tables» where
   X : backend.serial.u32.field.FieldElement2625
   Y : backend.serial.u32.field.FieldElement2625
   Z : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::backend::serial::curve_models::ProjectivePoint::i686-no-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::ProjectivePoint::32bit-notables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 154:0-158:1
     Visibility: public -/
-structure backend.serial.curve_models.ProjectivePoint.«i686-no-tables» where
+structure backend.serial.curve_models.ProjectivePoint.«32bit-notables» where
   X : backend.serial.u32.field.FieldElement2625
   Y : backend.serial.u32.field.FieldElement2625
   Z : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::backend::serial::curve_models::CompletedPoint::x86_64-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::CompletedPoint::64bit-tables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 169:0-174:1
     Visibility: public -/
-structure backend.serial.curve_models.CompletedPoint.«x86_64-tables» where
+structure backend.serial.curve_models.CompletedPoint.«64bit-tables» where
   X : backend.serial.u64.field.FieldElement51
   Y : backend.serial.u64.field.FieldElement51
   Z : backend.serial.u64.field.FieldElement51
   T : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::backend::serial::curve_models::CompletedPoint::x86_64-no-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::CompletedPoint::64bit-notables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 169:0-174:1
     Visibility: public -/
-structure backend.serial.curve_models.CompletedPoint.«x86_64-no-tables» where
+structure backend.serial.curve_models.CompletedPoint.«64bit-notables» where
   X : backend.serial.u64.field.FieldElement51
   Y : backend.serial.u64.field.FieldElement51
   Z : backend.serial.u64.field.FieldElement51
   T : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::backend::serial::curve_models::CompletedPoint::i686-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::CompletedPoint::32bit-tables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 169:0-174:1
     Visibility: public -/
-structure backend.serial.curve_models.CompletedPoint.«i686-tables» where
+structure backend.serial.curve_models.CompletedPoint.«32bit-tables» where
   X : backend.serial.u32.field.FieldElement2625
   Y : backend.serial.u32.field.FieldElement2625
   Z : backend.serial.u32.field.FieldElement2625
   T : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::backend::serial::curve_models::CompletedPoint::i686-no-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::CompletedPoint::32bit-notables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 169:0-174:1
     Visibility: public -/
-structure backend.serial.curve_models.CompletedPoint.«i686-no-tables» where
+structure backend.serial.curve_models.CompletedPoint.«32bit-notables» where
   X : backend.serial.u32.field.FieldElement2625
   Y : backend.serial.u32.field.FieldElement2625
   Z : backend.serial.u32.field.FieldElement2625
   T : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::backend::serial::curve_models::AffineNielsPoint::x86_64-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::AffineNielsPoint::64bit-tables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 184:0-188:1
     Visibility: public -/
-structure backend.serial.curve_models.AffineNielsPoint.«x86_64-tables» where
+structure backend.serial.curve_models.AffineNielsPoint.«64bit-tables» where
   y_plus_x : backend.serial.u64.field.FieldElement51
   y_minus_x : backend.serial.u64.field.FieldElement51
   xy2d : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::backend::serial::curve_models::AffineNielsPoint::x86_64-no-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::AffineNielsPoint::64bit-notables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 184:0-188:1
     Visibility: public -/
-structure backend.serial.curve_models.AffineNielsPoint.«x86_64-no-tables»
-  where
+structure backend.serial.curve_models.AffineNielsPoint.«64bit-notables» where
   y_plus_x : backend.serial.u64.field.FieldElement51
   y_minus_x : backend.serial.u64.field.FieldElement51
   xy2d : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::backend::serial::curve_models::AffineNielsPoint::i686-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::AffineNielsPoint::32bit-tables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 184:0-188:1
     Visibility: public -/
-structure backend.serial.curve_models.AffineNielsPoint.«i686-tables» where
+structure backend.serial.curve_models.AffineNielsPoint.«32bit-tables» where
   y_plus_x : backend.serial.u32.field.FieldElement2625
   y_minus_x : backend.serial.u32.field.FieldElement2625
   xy2d : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::backend::serial::curve_models::AffineNielsPoint::i686-no-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::AffineNielsPoint::32bit-notables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 184:0-188:1
     Visibility: public -/
-structure backend.serial.curve_models.AffineNielsPoint.«i686-no-tables» where
+structure backend.serial.curve_models.AffineNielsPoint.«32bit-notables» where
   y_plus_x : backend.serial.u32.field.FieldElement2625
   y_minus_x : backend.serial.u32.field.FieldElement2625
   xy2d : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::backend::serial::curve_models::ProjectiveNielsPoint::x86_64-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::ProjectiveNielsPoint::64bit-tables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 206:0-211:1
     Visibility: public -/
-structure backend.serial.curve_models.ProjectiveNielsPoint.«x86_64-tables»
+structure backend.serial.curve_models.ProjectiveNielsPoint.«64bit-tables»
   where
   Y_plus_X : backend.serial.u64.field.FieldElement51
   Y_minus_X : backend.serial.u64.field.FieldElement51
   Z : backend.serial.u64.field.FieldElement51
   T2d : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::backend::serial::curve_models::ProjectiveNielsPoint::x86_64-no-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::ProjectiveNielsPoint::64bit-notables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 206:0-211:1
     Visibility: public -/
-structure backend.serial.curve_models.ProjectiveNielsPoint.«x86_64-no-tables»
+structure backend.serial.curve_models.ProjectiveNielsPoint.«64bit-notables»
   where
   Y_plus_X : backend.serial.u64.field.FieldElement51
   Y_minus_X : backend.serial.u64.field.FieldElement51
   Z : backend.serial.u64.field.FieldElement51
   T2d : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::backend::serial::curve_models::ProjectiveNielsPoint::i686-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::ProjectiveNielsPoint::32bit-tables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 206:0-211:1
     Visibility: public -/
-structure backend.serial.curve_models.ProjectiveNielsPoint.«i686-tables»
+structure backend.serial.curve_models.ProjectiveNielsPoint.«32bit-tables»
   where
   Y_plus_X : backend.serial.u32.field.FieldElement2625
   Y_minus_X : backend.serial.u32.field.FieldElement2625
   Z : backend.serial.u32.field.FieldElement2625
   T2d : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::backend::serial::curve_models::ProjectiveNielsPoint::i686-no-tables]
+/-- [curve25519_dalek::backend::serial::curve_models::ProjectiveNielsPoint::32bit-notables]
     Source: 'curve25519-dalek/src/backend/serial/curve_models.rs', lines 206:0-211:1
     Visibility: public -/
-structure backend.serial.curve_models.ProjectiveNielsPoint.«i686-no-tables»
+structure backend.serial.curve_models.ProjectiveNielsPoint.«32bit-notables»
   where
   Y_plus_X : backend.serial.u32.field.FieldElement2625
   Y_minus_X : backend.serial.u32.field.FieldElement2625
@@ -298,37 +296,37 @@ def backend.serial.u64.field.SubShared0FieldElement51SharedAFieldElement51FieldE
   backend.serial.u64.field.FieldElement51 ×
   backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::edwards::EdwardsPoint::x86_64-tables]
+/-- [curve25519_dalek::edwards::EdwardsPoint::64bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 390:0-395:1
     Visibility: public -/
-structure edwards.EdwardsPoint.«x86_64-tables» where
+structure edwards.EdwardsPoint.«64bit-tables» where
   X : backend.serial.u64.field.FieldElement51
   Y : backend.serial.u64.field.FieldElement51
   Z : backend.serial.u64.field.FieldElement51
   T : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::edwards::EdwardsPoint::x86_64-no-tables]
+/-- [curve25519_dalek::edwards::EdwardsPoint::64bit-notables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 390:0-395:1
     Visibility: public -/
-structure edwards.EdwardsPoint.«x86_64-no-tables» where
+structure edwards.EdwardsPoint.«64bit-notables» where
   X : backend.serial.u64.field.FieldElement51
   Y : backend.serial.u64.field.FieldElement51
   Z : backend.serial.u64.field.FieldElement51
   T : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::edwards::EdwardsPoint::i686-tables]
+/-- [curve25519_dalek::edwards::EdwardsPoint::32bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 390:0-395:1
     Visibility: public -/
-structure edwards.EdwardsPoint.«i686-tables» where
+structure edwards.EdwardsPoint.«32bit-tables» where
   X : backend.serial.u32.field.FieldElement2625
   Y : backend.serial.u32.field.FieldElement2625
   Z : backend.serial.u32.field.FieldElement2625
   T : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::edwards::EdwardsPoint::i686-no-tables]
+/-- [curve25519_dalek::edwards::EdwardsPoint::32bit-notables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 390:0-395:1
     Visibility: public -/
-structure edwards.EdwardsPoint.«i686-no-tables» where
+structure edwards.EdwardsPoint.«32bit-notables» where
   X : backend.serial.u32.field.FieldElement2625
   Y : backend.serial.u32.field.FieldElement2625
   Z : backend.serial.u32.field.FieldElement2625
@@ -371,37 +369,37 @@ structure traits.VartimeMultiscalarMul (Self : Type _) (Self_Point : Type _)
 @[reducible]
 def window.NafLookupTable8 (T : Type _) := Array T 64#usize
 
-/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::x86_64-tables]
+/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::64bit-tables]
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs', lines 29:0-31:1
     Visibility: public -/
-structure backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«x86_64-tables»
+structure backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«64bit-tables»
   where
   static_lookup_tables : alloc.vec.Vec (window.NafLookupTable8
-    backend.serial.curve_models.AffineNielsPoint.«x86_64-tables»)
+    backend.serial.curve_models.AffineNielsPoint.«64bit-tables»)
 
-/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::x86_64-no-tables]
+/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::64bit-notables]
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs', lines 29:0-31:1
     Visibility: public -/
-structure backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«x86_64-no-tables»
+structure backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«64bit-notables»
   where
   static_lookup_tables : alloc.vec.Vec (window.NafLookupTable8
-    backend.serial.curve_models.AffineNielsPoint.«x86_64-no-tables»)
+    backend.serial.curve_models.AffineNielsPoint.«64bit-notables»)
 
-/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::i686-tables]
+/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::32bit-tables]
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs', lines 29:0-31:1
     Visibility: public -/
-structure backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«i686-tables»
+structure backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«32bit-tables»
   where
   static_lookup_tables : alloc.vec.Vec (window.NafLookupTable8
-    backend.serial.curve_models.AffineNielsPoint.«i686-tables»)
+    backend.serial.curve_models.AffineNielsPoint.«32bit-tables»)
 
-/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::i686-no-tables]
+/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::32bit-notables]
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs', lines 29:0-31:1
     Visibility: public -/
-structure backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«i686-no-tables»
+structure backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«32bit-notables»
   where
   static_lookup_tables : alloc.vec.Vec (window.NafLookupTable8
-    backend.serial.curve_models.AffineNielsPoint.«i686-no-tables»)
+    backend.serial.curve_models.AffineNielsPoint.«32bit-notables»)
 
 /-- Trait declaration: [curve25519_dalek::traits::VartimePrecomputedMultiscalarMul]
     Source: 'curve25519-dalek/src/traits.rs', lines 291:0-414:1
@@ -434,37 +432,37 @@ structure traits.VartimePrecomputedMultiscalarMul (Self : Type _) (Self_Point :
 @[reducible]
 def window.NafLookupTable5 (T : Type _) := Array T 8#usize
 
-/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::x86_64-tables> for curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::x86_64-tables}::optional_mixed_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::64bit-tables> for curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::64bit-tables}::optional_mixed_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs', lines 82:28-82:81 -/
 @[reducible]
-def backend.serial.scalar_mul.precomputed_straus.«VartimePrecomputedMultiscalarMulVartimePrecomputedStrausx86_64-tablesEdwardsPointx86_64-tables».optional_mixed_multiscalar_mul.closure
+def backend.serial.scalar_mul.precomputed_straus.«VartimePrecomputedMultiscalarMulVartimePrecomputedStraus64bit-tablesEdwardsPoint64bit-tables».optional_mixed_multiscalar_mul.closure
   (I : Type _) (J : Type _) (K : Type _) (Clause0_Item : Type _)
   (Clause0_IntoIter : Type _) (Clause2_Item : Type _) (Clause2_IntoIter :
   Type _) (Clause4_IntoIter : Type _) :=
 Unit
 
-/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::x86_64-no-tables> for curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::x86_64-no-tables}::optional_mixed_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::64bit-notables> for curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::64bit-notables}::optional_mixed_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs', lines 82:28-82:81 -/
 @[reducible]
-def backend.serial.scalar_mul.precomputed_straus.«VartimePrecomputedMultiscalarMulVartimePrecomputedStrausx86_64-no-tablesEdwardsPointx86_64-no-tables».optional_mixed_multiscalar_mul.closure
+def backend.serial.scalar_mul.precomputed_straus.«VartimePrecomputedMultiscalarMulVartimePrecomputedStraus64bit-notablesEdwardsPoint64bit-notables».optional_mixed_multiscalar_mul.closure
   (I : Type _) (J : Type _) (K : Type _) (Clause0_Item : Type _)
   (Clause0_IntoIter : Type _) (Clause2_Item : Type _) (Clause2_IntoIter :
   Type _) (Clause4_IntoIter : Type _) :=
 Unit
 
-/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::i686-tables> for curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::i686-tables}::optional_mixed_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::32bit-tables> for curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::32bit-tables}::optional_mixed_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs', lines 82:28-82:81 -/
 @[reducible]
-def backend.serial.scalar_mul.precomputed_straus.«VartimePrecomputedMultiscalarMulVartimePrecomputedStrausi686-tablesEdwardsPointi686-tables».optional_mixed_multiscalar_mul.closure
+def backend.serial.scalar_mul.precomputed_straus.«VartimePrecomputedMultiscalarMulVartimePrecomputedStraus32bit-tablesEdwardsPoint32bit-tables».optional_mixed_multiscalar_mul.closure
   (I : Type _) (J : Type _) (K : Type _) (Clause0_Item : Type _)
   (Clause0_IntoIter : Type _) (Clause2_Item : Type _) (Clause2_IntoIter :
   Type _) (Clause4_IntoIter : Type _) :=
 Unit
 
-/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::i686-no-tables> for curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::i686-no-tables}::optional_mixed_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::32bit-notables> for curve25519_dalek::backend::serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::32bit-notables}::optional_mixed_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/precomputed_straus.rs', lines 82:28-82:81 -/
 @[reducible]
-def backend.serial.scalar_mul.precomputed_straus.«VartimePrecomputedMultiscalarMulVartimePrecomputedStrausi686-no-tablesEdwardsPointi686-no-tables».optional_mixed_multiscalar_mul.closure
+def backend.serial.scalar_mul.precomputed_straus.«VartimePrecomputedMultiscalarMulVartimePrecomputedStraus32bit-notablesEdwardsPoint32bit-notables».optional_mixed_multiscalar_mul.closure
   (I : Type _) (J : Type _) (K : Type _) (Clause0_Item : Type _)
   (Clause0_IntoIter : Type _) (Clause2_Item : Type _) (Clause2_IntoIter :
   Type _) (Clause4_IntoIter : Type _) :=
@@ -496,34 +494,34 @@ structure traits.MultiscalarMul (Self : Type _) (Self_Point : Type _) where
 @[reducible]
 def window.LookupTable (T : Type _) := Array T 8#usize
 
-/-- [curve25519_dalek::backend::serial::scalar_mul::straus::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::x86_64-tables> for curve25519_dalek::backend::serial::scalar_mul::straus::Straus}::optional_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::backend::serial::scalar_mul::straus::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::64bit-tables> for curve25519_dalek::backend::serial::scalar_mul::straus::Straus}::optional_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/straus.rs', lines 180:28-180:81 -/
 @[reducible]
-def backend.serial.scalar_mul.straus.«VartimeMultiscalarMulStrausEdwardsPointx86_64-tables».optional_multiscalar_mul.closure
+def backend.serial.scalar_mul.straus.«VartimeMultiscalarMulStrausEdwardsPoint64bit-tables».optional_multiscalar_mul.closure
   (I : Type _) (J : Type _) (Clause0_Item : Type _) (Clause0_IntoIter : Type _)
   (Clause2_IntoIter : Type _) :=
 Unit
 
-/-- [curve25519_dalek::backend::serial::scalar_mul::straus::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::x86_64-no-tables> for curve25519_dalek::backend::serial::scalar_mul::straus::Straus}::optional_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::backend::serial::scalar_mul::straus::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::64bit-notables> for curve25519_dalek::backend::serial::scalar_mul::straus::Straus}::optional_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/straus.rs', lines 180:28-180:81 -/
 @[reducible]
-def backend.serial.scalar_mul.straus.«VartimeMultiscalarMulStrausEdwardsPointx86_64-no-tables».optional_multiscalar_mul.closure
+def backend.serial.scalar_mul.straus.«VartimeMultiscalarMulStrausEdwardsPoint64bit-notables».optional_multiscalar_mul.closure
   (I : Type _) (J : Type _) (Clause0_Item : Type _) (Clause0_IntoIter : Type _)
   (Clause2_IntoIter : Type _) :=
 Unit
 
-/-- [curve25519_dalek::backend::serial::scalar_mul::straus::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::i686-tables> for curve25519_dalek::backend::serial::scalar_mul::straus::Straus}::optional_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::backend::serial::scalar_mul::straus::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::32bit-tables> for curve25519_dalek::backend::serial::scalar_mul::straus::Straus}::optional_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/straus.rs', lines 180:28-180:81 -/
 @[reducible]
-def backend.serial.scalar_mul.straus.«VartimeMultiscalarMulStrausEdwardsPointi686-tables».optional_multiscalar_mul.closure
+def backend.serial.scalar_mul.straus.«VartimeMultiscalarMulStrausEdwardsPoint32bit-tables».optional_multiscalar_mul.closure
   (I : Type _) (J : Type _) (Clause0_Item : Type _) (Clause0_IntoIter : Type _)
   (Clause2_IntoIter : Type _) :=
 Unit
 
-/-- [curve25519_dalek::backend::serial::scalar_mul::straus::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::i686-no-tables> for curve25519_dalek::backend::serial::scalar_mul::straus::Straus}::optional_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::backend::serial::scalar_mul::straus::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::edwards::EdwardsPoint::32bit-notables> for curve25519_dalek::backend::serial::scalar_mul::straus::Straus}::optional_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/backend/serial/scalar_mul/straus.rs', lines 180:28-180:81 -/
 @[reducible]
-def backend.serial.scalar_mul.straus.«VartimeMultiscalarMulStrausEdwardsPointi686-no-tables».optional_multiscalar_mul.closure
+def backend.serial.scalar_mul.straus.«VartimeMultiscalarMulStrausEdwardsPoint32bit-notables».optional_multiscalar_mul.closure
   (I : Type _) (J : Type _) (Clause0_Item : Type _) (Clause0_IntoIter : Type _)
   (Clause2_IntoIter : Type _) :=
 Unit
@@ -540,13 +538,13 @@ def scalar.HalfWidthScalar := scalar.Scalar
 @[reducible]
 def backend.serial.u32.scalar.Scalar29 := Array Std.U32 9#usize
 
-/-- [curve25519_dalek::edwards::EdwardsBasepointTable::i686-tables]
+/-- [curve25519_dalek::edwards::EdwardsBasepointTable::32bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1281:8-1287:9
     Visibility: public -/
 @[reducible]
-def edwards.EdwardsBasepointTable.«i686-tables» :=
+def edwards.EdwardsBasepointTable.«32bit-tables» :=
   Array (window.LookupTable
-  backend.serial.curve_models.AffineNielsPoint.«i686-tables») 32#usize
+  backend.serial.curve_models.AffineNielsPoint.«32bit-tables») 32#usize
 
 /-- [curve25519_dalek::backend::serial::u64::scalar::Scalar52]
     Source: 'curve25519-dalek/src/backend/serial/u64/scalar.rs', lines 26:0-26:34
@@ -554,13 +552,13 @@ def edwards.EdwardsBasepointTable.«i686-tables» :=
 @[reducible]
 def backend.serial.u64.scalar.Scalar52 := Array Std.U64 5#usize
 
-/-- [curve25519_dalek::edwards::EdwardsBasepointTable::x86_64-tables]
+/-- [curve25519_dalek::edwards::EdwardsBasepointTable::64bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1281:8-1287:9
     Visibility: public -/
 @[reducible]
-def edwards.EdwardsBasepointTable.«x86_64-tables» :=
+def edwards.EdwardsBasepointTable.«64bit-tables» :=
   Array (window.LookupTable
-  backend.serial.curve_models.AffineNielsPoint.«x86_64-tables») 32#usize
+  backend.serial.curve_models.AffineNielsPoint.«64bit-tables») 32#usize
 
 /-- [curve25519_dalek::backend::BackendKind]
     Source: 'curve25519-dalek/src/backend.rs', lines 49:0-55:1 -/
@@ -568,41 +566,41 @@ def edwards.EdwardsBasepointTable.«x86_64-tables» :=
 inductive backend.BackendKind where
 | Serial : backend.BackendKind
 
-/-- [curve25519_dalek::backend::VartimePrecomputedStraus::x86_64-tables]
+/-- [curve25519_dalek::backend::VartimePrecomputedStraus::64bit-tables]
     Source: 'curve25519-dalek/src/backend.rs', lines 106:0-114:1 -/
 @[discriminant isize]
-inductive backend.VartimePrecomputedStraus.«x86_64-tables» where
+inductive backend.VartimePrecomputedStraus.«64bit-tables» where
 | Scalar :
-  backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«x86_64-tables»
+  backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«64bit-tables»
     →
-  backend.VartimePrecomputedStraus.«x86_64-tables»
+  backend.VartimePrecomputedStraus.«64bit-tables»
 
-/-- [curve25519_dalek::backend::VartimePrecomputedStraus::x86_64-no-tables]
+/-- [curve25519_dalek::backend::VartimePrecomputedStraus::64bit-notables]
     Source: 'curve25519-dalek/src/backend.rs', lines 106:0-114:1 -/
 @[discriminant isize]
-inductive backend.VartimePrecomputedStraus.«x86_64-no-tables» where
+inductive backend.VartimePrecomputedStraus.«64bit-notables» where
 | Scalar :
-  backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«x86_64-no-tables»
+  backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«64bit-notables»
     →
-  backend.VartimePrecomputedStraus.«x86_64-no-tables»
+  backend.VartimePrecomputedStraus.«64bit-notables»
 
-/-- [curve25519_dalek::backend::VartimePrecomputedStraus::i686-tables]
+/-- [curve25519_dalek::backend::VartimePrecomputedStraus::32bit-tables]
     Source: 'curve25519-dalek/src/backend.rs', lines 106:0-114:1 -/
 @[discriminant isize]
-inductive backend.VartimePrecomputedStraus.«i686-tables» where
+inductive backend.VartimePrecomputedStraus.«32bit-tables» where
 | Scalar :
-  backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«i686-tables»
+  backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«32bit-tables»
     →
-  backend.VartimePrecomputedStraus.«i686-tables»
+  backend.VartimePrecomputedStraus.«32bit-tables»
 
-/-- [curve25519_dalek::backend::VartimePrecomputedStraus::i686-no-tables]
+/-- [curve25519_dalek::backend::VartimePrecomputedStraus::32bit-notables]
     Source: 'curve25519-dalek/src/backend.rs', lines 106:0-114:1 -/
 @[discriminant isize]
-inductive backend.VartimePrecomputedStraus.«i686-no-tables» where
+inductive backend.VartimePrecomputedStraus.«32bit-notables» where
 | Scalar :
-  backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«i686-no-tables»
+  backend.serial.scalar_mul.precomputed_straus.VartimePrecomputedStraus.«32bit-notables»
     →
-  backend.VartimePrecomputedStraus.«i686-no-tables»
+  backend.VartimePrecomputedStraus.«32bit-notables»
 
 /-- [curve25519_dalek::edwards::CompressedEdwardsY]
     Source: 'curve25519-dalek/src/edwards.rs', lines 175:0-175:44
@@ -622,159 +620,159 @@ def montgomery.MontgomeryPoint := Array Std.U8 32#usize
 @[reducible]
 def ristretto.CompressedRistretto := Array Std.U8 32#usize
 
-/-- [curve25519_dalek::ristretto::RistrettoPoint::x86_64-tables]
+/-- [curve25519_dalek::ristretto::RistrettoPoint::64bit-tables]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 496:0-496:51
     Visibility: public -/
 @[reducible]
-def ristretto.RistrettoPoint.«x86_64-tables» :=
-  edwards.EdwardsPoint.«x86_64-tables»
+def ristretto.RistrettoPoint.«64bit-tables» :=
+  edwards.EdwardsPoint.«64bit-tables»
 
-/-- [curve25519_dalek::ristretto::RistrettoPoint::x86_64-no-tables]
+/-- [curve25519_dalek::ristretto::RistrettoPoint::64bit-notables]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 496:0-496:51
     Visibility: public -/
 @[reducible]
-def ristretto.RistrettoPoint.«x86_64-no-tables» :=
-  edwards.EdwardsPoint.«x86_64-no-tables»
+def ristretto.RistrettoPoint.«64bit-notables» :=
+  edwards.EdwardsPoint.«64bit-notables»
 
-/-- [curve25519_dalek::ristretto::RistrettoPoint::i686-tables]
+/-- [curve25519_dalek::ristretto::RistrettoPoint::32bit-tables]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 496:0-496:51
     Visibility: public -/
 @[reducible]
-def ristretto.RistrettoPoint.«i686-tables» :=
-  edwards.EdwardsPoint.«i686-tables»
+def ristretto.RistrettoPoint.«32bit-tables» :=
+  edwards.EdwardsPoint.«32bit-tables»
 
-/-- [curve25519_dalek::ristretto::RistrettoPoint::i686-no-tables]
+/-- [curve25519_dalek::ristretto::RistrettoPoint::32bit-notables]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 496:0-496:51
     Visibility: public -/
 @[reducible]
-def ristretto.RistrettoPoint.«i686-no-tables» :=
-  edwards.EdwardsPoint.«i686-no-tables»
+def ristretto.RistrettoPoint.«32bit-notables» :=
+  edwards.EdwardsPoint.«32bit-notables»
 
-/-- [curve25519_dalek::ristretto::RistrettoBasepointTable::x86_64-tables]
+/-- [curve25519_dalek::ristretto::RistrettoBasepointTable::64bit-tables]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1107:0-1107:69
     Visibility: public -/
 @[reducible]
-def ristretto.RistrettoBasepointTable.«x86_64-tables» :=
-  edwards.EdwardsBasepointTable.«x86_64-tables»
+def ristretto.RistrettoBasepointTable.«64bit-tables» :=
+  edwards.EdwardsBasepointTable.«64bit-tables»
 
-/-- [curve25519_dalek::ristretto::RistrettoBasepointTable::i686-tables]
+/-- [curve25519_dalek::ristretto::RistrettoBasepointTable::32bit-tables]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1107:0-1107:69
     Visibility: public -/
 @[reducible]
-def ristretto.RistrettoBasepointTable.«i686-tables» :=
-  edwards.EdwardsBasepointTable.«i686-tables»
+def ristretto.RistrettoBasepointTable.«32bit-tables» :=
+  edwards.EdwardsBasepointTable.«32bit-tables»
 
-/-- [curve25519_dalek::edwards::affine::AffinePoint::x86_64-tables]
+/-- [curve25519_dalek::edwards::affine::AffinePoint::64bit-tables]
     Source: 'curve25519-dalek/src/edwards/affine.rs', lines 12:0-15:1
     Visibility: public -/
-structure edwards.affine.AffinePoint.«x86_64-tables» where
+structure edwards.affine.AffinePoint.«64bit-tables» where
   x : backend.serial.u64.field.FieldElement51
   y : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::edwards::affine::AffinePoint::x86_64-no-tables]
+/-- [curve25519_dalek::edwards::affine::AffinePoint::64bit-notables]
     Source: 'curve25519-dalek/src/edwards/affine.rs', lines 12:0-15:1
     Visibility: public -/
-structure edwards.affine.AffinePoint.«x86_64-no-tables» where
+structure edwards.affine.AffinePoint.«64bit-notables» where
   x : backend.serial.u64.field.FieldElement51
   y : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::edwards::affine::AffinePoint::i686-tables]
+/-- [curve25519_dalek::edwards::affine::AffinePoint::32bit-tables]
     Source: 'curve25519-dalek/src/edwards/affine.rs', lines 12:0-15:1
     Visibility: public -/
-structure edwards.affine.AffinePoint.«i686-tables» where
+structure edwards.affine.AffinePoint.«32bit-tables» where
   x : backend.serial.u32.field.FieldElement2625
   y : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::edwards::affine::AffinePoint::i686-no-tables]
+/-- [curve25519_dalek::edwards::affine::AffinePoint::32bit-notables]
     Source: 'curve25519-dalek/src/edwards/affine.rs', lines 12:0-15:1
     Visibility: public -/
-structure edwards.affine.AffinePoint.«i686-no-tables» where
+structure edwards.affine.AffinePoint.«32bit-notables» where
   x : backend.serial.u32.field.FieldElement2625
   y : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::x86_64-tables}::compress_batch::{closure#1}]
+/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::64bit-tables}::compress_batch::{closure#1}]
     Source: 'curve25519-dalek/src/edwards.rs', lines 630:29-634:9 -/
-def edwards.«EdwardsPointx86_64-tables».compress_batch.closure_1 (N :
+def edwards.«EdwardsPoint64bit-tables».compress_batch.closure_1 (N :
   Std.Usize) :=
-  Array edwards.EdwardsPoint.«x86_64-tables» N × Array
+  Array edwards.EdwardsPoint.«64bit-tables» N × Array
   backend.serial.u64.field.FieldElement51 N
 
-/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::x86_64-tables}::compress_batch::{closure}]
+/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::64bit-tables}::compress_batch::{closure}]
     Source: 'curve25519-dalek/src/edwards.rs', lines 627:50-627:65 -/
 @[reducible]
-def edwards.«EdwardsPointx86_64-tables».compress_batch.closure (N :
-  Std.Usize) :=
-  Array edwards.EdwardsPoint.«x86_64-tables» N
-
-/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::x86_64-no-tables}::compress_batch::{closure#1}]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 630:29-634:9 -/
-def edwards.«EdwardsPointx86_64-no-tables».compress_batch.closure_1 (N :
-  Std.Usize) :=
-  Array edwards.EdwardsPoint.«x86_64-no-tables» N × Array
-  backend.serial.u64.field.FieldElement51 N
-
-/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::x86_64-no-tables}::compress_batch::{closure}]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 627:50-627:65 -/
-@[reducible]
-def edwards.«EdwardsPointx86_64-no-tables».compress_batch.closure (N :
-  Std.Usize) :=
-  Array edwards.EdwardsPoint.«x86_64-no-tables» N
-
-/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::i686-tables}::compress_batch::{closure#1}]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 630:29-634:9 -/
-def edwards.«EdwardsPointi686-tables».compress_batch.closure_1 (N :
-  Std.Usize) :=
-  Array edwards.EdwardsPoint.«i686-tables» N × Array
-  backend.serial.u32.field.FieldElement2625 N
-
-/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::i686-tables}::compress_batch::{closure}]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 627:50-627:65 -/
-@[reducible]
-def edwards.«EdwardsPointi686-tables».compress_batch.closure (N : Std.Usize)
+def edwards.«EdwardsPoint64bit-tables».compress_batch.closure (N : Std.Usize)
   :=
-  Array edwards.EdwardsPoint.«i686-tables» N
+  Array edwards.EdwardsPoint.«64bit-tables» N
 
-/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::i686-no-tables}::compress_batch::{closure#1}]
+/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::64bit-notables}::compress_batch::{closure#1}]
     Source: 'curve25519-dalek/src/edwards.rs', lines 630:29-634:9 -/
-def edwards.«EdwardsPointi686-no-tables».compress_batch.closure_1 (N :
+def edwards.«EdwardsPoint64bit-notables».compress_batch.closure_1 (N :
   Std.Usize) :=
-  Array edwards.EdwardsPoint.«i686-no-tables» N × Array
-  backend.serial.u32.field.FieldElement2625 N
+  Array edwards.EdwardsPoint.«64bit-notables» N × Array
+  backend.serial.u64.field.FieldElement51 N
 
-/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::i686-no-tables}::compress_batch::{closure}]
+/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::64bit-notables}::compress_batch::{closure}]
     Source: 'curve25519-dalek/src/edwards.rs', lines 627:50-627:65 -/
 @[reducible]
-def edwards.«EdwardsPointi686-no-tables».compress_batch.closure (N :
+def edwards.«EdwardsPoint64bit-notables».compress_batch.closure (N :
   Std.Usize) :=
-  Array edwards.EdwardsPoint.«i686-no-tables» N
+  Array edwards.EdwardsPoint.«64bit-notables» N
 
-/-- [curve25519_dalek::edwards::VartimeEdwardsPrecomputation::x86_64-tables]
+/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::32bit-tables}::compress_batch::{closure#1}]
+    Source: 'curve25519-dalek/src/edwards.rs', lines 630:29-634:9 -/
+def edwards.«EdwardsPoint32bit-tables».compress_batch.closure_1 (N :
+  Std.Usize) :=
+  Array edwards.EdwardsPoint.«32bit-tables» N × Array
+  backend.serial.u32.field.FieldElement2625 N
+
+/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::32bit-tables}::compress_batch::{closure}]
+    Source: 'curve25519-dalek/src/edwards.rs', lines 627:50-627:65 -/
+@[reducible]
+def edwards.«EdwardsPoint32bit-tables».compress_batch.closure (N : Std.Usize)
+  :=
+  Array edwards.EdwardsPoint.«32bit-tables» N
+
+/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::32bit-notables}::compress_batch::{closure#1}]
+    Source: 'curve25519-dalek/src/edwards.rs', lines 630:29-634:9 -/
+def edwards.«EdwardsPoint32bit-notables».compress_batch.closure_1 (N :
+  Std.Usize) :=
+  Array edwards.EdwardsPoint.«32bit-notables» N × Array
+  backend.serial.u32.field.FieldElement2625 N
+
+/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::32bit-notables}::compress_batch::{closure}]
+    Source: 'curve25519-dalek/src/edwards.rs', lines 627:50-627:65 -/
+@[reducible]
+def edwards.«EdwardsPoint32bit-notables».compress_batch.closure (N :
+  Std.Usize) :=
+  Array edwards.EdwardsPoint.«32bit-notables» N
+
+/-- [curve25519_dalek::edwards::VartimeEdwardsPrecomputation::64bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1032:0-1032:82
     Visibility: public -/
 @[reducible]
-def edwards.VartimeEdwardsPrecomputation.«x86_64-tables» :=
-  backend.VartimePrecomputedStraus.«x86_64-tables»
+def edwards.VartimeEdwardsPrecomputation.«64bit-tables» :=
+  backend.VartimePrecomputedStraus.«64bit-tables»
 
-/-- [curve25519_dalek::edwards::VartimeEdwardsPrecomputation::x86_64-no-tables]
+/-- [curve25519_dalek::edwards::VartimeEdwardsPrecomputation::64bit-notables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1032:0-1032:82
     Visibility: public -/
 @[reducible]
-def edwards.VartimeEdwardsPrecomputation.«x86_64-no-tables» :=
-  backend.VartimePrecomputedStraus.«x86_64-no-tables»
+def edwards.VartimeEdwardsPrecomputation.«64bit-notables» :=
+  backend.VartimePrecomputedStraus.«64bit-notables»
 
-/-- [curve25519_dalek::edwards::VartimeEdwardsPrecomputation::i686-tables]
+/-- [curve25519_dalek::edwards::VartimeEdwardsPrecomputation::32bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1032:0-1032:82
     Visibility: public -/
 @[reducible]
-def edwards.VartimeEdwardsPrecomputation.«i686-tables» :=
-  backend.VartimePrecomputedStraus.«i686-tables»
+def edwards.VartimeEdwardsPrecomputation.«32bit-tables» :=
+  backend.VartimePrecomputedStraus.«32bit-tables»
 
-/-- [curve25519_dalek::edwards::VartimeEdwardsPrecomputation::i686-no-tables]
+/-- [curve25519_dalek::edwards::VartimeEdwardsPrecomputation::32bit-notables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1032:0-1032:82
     Visibility: public -/
 @[reducible]
-def edwards.VartimeEdwardsPrecomputation.«i686-no-tables» :=
-  backend.VartimePrecomputedStraus.«i686-no-tables»
+def edwards.VartimeEdwardsPrecomputation.«32bit-notables» :=
+  backend.VartimePrecomputedStraus.«32bit-notables»
 
 /-- Trait declaration: [curve25519_dalek::traits::BasepointTable]
     Source: 'curve25519-dalek/src/traits.rs', lines 51:0-75:1
@@ -790,21 +788,21 @@ structure traits.BasepointTable (Self : Type _) (Self_Point : Type _) where
 @[reducible]
 def window.LookupTableRadix32 (T : Type _) := Array T 16#usize
 
-/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix32::x86_64-tables]
+/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix32::64bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1288:8-1294:9
     Visibility: public -/
 @[reducible]
-def edwards.EdwardsBasepointTableRadix32.«x86_64-tables» :=
+def edwards.EdwardsBasepointTableRadix32.«64bit-tables» :=
   Array (window.LookupTableRadix32
-  backend.serial.curve_models.AffineNielsPoint.«x86_64-tables») 32#usize
+  backend.serial.curve_models.AffineNielsPoint.«64bit-tables») 32#usize
 
-/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix32::i686-tables]
+/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix32::32bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1288:8-1294:9
     Visibility: public -/
 @[reducible]
-def edwards.EdwardsBasepointTableRadix32.«i686-tables» :=
+def edwards.EdwardsBasepointTableRadix32.«32bit-tables» :=
   Array (window.LookupTableRadix32
-  backend.serial.curve_models.AffineNielsPoint.«i686-tables») 32#usize
+  backend.serial.curve_models.AffineNielsPoint.«32bit-tables») 32#usize
 
 /-- [curve25519_dalek::window::LookupTableRadix64]
     Source: 'curve25519-dalek/src/window.rs', lines 47:8-47:51; this code is generated from a macro invocation at: 'curve25519-dalek/src/window.rs', lines 152:8-158:9
@@ -812,21 +810,21 @@ def edwards.EdwardsBasepointTableRadix32.«i686-tables» :=
 @[reducible]
 def window.LookupTableRadix64 (T : Type _) := Array T 32#usize
 
-/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix64::x86_64-tables]
+/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix64::64bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1295:8-1301:9
     Visibility: public -/
 @[reducible]
-def edwards.EdwardsBasepointTableRadix64.«x86_64-tables» :=
+def edwards.EdwardsBasepointTableRadix64.«64bit-tables» :=
   Array (window.LookupTableRadix64
-  backend.serial.curve_models.AffineNielsPoint.«x86_64-tables») 32#usize
+  backend.serial.curve_models.AffineNielsPoint.«64bit-tables») 32#usize
 
-/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix64::i686-tables]
+/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix64::32bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1295:8-1301:9
     Visibility: public -/
 @[reducible]
-def edwards.EdwardsBasepointTableRadix64.«i686-tables» :=
+def edwards.EdwardsBasepointTableRadix64.«32bit-tables» :=
   Array (window.LookupTableRadix64
-  backend.serial.curve_models.AffineNielsPoint.«i686-tables») 32#usize
+  backend.serial.curve_models.AffineNielsPoint.«32bit-tables») 32#usize
 
 /-- [curve25519_dalek::window::LookupTableRadix128]
     Source: 'curve25519-dalek/src/window.rs', lines 47:8-47:51; this code is generated from a macro invocation at: 'curve25519-dalek/src/window.rs', lines 160:8-166:9
@@ -834,21 +832,21 @@ def edwards.EdwardsBasepointTableRadix64.«i686-tables» :=
 @[reducible]
 def window.LookupTableRadix128 (T : Type _) := Array T 64#usize
 
-/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix128::x86_64-tables]
+/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix128::64bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1302:8-1308:9
     Visibility: public -/
 @[reducible]
-def edwards.EdwardsBasepointTableRadix128.«x86_64-tables» :=
+def edwards.EdwardsBasepointTableRadix128.«64bit-tables» :=
   Array (window.LookupTableRadix128
-  backend.serial.curve_models.AffineNielsPoint.«x86_64-tables») 32#usize
+  backend.serial.curve_models.AffineNielsPoint.«64bit-tables») 32#usize
 
-/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix128::i686-tables]
+/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix128::32bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1302:8-1308:9
     Visibility: public -/
 @[reducible]
-def edwards.EdwardsBasepointTableRadix128.«i686-tables» :=
+def edwards.EdwardsBasepointTableRadix128.«32bit-tables» :=
   Array (window.LookupTableRadix128
-  backend.serial.curve_models.AffineNielsPoint.«i686-tables») 32#usize
+  backend.serial.curve_models.AffineNielsPoint.«32bit-tables») 32#usize
 
 /-- [curve25519_dalek::window::LookupTableRadix256]
     Source: 'curve25519-dalek/src/window.rs', lines 47:8-47:51; this code is generated from a macro invocation at: 'curve25519-dalek/src/window.rs', lines 168:8-174:9
@@ -856,49 +854,49 @@ def edwards.EdwardsBasepointTableRadix128.«i686-tables» :=
 @[reducible]
 def window.LookupTableRadix256 (T : Type _) := Array T 128#usize
 
-/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix256::x86_64-tables]
+/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix256::64bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1309:8-1315:9
     Visibility: public -/
 @[reducible]
-def edwards.EdwardsBasepointTableRadix256.«x86_64-tables» :=
+def edwards.EdwardsBasepointTableRadix256.«64bit-tables» :=
   Array (window.LookupTableRadix256
-  backend.serial.curve_models.AffineNielsPoint.«x86_64-tables») 32#usize
+  backend.serial.curve_models.AffineNielsPoint.«64bit-tables») 32#usize
 
-/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix256::i686-tables]
+/-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix256::32bit-tables]
     Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1309:8-1315:9
     Visibility: public -/
 @[reducible]
-def edwards.EdwardsBasepointTableRadix256.«i686-tables» :=
+def edwards.EdwardsBasepointTableRadix256.«32bit-tables» :=
   Array (window.LookupTableRadix256
-  backend.serial.curve_models.AffineNielsPoint.«i686-tables») 32#usize
+  backend.serial.curve_models.AffineNielsPoint.«32bit-tables») 32#usize
 
-/-- [curve25519_dalek::montgomery::ProjectivePoint::i686-no-tables]
+/-- [curve25519_dalek::montgomery::ProjectivePoint::32bit-notables]
     Source: 'curve25519-dalek/src/montgomery.rs', lines 369:0-372:1 -/
-structure montgomery.ProjectivePoint.«i686-no-tables» where
+structure montgomery.ProjectivePoint.«32bit-notables» where
   U : backend.serial.u32.field.FieldElement2625
   W : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::montgomery::ProjectivePoint::i686-tables]
+/-- [curve25519_dalek::montgomery::ProjectivePoint::32bit-tables]
     Source: 'curve25519-dalek/src/montgomery.rs', lines 369:0-372:1 -/
-structure montgomery.ProjectivePoint.«i686-tables» where
+structure montgomery.ProjectivePoint.«32bit-tables» where
   U : backend.serial.u32.field.FieldElement2625
   W : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::montgomery::ProjectivePoint::x86_64-no-tables]
+/-- [curve25519_dalek::montgomery::ProjectivePoint::64bit-notables]
     Source: 'curve25519-dalek/src/montgomery.rs', lines 369:0-372:1 -/
-structure montgomery.ProjectivePoint.«x86_64-no-tables» where
+structure montgomery.ProjectivePoint.«64bit-notables» where
   U : backend.serial.u64.field.FieldElement51
   W : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::montgomery::ProjectivePoint::x86_64-tables]
+/-- [curve25519_dalek::montgomery::ProjectivePoint::64bit-tables]
     Source: 'curve25519-dalek/src/montgomery.rs', lines 369:0-372:1 -/
-structure montgomery.ProjectivePoint.«x86_64-tables» where
+structure montgomery.ProjectivePoint.«64bit-tables» where
   U : backend.serial.u64.field.FieldElement51
   W : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::ristretto::{curve25519_dalek::ristretto::RistrettoPoint::x86_64-tables}::double_and_compress_batch::BatchCompressState]
+/-- [curve25519_dalek::ristretto::{curve25519_dalek::ristretto::RistrettoPoint::64bit-tables}::double_and_compress_batch::BatchCompressState]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 569:8-576:9 -/
-structure ristretto.«RistrettoPointx86_64-tables».double_and_compress_batch.BatchCompressState
+structure ristretto.«RistrettoPoint64bit-tables».double_and_compress_batch.BatchCompressState
   where
   e : backend.serial.u64.field.FieldElement51
   f : backend.serial.u64.field.FieldElement51
@@ -907,9 +905,9 @@ structure ristretto.«RistrettoPointx86_64-tables».double_and_compress_batch.Ba
   eg : backend.serial.u64.field.FieldElement51
   fh : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::ristretto::{curve25519_dalek::ristretto::RistrettoPoint::x86_64-no-tables}::double_and_compress_batch::BatchCompressState]
+/-- [curve25519_dalek::ristretto::{curve25519_dalek::ristretto::RistrettoPoint::64bit-notables}::double_and_compress_batch::BatchCompressState]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 569:8-576:9 -/
-structure ristretto.«RistrettoPointx86_64-no-tables».double_and_compress_batch.BatchCompressState
+structure ristretto.«RistrettoPoint64bit-notables».double_and_compress_batch.BatchCompressState
   where
   e : backend.serial.u64.field.FieldElement51
   f : backend.serial.u64.field.FieldElement51
@@ -918,9 +916,9 @@ structure ristretto.«RistrettoPointx86_64-no-tables».double_and_compress_batch
   eg : backend.serial.u64.field.FieldElement51
   fh : backend.serial.u64.field.FieldElement51
 
-/-- [curve25519_dalek::ristretto::{curve25519_dalek::ristretto::RistrettoPoint::i686-tables}::double_and_compress_batch::BatchCompressState]
+/-- [curve25519_dalek::ristretto::{curve25519_dalek::ristretto::RistrettoPoint::32bit-tables}::double_and_compress_batch::BatchCompressState]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 569:8-576:9 -/
-structure ristretto.«RistrettoPointi686-tables».double_and_compress_batch.BatchCompressState
+structure ristretto.«RistrettoPoint32bit-tables».double_and_compress_batch.BatchCompressState
   where
   e : backend.serial.u32.field.FieldElement2625
   f : backend.serial.u32.field.FieldElement2625
@@ -929,9 +927,9 @@ structure ristretto.«RistrettoPointi686-tables».double_and_compress_batch.Batc
   eg : backend.serial.u32.field.FieldElement2625
   fh : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::ristretto::{curve25519_dalek::ristretto::RistrettoPoint::i686-no-tables}::double_and_compress_batch::BatchCompressState]
+/-- [curve25519_dalek::ristretto::{curve25519_dalek::ristretto::RistrettoPoint::32bit-notables}::double_and_compress_batch::BatchCompressState]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 569:8-576:9 -/
-structure ristretto.«RistrettoPointi686-no-tables».double_and_compress_batch.BatchCompressState
+structure ristretto.«RistrettoPoint32bit-notables».double_and_compress_batch.BatchCompressState
   where
   e : backend.serial.u32.field.FieldElement2625
   f : backend.serial.u32.field.FieldElement2625
@@ -940,97 +938,97 @@ structure ristretto.«RistrettoPointi686-no-tables».double_and_compress_batch.B
   eg : backend.serial.u32.field.FieldElement2625
   fh : backend.serial.u32.field.FieldElement2625
 
-/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::x86_64-tables> for curve25519_dalek::ristretto::RistrettoPoint::x86_64-tables}::optional_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::64bit-tables> for curve25519_dalek::ristretto::RistrettoPoint::64bit-tables}::optional_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1007:43-1007:50 -/
 @[reducible]
-def ristretto.«VartimeMultiscalarMulRistrettoPointx86_64-tablesRistrettoPointx86_64-tables».optional_multiscalar_mul.closure
+def ristretto.«VartimeMultiscalarMulRistrettoPoint64bit-tablesRistrettoPoint64bit-tables».optional_multiscalar_mul.closure
   (I : Type _) (J : Type _) (Clause0_Item : Type _) (Clause0_IntoIter : Type _)
   (Clause2_IntoIter : Type _) :=
 Unit
 
-/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::x86_64-no-tables> for curve25519_dalek::ristretto::RistrettoPoint::x86_64-no-tables}::optional_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::64bit-notables> for curve25519_dalek::ristretto::RistrettoPoint::64bit-notables}::optional_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1007:43-1007:50 -/
 @[reducible]
-def ristretto.«VartimeMultiscalarMulRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables».optional_multiscalar_mul.closure
+def ristretto.«VartimeMultiscalarMulRistrettoPoint64bit-notablesRistrettoPoint64bit-notables».optional_multiscalar_mul.closure
   (I : Type _) (J : Type _) (Clause0_Item : Type _) (Clause0_IntoIter : Type _)
   (Clause2_IntoIter : Type _) :=
 Unit
 
-/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::i686-tables> for curve25519_dalek::ristretto::RistrettoPoint::i686-tables}::optional_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::32bit-tables> for curve25519_dalek::ristretto::RistrettoPoint::32bit-tables}::optional_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1007:43-1007:50 -/
 @[reducible]
-def ristretto.«VartimeMultiscalarMulRistrettoPointi686-tablesRistrettoPointi686-tables».optional_multiscalar_mul.closure
+def ristretto.«VartimeMultiscalarMulRistrettoPoint32bit-tablesRistrettoPoint32bit-tables».optional_multiscalar_mul.closure
   (I : Type _) (J : Type _) (Clause0_Item : Type _) (Clause0_IntoIter : Type _)
   (Clause2_IntoIter : Type _) :=
 Unit
 
-/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::i686-no-tables> for curve25519_dalek::ristretto::RistrettoPoint::i686-no-tables}::optional_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimeMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::32bit-notables> for curve25519_dalek::ristretto::RistrettoPoint::32bit-notables}::optional_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1007:43-1007:50 -/
 @[reducible]
-def ristretto.«VartimeMultiscalarMulRistrettoPointi686-no-tablesRistrettoPointi686-no-tables».optional_multiscalar_mul.closure
+def ristretto.«VartimeMultiscalarMulRistrettoPoint32bit-notablesRistrettoPoint32bit-notables».optional_multiscalar_mul.closure
   (I : Type _) (J : Type _) (Clause0_Item : Type _) (Clause0_IntoIter : Type _)
   (Clause2_IntoIter : Type _) :=
 Unit
 
-/-- [curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::x86_64-tables]
+/-- [curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::64bit-tables]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1022:0-1022:84
     Visibility: public -/
 @[reducible]
-def ristretto.VartimeRistrettoPrecomputation.«x86_64-tables» :=
-  backend.VartimePrecomputedStraus.«x86_64-tables»
+def ristretto.VartimeRistrettoPrecomputation.«64bit-tables» :=
+  backend.VartimePrecomputedStraus.«64bit-tables»
 
-/-- [curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::x86_64-no-tables]
+/-- [curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::64bit-notables]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1022:0-1022:84
     Visibility: public -/
 @[reducible]
-def ristretto.VartimeRistrettoPrecomputation.«x86_64-no-tables» :=
-  backend.VartimePrecomputedStraus.«x86_64-no-tables»
+def ristretto.VartimeRistrettoPrecomputation.«64bit-notables» :=
+  backend.VartimePrecomputedStraus.«64bit-notables»
 
-/-- [curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::i686-tables]
+/-- [curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::32bit-tables]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1022:0-1022:84
     Visibility: public -/
 @[reducible]
-def ristretto.VartimeRistrettoPrecomputation.«i686-tables» :=
-  backend.VartimePrecomputedStraus.«i686-tables»
+def ristretto.VartimeRistrettoPrecomputation.«32bit-tables» :=
+  backend.VartimePrecomputedStraus.«32bit-tables»
 
-/-- [curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::i686-no-tables]
+/-- [curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::32bit-notables]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1022:0-1022:84
     Visibility: public -/
 @[reducible]
-def ristretto.VartimeRistrettoPrecomputation.«i686-no-tables» :=
-  backend.VartimePrecomputedStraus.«i686-no-tables»
+def ristretto.VartimeRistrettoPrecomputation.«32bit-notables» :=
+  backend.VartimePrecomputedStraus.«32bit-notables»
 
-/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::x86_64-tables> for curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::x86_64-tables}::optional_mixed_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::64bit-tables> for curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::64bit-tables}::optional_mixed_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1065:43-1065:50 -/
 @[reducible]
-def ristretto.«VartimePrecomputedMultiscalarMulVartimeRistrettoPrecomputationx86_64-tablesRistrettoPointx86_64-tables».optional_mixed_multiscalar_mul.closure
+def ristretto.«VartimePrecomputedMultiscalarMulVartimeRistrettoPrecomputation64bit-tablesRistrettoPoint64bit-tables».optional_mixed_multiscalar_mul.closure
   (I : Type _) (J : Type _) (K : Type _) (Clause0_Item : Type _)
   (Clause0_IntoIter : Type _) (Clause2_Item : Type _) (Clause2_IntoIter :
   Type _) (Clause4_IntoIter : Type _) :=
 Unit
 
-/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::x86_64-no-tables> for curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::x86_64-no-tables}::optional_mixed_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::64bit-notables> for curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::64bit-notables}::optional_mixed_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1065:43-1065:50 -/
 @[reducible]
-def ristretto.«VartimePrecomputedMultiscalarMulVartimeRistrettoPrecomputationx86_64-no-tablesRistrettoPointx86_64-no-tables».optional_mixed_multiscalar_mul.closure
+def ristretto.«VartimePrecomputedMultiscalarMulVartimeRistrettoPrecomputation64bit-notablesRistrettoPoint64bit-notables».optional_mixed_multiscalar_mul.closure
   (I : Type _) (J : Type _) (K : Type _) (Clause0_Item : Type _)
   (Clause0_IntoIter : Type _) (Clause2_Item : Type _) (Clause2_IntoIter :
   Type _) (Clause4_IntoIter : Type _) :=
 Unit
 
-/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::i686-tables> for curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::i686-tables}::optional_mixed_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::32bit-tables> for curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::32bit-tables}::optional_mixed_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1065:43-1065:50 -/
 @[reducible]
-def ristretto.«VartimePrecomputedMultiscalarMulVartimeRistrettoPrecomputationi686-tablesRistrettoPointi686-tables».optional_mixed_multiscalar_mul.closure
+def ristretto.«VartimePrecomputedMultiscalarMulVartimeRistrettoPrecomputation32bit-tablesRistrettoPoint32bit-tables».optional_mixed_multiscalar_mul.closure
   (I : Type _) (J : Type _) (K : Type _) (Clause0_Item : Type _)
   (Clause0_IntoIter : Type _) (Clause2_Item : Type _) (Clause2_IntoIter :
   Type _) (Clause4_IntoIter : Type _) :=
 Unit
 
-/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::i686-no-tables> for curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::i686-no-tables}::optional_mixed_multiscalar_mul::{closure}]
+/-- [curve25519_dalek::ristretto::{impl curve25519_dalek::traits::VartimePrecomputedMultiscalarMul<curve25519_dalek::ristretto::RistrettoPoint::32bit-notables> for curve25519_dalek::ristretto::VartimeRistrettoPrecomputation::32bit-notables}::optional_mixed_multiscalar_mul::{closure}]
     Source: 'curve25519-dalek/src/ristretto.rs', lines 1065:43-1065:50 -/
 @[reducible]
-def ristretto.«VartimePrecomputedMultiscalarMulVartimeRistrettoPrecomputationi686-no-tablesRistrettoPointi686-no-tables».optional_mixed_multiscalar_mul.closure
+def ristretto.«VartimePrecomputedMultiscalarMulVartimeRistrettoPrecomputation32bit-notablesRistrettoPoint32bit-notables».optional_mixed_multiscalar_mul.closure
   (I : Type _) (J : Type _) (K : Type _) (Clause0_Item : Type _)
   (Clause0_IntoIter : Type _) (Clause2_Item : Type _) (Clause2_IntoIter :
   Type _) (Clause4_IntoIter : Type _) :=

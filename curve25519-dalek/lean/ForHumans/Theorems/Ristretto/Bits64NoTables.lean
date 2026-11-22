@@ -10,15 +10,15 @@ public import ForHumans.Specs.Representation.Array
 public import ForHumans.Specs.Representation.Scalar
 import Proofs -- shake: keep
 public import ForHumans.Specs.Edwards
-public import ForHumans.Specs.Representation.Edwards.I686Tables
+public import ForHumans.Specs.Representation.Edwards.Bits64NoTables
 public import ForHumans.Specs.Representation.Montgomery
-public import ForHumans.Specs.Representation.ScalarMul.I686Tables
+public import ForHumans.Specs.Representation.ScalarMul.Bits64NoTables
 public import ForHumans.Specs.Ristretto
 public section
 
 set_option linter.style.longLine false
 
-/-! # `Ristretto` for `i686-tables`, generated from `ForHumans/Theorems/Ristretto.lean` -/
+/-! # `Ristretto` for `64bit-notables`, generated from `ForHumans/Theorems/Ristretto.lean` -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek
 open curve25519 (Ristretto.decodeRep Ristretto.encodeRep Ristretto.fromUniformRep Ristretto.mapRep
@@ -26,26 +26,26 @@ open curve25519 (Ristretto.decodeRep Ristretto.encodeRep Ristretto.fromUniformRe
 open Curve25519Dalek.ristretto (CompressedRistretto)
 open Curve25519Dalek.scalar (Scalar)
 
-namespace Theorems.ristretto.«i686-tables»
+namespace Theorems.ristretto.«64bit-notables»
 
 /-- `RistrettoPoint` in this configuration. -/
-abbrev RistrettoPoint := ristretto.RistrettoPoint.«i686-tables»
+abbrev RistrettoPoint := ristretto.RistrettoPoint.«64bit-notables»
 
 /-- `VartimeRistrettoPrecomputation` in this configuration. -/
-abbrev VartimeRistrettoPrecomputation := ristretto.VartimeRistrettoPrecomputation.«i686-tables»
+abbrev VartimeRistrettoPrecomputation := ristretto.VartimeRistrettoPrecomputation.«64bit-notables»
 
 /-- `CompressedRistretto::decompress`: RFC 9496's decoding `decodeRep` of the bytes, `none` exactly
 when they are not a valid ristretto255 encoding; the point is even (a ristretto255 representative).
 -/
 theorem CompressedRistretto.decompress (c : CompressedRistretto) :
-    CompressedRistretto.decompress.«i686-tables» c ⦃ (r : Option RistrettoPoint) =>
+    CompressedRistretto.decompress.«64bit-notables» c ⦃ (r : Option RistrettoPoint) =>
       r.map (·.toPoint) = Ristretto.decodeRep c.toVector ∧
       ∀ P, r = some P → P.OnCurve ∧ Even P.toPoint ∧ P.IsBounded ⦄ :=
-  ristretto.CompressedRistretto.«i686-tables».decompress_spec c
+  ristretto.CompressedRistretto.«64bit-notables».decompress_spec c
 
 namespace RistrettoPoint
 
-open ristretto.«RistrettoPointi686-tables»
+open ristretto.«RistrettoPoint64bit-notables»
 
 /-- `RistrettoPoint::compress`: RFC 9496's encoding of the represented point. -/
 theorem compress (P : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
@@ -75,7 +75,7 @@ end RistrettoPoint
 
 namespace RistrettoPoint
 
-open ristretto.RistrettoPoint.«i686-tables».Insts
+open ristretto.RistrettoPoint.«64bit-notables».Insts
 
 /-- `Identity for RistrettoPoint` represents the neutral element. -/
 theorem identity :
@@ -92,9 +92,9 @@ theorem default :
 /-- `PartialEq for RistrettoPoint`: equality in the Ristretto group. -/
 theorem eq (P Q : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
     (hQ' : Q.IsBounded) :
-    «CoreCmpPartialEqRistrettoPointi686-tables».eq P Q ⦃ (r : Bool) =>
+    «CoreCmpPartialEqRistrettoPoint64bit-notables».eq P Q ⦃ (r : Bool) =>
       r = true ↔ edwards.Rel P.toPoint Q.toPoint ⦄ :=
-  «CoreCmpPartialEqRistrettoPointi686-tables».eq_spec P Q hP' hQ' hP hQ
+  «CoreCmpPartialEqRistrettoPoint64bit-notables».eq_spec P Q hP' hQ' hP hQ
 
 /-- `ConstantTimeEq for RistrettoPoint`: equality in the Ristretto group, i.e. of the classes of the
 represented points (`X₁ Y₂ = Y₁ X₂` or `X₁ X₂ = Y₁ Y₂`). -/
@@ -107,81 +107,81 @@ theorem ct_eq (P Q : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : 
 end RistrettoPoint
 
 /-- `impl Add<&RistrettoPoint> for &RistrettoPoint` -/
-abbrev «&P + &Q» := open «Shared0RistrettoPointi686-tables».Insts in
-  «CoreOpsArithAddSharedARistrettoPointi686-tablesRistrettoPointi686-tables».add
+abbrev «&P + &Q» := open «Shared0RistrettoPoint64bit-notables».Insts in
+  «CoreOpsArithAddSharedARistrettoPoint64bit-notablesRistrettoPoint64bit-notables».add
 /-- `impl Add<&RistrettoPoint> for RistrettoPoint` -/
-abbrev «P + &Q» := open ristretto.RistrettoPoint.«i686-tables».Insts in
-  «CoreOpsArithAddSharedBRistrettoPointi686-tablesRistrettoPointi686-tables».add
+abbrev «P + &Q» := open ristretto.RistrettoPoint.«64bit-notables».Insts in
+  «CoreOpsArithAddSharedBRistrettoPoint64bit-notablesRistrettoPoint64bit-notables».add
 /-- `impl Add<RistrettoPoint> for &RistrettoPoint` -/
-abbrev «&P + Q» := open «SharedARistrettoPointi686-tables».Insts in
-  «CoreOpsArithAddRistrettoPointi686-tablesRistrettoPointi686-tables».add
+abbrev «&P + Q» := open «SharedARistrettoPoint64bit-notables».Insts in
+  «CoreOpsArithAddRistrettoPoint64bit-notablesRistrettoPoint64bit-notables».add
 /-- `impl Add<RistrettoPoint> for RistrettoPoint` -/
-abbrev «P + Q» := open ristretto.RistrettoPoint.«i686-tables».Insts in
-  «CoreOpsArithAddRistrettoPointi686-tablesRistrettoPointi686-tables».add
+abbrev «P + Q» := open ristretto.RistrettoPoint.«64bit-notables».Insts in
+  «CoreOpsArithAddRistrettoPoint64bit-notablesRistrettoPoint64bit-notables».add
 /-- `impl AddAssign<&RistrettoPoint> for RistrettoPoint` -/
-abbrev «P += &Q» := open ristretto.RistrettoPoint.«i686-tables».Insts in
-  «CoreOpsArithAddAssignShared0RistrettoPointi686-tables».add_assign
+abbrev «P += &Q» := open ristretto.RistrettoPoint.«64bit-notables».Insts in
+  «CoreOpsArithAddAssignShared0RistrettoPoint64bit-notables».add_assign
 /-- `impl AddAssign<RistrettoPoint> for RistrettoPoint` -/
-abbrev «P += Q» := open ristretto.RistrettoPoint.«i686-tables».Insts in
-  «CoreOpsArithAddAssignRistrettoPointi686-tables».add_assign
+abbrev «P += Q» := open ristretto.RistrettoPoint.«64bit-notables».Insts in
+  «CoreOpsArithAddAssignRistrettoPoint64bit-notables».add_assign
 
 /-- `impl Sub<&RistrettoPoint> for &RistrettoPoint` -/
-abbrev «&P - &Q» := open «Shared0RistrettoPointi686-tables».Insts in
-  «CoreOpsArithSubSharedARistrettoPointi686-tablesRistrettoPointi686-tables».sub
+abbrev «&P - &Q» := open «Shared0RistrettoPoint64bit-notables».Insts in
+  «CoreOpsArithSubSharedARistrettoPoint64bit-notablesRistrettoPoint64bit-notables».sub
 /-- `impl Sub<&RistrettoPoint> for RistrettoPoint` -/
-abbrev «P - &Q» := open ristretto.RistrettoPoint.«i686-tables».Insts in
-  «CoreOpsArithSubSharedBRistrettoPointi686-tablesRistrettoPointi686-tables».sub
+abbrev «P - &Q» := open ristretto.RistrettoPoint.«64bit-notables».Insts in
+  «CoreOpsArithSubSharedBRistrettoPoint64bit-notablesRistrettoPoint64bit-notables».sub
 /-- `impl Sub<RistrettoPoint> for &RistrettoPoint` -/
-abbrev «&P - Q» := open «SharedARistrettoPointi686-tables».Insts in
-  «CoreOpsArithSubRistrettoPointi686-tablesRistrettoPointi686-tables».sub
+abbrev «&P - Q» := open «SharedARistrettoPoint64bit-notables».Insts in
+  «CoreOpsArithSubRistrettoPoint64bit-notablesRistrettoPoint64bit-notables».sub
 /-- `impl Sub<RistrettoPoint> for RistrettoPoint` -/
-abbrev «P - Q» := open ristretto.RistrettoPoint.«i686-tables».Insts in
-  «CoreOpsArithSubRistrettoPointi686-tablesRistrettoPointi686-tables».sub
+abbrev «P - Q» := open ristretto.RistrettoPoint.«64bit-notables».Insts in
+  «CoreOpsArithSubRistrettoPoint64bit-notablesRistrettoPoint64bit-notables».sub
 /-- `impl SubAssign<&RistrettoPoint> for RistrettoPoint` -/
-abbrev «P -= &Q» := open ristretto.RistrettoPoint.«i686-tables».Insts in
-  «CoreOpsArithSubAssignShared0RistrettoPointi686-tables».sub_assign
+abbrev «P -= &Q» := open ristretto.RistrettoPoint.«64bit-notables».Insts in
+  «CoreOpsArithSubAssignShared0RistrettoPoint64bit-notables».sub_assign
 /-- `impl SubAssign<RistrettoPoint> for RistrettoPoint` -/
-abbrev «P -= Q» := open ristretto.RistrettoPoint.«i686-tables».Insts in
-  «CoreOpsArithSubAssignRistrettoPointi686-tables».sub_assign
+abbrev «P -= Q» := open ristretto.RistrettoPoint.«64bit-notables».Insts in
+  «CoreOpsArithSubAssignRistrettoPoint64bit-notables».sub_assign
 
 /-- `impl Neg for &RistrettoPoint` -/
-abbrev «-&P» := open «Shared0RistrettoPointi686-tables».Insts in
-  «CoreOpsArithNegRistrettoPointi686-tables».neg
+abbrev «-&P» := open «Shared0RistrettoPoint64bit-notables».Insts in
+  «CoreOpsArithNegRistrettoPoint64bit-notables».neg
 /-- `impl Neg for RistrettoPoint` -/
-abbrev «-P» := open ristretto.RistrettoPoint.«i686-tables».Insts in
-  «CoreOpsArithNegRistrettoPointi686-tables».neg
+abbrev «-P» := open ristretto.RistrettoPoint.«64bit-notables».Insts in
+  «CoreOpsArithNegRistrettoPoint64bit-notables».neg
 
 /-- `impl Mul<&Scalar> for &RistrettoPoint` -/
-abbrev «&P * &s» := open «Shared0RistrettoPointi686-tables».Insts in
-  «CoreOpsArithMulSharedAScalarRistrettoPointi686-tables».mul
+abbrev «&P * &s» := open «Shared0RistrettoPoint64bit-notables».Insts in
+  «CoreOpsArithMulSharedAScalarRistrettoPoint64bit-notables».mul
 /-- `impl Mul<&Scalar> for RistrettoPoint` -/
-abbrev «P * &s» := open ristretto.RistrettoPoint.«i686-tables».Insts in
-  «CoreOpsArithMulSharedBScalarRistrettoPointi686-tables».mul
+abbrev «P * &s» := open ristretto.RistrettoPoint.«64bit-notables».Insts in
+  «CoreOpsArithMulSharedBScalarRistrettoPoint64bit-notables».mul
 /-- `impl Mul<Scalar> for &RistrettoPoint` -/
-abbrev «&P * s» := open «SharedARistrettoPointi686-tables».Insts in
-  «CoreOpsArithMulScalarRistrettoPointi686-tables».mul
+abbrev «&P * s» := open «SharedARistrettoPoint64bit-notables».Insts in
+  «CoreOpsArithMulScalarRistrettoPoint64bit-notables».mul
 /-- `impl Mul<Scalar> for RistrettoPoint` -/
-abbrev «P * s» := open ristretto.RistrettoPoint.«i686-tables».Insts in
-  «CoreOpsArithMulScalarRistrettoPointi686-tables».mul
+abbrev «P * s» := open ristretto.RistrettoPoint.«64bit-notables».Insts in
+  «CoreOpsArithMulScalarRistrettoPoint64bit-notables».mul
 /-- `impl MulAssign<&Scalar> for RistrettoPoint` -/
 abbrev «P *= &s» :=
-  ristretto.RistrettoPoint.«i686-tables».Insts.CoreOpsArithMulAssignSharedAScalar.mul_assign
+  ristretto.RistrettoPoint.«64bit-notables».Insts.CoreOpsArithMulAssignSharedAScalar.mul_assign
 /-- `impl MulAssign<Scalar> for RistrettoPoint` -/
 abbrev «P *= s» :=
-  ristretto.RistrettoPoint.«i686-tables».Insts.CoreOpsArithMulAssignScalar.mul_assign
+  ristretto.RistrettoPoint.«64bit-notables».Insts.CoreOpsArithMulAssignScalar.mul_assign
 
 /-- `impl Mul<&RistrettoPoint> for &Scalar` -/
 abbrev «&s * &P» := open Shared0Scalar.Insts in
-  «CoreOpsArithMulSharedARistrettoPointi686-tablesRistrettoPointi686-tables».mul
+  «CoreOpsArithMulSharedARistrettoPoint64bit-notablesRistrettoPoint64bit-notables».mul
 /-- `impl Mul<&RistrettoPoint> for Scalar` -/
 abbrev «s * &P» := open scalar.Scalar.Insts in
-  «CoreOpsArithMulSharedBRistrettoPointi686-tablesRistrettoPointi686-tables».mul
+  «CoreOpsArithMulSharedBRistrettoPoint64bit-notablesRistrettoPoint64bit-notables».mul
 /-- `impl Mul<RistrettoPoint> for &Scalar` -/
 abbrev «&s * P» := open SharedAScalar.Insts in
-  «CoreOpsArithMulRistrettoPointi686-tablesRistrettoPointi686-tables».mul
+  «CoreOpsArithMulRistrettoPoint64bit-notablesRistrettoPoint64bit-notables».mul
 /-- `impl Mul<RistrettoPoint> for Scalar` -/
 abbrev «s * P» := open scalar.Scalar.Insts in
-  «CoreOpsArithMulRistrettoPointi686-tablesRistrettoPointi686-tables».mul
+  «CoreOpsArithMulRistrettoPoint64bit-notablesRistrettoPoint64bit-notables».mul
 
 namespace RistrettoPoint
 
@@ -191,8 +191,8 @@ theorem add (P Q : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.
     ∀ add ∈ [«&P + &Q», «P + &Q», «&P + Q», «P + Q», «P += &Q», «P += Q»],
       add P Q ⦃ (r : RistrettoPoint) =>
         r.OnCurve ∧ r.toPoint = P.toPoint + Q.toPoint ∧ r.IsBounded ⦄ := by
-  open «Shared0RistrettoPointi686-tables».Insts in
-  variants [«CoreOpsArithAddSharedARistrettoPointi686-tablesRistrettoPointi686-tables».add_spec]
+  open «Shared0RistrettoPoint64bit-notables».Insts in
+  variants [«CoreOpsArithAddSharedARistrettoPoint64bit-notablesRistrettoPoint64bit-notables».add_spec]
 
 /-- `Sub<&RistrettoPoint> for &RistrettoPoint` on the represented points. -/
 theorem sub (P Q : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
@@ -200,8 +200,8 @@ theorem sub (P Q : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.
     ∀ sub ∈ [«&P - &Q», «P - &Q», «&P - Q», «P - Q», «P -= &Q», «P -= Q»],
       sub P Q ⦃ (r : RistrettoPoint) =>
         r.OnCurve ∧ r.toPoint = P.toPoint - Q.toPoint ∧ r.IsBounded ⦄ := by
-  open «Shared0RistrettoPointi686-tables».Insts in
-  variants [«CoreOpsArithSubSharedARistrettoPointi686-tablesRistrettoPointi686-tables».sub_spec]
+  open «Shared0RistrettoPoint64bit-notables».Insts in
+  variants [«CoreOpsArithSubSharedARistrettoPoint64bit-notablesRistrettoPoint64bit-notables».sub_spec]
 
 /-- `Sum for RistrettoPoint`: the sum of the points yielded by the iterator (through `borrow`). -/
 theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint)
@@ -210,18 +210,18 @@ theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T RistrettoPoint)
     (hborrow : List.Forall₂
       (fun x P => borrowInst.borrow x ⦃ (P' : RistrettoPoint) => P' = P ⦄) xs Ps)
     (hPs : ∀ P ∈ Ps, P.OnCurve) (hPs' : ∀ P ∈ Ps, P.IsBounded) :
-    ristretto.RistrettoPoint.«i686-tables».Insts.CoreIterTraitsAccumSum.sum borrowInst iterInst
+    ristretto.RistrettoPoint.«64bit-notables».Insts.CoreIterTraitsAccumSum.sum borrowInst iterInst
       iter ⦃ (r : RistrettoPoint) =>
         r.OnCurve ∧ r.toPoint = (Ps.map (·.toPoint)).sum ∧ r.IsBounded ⦄ := by
-  apply ristretto.RistrettoPoint.«i686-tables».Insts.CoreIterTraitsAccumSum.sum_spec <;>
+  apply ristretto.RistrettoPoint.«64bit-notables».Insts.CoreIterTraitsAccumSum.sum_spec <;>
     assumption
 
 /-- `Neg for RistrettoPoint` negates the represented point. -/
 theorem neg (P : RistrettoPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
     ∀ neg ∈ [«-&P», «-P»],
       neg P ⦃ (r : RistrettoPoint) => r.OnCurve ∧ r.toPoint = -P.toPoint ∧ r.IsBounded ⦄ := by
-  open «Shared0RistrettoPointi686-tables».Insts in
-  variants [«CoreOpsArithNegRistrettoPointi686-tables».neg_spec]
+  open «Shared0RistrettoPoint64bit-notables».Insts in
+  variants [«CoreOpsArithNegRistrettoPoint64bit-notables».neg_spec]
 
 /-- `Mul<&Scalar> for &RistrettoPoint`: `s • P` (unreduced, `< 2^255`). -/
 theorem mul (P : RistrettoPoint) (s : Scalar) (hP : P.OnCurve) (hP' : P.IsBounded)
@@ -229,8 +229,8 @@ theorem mul (P : RistrettoPoint) (s : Scalar) (hP : P.OnCurve) (hP' : P.IsBounde
     ∀ mul ∈ [«&P * &s», «P * &s», «&P * s», «P * s», «P *= &s», «P *= s»],
       mul P s ⦃ (r : RistrettoPoint) =>
         r.OnCurve ∧ r.toPoint = s.asNat • P.toPoint ∧ r.IsBounded ⦄ := by
-  open «Shared0RistrettoPointi686-tables».Insts in
-  variants [«CoreOpsArithMulSharedAScalarRistrettoPointi686-tables».mul_spec]
+  open «Shared0RistrettoPoint64bit-notables».Insts in
+  variants [«CoreOpsArithMulSharedAScalarRistrettoPoint64bit-notables».mul_spec]
 
 /-- `Mul<&RistrettoPoint> for &Scalar`: as `&RistrettoPoint * &Scalar`. -/
 theorem mul_left (s : Scalar) (P : RistrettoPoint) (hs : s.asNat < 2 ^ 255) (hP : P.OnCurve)
@@ -239,19 +239,19 @@ theorem mul_left (s : Scalar) (P : RistrettoPoint) (hs : s.asNat < 2 ^ 255) (hP 
       mul s P ⦃ (r : RistrettoPoint) =>
         r.OnCurve ∧ r.toPoint = s.asNat • P.toPoint ∧ r.IsBounded ⦄ := by
   open Shared0Scalar.Insts in
-  variants [«CoreOpsArithMulSharedARistrettoPointi686-tablesRistrettoPointi686-tables».mul_spec]
+  variants [«CoreOpsArithMulSharedARistrettoPoint64bit-notablesRistrettoPoint64bit-notables».mul_spec]
 
 /-- `RistrettoPoint::mul_base`: `s • B` for the basepoint `B` (unreduced, `< 2^255`). -/
 theorem mul_base (s : Scalar) (hs : s.asNat < 2 ^ 255) :
-    ristretto.«RistrettoPointi686-tables».mul_base s ⦃ (r : RistrettoPoint) =>
+    ristretto.«RistrettoPoint64bit-notables».mul_base s ⦃ (r : RistrettoPoint) =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = s.asNat • basepoint ∧ r.IsBounded ⦄ :=
-  ristretto.«RistrettoPointi686-tables».mul_base_spec s hs
+  ristretto.«RistrettoPoint64bit-notables».mul_base_spec s hs
 
 end RistrettoPoint
 
 namespace RistrettoPoint
 
-open ristretto.RistrettoPoint.«i686-tables».Insts
+open ristretto.RistrettoPoint.«64bit-notables».Insts
 
 /-- `MultiscalarMul::multiscalar_mul` for `RistrettoPoint`: `∑ s_i • P_i` over the scalars and
 points the two inputs yield, which must be equally many (the patched `assert_eq!`; unreduced scalars
@@ -271,14 +271,14 @@ theorem multiscalar_mul
       (fun y P => borrowPointInst.borrow y ⦃ (P' : RistrettoPoint) => P' = P ⦄) ys Ps)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hPs : ∀ P ∈ Ps, P.OnCurve)
     (hPs' : ∀ P ∈ Ps, P.IsBounded) (hxs : xs.length ≤ Usize.max) (hlen : xs.length = ys.length) :
-    «Curve25519_dalekTraitsMultiscalarMulRistrettoPointi686-tables».multiscalar_mul
+    «Curve25519_dalekTraitsMultiscalarMulRistrettoPoint64bit-notables».multiscalar_mul
       scalarsInst borrowScalarInst pointsInst borrowPointInst scalars points
       ⦃ (r : RistrettoPoint) => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss Ps).sum ∧ r.IsBounded ⦄ := by
-  apply «Curve25519_dalekTraitsMultiscalarMulRistrettoPointi686-tables».multiscalar_mul_spec <;>
+  apply «Curve25519_dalekTraitsMultiscalarMulRistrettoPoint64bit-notables».multiscalar_mul_spec <;>
     assumption
 
-open «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPointi686-tables» in
+open «Curve25519_dalekTraitsVartimeMultiscalarMulRistrettoPoint64bit-notables» in
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `RistrettoPoint`: `none` iff some point is
 `none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the patched
 `assert_eq!`; unreduced scalars `< 2^255`). -/
@@ -305,8 +305,8 @@ end RistrettoPoint
 
 namespace VartimeRistrettoPrecomputation
 
-open ristretto.VartimeRistrettoPrecomputation.«i686-tables».Insts
-open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulRistrettoPointi686-tables»
+open ristretto.VartimeRistrettoPrecomputation.«64bit-notables».Insts
+open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulRistrettoPoint64bit-notables»
 
 /-- `VartimePrecomputedMultiscalarMul::new` for `VartimeRistrettoPrecomputation`: a precomputation
 of the points the input yields (through `borrow`). -/
@@ -380,58 +380,17 @@ namespace RistrettoPoint
 (unreduced scalars `< 2^255`). -/
 theorem vartime_double_scalar_mul_basepoint (a : Scalar) (A : RistrettoPoint) (b : Scalar)
     (ha : a.asNat < 2 ^ 255) (hA : A.OnCurve) (hA' : A.IsBounded) (hb : b.asNat < 2 ^ 255) :
-    ristretto.«RistrettoPointi686-tables».vartime_double_scalar_mul_basepoint a A b
+    ristretto.«RistrettoPoint64bit-notables».vartime_double_scalar_mul_basepoint a A b
       ⦃ (r : RistrettoPoint) =>
         r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.IsBounded ⦄ :=
-  ristretto.«RistrettoPointi686-tables».vartime_double_scalar_mul_basepoint_spec a A b ha hA' hA
+  ristretto.«RistrettoPoint64bit-notables».vartime_double_scalar_mul_basepoint_spec a A b ha hA' hA
     hb
 
 end RistrettoPoint
 
-/-- `RistrettoBasepointTable` in this configuration. -/
-abbrev RistrettoBasepointTable := ristretto.RistrettoBasepointTable.«i686-tables»
-
-namespace RistrettoBasepointTable
-
-/-- `impl Mul<&Scalar> for &RistrettoBasepointTable` -/
-abbrev «&t * &s» := open «Shared0RistrettoBasepointTablei686-tables».Insts in
-  «CoreOpsArithMulSharedBScalarRistrettoPointi686-tables».mul
-/-- `impl Mul<&RistrettoBasepointTable> for &Scalar` -/
-abbrev «&s * &t» := open Shared0Scalar.Insts in
-  «CoreOpsArithMulSharedARistrettoBasepointTablei686-tablesRistrettoPointi686-tables».mul
-
-/-- `Mul<&Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
-theorem mul (t : RistrettoBasepointTable) (s : Scalar) (ht : t.IsTable) (ht' : t.IsBounded)
-    (hs : s.asNat < 2 ^ 255) :
-    ∀ ts ∈ [«&t * &s» t s, «&s * &t» s t],
-      ts ⦃ (r : RistrettoPoint) => r.OnCurve ∧ r.toPoint = s.asNat • t.point ∧ r.IsBounded ⦄ := by
-  open «Shared0RistrettoBasepointTablei686-tables».Insts in
-  variants [«CoreOpsArithMulSharedBScalarRistrettoPointi686-tables».mul_spec]
-
-open ristretto.«RistrettoBasepointTablei686-tables»
-
-/-- `RistrettoBasepointTable::create`: a table representing `B`. -/
-theorem create (B : RistrettoPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
-    create B ⦃ (t : RistrettoBasepointTable) =>
-      t.IsTable ∧ t.point = B.toPoint ∧ t.IsBounded ⦄ :=
-  create_spec B hB' hB
-
-/-- `RistrettoBasepointTable::basepoint`: the point the table represents. -/
-theorem basepoint (t : RistrettoBasepointTable) (ht : t.IsTable) (ht' : t.IsBounded) :
-    basepoint t ⦃ (r : RistrettoPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ :=
-  basepoint_spec t ht' ht
-
-/-- `Clone`: the table itself. -/
-theorem clone (t : RistrettoBasepointTable) :
-    ristretto.RistrettoBasepointTable.«i686-tables».Insts.CoreCloneClone.clone t
-      ⦃ (r : RistrettoBasepointTable) => r = t ⦄ :=
-  ristretto.RistrettoBasepointTable.«i686-tables».Insts.CoreCloneClone.clone_spec t
-
-end RistrettoBasepointTable
-
 namespace RistrettoPoint
 
-open ristretto.RistrettoPoint.«i686-tables».Insts
+open ristretto.RistrettoPoint.«64bit-notables».Insts
 
 /-- `ConditionallySelectable for RistrettoPoint`: `a` if `choice = 0`, `b` if `choice = 1`. -/
 theorem conditional_select (a b : RistrettoPoint) (choice : subtle.Choice)
@@ -448,10 +407,10 @@ theorem zeroize (P : RistrettoPoint) :
 /-- `RistrettoPoint::map_to_curve`: RFC 9496's `MAP` of the 32 bytes (`Ristretto.mapRep`): an even
 point (a ristretto255 representative). -/
 theorem map_to_curve (bytes : Array U8 32#usize) :
-    ristretto.elligator.«RistrettoPointi686-tables».map_to_curve bytes ⦃ (r : RistrettoPoint) =>
+    ristretto.elligator.«RistrettoPoint64bit-notables».map_to_curve bytes ⦃ (r : RistrettoPoint) =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.mapRep bytes.toVector ∧ r.IsBounded ⦄ :=
-  ristretto.elligator.«RistrettoPointi686-tables».map_to_curve_spec bytes
+  ristretto.elligator.«RistrettoPoint64bit-notables».map_to_curve_spec bytes
 
 end RistrettoPoint
 
-end Theorems.ristretto.«i686-tables»
+end Theorems.ristretto.«64bit-notables»

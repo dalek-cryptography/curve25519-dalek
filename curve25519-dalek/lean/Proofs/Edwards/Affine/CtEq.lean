@@ -18,13 +18,13 @@ open Curve25519Dalek.backend.serial.u32.field (FieldElement2625)
 
 namespace Curve25519Dalek.edwards.affine
 
-namespace AffinePoint.«x86_64-tables».Insts.SubtleConstantTimeEq
+namespace AffinePoint.«64bit-tables».Insts.SubtleConstantTimeEq
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `ConstantTimeEq for AffinePoint`: both coordinates agree modulo `p`. -/
 @[step]
-theorem ct_eq_coords (self other : AffinePoint.«x86_64-tables») :
+theorem ct_eq_coords (self other : AffinePoint.«64bit-tables») :
     ct_eq self other ⦃ (c : subtle.Choice) =>
       c.IsValid ∧
         (c = 1#u8 ↔
@@ -38,24 +38,24 @@ theorem ct_eq_coords (self other : AffinePoint.«x86_64-tables») :
   rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
 
 /-- `ConstantTimeEq for AffinePoint` on points: equality of the represented points. -/
-theorem ct_eq_spec (self other : AffinePoint.«x86_64-tables») (hself : self.OnCurve)
+theorem ct_eq_spec (self other : AffinePoint.«64bit-tables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
     ct_eq self other ⦃ (r : subtle.Choice) =>
       r.IsValid ∧ (r = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
   spec_mono (ct_eq_coords self other) fun _ ⟨hcv, hc⟩ => by
-    rw [AffinePoint.«x86_64-tables».toPoint_eq_mk hself,
-      AffinePoint.«x86_64-tables».toPoint_eq_mk hother, Point.ext_iff]
+    rw [AffinePoint.«64bit-tables».toPoint_eq_mk hself,
+      AffinePoint.«64bit-tables».toPoint_eq_mk hother, Point.ext_iff]
     exact ⟨hcv, hc⟩
 
-end AffinePoint.«x86_64-tables».Insts.SubtleConstantTimeEq
+end AffinePoint.«64bit-tables».Insts.SubtleConstantTimeEq
 
-namespace AffinePoint.«i686-tables».Insts.SubtleConstantTimeEq
+namespace AffinePoint.«32bit-tables».Insts.SubtleConstantTimeEq
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `ConstantTimeEq for AffinePoint`: both coordinates agree modulo `p`. -/
 @[step]
-theorem ct_eq_coords (self other : AffinePoint.«i686-tables») :
+theorem ct_eq_coords (self other : AffinePoint.«32bit-tables») :
     ct_eq self other ⦃ (c : subtle.Choice) =>
       c.IsValid ∧
         (c = 1#u8 ↔
@@ -69,24 +69,24 @@ theorem ct_eq_coords (self other : AffinePoint.«i686-tables») :
   rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
 
 /-- `ConstantTimeEq for AffinePoint` on points: equality of the represented points. -/
-theorem ct_eq_spec (self other : AffinePoint.«i686-tables») (hself : self.OnCurve)
+theorem ct_eq_spec (self other : AffinePoint.«32bit-tables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
     ct_eq self other ⦃ (r : subtle.Choice) =>
       r.IsValid ∧ (r = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
   spec_mono (ct_eq_coords self other) fun _ ⟨hcv, hc⟩ => by
-    rw [AffinePoint.«i686-tables».toPoint_eq_mk hself,
-      AffinePoint.«i686-tables».toPoint_eq_mk hother, Point.ext_iff]
+    rw [AffinePoint.«32bit-tables».toPoint_eq_mk hself,
+      AffinePoint.«32bit-tables».toPoint_eq_mk hother, Point.ext_iff]
     exact ⟨hcv, hc⟩
 
-end AffinePoint.«i686-tables».Insts.SubtleConstantTimeEq
+end AffinePoint.«32bit-tables».Insts.SubtleConstantTimeEq
 
-namespace AffinePoint.«x86_64-no-tables».Insts.SubtleConstantTimeEq
+namespace AffinePoint.«64bit-notables».Insts.SubtleConstantTimeEq
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `ConstantTimeEq for AffinePoint`: both coordinates agree modulo `p`. -/
 @[step]
-theorem ct_eq_coords (self other : AffinePoint.«x86_64-no-tables») :
+theorem ct_eq_coords (self other : AffinePoint.«64bit-notables») :
     ct_eq self other ⦃ (c : subtle.Choice) =>
       c.IsValid ∧
         (c = 1#u8 ↔
@@ -100,24 +100,24 @@ theorem ct_eq_coords (self other : AffinePoint.«x86_64-no-tables») :
   rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
 
 /-- `ConstantTimeEq for AffinePoint` on points: equality of the represented points. -/
-theorem ct_eq_spec (self other : AffinePoint.«x86_64-no-tables») (hself : self.OnCurve)
+theorem ct_eq_spec (self other : AffinePoint.«64bit-notables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
     ct_eq self other ⦃ (r : subtle.Choice) =>
       r.IsValid ∧ (r = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
   spec_mono (ct_eq_coords self other) fun _ ⟨hcv, hc⟩ => by
-    rw [AffinePoint.«x86_64-no-tables».toPoint_eq_mk hself,
-      AffinePoint.«x86_64-no-tables».toPoint_eq_mk hother, Point.ext_iff]
+    rw [AffinePoint.«64bit-notables».toPoint_eq_mk hself,
+      AffinePoint.«64bit-notables».toPoint_eq_mk hother, Point.ext_iff]
     exact ⟨hcv, hc⟩
 
-end AffinePoint.«x86_64-no-tables».Insts.SubtleConstantTimeEq
+end AffinePoint.«64bit-notables».Insts.SubtleConstantTimeEq
 
-namespace AffinePoint.«i686-no-tables».Insts.SubtleConstantTimeEq
+namespace AffinePoint.«32bit-notables».Insts.SubtleConstantTimeEq
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `ConstantTimeEq for AffinePoint`: both coordinates agree modulo `p`. -/
 @[step]
-theorem ct_eq_coords (self other : AffinePoint.«i686-no-tables») :
+theorem ct_eq_coords (self other : AffinePoint.«32bit-notables») :
     ct_eq self other ⦃ (c : subtle.Choice) =>
       c.IsValid ∧
         (c = 1#u8 ↔
@@ -131,15 +131,15 @@ theorem ct_eq_coords (self other : AffinePoint.«i686-no-tables») :
   rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
 
 /-- `ConstantTimeEq for AffinePoint` on points: equality of the represented points. -/
-theorem ct_eq_spec (self other : AffinePoint.«i686-no-tables») (hself : self.OnCurve)
+theorem ct_eq_spec (self other : AffinePoint.«32bit-notables») (hself : self.OnCurve)
     (hother : other.OnCurve) :
     ct_eq self other ⦃ (r : subtle.Choice) =>
       r.IsValid ∧ (r = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
   spec_mono (ct_eq_coords self other) fun _ ⟨hcv, hc⟩ => by
-    rw [AffinePoint.«i686-no-tables».toPoint_eq_mk hself,
-      AffinePoint.«i686-no-tables».toPoint_eq_mk hother, Point.ext_iff]
+    rw [AffinePoint.«32bit-notables».toPoint_eq_mk hself,
+      AffinePoint.«32bit-notables».toPoint_eq_mk hother, Point.ext_iff]
     exact ⟨hcv, hc⟩
 
-end AffinePoint.«i686-no-tables».Insts.SubtleConstantTimeEq
+end AffinePoint.«32bit-notables».Insts.SubtleConstantTimeEq
 
 end Curve25519Dalek.edwards.affine

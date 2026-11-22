@@ -19,14 +19,14 @@ open Curve25519Dalek.backend.serial.curve_models
 
 namespace Curve25519Dalek.edwards
 
-namespace «EdwardsPointx86_64-tables»
+namespace «EdwardsPoint64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `EdwardsPoint::compress`: the canonical `y = Y / Z` with the sign of `x = X / Z` in
 bit `255`; limbs `< 2^52`. -/
 @[step]
-theorem compress_asNat (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52) :
+theorem compress_asNat (self : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52) :
     compress self ⦃ (r : CompressedEdwardsY) =>
       r.asNat = (self.Y.toField / self.Z.toField).val +
         2 ^ 255 * (if (self.X.toField / self.Z.toField).IsNeg then 1 else 0) ⦄ := by
@@ -36,24 +36,24 @@ theorem compress_asNat (self : EdwardsPoint.«x86_64-tables») (hself : self.Lim
   rw [hr, hx, hy]
 
 /-- `EdwardsPoint::compress` is RFC 8032's encoding of the represented point. -/
-theorem compress_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem compress_spec (self : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     compress self ⦃ (r : CompressedEdwardsY) => r.toVector = curve25519.encode self.toPoint ⦄ := by
   simp only [Curve25519Dalek.edwards.CompressedEdwardsY.toVector_eq_encode_iff]
   exact spec_mono (compress_asNat self hself) fun r hr => by
-      rw [hr, encodeNat_eq, EdwardsPoint.«x86_64-tables».toPoint_x hon,
-        EdwardsPoint.«x86_64-tables».toPoint_y hon]
+      rw [hr, encodeNat_eq, EdwardsPoint.«64bit-tables».toPoint_x hon,
+        EdwardsPoint.«64bit-tables».toPoint_y hon]
 
-end «EdwardsPointx86_64-tables»
+end «EdwardsPoint64bit-tables»
 
-namespace «EdwardsPointi686-tables»
+namespace «EdwardsPoint32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `EdwardsPoint::compress`: the canonical `y = Y / Z` with the sign of `x = X / Z` in
 bit `255`; limbs `< 2^26`. -/
 @[step]
-theorem compress_asNat (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26) :
+theorem compress_asNat (self : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26) :
     compress self ⦃ (r : CompressedEdwardsY) =>
       r.asNat = (self.Y.toField / self.Z.toField).val +
         2 ^ 255 * (if (self.X.toField / self.Z.toField).IsNeg then 1 else 0) ⦄ := by
@@ -63,24 +63,24 @@ theorem compress_asNat (self : EdwardsPoint.«i686-tables») (hself : self.Limbs
   rw [hr, hx, hy]
 
 /-- `EdwardsPoint::compress` is RFC 8032's encoding of the represented point. -/
-theorem compress_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem compress_spec (self : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     compress self ⦃ (r : CompressedEdwardsY) => r.toVector = curve25519.encode self.toPoint ⦄ := by
   simp only [Curve25519Dalek.edwards.CompressedEdwardsY.toVector_eq_encode_iff]
   exact spec_mono (compress_asNat self hself) fun r hr => by
-      rw [hr, encodeNat_eq, EdwardsPoint.«i686-tables».toPoint_x hon,
-        EdwardsPoint.«i686-tables».toPoint_y hon]
+      rw [hr, encodeNat_eq, EdwardsPoint.«32bit-tables».toPoint_x hon,
+        EdwardsPoint.«32bit-tables».toPoint_y hon]
 
-end «EdwardsPointi686-tables»
+end «EdwardsPoint32bit-tables»
 
-namespace «EdwardsPointx86_64-no-tables»
+namespace «EdwardsPoint64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `EdwardsPoint::compress`: the canonical `y = Y / Z` with the sign of `x = X / Z` in
 bit `255`; limbs `< 2^52`. -/
 @[step]
-theorem compress_asNat (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
+theorem compress_asNat (self : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52) :
     compress self ⦃ (r : CompressedEdwardsY) =>
       r.asNat = (self.Y.toField / self.Z.toField).val +
         2 ^ 255 * (if (self.X.toField / self.Z.toField).IsNeg then 1 else 0) ⦄ := by
@@ -90,24 +90,24 @@ theorem compress_asNat (self : EdwardsPoint.«x86_64-no-tables») (hself : self.
   rw [hr, hx, hy]
 
 /-- `EdwardsPoint::compress` is RFC 8032's encoding of the represented point. -/
-theorem compress_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem compress_spec (self : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     compress self ⦃ (r : CompressedEdwardsY) => r.toVector = curve25519.encode self.toPoint ⦄ := by
   simp only [Curve25519Dalek.edwards.CompressedEdwardsY.toVector_eq_encode_iff]
   exact spec_mono (compress_asNat self hself) fun r hr => by
-      rw [hr, encodeNat_eq, EdwardsPoint.«x86_64-no-tables».toPoint_x hon,
-        EdwardsPoint.«x86_64-no-tables».toPoint_y hon]
+      rw [hr, encodeNat_eq, EdwardsPoint.«64bit-notables».toPoint_x hon,
+        EdwardsPoint.«64bit-notables».toPoint_y hon]
 
-end «EdwardsPointx86_64-no-tables»
+end «EdwardsPoint64bit-notables»
 
-namespace «EdwardsPointi686-no-tables»
+namespace «EdwardsPoint32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `EdwardsPoint::compress`: the canonical `y = Y / Z` with the sign of `x = X / Z` in
 bit `255`; limbs `< 2^26`. -/
 @[step]
-theorem compress_asNat (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26) :
+theorem compress_asNat (self : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26) :
     compress self ⦃ (r : CompressedEdwardsY) =>
       r.asNat = (self.Y.toField / self.Z.toField).val +
         2 ^ 255 * (if (self.X.toField / self.Z.toField).IsNeg then 1 else 0) ⦄ := by
@@ -117,14 +117,14 @@ theorem compress_asNat (self : EdwardsPoint.«i686-no-tables») (hself : self.Li
   rw [hr, hx, hy]
 
 /-- `EdwardsPoint::compress` is RFC 8032's encoding of the represented point. -/
-theorem compress_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem compress_spec (self : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     compress self ⦃ (r : CompressedEdwardsY) => r.toVector = curve25519.encode self.toPoint ⦄ := by
   simp only [Curve25519Dalek.edwards.CompressedEdwardsY.toVector_eq_encode_iff]
   exact spec_mono (compress_asNat self hself) fun r hr => by
-      rw [hr, encodeNat_eq, EdwardsPoint.«i686-no-tables».toPoint_x hon,
-        EdwardsPoint.«i686-no-tables».toPoint_y hon]
+      rw [hr, encodeNat_eq, EdwardsPoint.«32bit-notables».toPoint_x hon,
+        EdwardsPoint.«32bit-notables».toPoint_y hon]
 
-end «EdwardsPointi686-no-tables»
+end «EdwardsPoint32bit-notables»
 
 end Curve25519Dalek.edwards

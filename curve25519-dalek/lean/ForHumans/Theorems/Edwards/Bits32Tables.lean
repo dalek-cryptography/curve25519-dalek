@@ -11,15 +11,15 @@ import Proofs -- shake: keep
 public import ForHumans.Specs.Edwards
 public import ForHumans.Specs.Montgomery
 public import ForHumans.Specs.Representation.Array
-public import ForHumans.Specs.Representation.Edwards.I686Tables
+public import ForHumans.Specs.Representation.Edwards.Bits32Tables
 public import ForHumans.Specs.Representation.Montgomery
-public import ForHumans.Specs.Representation.ScalarMul.I686Tables
+public import ForHumans.Specs.Representation.ScalarMul.Bits32Tables
 public import ForHumans.Specs.X25519
 public section
 
 set_option linter.style.longLine false
 
-/-! # `Edwards` for `i686-tables`, generated from `ForHumans/Theorems/Edwards.lean` -/
+/-! # `Edwards` for `32bit-tables`, generated from `ForHumans/Theorems/Edwards.lean` -/
 
 open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek
 open curve25519 (L basepoint decodeLenient decodeScalar25519 edwards edwardsToMontgomery encode
@@ -27,24 +27,24 @@ open curve25519 (L basepoint decodeLenient decodeScalar25519 edwards edwardsToMo
 open Curve25519Dalek.edwards (CompressedEdwardsY)
 open Curve25519Dalek.scalar (Scalar HalfWidthScalar)
 
-namespace Theorems.edwards.«i686-tables»
+namespace Theorems.edwards.«32bit-tables»
 
 /-- `EdwardsPoint` in this configuration. -/
-abbrev EdwardsPoint := edwards.EdwardsPoint.«i686-tables»
+abbrev EdwardsPoint := edwards.EdwardsPoint.«32bit-tables»
 
 /-- `VartimeEdwardsPrecomputation` in this configuration. -/
-abbrev VartimeEdwardsPrecomputation := edwards.VartimeEdwardsPrecomputation.«i686-tables»
+abbrev VartimeEdwardsPrecomputation := edwards.VartimeEdwardsPrecomputation.«32bit-tables»
 
 /-- `CompressedEdwardsY::decompress`: the lenient decoding `decodeLenient` of the bytes (`y` reduced
 modulo `p`, `x = 0` accepted with either sign); the point is on the curve. -/
 theorem CompressedEdwardsY.decompress (c : CompressedEdwardsY) :
-    CompressedEdwardsY.decompress.«i686-tables» c ⦃ (r : Option EdwardsPoint) =>
+    CompressedEdwardsY.decompress.«32bit-tables» c ⦃ (r : Option EdwardsPoint) =>
       r.map (·.toPoint) = decodeLenient c.toVector ∧ ∀ P, r = some P → P.OnCurve ∧ P.IsBounded ⦄ :=
-  edwards.CompressedEdwardsY.«i686-tables».decompress_spec c
+  edwards.CompressedEdwardsY.«32bit-tables».decompress_spec c
 
 namespace EdwardsPoint
 
-open edwards.EdwardsPoint.«i686-tables».Insts
+open edwards.EdwardsPoint.«32bit-tables».Insts
 
 /-- `Identity for EdwardsPoint` represents the neutral element. -/
 theorem identity :
@@ -80,15 +80,15 @@ theorem ct_eq (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.
 /-- `PartialEq for EdwardsPoint` on points: equality of the represented points. -/
 theorem eq (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
     (hQ' : Q.IsBounded) :
-    «CoreCmpPartialEqEdwardsPointi686-tables».eq P Q ⦃ (r : Bool) =>
+    «CoreCmpPartialEqEdwardsPoint32bit-tables».eq P Q ⦃ (r : Bool) =>
       r = true ↔ P.toPoint = Q.toPoint ⦄ :=
-  «CoreCmpPartialEqEdwardsPointi686-tables».eq_spec P Q hP' hQ' hP hQ
+  «CoreCmpPartialEqEdwardsPoint32bit-tables».eq_spec P Q hP' hQ' hP hQ
 
 end EdwardsPoint
 
 namespace EdwardsPoint
 
-open edwards.«EdwardsPointi686-tables»
+open edwards.«EdwardsPoint32bit-tables»
 
 /-- `EdwardsPoint::to_montgomery`: RFC 7748's encoding of the `u`-coordinate of the Montgomery image
 of the represented point (`0` for the identity). -/
@@ -129,81 +129,81 @@ theorem compress_batch_alloc (Ps : Slice EdwardsPoint) (hPs : ∀ i < Ps.length,
 end EdwardsPoint
 
 /-- `impl Add<&EdwardsPoint> for &EdwardsPoint` -/
-abbrev «&P + &Q» := open «Shared0EdwardsPointi686-tables».Insts in
-  «CoreOpsArithAddSharedAEdwardsPointi686-tablesEdwardsPointi686-tables».add
+abbrev «&P + &Q» := open «Shared0EdwardsPoint32bit-tables».Insts in
+  «CoreOpsArithAddSharedAEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».add
 /-- `impl Add<&EdwardsPoint> for EdwardsPoint` -/
-abbrev «P + &Q» := open edwards.EdwardsPoint.«i686-tables».Insts in
-  «CoreOpsArithAddSharedBEdwardsPointi686-tablesEdwardsPointi686-tables».add
+abbrev «P + &Q» := open edwards.EdwardsPoint.«32bit-tables».Insts in
+  «CoreOpsArithAddSharedBEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».add
 /-- `impl Add<EdwardsPoint> for &EdwardsPoint` -/
-abbrev «&P + Q» := open «SharedAEdwardsPointi686-tables».Insts in
-  «CoreOpsArithAddEdwardsPointi686-tablesEdwardsPointi686-tables».add
+abbrev «&P + Q» := open «SharedAEdwardsPoint32bit-tables».Insts in
+  «CoreOpsArithAddEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».add
 /-- `impl Add<EdwardsPoint> for EdwardsPoint` -/
-abbrev «P + Q» := open edwards.EdwardsPoint.«i686-tables».Insts in
-  «CoreOpsArithAddEdwardsPointi686-tablesEdwardsPointi686-tables».add
+abbrev «P + Q» := open edwards.EdwardsPoint.«32bit-tables».Insts in
+  «CoreOpsArithAddEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».add
 /-- `impl AddAssign<&EdwardsPoint> for EdwardsPoint` -/
-abbrev «P += &Q» := open edwards.EdwardsPoint.«i686-tables».Insts in
-  «CoreOpsArithAddAssignSharedAEdwardsPointi686-tables».add_assign
+abbrev «P += &Q» := open edwards.EdwardsPoint.«32bit-tables».Insts in
+  «CoreOpsArithAddAssignSharedAEdwardsPoint32bit-tables».add_assign
 /-- `impl AddAssign<EdwardsPoint> for EdwardsPoint` -/
-abbrev «P += Q» := open edwards.EdwardsPoint.«i686-tables».Insts in
-  «CoreOpsArithAddAssignEdwardsPointi686-tables».add_assign
+abbrev «P += Q» := open edwards.EdwardsPoint.«32bit-tables».Insts in
+  «CoreOpsArithAddAssignEdwardsPoint32bit-tables».add_assign
 
 /-- `impl Sub<&EdwardsPoint> for &EdwardsPoint` -/
-abbrev «&P - &Q» := open «Shared0EdwardsPointi686-tables».Insts in
-  «CoreOpsArithSubSharedAEdwardsPointi686-tablesEdwardsPointi686-tables».sub
+abbrev «&P - &Q» := open «Shared0EdwardsPoint32bit-tables».Insts in
+  «CoreOpsArithSubSharedAEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».sub
 /-- `impl Sub<&EdwardsPoint> for EdwardsPoint` -/
-abbrev «P - &Q» := open edwards.EdwardsPoint.«i686-tables».Insts in
-  «CoreOpsArithSubSharedBEdwardsPointi686-tablesEdwardsPointi686-tables».sub
+abbrev «P - &Q» := open edwards.EdwardsPoint.«32bit-tables».Insts in
+  «CoreOpsArithSubSharedBEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».sub
 /-- `impl Sub<EdwardsPoint> for &EdwardsPoint` -/
-abbrev «&P - Q» := open «SharedAEdwardsPointi686-tables».Insts in
-  «CoreOpsArithSubEdwardsPointi686-tablesEdwardsPointi686-tables».sub
+abbrev «&P - Q» := open «SharedAEdwardsPoint32bit-tables».Insts in
+  «CoreOpsArithSubEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».sub
 /-- `impl Sub<EdwardsPoint> for EdwardsPoint` -/
-abbrev «P - Q» := open edwards.EdwardsPoint.«i686-tables».Insts in
-  «CoreOpsArithSubEdwardsPointi686-tablesEdwardsPointi686-tables».sub
+abbrev «P - Q» := open edwards.EdwardsPoint.«32bit-tables».Insts in
+  «CoreOpsArithSubEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».sub
 /-- `impl SubAssign<&EdwardsPoint> for EdwardsPoint` -/
-abbrev «P -= &Q» := open edwards.EdwardsPoint.«i686-tables».Insts in
-  «CoreOpsArithSubAssignSharedAEdwardsPointi686-tables».sub_assign
+abbrev «P -= &Q» := open edwards.EdwardsPoint.«32bit-tables».Insts in
+  «CoreOpsArithSubAssignSharedAEdwardsPoint32bit-tables».sub_assign
 /-- `impl SubAssign<EdwardsPoint> for EdwardsPoint` -/
-abbrev «P -= Q» := open edwards.EdwardsPoint.«i686-tables».Insts in
-  «CoreOpsArithSubAssignEdwardsPointi686-tables».sub_assign
+abbrev «P -= Q» := open edwards.EdwardsPoint.«32bit-tables».Insts in
+  «CoreOpsArithSubAssignEdwardsPoint32bit-tables».sub_assign
 
 /-- `impl Neg for &EdwardsPoint` -/
-abbrev «-&P» := open «Shared0EdwardsPointi686-tables».Insts in
-  «CoreOpsArithNegEdwardsPointi686-tables».neg
+abbrev «-&P» := open «Shared0EdwardsPoint32bit-tables».Insts in
+  «CoreOpsArithNegEdwardsPoint32bit-tables».neg
 /-- `impl Neg for EdwardsPoint` -/
-abbrev «-P» := open edwards.EdwardsPoint.«i686-tables».Insts in
-  «CoreOpsArithNegEdwardsPointi686-tables».neg
+abbrev «-P» := open edwards.EdwardsPoint.«32bit-tables».Insts in
+  «CoreOpsArithNegEdwardsPoint32bit-tables».neg
 
 /-- `impl Mul<&Scalar> for &EdwardsPoint` -/
-abbrev «&P * &s» := open «Shared0EdwardsPointi686-tables».Insts in
-  «CoreOpsArithMulSharedAScalarEdwardsPointi686-tables».mul
+abbrev «&P * &s» := open «Shared0EdwardsPoint32bit-tables».Insts in
+  «CoreOpsArithMulSharedAScalarEdwardsPoint32bit-tables».mul
 /-- `impl Mul<&Scalar> for EdwardsPoint` -/
-abbrev «P * &s» := open edwards.EdwardsPoint.«i686-tables».Insts in
-  «CoreOpsArithMulSharedBScalarEdwardsPointi686-tables».mul
+abbrev «P * &s» := open edwards.EdwardsPoint.«32bit-tables».Insts in
+  «CoreOpsArithMulSharedBScalarEdwardsPoint32bit-tables».mul
 /-- `impl Mul<Scalar> for &EdwardsPoint` -/
-abbrev «&P * s» := open «SharedAEdwardsPointi686-tables».Insts in
-  «CoreOpsArithMulScalarEdwardsPointi686-tables».mul
+abbrev «&P * s» := open «SharedAEdwardsPoint32bit-tables».Insts in
+  «CoreOpsArithMulScalarEdwardsPoint32bit-tables».mul
 /-- `impl Mul<Scalar> for EdwardsPoint` -/
-abbrev «P * s» := open edwards.EdwardsPoint.«i686-tables».Insts in
-  «CoreOpsArithMulScalarEdwardsPointi686-tables».mul
+abbrev «P * s» := open edwards.EdwardsPoint.«32bit-tables».Insts in
+  «CoreOpsArithMulScalarEdwardsPoint32bit-tables».mul
 /-- `impl MulAssign<&Scalar> for EdwardsPoint` -/
 abbrev «P *= &s» :=
-  edwards.EdwardsPoint.«i686-tables».Insts.CoreOpsArithMulAssignSharedAScalar.mul_assign
+  edwards.EdwardsPoint.«32bit-tables».Insts.CoreOpsArithMulAssignSharedAScalar.mul_assign
 /-- `impl MulAssign<Scalar> for EdwardsPoint` -/
 abbrev «P *= s» :=
-  edwards.EdwardsPoint.«i686-tables».Insts.CoreOpsArithMulAssignScalar.mul_assign
+  edwards.EdwardsPoint.«32bit-tables».Insts.CoreOpsArithMulAssignScalar.mul_assign
 
 /-- `impl Mul<&EdwardsPoint> for &Scalar` -/
 abbrev «&s * &P» := open Shared0Scalar.Insts in
-  «CoreOpsArithMulSharedAEdwardsPointi686-tablesEdwardsPointi686-tables».mul
+  «CoreOpsArithMulSharedAEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».mul
 /-- `impl Mul<&EdwardsPoint> for Scalar` -/
 abbrev «s * &P» := open scalar.Scalar.Insts in
-  «CoreOpsArithMulSharedBEdwardsPointi686-tablesEdwardsPointi686-tables».mul
+  «CoreOpsArithMulSharedBEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».mul
 /-- `impl Mul<EdwardsPoint> for &Scalar` -/
 abbrev «&s * P» := open SharedAScalar.Insts in
-  «CoreOpsArithMulEdwardsPointi686-tablesEdwardsPointi686-tables».mul
+  «CoreOpsArithMulEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».mul
 /-- `impl Mul<EdwardsPoint> for Scalar` -/
 abbrev «s * P» := open scalar.Scalar.Insts in
-  «CoreOpsArithMulEdwardsPointi686-tablesEdwardsPointi686-tables».mul
+  «CoreOpsArithMulEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».mul
 
 namespace EdwardsPoint
 
@@ -213,8 +213,8 @@ theorem add (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.On
     ∀ add ∈ [«&P + &Q», «P + &Q», «&P + Q», «P + Q», «P += &Q», «P += Q»],
       add P Q ⦃ (r : EdwardsPoint) =>
         r.OnCurve ∧ r.toPoint = P.toPoint + Q.toPoint ∧ r.IsBounded ⦄ := by
-  open «Shared0EdwardsPointi686-tables».Insts in
-  variants [«CoreOpsArithAddSharedAEdwardsPointi686-tablesEdwardsPointi686-tables».add_spec]
+  open «Shared0EdwardsPoint32bit-tables».Insts in
+  variants [«CoreOpsArithAddSharedAEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».add_spec]
 
 /-- `Sub<&EdwardsPoint> for &EdwardsPoint` on the represented points. -/
 theorem sub (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
@@ -222,8 +222,8 @@ theorem sub (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.On
     ∀ sub ∈ [«&P - &Q», «P - &Q», «&P - Q», «P - Q», «P -= &Q», «P -= Q»],
       sub P Q ⦃ (r : EdwardsPoint) =>
         r.OnCurve ∧ r.toPoint = P.toPoint - Q.toPoint ∧ r.IsBounded ⦄ := by
-  open «Shared0EdwardsPointi686-tables».Insts in
-  variants [«CoreOpsArithSubSharedAEdwardsPointi686-tablesEdwardsPointi686-tables».sub_spec]
+  open «Shared0EdwardsPoint32bit-tables».Insts in
+  variants [«CoreOpsArithSubSharedAEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».sub_spec]
 
 /-- `Sum for EdwardsPoint`: the sum of the points yielded by the iterator (through `borrow`). -/
 theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T EdwardsPoint)
@@ -232,17 +232,17 @@ theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T EdwardsPoint)
     (hborrow : List.Forall₂
       (fun x P => borrowInst.borrow x ⦃ (P' : EdwardsPoint) => P' = P ⦄) xs Ps)
     (hPs : ∀ P ∈ Ps, P.OnCurve) (hPs' : ∀ P ∈ Ps, P.IsBounded) :
-    edwards.EdwardsPoint.«i686-tables».Insts.CoreIterTraitsAccumSum.sum borrowInst iterInst iter
+    edwards.EdwardsPoint.«32bit-tables».Insts.CoreIterTraitsAccumSum.sum borrowInst iterInst iter
       ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = (Ps.map (·.toPoint)).sum ∧ r.IsBounded ⦄ :=
-  edwards.EdwardsPoint.«i686-tables».Insts.CoreIterTraitsAccumSum.sum_spec borrowInst iterInst
+  edwards.EdwardsPoint.«32bit-tables».Insts.CoreIterTraitsAccumSum.sum_spec borrowInst iterInst
     iter xs Ps hiter hborrow hPs' hPs
 
 /-- `Neg for EdwardsPoint` (by value) negates the represented point. -/
 theorem neg (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
     ∀ neg ∈ [«-&P», «-P»],
       neg P ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = -P.toPoint ∧ r.IsBounded ⦄ := by
-  open «Shared0EdwardsPointi686-tables».Insts in
-  variants [«CoreOpsArithNegEdwardsPointi686-tables».neg_spec]
+  open «Shared0EdwardsPoint32bit-tables».Insts in
+  variants [«CoreOpsArithNegEdwardsPoint32bit-tables».neg_spec]
 
 /-- `Mul<&Scalar> for &EdwardsPoint`: `s • P` (unreduced, `< 2^255`). -/
 theorem mul (P : EdwardsPoint) (s : Scalar) (hP : P.OnCurve) (hP' : P.IsBounded)
@@ -250,8 +250,8 @@ theorem mul (P : EdwardsPoint) (s : Scalar) (hP : P.OnCurve) (hP' : P.IsBounded)
     ∀ mul ∈ [«&P * &s», «P * &s», «&P * s», «P * s», «P *= &s», «P *= s»],
       mul P s ⦃ (r : EdwardsPoint) =>
         r.OnCurve ∧ r.toPoint = s.asNat • P.toPoint ∧ r.IsBounded ⦄ := by
-  open «Shared0EdwardsPointi686-tables».Insts in
-  variants [«CoreOpsArithMulSharedAScalarEdwardsPointi686-tables».mul_spec]
+  open «Shared0EdwardsPoint32bit-tables».Insts in
+  variants [«CoreOpsArithMulSharedAScalarEdwardsPoint32bit-tables».mul_spec]
 
 /-- `Mul<&EdwardsPoint> for &Scalar`: as `&EdwardsPoint * &Scalar`. -/
 theorem mul_left (s : Scalar) (P : EdwardsPoint) (hs : s.asNat < 2 ^ 255) (hP : P.OnCurve)
@@ -260,9 +260,9 @@ theorem mul_left (s : Scalar) (P : EdwardsPoint) (hs : s.asNat < 2 ^ 255) (hP : 
       mul s P ⦃ (r : EdwardsPoint) =>
         r.OnCurve ∧ r.toPoint = s.asNat • P.toPoint ∧ r.IsBounded ⦄ := by
   open Shared0Scalar.Insts in
-  variants [«CoreOpsArithMulSharedAEdwardsPointi686-tablesEdwardsPointi686-tables».mul_spec]
+  variants [«CoreOpsArithMulSharedAEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».mul_spec]
 
-open edwards.«EdwardsPointi686-tables»
+open edwards.«EdwardsPoint32bit-tables»
 
 /-- `EdwardsPoint::mul_base`: `s • B` for the basepoint `B` (unreduced, `< 2^255`). -/
 theorem mul_base (s : Scalar) (hs : s.asNat < 2 ^ 255) :
@@ -289,7 +289,7 @@ end EdwardsPoint
 
 namespace EdwardsPoint
 
-open edwards.EdwardsPoint.«i686-tables».Insts
+open edwards.EdwardsPoint.«32bit-tables».Insts
 
 /-- `MultiscalarMul::multiscalar_mul` for `EdwardsPoint`: `∑ s_i • P_i` over the scalars and points
 the two inputs yield, which must be equally many (the patched `assert_eq!`; unreduced scalars `<
@@ -309,11 +309,11 @@ theorem multiscalar_mul
       (fun y P => borrowPointInst.borrow y ⦃ (P' : EdwardsPoint) => P' = P ⦄) ys Ps)
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hPs : ∀ P ∈ Ps, P.OnCurve)
     (hPs' : ∀ P ∈ Ps, P.IsBounded) (hxs : xs.length ≤ Usize.max) (hlen : xs.length = ys.length) :
-    «Curve25519_dalekTraitsMultiscalarMulEdwardsPointi686-tables».multiscalar_mul
+    «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint32bit-tables».multiscalar_mul
       scalarsInst borrowScalarInst pointsInst borrowPointInst scalars points
       ⦃ (r : EdwardsPoint) => r.OnCurve ∧
         r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss Ps).sum ∧ r.IsBounded ⦄ := by
-  apply «Curve25519_dalekTraitsMultiscalarMulEdwardsPointi686-tables».multiscalar_mul_spec <;>
+  apply «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint32bit-tables».multiscalar_mul_spec <;>
     assumption
 
 /-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `EdwardsPoint`: `none` iff some point is
@@ -331,21 +331,21 @@ theorem optional_multiscalar_mul {I J Clause0_Item Clause0_IntoIter Clause2_Into
     (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hPs : ∀ P, some P ∈ ops → P.OnCurve)
     (hPs' : ∀ P, some P ∈ ops → P.IsBounded) (hxs : xs.length ≤ Usize.max)
     (hlen : xs.length = ops.length) :
-    «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-tables».optional_multiscalar_mul
+    «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint32bit-tables».optional_multiscalar_mul
       scalarsInst borrowScalarInst pointsInst scalars points
       ⦃ (r : Option EdwardsPoint) => (none ∈ ops → r = none) ∧
         ∀ Ps, ops = Ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧
           R.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss Ps).sum ∧
           R.IsBounded ⦄ := by
-  open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPointi686-tables» in
+  open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint32bit-tables» in
   apply optional_multiscalar_mul_spec <;> assumption
 
 end EdwardsPoint
 
 namespace VartimeEdwardsPrecomputation
 
-open edwards.VartimeEdwardsPrecomputation.«i686-tables».Insts
-open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPointi686-tables»
+open edwards.VartimeEdwardsPrecomputation.«32bit-tables».Insts
+open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint32bit-tables»
 
 /-- `VartimePrecomputedMultiscalarMul::new` for `VartimeEdwardsPrecomputation`: a precomputation of
 the points the input yields (through `borrow`). -/
@@ -415,7 +415,7 @@ end VartimeEdwardsPrecomputation
 
 namespace EdwardsPoint
 
-open edwards.«EdwardsPointi686-tables»
+open edwards.«EdwardsPoint32bit-tables»
 
 /-- `EdwardsPoint::vartime_double_scalar_mul_basepoint`: `a • A + b • B` for the basepoint `B`
 (unreduced scalars `< 2^255`). -/
@@ -439,31 +439,31 @@ theorem vartime_triple_scalar_mul_basepoint (a1 : HalfWidthScalar) (A1 : Edwards
 end EdwardsPoint
 
 /-- `EdwardsBasepointTable` (radix `2^4`) in this configuration. -/
-abbrev EdwardsBasepointTable := edwards.EdwardsBasepointTable.«i686-tables»
+abbrev EdwardsBasepointTable := edwards.EdwardsBasepointTable.«32bit-tables»
 
 /-- `EdwardsBasepointTableRadix32` (radix `2^5`) in this configuration. -/
-abbrev EdwardsBasepointTableRadix32 := edwards.EdwardsBasepointTableRadix32.«i686-tables»
+abbrev EdwardsBasepointTableRadix32 := edwards.EdwardsBasepointTableRadix32.«32bit-tables»
 
 /-- `EdwardsBasepointTableRadix64` (radix `2^6`) in this configuration. -/
-abbrev EdwardsBasepointTableRadix64 := edwards.EdwardsBasepointTableRadix64.«i686-tables»
+abbrev EdwardsBasepointTableRadix64 := edwards.EdwardsBasepointTableRadix64.«32bit-tables»
 
 /-- `EdwardsBasepointTableRadix128` (radix `2^7`) in this configuration. -/
-abbrev EdwardsBasepointTableRadix128 := edwards.EdwardsBasepointTableRadix128.«i686-tables»
+abbrev EdwardsBasepointTableRadix128 := edwards.EdwardsBasepointTableRadix128.«32bit-tables»
 
 /-- `EdwardsBasepointTableRadix256` (radix `2^8`) in this configuration. -/
-abbrev EdwardsBasepointTableRadix256 := edwards.EdwardsBasepointTableRadix256.«i686-tables»
+abbrev EdwardsBasepointTableRadix256 := edwards.EdwardsBasepointTableRadix256.«32bit-tables»
 
 namespace EdwardsBasepointTable
 
-open edwards.EdwardsBasepointTable.«i686-tables».Insts
-open «Curve25519_dalekTraitsBasepointTableEdwardsPointi686-tables»
+open edwards.EdwardsBasepointTable.«32bit-tables».Insts
+open «Curve25519_dalekTraitsBasepointTableEdwardsPoint32bit-tables»
 
 /-- `impl Mul<&Scalar> for &EdwardsBasepointTable` -/
-abbrev «&t * &s» := open «SharedAEdwardsBasepointTablei686-tables».Insts in
-  «CoreOpsArithMulSharedBScalarEdwardsPointi686-tables».mul
+abbrev «&t * &s» := open «SharedAEdwardsBasepointTable32bit-tables».Insts in
+  «CoreOpsArithMulSharedBScalarEdwardsPoint32bit-tables».mul
 /-- `impl Mul<&EdwardsBasepointTable> for &Scalar` -/
 abbrev «&s * &t» := open SharedBScalar.Insts in
-  «CoreOpsArithMulSharedAEdwardsBasepointTablei686-tablesEdwardsPointi686-tables».mul
+  «CoreOpsArithMulSharedAEdwardsBasepointTable32bit-tablesEdwardsPoint32bit-tables».mul
 
 /-- `BasepointTable::create` (radix `2^4`): row `i` is the lookup table of `2^(8 i) • B`. -/
 theorem create (B : EdwardsPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
@@ -477,9 +477,9 @@ theorem basepoint (t : EdwardsBasepointTable) (ht : t.IsTable) (ht' : t.IsBounde
 
 /-- `Clone`: the table itself. -/
 theorem clone (t : EdwardsBasepointTable) :
-    edwards.EdwardsBasepointTable.«i686-tables».Insts.CoreCloneClone.clone t
+    edwards.EdwardsBasepointTable.«32bit-tables».Insts.CoreCloneClone.clone t
       ⦃ (r : EdwardsBasepointTable) => r = t ⦄ :=
-  edwards.EdwardsBasepointTable.«i686-tables».Insts.CoreCloneClone.clone_spec t
+  edwards.EdwardsBasepointTable.«32bit-tables».Insts.CoreCloneClone.clone_spec t
 
 /-- `BasepointTable::mul_base` (radix `2^4`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
 theorem mul_base (t : EdwardsBasepointTable) (s : Scalar) (ht : t.IsTable)
@@ -488,43 +488,43 @@ theorem mul_base (t : EdwardsBasepointTable) (s : Scalar) (ht : t.IsTable)
       ts ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = s.asNat • t.point ∧ r.IsBounded ⦄ := by
   variants [mul_base_spec]
 
-open edwards.EdwardsBasepointTable.«i686-tables».Insts in
+open edwards.EdwardsBasepointTable.«32bit-tables».Insts in
 /-- `From<&EdwardsBasepointTableRadix32> for EdwardsBasepointTable`: a table of the same point. -/
 theorem «from» :
     (∀ t : EdwardsBasepointTableRadix32, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix32i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3232bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTable) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix64, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix64i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6432bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTable) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix128, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix128i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12832bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTable) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix256, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix256i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25632bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTable) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) :=
   ⟨fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix32i686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3232bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix64i686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6432bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix128i686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12832bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix256i686-tables».from_spec t ht' ht⟩
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25632bit-tables».from_spec t ht' ht⟩
 
 end EdwardsBasepointTable
 
 namespace EdwardsBasepointTableRadix32
 
-open edwards.EdwardsBasepointTableRadix32.«i686-tables».Insts
-open «Curve25519_dalekTraitsBasepointTableEdwardsPointi686-tables»
+open edwards.EdwardsBasepointTableRadix32.«32bit-tables».Insts
+open «Curve25519_dalekTraitsBasepointTableEdwardsPoint32bit-tables»
 
 /-- `impl Mul<&Scalar> for &EdwardsBasepointTableRadix32` -/
-abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix32i686-tables».Insts in
-  «CoreOpsArithMulSharedBScalarEdwardsPointi686-tables».mul
+abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix3232bit-tables».Insts in
+  «CoreOpsArithMulSharedBScalarEdwardsPoint32bit-tables».mul
 /-- `impl Mul<&EdwardsBasepointTableRadix32> for &Scalar` -/
 abbrev «&s * &t» := open SharedBScalar.Insts in
-  «CoreOpsArithMulSharedAEdwardsBasepointTableRadix32i686-tablesEdwardsPointi686-tables».mul
+  «CoreOpsArithMulSharedAEdwardsBasepointTableRadix3232bit-tablesEdwardsPoint32bit-tables».mul
 
 /-- `BasepointTable::create` (radix `2^5`): row `i` is the lookup table of `2^(10 i) • B`.
 -/
@@ -540,9 +540,9 @@ theorem basepoint (t : EdwardsBasepointTableRadix32) (ht : t.IsTable) (ht' : t.I
 
 /-- `Clone`: the table itself. -/
 theorem clone (t : EdwardsBasepointTableRadix32) :
-    edwards.EdwardsBasepointTableRadix32.«i686-tables».Insts.CoreCloneClone.clone t
+    edwards.EdwardsBasepointTableRadix32.«32bit-tables».Insts.CoreCloneClone.clone t
       ⦃ (r : EdwardsBasepointTableRadix32) => r = t ⦄ :=
-  edwards.EdwardsBasepointTableRadix32.«i686-tables».Insts.CoreCloneClone.clone_spec t
+  edwards.EdwardsBasepointTableRadix32.«32bit-tables».Insts.CoreCloneClone.clone_spec t
 
 /-- `BasepointTable::mul_base` (radix `2^5`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
 theorem mul_base (t : EdwardsBasepointTableRadix32) (s : Scalar) (ht : t.IsTable)
@@ -551,43 +551,43 @@ theorem mul_base (t : EdwardsBasepointTableRadix32) (s : Scalar) (ht : t.IsTable
       ts ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = s.asNat • t.point ∧ r.IsBounded ⦄ := by
   variants [mul_base_spec]
 
-open edwards.EdwardsBasepointTableRadix32.«i686-tables».Insts in
+open edwards.EdwardsBasepointTableRadix32.«32bit-tables».Insts in
 /-- `From<&EdwardsBasepointTable> for EdwardsBasepointTableRadix32`: a table of the same point. -/
 theorem «from» :
     (∀ t : EdwardsBasepointTable, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTablei686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTable32bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix32) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix64, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix64i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6432bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix32) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix128, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix128i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12832bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix32) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix256, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix256i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25632bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix32) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) :=
   ⟨fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTablei686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTable32bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix64i686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6432bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix128i686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12832bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix256i686-tables».from_spec t ht' ht⟩
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25632bit-tables».from_spec t ht' ht⟩
 
 end EdwardsBasepointTableRadix32
 
 namespace EdwardsBasepointTableRadix64
 
-open edwards.EdwardsBasepointTableRadix64.«i686-tables».Insts
-open «Curve25519_dalekTraitsBasepointTableEdwardsPointi686-tables»
+open edwards.EdwardsBasepointTableRadix64.«32bit-tables».Insts
+open «Curve25519_dalekTraitsBasepointTableEdwardsPoint32bit-tables»
 
 /-- `impl Mul<&Scalar> for &EdwardsBasepointTableRadix64` -/
-abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix64i686-tables».Insts in
-  «CoreOpsArithMulSharedBScalarEdwardsPointi686-tables».mul
+abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix6432bit-tables».Insts in
+  «CoreOpsArithMulSharedBScalarEdwardsPoint32bit-tables».mul
 /-- `impl Mul<&EdwardsBasepointTableRadix64> for &Scalar` -/
 abbrev «&s * &t» := open SharedBScalar.Insts in
-  «CoreOpsArithMulSharedAEdwardsBasepointTableRadix64i686-tablesEdwardsPointi686-tables».mul
+  «CoreOpsArithMulSharedAEdwardsBasepointTableRadix6432bit-tablesEdwardsPoint32bit-tables».mul
 
 /-- `BasepointTable::create` (radix `2^6`): row `i` is the lookup table of `2^(12 i) • B`.
 -/
@@ -603,9 +603,9 @@ theorem basepoint (t : EdwardsBasepointTableRadix64) (ht : t.IsTable) (ht' : t.I
 
 /-- `Clone`: the table itself. -/
 theorem clone (t : EdwardsBasepointTableRadix64) :
-    edwards.EdwardsBasepointTableRadix64.«i686-tables».Insts.CoreCloneClone.clone t
+    edwards.EdwardsBasepointTableRadix64.«32bit-tables».Insts.CoreCloneClone.clone t
       ⦃ (r : EdwardsBasepointTableRadix64) => r = t ⦄ :=
-  edwards.EdwardsBasepointTableRadix64.«i686-tables».Insts.CoreCloneClone.clone_spec t
+  edwards.EdwardsBasepointTableRadix64.«32bit-tables».Insts.CoreCloneClone.clone_spec t
 
 /-- `BasepointTable::mul_base` (radix `2^6`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
 theorem mul_base (t : EdwardsBasepointTableRadix64) (s : Scalar) (ht : t.IsTable)
@@ -614,43 +614,43 @@ theorem mul_base (t : EdwardsBasepointTableRadix64) (s : Scalar) (ht : t.IsTable
       ts ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = s.asNat • t.point ∧ r.IsBounded ⦄ := by
   variants [mul_base_spec]
 
-open edwards.EdwardsBasepointTableRadix64.«i686-tables».Insts in
+open edwards.EdwardsBasepointTableRadix64.«32bit-tables».Insts in
 /-- `From<&EdwardsBasepointTable> for EdwardsBasepointTableRadix64`: a table of the same point. -/
 theorem «from» :
     (∀ t : EdwardsBasepointTable, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTablei686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTable32bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix64) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix32, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix32i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3232bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix64) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix128, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix128i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12832bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix64) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix256, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix256i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25632bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix64) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) :=
   ⟨fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTablei686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTable32bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix32i686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3232bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix128i686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12832bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix256i686-tables».from_spec t ht' ht⟩
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25632bit-tables».from_spec t ht' ht⟩
 
 end EdwardsBasepointTableRadix64
 
 namespace EdwardsBasepointTableRadix128
 
-open edwards.EdwardsBasepointTableRadix128.«i686-tables».Insts
-open «Curve25519_dalekTraitsBasepointTableEdwardsPointi686-tables»
+open edwards.EdwardsBasepointTableRadix128.«32bit-tables».Insts
+open «Curve25519_dalekTraitsBasepointTableEdwardsPoint32bit-tables»
 
 /-- `impl Mul<&Scalar> for &EdwardsBasepointTableRadix128` -/
-abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix128i686-tables».Insts in
-  «CoreOpsArithMulSharedBScalarEdwardsPointi686-tables».mul
+abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix12832bit-tables».Insts in
+  «CoreOpsArithMulSharedBScalarEdwardsPoint32bit-tables».mul
 /-- `impl Mul<&EdwardsBasepointTableRadix128> for &Scalar` -/
 abbrev «&s * &t» := open SharedBScalar.Insts in
-  «CoreOpsArithMulSharedAEdwardsBasepointTableRadix128i686-tablesEdwardsPointi686-tables».mul
+  «CoreOpsArithMulSharedAEdwardsBasepointTableRadix12832bit-tablesEdwardsPoint32bit-tables».mul
 
 /-- `BasepointTable::create` (radix `2^7`): row `i` is the lookup table of `2^(14 i) • B`.
 -/
@@ -666,9 +666,9 @@ theorem basepoint (t : EdwardsBasepointTableRadix128) (ht : t.IsTable) (ht' : t.
 
 /-- `Clone`: the table itself. -/
 theorem clone (t : EdwardsBasepointTableRadix128) :
-    edwards.EdwardsBasepointTableRadix128.«i686-tables».Insts.CoreCloneClone.clone t
+    edwards.EdwardsBasepointTableRadix128.«32bit-tables».Insts.CoreCloneClone.clone t
       ⦃ (r : EdwardsBasepointTableRadix128) => r = t ⦄ :=
-  edwards.EdwardsBasepointTableRadix128.«i686-tables».Insts.CoreCloneClone.clone_spec t
+  edwards.EdwardsBasepointTableRadix128.«32bit-tables».Insts.CoreCloneClone.clone_spec t
 
 /-- `BasepointTable::mul_base` (radix `2^7`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
 theorem mul_base (t : EdwardsBasepointTableRadix128) (s : Scalar) (ht : t.IsTable)
@@ -677,43 +677,43 @@ theorem mul_base (t : EdwardsBasepointTableRadix128) (s : Scalar) (ht : t.IsTabl
       ts ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = s.asNat • t.point ∧ r.IsBounded ⦄ := by
   variants [mul_base_spec]
 
-open edwards.EdwardsBasepointTableRadix128.«i686-tables».Insts in
+open edwards.EdwardsBasepointTableRadix128.«32bit-tables».Insts in
 /-- `From<&EdwardsBasepointTable> for EdwardsBasepointTableRadix128`: a table of the same point. -/
 theorem «from» :
     (∀ t : EdwardsBasepointTable, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTablei686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTable32bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix128) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix32, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix32i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3232bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix128) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix64, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix64i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6432bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix128) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix256, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix256i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25632bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix128) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) :=
   ⟨fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTablei686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTable32bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix32i686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3232bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix64i686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6432bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix256i686-tables».from_spec t ht' ht⟩
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25632bit-tables».from_spec t ht' ht⟩
 
 end EdwardsBasepointTableRadix128
 
 namespace EdwardsBasepointTableRadix256
 
-open edwards.EdwardsBasepointTableRadix256.«i686-tables».Insts
-open «Curve25519_dalekTraitsBasepointTableEdwardsPointi686-tables»
+open edwards.EdwardsBasepointTableRadix256.«32bit-tables».Insts
+open «Curve25519_dalekTraitsBasepointTableEdwardsPoint32bit-tables»
 
 /-- `impl Mul<&Scalar> for &EdwardsBasepointTableRadix256` -/
-abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix256i686-tables».Insts in
-  «CoreOpsArithMulSharedBScalarEdwardsPointi686-tables».mul
+abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix25632bit-tables».Insts in
+  «CoreOpsArithMulSharedBScalarEdwardsPoint32bit-tables».mul
 /-- `impl Mul<&EdwardsBasepointTableRadix256> for &Scalar` -/
 abbrev «&s * &t» := open SharedBScalar.Insts in
-  «CoreOpsArithMulSharedAEdwardsBasepointTableRadix256i686-tablesEdwardsPointi686-tables».mul
+  «CoreOpsArithMulSharedAEdwardsBasepointTableRadix25632bit-tablesEdwardsPoint32bit-tables».mul
 
 /-- `BasepointTable::create` (radix `2^8`): row `i` is the lookup table of `2^(16 i) • B`.
 -/
@@ -729,9 +729,9 @@ theorem basepoint (t : EdwardsBasepointTableRadix256) (ht : t.IsTable) (ht' : t.
 
 /-- `Clone`: the table itself. -/
 theorem clone (t : EdwardsBasepointTableRadix256) :
-    edwards.EdwardsBasepointTableRadix256.«i686-tables».Insts.CoreCloneClone.clone t
+    edwards.EdwardsBasepointTableRadix256.«32bit-tables».Insts.CoreCloneClone.clone t
       ⦃ (r : EdwardsBasepointTableRadix256) => r = t ⦄ :=
-  edwards.EdwardsBasepointTableRadix256.«i686-tables».Insts.CoreCloneClone.clone_spec t
+  edwards.EdwardsBasepointTableRadix256.«32bit-tables».Insts.CoreCloneClone.clone_spec t
 
 /-- `BasepointTable::mul_base` (radix `2^8`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
 theorem mul_base (t : EdwardsBasepointTableRadix256) (s : Scalar) (ht : t.IsTable)
@@ -740,35 +740,35 @@ theorem mul_base (t : EdwardsBasepointTableRadix256) (s : Scalar) (ht : t.IsTabl
       ts ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = s.asNat • t.point ∧ r.IsBounded ⦄ := by
   variants [mul_base_spec]
 
-open edwards.EdwardsBasepointTableRadix256.«i686-tables».Insts in
+open edwards.EdwardsBasepointTableRadix256.«32bit-tables».Insts in
 /-- `From<&EdwardsBasepointTable> for EdwardsBasepointTableRadix256`: a table of the same point. -/
 theorem «from» :
     (∀ t : EdwardsBasepointTable, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTablei686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTable32bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix256) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix32, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix32i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3232bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix256) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix64, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix64i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6432bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix256) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
     (∀ t : EdwardsBasepointTableRadix128, t.IsTable → t.IsBounded →
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix128i686-tables».«from» t
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12832bit-tables».«from» t
         ⦃ (r : EdwardsBasepointTableRadix256) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) :=
   ⟨fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTablei686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTable32bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix32i686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3232bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix64i686-tables».from_spec t ht' ht,
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6432bit-tables».from_spec t ht' ht,
     fun t ht ht' =>
-      «CoreConvertFromSharedAEdwardsBasepointTableRadix128i686-tables».from_spec t ht' ht⟩
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12832bit-tables».from_spec t ht' ht⟩
 
 end EdwardsBasepointTableRadix256
 
 namespace EdwardsPoint
 
-open edwards.«EdwardsPointi686-tables»
+open edwards.«EdwardsPoint32bit-tables»
 
 /-- `EdwardsPoint::mul_by_cofactor`: `8 • P`. -/
 theorem mul_by_cofactor (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
@@ -789,4 +789,4 @@ theorem is_torsion_free (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) 
 
 end EdwardsPoint
 
-end Theorems.edwards.«i686-tables»
+end Theorems.edwards.«32bit-tables»

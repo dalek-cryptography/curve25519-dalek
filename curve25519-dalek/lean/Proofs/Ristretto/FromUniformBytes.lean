@@ -24,7 +24,7 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 
 namespace Curve25519Dalek.ristretto
 
-namespace «RistrettoPointx86_64-tables»
+namespace «RistrettoPoint64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
@@ -33,7 +33,7 @@ value, `MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255
 limbs `< 2^52`. -/
 @[step]
 theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
-    from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«x86_64-tables») =>
+    from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep bytes.toVector ∧
         r.LimbsLt 52 ⦄ := by
   simp only [Aeneas.Std.Array.fromUniformRep_toVector]
@@ -57,9 +57,9 @@ theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     toField_eq_decodeU_of_asNat_eq r_2_post, h1, h2, Ristretto.fromUniformRepNat_def]
   rfl
 
-end «RistrettoPointx86_64-tables»
+end «RistrettoPoint64bit-tables»
 
-namespace «RistrettoPointi686-tables»
+namespace «RistrettoPoint32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
@@ -68,7 +68,7 @@ value, `MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255
 limbs `< 2^26`. -/
 @[step]
 theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
-    from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«i686-tables») =>
+    from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep bytes.toVector ∧
         r.LimbsLt 26 ⦄ := by
   simp only [Aeneas.Std.Array.fromUniformRep_toVector]
@@ -92,9 +92,9 @@ theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     toField_eq_decodeU_of_mod r_2_post, h1, h2, Ristretto.fromUniformRepNat_def]
   rfl
 
-end «RistrettoPointi686-tables»
+end «RistrettoPoint32bit-tables»
 
-namespace «RistrettoPointx86_64-no-tables»
+namespace «RistrettoPoint64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
@@ -103,7 +103,7 @@ value, `MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255
 limbs `< 2^52`. -/
 @[step]
 theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
-    from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«x86_64-no-tables») =>
+    from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep bytes.toVector ∧
         r.LimbsLt 52 ⦄ := by
   simp only [Aeneas.Std.Array.fromUniformRep_toVector]
@@ -127,9 +127,9 @@ theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     toField_eq_decodeU_of_asNat_eq r_2_post, h1, h2, Ristretto.fromUniformRepNat_def]
   rfl
 
-end «RistrettoPointx86_64-no-tables»
+end «RistrettoPoint64bit-notables»
 
-namespace «RistrettoPointi686-no-tables»
+namespace «RistrettoPoint32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
@@ -138,7 +138,7 @@ value, `MAP(r₀) + MAP(r₁)` for the two halves: an even point (a ristretto255
 limbs `< 2^26`. -/
 @[step]
 theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
-    from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«i686-no-tables») =>
+    from_uniform_bytes bytes ⦃ (r : RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = Ristretto.fromUniformRep bytes.toVector ∧
         r.LimbsLt 26 ⦄ := by
   simp only [Aeneas.Std.Array.fromUniformRep_toVector]
@@ -162,6 +162,6 @@ theorem from_uniform_bytes_spec (bytes : Array U8 64#usize) :
     toField_eq_decodeU_of_mod r_2_post, h1, h2, Ristretto.fromUniformRepNat_def]
   rfl
 
-end «RistrettoPointi686-no-tables»
+end «RistrettoPoint32bit-notables»
 
 end Curve25519Dalek.ristretto

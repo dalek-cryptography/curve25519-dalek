@@ -22,72 +22,72 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 
 namespace Curve25519Dalek.ristretto
 
-namespace «RistrettoPointx86_64-tables»
+namespace «RistrettoPoint64bit-tables»
 
 /-- `RistrettoPoint::mul_base`: `scalar • B` for the basepoint `B` (unreduced, `< 2^255`);
 an even point (a ristretto255 representative); limbs `< 2^52`. -/
 @[step]
 theorem mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul_base scalar ⦃ (r : RistrettoPoint.«x86_64-tables») =>
+    mul_base scalar ⦃ (r : RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
         r.LimbsLt 52 ⦄ := by
   unfold mul_base
-  step with constants.«x86_64-tables».RISTRETTO_BASEPOINT_TABLE_spec as ⟨t, ht, htp, htb⟩
+  step with constants.«64bit-tables».RISTRETTO_BASEPOINT_TABLE_spec as ⟨t, ht, htp, htb⟩
   step as ⟨r, h1, h2, h3⟩
   rw [htp] at h2
   exact ⟨h1, by rw [h2]; exact even_basepoint.nsmul_right _, h2, h3⟩
 
-end «RistrettoPointx86_64-tables»
+end «RistrettoPoint64bit-tables»
 
-namespace «RistrettoPointi686-tables»
+namespace «RistrettoPoint32bit-tables»
 
 /-- `RistrettoPoint::mul_base`: `scalar • B` for the basepoint `B` (unreduced, `< 2^255`);
 an even point (a ristretto255 representative); limbs `< 2^26`. -/
 @[step]
 theorem mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul_base scalar ⦃ (r : RistrettoPoint.«i686-tables») =>
+    mul_base scalar ⦃ (r : RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
         r.LimbsLt 26 ⦄ := by
   unfold mul_base
-  step with constants.«i686-tables».RISTRETTO_BASEPOINT_TABLE_spec as ⟨t, ht, htp, htb⟩
+  step with constants.«32bit-tables».RISTRETTO_BASEPOINT_TABLE_spec as ⟨t, ht, htp, htb⟩
   step as ⟨r, h1, h2, h3⟩
   rw [htp] at h2
   exact ⟨h1, by rw [h2]; exact even_basepoint.nsmul_right _, h2, h3⟩
 
-end «RistrettoPointi686-tables»
+end «RistrettoPoint32bit-tables»
 
-namespace «RistrettoPointx86_64-no-tables»
+namespace «RistrettoPoint64bit-notables»
 
 /-- `RistrettoPoint::mul_base`: `scalar • B` for the basepoint `B` (unreduced, `< 2^255`);
 an even point (a ristretto255 representative); limbs `< 2^52`. -/
 @[step]
 theorem mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul_base scalar ⦃ (r : RistrettoPoint.«x86_64-no-tables») =>
+    mul_base scalar ⦃ (r : RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
         r.LimbsLt 52 ⦄ := by
   unfold mul_base
-  step with constants.«x86_64-no-tables».RISTRETTO_BASEPOINT_POINT_spec as ⟨p, hp_on, _, hp, hpb⟩
+  step with constants.«64bit-notables».RISTRETTO_BASEPOINT_POINT_spec as ⟨p, hp_on, _, hp, hpb⟩
   step as ⟨r, h1, h2, h3⟩
   refine (fun h => ⟨h1, by rw [h]; exact even_basepoint.nsmul_right _, h, h3⟩) ?_
   rw [h2, hp]
 
-end «RistrettoPointx86_64-no-tables»
+end «RistrettoPoint64bit-notables»
 
-namespace «RistrettoPointi686-no-tables»
+namespace «RistrettoPoint32bit-notables»
 
 /-- `RistrettoPoint::mul_base`: `scalar • B` for the basepoint `B` (unreduced, `< 2^255`);
 an even point (a ristretto255 representative); limbs `< 2^26`. -/
 @[step]
 theorem mul_base_spec (scalar : scalar.Scalar) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul_base scalar ⦃ (r : RistrettoPoint.«i686-no-tables») =>
+    mul_base scalar ⦃ (r : RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = scalar.asNat • basepoint ∧
         r.LimbsLt 26 ⦄ := by
   unfold mul_base
-  step with constants.«i686-no-tables».RISTRETTO_BASEPOINT_POINT_spec as ⟨p, hp_on, _, hp, hpb⟩
+  step with constants.«32bit-notables».RISTRETTO_BASEPOINT_POINT_spec as ⟨p, hp_on, _, hp, hpb⟩
   step as ⟨r, h1, h2, h3⟩
   refine (fun h => ⟨h1, by rw [h]; exact even_basepoint.nsmul_right _, h, h3⟩) ?_
   rw [h2, hp]
 
-end «RistrettoPointi686-no-tables»
+end «RistrettoPoint32bit-notables»
 
 end Curve25519Dalek.ristretto

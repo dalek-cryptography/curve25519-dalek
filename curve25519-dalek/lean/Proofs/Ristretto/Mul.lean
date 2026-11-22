@@ -17,522 +17,522 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 
 namespace Curve25519Dalek
 
-namespace «Shared0RistrettoPointx86_64-tables».Insts
-namespace «CoreOpsArithMulSharedAScalarRistrettoPointx86_64-tables»
+namespace «Shared0RistrettoPoint64bit-tables».Insts
+namespace «CoreOpsArithMulSharedAScalarRistrettoPoint64bit-tables»
 
 open edwards.EdwardsPoint in
 /-- `Mul<&Scalar> for &RistrettoPoint`: `scalar • P` (unreduced, `< 2^255`); limbs `< 2^52`. -/
 @[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«x86_64-tables») (scalar : scalar.Scalar)
+theorem mul_spec (self : ristretto.RistrettoPoint.«64bit-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul self scalar ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    mul self scalar ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step with
-    «x86_64-tables».Insts.«CoreOpsArithMulSharedBScalarEdwardsPointx86_64-tables».mul_spec
+    «64bit-tables».Insts.«CoreOpsArithMulSharedBScalarEdwardsPoint64bit-tables».mul_spec
     self scalar hself hon hscalar as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulSharedAScalarRistrettoPointx86_64-tables»
-end «Shared0RistrettoPointx86_64-tables».Insts
+end «CoreOpsArithMulSharedAScalarRistrettoPoint64bit-tables»
+end «Shared0RistrettoPoint64bit-tables».Insts
 
-namespace «Shared0RistrettoPointi686-tables».Insts
-namespace «CoreOpsArithMulSharedAScalarRistrettoPointi686-tables»
+namespace «Shared0RistrettoPoint32bit-tables».Insts
+namespace «CoreOpsArithMulSharedAScalarRistrettoPoint32bit-tables»
 
 open edwards.EdwardsPoint in
 /-- `Mul<&Scalar> for &RistrettoPoint`: `scalar • P` (unreduced, `< 2^255`); limbs `< 2^26`. -/
 @[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«i686-tables») (scalar : scalar.Scalar)
+theorem mul_spec (self : ristretto.RistrettoPoint.«32bit-tables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul self scalar ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    mul self scalar ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step with
-    «i686-tables».Insts.«CoreOpsArithMulSharedBScalarEdwardsPointi686-tables».mul_spec
+    «32bit-tables».Insts.«CoreOpsArithMulSharedBScalarEdwardsPoint32bit-tables».mul_spec
     self scalar hself hon hscalar as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulSharedAScalarRistrettoPointi686-tables»
-end «Shared0RistrettoPointi686-tables».Insts
+end «CoreOpsArithMulSharedAScalarRistrettoPoint32bit-tables»
+end «Shared0RistrettoPoint32bit-tables».Insts
 
-namespace ristretto.RistrettoPoint.«x86_64-tables».Insts
-namespace «CoreOpsArithMulSharedBScalarRistrettoPointx86_64-tables»
-
-/-- `Mul<&Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
-@[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«x86_64-tables») (rhs : scalar.Scalar)
-    (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
-      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold mul
-  step as ⟨r, h1, h2, h3⟩
-  exact ⟨h1, h2, h3⟩
-
-end «CoreOpsArithMulSharedBScalarRistrettoPointx86_64-tables»
-end ristretto.RistrettoPoint.«x86_64-tables».Insts
-
-namespace ristretto.RistrettoPoint.«i686-tables».Insts
-namespace «CoreOpsArithMulSharedBScalarRistrettoPointi686-tables»
+namespace ristretto.RistrettoPoint.«64bit-tables».Insts
+namespace «CoreOpsArithMulSharedBScalarRistrettoPoint64bit-tables»
 
 /-- `Mul<&Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«i686-tables») (rhs : scalar.Scalar)
-    (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
-      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
-  unfold mul
-  step as ⟨r, h1, h2, h3⟩
-  exact ⟨h1, h2, h3⟩
-
-end «CoreOpsArithMulSharedBScalarRistrettoPointi686-tables»
-end ristretto.RistrettoPoint.«i686-tables».Insts
-
-namespace «SharedARistrettoPointx86_64-tables».Insts
-namespace «CoreOpsArithMulScalarRistrettoPointx86_64-tables»
-
-/-- `Mul<Scalar> for &RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
-@[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«x86_64-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : ristretto.RistrettoPoint.«64bit-tables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulScalarRistrettoPointx86_64-tables»
-end «SharedARistrettoPointx86_64-tables».Insts
+end «CoreOpsArithMulSharedBScalarRistrettoPoint64bit-tables»
+end ristretto.RistrettoPoint.«64bit-tables».Insts
 
-namespace «SharedARistrettoPointi686-tables».Insts
-namespace «CoreOpsArithMulScalarRistrettoPointi686-tables»
+namespace ristretto.RistrettoPoint.«32bit-tables».Insts
+namespace «CoreOpsArithMulSharedBScalarRistrettoPoint32bit-tables»
 
-/-- `Mul<Scalar> for &RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
+/-- `Mul<&Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«i686-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : ristretto.RistrettoPoint.«32bit-tables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulScalarRistrettoPointi686-tables»
-end «SharedARistrettoPointi686-tables».Insts
+end «CoreOpsArithMulSharedBScalarRistrettoPoint32bit-tables»
+end ristretto.RistrettoPoint.«32bit-tables».Insts
 
-namespace ristretto.RistrettoPoint.«x86_64-tables».Insts
-namespace «CoreOpsArithMulScalarRistrettoPointx86_64-tables»
+namespace «SharedARistrettoPoint64bit-tables».Insts
+namespace «CoreOpsArithMulScalarRistrettoPoint64bit-tables»
 
-/-- `Mul<Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
+/-- `Mul<Scalar> for &RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«x86_64-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : ristretto.RistrettoPoint.«64bit-tables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulScalarRistrettoPointx86_64-tables»
-end ristretto.RistrettoPoint.«x86_64-tables».Insts
+end «CoreOpsArithMulScalarRistrettoPoint64bit-tables»
+end «SharedARistrettoPoint64bit-tables».Insts
 
-namespace ristretto.RistrettoPoint.«i686-tables».Insts
-namespace «CoreOpsArithMulScalarRistrettoPointi686-tables»
+namespace «SharedARistrettoPoint32bit-tables».Insts
+namespace «CoreOpsArithMulScalarRistrettoPoint32bit-tables»
 
-/-- `Mul<Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
+/-- `Mul<Scalar> for &RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«i686-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : ristretto.RistrettoPoint.«32bit-tables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulScalarRistrettoPointi686-tables»
-end ristretto.RistrettoPoint.«i686-tables».Insts
+end «CoreOpsArithMulScalarRistrettoPoint32bit-tables»
+end «SharedARistrettoPoint32bit-tables».Insts
+
+namespace ristretto.RistrettoPoint.«64bit-tables».Insts
+namespace «CoreOpsArithMulScalarRistrettoPoint64bit-tables»
+
+/-- `Mul<Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
+@[step]
+theorem mul_spec (self : ristretto.RistrettoPoint.«64bit-tables») (rhs : scalar.Scalar)
+    (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
+      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
+  unfold mul
+  step as ⟨r, h1, h2, h3⟩
+  exact ⟨h1, h2, h3⟩
+
+end «CoreOpsArithMulScalarRistrettoPoint64bit-tables»
+end ristretto.RistrettoPoint.«64bit-tables».Insts
+
+namespace ristretto.RistrettoPoint.«32bit-tables».Insts
+namespace «CoreOpsArithMulScalarRistrettoPoint32bit-tables»
+
+/-- `Mul<Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
+@[step]
+theorem mul_spec (self : ristretto.RistrettoPoint.«32bit-tables») (rhs : scalar.Scalar)
+    (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
+      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
+  unfold mul
+  step as ⟨r, h1, h2, h3⟩
+  exact ⟨h1, h2, h3⟩
+
+end «CoreOpsArithMulScalarRistrettoPoint32bit-tables»
+end ristretto.RistrettoPoint.«32bit-tables».Insts
 
 namespace Shared0Scalar.Insts
-namespace «CoreOpsArithMulSharedARistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
+namespace «CoreOpsArithMulSharedARistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
 
 /-- `Mul<&RistrettoPoint> for &Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (point : ristretto.RistrettoPoint.«x86_64-tables»)
+theorem mul_spec (self : scalar.Scalar) (point : ristretto.RistrettoPoint.«64bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hpoint : point.LimbsLt 52) (hpoint_on : point.OnCurve) :
-    mul self point ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    mul self point ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • point.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step with
-    SharedAScalar.Insts.«CoreOpsArithMulEdwardsPointx86_64-tablesEdwardsPointx86_64-tables».mul_spec
+    SharedAScalar.Insts.«CoreOpsArithMulEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».mul_spec
     self point hself hpoint hpoint_on as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulSharedARistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
+end «CoreOpsArithMulSharedARistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
 
-namespace «CoreOpsArithMulSharedARistrettoPointi686-tablesRistrettoPointi686-tables»
+namespace «CoreOpsArithMulSharedARistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
 
 /-- `Mul<&RistrettoPoint> for &Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (point : ristretto.RistrettoPoint.«i686-tables»)
+theorem mul_spec (self : scalar.Scalar) (point : ristretto.RistrettoPoint.«32bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hpoint : point.LimbsLt 26) (hpoint_on : point.OnCurve) :
-    mul self point ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    mul self point ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • point.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step with
-    SharedAScalar.Insts.«CoreOpsArithMulEdwardsPointi686-tablesEdwardsPointi686-tables».mul_spec
+    SharedAScalar.Insts.«CoreOpsArithMulEdwardsPoint32bit-tablesEdwardsPoint32bit-tables».mul_spec
     self point hself hpoint hpoint_on as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulSharedARistrettoPointi686-tablesRistrettoPointi686-tables»
+end «CoreOpsArithMulSharedARistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
 end Shared0Scalar.Insts
 
 namespace scalar.Scalar.Insts
-namespace «CoreOpsArithMulSharedBRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
+namespace «CoreOpsArithMulSharedBRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
 
 /-- `Mul<&RistrettoPoint> for Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«x86_64-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«64bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulSharedBRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
+end «CoreOpsArithMulSharedBRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
 
-namespace «CoreOpsArithMulSharedBRistrettoPointi686-tablesRistrettoPointi686-tables»
+namespace «CoreOpsArithMulSharedBRistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
 
 /-- `Mul<&RistrettoPoint> for Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«i686-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«32bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulSharedBRistrettoPointi686-tablesRistrettoPointi686-tables»
+end «CoreOpsArithMulSharedBRistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
 end scalar.Scalar.Insts
 
 namespace SharedAScalar.Insts
-namespace «CoreOpsArithMulRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
+namespace «CoreOpsArithMulRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
 
 /-- `Mul<RistrettoPoint> for &Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«x86_64-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«64bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
+end «CoreOpsArithMulRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
 
-namespace «CoreOpsArithMulRistrettoPointi686-tablesRistrettoPointi686-tables»
+namespace «CoreOpsArithMulRistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
 
 /-- `Mul<RistrettoPoint> for &Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«i686-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«32bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulRistrettoPointi686-tablesRistrettoPointi686-tables»
+end «CoreOpsArithMulRistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
 end SharedAScalar.Insts
 
 namespace scalar.Scalar.Insts
-namespace «CoreOpsArithMulRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
+namespace «CoreOpsArithMulRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
 
 /-- `Mul<RistrettoPoint> for Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«x86_64-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«64bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulRistrettoPointx86_64-tablesRistrettoPointx86_64-tables»
+end «CoreOpsArithMulRistrettoPoint64bit-tablesRistrettoPoint64bit-tables»
 
-namespace «CoreOpsArithMulRistrettoPointi686-tablesRistrettoPointi686-tables»
+namespace «CoreOpsArithMulRistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
 
 /-- `Mul<RistrettoPoint> for Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«i686-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«32bit-tables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulRistrettoPointi686-tablesRistrettoPointi686-tables»
+end «CoreOpsArithMulRistrettoPoint32bit-tablesRistrettoPoint32bit-tables»
 end scalar.Scalar.Insts
 
-namespace «Shared0RistrettoPointx86_64-no-tables».Insts
-namespace «CoreOpsArithMulSharedAScalarRistrettoPointx86_64-no-tables»
+namespace «Shared0RistrettoPoint64bit-notables».Insts
+namespace «CoreOpsArithMulSharedAScalarRistrettoPoint64bit-notables»
 
 open edwards.EdwardsPoint in
 /-- `Mul<&Scalar> for &RistrettoPoint`: `scalar • P` (unreduced, `< 2^255`); limbs `< 2^52`. -/
 @[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables») (scalar : scalar.Scalar)
+theorem mul_spec (self : ristretto.RistrettoPoint.«64bit-notables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul self scalar ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    mul self scalar ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step with
-    «x86_64-no-tables».Insts.«CoreOpsArithMulSharedBScalarEdwardsPointx86_64-no-tables».mul_spec
+    «64bit-notables».Insts.«CoreOpsArithMulSharedBScalarEdwardsPoint64bit-notables».mul_spec
     self scalar hself hon hscalar as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulSharedAScalarRistrettoPointx86_64-no-tables»
-end «Shared0RistrettoPointx86_64-no-tables».Insts
+end «CoreOpsArithMulSharedAScalarRistrettoPoint64bit-notables»
+end «Shared0RistrettoPoint64bit-notables».Insts
 
-namespace «Shared0RistrettoPointi686-no-tables».Insts
-namespace «CoreOpsArithMulSharedAScalarRistrettoPointi686-no-tables»
+namespace «Shared0RistrettoPoint32bit-notables».Insts
+namespace «CoreOpsArithMulSharedAScalarRistrettoPoint32bit-notables»
 
 open edwards.EdwardsPoint in
 /-- `Mul<&Scalar> for &RistrettoPoint`: `scalar • P` (unreduced, `< 2^255`); limbs `< 2^26`. -/
 @[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«i686-no-tables») (scalar : scalar.Scalar)
+theorem mul_spec (self : ristretto.RistrettoPoint.«32bit-notables») (scalar : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hscalar : scalar.asNat < 2 ^ 255) :
-    mul self scalar ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    mul self scalar ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = scalar.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step with
-    «i686-no-tables».Insts.«CoreOpsArithMulSharedBScalarEdwardsPointi686-no-tables».mul_spec
+    «32bit-notables».Insts.«CoreOpsArithMulSharedBScalarEdwardsPoint32bit-notables».mul_spec
     self scalar hself hon hscalar as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulSharedAScalarRistrettoPointi686-no-tables»
-end «Shared0RistrettoPointi686-no-tables».Insts
+end «CoreOpsArithMulSharedAScalarRistrettoPoint32bit-notables»
+end «Shared0RistrettoPoint32bit-notables».Insts
 
-namespace ristretto.RistrettoPoint.«x86_64-no-tables».Insts
-namespace «CoreOpsArithMulSharedBScalarRistrettoPointx86_64-no-tables»
-
-/-- `Mul<&Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
-@[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables») (rhs : scalar.Scalar)
-    (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
-      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
-  unfold mul
-  step as ⟨r, h1, h2, h3⟩
-  exact ⟨h1, h2, h3⟩
-
-end «CoreOpsArithMulSharedBScalarRistrettoPointx86_64-no-tables»
-end ristretto.RistrettoPoint.«x86_64-no-tables».Insts
-
-namespace ristretto.RistrettoPoint.«i686-no-tables».Insts
-namespace «CoreOpsArithMulSharedBScalarRistrettoPointi686-no-tables»
+namespace ristretto.RistrettoPoint.«64bit-notables».Insts
+namespace «CoreOpsArithMulSharedBScalarRistrettoPoint64bit-notables»
 
 /-- `Mul<&Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«i686-no-tables») (rhs : scalar.Scalar)
-    (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
-      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
-  unfold mul
-  step as ⟨r, h1, h2, h3⟩
-  exact ⟨h1, h2, h3⟩
-
-end «CoreOpsArithMulSharedBScalarRistrettoPointi686-no-tables»
-end ristretto.RistrettoPoint.«i686-no-tables».Insts
-
-namespace «SharedARistrettoPointx86_64-no-tables».Insts
-namespace «CoreOpsArithMulScalarRistrettoPointx86_64-no-tables»
-
-/-- `Mul<Scalar> for &RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
-@[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : ristretto.RistrettoPoint.«64bit-notables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulScalarRistrettoPointx86_64-no-tables»
-end «SharedARistrettoPointx86_64-no-tables».Insts
+end «CoreOpsArithMulSharedBScalarRistrettoPoint64bit-notables»
+end ristretto.RistrettoPoint.«64bit-notables».Insts
 
-namespace «SharedARistrettoPointi686-no-tables».Insts
-namespace «CoreOpsArithMulScalarRistrettoPointi686-no-tables»
+namespace ristretto.RistrettoPoint.«32bit-notables».Insts
+namespace «CoreOpsArithMulSharedBScalarRistrettoPoint32bit-notables»
 
-/-- `Mul<Scalar> for &RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
+/-- `Mul<&Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«i686-no-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : ristretto.RistrettoPoint.«32bit-notables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulScalarRistrettoPointi686-no-tables»
-end «SharedARistrettoPointi686-no-tables».Insts
+end «CoreOpsArithMulSharedBScalarRistrettoPoint32bit-notables»
+end ristretto.RistrettoPoint.«32bit-notables».Insts
 
-namespace ristretto.RistrettoPoint.«x86_64-no-tables».Insts
-namespace «CoreOpsArithMulScalarRistrettoPointx86_64-no-tables»
+namespace «SharedARistrettoPoint64bit-notables».Insts
+namespace «CoreOpsArithMulScalarRistrettoPoint64bit-notables»
 
-/-- `Mul<Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
+/-- `Mul<Scalar> for &RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«x86_64-no-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : ristretto.RistrettoPoint.«64bit-notables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulScalarRistrettoPointx86_64-no-tables»
-end ristretto.RistrettoPoint.«x86_64-no-tables».Insts
+end «CoreOpsArithMulScalarRistrettoPoint64bit-notables»
+end «SharedARistrettoPoint64bit-notables».Insts
 
-namespace ristretto.RistrettoPoint.«i686-no-tables».Insts
-namespace «CoreOpsArithMulScalarRistrettoPointi686-no-tables»
+namespace «SharedARistrettoPoint32bit-notables».Insts
+namespace «CoreOpsArithMulScalarRistrettoPoint32bit-notables»
 
-/-- `Mul<Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
+/-- `Mul<Scalar> for &RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : ristretto.RistrettoPoint.«i686-no-tables») (rhs : scalar.Scalar)
+theorem mul_spec (self : ristretto.RistrettoPoint.«32bit-notables») (rhs : scalar.Scalar)
     (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulScalarRistrettoPointi686-no-tables»
-end ristretto.RistrettoPoint.«i686-no-tables».Insts
+end «CoreOpsArithMulScalarRistrettoPoint32bit-notables»
+end «SharedARistrettoPoint32bit-notables».Insts
+
+namespace ristretto.RistrettoPoint.«64bit-notables».Insts
+namespace «CoreOpsArithMulScalarRistrettoPoint64bit-notables»
+
+/-- `Mul<Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
+@[step]
+theorem mul_spec (self : ristretto.RistrettoPoint.«64bit-notables») (rhs : scalar.Scalar)
+    (hself : self.LimbsLt 52) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
+      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 52 ⦄ := by
+  unfold mul
+  step as ⟨r, h1, h2, h3⟩
+  exact ⟨h1, h2, h3⟩
+
+end «CoreOpsArithMulScalarRistrettoPoint64bit-notables»
+end ristretto.RistrettoPoint.«64bit-notables».Insts
+
+namespace ristretto.RistrettoPoint.«32bit-notables».Insts
+namespace «CoreOpsArithMulScalarRistrettoPoint32bit-notables»
+
+/-- `Mul<Scalar> for RistrettoPoint`: as `&RistrettoPoint * &Scalar`. -/
+@[step]
+theorem mul_spec (self : ristretto.RistrettoPoint.«32bit-notables») (rhs : scalar.Scalar)
+    (hself : self.LimbsLt 26) (hon : self.OnCurve) (hrhs : rhs.asNat < 2 ^ 255) :
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
+      r.OnCurve ∧ r.toPoint = rhs.asNat • self.toPoint ∧ r.LimbsLt 26 ⦄ := by
+  unfold mul
+  step as ⟨r, h1, h2, h3⟩
+  exact ⟨h1, h2, h3⟩
+
+end «CoreOpsArithMulScalarRistrettoPoint32bit-notables»
+end ristretto.RistrettoPoint.«32bit-notables».Insts
 
 namespace Shared0Scalar.Insts
-namespace «CoreOpsArithMulSharedARistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
+namespace «CoreOpsArithMulSharedARistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
 
 open SharedAScalar in
 /-- `Mul<&RistrettoPoint> for &Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (point : ristretto.RistrettoPoint.«x86_64-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (point : ristretto.RistrettoPoint.«64bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hpoint : point.LimbsLt 52) (hpoint_on : point.OnCurve) :
-    mul self point ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    mul self point ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • point.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step with
-    Insts.«CoreOpsArithMulEdwardsPointx86_64-no-tablesEdwardsPointx86_64-no-tables».mul_spec
+    Insts.«CoreOpsArithMulEdwardsPoint64bit-notablesEdwardsPoint64bit-notables».mul_spec
     self point hself hpoint hpoint_on as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulSharedARistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
+end «CoreOpsArithMulSharedARistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
 
-namespace «CoreOpsArithMulSharedARistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
+namespace «CoreOpsArithMulSharedARistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
 
 open SharedAScalar in
 /-- `Mul<&RistrettoPoint> for &Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (point : ristretto.RistrettoPoint.«i686-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (point : ristretto.RistrettoPoint.«32bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hpoint : point.LimbsLt 26) (hpoint_on : point.OnCurve) :
-    mul self point ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    mul self point ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • point.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step with
-    Insts.«CoreOpsArithMulEdwardsPointi686-no-tablesEdwardsPointi686-no-tables».mul_spec
+    Insts.«CoreOpsArithMulEdwardsPoint32bit-notablesEdwardsPoint32bit-notables».mul_spec
     self point hself hpoint hpoint_on as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulSharedARistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
+end «CoreOpsArithMulSharedARistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
 end Shared0Scalar.Insts
 
 namespace scalar.Scalar.Insts
-namespace «CoreOpsArithMulSharedBRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
+namespace «CoreOpsArithMulSharedBRistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
 
 /-- `Mul<&RistrettoPoint> for Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«64bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulSharedBRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
+end «CoreOpsArithMulSharedBRistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
 
-namespace «CoreOpsArithMulSharedBRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
+namespace «CoreOpsArithMulSharedBRistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
 
 /-- `Mul<&RistrettoPoint> for Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«i686-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«32bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulSharedBRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
+end «CoreOpsArithMulSharedBRistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
 end scalar.Scalar.Insts
 
 namespace SharedAScalar.Insts
-namespace «CoreOpsArithMulRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
+namespace «CoreOpsArithMulRistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
 
 /-- `Mul<RistrettoPoint> for &Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«64bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
+end «CoreOpsArithMulRistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
 
-namespace «CoreOpsArithMulRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
+namespace «CoreOpsArithMulRistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
 
 /-- `Mul<RistrettoPoint> for &Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«i686-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«32bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
+end «CoreOpsArithMulRistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
 end SharedAScalar.Insts
 
 namespace scalar.Scalar.Insts
-namespace «CoreOpsArithMulRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
+namespace «CoreOpsArithMulRistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
 
 /-- `Mul<RistrettoPoint> for Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«64bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 52) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulRistrettoPointx86_64-no-tablesRistrettoPointx86_64-no-tables»
+end «CoreOpsArithMulRistrettoPoint64bit-notablesRistrettoPoint64bit-notables»
 
-namespace «CoreOpsArithMulRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
+namespace «CoreOpsArithMulRistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
 
 /-- `Mul<RistrettoPoint> for Scalar`: as `&RistrettoPoint * &Scalar`. -/
 @[step]
-theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«i686-no-tables»)
+theorem mul_spec (self : scalar.Scalar) (rhs : ristretto.RistrettoPoint.«32bit-notables»)
     (hself : self.asNat < 2 ^ 255) (hrhs : rhs.LimbsLt 26) (hrhs_on : rhs.OnCurve) :
-    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    mul self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.asNat • rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold mul
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithMulRistrettoPointi686-no-tablesRistrettoPointi686-no-tables»
+end «CoreOpsArithMulRistrettoPoint32bit-notablesRistrettoPoint32bit-notables»
 end scalar.Scalar.Insts
 
 end Curve25519Dalek

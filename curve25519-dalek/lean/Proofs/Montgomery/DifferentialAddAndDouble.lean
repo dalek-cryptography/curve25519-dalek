@@ -106,24 +106,24 @@ end Curve25519Dalek.Backend
 
 namespace Curve25519Dalek.montgomery
 
-namespace «x86_64-tables»
+namespace «64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-theorem differential_add_and_double_eq (P Q : ProjectivePoint.«x86_64-tables»)
+theorem differential_add_and_double_eq (P Q : ProjectivePoint.«64bit-tables»)
     (affine_PmQ : FieldElement51) :
-    differential_add_and_double.«x86_64-tables» P Q affine_PmQ =
+    differential_add_and_double.«64bit-tables» P Q affine_PmQ =
       Backend.differentialAddAndDoubleBody Backend.U64
-        (fun U W => (⟨U, W⟩ : ProjectivePoint.«x86_64-tables»)) P.U P.W Q.U Q.W affine_PmQ := rfl
+        (fun U W => (⟨U, W⟩ : ProjectivePoint.«64bit-tables»)) P.U P.W Q.U Q.W affine_PmQ := rfl
 
 /-- `differential_add_and_double`: one step of the ladder on `(U : W)` coordinates,
 `P ↦ xDbl P` and `Q ↦ XZ.add P Q u(P - Q)` exactly (RFC 7748 §5); limbs `< 2^52`. -/
 @[step]
-theorem differential_add_and_double_spec (P Q : ProjectivePoint.«x86_64-tables»)
+theorem differential_add_and_double_spec (P Q : ProjectivePoint.«64bit-tables»)
     (affine_PmQ : FieldElement51) (hP : P.LimbsLt 52) (hQ : Q.LimbsLt 52)
     (haffine_PmQ : affine_PmQ.LimbsLt 54) :
-    differential_add_and_double.«x86_64-tables» P Q affine_PmQ
-      ⦃ (P' Q' : ProjectivePoint.«x86_64-tables») =>
+    differential_add_and_double.«64bit-tables» P Q affine_PmQ
+      ⦃ (P' Q' : ProjectivePoint.«64bit-tables») =>
         P'.toXZ = MontgomeryModel.XZ.dbl montgomery.a24 P.toXZ ∧
         Q'.toXZ = MontgomeryModel.XZ.add P.toXZ Q.toXZ affine_PmQ.toField ∧
         P'.LimbsLt 52 ∧ Q'.LimbsLt 52 ⦄ := by
@@ -134,29 +134,29 @@ theorem differential_add_and_double_spec (P Q : ProjectivePoint.«x86_64-tables�
     Backend.U64.add_spec Backend.U64.sub_spec Backend.U64.mul_spec Backend.U64.square_spec
     Backend.U64.aplus2OverFour_spec _ _ _ _ _ _ hPU hPW hQU hQW haffine_PmQ)
   rintro ⟨P', Q'⟩ ⟨u, w, u', w', rfl, rfl, h1, h2, b1, b2, b3, b4⟩
-  simp only [ProjectivePoint.«x86_64-tables».toXZ_def]
+  simp only [ProjectivePoint.«64bit-tables».toXZ_def]
   exact ⟨h1, h2, ⟨b1, b2⟩, ⟨b3, b4⟩⟩
 
-end «x86_64-tables»
+end «64bit-tables»
 
-namespace «i686-tables»
+namespace «32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-theorem differential_add_and_double_eq (P Q : ProjectivePoint.«i686-tables»)
+theorem differential_add_and_double_eq (P Q : ProjectivePoint.«32bit-tables»)
     (affine_PmQ : FieldElement2625) :
-    differential_add_and_double.«i686-tables» P Q affine_PmQ =
+    differential_add_and_double.«32bit-tables» P Q affine_PmQ =
       Backend.differentialAddAndDoubleBody Backend.U32
-        (fun U W => (⟨U, W⟩ : ProjectivePoint.«i686-tables»)) P.U P.W Q.U Q.W affine_PmQ := rfl
+        (fun U W => (⟨U, W⟩ : ProjectivePoint.«32bit-tables»)) P.U P.W Q.U Q.W affine_PmQ := rfl
 
 /-- `differential_add_and_double`: one step of the ladder on `(U : W)` coordinates,
 `P ↦ xDbl P` and `Q ↦ XZ.add P Q u(P - Q)` exactly (RFC 7748 §5); limbs `< 2^26`. -/
 @[step]
-theorem differential_add_and_double_spec (P Q : ProjectivePoint.«i686-tables»)
+theorem differential_add_and_double_spec (P Q : ProjectivePoint.«32bit-tables»)
     (affine_PmQ : FieldElement2625) (hP : P.LimbsLt 26) (hQ : Q.LimbsLt 26)
     (haffine_PmQ : affine_PmQ.LimbsLt 27) :
-    differential_add_and_double.«i686-tables» P Q affine_PmQ
-      ⦃ (P' Q' : ProjectivePoint.«i686-tables») =>
+    differential_add_and_double.«32bit-tables» P Q affine_PmQ
+      ⦃ (P' Q' : ProjectivePoint.«32bit-tables») =>
         P'.toXZ = MontgomeryModel.XZ.dbl montgomery.a24 P.toXZ ∧
         Q'.toXZ = MontgomeryModel.XZ.add P.toXZ Q.toXZ affine_PmQ.toField ∧
         P'.LimbsLt 26 ∧ Q'.LimbsLt 26 ⦄ := by
@@ -167,29 +167,29 @@ theorem differential_add_and_double_spec (P Q : ProjectivePoint.«i686-tables»)
     Backend.U32.add_spec Backend.U32.sub_spec Backend.U32.mul_spec Backend.U32.square_spec
     Backend.U32.aplus2OverFour_spec _ _ _ _ _ _ hPU hPW hQU hQW haffine_PmQ)
   rintro ⟨P', Q'⟩ ⟨u, w, u', w', rfl, rfl, h1, h2, b1, b2, b3, b4⟩
-  simp only [ProjectivePoint.«i686-tables».toXZ_def]
+  simp only [ProjectivePoint.«32bit-tables».toXZ_def]
   exact ⟨h1, h2, ⟨b1, b2⟩, ⟨b3, b4⟩⟩
 
-end «i686-tables»
+end «32bit-tables»
 
-namespace «x86_64-no-tables»
+namespace «64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
-theorem differential_add_and_double_eq (P Q : ProjectivePoint.«x86_64-no-tables»)
+theorem differential_add_and_double_eq (P Q : ProjectivePoint.«64bit-notables»)
     (affine_PmQ : FieldElement51) :
-    differential_add_and_double.«x86_64-no-tables» P Q affine_PmQ =
+    differential_add_and_double.«64bit-notables» P Q affine_PmQ =
       Backend.differentialAddAndDoubleBody Backend.U64
-        (fun U W => (⟨U, W⟩ : ProjectivePoint.«x86_64-no-tables»)) P.U P.W Q.U Q.W affine_PmQ := rfl
+        (fun U W => (⟨U, W⟩ : ProjectivePoint.«64bit-notables»)) P.U P.W Q.U Q.W affine_PmQ := rfl
 
 /-- `differential_add_and_double`: one step of the ladder on `(U : W)` coordinates,
 `P ↦ xDbl P` and `Q ↦ XZ.add P Q u(P - Q)` exactly (RFC 7748 §5); limbs `< 2^52`. -/
 @[step]
-theorem differential_add_and_double_spec (P Q : ProjectivePoint.«x86_64-no-tables»)
+theorem differential_add_and_double_spec (P Q : ProjectivePoint.«64bit-notables»)
     (affine_PmQ : FieldElement51) (hP : P.LimbsLt 52) (hQ : Q.LimbsLt 52)
     (haffine_PmQ : affine_PmQ.LimbsLt 54) :
-    differential_add_and_double.«x86_64-no-tables» P Q affine_PmQ
-      ⦃ (P' Q' : ProjectivePoint.«x86_64-no-tables») =>
+    differential_add_and_double.«64bit-notables» P Q affine_PmQ
+      ⦃ (P' Q' : ProjectivePoint.«64bit-notables») =>
         P'.toXZ = MontgomeryModel.XZ.dbl montgomery.a24 P.toXZ ∧
         Q'.toXZ = MontgomeryModel.XZ.add P.toXZ Q.toXZ affine_PmQ.toField ∧
         P'.LimbsLt 52 ∧ Q'.LimbsLt 52 ⦄ := by
@@ -200,29 +200,29 @@ theorem differential_add_and_double_spec (P Q : ProjectivePoint.«x86_64-no-tabl
     Backend.U64.add_spec Backend.U64.sub_spec Backend.U64.mul_spec Backend.U64.square_spec
     Backend.U64.aplus2OverFour_spec _ _ _ _ _ _ hPU hPW hQU hQW haffine_PmQ)
   rintro ⟨P', Q'⟩ ⟨u, w, u', w', rfl, rfl, h1, h2, b1, b2, b3, b4⟩
-  simp only [ProjectivePoint.«x86_64-no-tables».toXZ_def]
+  simp only [ProjectivePoint.«64bit-notables».toXZ_def]
   exact ⟨h1, h2, ⟨b1, b2⟩, ⟨b3, b4⟩⟩
 
-end «x86_64-no-tables»
+end «64bit-notables»
 
-namespace «i686-no-tables»
+namespace «32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
-theorem differential_add_and_double_eq (P Q : ProjectivePoint.«i686-no-tables»)
+theorem differential_add_and_double_eq (P Q : ProjectivePoint.«32bit-notables»)
     (affine_PmQ : FieldElement2625) :
-    differential_add_and_double.«i686-no-tables» P Q affine_PmQ =
+    differential_add_and_double.«32bit-notables» P Q affine_PmQ =
       Backend.differentialAddAndDoubleBody Backend.U32
-        (fun U W => (⟨U, W⟩ : ProjectivePoint.«i686-no-tables»)) P.U P.W Q.U Q.W affine_PmQ := rfl
+        (fun U W => (⟨U, W⟩ : ProjectivePoint.«32bit-notables»)) P.U P.W Q.U Q.W affine_PmQ := rfl
 
 /-- `differential_add_and_double`: one step of the ladder on `(U : W)` coordinates,
 `P ↦ xDbl P` and `Q ↦ XZ.add P Q u(P - Q)` exactly (RFC 7748 §5); limbs `< 2^26`. -/
 @[step]
-theorem differential_add_and_double_spec (P Q : ProjectivePoint.«i686-no-tables»)
+theorem differential_add_and_double_spec (P Q : ProjectivePoint.«32bit-notables»)
     (affine_PmQ : FieldElement2625) (hP : P.LimbsLt 26) (hQ : Q.LimbsLt 26)
     (haffine_PmQ : affine_PmQ.LimbsLt 27) :
-    differential_add_and_double.«i686-no-tables» P Q affine_PmQ
-      ⦃ (P' Q' : ProjectivePoint.«i686-no-tables») =>
+    differential_add_and_double.«32bit-notables» P Q affine_PmQ
+      ⦃ (P' Q' : ProjectivePoint.«32bit-notables») =>
         P'.toXZ = MontgomeryModel.XZ.dbl montgomery.a24 P.toXZ ∧
         Q'.toXZ = MontgomeryModel.XZ.add P.toXZ Q.toXZ affine_PmQ.toField ∧
         P'.LimbsLt 26 ∧ Q'.LimbsLt 26 ⦄ := by
@@ -233,9 +233,9 @@ theorem differential_add_and_double_spec (P Q : ProjectivePoint.«i686-no-tables
     Backend.U32.add_spec Backend.U32.sub_spec Backend.U32.mul_spec Backend.U32.square_spec
     Backend.U32.aplus2OverFour_spec _ _ _ _ _ _ hPU hPW hQU hQW haffine_PmQ)
   rintro ⟨P', Q'⟩ ⟨u, w, u', w', rfl, rfl, h1, h2, b1, b2, b3, b4⟩
-  simp only [ProjectivePoint.«i686-no-tables».toXZ_def]
+  simp only [ProjectivePoint.«32bit-notables».toXZ_def]
   exact ⟨h1, h2, ⟨b1, b2⟩, ⟨b3, b4⟩⟩
 
-end «i686-no-tables»
+end «32bit-notables»
 
 end Curve25519Dalek.montgomery

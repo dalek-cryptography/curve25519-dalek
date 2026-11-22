@@ -234,12 +234,12 @@ end Curve25519Dalek.Backend
 
 namespace Curve25519Dalek.ristretto
 
-namespace «RistrettoPointx86_64-tables».double_and_compress_batch
+namespace «RistrettoPoint64bit-tables».double_and_compress_batch
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- The state of a point `P`: its doubling quantities as field elements, with their limb bounds. -/
-private def StateOf (P : RistrettoPoint.«x86_64-tables») (st : BatchCompressState) : Prop :=
+private def StateOf (P : RistrettoPoint.«64bit-tables») (st : BatchCompressState) : Prop :=
   st.e.toField = P.X.toField * (P.Y.toField + P.Y.toField) ∧
   st.f.toField = P.Z.toField ^ 2 + P.T.toField ^ 2 * d ∧
   st.g.toField = P.Y.toField ^ 2 + P.X.toField ^ 2 ∧
@@ -248,16 +248,16 @@ private def StateOf (P : RistrettoPoint.«x86_64-tables») (st : BatchCompressSt
   st.e.LimbsLt 54 ∧ st.f.LimbsLt 54 ∧ st.g.LimbsLt 54 ∧ st.h.LimbsLt 54 ∧ st.eg.LimbsLt 52 ∧
   st.fh.LimbsLt 52
 
-private theorem from_eq (P : RistrettoPoint.«x86_64-tables») :
-    BatchCompressState.Insts.«CoreConvertFromSharedARistrettoPointx86_64-tables».from P =
+private theorem from_eq (P : RistrettoPoint.«64bit-tables») :
+    BatchCompressState.Insts.«CoreConvertFromSharedARistrettoPoint64bit-tables».from P =
       Backend.batchStateBody Backend.U64
         (fun e f g h eg fh => (⟨e, f, g, h, eg, fh⟩ : BatchCompressState))
         P.X P.Y P.Z P.T := rfl
 
 open BatchCompressState.Insts in
 /-- `BatchCompressState::from`: the doubling quantities of `P`. -/
-private theorem from_spec (P : RistrettoPoint.«x86_64-tables») (hP : P.LimbsLt 52) :
-    «CoreConvertFromSharedARistrettoPointx86_64-tables».from P
+private theorem from_spec (P : RistrettoPoint.«64bit-tables») (hP : P.LimbsLt 52) :
+    «CoreConvertFromSharedARistrettoPoint64bit-tables».from P
       ⦃ (st : BatchCompressState) => StateOf P st ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hP
   rw [from_eq]
@@ -282,8 +282,8 @@ private theorem forall₂_getElem! {α β : Type} [Inhabited α] [Inhabited β] 
 /-- The collecting loop: one state per point. -/
 private theorem states_loop_spec {I It : Type}
     (pointsInst :
-      core.iter.traits.collect.IntoIterator I RistrettoPoint.«x86_64-tables» It)
-    (it : It) (ps : List RistrettoPoint.«x86_64-tables»)
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«64bit-tables» It)
+    (it : It) (ps : List RistrettoPoint.«64bit-tables»)
     (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52) (out : alloc.vec.Vec BatchCompressState)
     (hlen : out.length + ps.length ≤ Usize.max) :
@@ -328,8 +328,8 @@ private theorem efgh_spec (st : BatchCompressState) (h1 : st.eg.LimbsLt 52)
 /-- `states`: one state per point. -/
 private theorem states_spec {I It : Type}
     (pointsInst :
-      core.iter.traits.collect.IntoIterator I RistrettoPoint.«x86_64-tables» It)
-    (it : It) (ps : List RistrettoPoint.«x86_64-tables»)
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«64bit-tables» It)
+    (it : It) (ps : List RistrettoPoint.«64bit-tables»)
     (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52) (hlen : ps.length ≤ Usize.max) :
     double_and_compress_batch_loop0 pointsInst it (alloc.vec.Vec.new _)
@@ -341,14 +341,14 @@ private theorem states_spec {I It : Type}
   rw [hv]
   simpa using hzs
 
-end «RistrettoPointx86_64-tables».double_and_compress_batch
+end «RistrettoPoint64bit-tables».double_and_compress_batch
 
-namespace «RistrettoPointi686-tables».double_and_compress_batch
+namespace «RistrettoPoint32bit-tables».double_and_compress_batch
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- The state of a point `P`: its doubling quantities as field elements, with their limb bounds. -/
-private def StateOf (P : RistrettoPoint.«i686-tables») (st : BatchCompressState) : Prop :=
+private def StateOf (P : RistrettoPoint.«32bit-tables») (st : BatchCompressState) : Prop :=
   st.e.toField = P.X.toField * (P.Y.toField + P.Y.toField) ∧
   st.f.toField = P.Z.toField ^ 2 + P.T.toField ^ 2 * d ∧
   st.g.toField = P.Y.toField ^ 2 + P.X.toField ^ 2 ∧
@@ -357,16 +357,16 @@ private def StateOf (P : RistrettoPoint.«i686-tables») (st : BatchCompressStat
   st.e.LimbsLt 27 ∧ st.f.LimbsLt 27 ∧ st.g.LimbsLt 27 ∧ st.h.LimbsLt 27 ∧ st.eg.LimbsLt 26 ∧
   st.fh.LimbsLt 26
 
-private theorem from_eq (P : RistrettoPoint.«i686-tables») :
-    BatchCompressState.Insts.«CoreConvertFromSharedARistrettoPointi686-tables».from P =
+private theorem from_eq (P : RistrettoPoint.«32bit-tables») :
+    BatchCompressState.Insts.«CoreConvertFromSharedARistrettoPoint32bit-tables».from P =
       Backend.batchStateBody Backend.U32
         (fun e f g h eg fh => (⟨e, f, g, h, eg, fh⟩ : BatchCompressState))
         P.X P.Y P.Z P.T := rfl
 
 open BatchCompressState.Insts in
 /-- `BatchCompressState::from`: the doubling quantities of `P`. -/
-private theorem from_spec (P : RistrettoPoint.«i686-tables») (hP : P.LimbsLt 26) :
-    «CoreConvertFromSharedARistrettoPointi686-tables».from P
+private theorem from_spec (P : RistrettoPoint.«32bit-tables») (hP : P.LimbsLt 26) :
+    «CoreConvertFromSharedARistrettoPoint32bit-tables».from P
       ⦃ (st : BatchCompressState) => StateOf P st ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hP
   rw [from_eq]
@@ -391,8 +391,8 @@ private theorem forall₂_getElem! {α β : Type} [Inhabited α] [Inhabited β] 
 /-- The collecting loop: one state per point. -/
 private theorem states_loop_spec {I It : Type}
     (pointsInst :
-      core.iter.traits.collect.IntoIterator I RistrettoPoint.«i686-tables» It)
-    (it : It) (ps : List RistrettoPoint.«i686-tables»)
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«32bit-tables» It)
+    (it : It) (ps : List RistrettoPoint.«32bit-tables»)
     (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26) (out : alloc.vec.Vec BatchCompressState)
     (hlen : out.length + ps.length ≤ Usize.max) :
@@ -437,8 +437,8 @@ private theorem efgh_spec (st : BatchCompressState) (h1 : st.eg.LimbsLt 26)
 /-- `states`: one state per point. -/
 private theorem states_spec {I It : Type}
     (pointsInst :
-      core.iter.traits.collect.IntoIterator I RistrettoPoint.«i686-tables» It)
-    (it : It) (ps : List RistrettoPoint.«i686-tables»)
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«32bit-tables» It)
+    (it : It) (ps : List RistrettoPoint.«32bit-tables»)
     (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26) (hlen : ps.length ≤ Usize.max) :
     double_and_compress_batch_loop0 pointsInst it (alloc.vec.Vec.new _)
@@ -450,9 +450,9 @@ private theorem states_spec {I It : Type}
   rw [hv]
   simpa using hzs
 
-end «RistrettoPointi686-tables».double_and_compress_batch
+end «RistrettoPoint32bit-tables».double_and_compress_batch
 
-namespace «RistrettoPointx86_64-tables»
+namespace «RistrettoPoint64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
@@ -531,16 +531,16 @@ private theorem compressState_eq (st : BatchCompressState) (inv : FieldElement51
 
 /-- The encoding step of the second loop: from the state of `P` and the inverse of `e g · f h`,
 the bytes of `2 P`. -/
-private theorem compressState_spec (P : RistrettoPoint.«x86_64-tables») (hP : P.OnCurve)
+private theorem compressState_spec (P : RistrettoPoint.«64bit-tables») (hP : P.OnCurve)
     (st : BatchCompressState) (hst : StateOf P st) (inv : FieldElement51)
     (Inv : inv.toField = (st.eg.toField * st.fh.toField)⁻¹) (Invb : inv.LimbsLt 52) :
     compressState st inv ⦃ (bytes : CompressedRistretto) =>
       bytes.asNat = Ristretto.encodeRepNat (2 • P.toPoint) ⦄ := by
   obtain ⟨Se, Sf, Sg, Sh, Seg, Sfh, Seb, Sfb, Sgb, Shb, Segb, Sfhb⟩ := hst
-  rw [edwards.EdwardsPoint.«x86_64-tables».onCurve_iff,
-    edwards.EdwardsPoint.«x86_64-tables».toExtended_def] at hP
-  rw [compressState_eq, edwards.EdwardsPoint.«x86_64-tables».toPoint_def,
-    edwards.EdwardsPoint.«x86_64-tables».toExtended_def]
+  rw [edwards.EdwardsPoint.«64bit-tables».onCurve_iff,
+    edwards.EdwardsPoint.«64bit-tables».toExtended_def] at hP
+  rw [compressState_eq, edwards.EdwardsPoint.«64bit-tables».toPoint_def,
+    edwards.EdwardsPoint.«64bit-tables».toExtended_def]
   exact Backend.compressStateBody_spec Backend.U64
     Backend.U64.sub_spec Backend.U64.mul_spec Backend.U64.neg_spec Backend.U64.sqrtM1_spec
     Backend.U64.invsqrtAMinusD_spec Backend.U64.is_negative_spec Backend.U64.conditional_assign_spec
@@ -551,7 +551,7 @@ private theorem compressState_spec (P : RistrettoPoint.«x86_64-tables») (hP : 
 open scoped Helpers.IndexStep in
 /-- The second loop: entry `k` encodes `2 P_k`, from the state and the inverse of `e g · f h`. -/
 private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.BatchCompressState)
-    (ps : List RistrettoPoint.«x86_64-tables») (hsts : List.Forall₂ StateOf ps states.val)
+    (ps : List RistrettoPoint.«64bit-tables») (hsts : List.Forall₂ StateOf ps states.val)
     (hon : ∀ P ∈ ps, P.OnCurve) (invs : alloc.vec.Vec FieldElement51)
     (hinvs : ∀ k < states.length, invs[k]!.toField =
       ((states[k]!).eg.toField * (states[k]!).fh.toField)⁻¹ ∧ (invs[k]!).LimbsLt 52)
@@ -618,8 +618,8 @@ the points `P_i` the input yields; limbs `< 2^52`. -/
 @[step]
 theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
     (pointsInst :
-      core.iter.traits.collect.IntoIterator I RistrettoPoint.«x86_64-tables» Clause0_IntoIter)
-    (points : I) (ps : List RistrettoPoint.«x86_64-tables»)
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«64bit-tables» Clause0_IntoIter)
+    (points : I) (ps : List RistrettoPoint.«64bit-tables»)
     (hpoints : pointsInst.Yields points ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52)
     (hps_on : ∀ P ∈ ps, P.OnCurve) (hlen : ps.length ≤ Usize.max) :
@@ -665,9 +665,9 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
     (fun k hk => absurd hk (by simp)) as ⟨r, hrlen, hr⟩
   exact ⟨hrlen.trans hpslen.symm, fun k hk => hr k (hpslen ▸ hk)⟩
 
-end «RistrettoPointx86_64-tables»
+end «RistrettoPoint64bit-tables»
 
-namespace «RistrettoPointi686-tables»
+namespace «RistrettoPoint32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
@@ -746,16 +746,16 @@ private theorem compressState_eq (st : BatchCompressState) (inv : FieldElement26
 
 /-- The encoding step of the second loop: from the state of `P` and the inverse of `e g · f h`,
 the bytes of `2 P`. -/
-private theorem compressState_spec (P : RistrettoPoint.«i686-tables») (hP : P.OnCurve)
+private theorem compressState_spec (P : RistrettoPoint.«32bit-tables») (hP : P.OnCurve)
     (st : BatchCompressState) (hst : StateOf P st) (inv : FieldElement2625)
     (Inv : inv.toField = (st.eg.toField * st.fh.toField)⁻¹) (Invb : inv.LimbsLt 26) :
     compressState st inv ⦃ (bytes : CompressedRistretto) =>
       bytes.asNat = Ristretto.encodeRepNat (2 • P.toPoint) ⦄ := by
   obtain ⟨Se, Sf, Sg, Sh, Seg, Sfh, Seb, Sfb, Sgb, Shb, Segb, Sfhb⟩ := hst
-  rw [edwards.EdwardsPoint.«i686-tables».onCurve_iff,
-    edwards.EdwardsPoint.«i686-tables».toExtended_def] at hP
-  rw [compressState_eq, edwards.EdwardsPoint.«i686-tables».toPoint_def,
-    edwards.EdwardsPoint.«i686-tables».toExtended_def]
+  rw [edwards.EdwardsPoint.«32bit-tables».onCurve_iff,
+    edwards.EdwardsPoint.«32bit-tables».toExtended_def] at hP
+  rw [compressState_eq, edwards.EdwardsPoint.«32bit-tables».toPoint_def,
+    edwards.EdwardsPoint.«32bit-tables».toExtended_def]
   exact Backend.compressStateBody_spec Backend.U32
     Backend.U32.sub_spec Backend.U32.mul_spec Backend.U32.neg_spec Backend.U32.sqrtM1_spec
     Backend.U32.invsqrtAMinusD_spec Backend.U32.is_negative_spec Backend.U32.conditional_assign_spec
@@ -766,7 +766,7 @@ private theorem compressState_spec (P : RistrettoPoint.«i686-tables») (hP : P.
 open scoped Helpers.IndexStep in
 /-- The second loop: entry `k` encodes `2 P_k`, from the state and the inverse of `e g · f h`. -/
 private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.BatchCompressState)
-    (ps : List RistrettoPoint.«i686-tables») (hsts : List.Forall₂ StateOf ps states.val)
+    (ps : List RistrettoPoint.«32bit-tables») (hsts : List.Forall₂ StateOf ps states.val)
     (hon : ∀ P ∈ ps, P.OnCurve) (invs : alloc.vec.Vec FieldElement2625)
     (hinvs : ∀ k < states.length, invs[k]!.toField =
       ((states[k]!).eg.toField * (states[k]!).fh.toField)⁻¹ ∧ (invs[k]!).LimbsLt 26)
@@ -833,8 +833,8 @@ the points `P_i` the input yields; limbs `< 2^26`. -/
 @[step]
 theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
     (pointsInst :
-      core.iter.traits.collect.IntoIterator I RistrettoPoint.«i686-tables» Clause0_IntoIter)
-    (points : I) (ps : List RistrettoPoint.«i686-tables»)
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«32bit-tables» Clause0_IntoIter)
+    (points : I) (ps : List RistrettoPoint.«32bit-tables»)
     (hpoints : pointsInst.Yields points ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26)
     (hps_on : ∀ P ∈ ps, P.OnCurve) (hlen : ps.length ≤ Usize.max) :
@@ -880,14 +880,14 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
     (fun k hk => absurd hk (by simp)) as ⟨r, hrlen, hr⟩
   exact ⟨hrlen.trans hpslen.symm, fun k hk => hr k (hpslen ▸ hk)⟩
 
-end «RistrettoPointi686-tables»
+end «RistrettoPoint32bit-tables»
 
-namespace «RistrettoPointx86_64-no-tables».double_and_compress_batch
+namespace «RistrettoPoint64bit-notables».double_and_compress_batch
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- The state of a point `P`: its doubling quantities as field elements, with their limb bounds. -/
-private def StateOf (P : RistrettoPoint.«x86_64-no-tables») (st : BatchCompressState) : Prop :=
+private def StateOf (P : RistrettoPoint.«64bit-notables») (st : BatchCompressState) : Prop :=
   st.e.toField = P.X.toField * (P.Y.toField + P.Y.toField) ∧
   st.f.toField = P.Z.toField ^ 2 + P.T.toField ^ 2 * d ∧
   st.g.toField = P.Y.toField ^ 2 + P.X.toField ^ 2 ∧
@@ -896,16 +896,16 @@ private def StateOf (P : RistrettoPoint.«x86_64-no-tables») (st : BatchCompres
   st.e.LimbsLt 54 ∧ st.f.LimbsLt 54 ∧ st.g.LimbsLt 54 ∧ st.h.LimbsLt 54 ∧ st.eg.LimbsLt 52 ∧
   st.fh.LimbsLt 52
 
-private theorem from_eq (P : RistrettoPoint.«x86_64-no-tables») :
-    BatchCompressState.Insts.«CoreConvertFromSharedARistrettoPointx86_64-no-tables».from P =
+private theorem from_eq (P : RistrettoPoint.«64bit-notables») :
+    BatchCompressState.Insts.«CoreConvertFromSharedARistrettoPoint64bit-notables».from P =
       Backend.batchStateBody Backend.U64
         (fun e f g h eg fh => (⟨e, f, g, h, eg, fh⟩ : BatchCompressState))
         P.X P.Y P.Z P.T := rfl
 
 open BatchCompressState.Insts in
 /-- `BatchCompressState::from`: the doubling quantities of `P`. -/
-private theorem from_spec (P : RistrettoPoint.«x86_64-no-tables») (hP : P.LimbsLt 52) :
-    «CoreConvertFromSharedARistrettoPointx86_64-no-tables».from P
+private theorem from_spec (P : RistrettoPoint.«64bit-notables») (hP : P.LimbsLt 52) :
+    «CoreConvertFromSharedARistrettoPoint64bit-notables».from P
       ⦃ (st : BatchCompressState) => StateOf P st ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hP
   rw [from_eq]
@@ -930,8 +930,8 @@ private theorem forall₂_getElem! {α β : Type} [Inhabited α] [Inhabited β] 
 /-- The collecting loop: one state per point. -/
 private theorem states_loop_spec {I It : Type}
     (pointsInst :
-      core.iter.traits.collect.IntoIterator I RistrettoPoint.«x86_64-no-tables» It)
-    (it : It) (ps : List RistrettoPoint.«x86_64-no-tables»)
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«64bit-notables» It)
+    (it : It) (ps : List RistrettoPoint.«64bit-notables»)
     (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52) (out : alloc.vec.Vec BatchCompressState)
     (hlen : out.length + ps.length ≤ Usize.max) :
@@ -976,8 +976,8 @@ private theorem efgh_spec (st : BatchCompressState) (h1 : st.eg.LimbsLt 52)
 /-- `states`: one state per point. -/
 private theorem states_spec {I It : Type}
     (pointsInst :
-      core.iter.traits.collect.IntoIterator I RistrettoPoint.«x86_64-no-tables» It)
-    (it : It) (ps : List RistrettoPoint.«x86_64-no-tables»)
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«64bit-notables» It)
+    (it : It) (ps : List RistrettoPoint.«64bit-notables»)
     (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52) (hlen : ps.length ≤ Usize.max) :
     double_and_compress_batch_loop0 pointsInst it (alloc.vec.Vec.new _)
@@ -989,14 +989,14 @@ private theorem states_spec {I It : Type}
   rw [hv]
   simpa using hzs
 
-end «RistrettoPointx86_64-no-tables».double_and_compress_batch
+end «RistrettoPoint64bit-notables».double_and_compress_batch
 
-namespace «RistrettoPointi686-no-tables».double_and_compress_batch
+namespace «RistrettoPoint32bit-notables».double_and_compress_batch
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- The state of a point `P`: its doubling quantities as field elements, with their limb bounds. -/
-private def StateOf (P : RistrettoPoint.«i686-no-tables») (st : BatchCompressState) : Prop :=
+private def StateOf (P : RistrettoPoint.«32bit-notables») (st : BatchCompressState) : Prop :=
   st.e.toField = P.X.toField * (P.Y.toField + P.Y.toField) ∧
   st.f.toField = P.Z.toField ^ 2 + P.T.toField ^ 2 * d ∧
   st.g.toField = P.Y.toField ^ 2 + P.X.toField ^ 2 ∧
@@ -1005,16 +1005,16 @@ private def StateOf (P : RistrettoPoint.«i686-no-tables») (st : BatchCompressS
   st.e.LimbsLt 27 ∧ st.f.LimbsLt 27 ∧ st.g.LimbsLt 27 ∧ st.h.LimbsLt 27 ∧ st.eg.LimbsLt 26 ∧
   st.fh.LimbsLt 26
 
-private theorem from_eq (P : RistrettoPoint.«i686-no-tables») :
-    BatchCompressState.Insts.«CoreConvertFromSharedARistrettoPointi686-no-tables».from P =
+private theorem from_eq (P : RistrettoPoint.«32bit-notables») :
+    BatchCompressState.Insts.«CoreConvertFromSharedARistrettoPoint32bit-notables».from P =
       Backend.batchStateBody Backend.U32
         (fun e f g h eg fh => (⟨e, f, g, h, eg, fh⟩ : BatchCompressState))
         P.X P.Y P.Z P.T := rfl
 
 open BatchCompressState.Insts in
 /-- `BatchCompressState::from`: the doubling quantities of `P`. -/
-private theorem from_spec (P : RistrettoPoint.«i686-no-tables») (hP : P.LimbsLt 26) :
-    «CoreConvertFromSharedARistrettoPointi686-no-tables».from P
+private theorem from_spec (P : RistrettoPoint.«32bit-notables») (hP : P.LimbsLt 26) :
+    «CoreConvertFromSharedARistrettoPoint32bit-notables».from P
       ⦃ (st : BatchCompressState) => StateOf P st ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hP
   rw [from_eq]
@@ -1039,8 +1039,8 @@ private theorem forall₂_getElem! {α β : Type} [Inhabited α] [Inhabited β] 
 /-- The collecting loop: one state per point. -/
 private theorem states_loop_spec {I It : Type}
     (pointsInst :
-      core.iter.traits.collect.IntoIterator I RistrettoPoint.«i686-no-tables» It)
-    (it : It) (ps : List RistrettoPoint.«i686-no-tables»)
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«32bit-notables» It)
+    (it : It) (ps : List RistrettoPoint.«32bit-notables»)
     (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26) (out : alloc.vec.Vec BatchCompressState)
     (hlen : out.length + ps.length ≤ Usize.max) :
@@ -1085,8 +1085,8 @@ private theorem efgh_spec (st : BatchCompressState) (h1 : st.eg.LimbsLt 26)
 /-- `states`: one state per point. -/
 private theorem states_spec {I It : Type}
     (pointsInst :
-      core.iter.traits.collect.IntoIterator I RistrettoPoint.«i686-no-tables» It)
-    (it : It) (ps : List RistrettoPoint.«i686-no-tables»)
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«32bit-notables» It)
+    (it : It) (ps : List RistrettoPoint.«32bit-notables»)
     (hit : pointsInst.iteratorInst.Yields it ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26) (hlen : ps.length ≤ Usize.max) :
     double_and_compress_batch_loop0 pointsInst it (alloc.vec.Vec.new _)
@@ -1098,9 +1098,9 @@ private theorem states_spec {I It : Type}
   rw [hv]
   simpa using hzs
 
-end «RistrettoPointi686-no-tables».double_and_compress_batch
+end «RistrettoPoint32bit-notables».double_and_compress_batch
 
-namespace «RistrettoPointx86_64-no-tables»
+namespace «RistrettoPoint64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
@@ -1179,16 +1179,16 @@ private theorem compressState_eq (st : BatchCompressState) (inv : FieldElement51
 
 /-- The encoding step of the second loop: from the state of `P` and the inverse of `e g · f h`,
 the bytes of `2 P`. -/
-private theorem compressState_spec (P : RistrettoPoint.«x86_64-no-tables») (hP : P.OnCurve)
+private theorem compressState_spec (P : RistrettoPoint.«64bit-notables») (hP : P.OnCurve)
     (st : BatchCompressState) (hst : StateOf P st) (inv : FieldElement51)
     (Inv : inv.toField = (st.eg.toField * st.fh.toField)⁻¹) (Invb : inv.LimbsLt 52) :
     compressState st inv ⦃ (bytes : CompressedRistretto) =>
       bytes.asNat = Ristretto.encodeRepNat (2 • P.toPoint) ⦄ := by
   obtain ⟨Se, Sf, Sg, Sh, Seg, Sfh, Seb, Sfb, Sgb, Shb, Segb, Sfhb⟩ := hst
-  rw [edwards.EdwardsPoint.«x86_64-no-tables».onCurve_iff,
-    edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def] at hP
-  rw [compressState_eq, edwards.EdwardsPoint.«x86_64-no-tables».toPoint_def,
-    edwards.EdwardsPoint.«x86_64-no-tables».toExtended_def]
+  rw [edwards.EdwardsPoint.«64bit-notables».onCurve_iff,
+    edwards.EdwardsPoint.«64bit-notables».toExtended_def] at hP
+  rw [compressState_eq, edwards.EdwardsPoint.«64bit-notables».toPoint_def,
+    edwards.EdwardsPoint.«64bit-notables».toExtended_def]
   exact Backend.compressStateBody_spec Backend.U64
     Backend.U64.sub_spec Backend.U64.mul_spec Backend.U64.neg_spec Backend.U64.sqrtM1_spec
     Backend.U64.invsqrtAMinusD_spec Backend.U64.is_negative_spec Backend.U64.conditional_assign_spec
@@ -1199,7 +1199,7 @@ private theorem compressState_spec (P : RistrettoPoint.«x86_64-no-tables») (hP
 open scoped Helpers.IndexStep in
 /-- The second loop: entry `k` encodes `2 P_k`, from the state and the inverse of `e g · f h`. -/
 private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.BatchCompressState)
-    (ps : List RistrettoPoint.«x86_64-no-tables») (hsts : List.Forall₂ StateOf ps states.val)
+    (ps : List RistrettoPoint.«64bit-notables») (hsts : List.Forall₂ StateOf ps states.val)
     (hon : ∀ P ∈ ps, P.OnCurve) (invs : alloc.vec.Vec FieldElement51)
     (hinvs : ∀ k < states.length, invs[k]!.toField =
       ((states[k]!).eg.toField * (states[k]!).fh.toField)⁻¹ ∧ (invs[k]!).LimbsLt 52)
@@ -1266,8 +1266,8 @@ the points `P_i` the input yields; limbs `< 2^52`. -/
 @[step]
 theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
     (pointsInst :
-      core.iter.traits.collect.IntoIterator I RistrettoPoint.«x86_64-no-tables» Clause0_IntoIter)
-    (points : I) (ps : List RistrettoPoint.«x86_64-no-tables»)
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«64bit-notables» Clause0_IntoIter)
+    (points : I) (ps : List RistrettoPoint.«64bit-notables»)
     (hpoints : pointsInst.Yields points ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 52)
     (hps_on : ∀ P ∈ ps, P.OnCurve) (hlen : ps.length ≤ Usize.max) :
@@ -1313,9 +1313,9 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
     (fun k hk => absurd hk (by simp)) as ⟨r, hrlen, hr⟩
   exact ⟨hrlen.trans hpslen.symm, fun k hk => hr k (hpslen ▸ hk)⟩
 
-end «RistrettoPointx86_64-no-tables»
+end «RistrettoPoint64bit-notables»
 
-namespace «RistrettoPointi686-no-tables»
+namespace «RistrettoPoint32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
@@ -1394,16 +1394,16 @@ private theorem compressState_eq (st : BatchCompressState) (inv : FieldElement26
 
 /-- The encoding step of the second loop: from the state of `P` and the inverse of `e g · f h`,
 the bytes of `2 P`. -/
-private theorem compressState_spec (P : RistrettoPoint.«i686-no-tables») (hP : P.OnCurve)
+private theorem compressState_spec (P : RistrettoPoint.«32bit-notables») (hP : P.OnCurve)
     (st : BatchCompressState) (hst : StateOf P st) (inv : FieldElement2625)
     (Inv : inv.toField = (st.eg.toField * st.fh.toField)⁻¹) (Invb : inv.LimbsLt 26) :
     compressState st inv ⦃ (bytes : CompressedRistretto) =>
       bytes.asNat = Ristretto.encodeRepNat (2 • P.toPoint) ⦄ := by
   obtain ⟨Se, Sf, Sg, Sh, Seg, Sfh, Seb, Sfb, Sgb, Shb, Segb, Sfhb⟩ := hst
-  rw [edwards.EdwardsPoint.«i686-no-tables».onCurve_iff,
-    edwards.EdwardsPoint.«i686-no-tables».toExtended_def] at hP
-  rw [compressState_eq, edwards.EdwardsPoint.«i686-no-tables».toPoint_def,
-    edwards.EdwardsPoint.«i686-no-tables».toExtended_def]
+  rw [edwards.EdwardsPoint.«32bit-notables».onCurve_iff,
+    edwards.EdwardsPoint.«32bit-notables».toExtended_def] at hP
+  rw [compressState_eq, edwards.EdwardsPoint.«32bit-notables».toPoint_def,
+    edwards.EdwardsPoint.«32bit-notables».toExtended_def]
   exact Backend.compressStateBody_spec Backend.U32
     Backend.U32.sub_spec Backend.U32.mul_spec Backend.U32.neg_spec Backend.U32.sqrtM1_spec
     Backend.U32.invsqrtAMinusD_spec Backend.U32.is_negative_spec Backend.U32.conditional_assign_spec
@@ -1414,7 +1414,7 @@ private theorem compressState_spec (P : RistrettoPoint.«i686-no-tables») (hP :
 open scoped Helpers.IndexStep in
 /-- The second loop: entry `k` encodes `2 P_k`, from the state and the inverse of `e g · f h`. -/
 private theorem loop1_spec (states : alloc.vec.Vec double_and_compress_batch.BatchCompressState)
-    (ps : List RistrettoPoint.«i686-no-tables») (hsts : List.Forall₂ StateOf ps states.val)
+    (ps : List RistrettoPoint.«32bit-notables») (hsts : List.Forall₂ StateOf ps states.val)
     (hon : ∀ P ∈ ps, P.OnCurve) (invs : alloc.vec.Vec FieldElement2625)
     (hinvs : ∀ k < states.length, invs[k]!.toField =
       ((states[k]!).eg.toField * (states[k]!).fh.toField)⁻¹ ∧ (invs[k]!).LimbsLt 26)
@@ -1481,8 +1481,8 @@ the points `P_i` the input yields; limbs `< 2^26`. -/
 @[step]
 theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
     (pointsInst :
-      core.iter.traits.collect.IntoIterator I RistrettoPoint.«i686-no-tables» Clause0_IntoIter)
-    (points : I) (ps : List RistrettoPoint.«i686-no-tables»)
+      core.iter.traits.collect.IntoIterator I RistrettoPoint.«32bit-notables» Clause0_IntoIter)
+    (points : I) (ps : List RistrettoPoint.«32bit-notables»)
     (hpoints : pointsInst.Yields points ps)
     (hps : ∀ P ∈ ps, P.LimbsLt 26)
     (hps_on : ∀ P ∈ ps, P.OnCurve) (hlen : ps.length ≤ Usize.max) :
@@ -1528,6 +1528,6 @@ theorem double_and_compress_batch_spec {I Clause0_IntoIter : Type}
     (fun k hk => absurd hk (by simp)) as ⟨r, hrlen, hr⟩
   exact ⟨hrlen.trans hpslen.symm, fun k hk => hr k (hpslen ▸ hk)⟩
 
-end «RistrettoPointi686-no-tables»
+end «RistrettoPoint32bit-notables»
 
 end Curve25519Dalek.ristretto

@@ -14,12 +14,12 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 
 namespace Curve25519Dalek.edwards
 
-namespace «EdwardsPointx86_64-tables»
+namespace «EdwardsPoint64bit-tables»
 
 /-- `EdwardsPoint::is_torsion_free`: `L • self = 0` (multiplication by the unreduced
 `BASEPOINT_ORDER`); limbs `< 2^52`. -/
 @[step]
-theorem is_torsion_free_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem is_torsion_free_spec (self : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     is_torsion_free self ⦃ (r : Bool) => r = true ↔ L • self.toPoint = 0 ⦄ := by
   unfold is_torsion_free
@@ -29,14 +29,14 @@ theorem is_torsion_free_spec (self : EdwardsPoint.«x86_64-tables») (hself : se
   step as ⟨b, hb⟩
   rw [hb, hep, constants.BASEPOINT_ORDER_spec]
 
-end «EdwardsPointx86_64-tables»
+end «EdwardsPoint64bit-tables»
 
-namespace «EdwardsPointi686-tables»
+namespace «EdwardsPoint32bit-tables»
 
 /-- `EdwardsPoint::is_torsion_free`: `L • self = 0` (multiplication by the unreduced
 `BASEPOINT_ORDER`); limbs `< 2^26`. -/
 @[step]
-theorem is_torsion_free_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem is_torsion_free_spec (self : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     is_torsion_free self ⦃ (r : Bool) => r = true ↔ L • self.toPoint = 0 ⦄ := by
   unfold is_torsion_free
@@ -46,14 +46,14 @@ theorem is_torsion_free_spec (self : EdwardsPoint.«i686-tables») (hself : self
   step as ⟨b, hb⟩
   rw [hb, hep, constants.BASEPOINT_ORDER_spec]
 
-end «EdwardsPointi686-tables»
+end «EdwardsPoint32bit-tables»
 
-namespace «EdwardsPointx86_64-no-tables»
+namespace «EdwardsPoint64bit-notables»
 
 /-- `EdwardsPoint::is_torsion_free`: `L • self = 0` (multiplication by the unreduced
 `BASEPOINT_ORDER`); limbs `< 2^52`. -/
 @[step]
-theorem is_torsion_free_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem is_torsion_free_spec (self : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     is_torsion_free self ⦃ (r : Bool) => r = true ↔ L • self.toPoint = 0 ⦄ := by
   unfold is_torsion_free
@@ -63,14 +63,14 @@ theorem is_torsion_free_spec (self : EdwardsPoint.«x86_64-no-tables») (hself :
   step as ⟨b, hb⟩
   rw [hb, hep, constants.BASEPOINT_ORDER_spec]
 
-end «EdwardsPointx86_64-no-tables»
+end «EdwardsPoint64bit-notables»
 
-namespace «EdwardsPointi686-no-tables»
+namespace «EdwardsPoint32bit-notables»
 
 /-- `EdwardsPoint::is_torsion_free`: `L • self = 0` (multiplication by the unreduced
 `BASEPOINT_ORDER`); limbs `< 2^26`. -/
 @[step]
-theorem is_torsion_free_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem is_torsion_free_spec (self : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     is_torsion_free self ⦃ (r : Bool) => r = true ↔ L • self.toPoint = 0 ⦄ := by
   unfold is_torsion_free
@@ -80,6 +80,6 @@ theorem is_torsion_free_spec (self : EdwardsPoint.«i686-no-tables») (hself : s
   step as ⟨b, hb⟩
   rw [hb, hep, constants.BASEPOINT_ORDER_spec]
 
-end «EdwardsPointi686-no-tables»
+end «EdwardsPoint32bit-notables»
 
 end Curve25519Dalek.edwards

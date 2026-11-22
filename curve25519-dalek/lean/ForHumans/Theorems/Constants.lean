@@ -51,52 +51,52 @@ theorem X25519_LOW_ORDER_POINTS (Q : montgomery.MontgomeryPoint) :
 end Theorems.constants
 
 -- BEGIN PER-CONFIG
-namespace Theorems.constants.«x86_64-tables»
+namespace Theorems.constants.«64bit-tables»
 
 /-- `ED25519_BASEPOINT_POINT` represents the basepoint. -/
 theorem ED25519_BASEPOINT_POINT :
-    backend.serial.u64.constants.ED25519_BASEPOINT_POINT.«x86_64-tables»
-      ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    backend.serial.u64.constants.ED25519_BASEPOINT_POINT.«64bit-tables»
+      ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
         r.OnCurve ∧ r.toPoint = basepoint ∧ r.IsBounded ⦄ :=
-  backend.serial.u64.constants.«x86_64-tables».ED25519_BASEPOINT_POINT_spec
+  backend.serial.u64.constants.«64bit-tables».ED25519_BASEPOINT_POINT_spec
 
 /-- `ED25519_BASEPOINT_128_POINT` represents `2^128 • B`. -/
 theorem ED25519_BASEPOINT_128_POINT :
-    backend.serial.u64.constants.ED25519_BASEPOINT_128_POINT.«x86_64-tables»
-      ⦃ (r : edwards.EdwardsPoint.«x86_64-tables») =>
+    backend.serial.u64.constants.ED25519_BASEPOINT_128_POINT.«64bit-tables»
+      ⦃ (r : edwards.EdwardsPoint.«64bit-tables») =>
         r.OnCurve ∧ r.toPoint = 2 ^ 128 • basepoint ∧ r.IsBounded ⦄ :=
-  backend.serial.u64.constants.«x86_64-tables».ED25519_BASEPOINT_128_POINT_spec
+  backend.serial.u64.constants.«64bit-tables».ED25519_BASEPOINT_128_POINT_spec
 
 /-- `EIGHT_TORSION`: entry `i` represents `i • torsion8`. -/
 theorem EIGHT_TORSION :
-    backend.serial.u64.constants.EIGHT_TORSION.«x86_64-tables»
-      ⦃ (r : Array edwards.EdwardsPoint.«x86_64-tables» 8#usize) =>
+    backend.serial.u64.constants.EIGHT_TORSION.«64bit-tables»
+      ⦃ (r : Array edwards.EdwardsPoint.«64bit-tables» 8#usize) =>
         ∀ i : Fin 8, r[i.val]!.OnCurve ∧ r[i.val]!.toPoint = (i : ℕ) • torsion8 ∧
           r[i.val]!.IsBounded ⦄ :=
-  backend.serial.u64.constants.«x86_64-tables».EIGHT_TORSION_spec
+  backend.serial.u64.constants.«64bit-tables».EIGHT_TORSION_spec
 
 /-- `RISTRETTO_BASEPOINT_POINT`: the basepoint, an even point (a ristretto255 representative). -/
 theorem RISTRETTO_BASEPOINT_POINT :
-    constants.RISTRETTO_BASEPOINT_POINT.«x86_64-tables»
-      ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    constants.RISTRETTO_BASEPOINT_POINT.«64bit-tables»
+      ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
         r.OnCurve ∧ Even r.toPoint ∧ r.toPoint = basepoint ∧ r.IsBounded ⦄ :=
-  constants.«x86_64-tables».RISTRETTO_BASEPOINT_POINT_spec
+  constants.«64bit-tables».RISTRETTO_BASEPOINT_POINT_spec
 
 -- BEGIN TABLES-ONLY
 /-- `ED25519_BASEPOINT_TABLE`: a table representing the basepoint. -/
 theorem ED25519_BASEPOINT_TABLE :
     backend.serial.u64.constants.ED25519_BASEPOINT_TABLE
-      ⦃ (r : edwards.EdwardsBasepointTable.«x86_64-tables») =>
+      ⦃ (r : edwards.EdwardsBasepointTable.«64bit-tables») =>
         r.IsTable ∧ r.point = basepoint ∧ r.IsBounded ⦄ :=
   backend.serial.u64.constants.ED25519_BASEPOINT_TABLE_spec
 
 /-- `RISTRETTO_BASEPOINT_TABLE`: a table representing the basepoint. -/
 theorem RISTRETTO_BASEPOINT_TABLE :
-    constants.RISTRETTO_BASEPOINT_TABLE.«x86_64-tables»
-      ⦃ (r : ristretto.RistrettoBasepointTable.«x86_64-tables») =>
+    constants.RISTRETTO_BASEPOINT_TABLE.«64bit-tables»
+      ⦃ (r : ristretto.RistrettoBasepointTable.«64bit-tables») =>
         r.IsTable ∧ r.point = basepoint ∧ r.IsBounded ⦄ :=
-  constants.«x86_64-tables».RISTRETTO_BASEPOINT_TABLE_spec
+  constants.«64bit-tables».RISTRETTO_BASEPOINT_TABLE_spec
 -- END TABLES-ONLY
 
-end Theorems.constants.«x86_64-tables»
+end Theorems.constants.«64bit-tables»
 -- END PER-CONFIG

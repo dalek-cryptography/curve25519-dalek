@@ -20,120 +20,120 @@ open Curve25519Dalek.backend.serial.u32.field (FieldElement2625)
 
 namespace Curve25519Dalek.backend.serial.curve_models
 
-namespace ProjectiveNielsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace ProjectiveNielsPoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `Identity for ProjectiveNielsPoint`: `(1 : 1 : 1 : 0)`, limbs `< 2^54`. -/
 @[step]
 theorem identity_toProjectiveNiels :
-    identity ⦃ (r : ProjectiveNielsPoint.«x86_64-tables») =>
+    identity ⦃ (r : ProjectiveNielsPoint.«64bit-tables») =>
       r.toProjectiveNiels = ProjectiveNiels.identity ∧ r.LimbsLt 54 ⦄ := by
   unfold identity
   step as ⟨one, hone, hone_lt⟩
   step as ⟨zero, hzero, hzero_lt⟩
   refine ⟨?_, ?_⟩
-  · simp only [ProjectiveNielsPoint.«x86_64-tables».toProjectiveNiels_def,
+  · simp only [ProjectiveNielsPoint.«64bit-tables».toProjectiveNiels_def,
       ProjectiveNiels.identity, toField_eq_zero_of_asNat hzero, toField_eq_one_of_asNat hone]
   · exact ⟨limbs_lt_of_le (by decide) hone_lt, limbs_lt_of_le (by decide) hone_lt,
       limbs_lt_of_le (by decide) hone_lt, limbs_lt_of_le (by decide) hzero_lt⟩
 
 /-- `Identity for ProjectiveNielsPoint` represents the neutral element. -/
 theorem identity_spec :
-    identity ⦃ (r : ProjectiveNielsPoint.«x86_64-tables») =>
+    identity ⦃ (r : ProjectiveNielsPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 54 ⦄ :=
   spec_mono identity_toProjectiveNiels fun r ⟨hr, hb⟩ => by
-    rw [ProjectiveNielsPoint.«x86_64-tables».onCurve_iff,
-      ProjectiveNielsPoint.«x86_64-tables».toPoint_def, hr]
+    rw [ProjectiveNielsPoint.«64bit-tables».onCurve_iff,
+      ProjectiveNielsPoint.«64bit-tables».toPoint_def, hr]
     exact ⟨ProjectiveNiels.onCurve_identity, ProjectiveNiels.toPoint_identity, hb⟩
 
-end ProjectiveNielsPoint.«x86_64-tables».Insts.Curve25519_dalekTraitsIdentity
+end ProjectiveNielsPoint.«64bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
-namespace ProjectiveNielsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace ProjectiveNielsPoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `Identity for ProjectiveNielsPoint`: `(1 : 1 : 1 : 0)`, limbs `< 2^27`. -/
 @[step]
 theorem identity_toProjectiveNiels :
-    identity ⦃ (r : ProjectiveNielsPoint.«i686-tables») =>
+    identity ⦃ (r : ProjectiveNielsPoint.«32bit-tables») =>
       r.toProjectiveNiels = ProjectiveNiels.identity ∧ r.LimbsLt 27 ⦄ := by
   unfold identity
   step as ⟨one, hone, hone_lt⟩
   step as ⟨zero, hzero, hzero_lt⟩
   refine ⟨?_, ?_⟩
-  · simp only [ProjectiveNielsPoint.«i686-tables».toProjectiveNiels_def,
+  · simp only [ProjectiveNielsPoint.«32bit-tables».toProjectiveNiels_def,
       ProjectiveNiels.identity, toField_eq_zero_of_asNat hzero, toField_eq_one_of_asNat hone]
   · exact ⟨limbs_lt_of_le (by decide) hone_lt, limbs_lt_of_le (by decide) hone_lt,
       limbs_lt_of_le (by decide) hone_lt, limbs_lt_of_le (by decide) hzero_lt⟩
 
 /-- `Identity for ProjectiveNielsPoint` represents the neutral element. -/
 theorem identity_spec :
-    identity ⦃ (r : ProjectiveNielsPoint.«i686-tables») =>
+    identity ⦃ (r : ProjectiveNielsPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 27 ⦄ :=
   spec_mono identity_toProjectiveNiels fun r ⟨hr, hb⟩ => by
-    rw [ProjectiveNielsPoint.«i686-tables».onCurve_iff,
-      ProjectiveNielsPoint.«i686-tables».toPoint_def, hr]
+    rw [ProjectiveNielsPoint.«32bit-tables».onCurve_iff,
+      ProjectiveNielsPoint.«32bit-tables».toPoint_def, hr]
     exact ⟨ProjectiveNiels.onCurve_identity, ProjectiveNiels.toPoint_identity, hb⟩
 
-end ProjectiveNielsPoint.«i686-tables».Insts.Curve25519_dalekTraitsIdentity
+end ProjectiveNielsPoint.«32bit-tables».Insts.Curve25519_dalekTraitsIdentity
 
-namespace ProjectiveNielsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace ProjectiveNielsPoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `Identity for ProjectiveNielsPoint`: `(1 : 1 : 1 : 0)`, limbs `< 2^54`. -/
 @[step]
 theorem identity_toProjectiveNiels :
-    identity ⦃ (r : ProjectiveNielsPoint.«x86_64-no-tables») =>
+    identity ⦃ (r : ProjectiveNielsPoint.«64bit-notables») =>
       r.toProjectiveNiels = ProjectiveNiels.identity ∧ r.LimbsLt 54 ⦄ := by
   unfold identity
   step as ⟨one, hone, hone_lt⟩
   step as ⟨zero, hzero, hzero_lt⟩
   refine ⟨?_, ?_⟩
-  · simp only [ProjectiveNielsPoint.«x86_64-no-tables».toProjectiveNiels_def,
+  · simp only [ProjectiveNielsPoint.«64bit-notables».toProjectiveNiels_def,
       ProjectiveNiels.identity, toField_eq_zero_of_asNat hzero, toField_eq_one_of_asNat hone]
   · exact ⟨limbs_lt_of_le (by decide) hone_lt, limbs_lt_of_le (by decide) hone_lt,
       limbs_lt_of_le (by decide) hone_lt, limbs_lt_of_le (by decide) hzero_lt⟩
 
 /-- `Identity for ProjectiveNielsPoint` represents the neutral element. -/
 theorem identity_spec :
-    identity ⦃ (r : ProjectiveNielsPoint.«x86_64-no-tables») =>
+    identity ⦃ (r : ProjectiveNielsPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 54 ⦄ :=
   spec_mono identity_toProjectiveNiels fun r ⟨hr, hb⟩ => by
-    rw [ProjectiveNielsPoint.«x86_64-no-tables».onCurve_iff,
-      ProjectiveNielsPoint.«x86_64-no-tables».toPoint_def, hr]
+    rw [ProjectiveNielsPoint.«64bit-notables».onCurve_iff,
+      ProjectiveNielsPoint.«64bit-notables».toPoint_def, hr]
     exact ⟨ProjectiveNiels.onCurve_identity, ProjectiveNiels.toPoint_identity, hb⟩
 
-end ProjectiveNielsPoint.«x86_64-no-tables».Insts.Curve25519_dalekTraitsIdentity
+end ProjectiveNielsPoint.«64bit-notables».Insts.Curve25519_dalekTraitsIdentity
 
-namespace ProjectiveNielsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity
+namespace ProjectiveNielsPoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `Identity for ProjectiveNielsPoint`: `(1 : 1 : 1 : 0)`, limbs `< 2^27`. -/
 @[step]
 theorem identity_toProjectiveNiels :
-    identity ⦃ (r : ProjectiveNielsPoint.«i686-no-tables») =>
+    identity ⦃ (r : ProjectiveNielsPoint.«32bit-notables») =>
       r.toProjectiveNiels = ProjectiveNiels.identity ∧ r.LimbsLt 27 ⦄ := by
   unfold identity
   step as ⟨one, hone, hone_lt⟩
   step as ⟨zero, hzero, hzero_lt⟩
   refine ⟨?_, ?_⟩
-  · simp only [ProjectiveNielsPoint.«i686-no-tables».toProjectiveNiels_def,
+  · simp only [ProjectiveNielsPoint.«32bit-notables».toProjectiveNiels_def,
       ProjectiveNiels.identity, toField_eq_zero_of_asNat hzero, toField_eq_one_of_asNat hone]
   · exact ⟨limbs_lt_of_le (by decide) hone_lt, limbs_lt_of_le (by decide) hone_lt,
       limbs_lt_of_le (by decide) hone_lt, limbs_lt_of_le (by decide) hzero_lt⟩
 
 /-- `Identity for ProjectiveNielsPoint` represents the neutral element. -/
 theorem identity_spec :
-    identity ⦃ (r : ProjectiveNielsPoint.«i686-no-tables») =>
+    identity ⦃ (r : ProjectiveNielsPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = 0 ∧ r.LimbsLt 27 ⦄ :=
   spec_mono identity_toProjectiveNiels fun r ⟨hr, hb⟩ => by
-    rw [ProjectiveNielsPoint.«i686-no-tables».onCurve_iff,
-      ProjectiveNielsPoint.«i686-no-tables».toPoint_def, hr]
+    rw [ProjectiveNielsPoint.«32bit-notables».onCurve_iff,
+      ProjectiveNielsPoint.«32bit-notables».toPoint_def, hr]
     exact ⟨ProjectiveNiels.onCurve_identity, ProjectiveNiels.toPoint_identity, hb⟩
 
-end ProjectiveNielsPoint.«i686-no-tables».Insts.Curve25519_dalekTraitsIdentity
+end ProjectiveNielsPoint.«32bit-notables».Insts.Curve25519_dalekTraitsIdentity
 
 end Curve25519Dalek.backend.serial.curve_models

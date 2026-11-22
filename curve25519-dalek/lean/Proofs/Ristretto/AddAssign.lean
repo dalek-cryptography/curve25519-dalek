@@ -17,140 +17,140 @@ open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
 
 namespace Curve25519Dalek
 
-namespace ristretto.RistrettoPoint.«x86_64-tables».Insts
-namespace «CoreOpsArithAddAssignShared0RistrettoPointx86_64-tables»
+namespace ristretto.RistrettoPoint.«64bit-tables».Insts
+namespace «CoreOpsArithAddAssignShared0RistrettoPoint64bit-tables»
 
 /-- `AddAssign<&RistrettoPoint> for RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
+theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«64bit-tables»)
     (hself : self.LimbsLt 52) (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add_assign
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddAssignShared0RistrettoPointx86_64-tables»
-end ristretto.RistrettoPoint.«x86_64-tables».Insts
+end «CoreOpsArithAddAssignShared0RistrettoPoint64bit-tables»
+end ristretto.RistrettoPoint.«64bit-tables».Insts
 
-namespace ristretto.RistrettoPoint.«i686-tables».Insts
-namespace «CoreOpsArithAddAssignShared0RistrettoPointi686-tables»
+namespace ristretto.RistrettoPoint.«32bit-tables».Insts
+namespace «CoreOpsArithAddAssignShared0RistrettoPoint32bit-tables»
 
 /-- `AddAssign<&RistrettoPoint> for RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«i686-tables»)
+theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«32bit-tables»)
     (hself : self.LimbsLt 26) (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add_assign
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddAssignShared0RistrettoPointi686-tables»
-end ristretto.RistrettoPoint.«i686-tables».Insts
+end «CoreOpsArithAddAssignShared0RistrettoPoint32bit-tables»
+end ristretto.RistrettoPoint.«32bit-tables».Insts
 
-namespace ristretto.RistrettoPoint.«x86_64-tables».Insts
-namespace «CoreOpsArithAddAssignRistrettoPointx86_64-tables»
+namespace ristretto.RistrettoPoint.«64bit-tables».Insts
+namespace «CoreOpsArithAddAssignRistrettoPoint64bit-tables»
 
 /-- `AddAssign<RistrettoPoint> for RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«x86_64-tables»)
+theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«64bit-tables»)
     (hself : self.LimbsLt 52) (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-tables») =>
+    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add_assign
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddAssignRistrettoPointx86_64-tables»
-end ristretto.RistrettoPoint.«x86_64-tables».Insts
+end «CoreOpsArithAddAssignRistrettoPoint64bit-tables»
+end ristretto.RistrettoPoint.«64bit-tables».Insts
 
-namespace ristretto.RistrettoPoint.«i686-tables».Insts
-namespace «CoreOpsArithAddAssignRistrettoPointi686-tables»
+namespace ristretto.RistrettoPoint.«32bit-tables».Insts
+namespace «CoreOpsArithAddAssignRistrettoPoint32bit-tables»
 
 /-- `AddAssign<RistrettoPoint> for RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«i686-tables»)
+theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«32bit-tables»)
     (hself : self.LimbsLt 26) (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-tables») =>
+    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-tables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add_assign
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddAssignRistrettoPointi686-tables»
-end ristretto.RistrettoPoint.«i686-tables».Insts
+end «CoreOpsArithAddAssignRistrettoPoint32bit-tables»
+end ristretto.RistrettoPoint.«32bit-tables».Insts
 
-namespace ristretto.RistrettoPoint.«x86_64-no-tables».Insts
-namespace «CoreOpsArithAddAssignShared0RistrettoPointx86_64-no-tables»
+namespace ristretto.RistrettoPoint.«64bit-notables».Insts
+namespace «CoreOpsArithAddAssignShared0RistrettoPoint64bit-notables»
 
 /-- `AddAssign<&RistrettoPoint> for RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
+theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«64bit-notables»)
     (hself : self.LimbsLt 52) (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add_assign
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddAssignShared0RistrettoPointx86_64-no-tables»
-end ristretto.RistrettoPoint.«x86_64-no-tables».Insts
+end «CoreOpsArithAddAssignShared0RistrettoPoint64bit-notables»
+end ristretto.RistrettoPoint.«64bit-notables».Insts
 
-namespace ristretto.RistrettoPoint.«i686-no-tables».Insts
-namespace «CoreOpsArithAddAssignShared0RistrettoPointi686-no-tables»
+namespace ristretto.RistrettoPoint.«32bit-notables».Insts
+namespace «CoreOpsArithAddAssignShared0RistrettoPoint32bit-notables»
 
 /-- `AddAssign<&RistrettoPoint> for RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«i686-no-tables»)
+theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«32bit-notables»)
     (hself : self.LimbsLt 26) (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add_assign
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddAssignShared0RistrettoPointi686-no-tables»
-end ristretto.RistrettoPoint.«i686-no-tables».Insts
+end «CoreOpsArithAddAssignShared0RistrettoPoint32bit-notables»
+end ristretto.RistrettoPoint.«32bit-notables».Insts
 
-namespace ristretto.RistrettoPoint.«x86_64-no-tables».Insts
-namespace «CoreOpsArithAddAssignRistrettoPointx86_64-no-tables»
+namespace ristretto.RistrettoPoint.«64bit-notables».Insts
+namespace «CoreOpsArithAddAssignRistrettoPoint64bit-notables»
 
 /-- `AddAssign<RistrettoPoint> for RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«x86_64-no-tables»)
+theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«64bit-notables»)
     (hself : self.LimbsLt 52) (hrhs : rhs.LimbsLt 52) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«x86_64-no-tables») =>
+    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«64bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 52 ⦄ := by
   unfold add_assign
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddAssignRistrettoPointx86_64-no-tables»
-end ristretto.RistrettoPoint.«x86_64-no-tables».Insts
+end «CoreOpsArithAddAssignRistrettoPoint64bit-notables»
+end ristretto.RistrettoPoint.«64bit-notables».Insts
 
-namespace ristretto.RistrettoPoint.«i686-no-tables».Insts
-namespace «CoreOpsArithAddAssignRistrettoPointi686-no-tables»
+namespace ristretto.RistrettoPoint.«32bit-notables».Insts
+namespace «CoreOpsArithAddAssignRistrettoPoint32bit-notables»
 
 /-- `AddAssign<RistrettoPoint> for RistrettoPoint` on the represented points. -/
 @[step]
-theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«i686-no-tables»)
+theorem add_assign_spec (self rhs : ristretto.RistrettoPoint.«32bit-notables»)
     (hself : self.LimbsLt 26) (hrhs : rhs.LimbsLt 26) (hself_on : self.OnCurve)
     (hrhs_on : rhs.OnCurve) :
-    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«i686-no-tables») =>
+    add_assign self rhs ⦃ (r : ristretto.RistrettoPoint.«32bit-notables») =>
       r.OnCurve ∧ r.toPoint = self.toPoint + rhs.toPoint ∧ r.LimbsLt 26 ⦄ := by
   unfold add_assign
   step as ⟨r, h1, h2, h3⟩
   exact ⟨h1, h2, h3⟩
 
-end «CoreOpsArithAddAssignRistrettoPointi686-no-tables»
-end ristretto.RistrettoPoint.«i686-no-tables».Insts
+end «CoreOpsArithAddAssignRistrettoPoint32bit-notables»
+end ristretto.RistrettoPoint.«32bit-notables».Insts
 
 end Curve25519Dalek

@@ -65,11 +65,11 @@ end window
 
 namespace edwards
 
-namespace EdwardsBasepointTable.«x86_64-tables»
+namespace EdwardsBasepointTable.«64bit-tables»
 
 /-- A radix-`16` table whose row `i` is the lookup table of `2^(8 i) • P` is a table
 (`IsTable`) of the point `P`. -/
-theorem isTable_of_rows {self : EdwardsBasepointTable.«x86_64-tables»}
+theorem isTable_of_rows {self : EdwardsBasepointTable.«64bit-tables»}
     {P : curve25519.edwards.Point}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (8 * i) • P)) :
     self.IsTable ∧ self.point = P := by
@@ -80,19 +80,19 @@ theorem isTable_of_rows {self : EdwardsBasepointTable.«x86_64-tables»}
   exact h i hi j hj
 
 /-- `isTable_of_rows` with a further conjunct, in the shape of the table specs. -/
-theorem isTable_and_of_rows {self : EdwardsBasepointTable.«x86_64-tables»}
+theorem isTable_and_of_rows {self : EdwardsBasepointTable.«64bit-tables»}
     {P : curve25519.edwards.Point} {Q : Prop}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (8 * i) • P)) (hq : Q) :
     self.IsTable ∧ self.point = P ∧ Q :=
   ⟨(isTable_of_rows h).1, (isTable_of_rows h).2, hq⟩
 
-end EdwardsBasepointTable.«x86_64-tables»
+end EdwardsBasepointTable.«64bit-tables»
 
-namespace EdwardsBasepointTable.«i686-tables»
+namespace EdwardsBasepointTable.«32bit-tables»
 
 /-- A radix-`16` table whose row `i` is the lookup table of `2^(8 i) • P` is a table
 (`IsTable`) of the point `P`. -/
-theorem isTable_of_rows {self : EdwardsBasepointTable.«i686-tables»}
+theorem isTable_of_rows {self : EdwardsBasepointTable.«32bit-tables»}
     {P : curve25519.edwards.Point}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (8 * i) • P)) :
     self.IsTable ∧ self.point = P := by
@@ -103,19 +103,19 @@ theorem isTable_of_rows {self : EdwardsBasepointTable.«i686-tables»}
   exact h i hi j hj
 
 /-- `isTable_of_rows` with a further conjunct, in the shape of the table specs. -/
-theorem isTable_and_of_rows {self : EdwardsBasepointTable.«i686-tables»}
+theorem isTable_and_of_rows {self : EdwardsBasepointTable.«32bit-tables»}
     {P : curve25519.edwards.Point} {Q : Prop}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (8 * i) • P)) (hq : Q) :
     self.IsTable ∧ self.point = P ∧ Q :=
   ⟨(isTable_of_rows h).1, (isTable_of_rows h).2, hq⟩
 
-end EdwardsBasepointTable.«i686-tables»
+end EdwardsBasepointTable.«32bit-tables»
 
-namespace EdwardsBasepointTableRadix32.«x86_64-tables»
+namespace EdwardsBasepointTableRadix32.«64bit-tables»
 
 /-- A radix-`32` table whose row `i` is the lookup table of `2^(10 i) • P` is a table
 (`IsTable`) of the point `P`. -/
-theorem isTable_of_rows {self : EdwardsBasepointTableRadix32.«x86_64-tables»}
+theorem isTable_of_rows {self : EdwardsBasepointTableRadix32.«64bit-tables»}
     {P : curve25519.edwards.Point}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (10 * i) • P)) :
     self.IsTable ∧ self.point = P := by
@@ -126,19 +126,19 @@ theorem isTable_of_rows {self : EdwardsBasepointTableRadix32.«x86_64-tables»}
   exact h i hi j hj
 
 /-- `isTable_of_rows` with a further conjunct, in the shape of the table specs. -/
-theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix32.«x86_64-tables»}
+theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix32.«64bit-tables»}
     {P : curve25519.edwards.Point} {Q : Prop}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (10 * i) • P)) (hq : Q) :
     self.IsTable ∧ self.point = P ∧ Q :=
   ⟨(isTable_of_rows h).1, (isTable_of_rows h).2, hq⟩
 
-end EdwardsBasepointTableRadix32.«x86_64-tables»
+end EdwardsBasepointTableRadix32.«64bit-tables»
 
-namespace EdwardsBasepointTableRadix32.«i686-tables»
+namespace EdwardsBasepointTableRadix32.«32bit-tables»
 
 /-- A radix-`32` table whose row `i` is the lookup table of `2^(10 i) • P` is a table
 (`IsTable`) of the point `P`. -/
-theorem isTable_of_rows {self : EdwardsBasepointTableRadix32.«i686-tables»}
+theorem isTable_of_rows {self : EdwardsBasepointTableRadix32.«32bit-tables»}
     {P : curve25519.edwards.Point}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (10 * i) • P)) :
     self.IsTable ∧ self.point = P := by
@@ -149,19 +149,19 @@ theorem isTable_of_rows {self : EdwardsBasepointTableRadix32.«i686-tables»}
   exact h i hi j hj
 
 /-- `isTable_of_rows` with a further conjunct, in the shape of the table specs. -/
-theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix32.«i686-tables»}
+theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix32.«32bit-tables»}
     {P : curve25519.edwards.Point} {Q : Prop}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (10 * i) • P)) (hq : Q) :
     self.IsTable ∧ self.point = P ∧ Q :=
   ⟨(isTable_of_rows h).1, (isTable_of_rows h).2, hq⟩
 
-end EdwardsBasepointTableRadix32.«i686-tables»
+end EdwardsBasepointTableRadix32.«32bit-tables»
 
-namespace EdwardsBasepointTableRadix64.«x86_64-tables»
+namespace EdwardsBasepointTableRadix64.«64bit-tables»
 
 /-- A radix-`64` table whose row `i` is the lookup table of `2^(12 i) • P` is a table
 (`IsTable`) of the point `P`. -/
-theorem isTable_of_rows {self : EdwardsBasepointTableRadix64.«x86_64-tables»}
+theorem isTable_of_rows {self : EdwardsBasepointTableRadix64.«64bit-tables»}
     {P : curve25519.edwards.Point}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (12 * i) • P)) :
     self.IsTable ∧ self.point = P := by
@@ -172,19 +172,19 @@ theorem isTable_of_rows {self : EdwardsBasepointTableRadix64.«x86_64-tables»}
   exact h i hi j hj
 
 /-- `isTable_of_rows` with a further conjunct, in the shape of the table specs. -/
-theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix64.«x86_64-tables»}
+theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix64.«64bit-tables»}
     {P : curve25519.edwards.Point} {Q : Prop}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (12 * i) • P)) (hq : Q) :
     self.IsTable ∧ self.point = P ∧ Q :=
   ⟨(isTable_of_rows h).1, (isTable_of_rows h).2, hq⟩
 
-end EdwardsBasepointTableRadix64.«x86_64-tables»
+end EdwardsBasepointTableRadix64.«64bit-tables»
 
-namespace EdwardsBasepointTableRadix64.«i686-tables»
+namespace EdwardsBasepointTableRadix64.«32bit-tables»
 
 /-- A radix-`64` table whose row `i` is the lookup table of `2^(12 i) • P` is a table
 (`IsTable`) of the point `P`. -/
-theorem isTable_of_rows {self : EdwardsBasepointTableRadix64.«i686-tables»}
+theorem isTable_of_rows {self : EdwardsBasepointTableRadix64.«32bit-tables»}
     {P : curve25519.edwards.Point}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (12 * i) • P)) :
     self.IsTable ∧ self.point = P := by
@@ -195,19 +195,19 @@ theorem isTable_of_rows {self : EdwardsBasepointTableRadix64.«i686-tables»}
   exact h i hi j hj
 
 /-- `isTable_of_rows` with a further conjunct, in the shape of the table specs. -/
-theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix64.«i686-tables»}
+theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix64.«32bit-tables»}
     {P : curve25519.edwards.Point} {Q : Prop}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (12 * i) • P)) (hq : Q) :
     self.IsTable ∧ self.point = P ∧ Q :=
   ⟨(isTable_of_rows h).1, (isTable_of_rows h).2, hq⟩
 
-end EdwardsBasepointTableRadix64.«i686-tables»
+end EdwardsBasepointTableRadix64.«32bit-tables»
 
-namespace EdwardsBasepointTableRadix128.«x86_64-tables»
+namespace EdwardsBasepointTableRadix128.«64bit-tables»
 
 /-- A radix-`128` table whose row `i` is the lookup table of `2^(14 i) • P` is a table
 (`IsTable`) of the point `P`. -/
-theorem isTable_of_rows {self : EdwardsBasepointTableRadix128.«x86_64-tables»}
+theorem isTable_of_rows {self : EdwardsBasepointTableRadix128.«64bit-tables»}
     {P : curve25519.edwards.Point}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (14 * i) • P)) :
     self.IsTable ∧ self.point = P := by
@@ -218,19 +218,19 @@ theorem isTable_of_rows {self : EdwardsBasepointTableRadix128.«x86_64-tables»}
   exact h i hi j hj
 
 /-- `isTable_of_rows` with a further conjunct, in the shape of the table specs. -/
-theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix128.«x86_64-tables»}
+theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix128.«64bit-tables»}
     {P : curve25519.edwards.Point} {Q : Prop}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (14 * i) • P)) (hq : Q) :
     self.IsTable ∧ self.point = P ∧ Q :=
   ⟨(isTable_of_rows h).1, (isTable_of_rows h).2, hq⟩
 
-end EdwardsBasepointTableRadix128.«x86_64-tables»
+end EdwardsBasepointTableRadix128.«64bit-tables»
 
-namespace EdwardsBasepointTableRadix128.«i686-tables»
+namespace EdwardsBasepointTableRadix128.«32bit-tables»
 
 /-- A radix-`128` table whose row `i` is the lookup table of `2^(14 i) • P` is a table
 (`IsTable`) of the point `P`. -/
-theorem isTable_of_rows {self : EdwardsBasepointTableRadix128.«i686-tables»}
+theorem isTable_of_rows {self : EdwardsBasepointTableRadix128.«32bit-tables»}
     {P : curve25519.edwards.Point}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (14 * i) • P)) :
     self.IsTable ∧ self.point = P := by
@@ -241,19 +241,19 @@ theorem isTable_of_rows {self : EdwardsBasepointTableRadix128.«i686-tables»}
   exact h i hi j hj
 
 /-- `isTable_of_rows` with a further conjunct, in the shape of the table specs. -/
-theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix128.«i686-tables»}
+theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix128.«32bit-tables»}
     {P : curve25519.edwards.Point} {Q : Prop}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (14 * i) • P)) (hq : Q) :
     self.IsTable ∧ self.point = P ∧ Q :=
   ⟨(isTable_of_rows h).1, (isTable_of_rows h).2, hq⟩
 
-end EdwardsBasepointTableRadix128.«i686-tables»
+end EdwardsBasepointTableRadix128.«32bit-tables»
 
-namespace EdwardsBasepointTableRadix256.«x86_64-tables»
+namespace EdwardsBasepointTableRadix256.«64bit-tables»
 
 /-- A radix-`256` table whose row `i` is the lookup table of `2^(16 i) • P` is a table
 (`IsTable`) of the point `P`. -/
-theorem isTable_of_rows {self : EdwardsBasepointTableRadix256.«x86_64-tables»}
+theorem isTable_of_rows {self : EdwardsBasepointTableRadix256.«64bit-tables»}
     {P : curve25519.edwards.Point}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (16 * i) • P)) :
     self.IsTable ∧ self.point = P := by
@@ -264,19 +264,19 @@ theorem isTable_of_rows {self : EdwardsBasepointTableRadix256.«x86_64-tables»}
   exact h i hi j hj
 
 /-- `isTable_of_rows` with a further conjunct, in the shape of the table specs. -/
-theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix256.«x86_64-tables»}
+theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix256.«64bit-tables»}
     {P : curve25519.edwards.Point} {Q : Prop}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (16 * i) • P)) (hq : Q) :
     self.IsTable ∧ self.point = P ∧ Q :=
   ⟨(isTable_of_rows h).1, (isTable_of_rows h).2, hq⟩
 
-end EdwardsBasepointTableRadix256.«x86_64-tables»
+end EdwardsBasepointTableRadix256.«64bit-tables»
 
-namespace EdwardsBasepointTableRadix256.«i686-tables»
+namespace EdwardsBasepointTableRadix256.«32bit-tables»
 
 /-- A radix-`256` table whose row `i` is the lookup table of `2^(16 i) • P` is a table
 (`IsTable`) of the point `P`. -/
-theorem isTable_of_rows {self : EdwardsBasepointTableRadix256.«i686-tables»}
+theorem isTable_of_rows {self : EdwardsBasepointTableRadix256.«32bit-tables»}
     {P : curve25519.edwards.Point}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (16 * i) • P)) :
     self.IsTable ∧ self.point = P := by
@@ -287,51 +287,51 @@ theorem isTable_of_rows {self : EdwardsBasepointTableRadix256.«i686-tables»}
   exact h i hi j hj
 
 /-- `isTable_of_rows` with a further conjunct, in the shape of the table specs. -/
-theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix256.«i686-tables»}
+theorem isTable_and_of_rows {self : EdwardsBasepointTableRadix256.«32bit-tables»}
     {P : curve25519.edwards.Point} {Q : Prop}
     (h : ∀ i < 32, (self[i]!).Represents (2 ^ (16 * i) • P)) (hq : Q) :
     self.IsTable ∧ self.point = P ∧ Q :=
   ⟨(isTable_of_rows h).1, (isTable_of_rows h).2, hq⟩
 
-end EdwardsBasepointTableRadix256.«i686-tables»
+end EdwardsBasepointTableRadix256.«32bit-tables»
 
 end edwards
 
 namespace backend.serial.scalar_mul.precomputed_straus
 
 /-- The tables of `self` are the NAF tables of the points `ps`, in order (same length). -/
-@[expose] def VartimePrecomputedStraus.«x86_64-tables».Represents
-    (self : VartimePrecomputedStraus.«x86_64-tables») (ps : List curve25519.edwards.Point) :
+@[expose] def VartimePrecomputedStraus.«64bit-tables».Represents
+    (self : VartimePrecomputedStraus.«64bit-tables») (ps : List curve25519.edwards.Point) :
     Prop :=
   List.Forall₂ window.NafLookupTable8.Represents self.static_lookup_tables.val ps
 
 /-- The tables of `self` are the NAF tables of the points `ps`, in order (same length). -/
-@[expose] def VartimePrecomputedStraus.«i686-tables».Represents
-    (self : VartimePrecomputedStraus.«i686-tables») (ps : List curve25519.edwards.Point) :
+@[expose] def VartimePrecomputedStraus.«32bit-tables».Represents
+    (self : VartimePrecomputedStraus.«32bit-tables») (ps : List curve25519.edwards.Point) :
     Prop :=
   List.Forall₂ window.NafLookupTable8.Represents self.static_lookup_tables.val ps
 
 /-- The tables of `self` are the NAF tables of the points `ps`, in order (same length). -/
-@[expose] def VartimePrecomputedStraus.«x86_64-no-tables».Represents
-    (self : VartimePrecomputedStraus.«x86_64-no-tables») (ps : List curve25519.edwards.Point) :
+@[expose] def VartimePrecomputedStraus.«64bit-notables».Represents
+    (self : VartimePrecomputedStraus.«64bit-notables») (ps : List curve25519.edwards.Point) :
     Prop :=
   List.Forall₂ window.NafLookupTable8.Represents self.static_lookup_tables.val ps
 
 /-- The tables of `self` are the NAF tables of the points `ps`, in order (same length). -/
-@[expose] def VartimePrecomputedStraus.«i686-no-tables».Represents
-    (self : VartimePrecomputedStraus.«i686-no-tables») (ps : List curve25519.edwards.Point) :
+@[expose] def VartimePrecomputedStraus.«32bit-notables».Represents
+    (self : VartimePrecomputedStraus.«32bit-notables») (ps : List curve25519.edwards.Point) :
     Prop :=
   List.Forall₂ window.NafLookupTable8.Represents self.static_lookup_tables.val ps
 
 /-- The serial precomputation `pre` represents `ps` iff the backend precomputation holding it is
 valid (`IsValid`) with the static points `ps`. -/
-theorem VartimePrecomputedStraus.«x86_64-tables».represents_iff
-    (pre : VartimePrecomputedStraus.«x86_64-tables») (ps : List curve25519.edwards.Point) :
-    pre.Represents ps ↔ (backend.VartimePrecomputedStraus.«x86_64-tables».Scalar pre).IsValid ∧
-      (backend.VartimePrecomputedStraus.«x86_64-tables».Scalar pre).points = ps := by
-  simp only [backend.VartimePrecomputedStraus.«x86_64-tables».IsValid,
-    backend.VartimePrecomputedStraus.«x86_64-tables».points,
-    VartimePrecomputedStraus.«x86_64-tables».Represents]
+theorem VartimePrecomputedStraus.«64bit-tables».represents_iff
+    (pre : VartimePrecomputedStraus.«64bit-tables») (ps : List curve25519.edwards.Point) :
+    pre.Represents ps ↔ (backend.VartimePrecomputedStraus.«64bit-tables».Scalar pre).IsValid ∧
+      (backend.VartimePrecomputedStraus.«64bit-tables».Scalar pre).points = ps := by
+  simp only [backend.VartimePrecomputedStraus.«64bit-tables».IsValid,
+    backend.VartimePrecomputedStraus.«64bit-tables».points,
+    VartimePrecomputedStraus.«64bit-tables».Represents]
   constructor
   · intro h
     obtain ⟨hlen, hget⟩ := List.forall₂_iff_get.mp h
@@ -361,13 +361,13 @@ theorem VartimePrecomputedStraus.«x86_64-tables».represents_iff
 
 /-- The serial precomputation `pre` represents `ps` iff the backend precomputation holding it is
 valid (`IsValid`) with the static points `ps`. -/
-theorem VartimePrecomputedStraus.«i686-tables».represents_iff
-    (pre : VartimePrecomputedStraus.«i686-tables») (ps : List curve25519.edwards.Point) :
-    pre.Represents ps ↔ (backend.VartimePrecomputedStraus.«i686-tables».Scalar pre).IsValid ∧
-      (backend.VartimePrecomputedStraus.«i686-tables».Scalar pre).points = ps := by
-  simp only [backend.VartimePrecomputedStraus.«i686-tables».IsValid,
-    backend.VartimePrecomputedStraus.«i686-tables».points,
-    VartimePrecomputedStraus.«i686-tables».Represents]
+theorem VartimePrecomputedStraus.«32bit-tables».represents_iff
+    (pre : VartimePrecomputedStraus.«32bit-tables») (ps : List curve25519.edwards.Point) :
+    pre.Represents ps ↔ (backend.VartimePrecomputedStraus.«32bit-tables».Scalar pre).IsValid ∧
+      (backend.VartimePrecomputedStraus.«32bit-tables».Scalar pre).points = ps := by
+  simp only [backend.VartimePrecomputedStraus.«32bit-tables».IsValid,
+    backend.VartimePrecomputedStraus.«32bit-tables».points,
+    VartimePrecomputedStraus.«32bit-tables».Represents]
   constructor
   · intro h
     obtain ⟨hlen, hget⟩ := List.forall₂_iff_get.mp h
@@ -397,13 +397,13 @@ theorem VartimePrecomputedStraus.«i686-tables».represents_iff
 
 /-- The serial precomputation `pre` represents `ps` iff the backend precomputation holding it is
 valid (`IsValid`) with the static points `ps`. -/
-theorem VartimePrecomputedStraus.«x86_64-no-tables».represents_iff
-    (pre : VartimePrecomputedStraus.«x86_64-no-tables») (ps : List curve25519.edwards.Point) :
-    pre.Represents ps ↔ (backend.VartimePrecomputedStraus.«x86_64-no-tables».Scalar pre).IsValid ∧
-      (backend.VartimePrecomputedStraus.«x86_64-no-tables».Scalar pre).points = ps := by
-  simp only [backend.VartimePrecomputedStraus.«x86_64-no-tables».IsValid,
-    backend.VartimePrecomputedStraus.«x86_64-no-tables».points,
-    VartimePrecomputedStraus.«x86_64-no-tables».Represents]
+theorem VartimePrecomputedStraus.«64bit-notables».represents_iff
+    (pre : VartimePrecomputedStraus.«64bit-notables») (ps : List curve25519.edwards.Point) :
+    pre.Represents ps ↔ (backend.VartimePrecomputedStraus.«64bit-notables».Scalar pre).IsValid ∧
+      (backend.VartimePrecomputedStraus.«64bit-notables».Scalar pre).points = ps := by
+  simp only [backend.VartimePrecomputedStraus.«64bit-notables».IsValid,
+    backend.VartimePrecomputedStraus.«64bit-notables».points,
+    VartimePrecomputedStraus.«64bit-notables».Represents]
   constructor
   · intro h
     obtain ⟨hlen, hget⟩ := List.forall₂_iff_get.mp h
@@ -433,13 +433,13 @@ theorem VartimePrecomputedStraus.«x86_64-no-tables».represents_iff
 
 /-- The serial precomputation `pre` represents `ps` iff the backend precomputation holding it is
 valid (`IsValid`) with the static points `ps`. -/
-theorem VartimePrecomputedStraus.«i686-no-tables».represents_iff
-    (pre : VartimePrecomputedStraus.«i686-no-tables») (ps : List curve25519.edwards.Point) :
-    pre.Represents ps ↔ (backend.VartimePrecomputedStraus.«i686-no-tables».Scalar pre).IsValid ∧
-      (backend.VartimePrecomputedStraus.«i686-no-tables».Scalar pre).points = ps := by
-  simp only [backend.VartimePrecomputedStraus.«i686-no-tables».IsValid,
-    backend.VartimePrecomputedStraus.«i686-no-tables».points,
-    VartimePrecomputedStraus.«i686-no-tables».Represents]
+theorem VartimePrecomputedStraus.«32bit-notables».represents_iff
+    (pre : VartimePrecomputedStraus.«32bit-notables») (ps : List curve25519.edwards.Point) :
+    pre.Represents ps ↔ (backend.VartimePrecomputedStraus.«32bit-notables».Scalar pre).IsValid ∧
+      (backend.VartimePrecomputedStraus.«32bit-notables».Scalar pre).points = ps := by
+  simp only [backend.VartimePrecomputedStraus.«32bit-notables».IsValid,
+    backend.VartimePrecomputedStraus.«32bit-notables».points,
+    VartimePrecomputedStraus.«32bit-notables».Represents]
   constructor
   · intro h
     obtain ⟨hlen, hget⟩ := List.forall₂_iff_get.mp h

@@ -16,13 +16,13 @@ open Curve25519Dalek.backend.serial.curve_models
 
 namespace Curve25519Dalek.edwards
 
-namespace «EdwardsPointx86_64-tables»
+namespace «EdwardsPoint64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `EdwardsPoint::is_small_order`: `8 • self = 0`; limbs `< 2^52`. -/
 @[step]
-theorem is_small_order_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem is_small_order_spec (self : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     is_small_order self ⦃ (r : Bool) => r = true ↔ 8 • self.toPoint = 0 ⦄ := by
   unfold is_small_order
@@ -30,15 +30,15 @@ theorem is_small_order_spec (self : EdwardsPoint.«x86_64-tables») (hself : sel
   step as ⟨b, hb⟩
   rw [hb, hep]
 
-end «EdwardsPointx86_64-tables»
+end «EdwardsPoint64bit-tables»
 
-namespace «EdwardsPointi686-tables»
+namespace «EdwardsPoint32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `EdwardsPoint::is_small_order`: `8 • self = 0`; limbs `< 2^26`. -/
 @[step]
-theorem is_small_order_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem is_small_order_spec (self : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     is_small_order self ⦃ (r : Bool) => r = true ↔ 8 • self.toPoint = 0 ⦄ := by
   unfold is_small_order
@@ -46,15 +46,15 @@ theorem is_small_order_spec (self : EdwardsPoint.«i686-tables») (hself : self.
   step as ⟨b, hb⟩
   rw [hb, hep]
 
-end «EdwardsPointi686-tables»
+end «EdwardsPoint32bit-tables»
 
-namespace «EdwardsPointx86_64-no-tables»
+namespace «EdwardsPoint64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `EdwardsPoint::is_small_order`: `8 • self = 0`; limbs `< 2^52`. -/
 @[step]
-theorem is_small_order_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem is_small_order_spec (self : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     is_small_order self ⦃ (r : Bool) => r = true ↔ 8 • self.toPoint = 0 ⦄ := by
   unfold is_small_order
@@ -62,15 +62,15 @@ theorem is_small_order_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : 
   step as ⟨b, hb⟩
   rw [hb, hep]
 
-end «EdwardsPointx86_64-no-tables»
+end «EdwardsPoint64bit-notables»
 
-namespace «EdwardsPointi686-no-tables»
+namespace «EdwardsPoint32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `EdwardsPoint::is_small_order`: `8 • self = 0`; limbs `< 2^26`. -/
 @[step]
-theorem is_small_order_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem is_small_order_spec (self : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     is_small_order self ⦃ (r : Bool) => r = true ↔ 8 • self.toPoint = 0 ⦄ := by
   unfold is_small_order
@@ -78,6 +78,6 @@ theorem is_small_order_spec (self : EdwardsPoint.«i686-no-tables») (hself : se
   step as ⟨b, hb⟩
   rw [hb, hep]
 
-end «EdwardsPointi686-no-tables»
+end «EdwardsPoint32bit-notables»
 
 end Curve25519Dalek.edwards

@@ -147,21 +147,21 @@ end Curve25519Dalek.Backend
 
 namespace Curve25519Dalek.edwards
 
-namespace decompress.«x86_64-tables»
+namespace decompress.«64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `decompress::step_1`: `Y` from the low `255` bits, `Z = 1`, and `(c, X) = sqrt_ratio_i (Y² - 1)
 (d Y² + 1)`: `c = 1` iff `xSq Y` is a square, and then `X` is its non-negative root. -/
 private theorem step_1_spec (repr : CompressedEdwardsY) :
-    step_1.«x86_64-tables» repr ⦃ (c : subtle.Choice) (X Y Z : FieldElement51) =>
+    step_1.«64bit-tables» repr ⦃ (c : subtle.Choice) (X Y Z : FieldElement51) =>
       c.IsValid ∧ Y.toField = ((CompressedEdwardsY.asNat repr % 2 ^ 255 : ℕ) : ZMod p) ∧
       Z.toField = 1 ∧
       (c = 1#u8 ↔ IsSquare (curve25519.edwards.xSq Y.toField)) ∧
       (c = 1#u8 → X.toField ^ 2 = curve25519.edwards.xSq Y.toField) ∧ ¬ X.toField.IsNeg ∧
       X.LimbsLt 52 ∧ Y.LimbsLt 52 ∧
       Z.LimbsLt 52 ⦄ := by
-  unfold step_1.«x86_64-tables»
+  unfold step_1.«64bit-tables»
   step as ⟨a, ha⟩
   step as ⟨Y, hY, hY_lt⟩
   rw [ha] at hY
@@ -178,59 +178,59 @@ private theorem step_1_spec (repr : CompressedEdwardsY) :
 private theorem step_2_spec (repr : CompressedEdwardsY) (X Y Z : FieldElement51)
     (hX : X.LimbsLt 52) (hY : Y.LimbsLt 52)
     (hZ : Z.LimbsLt 52) :
-    step_2.«x86_64-tables» repr X Y Z ⦃ (r : EdwardsPoint.«x86_64-tables») =>
+    step_2.«64bit-tables» repr X Y Z ⦃ (r : EdwardsPoint.«64bit-tables») =>
       (CompressedEdwardsY.asNat repr / 2 ^ 255 = 0 →
         r.toExtended = ⟨X.toField, Y.toField, Z.toField, X.toField * Y.toField⟩) ∧
       (CompressedEdwardsY.asNat repr / 2 ^ 255 = 1 →
         r.toExtended = ⟨-X.toField, Y.toField, Z.toField, -X.toField * Y.toField⟩) ∧
       r.LimbsLt 52 ⦄ := by
-  rw [show step_2.«x86_64-tables» repr X Y Z = Backend.U64.edStep2Body
-      (fun X Y Z T => ({ X, Y, Z, T } : EdwardsPoint.«x86_64-tables»)) repr X Y Z from rfl]
+  rw [show step_2.«64bit-tables» repr X Y Z = Backend.U64.edStep2Body
+      (fun X Y Z T => ({ X, Y, Z, T } : EdwardsPoint.«64bit-tables»)) repr X Y Z from rfl]
   apply spec_mono (Backend.edStep2Body_spec Backend.U64 Backend.U64.mul_spec
     Backend.U64.conditional_negate_spec _ repr X Y Z hX hY)
   rintro _ ⟨X1, T, rfl, h0, h1, hT, hX1b, hTb⟩
   have hT' : T.toField = X1.toField * Y.toField := hT
   refine ⟨fun h => ?_, fun h => ?_, ⟨hX1b, hY, hZ, hTb⟩⟩
   · rw [h0 h] at hT' ⊢
-    simp only [EdwardsPoint.«x86_64-tables».toExtended_def, hT']
+    simp only [EdwardsPoint.«64bit-tables».toExtended_def, hT']
   · have hx : X1.toField = -X.toField := (h1 h)
-    simp only [EdwardsPoint.«x86_64-tables».toExtended_def, hT', hx]
+    simp only [EdwardsPoint.«64bit-tables».toExtended_def, hT', hx]
 
 /-- The decompressed point `(x : y : 1 : x y)` with `x² = xSq y` is on the curve. -/
-private theorem onCurve_and_toPoint_of_toExtended {ep : EdwardsPoint.«x86_64-tables»}
+private theorem onCurve_and_toPoint_of_toExtended {ep : EdwardsPoint.«64bit-tables»}
     {x y : ZMod p} (hx : x ^ 2 = curve25519.edwards.xSq y)
     (h : ep.toExtended = ⟨x, y, 1, x * y⟩) :
     ep.OnCurve ∧ ep.toPoint.x = x ∧ ep.toPoint.y = y := by
   have hon : ep.OnCurve := by
-    rw [EdwardsPoint.«x86_64-tables».onCurve_iff, h]
+    rw [EdwardsPoint.«64bit-tables».onCurve_iff, h]
     refine ⟨one_ne_zero, (one_mul _).symm, ?_⟩
     rw [div_one, div_one]
     exact equation_iff_sq_eq_xSq.mpr hx
   refine ⟨hon, ?_, ?_⟩
-  · rw [EdwardsPoint.«x86_64-tables».toPoint_x hon]
-    simp only [EdwardsPoint.«x86_64-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [EdwardsPoint.«64bit-tables».toPoint_x hon]
+    simp only [EdwardsPoint.«64bit-tables».toExtended_def, Extended.mk.injEq] at h
     rw [h.1, h.2.2.1, div_one]
-  · rw [EdwardsPoint.«x86_64-tables».toPoint_y hon]
-    simp only [EdwardsPoint.«x86_64-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [EdwardsPoint.«64bit-tables».toPoint_y hon]
+    simp only [EdwardsPoint.«64bit-tables».toExtended_def, Extended.mk.injEq] at h
     rw [h.2.1, h.2.2.1, div_one]
 
-end decompress.«x86_64-tables»
+end decompress.«64bit-tables»
 
-namespace decompress.«i686-tables»
+namespace decompress.«32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `decompress::step_1`: `Y` from the low `255` bits, `Z = 1`, and `(c, X) = sqrt_ratio_i (Y² - 1)
 (d Y² + 1)`: `c = 1` iff `xSq Y` is a square, and then `X` is its non-negative root. -/
 private theorem step_1_spec (repr : CompressedEdwardsY) :
-    step_1.«i686-tables» repr ⦃ (c : subtle.Choice) (X Y Z : FieldElement2625) =>
+    step_1.«32bit-tables» repr ⦃ (c : subtle.Choice) (X Y Z : FieldElement2625) =>
       c.IsValid ∧ Y.toField = ((CompressedEdwardsY.asNat repr % 2 ^ 255 : ℕ) : ZMod p) ∧
       Z.toField = 1 ∧
       (c = 1#u8 ↔ IsSquare (curve25519.edwards.xSq Y.toField)) ∧
       (c = 1#u8 → X.toField ^ 2 = curve25519.edwards.xSq Y.toField) ∧ ¬ X.toField.IsNeg ∧
       X.LimbsLt 26 ∧ Y.LimbsLt 26 ∧
       Z.LimbsLt 26 ⦄ := by
-  unfold step_1.«i686-tables»
+  unfold step_1.«32bit-tables»
   step as ⟨a, ha⟩
   step as ⟨Y, hY, hY_lt⟩
   rw [ha] at hY
@@ -248,45 +248,45 @@ private theorem step_1_spec (repr : CompressedEdwardsY) :
 private theorem step_2_spec (repr : CompressedEdwardsY) (X Y Z : FieldElement2625)
     (hX : X.LimbsLt 26) (hY : Y.LimbsLt 26)
     (hZ : Z.LimbsLt 26) :
-    step_2.«i686-tables» repr X Y Z ⦃ (r : EdwardsPoint.«i686-tables») =>
+    step_2.«32bit-tables» repr X Y Z ⦃ (r : EdwardsPoint.«32bit-tables») =>
       (CompressedEdwardsY.asNat repr / 2 ^ 255 = 0 →
         r.toExtended = ⟨X.toField, Y.toField, Z.toField, X.toField * Y.toField⟩) ∧
       (CompressedEdwardsY.asNat repr / 2 ^ 255 = 1 →
         r.toExtended = ⟨-X.toField, Y.toField, Z.toField, -X.toField * Y.toField⟩) ∧
       r.LimbsLt 26 ⦄ := by
-  rw [show step_2.«i686-tables» repr X Y Z = Backend.U32.edStep2Body
-      (fun X Y Z T => ({ X, Y, Z, T } : EdwardsPoint.«i686-tables»)) repr X Y Z from rfl]
+  rw [show step_2.«32bit-tables» repr X Y Z = Backend.U32.edStep2Body
+      (fun X Y Z T => ({ X, Y, Z, T } : EdwardsPoint.«32bit-tables»)) repr X Y Z from rfl]
   apply spec_mono (Backend.edStep2Body_spec Backend.U32 Backend.U32.mul_spec
     Backend.U32.conditional_negate_spec _ repr X Y Z hX hY)
   rintro _ ⟨X1, T, rfl, h0, h1, hT, hX1b, hTb⟩
   have hT' : T.toField = X1.toField * Y.toField := hT
   refine ⟨fun h => ?_, fun h => ?_, ⟨hX1b, hY, hZ, hTb⟩⟩
   · rw [h0 h] at hT' ⊢
-    simp only [EdwardsPoint.«i686-tables».toExtended_def, hT']
+    simp only [EdwardsPoint.«32bit-tables».toExtended_def, hT']
   · have hx : X1.toField = -X.toField := (h1 h)
-    simp only [EdwardsPoint.«i686-tables».toExtended_def, hT', hx]
+    simp only [EdwardsPoint.«32bit-tables».toExtended_def, hT', hx]
 
 /-- The decompressed point `(x : y : 1 : x y)` with `x² = xSq y` is on the curve. -/
-private theorem onCurve_and_toPoint_of_toExtended {ep : EdwardsPoint.«i686-tables»}
+private theorem onCurve_and_toPoint_of_toExtended {ep : EdwardsPoint.«32bit-tables»}
     {x y : ZMod p} (hx : x ^ 2 = curve25519.edwards.xSq y)
     (h : ep.toExtended = ⟨x, y, 1, x * y⟩) :
     ep.OnCurve ∧ ep.toPoint.x = x ∧ ep.toPoint.y = y := by
   have hon : ep.OnCurve := by
-    rw [EdwardsPoint.«i686-tables».onCurve_iff, h]
+    rw [EdwardsPoint.«32bit-tables».onCurve_iff, h]
     refine ⟨one_ne_zero, (one_mul _).symm, ?_⟩
     rw [div_one, div_one]
     exact equation_iff_sq_eq_xSq.mpr hx
   refine ⟨hon, ?_, ?_⟩
-  · rw [EdwardsPoint.«i686-tables».toPoint_x hon]
-    simp only [EdwardsPoint.«i686-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [EdwardsPoint.«32bit-tables».toPoint_x hon]
+    simp only [EdwardsPoint.«32bit-tables».toExtended_def, Extended.mk.injEq] at h
     rw [h.1, h.2.2.1, div_one]
-  · rw [EdwardsPoint.«i686-tables».toPoint_y hon]
-    simp only [EdwardsPoint.«i686-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [EdwardsPoint.«32bit-tables».toPoint_y hon]
+    simp only [EdwardsPoint.«32bit-tables».toExtended_def, Extended.mk.injEq] at h
     rw [h.2.1, h.2.2.1, div_one]
 
-end decompress.«i686-tables»
+end decompress.«32bit-tables»
 
-namespace CompressedEdwardsY.«x86_64-tables»
+namespace CompressedEdwardsY.«64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
@@ -295,12 +295,12 @@ value (`y` reduced modulo `p`, `x = 0` accepted with either sign); the point is 
 limbs `< 2^52`. -/
 @[step]
 theorem decompress_spec (self : CompressedEdwardsY) :
-    decompress.«x86_64-tables» self ⦃ (r : Option (EdwardsPoint.«x86_64-tables»)) =>
-      r.map EdwardsPoint.«x86_64-tables».toPoint = decodeLenient self.toVector ∧
+    decompress.«64bit-tables» self ⦃ (r : Option (EdwardsPoint.«64bit-tables»)) =>
+      r.map EdwardsPoint.«64bit-tables».toPoint = decodeLenient self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ q.LimbsLt 52 ⦄ := by
   simp only [Curve25519Dalek.edwards.CompressedEdwardsY.decodeLenient_toVector]
-  unfold decompress.«x86_64-tables»
-  step with decompress.«x86_64-tables».step_1_spec
+  unfold decompress.«64bit-tables»
+  step with decompress.«64bit-tables».step_1_spec
     as ⟨c, X, Y, Z, hcv, hYf, hZf, hc, hX, hXneg, hX_lt, hY_lt, hZ_lt⟩
   step as ⟨b, hb⟩
   rcases hcv with rfl | rfl
@@ -309,28 +309,28 @@ theorem decompress_spec (self : CompressedEdwardsY) :
     rw [Option.map_none, eq_comm, decodeLenientNat_eq_none_iff, ← hYf]
     exact fun hs => absurd (hc.mpr hs) (by decide)
   · simp only [hb, show (1#u8 != 0#u8) = true from by decide, ite_true]
-    step with decompress.«x86_64-tables».step_2_spec as ⟨ep, hep0, hep1, hepb⟩
+    step with decompress.«64bit-tables».step_2_spec as ⟨ep, hep0, hep1, hepb⟩
     rw [hZf] at hep0 hep1
     have hsq := hX rfl
     have hle := self.asNat_div_two_pow_le_one
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hle with h0 | h1
     · obtain ⟨hon, hpx, hpy⟩ :=
-        edwards.decompress.«x86_64-tables».onCurve_and_toPoint_of_toExtended hsq (hep0 h0)
+        edwards.decompress.«64bit-tables».onCurve_and_toPoint_of_toExtended hsq (hep0 h0)
       refine ⟨?_, fun q hq => Option.some.inj hq ▸ ⟨hon, hepb⟩⟩
       rw [Option.map_some, eq_comm]
       exact decodeLenientNat_eq_some_of_sign hXneg ep.toPoint (by rw [hpy, hYf]) (fun _ => hpx)
         (fun h => absurd (h0.symm.trans h) (by decide)) hle
     · obtain ⟨hon, hpx, hpy⟩ :=
-        edwards.decompress.«x86_64-tables».onCurve_and_toPoint_of_toExtended
+        edwards.decompress.«64bit-tables».onCurve_and_toPoint_of_toExtended
           (by rw [neg_sq]; exact hsq) (hep1 h1)
       refine ⟨?_, fun q hq => Option.some.inj hq ▸ ⟨hon, hepb⟩⟩
       rw [Option.map_some, eq_comm]
       exact decodeLenientNat_eq_some_of_sign hXneg ep.toPoint (by rw [hpy, hYf])
         (fun h => absurd (h1.symm.trans h) (by decide)) (fun _ => hpx) hle
 
-end CompressedEdwardsY.«x86_64-tables»
+end CompressedEdwardsY.«64bit-tables»
 
-namespace CompressedEdwardsY.«i686-tables»
+namespace CompressedEdwardsY.«32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
@@ -339,12 +339,12 @@ value (`y` reduced modulo `p`, `x = 0` accepted with either sign); the point is 
 limbs `< 2^26`. -/
 @[step]
 theorem decompress_spec (self : CompressedEdwardsY) :
-    decompress.«i686-tables» self ⦃ (r : Option (EdwardsPoint.«i686-tables»)) =>
-      r.map EdwardsPoint.«i686-tables».toPoint = decodeLenient self.toVector ∧
+    decompress.«32bit-tables» self ⦃ (r : Option (EdwardsPoint.«32bit-tables»)) =>
+      r.map EdwardsPoint.«32bit-tables».toPoint = decodeLenient self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ q.LimbsLt 26 ⦄ := by
   simp only [Curve25519Dalek.edwards.CompressedEdwardsY.decodeLenient_toVector]
-  unfold decompress.«i686-tables»
-  step with decompress.«i686-tables».step_1_spec
+  unfold decompress.«32bit-tables»
+  step with decompress.«32bit-tables».step_1_spec
     as ⟨c, X, Y, Z, hcv, hYf, hZf, hc, hX, hXneg, hX_lt, hY_lt, hZ_lt⟩
   step as ⟨b, hb⟩
   rcases hcv with rfl | rfl
@@ -353,42 +353,42 @@ theorem decompress_spec (self : CompressedEdwardsY) :
     rw [Option.map_none, eq_comm, decodeLenientNat_eq_none_iff, ← hYf]
     exact fun hs => absurd (hc.mpr hs) (by decide)
   · simp only [hb, show (1#u8 != 0#u8) = true from by decide, ite_true]
-    step with decompress.«i686-tables».step_2_spec as ⟨ep, hep0, hep1, hepb⟩
+    step with decompress.«32bit-tables».step_2_spec as ⟨ep, hep0, hep1, hepb⟩
     rw [hZf] at hep0 hep1
     have hsq := hX rfl
     have hle := self.asNat_div_two_pow_le_one
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hle with h0 | h1
     · obtain ⟨hon, hpx, hpy⟩ :=
-        edwards.decompress.«i686-tables».onCurve_and_toPoint_of_toExtended hsq (hep0 h0)
+        edwards.decompress.«32bit-tables».onCurve_and_toPoint_of_toExtended hsq (hep0 h0)
       refine ⟨?_, fun q hq => Option.some.inj hq ▸ ⟨hon, hepb⟩⟩
       rw [Option.map_some, eq_comm]
       exact decodeLenientNat_eq_some_of_sign hXneg ep.toPoint (by rw [hpy, hYf]) (fun _ => hpx)
         (fun h => absurd (h0.symm.trans h) (by decide)) hle
     · obtain ⟨hon, hpx, hpy⟩ :=
-        edwards.decompress.«i686-tables».onCurve_and_toPoint_of_toExtended
+        edwards.decompress.«32bit-tables».onCurve_and_toPoint_of_toExtended
           (by rw [neg_sq]; exact hsq) (hep1 h1)
       refine ⟨?_, fun q hq => Option.some.inj hq ▸ ⟨hon, hepb⟩⟩
       rw [Option.map_some, eq_comm]
       exact decodeLenientNat_eq_some_of_sign hXneg ep.toPoint (by rw [hpy, hYf])
         (fun h => absurd (h1.symm.trans h) (by decide)) (fun _ => hpx) hle
 
-end CompressedEdwardsY.«i686-tables»
+end CompressedEdwardsY.«32bit-tables»
 
-namespace decompress.«x86_64-no-tables»
+namespace decompress.«64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `decompress::step_1`: `Y` from the low `255` bits, `Z = 1`, and `(c, X) = sqrt_ratio_i (Y² - 1)
 (d Y² + 1)`: `c = 1` iff `xSq Y` is a square, and then `X` is its non-negative root. -/
 private theorem step_1_spec (repr : CompressedEdwardsY) :
-    step_1.«x86_64-no-tables» repr ⦃ (c : subtle.Choice) (X Y Z : FieldElement51) =>
+    step_1.«64bit-notables» repr ⦃ (c : subtle.Choice) (X Y Z : FieldElement51) =>
       c.IsValid ∧ Y.toField = ((CompressedEdwardsY.asNat repr % 2 ^ 255 : ℕ) : ZMod p) ∧
       Z.toField = 1 ∧
       (c = 1#u8 ↔ IsSquare (curve25519.edwards.xSq Y.toField)) ∧
       (c = 1#u8 → X.toField ^ 2 = curve25519.edwards.xSq Y.toField) ∧ ¬ X.toField.IsNeg ∧
       X.LimbsLt 52 ∧ Y.LimbsLt 52 ∧
       Z.LimbsLt 52 ⦄ := by
-  unfold step_1.«x86_64-no-tables»
+  unfold step_1.«64bit-notables»
   step as ⟨a, ha⟩
   step as ⟨Y, hY, hY_lt⟩
   rw [ha] at hY
@@ -405,59 +405,59 @@ private theorem step_1_spec (repr : CompressedEdwardsY) :
 private theorem step_2_spec (repr : CompressedEdwardsY) (X Y Z : FieldElement51)
     (hX : X.LimbsLt 52) (hY : Y.LimbsLt 52)
     (hZ : Z.LimbsLt 52) :
-    step_2.«x86_64-no-tables» repr X Y Z ⦃ (r : EdwardsPoint.«x86_64-no-tables») =>
+    step_2.«64bit-notables» repr X Y Z ⦃ (r : EdwardsPoint.«64bit-notables») =>
       (CompressedEdwardsY.asNat repr / 2 ^ 255 = 0 →
         r.toExtended = ⟨X.toField, Y.toField, Z.toField, X.toField * Y.toField⟩) ∧
       (CompressedEdwardsY.asNat repr / 2 ^ 255 = 1 →
         r.toExtended = ⟨-X.toField, Y.toField, Z.toField, -X.toField * Y.toField⟩) ∧
       r.LimbsLt 52 ⦄ := by
-  rw [show step_2.«x86_64-no-tables» repr X Y Z = Backend.U64.edStep2Body
-      (fun X Y Z T => ({ X, Y, Z, T } : EdwardsPoint.«x86_64-no-tables»)) repr X Y Z from rfl]
+  rw [show step_2.«64bit-notables» repr X Y Z = Backend.U64.edStep2Body
+      (fun X Y Z T => ({ X, Y, Z, T } : EdwardsPoint.«64bit-notables»)) repr X Y Z from rfl]
   apply spec_mono (Backend.edStep2Body_spec Backend.U64 Backend.U64.mul_spec
     Backend.U64.conditional_negate_spec _ repr X Y Z hX hY)
   rintro _ ⟨X1, T, rfl, h0, h1, hT, hX1b, hTb⟩
   have hT' : T.toField = X1.toField * Y.toField := hT
   refine ⟨fun h => ?_, fun h => ?_, ⟨hX1b, hY, hZ, hTb⟩⟩
   · rw [h0 h] at hT' ⊢
-    simp only [EdwardsPoint.«x86_64-no-tables».toExtended_def, hT']
+    simp only [EdwardsPoint.«64bit-notables».toExtended_def, hT']
   · have hx : X1.toField = -X.toField := (h1 h)
-    simp only [EdwardsPoint.«x86_64-no-tables».toExtended_def, hT', hx]
+    simp only [EdwardsPoint.«64bit-notables».toExtended_def, hT', hx]
 
 /-- The decompressed point `(x : y : 1 : x y)` with `x² = xSq y` is on the curve. -/
-private theorem onCurve_and_toPoint_of_toExtended {ep : EdwardsPoint.«x86_64-no-tables»}
+private theorem onCurve_and_toPoint_of_toExtended {ep : EdwardsPoint.«64bit-notables»}
     {x y : ZMod p} (hx : x ^ 2 = curve25519.edwards.xSq y)
     (h : ep.toExtended = ⟨x, y, 1, x * y⟩) :
     ep.OnCurve ∧ ep.toPoint.x = x ∧ ep.toPoint.y = y := by
   have hon : ep.OnCurve := by
-    rw [EdwardsPoint.«x86_64-no-tables».onCurve_iff, h]
+    rw [EdwardsPoint.«64bit-notables».onCurve_iff, h]
     refine ⟨one_ne_zero, (one_mul _).symm, ?_⟩
     rw [div_one, div_one]
     exact equation_iff_sq_eq_xSq.mpr hx
   refine ⟨hon, ?_, ?_⟩
-  · rw [EdwardsPoint.«x86_64-no-tables».toPoint_x hon]
-    simp only [EdwardsPoint.«x86_64-no-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [EdwardsPoint.«64bit-notables».toPoint_x hon]
+    simp only [EdwardsPoint.«64bit-notables».toExtended_def, Extended.mk.injEq] at h
     rw [h.1, h.2.2.1, div_one]
-  · rw [EdwardsPoint.«x86_64-no-tables».toPoint_y hon]
-    simp only [EdwardsPoint.«x86_64-no-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [EdwardsPoint.«64bit-notables».toPoint_y hon]
+    simp only [EdwardsPoint.«64bit-notables».toExtended_def, Extended.mk.injEq] at h
     rw [h.2.1, h.2.2.1, div_one]
 
-end decompress.«x86_64-no-tables»
+end decompress.«64bit-notables»
 
-namespace decompress.«i686-no-tables»
+namespace decompress.«32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `decompress::step_1`: `Y` from the low `255` bits, `Z = 1`, and `(c, X) = sqrt_ratio_i (Y² - 1)
 (d Y² + 1)`: `c = 1` iff `xSq Y` is a square, and then `X` is its non-negative root. -/
 private theorem step_1_spec (repr : CompressedEdwardsY) :
-    step_1.«i686-no-tables» repr ⦃ (c : subtle.Choice) (X Y Z : FieldElement2625) =>
+    step_1.«32bit-notables» repr ⦃ (c : subtle.Choice) (X Y Z : FieldElement2625) =>
       c.IsValid ∧ Y.toField = ((CompressedEdwardsY.asNat repr % 2 ^ 255 : ℕ) : ZMod p) ∧
       Z.toField = 1 ∧
       (c = 1#u8 ↔ IsSquare (curve25519.edwards.xSq Y.toField)) ∧
       (c = 1#u8 → X.toField ^ 2 = curve25519.edwards.xSq Y.toField) ∧ ¬ X.toField.IsNeg ∧
       X.LimbsLt 26 ∧ Y.LimbsLt 26 ∧
       Z.LimbsLt 26 ⦄ := by
-  unfold step_1.«i686-no-tables»
+  unfold step_1.«32bit-notables»
   step as ⟨a, ha⟩
   step as ⟨Y, hY, hY_lt⟩
   rw [ha] at hY
@@ -475,45 +475,45 @@ private theorem step_1_spec (repr : CompressedEdwardsY) :
 private theorem step_2_spec (repr : CompressedEdwardsY) (X Y Z : FieldElement2625)
     (hX : X.LimbsLt 26) (hY : Y.LimbsLt 26)
     (hZ : Z.LimbsLt 26) :
-    step_2.«i686-no-tables» repr X Y Z ⦃ (r : EdwardsPoint.«i686-no-tables») =>
+    step_2.«32bit-notables» repr X Y Z ⦃ (r : EdwardsPoint.«32bit-notables») =>
       (CompressedEdwardsY.asNat repr / 2 ^ 255 = 0 →
         r.toExtended = ⟨X.toField, Y.toField, Z.toField, X.toField * Y.toField⟩) ∧
       (CompressedEdwardsY.asNat repr / 2 ^ 255 = 1 →
         r.toExtended = ⟨-X.toField, Y.toField, Z.toField, -X.toField * Y.toField⟩) ∧
       r.LimbsLt 26 ⦄ := by
-  rw [show step_2.«i686-no-tables» repr X Y Z = Backend.U32.edStep2Body
-      (fun X Y Z T => ({ X, Y, Z, T } : EdwardsPoint.«i686-no-tables»)) repr X Y Z from rfl]
+  rw [show step_2.«32bit-notables» repr X Y Z = Backend.U32.edStep2Body
+      (fun X Y Z T => ({ X, Y, Z, T } : EdwardsPoint.«32bit-notables»)) repr X Y Z from rfl]
   apply spec_mono (Backend.edStep2Body_spec Backend.U32 Backend.U32.mul_spec
     Backend.U32.conditional_negate_spec _ repr X Y Z hX hY)
   rintro _ ⟨X1, T, rfl, h0, h1, hT, hX1b, hTb⟩
   have hT' : T.toField = X1.toField * Y.toField := hT
   refine ⟨fun h => ?_, fun h => ?_, ⟨hX1b, hY, hZ, hTb⟩⟩
   · rw [h0 h] at hT' ⊢
-    simp only [EdwardsPoint.«i686-no-tables».toExtended_def, hT']
+    simp only [EdwardsPoint.«32bit-notables».toExtended_def, hT']
   · have hx : X1.toField = -X.toField := (h1 h)
-    simp only [EdwardsPoint.«i686-no-tables».toExtended_def, hT', hx]
+    simp only [EdwardsPoint.«32bit-notables».toExtended_def, hT', hx]
 
 /-- The decompressed point `(x : y : 1 : x y)` with `x² = xSq y` is on the curve. -/
-private theorem onCurve_and_toPoint_of_toExtended {ep : EdwardsPoint.«i686-no-tables»}
+private theorem onCurve_and_toPoint_of_toExtended {ep : EdwardsPoint.«32bit-notables»}
     {x y : ZMod p} (hx : x ^ 2 = curve25519.edwards.xSq y)
     (h : ep.toExtended = ⟨x, y, 1, x * y⟩) :
     ep.OnCurve ∧ ep.toPoint.x = x ∧ ep.toPoint.y = y := by
   have hon : ep.OnCurve := by
-    rw [EdwardsPoint.«i686-no-tables».onCurve_iff, h]
+    rw [EdwardsPoint.«32bit-notables».onCurve_iff, h]
     refine ⟨one_ne_zero, (one_mul _).symm, ?_⟩
     rw [div_one, div_one]
     exact equation_iff_sq_eq_xSq.mpr hx
   refine ⟨hon, ?_, ?_⟩
-  · rw [EdwardsPoint.«i686-no-tables».toPoint_x hon]
-    simp only [EdwardsPoint.«i686-no-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [EdwardsPoint.«32bit-notables».toPoint_x hon]
+    simp only [EdwardsPoint.«32bit-notables».toExtended_def, Extended.mk.injEq] at h
     rw [h.1, h.2.2.1, div_one]
-  · rw [EdwardsPoint.«i686-no-tables».toPoint_y hon]
-    simp only [EdwardsPoint.«i686-no-tables».toExtended_def, Extended.mk.injEq] at h
+  · rw [EdwardsPoint.«32bit-notables».toPoint_y hon]
+    simp only [EdwardsPoint.«32bit-notables».toExtended_def, Extended.mk.injEq] at h
     rw [h.2.1, h.2.2.1, div_one]
 
-end decompress.«i686-no-tables»
+end decompress.«32bit-notables»
 
-namespace CompressedEdwardsY.«x86_64-no-tables»
+namespace CompressedEdwardsY.«64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
@@ -522,12 +522,12 @@ value (`y` reduced modulo `p`, `x = 0` accepted with either sign); the point is 
 limbs `< 2^52`. -/
 @[step]
 theorem decompress_spec (self : CompressedEdwardsY) :
-    decompress.«x86_64-no-tables» self ⦃ (r : Option (EdwardsPoint.«x86_64-no-tables»)) =>
-      r.map EdwardsPoint.«x86_64-no-tables».toPoint = decodeLenient self.toVector ∧
+    decompress.«64bit-notables» self ⦃ (r : Option (EdwardsPoint.«64bit-notables»)) =>
+      r.map EdwardsPoint.«64bit-notables».toPoint = decodeLenient self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ q.LimbsLt 52 ⦄ := by
   simp only [Curve25519Dalek.edwards.CompressedEdwardsY.decodeLenient_toVector]
-  unfold decompress.«x86_64-no-tables»
-  step with decompress.«x86_64-no-tables».step_1_spec
+  unfold decompress.«64bit-notables»
+  step with decompress.«64bit-notables».step_1_spec
     as ⟨c, X, Y, Z, hcv, hYf, hZf, hc, hX, hXneg, hX_lt, hY_lt, hZ_lt⟩
   step as ⟨b, hb⟩
   rcases hcv with rfl | rfl
@@ -536,28 +536,28 @@ theorem decompress_spec (self : CompressedEdwardsY) :
     rw [Option.map_none, eq_comm, decodeLenientNat_eq_none_iff, ← hYf]
     exact fun hs => absurd (hc.mpr hs) (by decide)
   · simp only [hb, show (1#u8 != 0#u8) = true from by decide, ite_true]
-    step with decompress.«x86_64-no-tables».step_2_spec as ⟨ep, hep0, hep1, hepb⟩
+    step with decompress.«64bit-notables».step_2_spec as ⟨ep, hep0, hep1, hepb⟩
     rw [hZf] at hep0 hep1
     have hsq := hX rfl
     have hle := self.asNat_div_two_pow_le_one
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hle with h0 | h1
     · obtain ⟨hon, hpx, hpy⟩ :=
-        edwards.decompress.«x86_64-no-tables».onCurve_and_toPoint_of_toExtended hsq (hep0 h0)
+        edwards.decompress.«64bit-notables».onCurve_and_toPoint_of_toExtended hsq (hep0 h0)
       refine ⟨?_, fun q hq => Option.some.inj hq ▸ ⟨hon, hepb⟩⟩
       rw [Option.map_some, eq_comm]
       exact decodeLenientNat_eq_some_of_sign hXneg ep.toPoint (by rw [hpy, hYf]) (fun _ => hpx)
         (fun h => absurd (h0.symm.trans h) (by decide)) hle
     · obtain ⟨hon, hpx, hpy⟩ :=
-        edwards.decompress.«x86_64-no-tables».onCurve_and_toPoint_of_toExtended
+        edwards.decompress.«64bit-notables».onCurve_and_toPoint_of_toExtended
           (by rw [neg_sq]; exact hsq) (hep1 h1)
       refine ⟨?_, fun q hq => Option.some.inj hq ▸ ⟨hon, hepb⟩⟩
       rw [Option.map_some, eq_comm]
       exact decodeLenientNat_eq_some_of_sign hXneg ep.toPoint (by rw [hpy, hYf])
         (fun h => absurd (h1.symm.trans h) (by decide)) (fun _ => hpx) hle
 
-end CompressedEdwardsY.«x86_64-no-tables»
+end CompressedEdwardsY.«64bit-notables»
 
-namespace CompressedEdwardsY.«i686-no-tables»
+namespace CompressedEdwardsY.«32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
@@ -566,12 +566,12 @@ value (`y` reduced modulo `p`, `x = 0` accepted with either sign); the point is 
 limbs `< 2^26`. -/
 @[step]
 theorem decompress_spec (self : CompressedEdwardsY) :
-    decompress.«i686-no-tables» self ⦃ (r : Option (EdwardsPoint.«i686-no-tables»)) =>
-      r.map EdwardsPoint.«i686-no-tables».toPoint = decodeLenient self.toVector ∧
+    decompress.«32bit-notables» self ⦃ (r : Option (EdwardsPoint.«32bit-notables»)) =>
+      r.map EdwardsPoint.«32bit-notables».toPoint = decodeLenient self.toVector ∧
       ∀ q, r = some q → q.OnCurve ∧ q.LimbsLt 26 ⦄ := by
   simp only [Curve25519Dalek.edwards.CompressedEdwardsY.decodeLenient_toVector]
-  unfold decompress.«i686-no-tables»
-  step with decompress.«i686-no-tables».step_1_spec
+  unfold decompress.«32bit-notables»
+  step with decompress.«32bit-notables».step_1_spec
     as ⟨c, X, Y, Z, hcv, hYf, hZf, hc, hX, hXneg, hX_lt, hY_lt, hZ_lt⟩
   step as ⟨b, hb⟩
   rcases hcv with rfl | rfl
@@ -580,25 +580,25 @@ theorem decompress_spec (self : CompressedEdwardsY) :
     rw [Option.map_none, eq_comm, decodeLenientNat_eq_none_iff, ← hYf]
     exact fun hs => absurd (hc.mpr hs) (by decide)
   · simp only [hb, show (1#u8 != 0#u8) = true from by decide, ite_true]
-    step with decompress.«i686-no-tables».step_2_spec as ⟨ep, hep0, hep1, hepb⟩
+    step with decompress.«32bit-notables».step_2_spec as ⟨ep, hep0, hep1, hepb⟩
     rw [hZf] at hep0 hep1
     have hsq := hX rfl
     have hle := self.asNat_div_two_pow_le_one
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hle with h0 | h1
     · obtain ⟨hon, hpx, hpy⟩ :=
-        edwards.decompress.«i686-no-tables».onCurve_and_toPoint_of_toExtended hsq (hep0 h0)
+        edwards.decompress.«32bit-notables».onCurve_and_toPoint_of_toExtended hsq (hep0 h0)
       refine ⟨?_, fun q hq => Option.some.inj hq ▸ ⟨hon, hepb⟩⟩
       rw [Option.map_some, eq_comm]
       exact decodeLenientNat_eq_some_of_sign hXneg ep.toPoint (by rw [hpy, hYf]) (fun _ => hpx)
         (fun h => absurd (h0.symm.trans h) (by decide)) hle
     · obtain ⟨hon, hpx, hpy⟩ :=
-        edwards.decompress.«i686-no-tables».onCurve_and_toPoint_of_toExtended
+        edwards.decompress.«32bit-notables».onCurve_and_toPoint_of_toExtended
           (by rw [neg_sq]; exact hsq) (hep1 h1)
       refine ⟨?_, fun q hq => Option.some.inj hq ▸ ⟨hon, hepb⟩⟩
       rw [Option.map_some, eq_comm]
       exact decodeLenientNat_eq_some_of_sign hXneg ep.toPoint (by rw [hpy, hYf])
         (fun h => absurd (h1.symm.trans h) (by decide)) (fun _ => hpx) hle
 
-end CompressedEdwardsY.«i686-no-tables»
+end CompressedEdwardsY.«32bit-notables»
 
 end Curve25519Dalek.edwards

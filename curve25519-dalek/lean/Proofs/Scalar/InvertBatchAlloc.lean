@@ -21,14 +21,14 @@ open Curve25519Dalek.backend.serial.u64.scalar (montgomeryRadix)
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert_batch_alloc.«x86_64-tables_spec» (inputs : Slice Scalar)
+theorem invert_batch_alloc.«64bit-tables_spec» (inputs : Slice Scalar)
     (hinputs : ∀ i < inputs.length, inputs[i]!.asNat % L ≠ 0) :
-    invert_batch_alloc.«x86_64-tables» inputs ⦃ (ret : Scalar) (r : Slice Scalar) =>
+    invert_batch_alloc.«64bit-tables» inputs ⦃ (ret : Scalar) (r : Slice Scalar) =>
       r.length = inputs.length ∧
       (∀ i < inputs.length, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
       ret.asNat * (∏ i ∈ Finset.range inputs.length, inputs[i]!.asNat) % L = 1 ∧
       ret.asNat < L ⦄ := by
-  unfold invert_batch_alloc.«x86_64-tables»
+  unfold invert_batch_alloc.«64bit-tables»
   step as ⟨one, hone, honeb⟩
   step as ⟨acc, hacc, haccb⟩
   step with alloc.vec.from_elem_spec
@@ -45,14 +45,14 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert_batch_alloc.«x86_64-no-tables_spec» (inputs : Slice Scalar)
+theorem invert_batch_alloc.«64bit-notables_spec» (inputs : Slice Scalar)
     (hinputs : ∀ i < inputs.length, inputs[i]!.asNat % L ≠ 0) :
-    invert_batch_alloc.«x86_64-no-tables» inputs ⦃ (ret : Scalar) (r : Slice Scalar) =>
+    invert_batch_alloc.«64bit-notables» inputs ⦃ (ret : Scalar) (r : Slice Scalar) =>
       r.length = inputs.length ∧
       (∀ i < inputs.length, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
       ret.asNat * (∏ i ∈ Finset.range inputs.length, inputs[i]!.asNat) % L = 1 ∧
       ret.asNat < L ⦄ :=
-  invert_batch_alloc.«x86_64-tables_spec» inputs hinputs
+  invert_batch_alloc.«64bit-tables_spec» inputs hinputs
 
 end Curve25519Dalek.scalar.Scalar
 
@@ -60,14 +60,14 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert_batch_alloc.«i686-tables_spec» (inputs : Slice Scalar)
+theorem invert_batch_alloc.«32bit-tables_spec» (inputs : Slice Scalar)
     (hinputs : ∀ i < inputs.length, inputs[i]!.asNat % L ≠ 0) :
-    invert_batch_alloc.«i686-tables» inputs ⦃ (ret : Scalar) (r : Slice Scalar) =>
+    invert_batch_alloc.«32bit-tables» inputs ⦃ (ret : Scalar) (r : Slice Scalar) =>
       r.length = inputs.length ∧
       (∀ i < inputs.length, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
       ret.asNat * (∏ i ∈ Finset.range inputs.length, inputs[i]!.asNat) % L = 1 ∧
       ret.asNat < L ⦄ := by
-  unfold invert_batch_alloc.«i686-tables»
+  unfold invert_batch_alloc.«32bit-tables»
   step as ⟨one, hone, honeb⟩
   step as ⟨acc, hacc, haccb⟩
   step with alloc.vec.from_elem_spec
@@ -84,14 +84,14 @@ end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
 
 @[step]
-theorem invert_batch_alloc.«i686-no-tables_spec» (inputs : Slice Scalar)
+theorem invert_batch_alloc.«32bit-notables_spec» (inputs : Slice Scalar)
     (hinputs : ∀ i < inputs.length, inputs[i]!.asNat % L ≠ 0) :
-    invert_batch_alloc.«i686-no-tables» inputs ⦃ (ret : Scalar) (r : Slice Scalar) =>
+    invert_batch_alloc.«32bit-notables» inputs ⦃ (ret : Scalar) (r : Slice Scalar) =>
       r.length = inputs.length ∧
       (∀ i < inputs.length, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
       ret.asNat * (∏ i ∈ Finset.range inputs.length, inputs[i]!.asNat) % L = 1 ∧
       ret.asNat < L ⦄ :=
-  invert_batch_alloc.«i686-tables_spec» inputs hinputs
+  invert_batch_alloc.«32bit-tables_spec» inputs hinputs
 
 end Curve25519Dalek.scalar.Scalar
 namespace Curve25519Dalek.scalar.Scalar
@@ -106,9 +106,9 @@ theorem invert_batch_alloc_spec (inputs : Slice Scalar)
       ret.asNat < L ⦄ := by
   unfold invert_batch_alloc
   exact dispatch_all_spec
-    (invert_batch_alloc.«x86_64-tables_spec» inputs hinputs)
-    (invert_batch_alloc.«x86_64-no-tables_spec» inputs hinputs)
-    (invert_batch_alloc.«i686-tables_spec» inputs hinputs)
-    (invert_batch_alloc.«i686-no-tables_spec» inputs hinputs)
+    (invert_batch_alloc.«64bit-tables_spec» inputs hinputs)
+    (invert_batch_alloc.«64bit-notables_spec» inputs hinputs)
+    (invert_batch_alloc.«32bit-tables_spec» inputs hinputs)
+    (invert_batch_alloc.«32bit-notables_spec» inputs hinputs)
 
 end Curve25519Dalek.scalar.Scalar

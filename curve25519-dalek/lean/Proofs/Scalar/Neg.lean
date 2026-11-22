@@ -34,10 +34,10 @@ open Curve25519Dalek.backend.serial.u64.scalar (montgomeryRadix)
 namespace Curve25519Dalek.scalar.NegShared0ScalarScalar
 
 @[step]
-theorem neg.«x86_64-tables_spec» (self : Scalar) :
-    neg.«x86_64-tables» self ⦃ (r : Scalar) =>
+theorem neg.«64bit-tables_spec» (self : Scalar) :
+    neg.«64bit-tables» self ⦃ (r : Scalar) =>
       (r.asNat + self.asNat) % L = 0 ∧ r.asNat < L ⦄ := by
-  unfold neg.«x86_64-tables»
+  unfold neg.«64bit-tables»
   obtain ⟨hR, hRb⟩ := backend.serial.u64.constants.R_spec
   step as ⟨x, hx, hxb⟩
   step with backend.serial.u64.scalar.Scalar52.mul_internal_spec x _ hxb hRb as ⟨xR, hxR, hxRb⟩
@@ -63,10 +63,10 @@ end Curve25519Dalek.scalar.NegShared0ScalarScalar
 namespace Curve25519Dalek.scalar.NegShared0ScalarScalar
 
 @[step]
-theorem neg.«x86_64-no-tables_spec» (self : Scalar) :
-    neg.«x86_64-no-tables» self ⦃ (r : Scalar) =>
+theorem neg.«64bit-notables_spec» (self : Scalar) :
+    neg.«64bit-notables» self ⦃ (r : Scalar) =>
       (r.asNat + self.asNat) % L = 0 ∧ r.asNat < L ⦄ :=
-  neg.«x86_64-tables_spec» self
+  neg.«64bit-tables_spec» self
 
 end Curve25519Dalek.scalar.NegShared0ScalarScalar
 
@@ -74,10 +74,10 @@ end Curve25519Dalek.scalar.NegShared0ScalarScalar
 namespace Curve25519Dalek.scalar.NegShared0ScalarScalar
 
 @[step]
-theorem neg.«i686-tables_spec» (self : Scalar) :
-    neg.«i686-tables» self ⦃ (r : Scalar) =>
+theorem neg.«32bit-tables_spec» (self : Scalar) :
+    neg.«32bit-tables» self ⦃ (r : Scalar) =>
       (r.asNat + self.asNat) % L = 0 ∧ r.asNat < L ⦄ := by
-  unfold neg.«i686-tables»
+  unfold neg.«32bit-tables»
   obtain ⟨hR, hRb⟩ := backend.serial.u32.constants.R_spec
   step as ⟨x, hx, hxb⟩
   step with backend.serial.u32.scalar.Scalar29.mul_internal_spec x _ hxb hRb as ⟨xR, hxR, hxRb⟩
@@ -103,10 +103,10 @@ end Curve25519Dalek.scalar.NegShared0ScalarScalar
 namespace Curve25519Dalek.scalar.NegShared0ScalarScalar
 
 @[step]
-theorem neg.«i686-no-tables_spec» (self : Scalar) :
-    neg.«i686-no-tables» self ⦃ (r : Scalar) =>
+theorem neg.«32bit-notables_spec» (self : Scalar) :
+    neg.«32bit-notables» self ⦃ (r : Scalar) =>
       (r.asNat + self.asNat) % L = 0 ∧ r.asNat < L ⦄ :=
-  neg.«i686-tables_spec» self
+  neg.«32bit-tables_spec» self
 
 end Curve25519Dalek.scalar.NegShared0ScalarScalar
 namespace Curve25519Dalek.Shared0Scalar.Insts.CoreOpsArithNegScalar
@@ -117,10 +117,10 @@ theorem neg_spec (self : Scalar) :
       (r.asNat + self.asNat) % L = 0 ∧ r.asNat < L ⦄ := by
   unfold neg
   exact dispatch_all_spec
-    (scalar.NegShared0ScalarScalar.neg.«x86_64-tables_spec» self)
-    (scalar.NegShared0ScalarScalar.neg.«x86_64-no-tables_spec» self)
-    (scalar.NegShared0ScalarScalar.neg.«i686-tables_spec» self)
-    (scalar.NegShared0ScalarScalar.neg.«i686-no-tables_spec» self)
+    (scalar.NegShared0ScalarScalar.neg.«64bit-tables_spec» self)
+    (scalar.NegShared0ScalarScalar.neg.«64bit-notables_spec» self)
+    (scalar.NegShared0ScalarScalar.neg.«32bit-tables_spec» self)
+    (scalar.NegShared0ScalarScalar.neg.«32bit-notables_spec» self)
 
 end Curve25519Dalek.Shared0Scalar.Insts.CoreOpsArithNegScalar
 

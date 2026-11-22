@@ -34,14 +34,14 @@ open Curve25519Dalek.backend.serial.u32.field (FieldElement2625)
 
 namespace Curve25519Dalek.edwards
 
-namespace «EdwardsPointx86_64-tables»
+namespace «EdwardsPoint64bit-tables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `EdwardsPoint::to_montgomery`: the canonical bytes of `(Z + Y) / (Z - Y)` (`0` if
 `Z = Y`); limbs `< 2^52`. -/
 @[step]
-theorem to_montgomery_asNat (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52) :
+theorem to_montgomery_asNat (self : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52) :
     to_montgomery self ⦃ (r : montgomery.MontgomeryPoint) =>
       r.asNat = ((self.Z.toField + self.Y.toField) / (self.Z.toField - self.Y.toField)).val ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
@@ -56,25 +56,25 @@ theorem to_montgomery_asNat (self : EdwardsPoint.«x86_64-tables») (hself : sel
 
 /-- `EdwardsPoint::to_montgomery`: RFC 7748's encoding of the `u`-coordinate of the
 Montgomery image of the represented point (`0` for the identity). -/
-theorem to_montgomery_spec (self : EdwardsPoint.«x86_64-tables») (hself : self.LimbsLt 52)
+theorem to_montgomery_spec (self : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     to_montgomery self ⦃ (r : montgomery.MontgomeryPoint) =>
       r.toVector = encodeUCoordinate (edwardsToMontgomery self.toPoint).u ⦄ := by
   simp only [Curve25519Dalek.montgomery.MontgomeryPoint.toVector_eq_encodeUCoordinate_iff]
   exact spec_mono (to_montgomery_asNat self hself) fun r hr => by
-      rw [hr, EdwardsPoint.«x86_64-tables».u_edwardsToMontgomery hon]
+      rw [hr, EdwardsPoint.«64bit-tables».u_edwardsToMontgomery hon]
       rfl
 
-end «EdwardsPointx86_64-tables»
+end «EdwardsPoint64bit-tables»
 
-namespace «EdwardsPointi686-tables»
+namespace «EdwardsPoint32bit-tables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `EdwardsPoint::to_montgomery`: the canonical bytes of `(Z + Y) / (Z - Y)` (`0` if
 `Z = Y`); limbs `< 2^26`. -/
 @[step]
-theorem to_montgomery_asNat (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26) :
+theorem to_montgomery_asNat (self : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26) :
     to_montgomery self ⦃ (r : montgomery.MontgomeryPoint) =>
       r.asNat = ((self.Z.toField + self.Y.toField) / (self.Z.toField - self.Y.toField)).val ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
@@ -89,25 +89,25 @@ theorem to_montgomery_asNat (self : EdwardsPoint.«i686-tables») (hself : self.
 
 /-- `EdwardsPoint::to_montgomery`: RFC 7748's encoding of the `u`-coordinate of the
 Montgomery image of the represented point (`0` for the identity). -/
-theorem to_montgomery_spec (self : EdwardsPoint.«i686-tables») (hself : self.LimbsLt 26)
+theorem to_montgomery_spec (self : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     to_montgomery self ⦃ (r : montgomery.MontgomeryPoint) =>
       r.toVector = encodeUCoordinate (edwardsToMontgomery self.toPoint).u ⦄ := by
   simp only [Curve25519Dalek.montgomery.MontgomeryPoint.toVector_eq_encodeUCoordinate_iff]
   exact spec_mono (to_montgomery_asNat self hself) fun r hr => by
-      rw [hr, EdwardsPoint.«i686-tables».u_edwardsToMontgomery hon]
+      rw [hr, EdwardsPoint.«32bit-tables».u_edwardsToMontgomery hon]
       rfl
 
-end «EdwardsPointi686-tables»
+end «EdwardsPoint32bit-tables»
 
-namespace «EdwardsPointx86_64-no-tables»
+namespace «EdwardsPoint64bit-notables»
 
 open Curve25519Dalek.backend.serial.u64.field.FieldElement51
 
 /-- `EdwardsPoint::to_montgomery`: the canonical bytes of `(Z + Y) / (Z - Y)` (`0` if
 `Z = Y`); limbs `< 2^52`. -/
 @[step]
-theorem to_montgomery_asNat (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52) :
+theorem to_montgomery_asNat (self : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52) :
     to_montgomery self ⦃ (r : montgomery.MontgomeryPoint) =>
       r.asNat = ((self.Z.toField + self.Y.toField) / (self.Z.toField - self.Y.toField)).val ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
@@ -122,25 +122,25 @@ theorem to_montgomery_asNat (self : EdwardsPoint.«x86_64-no-tables») (hself : 
 
 /-- `EdwardsPoint::to_montgomery`: RFC 7748's encoding of the `u`-coordinate of the
 Montgomery image of the represented point (`0` for the identity). -/
-theorem to_montgomery_spec (self : EdwardsPoint.«x86_64-no-tables») (hself : self.LimbsLt 52)
+theorem to_montgomery_spec (self : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
     (hon : self.OnCurve) :
     to_montgomery self ⦃ (r : montgomery.MontgomeryPoint) =>
       r.toVector = encodeUCoordinate (edwardsToMontgomery self.toPoint).u ⦄ := by
   simp only [Curve25519Dalek.montgomery.MontgomeryPoint.toVector_eq_encodeUCoordinate_iff]
   exact spec_mono (to_montgomery_asNat self hself) fun r hr => by
-      rw [hr, EdwardsPoint.«x86_64-no-tables».u_edwardsToMontgomery hon]
+      rw [hr, EdwardsPoint.«64bit-notables».u_edwardsToMontgomery hon]
       rfl
 
-end «EdwardsPointx86_64-no-tables»
+end «EdwardsPoint64bit-notables»
 
-namespace «EdwardsPointi686-no-tables»
+namespace «EdwardsPoint32bit-notables»
 
 open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
 
 /-- `EdwardsPoint::to_montgomery`: the canonical bytes of `(Z + Y) / (Z - Y)` (`0` if
 `Z = Y`); limbs `< 2^26`. -/
 @[step]
-theorem to_montgomery_asNat (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26) :
+theorem to_montgomery_asNat (self : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26) :
     to_montgomery self ⦃ (r : montgomery.MontgomeryPoint) =>
       r.asNat = ((self.Z.toField + self.Y.toField) / (self.Z.toField - self.Y.toField)).val ⦄ := by
   obtain ⟨hX, hY, hZ, hT⟩ := hself
@@ -155,15 +155,15 @@ theorem to_montgomery_asNat (self : EdwardsPoint.«i686-no-tables») (hself : se
 
 /-- `EdwardsPoint::to_montgomery`: RFC 7748's encoding of the `u`-coordinate of the
 Montgomery image of the represented point (`0` for the identity). -/
-theorem to_montgomery_spec (self : EdwardsPoint.«i686-no-tables») (hself : self.LimbsLt 26)
+theorem to_montgomery_spec (self : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
     (hon : self.OnCurve) :
     to_montgomery self ⦃ (r : montgomery.MontgomeryPoint) =>
       r.toVector = encodeUCoordinate (edwardsToMontgomery self.toPoint).u ⦄ := by
   simp only [Curve25519Dalek.montgomery.MontgomeryPoint.toVector_eq_encodeUCoordinate_iff]
   exact spec_mono (to_montgomery_asNat self hself) fun r hr => by
-      rw [hr, EdwardsPoint.«i686-no-tables».u_edwardsToMontgomery hon]
+      rw [hr, EdwardsPoint.«32bit-notables».u_edwardsToMontgomery hon]
       rfl
 
-end «EdwardsPointi686-no-tables»
+end «EdwardsPoint32bit-notables»
 
 end Curve25519Dalek.edwards

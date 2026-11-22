@@ -297,7 +297,7 @@ def backend.serial.u64.field.SubShared0FieldElement51SharedAFieldElement51FieldE
   backend.serial.u64.field.FieldElement51
 
 /-- [curve25519_dalek::edwards::EdwardsPoint::64bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 390:0-395:1
+    Source: 'curve25519-dalek/src/edwards.rs', lines 432:0-437:1
     Visibility: public -/
 structure edwards.EdwardsPoint.«64bit-tables» where
   X : backend.serial.u64.field.FieldElement51
@@ -306,7 +306,7 @@ structure edwards.EdwardsPoint.«64bit-tables» where
   T : backend.serial.u64.field.FieldElement51
 
 /-- [curve25519_dalek::edwards::EdwardsPoint::64bit-notables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 390:0-395:1
+    Source: 'curve25519-dalek/src/edwards.rs', lines 432:0-437:1
     Visibility: public -/
 structure edwards.EdwardsPoint.«64bit-notables» where
   X : backend.serial.u64.field.FieldElement51
@@ -315,7 +315,7 @@ structure edwards.EdwardsPoint.«64bit-notables» where
   T : backend.serial.u64.field.FieldElement51
 
 /-- [curve25519_dalek::edwards::EdwardsPoint::32bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 390:0-395:1
+    Source: 'curve25519-dalek/src/edwards.rs', lines 432:0-437:1
     Visibility: public -/
 structure edwards.EdwardsPoint.«32bit-tables» where
   X : backend.serial.u32.field.FieldElement2625
@@ -324,7 +324,7 @@ structure edwards.EdwardsPoint.«32bit-tables» where
   T : backend.serial.u32.field.FieldElement2625
 
 /-- [curve25519_dalek::edwards::EdwardsPoint::32bit-notables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 390:0-395:1
+    Source: 'curve25519-dalek/src/edwards.rs', lines 432:0-437:1
     Visibility: public -/
 structure edwards.EdwardsPoint.«32bit-notables» where
   X : backend.serial.u32.field.FieldElement2625
@@ -539,7 +539,7 @@ def scalar.HalfWidthScalar := scalar.Scalar
 def backend.serial.u32.scalar.Scalar29 := Array Std.U32 9#usize
 
 /-- [curve25519_dalek::edwards::EdwardsBasepointTable::32bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1281:8-1287:9
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1200:8-1200:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1323:8-1329:9
     Visibility: public -/
 @[reducible]
 def edwards.EdwardsBasepointTable.«32bit-tables» :=
@@ -553,7 +553,7 @@ def edwards.EdwardsBasepointTable.«32bit-tables» :=
 def backend.serial.u64.scalar.Scalar52 := Array Std.U64 5#usize
 
 /-- [curve25519_dalek::edwards::EdwardsBasepointTable::64bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1281:8-1287:9
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1200:8-1200:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1323:8-1329:9
     Visibility: public -/
 @[reducible]
 def edwards.EdwardsBasepointTable.«64bit-tables» :=
@@ -690,85 +690,111 @@ structure edwards.affine.AffinePoint.«32bit-notables» where
   x : backend.serial.u32.field.FieldElement2625
   y : backend.serial.u32.field.FieldElement2625
 
+/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::CompressedEdwardsY}::decompress_nist_full::{closure}::64bit-tables]
+    Source: 'curve25519-dalek/src/edwards.rs', lines 260:20-260:75 -/
+@[reducible]
+def edwards.CompressedEdwardsY.decompress_nist_full.closure.«64bit-tables» :=
+Unit
+
+/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::CompressedEdwardsY}::decompress_nist_full::{closure}::64bit-notables]
+    Source: 'curve25519-dalek/src/edwards.rs', lines 260:20-260:75 -/
+@[reducible]
+def edwards.CompressedEdwardsY.decompress_nist_full.closure.«64bit-notables»
+  :=
+Unit
+
+/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::CompressedEdwardsY}::decompress_nist_full::{closure}::32bit-tables]
+    Source: 'curve25519-dalek/src/edwards.rs', lines 260:20-260:75 -/
+@[reducible]
+def edwards.CompressedEdwardsY.decompress_nist_full.closure.«32bit-tables» :=
+Unit
+
+/-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::CompressedEdwardsY}::decompress_nist_full::{closure}::32bit-notables]
+    Source: 'curve25519-dalek/src/edwards.rs', lines 260:20-260:75 -/
+@[reducible]
+def edwards.CompressedEdwardsY.decompress_nist_full.closure.«32bit-notables»
+  :=
+Unit
+
 /-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::64bit-tables}::compress_batch::{closure#1}]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 630:29-634:9 -/
+    Source: 'curve25519-dalek/src/edwards.rs', lines 672:29-676:9 -/
 def edwards.«EdwardsPoint64bit-tables».compress_batch.closure_1 (N :
   Std.Usize) :=
   Array edwards.EdwardsPoint.«64bit-tables» N × Array
   backend.serial.u64.field.FieldElement51 N
 
 /-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::64bit-tables}::compress_batch::{closure}]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 627:50-627:65 -/
+    Source: 'curve25519-dalek/src/edwards.rs', lines 669:50-669:65 -/
 @[reducible]
 def edwards.«EdwardsPoint64bit-tables».compress_batch.closure (N : Std.Usize)
   :=
   Array edwards.EdwardsPoint.«64bit-tables» N
 
 /-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::64bit-notables}::compress_batch::{closure#1}]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 630:29-634:9 -/
+    Source: 'curve25519-dalek/src/edwards.rs', lines 672:29-676:9 -/
 def edwards.«EdwardsPoint64bit-notables».compress_batch.closure_1 (N :
   Std.Usize) :=
   Array edwards.EdwardsPoint.«64bit-notables» N × Array
   backend.serial.u64.field.FieldElement51 N
 
 /-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::64bit-notables}::compress_batch::{closure}]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 627:50-627:65 -/
+    Source: 'curve25519-dalek/src/edwards.rs', lines 669:50-669:65 -/
 @[reducible]
 def edwards.«EdwardsPoint64bit-notables».compress_batch.closure (N :
   Std.Usize) :=
   Array edwards.EdwardsPoint.«64bit-notables» N
 
 /-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::32bit-tables}::compress_batch::{closure#1}]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 630:29-634:9 -/
+    Source: 'curve25519-dalek/src/edwards.rs', lines 672:29-676:9 -/
 def edwards.«EdwardsPoint32bit-tables».compress_batch.closure_1 (N :
   Std.Usize) :=
   Array edwards.EdwardsPoint.«32bit-tables» N × Array
   backend.serial.u32.field.FieldElement2625 N
 
 /-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::32bit-tables}::compress_batch::{closure}]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 627:50-627:65 -/
+    Source: 'curve25519-dalek/src/edwards.rs', lines 669:50-669:65 -/
 @[reducible]
 def edwards.«EdwardsPoint32bit-tables».compress_batch.closure (N : Std.Usize)
   :=
   Array edwards.EdwardsPoint.«32bit-tables» N
 
 /-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::32bit-notables}::compress_batch::{closure#1}]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 630:29-634:9 -/
+    Source: 'curve25519-dalek/src/edwards.rs', lines 672:29-676:9 -/
 def edwards.«EdwardsPoint32bit-notables».compress_batch.closure_1 (N :
   Std.Usize) :=
   Array edwards.EdwardsPoint.«32bit-notables» N × Array
   backend.serial.u32.field.FieldElement2625 N
 
 /-- [curve25519_dalek::edwards::{curve25519_dalek::edwards::EdwardsPoint::32bit-notables}::compress_batch::{closure}]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 627:50-627:65 -/
+    Source: 'curve25519-dalek/src/edwards.rs', lines 669:50-669:65 -/
 @[reducible]
 def edwards.«EdwardsPoint32bit-notables».compress_batch.closure (N :
   Std.Usize) :=
   Array edwards.EdwardsPoint.«32bit-notables» N
 
 /-- [curve25519_dalek::edwards::VartimeEdwardsPrecomputation::64bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1032:0-1032:82
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1074:0-1074:82
     Visibility: public -/
 @[reducible]
 def edwards.VartimeEdwardsPrecomputation.«64bit-tables» :=
   backend.VartimePrecomputedStraus.«64bit-tables»
 
 /-- [curve25519_dalek::edwards::VartimeEdwardsPrecomputation::64bit-notables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1032:0-1032:82
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1074:0-1074:82
     Visibility: public -/
 @[reducible]
 def edwards.VartimeEdwardsPrecomputation.«64bit-notables» :=
   backend.VartimePrecomputedStraus.«64bit-notables»
 
 /-- [curve25519_dalek::edwards::VartimeEdwardsPrecomputation::32bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1032:0-1032:82
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1074:0-1074:82
     Visibility: public -/
 @[reducible]
 def edwards.VartimeEdwardsPrecomputation.«32bit-tables» :=
   backend.VartimePrecomputedStraus.«32bit-tables»
 
 /-- [curve25519_dalek::edwards::VartimeEdwardsPrecomputation::32bit-notables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1032:0-1032:82
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1074:0-1074:82
     Visibility: public -/
 @[reducible]
 def edwards.VartimeEdwardsPrecomputation.«32bit-notables» :=
@@ -789,7 +815,7 @@ structure traits.BasepointTable (Self : Type _) (Self_Point : Type _) where
 def window.LookupTableRadix32 (T : Type _) := Array T 16#usize
 
 /-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix32::64bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1288:8-1294:9
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1200:8-1200:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1330:8-1336:9
     Visibility: public -/
 @[reducible]
 def edwards.EdwardsBasepointTableRadix32.«64bit-tables» :=
@@ -797,7 +823,7 @@ def edwards.EdwardsBasepointTableRadix32.«64bit-tables» :=
   backend.serial.curve_models.AffineNielsPoint.«64bit-tables») 32#usize
 
 /-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix32::32bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1288:8-1294:9
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1200:8-1200:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1330:8-1336:9
     Visibility: public -/
 @[reducible]
 def edwards.EdwardsBasepointTableRadix32.«32bit-tables» :=
@@ -811,7 +837,7 @@ def edwards.EdwardsBasepointTableRadix32.«32bit-tables» :=
 def window.LookupTableRadix64 (T : Type _) := Array T 32#usize
 
 /-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix64::64bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1295:8-1301:9
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1200:8-1200:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1337:8-1343:9
     Visibility: public -/
 @[reducible]
 def edwards.EdwardsBasepointTableRadix64.«64bit-tables» :=
@@ -819,7 +845,7 @@ def edwards.EdwardsBasepointTableRadix64.«64bit-tables» :=
   backend.serial.curve_models.AffineNielsPoint.«64bit-tables») 32#usize
 
 /-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix64::32bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1295:8-1301:9
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1200:8-1200:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1337:8-1343:9
     Visibility: public -/
 @[reducible]
 def edwards.EdwardsBasepointTableRadix64.«32bit-tables» :=
@@ -833,7 +859,7 @@ def edwards.EdwardsBasepointTableRadix64.«32bit-tables» :=
 def window.LookupTableRadix128 (T : Type _) := Array T 64#usize
 
 /-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix128::64bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1302:8-1308:9
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1200:8-1200:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1344:8-1350:9
     Visibility: public -/
 @[reducible]
 def edwards.EdwardsBasepointTableRadix128.«64bit-tables» :=
@@ -841,7 +867,7 @@ def edwards.EdwardsBasepointTableRadix128.«64bit-tables» :=
   backend.serial.curve_models.AffineNielsPoint.«64bit-tables») 32#usize
 
 /-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix128::32bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1302:8-1308:9
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1200:8-1200:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1344:8-1350:9
     Visibility: public -/
 @[reducible]
 def edwards.EdwardsBasepointTableRadix128.«32bit-tables» :=
@@ -855,7 +881,7 @@ def edwards.EdwardsBasepointTableRadix128.«32bit-tables» :=
 def window.LookupTableRadix256 (T : Type _) := Array T 128#usize
 
 /-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix256::64bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1309:8-1315:9
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1200:8-1200:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1351:8-1357:9
     Visibility: public -/
 @[reducible]
 def edwards.EdwardsBasepointTableRadix256.«64bit-tables» :=
@@ -863,7 +889,7 @@ def edwards.EdwardsBasepointTableRadix256.«64bit-tables» :=
   backend.serial.curve_models.AffineNielsPoint.«64bit-tables») 32#usize
 
 /-- [curve25519_dalek::edwards::EdwardsBasepointTableRadix256::32bit-tables]
-    Source: 'curve25519-dalek/src/edwards.rs', lines 1158:8-1158:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1309:8-1315:9
+    Source: 'curve25519-dalek/src/edwards.rs', lines 1200:8-1200:68; this code is generated from a macro invocation at: 'curve25519-dalek/src/edwards.rs', lines 1351:8-1357:9
     Visibility: public -/
 @[reducible]
 def edwards.EdwardsBasepointTableRadix256.«32bit-tables» :=

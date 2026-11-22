@@ -10,6 +10,7 @@ public import Aeneas
 public import Curve25519Dalek.Types
 public import ForHumans.Specs.External.Subtle.Contract
 public import ForHumans.Specs.External.Zeroize.Contract
+public import ForHumans.Specs.External.Core
 @[expose] public section
 open Aeneas Aeneas.Std Result ControlFlow Error
 set_option linter.dupNamespace false

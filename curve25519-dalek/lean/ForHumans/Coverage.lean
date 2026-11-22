@@ -12,7 +12,9 @@ namespace Coverage
 /-- The four configurations of the translation. -/
 def configs : List String := ["64bit-tables", "32bit-tables", "64bit-notables", "32bit-notables"]
 
-/-- The types with invariants, in configuration `c`, each with its invariants. -/
+/-- Returns a list of types along with the invariants that must appear in the postcondition of every
+function returning that type. `c` is the current configuration of word size and precomputed-tables
+feature. -/
 def watched (c : String) : List (Name × List Name) :=
   let cfg (s : String) : Name := .str (("Curve25519Dalek." ++ s).toName) c
   let inv (s : String) (ps : List String) := ps.map (cfg s).str

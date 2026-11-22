@@ -13,7 +13,7 @@ def specTheorems (env : Environment) : Array Name :=
     let ours := (`Theorems).isPrefixOf n || (`TestVectors).isPrefixOf n
     if ours && c matches .thmInfo _ && !n.isInternal then acc.push n else acc
 
-/-- info: 455 theorems, all using only the allowed axioms -/
+/-- info: 463 theorems, all using only the allowed axioms -/
 #guard_msgs in
 run_cmd do
   let names := (specTheorems (← getEnv)).qsort Name.lt

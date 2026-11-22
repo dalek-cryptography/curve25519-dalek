@@ -328,6 +328,29 @@ theorem decompress_spec (self : CompressedEdwardsY) :
       exact decodeLenientNat_eq_some_of_sign hXneg ep.toPoint (by rw [hpy, hYf])
         (fun h => absurd (h1.symm.trans h) (by decide)) (fun _ => hpx) hle
 
+/-- `CompressedEdwardsY::decompress`: the decompressed point has `Z = 1`. -/
+theorem decompress_Z_spec (self : CompressedEdwardsY) :
+    decompress.«64bit-tables» self ⦃ (r : Option (EdwardsPoint.«64bit-tables»)) =>
+      ∀ q, r = some q → q.Z.toField = 1 ⦄ := by
+  unfold decompress.«64bit-tables»
+  step with decompress.«64bit-tables».step_1_spec
+    as ⟨c, X, Y, Z, hcv, hYf, hZf, hc, hX, hXneg, hX_lt, hY_lt, hZ_lt⟩
+  step as ⟨b, hb⟩
+  rcases hcv with rfl | rfl
+  · simp only [hb, bne_self_eq_false, Bool.false_eq_true, ite_false, WP.spec_ok]
+    exact fun q hq => by cases hq
+  · simp only [hb, show (1#u8 != 0#u8) = true from by decide, ite_true]
+    step with decompress.«64bit-tables».step_2_spec as ⟨ep, hep0, hep1, hepb⟩
+    intro q hq
+    obtain rfl := Option.some.inj hq
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp self.asNat_div_two_pow_le_one with h0 | h1
+    · have h := hep0 h0
+      simp only [EdwardsPoint.«64bit-tables».toExtended_def, Extended.mk.injEq] at h
+      exact h.2.2.1.trans hZf
+    · have h := hep1 h1
+      simp only [EdwardsPoint.«64bit-tables».toExtended_def, Extended.mk.injEq] at h
+      exact h.2.2.1.trans hZf
+
 end CompressedEdwardsY.«64bit-tables»
 
 namespace CompressedEdwardsY.«32bit-tables»
@@ -371,6 +394,29 @@ theorem decompress_spec (self : CompressedEdwardsY) :
       rw [Option.map_some, eq_comm]
       exact decodeLenientNat_eq_some_of_sign hXneg ep.toPoint (by rw [hpy, hYf])
         (fun h => absurd (h1.symm.trans h) (by decide)) (fun _ => hpx) hle
+
+/-- `CompressedEdwardsY::decompress`: the decompressed point has `Z = 1`. -/
+theorem decompress_Z_spec (self : CompressedEdwardsY) :
+    decompress.«32bit-tables» self ⦃ (r : Option (EdwardsPoint.«32bit-tables»)) =>
+      ∀ q, r = some q → q.Z.toField = 1 ⦄ := by
+  unfold decompress.«32bit-tables»
+  step with decompress.«32bit-tables».step_1_spec
+    as ⟨c, X, Y, Z, hcv, hYf, hZf, hc, hX, hXneg, hX_lt, hY_lt, hZ_lt⟩
+  step as ⟨b, hb⟩
+  rcases hcv with rfl | rfl
+  · simp only [hb, bne_self_eq_false, Bool.false_eq_true, ite_false, WP.spec_ok]
+    exact fun q hq => by cases hq
+  · simp only [hb, show (1#u8 != 0#u8) = true from by decide, ite_true]
+    step with decompress.«32bit-tables».step_2_spec as ⟨ep, hep0, hep1, hepb⟩
+    intro q hq
+    obtain rfl := Option.some.inj hq
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp self.asNat_div_two_pow_le_one with h0 | h1
+    · have h := hep0 h0
+      simp only [EdwardsPoint.«32bit-tables».toExtended_def, Extended.mk.injEq] at h
+      exact h.2.2.1.trans hZf
+    · have h := hep1 h1
+      simp only [EdwardsPoint.«32bit-tables».toExtended_def, Extended.mk.injEq] at h
+      exact h.2.2.1.trans hZf
 
 end CompressedEdwardsY.«32bit-tables»
 
@@ -555,6 +601,29 @@ theorem decompress_spec (self : CompressedEdwardsY) :
       exact decodeLenientNat_eq_some_of_sign hXneg ep.toPoint (by rw [hpy, hYf])
         (fun h => absurd (h1.symm.trans h) (by decide)) (fun _ => hpx) hle
 
+/-- `CompressedEdwardsY::decompress`: the decompressed point has `Z = 1`. -/
+theorem decompress_Z_spec (self : CompressedEdwardsY) :
+    decompress.«64bit-notables» self ⦃ (r : Option (EdwardsPoint.«64bit-notables»)) =>
+      ∀ q, r = some q → q.Z.toField = 1 ⦄ := by
+  unfold decompress.«64bit-notables»
+  step with decompress.«64bit-notables».step_1_spec
+    as ⟨c, X, Y, Z, hcv, hYf, hZf, hc, hX, hXneg, hX_lt, hY_lt, hZ_lt⟩
+  step as ⟨b, hb⟩
+  rcases hcv with rfl | rfl
+  · simp only [hb, bne_self_eq_false, Bool.false_eq_true, ite_false, WP.spec_ok]
+    exact fun q hq => by cases hq
+  · simp only [hb, show (1#u8 != 0#u8) = true from by decide, ite_true]
+    step with decompress.«64bit-notables».step_2_spec as ⟨ep, hep0, hep1, hepb⟩
+    intro q hq
+    obtain rfl := Option.some.inj hq
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp self.asNat_div_two_pow_le_one with h0 | h1
+    · have h := hep0 h0
+      simp only [EdwardsPoint.«64bit-notables».toExtended_def, Extended.mk.injEq] at h
+      exact h.2.2.1.trans hZf
+    · have h := hep1 h1
+      simp only [EdwardsPoint.«64bit-notables».toExtended_def, Extended.mk.injEq] at h
+      exact h.2.2.1.trans hZf
+
 end CompressedEdwardsY.«64bit-notables»
 
 namespace CompressedEdwardsY.«32bit-notables»
@@ -598,6 +667,29 @@ theorem decompress_spec (self : CompressedEdwardsY) :
       rw [Option.map_some, eq_comm]
       exact decodeLenientNat_eq_some_of_sign hXneg ep.toPoint (by rw [hpy, hYf])
         (fun h => absurd (h1.symm.trans h) (by decide)) (fun _ => hpx) hle
+
+/-- `CompressedEdwardsY::decompress`: the decompressed point has `Z = 1`. -/
+theorem decompress_Z_spec (self : CompressedEdwardsY) :
+    decompress.«32bit-notables» self ⦃ (r : Option (EdwardsPoint.«32bit-notables»)) =>
+      ∀ q, r = some q → q.Z.toField = 1 ⦄ := by
+  unfold decompress.«32bit-notables»
+  step with decompress.«32bit-notables».step_1_spec
+    as ⟨c, X, Y, Z, hcv, hYf, hZf, hc, hX, hXneg, hX_lt, hY_lt, hZ_lt⟩
+  step as ⟨b, hb⟩
+  rcases hcv with rfl | rfl
+  · simp only [hb, bne_self_eq_false, Bool.false_eq_true, ite_false, WP.spec_ok]
+    exact fun q hq => by cases hq
+  · simp only [hb, show (1#u8 != 0#u8) = true from by decide, ite_true]
+    step with decompress.«32bit-notables».step_2_spec as ⟨ep, hep0, hep1, hepb⟩
+    intro q hq
+    obtain rfl := Option.some.inj hq
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp self.asNat_div_two_pow_le_one with h0 | h1
+    · have h := hep0 h0
+      simp only [EdwardsPoint.«32bit-notables».toExtended_def, Extended.mk.injEq] at h
+      exact h.2.2.1.trans hZf
+    · have h := hep1 h1
+      simp only [EdwardsPoint.«32bit-notables».toExtended_def, Extended.mk.injEq] at h
+      exact h.2.2.1.trans hZf
 
 end CompressedEdwardsY.«32bit-notables»
 

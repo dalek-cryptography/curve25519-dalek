@@ -42,6 +42,24 @@ theorem CompressedEdwardsY.decompress (c : CompressedEdwardsY) :
       r.map (·.toPoint) = decodeLenient c.toVector ∧ ∀ P, r = some P → P.OnCurve ∧ P.IsBounded ⦄ :=
   edwards.CompressedEdwardsY.«32bit-tables».decompress_spec c
 
+/-- `CompressedEdwardsY::decompress_rfc8032`: RFC 8032's decoding, `decompress` kept only if the
+point's encoding is the input. -/
+theorem CompressedEdwardsY.decompress_rfc8032 (c : CompressedEdwardsY) :
+    CompressedEdwardsY.decompress_rfc8032.«32bit-tables» c ⦃ (r : Option EdwardsPoint) =>
+      r.map (·.toPoint) = (decodeLenient c.toVector).filter (fun P => encode P = c.toVector) ∧
+      ∀ P, r = some P → P.OnCurve ∧ P.IsBounded ⦄ :=
+  edwards.CompressedEdwardsY.«32bit-tables».decompress_rfc8032_spec c
+
+/-- `CompressedEdwardsY::decompress_nist_full`: `decompress_rfc8032` kept only if the point is not
+`0` and is in the prime-order subgroup. -/
+theorem CompressedEdwardsY.decompress_nist_full (c : CompressedEdwardsY) :
+    CompressedEdwardsY.decompress_nist_full.«32bit-tables» c ⦃ (r : Option EdwardsPoint) =>
+      r.map (·.toPoint) =
+        ((decodeLenient c.toVector).filter (fun P => encode P = c.toVector)).filter
+          (fun P => P ≠ 0 ∧ L • P = 0) ∧
+      ∀ P, r = some P → P.OnCurve ∧ P.IsBounded ⦄ :=
+  edwards.CompressedEdwardsY.«32bit-tables».decompress_nist_full_spec c
+
 namespace EdwardsPoint
 
 open edwards.EdwardsPoint.«32bit-tables».Insts

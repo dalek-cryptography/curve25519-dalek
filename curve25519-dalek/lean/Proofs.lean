@@ -213,6 +213,7 @@ public import Proofs.Edwards.CompressedZeroize
 public import Proofs.Edwards.ConditionalSelect
 public import Proofs.Edwards.CtEq
 public import Proofs.Edwards.Decompress
+public import Proofs.Edwards.DecompressRfc8032
 public import Proofs.Edwards.Default
 public import Proofs.Edwards.Double
 public import Proofs.Edwards.Eq

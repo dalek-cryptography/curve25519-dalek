@@ -79,7 +79,7 @@ theorem mul (a b : Scalar) :
     ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
 
 /-- `Add::add`: the sum modulo `L`, for reduced inputs. -/
-theorem add (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
+theorem add (a b : Scalar) (ha : a.IsCanonical) (hb : b.IsCanonical) :
     ∀ add ∈ [
         Shared0Scalar.Insts.CoreOpsArithAddSharedAScalarScalar.add, -- &a + &b
         Scalar.Insts.CoreOpsArithAddSharedBScalarScalar.add, -- a + &b
@@ -94,7 +94,7 @@ theorem add (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
     ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
 
 /-- `Sub::sub`: the difference modulo `L`, reduced, for reduced inputs. -/
-theorem sub (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
+theorem sub (a b : Scalar) (ha : a.IsCanonical) (hb : b.IsCanonical) :
     ∀ sub ∈ [
         Shared0Scalar.Insts.CoreOpsArithSubSharedAScalarScalar.sub, -- &a - &b
         Scalar.Insts.CoreOpsArithSubSharedBScalarScalar.sub, -- a - &b
@@ -144,7 +144,7 @@ theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T Scalar)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
     (ss : List Scalar) (hiter : iterInst.Yields iter xs)
     (hborrow : List.Forall₂ (fun x s => borrowInst.borrow x ⦃ (s' : Scalar) => s' = s ⦄) xs ss)
-    (hss : ∀ s ∈ ss, s.asNat < L) :
+    (hss : ∀ s ∈ ss, s.IsCanonical) :
     Scalar.Insts.CoreIterTraitsAccumSum.sum borrowInst iterInst iter ⦃ (r : Scalar) =>
       r.asNat = (ss.map (·.asNat)).sum % L ∧ r.IsCanonical ⦄ :=
   spec_mono (Scalar.Insts.CoreIterTraitsAccumSum.sum_spec borrowInst iterInst iter xs ss hiter
@@ -228,7 +228,7 @@ theorem invert_batch_alloc (inputs : Slice Scalar)
   Scalar.invert_batch_alloc_spec inputs hinputs
 
 /-- `div_by_2`: `b` with `b + b = s` modulo `L`, reduced. -/
-theorem div_by_2 (s : Scalar) (hs : s.asNat < L) :
+theorem div_by_2 (s : Scalar) (hs : s.IsCanonical) :
     Scalar.div_by_2 s ⦃ (r : Scalar) => 2 * r.asNat % L = s.asNat ∧ r.IsCanonical ⦄ :=
   Scalar.div_by_2_spec s hs
 

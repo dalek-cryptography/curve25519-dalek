@@ -48,3 +48,10 @@ done
     -Zjson-target-spec -Zbuild-std=core,alloc)
 .aeneas/aeneas -backend lean -split-files -emit-json -namespace Curve25519Dalek \
     -dest . -subdir Curve25519Dalek .llbc/curve25519_dalek.llbc
+# The external declarations are in ForHumans/Specs/External/ (their specs in Proofs/External/),
+# not in the {Types,Funs}External modules Aeneas imports.
+sed -i 's/^public import Curve25519Dalek\.TypesExternal$/public import ForHumans.Specs.External.Subtle.Types/' \
+    Curve25519Dalek/Types.lean
+sed -i 's/^public import Curve25519Dalek\.FunsExternal$/public import Proofs.External.Alloc/' \
+    Curve25519Dalek/Funs.lean
+rm -f Curve25519Dalek/TypesExternal_Template.lean Curve25519Dalek/FunsExternal_Template.lean

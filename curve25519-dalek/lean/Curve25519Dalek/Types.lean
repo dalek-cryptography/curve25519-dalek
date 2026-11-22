@@ -2,7 +2,7 @@
 -- [curve25519_dalek]: type definitions
 module
 public import Aeneas
-public import Curve25519Dalek.TypesExternal
+public import ForHumans.Specs.External.Subtle.Types
 @[expose] public section
 open Aeneas Aeneas.Std Result ControlFlow Error
 set_option linter.dupNamespace false

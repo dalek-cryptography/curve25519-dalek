@@ -3,7 +3,7 @@
 module
 public import Aeneas
 public import Curve25519Dalek.Types
-public import Curve25519Dalek.FunsExternal
+public import Proofs.External.Alloc
 @[expose] public section
 open Aeneas Aeneas.Std Result ControlFlow Error
 set_option linter.dupNamespace false

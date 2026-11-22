@@ -22,15 +22,13 @@ namespace Theorems.scalar.Scalar
 theorem from_bytes_mod_order (bytes : Array U8 32#usize) :
     Scalar.from_bytes_mod_order bytes ⦃ (r : Scalar) =>
       r.asNat = bytes.asNat 8 % L ∧ r.IsCanonical ⦄ :=
-  spec_mono (Scalar.from_bytes_mod_order_spec bytes) fun _ h =>
-    ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
+  scalar.Scalar.canonical_of_mod (Scalar.from_bytes_mod_order_spec bytes)
 
 /-- `from_bytes_mod_order_wide`: the 512-bit little-endian value reduced modulo `L`. -/
 theorem from_bytes_mod_order_wide (input : Array U8 64#usize) :
     Scalar.from_bytes_mod_order_wide input ⦃ (r : Scalar) =>
       r.asNat = input.asNat 8 % L ∧ r.IsCanonical ⦄ :=
-  spec_mono (Scalar.from_bytes_mod_order_wide_spec input) fun _ h =>
-    ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
+  scalar.Scalar.canonical_of_mod (Scalar.from_bytes_mod_order_wide_spec input)
 
 /-- `from_canonical_bytes`: `Some` exactly for canonical encodings (value below `L`). -/
 theorem from_canonical_bytes (bytes : Array U8 32#usize) :
@@ -38,13 +36,7 @@ theorem from_canonical_bytes (bytes : Array U8 32#usize) :
       r.is_some.IsValid ∧ r.value.bytes = bytes ∧
       (bytes.asNat 8 < L → r.is_some = 1#u8) ∧ (L ≤ bytes.asNat 8 → r.is_some = 0#u8) ∧
       (r.is_some = 1#u8 → r.value.IsCanonical) ⦄ :=
-  spec_mono (Scalar.from_canonical_bytes_spec bytes) fun r ⟨hv, hb, hlt, hge⟩ =>
-    ⟨hv, hb, hlt, hge, fun h1 => scalar.Scalar.isCanonical_of_eq
-      (by rw [scalar.Scalar.asNat_def, hb]) (by
-        by_contra hc
-        have := hge (Nat.le_of_not_lt hc)
-        rw [h1] at this
-        exact absurd this (by decide))⟩
+  Scalar.from_canonical_bytes_canonical_spec bytes
 
 /-- `PartialEq::eq`: equality of the byte encodings. -/
 theorem eq (a b : Scalar) :
@@ -73,10 +65,8 @@ theorem mul (a b : Scalar) :
         Scalar.Insts.CoreOpsArithMulAssignSharedAScalar.mul_assign, -- a *= &b
         Scalar.Insts.CoreOpsArithMulAssignScalar.mul_assign], -- a *= b
       mul a b ⦃ (r : Scalar) => r.asNat = a.asNat * b.asNat % L ∧ r.IsCanonical ⦄ := by
-  simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
-  and_intros <;> exact spec_mono (by
-    apply Shared0Scalar.Insts.CoreOpsArithMulSharedAScalarScalar.mul_spec) fun _ h =>
-    ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
+  variants [scalar.Scalar.canonical_of_mod
+    (Shared0Scalar.Insts.CoreOpsArithMulSharedAScalarScalar.mul_spec _ _)]
 
 /-- `Add::add`: the sum modulo `L`, for reduced inputs. -/
 theorem add (a b : Scalar) (ha : a.IsCanonical) (hb : b.IsCanonical) :
@@ -88,10 +78,8 @@ theorem add (a b : Scalar) (ha : a.IsCanonical) (hb : b.IsCanonical) :
         Scalar.Insts.CoreOpsArithAddAssignSharedAScalar.add_assign, -- a += &b
         Scalar.Insts.CoreOpsArithAddAssignScalar.add_assign], -- a += b
       add a b ⦃ (r : Scalar) => r.asNat = (a.asNat + b.asNat) % L ∧ r.IsCanonical ⦄ := by
-  simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
-  and_intros <;> exact spec_mono (by
-    apply Shared0Scalar.Insts.CoreOpsArithAddSharedAScalarScalar.add_spec <;> assumption) fun _ h =>
-    ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
+  variants [scalar.Scalar.canonical_of_mod
+    (Shared0Scalar.Insts.CoreOpsArithAddSharedAScalarScalar.add_spec _ _ ‹_› ‹_›)]
 
 /-- `Sub::sub`: the difference modulo `L`, reduced, for reduced inputs. -/
 theorem sub (a b : Scalar) (ha : a.IsCanonical) (hb : b.IsCanonical) :
@@ -124,10 +112,7 @@ theorem conditional_select_isCanonical (a b : Scalar) (choice : subtle.Choice)
     (hchoice : choice.IsValid) (ha : a.IsCanonical) (hb : b.IsCanonical) :
     Scalar.Insts.SubtleConditionallySelectable.conditional_select a b choice ⦃ (r : Scalar) =>
       r.IsCanonical ⦄ :=
-  spec_mono (conditional_select a b choice hchoice) fun r ⟨h0, h1⟩ => by
-    rcases hchoice with h | h
-    · obtain rfl := h0 h; exact ha
-    · obtain rfl := h1 h; exact hb
+  spec_select (conditional_select a b choice hchoice) hchoice ha hb
 
 /-- `Product::product`: the product of the items modulo `L`. -/
 theorem product {T I : Type} (borrowInst : core.borrow.Borrow T Scalar)
@@ -136,8 +121,8 @@ theorem product {T I : Type} (borrowInst : core.borrow.Borrow T Scalar)
     (hborrow : List.Forall₂ (fun x s => borrowInst.borrow x ⦃ (s' : Scalar) => s' = s ⦄) xs ss) :
     Scalar.Insts.CoreIterTraitsAccumProduct.product borrowInst iterInst iter ⦃ (r : Scalar) =>
       r.asNat = (ss.map (·.asNat)).prod % L ∧ r.IsCanonical ⦄ :=
-  spec_mono (Scalar.Insts.CoreIterTraitsAccumProduct.product_spec borrowInst iterInst iter xs ss
-    hiter hborrow) fun _ h => ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
+  scalar.Scalar.canonical_of_mod (Scalar.Insts.CoreIterTraitsAccumProduct.product_spec borrowInst
+    iterInst iter xs ss hiter hborrow)
 
 /-- `Sum::sum`: the sum of the items modulo `L`, for reduced items. -/
 theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T Scalar)
@@ -147,14 +132,13 @@ theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T Scalar)
     (hss : ∀ s ∈ ss, s.IsCanonical) :
     Scalar.Insts.CoreIterTraitsAccumSum.sum borrowInst iterInst iter ⦃ (r : Scalar) =>
       r.asNat = (ss.map (·.asNat)).sum % L ∧ r.IsCanonical ⦄ :=
-  spec_mono (Scalar.Insts.CoreIterTraitsAccumSum.sum_spec borrowInst iterInst iter xs ss hiter
-    hborrow hss) fun _ h => ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
+  scalar.Scalar.canonical_of_mod (Scalar.Insts.CoreIterTraitsAccumSum.sum_spec borrowInst
+    iterInst iter xs ss hiter hborrow hss)
 
 /-- `Default::default`: the scalar `0`. -/
 theorem default :
     Scalar.Insts.CoreDefaultDefault.default ⦃ (r : Scalar) => r.asNat = 0 ∧ r.IsCanonical ⦄ :=
-  spec_mono Scalar.Insts.CoreDefaultDefault.default_spec fun _ h =>
-    ⟨h, scalar.Scalar.isCanonical_of_eq h curve25519.L_pos⟩
+  scalar.Scalar.canonical_of_eq Scalar.Insts.CoreDefaultDefault.default_spec curve25519.L_pos
 
 /-- `From<u8>`: the value of `x`. -/
 theorem «from» :
@@ -167,25 +151,23 @@ theorem «from» :
     (∀ x : U64, Scalar.Insts.CoreConvertFromU64.from x ⦃ (r : Scalar) =>
       r.asNat = x.val ∧ r.IsCanonical ⦄) ∧
     (∀ x : U128, Scalar.Insts.CoreConvertFromU128.from x ⦃ (r : Scalar) =>
-      r.asNat = x.val ∧ r.IsCanonical ⦄) := by
-  have hL : 2 ^ 128 < L := by rw [curve25519.L_eq_numeral]; decide
-  refine ⟨fun x => ?_, fun x => ?_, fun x => ?_, fun x => ?_, fun x => ?_⟩ <;>
-  · refine spec_mono (by first
-      | exact Scalar.Insts.CoreConvertFromU8.from_spec x
-      | exact Scalar.Insts.CoreConvertFromU16.from_spec x
-      | exact Scalar.Insts.CoreConvertFromU32.from_spec x
-      | exact Scalar.Insts.CoreConvertFromU64.from_spec x
-      | exact Scalar.Insts.CoreConvertFromU128.from_spec x) fun _ h =>
-      ⟨h, scalar.Scalar.isCanonical_of_eq h (lt_of_lt_of_le x.hmax (by
-        have := hL.le; simp only [UScalarTy.numBits] at *; omega))⟩
+      r.asNat = x.val ∧ r.IsCanonical ⦄) :=
+  ⟨fun x => scalar.Scalar.canonical_of_eq (Scalar.Insts.CoreConvertFromU8.from_spec x)
+      (scalar.Scalar.val_lt_L x),
+    fun x => scalar.Scalar.canonical_of_eq (Scalar.Insts.CoreConvertFromU16.from_spec x)
+      (scalar.Scalar.val_lt_L x),
+    fun x => scalar.Scalar.canonical_of_eq (Scalar.Insts.CoreConvertFromU32.from_spec x)
+      (scalar.Scalar.val_lt_L x),
+    fun x => scalar.Scalar.canonical_of_eq (Scalar.Insts.CoreConvertFromU64.from_spec x)
+      (scalar.Scalar.val_lt_L x),
+    fun x => scalar.Scalar.canonical_of_eq (Scalar.Insts.CoreConvertFromU128.from_spec x)
+      (scalar.Scalar.val_lt_L x)⟩
 
 /-- `Zeroize::zeroize`: all bytes `0`. -/
 theorem zeroize (s : Scalar) :
     Scalar.Insts.ZeroizeZeroize.zeroize s ⦃ (r : Scalar) =>
       r = { bytes := Array.repeat 32#usize 0#u8 } ∧ r.IsCanonical ⦄ :=
-  spec_mono (Scalar.Insts.ZeroizeZeroize.zeroize_spec s) fun _ h =>
-    ⟨h, scalar.Scalar.isCanonical_of_eq (n := 0)
-      (by rw [h, scalar.Scalar.asNat_def]; simp [Array.asNat_def, Nat.ofDigits]) curve25519.L_pos⟩
+  Scalar.zeroize_canonical_spec s
 
 /-- `ZERO`: the scalar `0`. -/
 theorem ZERO : Scalar.ZERO.asNat = 0 := Scalar.ZERO_spec

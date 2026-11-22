@@ -169,6 +169,16 @@ theorem EIGHT_TORSION_spec :
       edwards.EdwardsPoint.«32bit-tables».toPoint_def, hr]
     exact ⟨Point.onCurve_toExtended _, Point.toPoint_toExtended _, hb⟩
 
+/-- `EIGHT_TORSION_INNER_DOC_HIDDEN`: as `EIGHT_TORSION`. -/
+theorem EIGHT_TORSION_INNER_DOC_HIDDEN_spec :
+    EIGHT_TORSION_INNER_DOC_HIDDEN.«32bit-tables»
+      ⦃ (r : Array edwards.EdwardsPoint.«32bit-tables» 8#usize) =>
+      ∀ i : Fin 8, r[i.val]!.OnCurve ∧ r[i.val]!.toPoint = (i : ℕ) • torsion8 ∧
+        r[i.val]!.LimbsLt 26 ⦄ := by
+  have h := EIGHT_TORSION_spec
+  unfold EIGHT_TORSION.«32bit-tables» at h
+  exact h
+
 end «32bit-tables»
 
 namespace «32bit-notables»
@@ -315,6 +325,16 @@ theorem EIGHT_TORSION_spec :
     rw [edwards.EdwardsPoint.«32bit-notables».onCurve_iff,
       edwards.EdwardsPoint.«32bit-notables».toPoint_def, hr]
     exact ⟨Point.onCurve_toExtended _, Point.toPoint_toExtended _, hb⟩
+
+/-- `EIGHT_TORSION_INNER_DOC_HIDDEN`: as `EIGHT_TORSION`. -/
+theorem EIGHT_TORSION_INNER_DOC_HIDDEN_spec :
+    EIGHT_TORSION_INNER_DOC_HIDDEN.«32bit-notables»
+      ⦃ (r : Array edwards.EdwardsPoint.«32bit-notables» 8#usize) =>
+      ∀ i : Fin 8, r[i.val]!.OnCurve ∧ r[i.val]!.toPoint = (i : ℕ) • torsion8 ∧
+        r[i.val]!.LimbsLt 26 ⦄ := by
+  have h := EIGHT_TORSION_spec
+  unfold EIGHT_TORSION.«32bit-notables» at h
+  exact h
 
 end «32bit-notables»
 

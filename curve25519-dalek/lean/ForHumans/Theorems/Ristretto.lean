@@ -507,10 +507,7 @@ theorem conditional_select_wellFormed (a b : RistrettoPoint) (choice : subtle.Ch
     (hb : b.OnCurve) (hb₂ : Even b.toPoint) (hb' : b.IsBounded) :
     SubtleConditionallySelectable.conditional_select a b choice ⦃ (r : RistrettoPoint) =>
       r.OnCurve ∧ Even r.toPoint ∧ r.IsBounded ⦄ :=
-  spec_mono (conditional_select a b choice hchoice) fun r ⟨h0, h1⟩ => by
-    rcases hchoice with h | h
-    · obtain rfl := h0 h; exact ⟨ha, ha₂, ha'⟩
-    · obtain rfl := h1 h; exact ⟨hb, hb₂, hb'⟩
+  spec_select (conditional_select a b choice hchoice) hchoice ⟨ha, ha₂, ha'⟩ ⟨hb, hb₂, hb'⟩
 
 /-- `Zeroize for RistrettoPoint` leaves the neutral element. -/
 theorem zeroize (P : RistrettoPoint) :

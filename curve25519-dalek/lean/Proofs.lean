@@ -280,6 +280,7 @@ public import Proofs.Helpers.Montgomery
 public import Proofs.Helpers.Naf
 public import Proofs.Helpers.RistrettoCompress
 public import Proofs.Helpers.Scalar
+public import Proofs.Helpers.Select
 public import Proofs.Helpers.Scalar29
 public import Proofs.Helpers.Scalar52
 public import Proofs.Helpers.StepSpecs
@@ -345,6 +346,7 @@ public import Proofs.Ristretto.VartimeRistrettoPrecomputation
 public import Proofs.Scalar.Add
 public import Proofs.Scalar.AddAssign
 public import Proofs.Scalar.AsBytes
+public import Proofs.Scalar.Canonical
 public import Proofs.Scalar.AsRadix16
 public import Proofs.Scalar.AsRadix2w
 public import Proofs.Scalar.ClampInteger

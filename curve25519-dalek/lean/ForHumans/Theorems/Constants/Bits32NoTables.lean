@@ -52,10 +52,8 @@ theorem EIGHT_TORSION_INNER_DOC_HIDDEN :
     backend.serial.u32.constants.EIGHT_TORSION_INNER_DOC_HIDDEN.«32bit-notables»
       ⦃ (r : Array edwards.EdwardsPoint.«32bit-notables» 8#usize) =>
         ∀ i : Fin 8, r[i.val]!.OnCurve ∧ r[i.val]!.toPoint = (i : ℕ) • torsion8 ∧
-          r[i.val]!.IsBounded ⦄ := by
-  have h := Theorems.constants.«32bit-notables».EIGHT_TORSION
-  unfold backend.serial.u32.constants.EIGHT_TORSION.«32bit-notables» at h
-  exact h
+          r[i.val]!.IsBounded ⦄ :=
+  backend.serial.u32.constants.«32bit-notables».EIGHT_TORSION_INNER_DOC_HIDDEN_spec
 
 /-- `RISTRETTO_BASEPOINT_POINT`: the basepoint, an even point (a ristretto255 representative). -/
 theorem RISTRETTO_BASEPOINT_POINT :

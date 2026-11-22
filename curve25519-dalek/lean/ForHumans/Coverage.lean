@@ -32,7 +32,8 @@ def watched (c : String) : List (Name × List Name) :=
 
 /-- All the watched types, in all configurations, and `Scalar`. -/
 def allWatched : List (Name × List Name) :=
-  configs.flatMap watched ++ [(`Curve25519Dalek.scalar.Scalar, [])]
+  configs.flatMap watched ++
+    [(`Curve25519Dalek.scalar.Scalar, [`Curve25519Dalek.scalar.Scalar.IsCanonical])]
 
 /-- Rust source files (prefixes) whose items are not callable from outside the crate. -/
 def exemptFiles : List (String × String) := [

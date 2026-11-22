@@ -25,4 +25,9 @@ theorem scalar.HalfWidthScalar.asNat_def (self : scalar.HalfWidthScalar) :
   unfold scalar.HalfWidthScalar.asNat
   rfl
 
+theorem scalar.Scalar.isCanonical_of_eq {s : scalar.Scalar} {n : ℕ} (h : s.asNat = n)
+    (hn : n < curve25519.L) : s.IsCanonical := by
+  unfold scalar.Scalar.IsCanonical
+  omega
+
 end Curve25519Dalek

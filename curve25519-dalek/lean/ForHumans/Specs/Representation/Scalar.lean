@@ -5,6 +5,7 @@ Authors: Alessandro D'Angelo, Oliver Butterley
 -/
 module
 public import Curve25519Dalek.Types
+public import ForHumans.Specs.Constants
 import ForHumans.Specs.Representation.Array
 public section
 
@@ -16,6 +17,10 @@ namespace Curve25519Dalek
 reduced modulo `L`). -/
 def scalar.Scalar.asNat (self : scalar.Scalar) : ℕ :=
   self.bytes.asNat 8
+
+/-- Invariant #2 of `Scalar` (`scalar.rs`): the value is below `L`. -/
+@[expose] def scalar.Scalar.IsCanonical (self : scalar.Scalar) : Prop :=
+  self.asNat < curve25519.L
 
 /-- The natural number encoded by a `HalfWidthScalar` (a `Scalar` meant to be below `2^128`). -/
 def scalar.HalfWidthScalar.asNat (self : scalar.HalfWidthScalar) : ℕ :=

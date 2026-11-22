@@ -20,20 +20,31 @@ namespace Theorems.scalar.Scalar
 
 /-- `from_bytes_mod_order`: the 256-bit little-endian value reduced modulo `L`. -/
 theorem from_bytes_mod_order (bytes : Array U8 32#usize) :
-    Scalar.from_bytes_mod_order bytes ⦃ (r : Scalar) => r.asNat = bytes.asNat 8 % L ⦄ :=
-  Scalar.from_bytes_mod_order_spec bytes
+    Scalar.from_bytes_mod_order bytes ⦃ (r : Scalar) =>
+      r.asNat = bytes.asNat 8 % L ∧ r.IsCanonical ⦄ :=
+  spec_mono (Scalar.from_bytes_mod_order_spec bytes) fun _ h =>
+    ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
 
 /-- `from_bytes_mod_order_wide`: the 512-bit little-endian value reduced modulo `L`. -/
 theorem from_bytes_mod_order_wide (input : Array U8 64#usize) :
-    Scalar.from_bytes_mod_order_wide input ⦃ (r : Scalar) => r.asNat = input.asNat 8 % L ⦄ :=
-  Scalar.from_bytes_mod_order_wide_spec input
+    Scalar.from_bytes_mod_order_wide input ⦃ (r : Scalar) =>
+      r.asNat = input.asNat 8 % L ∧ r.IsCanonical ⦄ :=
+  spec_mono (Scalar.from_bytes_mod_order_wide_spec input) fun _ h =>
+    ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
 
 /-- `from_canonical_bytes`: `Some` exactly for canonical encodings (value below `L`). -/
 theorem from_canonical_bytes (bytes : Array U8 32#usize) :
     Scalar.from_canonical_bytes bytes ⦃ (r : subtle.CtOption Scalar) =>
       r.is_some.IsValid ∧ r.value.bytes = bytes ∧
-      (bytes.asNat 8 < L → r.is_some = 1#u8) ∧ (L ≤ bytes.asNat 8 → r.is_some = 0#u8) ⦄ :=
-  Scalar.from_canonical_bytes_spec bytes
+      (bytes.asNat 8 < L → r.is_some = 1#u8) ∧ (L ≤ bytes.asNat 8 → r.is_some = 0#u8) ∧
+      (r.is_some = 1#u8 → r.value.IsCanonical) ⦄ :=
+  spec_mono (Scalar.from_canonical_bytes_spec bytes) fun r ⟨hv, hb, hlt, hge⟩ =>
+    ⟨hv, hb, hlt, hge, fun h1 => scalar.Scalar.isCanonical_of_eq
+      (by rw [scalar.Scalar.asNat_def, hb]) (by
+        by_contra hc
+        have := hge (Nat.le_of_not_lt hc)
+        rw [h1] at this
+        exact absurd this (by decide))⟩
 
 /-- `PartialEq::eq`: equality of the byte encodings. -/
 theorem eq (a b : Scalar) :
@@ -61,8 +72,11 @@ theorem mul (a b : Scalar) :
         Scalar.Insts.CoreOpsArithMulScalarScalar.mul, -- a * b
         Scalar.Insts.CoreOpsArithMulAssignSharedAScalar.mul_assign, -- a *= &b
         Scalar.Insts.CoreOpsArithMulAssignScalar.mul_assign], -- a *= b
-      mul a b ⦃ (r : Scalar) => r.asNat = a.asNat * b.asNat % L ⦄ := by
-  variants [Shared0Scalar.Insts.CoreOpsArithMulSharedAScalarScalar.mul_spec]
+      mul a b ⦃ (r : Scalar) => r.asNat = a.asNat * b.asNat % L ∧ r.IsCanonical ⦄ := by
+  simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
+  and_intros <;> exact spec_mono (by
+    apply Shared0Scalar.Insts.CoreOpsArithMulSharedAScalarScalar.mul_spec) fun _ h =>
+    ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
 
 /-- `Add::add`: the sum modulo `L`, for reduced inputs. -/
 theorem add (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
@@ -73,8 +87,11 @@ theorem add (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
         Scalar.Insts.CoreOpsArithAddScalarScalar.add, -- a + b
         Scalar.Insts.CoreOpsArithAddAssignSharedAScalar.add_assign, -- a += &b
         Scalar.Insts.CoreOpsArithAddAssignScalar.add_assign], -- a += b
-      add a b ⦃ (r : Scalar) => r.asNat = (a.asNat + b.asNat) % L ⦄ := by
-  variants [Shared0Scalar.Insts.CoreOpsArithAddSharedAScalarScalar.add_spec]
+      add a b ⦃ (r : Scalar) => r.asNat = (a.asNat + b.asNat) % L ∧ r.IsCanonical ⦄ := by
+  simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
+  and_intros <;> exact spec_mono (by
+    apply Shared0Scalar.Insts.CoreOpsArithAddSharedAScalarScalar.add_spec <;> assumption) fun _ h =>
+    ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
 
 /-- `Sub::sub`: the difference modulo `L`, reduced, for reduced inputs. -/
 theorem sub (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
@@ -85,7 +102,7 @@ theorem sub (a b : Scalar) (ha : a.asNat < L) (hb : b.asNat < L) :
         Scalar.Insts.CoreOpsArithSubScalarScalar.sub, -- a - b
         Scalar.Insts.CoreOpsArithSubAssignSharedAScalar.sub_assign, -- a -= &b
         Scalar.Insts.CoreOpsArithSubAssignScalar.sub_assign], -- a -= b
-      sub a b ⦃ (r : Scalar) => (r.asNat + b.asNat) % L = a.asNat ∧ r.asNat < L ⦄ := by
+      sub a b ⦃ (r : Scalar) => (r.asNat + b.asNat) % L = a.asNat ∧ r.IsCanonical ⦄ := by
   variants [Shared0Scalar.Insts.CoreOpsArithSubSharedAScalarScalar.sub_spec]
 
 /-- `Neg::neg` (for `&Scalar`): the negation modulo `L`, reduced. -/
@@ -93,7 +110,7 @@ theorem neg (a : Scalar) :
     ∀ neg ∈ [
         Shared0Scalar.Insts.CoreOpsArithNegScalar.neg, -- -&a
         Scalar.Insts.CoreOpsArithNegScalar.neg], -- -a
-      neg a ⦃ (r : Scalar) => (r.asNat + a.asNat) % L = 0 ∧ r.asNat < L ⦄ := by
+      neg a ⦃ (r : Scalar) => (r.asNat + a.asNat) % L = 0 ∧ r.IsCanonical ⦄ := by
   variants [Shared0Scalar.Insts.CoreOpsArithNegScalar.neg_spec]
 
 /-- `conditional_select`: `a` if `choice = 0`, `b` if `choice = 1`, for a valid `choice`. -/
@@ -102,14 +119,25 @@ theorem conditional_select (a b : Scalar) (choice : subtle.Choice) (hchoice : ch
       (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ :=
   Scalar.Insts.SubtleConditionallySelectable.conditional_select_spec a b choice hchoice
 
+/-- `conditional_select` of canonical scalars is canonical. -/
+theorem conditional_select_isCanonical (a b : Scalar) (choice : subtle.Choice)
+    (hchoice : choice.IsValid) (ha : a.IsCanonical) (hb : b.IsCanonical) :
+    Scalar.Insts.SubtleConditionallySelectable.conditional_select a b choice ⦃ (r : Scalar) =>
+      r.IsCanonical ⦄ :=
+  spec_mono (conditional_select a b choice hchoice) fun r ⟨h0, h1⟩ => by
+    rcases hchoice with h | h
+    · obtain rfl := h0 h; exact ha
+    · obtain rfl := h1 h; exact hb
+
 /-- `Product::product`: the product of the items modulo `L`. -/
 theorem product {T I : Type} (borrowInst : core.borrow.Borrow T Scalar)
     (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
     (ss : List Scalar) (hiter : iterInst.Yields iter xs)
     (hborrow : List.Forall₂ (fun x s => borrowInst.borrow x ⦃ (s' : Scalar) => s' = s ⦄) xs ss) :
     Scalar.Insts.CoreIterTraitsAccumProduct.product borrowInst iterInst iter ⦃ (r : Scalar) =>
-      r.asNat = (ss.map (·.asNat)).prod % L ⦄ :=
-  Scalar.Insts.CoreIterTraitsAccumProduct.product_spec borrowInst iterInst iter xs ss hiter hborrow
+      r.asNat = (ss.map (·.asNat)).prod % L ∧ r.IsCanonical ⦄ :=
+  spec_mono (Scalar.Insts.CoreIterTraitsAccumProduct.product_spec borrowInst iterInst iter xs ss
+    hiter hborrow) fun _ h => ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
 
 /-- `Sum::sum`: the sum of the items modulo `L`, for reduced items. -/
 theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T Scalar)
@@ -118,29 +146,46 @@ theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T Scalar)
     (hborrow : List.Forall₂ (fun x s => borrowInst.borrow x ⦃ (s' : Scalar) => s' = s ⦄) xs ss)
     (hss : ∀ s ∈ ss, s.asNat < L) :
     Scalar.Insts.CoreIterTraitsAccumSum.sum borrowInst iterInst iter ⦃ (r : Scalar) =>
-      r.asNat = (ss.map (·.asNat)).sum % L ⦄ :=
-  Scalar.Insts.CoreIterTraitsAccumSum.sum_spec borrowInst iterInst iter xs ss hiter hborrow hss
+      r.asNat = (ss.map (·.asNat)).sum % L ∧ r.IsCanonical ⦄ :=
+  spec_mono (Scalar.Insts.CoreIterTraitsAccumSum.sum_spec borrowInst iterInst iter xs ss hiter
+    hborrow hss) fun _ h => ⟨h, scalar.Scalar.isCanonical_of_eq h (Nat.mod_lt _ curve25519.L_pos)⟩
 
 /-- `Default::default`: the scalar `0`. -/
-theorem default : Scalar.Insts.CoreDefaultDefault.default ⦃ (r : Scalar) => r.asNat = 0 ⦄ :=
-  Scalar.Insts.CoreDefaultDefault.default_spec
+theorem default :
+    Scalar.Insts.CoreDefaultDefault.default ⦃ (r : Scalar) => r.asNat = 0 ∧ r.IsCanonical ⦄ :=
+  spec_mono Scalar.Insts.CoreDefaultDefault.default_spec fun _ h =>
+    ⟨h, scalar.Scalar.isCanonical_of_eq h curve25519.L_pos⟩
 
 /-- `From<u8>`: the value of `x`. -/
 theorem «from» :
-    (∀ x : U8, Scalar.Insts.CoreConvertFromU8.from x ⦃ (r : Scalar) => r.asNat = x.val ⦄) ∧
-    (∀ x : U16, Scalar.Insts.CoreConvertFromU16.from x ⦃ (r : Scalar) => r.asNat = x.val ⦄) ∧
-    (∀ x : U32, Scalar.Insts.CoreConvertFromU32.from x ⦃ (r : Scalar) => r.asNat = x.val ⦄) ∧
-    (∀ x : U64, Scalar.Insts.CoreConvertFromU64.from x ⦃ (r : Scalar) => r.asNat = x.val ⦄) ∧
-    (∀ x : U128, Scalar.Insts.CoreConvertFromU128.from x ⦃ (r : Scalar) => r.asNat = x.val ⦄) :=
-  ⟨Scalar.Insts.CoreConvertFromU8.from_spec, Scalar.Insts.CoreConvertFromU16.from_spec,
-    Scalar.Insts.CoreConvertFromU32.from_spec, Scalar.Insts.CoreConvertFromU64.from_spec,
-    Scalar.Insts.CoreConvertFromU128.from_spec⟩
+    (∀ x : U8, Scalar.Insts.CoreConvertFromU8.from x ⦃ (r : Scalar) =>
+      r.asNat = x.val ∧ r.IsCanonical ⦄) ∧
+    (∀ x : U16, Scalar.Insts.CoreConvertFromU16.from x ⦃ (r : Scalar) =>
+      r.asNat = x.val ∧ r.IsCanonical ⦄) ∧
+    (∀ x : U32, Scalar.Insts.CoreConvertFromU32.from x ⦃ (r : Scalar) =>
+      r.asNat = x.val ∧ r.IsCanonical ⦄) ∧
+    (∀ x : U64, Scalar.Insts.CoreConvertFromU64.from x ⦃ (r : Scalar) =>
+      r.asNat = x.val ∧ r.IsCanonical ⦄) ∧
+    (∀ x : U128, Scalar.Insts.CoreConvertFromU128.from x ⦃ (r : Scalar) =>
+      r.asNat = x.val ∧ r.IsCanonical ⦄) := by
+  have hL : 2 ^ 128 < L := by rw [curve25519.L_eq_numeral]; decide
+  refine ⟨fun x => ?_, fun x => ?_, fun x => ?_, fun x => ?_, fun x => ?_⟩ <;>
+  · refine spec_mono (by first
+      | exact Scalar.Insts.CoreConvertFromU8.from_spec x
+      | exact Scalar.Insts.CoreConvertFromU16.from_spec x
+      | exact Scalar.Insts.CoreConvertFromU32.from_spec x
+      | exact Scalar.Insts.CoreConvertFromU64.from_spec x
+      | exact Scalar.Insts.CoreConvertFromU128.from_spec x) fun _ h =>
+      ⟨h, scalar.Scalar.isCanonical_of_eq h (lt_of_lt_of_le x.hmax (by
+        have := hL.le; simp only [UScalarTy.numBits] at *; omega))⟩
 
 /-- `Zeroize::zeroize`: all bytes `0`. -/
 theorem zeroize (s : Scalar) :
     Scalar.Insts.ZeroizeZeroize.zeroize s ⦃ (r : Scalar) =>
-      r = { bytes := Array.repeat 32#usize 0#u8 } ⦄ :=
-  Scalar.Insts.ZeroizeZeroize.zeroize_spec s
+      r = { bytes := Array.repeat 32#usize 0#u8 } ∧ r.IsCanonical ⦄ :=
+  spec_mono (Scalar.Insts.ZeroizeZeroize.zeroize_spec s) fun _ h =>
+    ⟨h, scalar.Scalar.isCanonical_of_eq (n := 0)
+      (by rw [h, scalar.Scalar.asNat_def]; simp [Array.asNat_def, Nat.ofDigits]) curve25519.L_pos⟩
 
 /-- `ZERO`: the scalar `0`. -/
 theorem ZERO : Scalar.ZERO.asNat = 0 := Scalar.ZERO_spec
@@ -160,16 +205,16 @@ theorem as_bytes (s : Scalar) : Scalar.as_bytes s ⦃ (r : Array U8 32#usize) =>
 theorem invert (s : Scalar) :
     Scalar.invert s ⦃ (r : Scalar) =>
       (s.asNat % L ≠ 0 → r.asNat * s.asNat % L = 1) ∧
-      (s.asNat % L = 0 → r.asNat = 0) ∧ r.asNat < L ⦄ :=
+      (s.asNat % L = 0 → r.asNat = 0) ∧ r.IsCanonical ⦄ :=
   Scalar.invert_spec s
 
 /-- `invert_batch`: inverts every (nonzero) input; returns the inverse of their product. -/
 theorem invert_batch {N : Usize} (inputs : Array Scalar N)
     (hinputs : ∀ i < N.val, inputs[i]!.asNat % L ≠ 0) :
     Scalar.invert_batch inputs ⦃ (ret : Scalar) (r : Array Scalar N) =>
-      (∀ i < N.val, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
+      (∀ i < N.val, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.IsCanonical) ∧
       ret.asNat * (∏ i ∈ Finset.range N.val, inputs[i]!.asNat) % L = 1 ∧
-      ret.asNat < L ⦄ :=
+      ret.IsCanonical ⦄ :=
   Scalar.invert_batch_spec inputs hinputs
 
 /-- `invert_batch_alloc`: as `invert_batch`, on a slice. -/
@@ -177,14 +222,14 @@ theorem invert_batch_alloc (inputs : Slice Scalar)
     (hinputs : ∀ i < inputs.length, inputs[i]!.asNat % L ≠ 0) :
     Scalar.invert_batch_alloc inputs ⦃ (ret : Scalar) (r : Slice Scalar) =>
       r.length = inputs.length ∧
-      (∀ i < inputs.length, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.asNat < L) ∧
+      (∀ i < inputs.length, r[i]!.asNat * inputs[i]!.asNat % L = 1 ∧ r[i]!.IsCanonical) ∧
       ret.asNat * (∏ i ∈ Finset.range inputs.length, inputs[i]!.asNat) % L = 1 ∧
-      ret.asNat < L ⦄ :=
+      ret.IsCanonical ⦄ :=
   Scalar.invert_batch_alloc_spec inputs hinputs
 
 /-- `div_by_2`: `b` with `b + b = s` modulo `L`, reduced. -/
 theorem div_by_2 (s : Scalar) (hs : s.asNat < L) :
-    Scalar.div_by_2 s ⦃ (r : Scalar) => 2 * r.asNat % L = s.asNat ∧ r.asNat < L ⦄ :=
+    Scalar.div_by_2 s ⦃ (r : Scalar) => 2 * r.asNat % L = s.asNat ∧ r.IsCanonical ⦄ :=
   Scalar.div_by_2_spec s hs
 
 end Theorems.scalar.Scalar

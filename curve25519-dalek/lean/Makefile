@@ -9,11 +9,14 @@ gen:
 # Build everything, including the axiom, definition and coverage checks.
 build: gen
 	lake exe cache get
+	lake build Aeneas
 	lake build --wfail
 
 # What CI runs.
 check:
 	python3 scripts/gen-config-specs.py --check
+	lake exe cache get
+	lake build Aeneas
 	lake build --wfail
 	lake exe runLinter ForHumans
 	lake exe runLinter Proofs

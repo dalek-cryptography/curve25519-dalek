@@ -27,7 +27,7 @@ lint:
 
 # One check at a time; silent when it passes.
 axioms: gen
-	lake env lean ForHumans/Theorems/Axioms.lean
+	lake env lean ForHumans/Theorems/AxiomCheck.lean
 definitions: gen
 	lake env lean ForHumans/Theorems/Definitions.lean
 coverage: gen

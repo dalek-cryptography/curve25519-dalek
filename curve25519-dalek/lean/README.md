@@ -4,24 +4,27 @@ This directory contains specs, theorems, axioms, and proofs about `curve25519-da
 
 ## How to Run
 
-Run `make` to do all of the below.
+Run `make` to build all the important stuff. We list all the targets below:
 
 | Command | Effect |
 |---|---|
-| `make check` | Checks Copies up to date, strict build, linters. |
 | `make gen` | Regenerates template-based files (via `scripts/gen-config-specs.py`) |
-| `make axioms` | Checks that only the axioms listed in `ForHumans/Theorems/Axioms.lean` appear in proofs. Silent on success. |
-| `make definitions` | Checks that `ForHumans/` is self-contained, and doesn't rely on, e.g., definitions in `Proofs/`. Silent on success. |
-|  `make coverage` | Checks that every Rust function returning a point, table, precomputation, or scalar has a theorem about it (or is explicitly exempted). This is intended to ensure that we check the well-formedness of all values that are publicly constructible. Silent on success. |
+| `make axioms` | Checks that only the axioms listed in `ForHumans/AxiomCheck.lean` appear in proofs. Silent on success. |
+|  `make coverage` | Checks that every public Rust function returning a type with mandatory invariants (a point, table, precomputation, or scalar) has a theorem about it. This is intended to ensure that we check the well-formedness of all values that are publicly constructible. Silent on success. |
+| `make definitions` | Checks that the theorem statements in `ForHumans/` are self-contained, and doesn't rely on, e.g., definitions in `Proofs/`. Silent on success. |
+| `make` | Does all of the above |
+| `make check` | Checks copies up to date, strict build, linters. |
 | `make lint` | Runs Lean linters on `ForHumans/` and `Proofs/`. |
 | `make shake` | Lists unneeded imports in `ForHumans`. Prune with `lake shake ForHumans --fix`. |
-| `make translate` | Reruns Aeneas, thus re-extarcting the Rust code to Lean. |
+| `make translate` | Reruns Aeneas, thus re-extracting the Rust code to Lean. |
 
 The Aeneas version is pinned in `AENEAS_VERSION.txt`.
 
 ## What the Theorems Cover
 
-Our proofs cover the `u32` and `u64` backends, both with and without the `precomputed-tables` feature. We list Rust files along with theorems proved about them, notes, and properties not covered:
+Our proofs cover the `serial` backend using `curve25519_dalek_bits="32"` and `curve25519_dalek_bits="64"`, both with and without the `precomputed-tables` feature. This is 4 total configurations. Each configuration is also built with `alloc` and `zeroize` features (the functions of these crates are axiomatized, and not proved).
+
+We list Rust files along with theorems proved about them, notes, and properties not covered:
 
 | Rust file | Theorems | Notes | Not covered |
 |---|---|---|---|
@@ -32,26 +35,30 @@ Our proofs cover the `u32` and `u64` backends, both with and without the `precom
 | `montgomery.rs` | `Montgomery.lean` | Inputs via `decodeUCoordinate`, results as `encodeUCoordinate`. Scalar multiplication is RFC 7748's ladder, computing `u(n • Q)` on the curve or its twist. | Not translated: `Debug`, `Hash`, `serde`. |
 | `constants.rs` | `Constants.lean` | Includes the backend constants it re-exports. Tables exist only with precomputed tables. | `BASEPOINT_ORDER` (`pub(crate)`, proved in `Proofs/Constants/BasepointOrder.lean`). |
 
-We currently do not have any proofs for any functions that rely on the features: `legacy_compatibility`, `group`, `digest`, `lizard`, or `rand_core`. We also have no proofs for the crate when compiled with backends `fiat` or `simd`.
+We currently do not have any proofs for any functions that rely on the features: `legacy_compatibility`, `group`, `digest`, `lizard`, `rand_core`, or `serde`. We also have no proofs for the crate when compiled with backends `fiat` or `simd`.
+
+Caveat: In order to make Aeneas extraction work, we must apply some patches to the Rust code. These are found in `translation-patches/`. The the patches are all relatively small and mostly syntactic, but not always. They are temporary, and should go away as Aeneas gets better at interpreting Rust.
 
 ## Things that Humans Audit
 
-The `ForHumans/` directory has all the stuff that humans need to read in order to be convinced of the safety of this crate:
+The `ForHumans/` directory has all the stuff that humans need to read in order to be convinced of the correctness and safety of this crate:
 
 - `ForHumans/Specs/` contains the definitions used by all theorems (types, operators, constants).
-- `ForHumans/Specs/External/` contains axioms about this crate's Rust dependencies, i.e., `subtle`, `zerioize`, and `alloc`.
-- `ForHumans/Theorems/` contains all top-level theorems proved about the crate. It is organized such that each Lean file corresponds to one Rust file.
-- `ForHumans/AxiomCheck.lean` contains a list of all the places that axioms can come from, and checks that no Lean proofs use any axioms outside of those.
-- `ForHumans/Coverage.lean` checks that every Rust function returning a point, table, precomputation, or scalar has a theorem about it (or is explicitly exempted). This is intended to ensure that we check the well-formedness of all values that are publicly constructible.
-- `ForHumans/Definitions.lean` checks that `ForHumans/` is self-contained, and doesn't rely on, e.g., definitions in `Proofs/`.
-- `ForHumans/TestVectors.lean` (optional) contains correctness checks against RFC test vectors.
+- `ForHumans/Specs/External/` contains axioms about this crate's Rust dependencies, i.e., `subtle`, `zeroize`, and `alloc`.
+- `ForHumans/Theorems/` contains all top-level theorems proved about the crate. It is organized such that each Lean file corresponds to roughly one Rust file.
+- `ForHumans/AxiomCheck.lean` runs the check described above by `make axioms`.
+- `ForHumans/Coverage.lean` runs the check described above by `make coverage`.
+- `ForHumans/Definitions.lean` runs the checks described above by `make definitions`.
+- `ForHumans/TestVectors.lean` (optional) contains correctness checks of `ForHumans/Specs/` against RFC test vectors.
 
-One syntax hint: when `f` is an Aeneas-translated function, `f args ⦃ r => P r ⦄` means that that `f args` returns a value `r` satisfying predicate `P`. This also guarantees that `r` exists, and no panic or other no-return condition happened.
+One syntax hint: when `f` is an Aeneas-translated function, `f args ⦃ r => P r ⦄` means that `f args` returns a value `r` satisfying predicate `P`. This also guarantees that `r` exists, and no panic or other no-return condition happened.
 
-**Autogenerated files.** Just for completeness, we also include autogenerated files in the `ForHumans/` dir. These files are backend-specific, and are autogenerated from a template file by `scripts/gen-config-specs.py`. When auditing, you should just read the template file. Anything of the form `ForHumans/Theorems/<File>/*` is autogenerated from the template `ForHumans/Theorems/<File>.lean`. Similarly, `ForHumans/Specs/Representation/<File>/*` is autogenerated from a template in `ForHumans/Specs/Representation/<File>.lean`.
+**Autogenerated files.** Just for completeness, we also include autogenerated files in the `ForHumans/` dir. These files are configuration-specific, and are autogenerated from a template file (really the `64bit-tables` config) by `scripts/gen-config-specs.py`. When auditing, you should just read the template file. Anything of the form `ForHumans/Theorems/<File>/*` is autogenerated from the template `ForHumans/Theorems/<File>.lean`. Similarly, `ForHumans/Specs/Representation/<File>/*` is autogenerated from a template in `ForHumans/Specs/Representation/<File>.lean`.
 
-**Lean dependencies.** We use mathlib and also an elliptic curve [math library](https://github.com/Beneficial-AI-Foundation/elliptic-curve/tree/4015c7cfab714640e77500bdbde6e64face3fbaa) from BAIF. An extra careful human auditor must also review this.
+**Lean dependencies.** We use mathlib, Aeneas, and an elliptic curve [math library](https://github.com/Beneficial-AI-Foundation/elliptic-curve/tree/4015c7cfab714640e77500bdbde6e64face3fbaa) from BAIF.
 
 ## Other Dirs
 
-`Proofs/` contains all proofs, and `Curve25519Dalek/` contains all code generated by Aeneas.
+- `Proofs/` contains all proofs
+- `Curve25519Dalek/` contains all code generated by Aeneas.
+- `translation-patches` contains annotated patches to the Rust code that makes Aeneas happy

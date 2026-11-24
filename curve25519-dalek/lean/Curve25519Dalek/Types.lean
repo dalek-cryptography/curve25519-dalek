@@ -527,7 +527,7 @@ def backend.serial.scalar_mul.straus.«VartimeMultiscalarMulStrausEdwardsPoint32
 Unit
 
 /-- [curve25519_dalek::scalar::HalfWidthScalar]
-    Source: 'curve25519-dalek/src/scalar.rs', lines 1428:0-1428:35
+    Source: 'curve25519-dalek/src/scalar.rs', lines 1445:0-1445:35
     Visibility: public -/
 @[reducible]
 def scalar.HalfWidthScalar := scalar.Scalar

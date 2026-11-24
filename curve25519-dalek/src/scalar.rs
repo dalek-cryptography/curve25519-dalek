@@ -1184,56 +1184,73 @@ impl UnpackedScalar {
     #[rustfmt::skip] // keep alignment of addition chain and squarings
     #[allow(clippy::just_underscores_and_digits)]
     pub fn montgomery_invert(&self) -> UnpackedScalar {
-        // Uses the addition chain from
-        // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
-        let    _1 = *self;
-        let   _10 = _1.montgomery_square();
-        let  _100 = _10.montgomery_square();
-        let   _11 = UnpackedScalar::montgomery_mul(&_10,     &_1);
-        let  _101 = UnpackedScalar::montgomery_mul(&_10,    &_11);
-        let  _111 = UnpackedScalar::montgomery_mul(&_10,   &_101);
-        let _1001 = UnpackedScalar::montgomery_mul(&_10,   &_111);
-        let _1011 = UnpackedScalar::montgomery_mul(&_10,  &_1001);
-        let _1111 = UnpackedScalar::montgomery_mul(&_100, &_1011);
+        // 274 steps: 248 squarings, 26 multiplications
+        let _1 = *self;
+        let _10 = _1.montgomery_square();
+        let _100 = _10.montgomery_square();
+        let _1000 = _100.montgomery_square();
+        let _10000 = _1000.montgomery_square();
+        let _10001 = UnpackedScalar::montgomery_mul(&_10000, &_1);
+        let _100001 = UnpackedScalar::montgomery_mul(&_10001, &_10000);
+        let _1000010 = _100001.montgomery_square();
+        let _1100011 = UnpackedScalar::montgomery_mul(&_1000010, &_100001);
+        let _11000110 = _1100011.montgomery_square();
+        let _110001100 = _11000110.montgomery_square();
+        let _110011101 = UnpackedScalar::montgomery_mul(&_110001100, &_10001);
+        let _1100101001 = UnpackedScalar::montgomery_mul(&_110011101, &_110001100);
+        let _11001010010 = _1100101001.montgomery_square();
+        let _110010100100 = _11001010010.montgomery_square();
+        let _1100101001000 = _110010100100.montgomery_square();
+        let _1100101001001 = UnpackedScalar::montgomery_mul(&_1100101001000, &_1);
+        let _11001010010001 = UnpackedScalar::montgomery_mul(&_1100101001001, &_1100101001000);
+        let _110010100100010 = _11001010010001.montgomery_square();
+        let _111111001101011 = UnpackedScalar::montgomery_mul(&_110010100100010, &_1100101001001);
+        let _1111110011010110 = _111111001101011.montgomery_square();
+        let _1111111111111111 = UnpackedScalar::montgomery_mul(&_1111110011010110, &_1100101001);
 
-        // _10000
-        let mut y = UnpackedScalar::montgomery_mul(&_1111, &_1);
+        // _10000000000000000
+        let mut y = UnpackedScalar::montgomery_mul(&_1111111111111111, &_1);
 
         #[inline]
-        fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar) {
+        fn square_n(y: &mut UnpackedScalar, squarings: usize) {
             for _ in 0..squarings {
                 *y = y.montgomery_square();
             }
+        }
+
+        #[inline]
+        fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar) {
+            square_n(y, squarings);
             *y = UnpackedScalar::montgomery_mul(y, x);
         }
 
-        square_multiply(&mut y, 123 + 3, &_101);
-        square_multiply(&mut y,   2 + 2, &_11);
-        square_multiply(&mut y,   1 + 4, &_1111);
-        square_multiply(&mut y,   1 + 4, &_1111);
-        square_multiply(&mut y,       4, &_1001);
-        square_multiply(&mut y,       2, &_11);
-        square_multiply(&mut y,   1 + 4, &_1111);
-        square_multiply(&mut y,   1 + 3, &_101);
-        square_multiply(&mut y,   3 + 3, &_101);
-        square_multiply(&mut y,       3, &_111);
-        square_multiply(&mut y,   1 + 4, &_1111);
-        square_multiply(&mut y,   2 + 3, &_111);
-        square_multiply(&mut y,   2 + 2, &_11);
-        square_multiply(&mut y,   1 + 4, &_1011);
-        square_multiply(&mut y,   2 + 4, &_1011);
-        square_multiply(&mut y,   6 + 4, &_1001);
-        square_multiply(&mut y,   2 + 2, &_11);
-        square_multiply(&mut y,   3 + 2, &_11);
-        square_multiply(&mut y,   3 + 2, &_11);
-        square_multiply(&mut y,   1 + 4, &_1001);
-        square_multiply(&mut y,   1 + 3, &_111);
-        square_multiply(&mut y,   2 + 4, &_1111);
-        square_multiply(&mut y,   1 + 4, &_1011);
-        square_multiply(&mut y,       3, &_101);
-        square_multiply(&mut y,   2 + 4, &_1111);
-        square_multiply(&mut y,       3, &_101);
-        square_multiply(&mut y,   1 + 2, &_11);
+        //  y = _100000000000000000000
+        square_n(&mut y, 4);
+        let _100000000000001100011 = UnpackedScalar::montgomery_mul(&y, &_1100011);
+
+        //  y = _1000000000000000000000000000000000000000
+        square_n(&mut y, 19);
+        let _1000000000000000000000000001100101001001 =
+            UnpackedScalar::montgomery_mul(&y, &_1100101001001);
+
+        //  y = _1000000000000000000000000000000000000000000
+        square_n(&mut y, 3);
+        let _1001000000000000000000000000001100101001001 =
+            UnpackedScalar::montgomery_mul(&y, &_1000000000000000000000000001100101001001);
+
+        square_multiply(&mut y, 85 + 5, &_10001);
+        square_multiply(&mut y,      8, &_110011101);
+        square_multiply(&mut y,     14, &_111111001101011);
+        square_multiply(&mut y,      6, &_1100101001);
+        square_multiply(&mut y,     13, &_1001000000000000000000000000001100101001001);
+        square_multiply(&mut y,      2, &_11001010010001);
+        square_multiply(&mut y,     12, &_111111001101011);
+        square_multiply(&mut y, 4 + 21, &_100000000000001100011);
+        square_multiply(&mut y,  3 + 7, &_1100011);
+        square_multiply(&mut y,     10, &_1001000000000000000000000000001100101001001);
+        square_multiply(&mut y,     10, &_1001000000000000000000000000001100101001001);
+        square_multiply(&mut y,      3, &_100000000000001100011);
+        square_multiply(&mut y,      7, &_111111001101011);
 
         y
     }

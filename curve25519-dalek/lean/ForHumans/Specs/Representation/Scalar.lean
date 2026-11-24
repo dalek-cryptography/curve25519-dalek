@@ -1,8 +1,3 @@
-/-
-Copyright 2025 The Beneficial AI Foundation. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Alessandro D'Angelo, Oliver Butterley
--/
 module
 public import Curve25519Dalek.Types
 public import ForHumans.Specs.Constants

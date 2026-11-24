@@ -1,0 +1,4 @@
+# Charon / Aeneas / Lean verification tooling.
+.aeneas/
+.lake/
+.llbc/

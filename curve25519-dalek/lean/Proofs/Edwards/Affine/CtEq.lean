@@ -1,0 +1,141 @@
+module
+public import Curve25519Dalek.Funs
+public import Proofs.Representation.Edwards
+public import Proofs.External.Subtle.Contract
+import Proofs.Field.CtEq
+import Proofs.Helpers.Coords
+import Proofs.Helpers.ToField
+import Proofs.Helpers.ToField2625
+public section
+
+open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel
+open Curve25519Dalek.backend.serial.u64.field (FieldElement51)
+open Curve25519Dalek.backend.serial.u32.field (FieldElement2625)
+
+namespace Curve25519Dalek.edwards.affine
+
+namespace AffinePoint.«64bit-tables».Insts.SubtleConstantTimeEq
+
+open Curve25519Dalek.backend.serial.u64.field.FieldElement51
+
+/-- `ConstantTimeEq for AffinePoint`: both coordinates agree modulo `p`. -/
+@[step]
+theorem ct_eq_coords (self other : AffinePoint.«64bit-tables») :
+    ct_eq self other ⦃ (c : subtle.Choice) =>
+      c.IsValid ∧
+        (c = 1#u8 ↔
+          self.x.toField = other.x.toField ∧ self.y.toField = other.y.toField) ⦄ := by
+  unfold ct_eq
+  step as ⟨c, hcv, hc1, hc0⟩
+  step as ⟨c1, hc1v, hc11, hc10⟩
+  step as ⟨c2, hc2v, hc2⟩
+  refine ⟨hc2v, ?_⟩
+  rw [hc2, ← eq_one_iff_toField_eq hc1 hc0, ← eq_one_iff_toField_eq hc11 hc10]
+  rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
+
+/-- `ConstantTimeEq for AffinePoint` on points: equality of the represented points. -/
+theorem ct_eq_spec (self other : AffinePoint.«64bit-tables») (hself : self.OnCurve)
+    (hother : other.OnCurve) :
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
+  spec_mono (ct_eq_coords self other) fun _ ⟨hcv, hc⟩ => by
+    rw [AffinePoint.«64bit-tables».toPoint_eq_mk hself,
+      AffinePoint.«64bit-tables».toPoint_eq_mk hother, Point.ext_iff]
+    exact ⟨hcv, hc⟩
+
+end AffinePoint.«64bit-tables».Insts.SubtleConstantTimeEq
+
+namespace AffinePoint.«32bit-tables».Insts.SubtleConstantTimeEq
+
+open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
+
+/-- `ConstantTimeEq for AffinePoint`: both coordinates agree modulo `p`. -/
+@[step]
+theorem ct_eq_coords (self other : AffinePoint.«32bit-tables») :
+    ct_eq self other ⦃ (c : subtle.Choice) =>
+      c.IsValid ∧
+        (c = 1#u8 ↔
+          self.x.toField = other.x.toField ∧ self.y.toField = other.y.toField) ⦄ := by
+  unfold ct_eq
+  step as ⟨c, hcv, hc1, hc0⟩
+  step as ⟨c1, hc1v, hc11, hc10⟩
+  step as ⟨c2, hc2v, hc2⟩
+  refine ⟨hc2v, ?_⟩
+  rw [hc2, ← eq_one_iff_toField_eq hc1 hc0, ← eq_one_iff_toField_eq hc11 hc10]
+  rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
+
+/-- `ConstantTimeEq for AffinePoint` on points: equality of the represented points. -/
+theorem ct_eq_spec (self other : AffinePoint.«32bit-tables») (hself : self.OnCurve)
+    (hother : other.OnCurve) :
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
+  spec_mono (ct_eq_coords self other) fun _ ⟨hcv, hc⟩ => by
+    rw [AffinePoint.«32bit-tables».toPoint_eq_mk hself,
+      AffinePoint.«32bit-tables».toPoint_eq_mk hother, Point.ext_iff]
+    exact ⟨hcv, hc⟩
+
+end AffinePoint.«32bit-tables».Insts.SubtleConstantTimeEq
+
+namespace AffinePoint.«64bit-notables».Insts.SubtleConstantTimeEq
+
+open Curve25519Dalek.backend.serial.u64.field.FieldElement51
+
+/-- `ConstantTimeEq for AffinePoint`: both coordinates agree modulo `p`. -/
+@[step]
+theorem ct_eq_coords (self other : AffinePoint.«64bit-notables») :
+    ct_eq self other ⦃ (c : subtle.Choice) =>
+      c.IsValid ∧
+        (c = 1#u8 ↔
+          self.x.toField = other.x.toField ∧ self.y.toField = other.y.toField) ⦄ := by
+  unfold ct_eq
+  step as ⟨c, hcv, hc1, hc0⟩
+  step as ⟨c1, hc1v, hc11, hc10⟩
+  step as ⟨c2, hc2v, hc2⟩
+  refine ⟨hc2v, ?_⟩
+  rw [hc2, ← eq_one_iff_toField_eq hc1 hc0, ← eq_one_iff_toField_eq hc11 hc10]
+  rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
+
+/-- `ConstantTimeEq for AffinePoint` on points: equality of the represented points. -/
+theorem ct_eq_spec (self other : AffinePoint.«64bit-notables») (hself : self.OnCurve)
+    (hother : other.OnCurve) :
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
+  spec_mono (ct_eq_coords self other) fun _ ⟨hcv, hc⟩ => by
+    rw [AffinePoint.«64bit-notables».toPoint_eq_mk hself,
+      AffinePoint.«64bit-notables».toPoint_eq_mk hother, Point.ext_iff]
+    exact ⟨hcv, hc⟩
+
+end AffinePoint.«64bit-notables».Insts.SubtleConstantTimeEq
+
+namespace AffinePoint.«32bit-notables».Insts.SubtleConstantTimeEq
+
+open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
+
+/-- `ConstantTimeEq for AffinePoint`: both coordinates agree modulo `p`. -/
+@[step]
+theorem ct_eq_coords (self other : AffinePoint.«32bit-notables») :
+    ct_eq self other ⦃ (c : subtle.Choice) =>
+      c.IsValid ∧
+        (c = 1#u8 ↔
+          self.x.toField = other.x.toField ∧ self.y.toField = other.y.toField) ⦄ := by
+  unfold ct_eq
+  step as ⟨c, hcv, hc1, hc0⟩
+  step as ⟨c1, hc1v, hc11, hc10⟩
+  step as ⟨c2, hc2v, hc2⟩
+  refine ⟨hc2v, ?_⟩
+  rw [hc2, ← eq_one_iff_toField_eq hc1 hc0, ← eq_one_iff_toField_eq hc11 hc10]
+  rcases hcv with rfl | rfl <;> rcases hc1v with rfl | rfl <;> decide
+
+/-- `ConstantTimeEq for AffinePoint` on points: equality of the represented points. -/
+theorem ct_eq_spec (self other : AffinePoint.«32bit-notables») (hself : self.OnCurve)
+    (hother : other.OnCurve) :
+    ct_eq self other ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ self.toPoint = other.toPoint) ⦄ :=
+  spec_mono (ct_eq_coords self other) fun _ ⟨hcv, hc⟩ => by
+    rw [AffinePoint.«32bit-notables».toPoint_eq_mk hself,
+      AffinePoint.«32bit-notables».toPoint_eq_mk hother, Point.ext_iff]
+    exact ⟨hcv, hc⟩
+
+end AffinePoint.«32bit-notables».Insts.SubtleConstantTimeEq
+
+end Curve25519Dalek.edwards.affine

@@ -1,0 +1,72 @@
+Translation patch: <Straus as VartimeMultiscalarMul>::optional_multiscalar_mul
+
+Change: `map`/`collect` become `for` loops; an explicit `match` returns on the first `None` point; the `zip` becomes a range loop to the shorter length.
+Why: Aeneas only models `Iterator::next` (aeneas#1057).
+Behaviour: identical (stops at the first `None` point, like the `?`).
+Relies on: `non_adjacent_form(5)` returns `[i8; 256]`.
+
+diff --git a/curve25519-dalek/src/backend/serial/scalar_mul/straus.rs b/curve25519-dalek/src/backend/serial/scalar_mul/straus.rs
+index a20e393..473ed9b 100644
+--- a/curve25519-dalek/src/backend/serial/scalar_mul/straus.rs
++++ b/curve25519-dalek/src/backend/serial/scalar_mul/straus.rs
+@@ -150,46 +150,51 @@ impl VartimeMultiscalarMul for Straus {
+     /// Variable-time Straus using a non-adjacent form of width \\(5\\).
+     ///
+     /// This is completely similar to the constant-time code, but we
+     /// use a non-adjacent form for the scalar, and do not do table
+     /// lookups in constant time.
+     ///
+     /// The non-adjacent form has signed, odd digits.  Using only odd
+     /// digits halves the table size (since we only need odd
+     /// multiples), or gives fewer additions for the same table size.
+     fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
+     where
+         I: IntoIterator,
+         I::Item: Borrow<Scalar>,
+         J: IntoIterator<Item = Option<EdwardsPoint>>,
+     {
+         use crate::backend::serial::curve_models::{
+             CompletedPoint, ProjectiveNielsPoint, ProjectivePoint,
+         };
+         use crate::traits::Identity;
+         use crate::window::NafLookupTable5;
+ 
+-        let nafs: Vec<_> = scalars
+-            .into_iter()
+-            .map(|c| c.borrow().non_adjacent_form(5))
+-            .collect();
++        let mut nafs = vec![];
++        for c in scalars {
++            nafs.push(c.borrow().non_adjacent_form(5));
++        }
+ 
+-        let lookup_tables = points
+-            .into_iter()
+-            .map(|P_opt| P_opt.map(|P| NafLookupTable5::<ProjectiveNielsPoint>::from(&P)))
+-            .collect::<Option<Vec<_>>>()?;
++        let mut lookup_tables = vec![];
++        for P_opt in points {
++            match P_opt.map(|P| NafLookupTable5::<ProjectiveNielsPoint>::from(&P)) {
++                Some(table) => lookup_tables.push(table),
++                None => return None,
++            }
++        }
+ 
+         let mut r = ProjectivePoint::identity();
+ 
+         for i in (0..256).rev() {
+             let mut t: CompletedPoint = r.double();
+ 
+-            for (naf, lookup_table) in nafs.iter().zip(lookup_tables.iter()) {
++            for k in 0..nafs.len().min(lookup_tables.len()) {
++                let naf = &nafs[k];
++                let lookup_table = &lookup_tables[k];
+                 add_naf_digit!(t.as_extended(), naf[i], lookup_table);
+             }
+ 
+             r = t.as_projective();
+         }
+ 
+         Some(r.as_extended())
+     }
+ }

@@ -1,0 +1,57 @@
+Translation patch: <EdwardsPoint as VartimeMultiscalarMul>::optional_multiscalar_mul
+
+Change: as edwards-multiscalar_mul; `size = scalars.len()` picks Straus (< 190) or Pippenger.
+Why: Aeneas only models `Iterator::next` (aeneas#1057). `size_hint` cannot be called at all.
+Behaviour: same result for valid inputs, not identical: as edwards-multiscalar_mul, and all points are
+read even after a `None`.
+
+diff --git a/curve25519-dalek/src/edwards.rs b/curve25519-dalek/src/edwards.rs
+index 1120e8f..c1ada07 100644
+--- a/curve25519-dalek/src/edwards.rs
++++ b/curve25519-dalek/src/edwards.rs
+@@ -1002,39 +1002,32 @@ impl VartimeMultiscalarMul for EdwardsPoint {
+     fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
+     where
+         I: IntoIterator,
+         I::Item: Borrow<Scalar>,
+         J: IntoIterator<Item = Option<EdwardsPoint>>,
+     {
+         // Sanity-check lengths of input iterators
+-        let mut scalars = scalars.into_iter();
+-        let mut points = points.into_iter();
++        let scalars = Vec::from_iter(scalars.into_iter());
++        let points = Vec::from_iter(points.into_iter());
+-
+-        // Lower and upper bounds on iterators
+-        let (s_lo, s_hi) = scalars.by_ref().size_hint();
+-        let (p_lo, p_hi) = points.by_ref().size_hint();
+ 
+-        // They should all be equal
+-        assert_eq!(s_lo, p_lo);
+-        assert_eq!(s_hi, Some(s_lo));
+-        assert_eq!(p_hi, Some(p_lo));
++        // They should be equal
++        assert_eq!(scalars.len(), points.len());
+ 
+-        // Now we know there's a single size.
+-        // Use this as the hint to decide which algorithm to use.
+-        let size = s_lo;
++        // Use the size to decide which algorithm to use.
++        let size = scalars.len();
+ 
+         if size < 190 {
+             crate::backend::straus_optional_multiscalar_mul(scalars, points)
+         } else {
+             crate::backend::pippenger_optional_multiscalar_mul(scalars, points)
+         }
+     }
+ }
+ 
+ /// Precomputation for variable-time multiscalar multiplication with `EdwardsPoint`s.
+ // This wraps the inner implementation in a facade type so that we can
+ // decouple stability of the inner type from the stability of the
+ // outer type.
+ #[cfg(feature = "alloc")]
+ pub struct VartimeEdwardsPrecomputation(crate::backend::VartimePrecomputedStraus);
+ 
+ #[cfg(feature = "alloc")]

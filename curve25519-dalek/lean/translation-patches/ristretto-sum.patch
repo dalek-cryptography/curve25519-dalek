@@ -1,0 +1,27 @@
+Translation patch: <RistrettoPoint as Sum<T>>::sum
+
+Change: `iter.fold(..)` becomes a `for` loop.
+Why: Aeneas only models `Iterator::next` (aeneas#1057).
+Behaviour: identical for iterators whose `fold` agrees with `next` (all std/lawful iterators): the default `fold` is exactly this loop.
+
+diff --git a/curve25519-dalek/src/ristretto.rs b/curve25519-dalek/src/ristretto.rs
+index 269662d..f95d62b 100644
+--- a/curve25519-dalek/src/ristretto.rs
++++ b/curve25519-dalek/src/ristretto.rs
+@@ -883,11 +883,15 @@ impl<T> Sum<T> for RistrettoPoint
+ where
+     T: Borrow<RistrettoPoint>,
+ {
+     fn sum<I>(iter: I) -> Self
+     where
+         I: Iterator<Item = T>,
+     {
+-        iter.fold(RistrettoPoint::identity(), |acc, item| acc + item.borrow())
++        let mut acc = RistrettoPoint::identity();
++        for item in iter {
++            acc = acc + item.borrow();
++        }
++        acc
+     }
+ }
+ 

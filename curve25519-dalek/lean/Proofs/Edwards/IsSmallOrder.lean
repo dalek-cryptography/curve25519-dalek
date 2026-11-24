@@ -1,0 +1,79 @@
+module
+public import Curve25519Dalek.Funs
+public import Proofs.Representation.Edwards
+import Proofs.Edwards.IsIdentity
+import Proofs.Edwards.MulByCofactor
+public section
+
+open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519 TwistedEdwardsModel
+open Curve25519Dalek.backend.serial.u64.field (FieldElement51)
+open Curve25519Dalek.backend.serial.u32.field (FieldElement2625)
+open Curve25519Dalek.backend.serial.curve_models
+
+namespace Curve25519Dalek.edwards
+
+namespace «EdwardsPoint64bit-tables»
+
+open Curve25519Dalek.backend.serial.u64.field.FieldElement51
+
+/-- `EdwardsPoint::is_small_order`: `8 • self = 0`; limbs `< 2^52`. -/
+@[step]
+theorem is_small_order_spec (self : EdwardsPoint.«64bit-tables») (hself : self.LimbsLt 52)
+    (hon : self.OnCurve) :
+    is_small_order self ⦃ (r : Bool) => r = true ↔ 8 • self.toPoint = 0 ⦄ := by
+  unfold is_small_order
+  step as ⟨ep, hepon, hep, hepb⟩
+  step as ⟨b, hb⟩
+  rw [hb, hep]
+
+end «EdwardsPoint64bit-tables»
+
+namespace «EdwardsPoint32bit-tables»
+
+open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
+
+/-- `EdwardsPoint::is_small_order`: `8 • self = 0`; limbs `< 2^26`. -/
+@[step]
+theorem is_small_order_spec (self : EdwardsPoint.«32bit-tables») (hself : self.LimbsLt 26)
+    (hon : self.OnCurve) :
+    is_small_order self ⦃ (r : Bool) => r = true ↔ 8 • self.toPoint = 0 ⦄ := by
+  unfold is_small_order
+  step as ⟨ep, hepon, hep, hepb⟩
+  step as ⟨b, hb⟩
+  rw [hb, hep]
+
+end «EdwardsPoint32bit-tables»
+
+namespace «EdwardsPoint64bit-notables»
+
+open Curve25519Dalek.backend.serial.u64.field.FieldElement51
+
+/-- `EdwardsPoint::is_small_order`: `8 • self = 0`; limbs `< 2^52`. -/
+@[step]
+theorem is_small_order_spec (self : EdwardsPoint.«64bit-notables») (hself : self.LimbsLt 52)
+    (hon : self.OnCurve) :
+    is_small_order self ⦃ (r : Bool) => r = true ↔ 8 • self.toPoint = 0 ⦄ := by
+  unfold is_small_order
+  step as ⟨ep, hepon, hep, hepb⟩
+  step as ⟨b, hb⟩
+  rw [hb, hep]
+
+end «EdwardsPoint64bit-notables»
+
+namespace «EdwardsPoint32bit-notables»
+
+open Curve25519Dalek.backend.serial.u32.field.FieldElement2625
+
+/-- `EdwardsPoint::is_small_order`: `8 • self = 0`; limbs `< 2^26`. -/
+@[step]
+theorem is_small_order_spec (self : EdwardsPoint.«32bit-notables») (hself : self.LimbsLt 26)
+    (hon : self.OnCurve) :
+    is_small_order self ⦃ (r : Bool) => r = true ↔ 8 • self.toPoint = 0 ⦄ := by
+  unfold is_small_order
+  step as ⟨ep, hepon, hep, hepb⟩
+  step as ⟨b, hb⟩
+  rw [hb, hep]
+
+end «EdwardsPoint32bit-notables»
+
+end Curve25519Dalek.edwards

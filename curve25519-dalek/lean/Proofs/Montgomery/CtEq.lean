@@ -1,0 +1,127 @@
+module
+public import Proofs.Curve25519.X25519
+public import Curve25519Dalek.Funs
+public import Proofs.Representation.Montgomery
+public import Proofs.External.Subtle.Contract
+import Proofs.Backend.Serial.U64.Field.FromBytes
+import Proofs.Field.CtEq
+import Proofs.Helpers.Target
+import Proofs.Backend.Serial.U32.Field.FromBytes
+public import Proofs.Helpers.ByteValues
+public section
+
+/-! # `ConstantTimeEq for MontgomeryPoint` -/
+
+open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
+open Curve25519Dalek.backend.serial.u64.field (FieldElement51)
+open Curve25519Dalek.backend.serial.u32.field (FieldElement2625)
+
+namespace Curve25519Dalek.montgomery.ConstantTimeEqMontgomeryPoint
+
+open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
+/-- `ConstantTimeEq for MontgomeryPoint`: equality of the encoded `u`-coordinates (bit `255`
+masked, reduced modulo `p`). -/
+@[step]
+theorem ct_eq.«64bit-tables_spec» (self other : MontgomeryPoint) :
+    ct_eq.«64bit-tables» self other ⦃ (r : subtle.Choice) => r.IsValid ∧
+      (r = 1#u8 ↔ decodeUCoordinate self.toVector = decodeUCoordinate other.toVector) ⦄ := by
+  unfold ct_eq.«64bit-tables»
+  step as ⟨a, ha, ha_lt⟩
+  step as ⟨b, hb, hb_lt⟩
+  step as ⟨c, hcv, hc1, hc0⟩
+  have hu : decodeUCoordinate self.toVector = decodeUCoordinate other.toVector ↔
+      a.asNat % p = b.asNat % p := by
+    rw [MontgomeryPoint.decodeUCoordinate_toVector, MontgomeryPoint.decodeUCoordinate_toVector,
+      decodeU, decodeU, ha, hb, ZMod.natCast_eq_natCast_iff', MontgomeryPoint.asNat_def,
+      MontgomeryPoint.asNat_def]
+  rw [hu]
+  refine ⟨hcv, fun h => ?_, hc1⟩
+  by_contra hne
+  rw [hc0 hne] at h
+  exact absurd h (by decide)
+
+open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
+/-- `ConstantTimeEq for MontgomeryPoint`: equality of the encoded `u`-coordinates (bit `255`
+masked, reduced modulo `p`). -/
+@[step]
+theorem ct_eq.«32bit-tables_spec» (self other : MontgomeryPoint) :
+    ct_eq.«32bit-tables» self other ⦃ (r : subtle.Choice) => r.IsValid ∧
+      (r = 1#u8 ↔ decodeUCoordinate self.toVector = decodeUCoordinate other.toVector) ⦄ := by
+  unfold ct_eq.«32bit-tables»
+  step as ⟨a, ha, ha_lt⟩
+  step as ⟨b, hb, hb_lt⟩
+  step as ⟨c, hcv, hc1, hc0⟩
+  have hu : decodeUCoordinate self.toVector = decodeUCoordinate other.toVector ↔
+      a.asNat % p = b.asNat % p := by
+    rw [MontgomeryPoint.decodeUCoordinate_toVector, MontgomeryPoint.decodeUCoordinate_toVector,
+      decodeU, decodeU, ha, hb, ZMod.natCast_eq_natCast_iff', MontgomeryPoint.asNat_def,
+      MontgomeryPoint.asNat_def]
+  rw [hu]
+  refine ⟨hcv, fun h => ?_, hc1⟩
+  by_contra hne
+  rw [hc0 hne] at h
+  exact absurd h (by decide)
+
+open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
+/-- `ConstantTimeEq for MontgomeryPoint`: equality of the encoded `u`-coordinates (bit `255`
+masked, reduced modulo `p`). -/
+@[step]
+theorem ct_eq.«64bit-notables_spec» (self other : MontgomeryPoint) :
+    ct_eq.«64bit-notables» self other ⦃ (r : subtle.Choice) => r.IsValid ∧
+      (r = 1#u8 ↔ decodeUCoordinate self.toVector = decodeUCoordinate other.toVector) ⦄ := by
+  unfold ct_eq.«64bit-notables»
+  step as ⟨a, ha, ha_lt⟩
+  step as ⟨b, hb, hb_lt⟩
+  step as ⟨c, hcv, hc1, hc0⟩
+  have hu : decodeUCoordinate self.toVector = decodeUCoordinate other.toVector ↔
+      a.asNat % p = b.asNat % p := by
+    rw [MontgomeryPoint.decodeUCoordinate_toVector, MontgomeryPoint.decodeUCoordinate_toVector,
+      decodeU, decodeU, ha, hb, ZMod.natCast_eq_natCast_iff', MontgomeryPoint.asNat_def,
+      MontgomeryPoint.asNat_def]
+  rw [hu]
+  refine ⟨hcv, fun h => ?_, hc1⟩
+  by_contra hne
+  rw [hc0 hne] at h
+  exact absurd h (by decide)
+
+open Curve25519Dalek.backend.serial.u32.field.FieldElement2625 in
+/-- `ConstantTimeEq for MontgomeryPoint`: equality of the encoded `u`-coordinates (bit `255`
+masked, reduced modulo `p`). -/
+@[step]
+theorem ct_eq.«32bit-notables_spec» (self other : MontgomeryPoint) :
+    ct_eq.«32bit-notables» self other ⦃ (r : subtle.Choice) => r.IsValid ∧
+      (r = 1#u8 ↔ decodeUCoordinate self.toVector = decodeUCoordinate other.toVector) ⦄ := by
+  unfold ct_eq.«32bit-notables»
+  step as ⟨a, ha, ha_lt⟩
+  step as ⟨b, hb, hb_lt⟩
+  step as ⟨c, hcv, hc1, hc0⟩
+  have hu : decodeUCoordinate self.toVector = decodeUCoordinate other.toVector ↔
+      a.asNat % p = b.asNat % p := by
+    rw [MontgomeryPoint.decodeUCoordinate_toVector, MontgomeryPoint.decodeUCoordinate_toVector,
+      decodeU, decodeU, ha, hb, ZMod.natCast_eq_natCast_iff', MontgomeryPoint.asNat_def,
+      MontgomeryPoint.asNat_def]
+  rw [hu]
+  refine ⟨hcv, fun h => ?_, hc1⟩
+  by_contra hne
+  rw [hc0 hne] at h
+  exact absurd h (by decide)
+
+end Curve25519Dalek.montgomery.ConstantTimeEqMontgomeryPoint
+
+namespace Curve25519Dalek.montgomery.MontgomeryPoint.Insts.SubtleConstantTimeEq
+
+open Curve25519Dalek.backend.serial.u64.field.FieldElement51 in
+/-- `ConstantTimeEq for MontgomeryPoint`: equality of the encoded `u`-coordinates (bit `255`
+masked, reduced modulo `p`). -/
+@[step]
+theorem ct_eq_spec (self other : MontgomeryPoint) :
+    ct_eq self other ⦃ (r : subtle.Choice) => r.IsValid ∧
+      (r = 1#u8 ↔ decodeUCoordinate self.toVector = decodeUCoordinate other.toVector) ⦄ := by
+  unfold ct_eq
+  exact dispatch_all_spec
+    (ConstantTimeEqMontgomeryPoint.ct_eq.«64bit-tables_spec» self other)
+    (ConstantTimeEqMontgomeryPoint.ct_eq.«64bit-notables_spec» self other)
+    (ConstantTimeEqMontgomeryPoint.ct_eq.«32bit-tables_spec» self other)
+    (ConstantTimeEqMontgomeryPoint.ct_eq.«32bit-notables_spec» self other)
+
+end Curve25519Dalek.montgomery.MontgomeryPoint.Insts.SubtleConstantTimeEq

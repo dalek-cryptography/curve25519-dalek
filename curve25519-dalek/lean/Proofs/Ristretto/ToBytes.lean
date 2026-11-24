@@ -1,0 +1,20 @@
+module
+public import Curve25519Dalek.Funs
+public import Proofs.Representation.Array
+public import Proofs.Helpers.ByteValues
+public section
+
+/-! # `CompressedRistretto::to_bytes` -/
+
+open Aeneas Aeneas.Std Result Aeneas.Std.WP
+
+namespace Curve25519Dalek.ristretto.CompressedRistretto
+
+/-- `CompressedRistretto::to_bytes`: the bytes. -/
+@[step]
+theorem to_bytes_spec (self : CompressedRistretto) :
+    to_bytes self ⦃ (r : Array U8 32#usize) => r = self ⦄ := by
+  unfold to_bytes
+  step*
+
+end Curve25519Dalek.ristretto.CompressedRistretto

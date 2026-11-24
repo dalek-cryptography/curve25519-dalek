@@ -1,0 +1,31 @@
+Translation patch: RISTRETTO_BASEPOINT_TABLE
+
+Change: the `&raw const` pointer cast becomes `&RistrettoBasepointTable(EdwardsBasepointTable(ED25519_BASEPOINT_TABLE.0))`.
+Why: Aeneas rejects `&raw const`.
+Behaviour: same value, separate ~30 KB copy (different address).
+Relies on: `RistrettoBasepointTable` is `#[repr(transparent)]` over `EdwardsBasepointTable`, whose only field is `Copy`.
+
+diff --git a/curve25519-dalek/src/constants.rs b/curve25519-dalek/src/constants.rs
+index 6f5ffa8..0172ac5 100644
+--- a/curve25519-dalek/src/constants.rs
++++ b/curve25519-dalek/src/constants.rs
+@@ -79,17 +79,14 @@
+ 
+ #[cfg(feature = "precomputed-tables")]
+ use crate::ristretto::RistrettoBasepointTable;
+ 
+ /// The Ristretto basepoint, as a `RistrettoBasepointTable` for scalar multiplication.
+ #[cfg(feature = "precomputed-tables")]
+-pub static RISTRETTO_BASEPOINT_TABLE: &RistrettoBasepointTable = unsafe {
+-    // SAFETY: `RistrettoBasepointTable` is a `#[repr(transparent)]` newtype of
+-    // `EdwardsBasepointTable`
+-    &*(ED25519_BASEPOINT_TABLE as *const EdwardsBasepointTable as *const RistrettoBasepointTable)
+-};
++pub static RISTRETTO_BASEPOINT_TABLE: &RistrettoBasepointTable =
++    &RistrettoBasepointTable(EdwardsBasepointTable(ED25519_BASEPOINT_TABLE.0));
+ 
+ /// X25519 low order points.
+ ///
+ /// The output of any scalar multiplied by these points is zero. Protocols which need to ensure
+ /// "contributory" behavior should reject these points.
+ ///

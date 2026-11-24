@@ -1,0 +1,23 @@
+module
+public import Curve25519Dalek.Funs
+public import Proofs.Representation.Scalar52
+public import Proofs.Curve25519.Basic
+import Proofs.Helpers.Montgomery
+public import Proofs.Helpers.ByteValues
+public section
+
+open Aeneas Aeneas.Std Result Aeneas.Std.WP
+open Curve25519Dalek.backend.serial.u64.field (FieldElement51)
+open Curve25519Dalek.backend.serial.u64.scalar (Scalar52 montgomeryRadix)
+open curve25519 (p a d A)
+
+namespace Curve25519Dalek.backend.serial.u64.constants
+
+theorem R_spec :
+    Scalar52.asNat R = montgomeryRadix % curve25519.L ∧ R.LimbsLt 52 := by
+  unfold R
+  simp only [scalar.Scalar52.asNat_def, Array.asNat_def]
+  rw [scalar.montgomeryRadix_mod_L]
+  decide
+
+end Curve25519Dalek.backend.serial.u64.constants

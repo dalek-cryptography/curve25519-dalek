@@ -1,0 +1,20 @@
+module
+public import Curve25519Dalek.Funs
+public import Proofs.Representation.Montgomery
+public import Proofs.Helpers.ByteValues
+public section
+
+/-! # `MontgomeryPoint::to_bytes` -/
+
+open Aeneas Aeneas.Std Result Aeneas.Std.WP
+
+namespace Curve25519Dalek.montgomery.MontgomeryPoint
+
+/-- `MontgomeryPoint::to_bytes`: the 32 bytes themselves. -/
+@[step]
+theorem to_bytes_spec (self : MontgomeryPoint) :
+    to_bytes self ⦃ (r : Array U8 32#usize) => r = self ⦄ := by
+  unfold to_bytes
+  step*
+
+end Curve25519Dalek.montgomery.MontgomeryPoint

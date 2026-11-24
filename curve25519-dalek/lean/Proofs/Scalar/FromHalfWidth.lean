@@ -1,0 +1,23 @@
+module
+public import Proofs.Curve25519.Basic
+public import Curve25519Dalek.Funs
+public import Proofs.Representation.Scalar
+public import Proofs.Representation.Scalar52
+import Proofs.External.Subtle
+public import Proofs.Helpers.ByteValues
+public section
+
+open Aeneas Aeneas.Std Result Aeneas.Std.WP curve25519
+open Curve25519Dalek.scalar (Scalar HalfWidthScalar)
+open Curve25519Dalek.backend.serial.u64.scalar (montgomeryRadix)
+
+namespace Curve25519Dalek.scalar.Scalar.Insts.CoreConvertFromHalfWidthScalar
+
+@[step]
+theorem from_spec (x : HalfWidthScalar) :
+    «from» x ⦃ (r : Scalar) =>
+      r.asNat = x.asNat ⦄ := by
+  unfold «from»
+  simp [HalfWidthScalar.asNat_def]
+
+end Curve25519Dalek.scalar.Scalar.Insts.CoreConvertFromHalfWidthScalar

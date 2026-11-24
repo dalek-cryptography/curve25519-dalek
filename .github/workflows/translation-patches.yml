@@ -1,0 +1,68 @@
+name: Translation patches
+
+# Run the full test suite on the Rust code as patched for the Lean translation, to check that the
+# patches in curve25519-dalek/lean/translation-patches/ preserve behavior.
+
+on:
+  push:
+    branches: [ '**' ]
+    paths: &paths
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'curve25519-dalek/Cargo.toml'
+      - 'curve25519-dalek/build.rs'
+      - 'curve25519-dalek/src/**'
+      - 'curve25519-dalek/tests/**'
+      - 'curve25519-dalek/lean/translation-patches/**'
+      - 'ed25519-dalek/**'
+      - 'x25519-dalek/**'
+      - '.github/workflows/translation-patches.yml'
+  pull_request:
+    branches: [ '**' ]
+    paths: *paths
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# No `-D warnings`: the patched code is never shipped, and leaves an unused import in straus.rs.
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-patched:
+    name: Test patched code (${{ matrix.target }}, ${{ matrix.backend }} backend)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The verified configurations: serial backend, 32- and 64-bit
+          - target: i686-unknown-linux-gnu
+            backend: serial
+            deps: sudo apt update && sudo apt install gcc-multilib
+          - target: x86_64-unknown-linux-gnu
+            backend: serial
+          # The default backend selection, which the patches also touch
+          - target: x86_64-unknown-linux-gnu
+            backend: default
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: dtolnay/rust-toolchain@stable
+      - run: rustup target add ${{ matrix.target }}
+      - run: ${{ matrix.deps }}
+
+      - name: Apply translation patches
+        run: |
+          for patch in curve25519-dalek/lean/translation-patches/*.patch; do
+            git apply "$patch"
+          done
+          git diff --stat
+
+      - name: Test with all features
+        env:
+          RUSTFLAGS: ${{ matrix.backend == 'serial' && '--cfg curve25519_dalek_backend="serial"' || '' }}
+        run: cargo test --target ${{ matrix.target }} --all-features

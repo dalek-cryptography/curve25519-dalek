@@ -1,0 +1,878 @@
+module
+public import Curve25519Dalek.Funs
+public import ForHumans.Specs.Representation.Scalar
+public import ForHumans.Specs.Representation.Iterator
+import Proofs -- shake: keep
+public import ForHumans.Specs.Edwards
+public import ForHumans.Specs.Montgomery
+public import ForHumans.Specs.Representation.Array
+public import ForHumans.Specs.Representation.Edwards
+public import ForHumans.Specs.Representation.Montgomery
+public import ForHumans.Specs.Representation.ScalarMul
+public import ForHumans.Specs.X25519
+public section
+
+open Aeneas Aeneas.Std Result Aeneas.Std.WP Curve25519Dalek
+open curve25519 (L basepoint decodeLenient decodeScalar25519 edwards edwardsToMontgomery encode
+    encodeUCoordinate montgomery)
+open Curve25519Dalek.edwards (CompressedEdwardsY)
+open Curve25519Dalek.scalar (Scalar HalfWidthScalar)
+
+namespace Theorems.edwards.CompressedEdwardsY
+
+/-- `ConstantTimeEq for CompressedEdwardsY`: byte equality (two encodings of one point can differ).
+-/
+theorem ct_eq (a b : CompressedEdwardsY) :
+    CompressedEdwardsY.Insts.SubtleConstantTimeEq.ct_eq a b ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ a = b) ⦄ :=
+  CompressedEdwardsY.Insts.SubtleConstantTimeEq.ct_eq_spec a b
+
+/-- `PartialEq for CompressedEdwardsY`: byte equality (two encodings of one point can differ). -/
+theorem eq (a b : CompressedEdwardsY) :
+    CompressedEdwardsY.Insts.CoreCmpPartialEqCompressedEdwardsY.eq a b ⦃ (r : Bool) =>
+      r = true ↔ a = b ⦄ :=
+  CompressedEdwardsY.Insts.CoreCmpPartialEqCompressedEdwardsY.eq_spec a b
+
+/-- `CompressedEdwardsY::as_bytes`: the bytes. -/
+theorem as_bytes (c : CompressedEdwardsY) :
+    CompressedEdwardsY.as_bytes c ⦃ (r : Array U8 32#usize) => r = c ⦄ :=
+  CompressedEdwardsY.as_bytes_spec c
+
+/-- `CompressedEdwardsY::to_bytes`: the bytes. -/
+theorem to_bytes (c : CompressedEdwardsY) :
+    CompressedEdwardsY.to_bytes c ⦃ (r : Array U8 32#usize) => r = c ⦄ :=
+  CompressedEdwardsY.to_bytes_spec c
+
+/-- `TryFrom<&[u8]> for CompressedEdwardsY`: as `from_slice`. -/
+theorem try_from (slice : Slice U8) :
+    CompressedEdwardsY.Insts.CoreConvertTryFromShared0SliceU8TryFromSliceError.try_from slice
+      ⦃ (r : core.result.Result CompressedEdwardsY core.array.TryFromSliceError) =>
+        match r with
+        | .Ok c => slice.length = 32 ∧ ∀ i < 32, c[i]! = slice[i]!
+        | .Err _ => slice.length ≠ 32 ⦄ :=
+  CompressedEdwardsY.Insts.CoreConvertTryFromShared0SliceU8TryFromSliceError.try_from_spec slice
+
+/-- `Identity for CompressedEdwardsY` is the encoding of the neutral element. -/
+theorem identity :
+    CompressedEdwardsY.Insts.Curve25519_dalekTraitsIdentity.identity ⦃ (r : CompressedEdwardsY) =>
+      r.toVector = encode 0 ⦄ :=
+  CompressedEdwardsY.Insts.Curve25519_dalekTraitsIdentity.identity_spec
+
+/-- `Default for CompressedEdwardsY` is the encoding of the neutral element. -/
+theorem default :
+    CompressedEdwardsY.Insts.CoreDefaultDefault.default ⦃ (r : CompressedEdwardsY) =>
+      r.toVector = encode 0 ⦄ :=
+  CompressedEdwardsY.Insts.CoreDefaultDefault.default_spec
+
+/-- `CompressedEdwardsY::from_slice`: the bytes of a slice of length `32`, an error otherwise. -/
+theorem from_slice (bytes : Slice U8) :
+    CompressedEdwardsY.from_slice bytes
+      ⦃ (r : core.result.Result CompressedEdwardsY core.array.TryFromSliceError) =>
+        match r with
+        | .Ok c => bytes.length = 32 ∧ ∀ i < 32, c[i]! = bytes[i]!
+        | .Err _ => bytes.length ≠ 32 ⦄ :=
+  CompressedEdwardsY.from_slice_spec bytes
+
+/-- `Zeroize for CompressedEdwardsY` leaves the encoding of the neutral element. -/
+theorem zeroize (c : CompressedEdwardsY) :
+    CompressedEdwardsY.Insts.ZeroizeZeroize.zeroize c ⦃ (r : CompressedEdwardsY) =>
+      r.toVector = encode 0 ⦄ :=
+  CompressedEdwardsY.Insts.ZeroizeZeroize.zeroize_spec c
+
+end Theorems.edwards.CompressedEdwardsY
+
+-- BEGIN PER-CONFIG
+namespace Theorems.edwards.«64bit-tables»
+
+/-- `EdwardsPoint` in this configuration. -/
+abbrev EdwardsPoint := edwards.EdwardsPoint.«64bit-tables»
+
+/-- `VartimeEdwardsPrecomputation` in this configuration. -/
+abbrev VartimeEdwardsPrecomputation := edwards.VartimeEdwardsPrecomputation.«64bit-tables»
+
+/-- `CompressedEdwardsY::decompress`: the lenient decoding `decodeLenient` of the bytes (`y` reduced
+modulo `p`, `x = 0` accepted with either sign); the point is on the curve. -/
+theorem CompressedEdwardsY.decompress (c : CompressedEdwardsY) :
+    CompressedEdwardsY.decompress.«64bit-tables» c ⦃ (r : Option EdwardsPoint) =>
+      r.map (·.toPoint) = decodeLenient c.toVector ∧ ∀ P, r = some P → P.OnCurve ∧ P.IsBounded ⦄ :=
+  edwards.CompressedEdwardsY.«64bit-tables».decompress_spec c
+
+/-- `CompressedEdwardsY::decompress_rfc8032`: RFC 8032's decoding, `decompress` kept only if the
+point's encoding is the input. -/
+theorem CompressedEdwardsY.decompress_rfc8032 (c : CompressedEdwardsY) :
+    CompressedEdwardsY.decompress_rfc8032.«64bit-tables» c ⦃ (r : Option EdwardsPoint) =>
+      r.map (·.toPoint) = (decodeLenient c.toVector).filter (fun P => encode P = c.toVector) ∧
+      ∀ P, r = some P → P.OnCurve ∧ P.IsBounded ⦄ :=
+  edwards.CompressedEdwardsY.«64bit-tables».decompress_rfc8032_spec c
+
+/-- `CompressedEdwardsY::decompress_nist_full`: `decompress_rfc8032` kept only if the point is not
+`0` and is in the prime-order subgroup. -/
+theorem CompressedEdwardsY.decompress_nist_full (c : CompressedEdwardsY) :
+    CompressedEdwardsY.decompress_nist_full.«64bit-tables» c ⦃ (r : Option EdwardsPoint) =>
+      r.map (·.toPoint) =
+        ((decodeLenient c.toVector).filter (fun P => encode P = c.toVector)).filter
+          (fun P => P ≠ 0 ∧ L • P = 0) ∧
+      ∀ P, r = some P → P.OnCurve ∧ P.IsBounded ⦄ :=
+  edwards.CompressedEdwardsY.«64bit-tables».decompress_nist_full_spec c
+
+namespace EdwardsPoint
+
+open edwards.EdwardsPoint.«64bit-tables».Insts
+
+/-- `Identity for EdwardsPoint` represents the neutral element. -/
+theorem identity :
+    Curve25519_dalekTraitsIdentity.identity ⦃ (r : EdwardsPoint) =>
+      r.OnCurve ∧ r.toPoint = 0 ∧ r.IsBounded ⦄ :=
+  Curve25519_dalekTraitsIdentity.identity_spec
+
+/-- `Default for EdwardsPoint` represents the neutral element. -/
+theorem default :
+    CoreDefaultDefault.default ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = 0 ∧ r.IsBounded ⦄ :=
+  CoreDefaultDefault.default_spec
+
+/-- `Zeroize for EdwardsPoint` leaves the neutral element. -/
+theorem zeroize (P : EdwardsPoint) :
+    ZeroizeZeroize.zeroize P ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = 0 ∧ r.IsBounded ⦄ :=
+  ZeroizeZeroize.zeroize_spec P
+
+/-- `ConditionallySelectable::conditional_select` for `EdwardsPoint`: `a` if `choice = 0`, `b` if
+`choice = 1`. -/
+theorem conditional_select (a b : EdwardsPoint) (choice : subtle.Choice)
+    (hchoice : choice.IsValid) :
+    SubtleConditionallySelectable.conditional_select a b choice ⦃ (r : EdwardsPoint) =>
+      (choice = 0#u8 → r = a) ∧ (choice = 1#u8 → r = b) ⦄ :=
+  SubtleConditionallySelectable.conditional_select_spec a b choice hchoice
+
+/-- `conditional_select` of well-formed points is well-formed. -/
+theorem conditional_select_wellFormed (a b : EdwardsPoint) (choice : subtle.Choice)
+    (hchoice : choice.IsValid) (ha : a.OnCurve) (ha' : a.IsBounded) (hb : b.OnCurve)
+    (hb' : b.IsBounded) :
+    SubtleConditionallySelectable.conditional_select a b choice ⦃ (r : EdwardsPoint) =>
+      r.OnCurve ∧ r.IsBounded ⦄ :=
+  spec_select (conditional_select a b choice hchoice) hchoice ⟨ha, ha'⟩ ⟨hb, hb'⟩
+
+/-- `ConstantTimeEq for EdwardsPoint` on points: equality of the represented points. -/
+theorem ct_eq (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
+    (hQ' : Q.IsBounded) :
+    SubtleConstantTimeEq.ct_eq P Q ⦃ (r : subtle.Choice) =>
+      r.IsValid ∧ (r = 1#u8 ↔ P.toPoint = Q.toPoint) ⦄ :=
+  SubtleConstantTimeEq.ct_eq_spec P Q hP' hQ' hP hQ
+
+/-- `PartialEq for EdwardsPoint` on points: equality of the represented points. -/
+theorem eq (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
+    (hQ' : Q.IsBounded) :
+    «CoreCmpPartialEqEdwardsPoint64bit-tables».eq P Q ⦃ (r : Bool) =>
+      r = true ↔ P.toPoint = Q.toPoint ⦄ :=
+  «CoreCmpPartialEqEdwardsPoint64bit-tables».eq_spec P Q hP' hQ' hP hQ
+
+end EdwardsPoint
+
+namespace EdwardsPoint
+
+open edwards.«EdwardsPoint64bit-tables»
+
+/-- `EdwardsPoint::to_montgomery`: RFC 7748's encoding of the `u`-coordinate of the Montgomery image
+of the represented point (`0` for the identity). -/
+theorem to_montgomery (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
+    to_montgomery P ⦃ (r : montgomery.MontgomeryPoint) =>
+      r.toVector = encodeUCoordinate (edwardsToMontgomery P.toPoint).u ⦄ :=
+  to_montgomery_spec P hP' hP
+
+/-- `EdwardsPoint::to_montgomery_batch`: entry `i` is RFC 7748's encoding of the `u`-coordinate of
+the Montgomery image of point `i` (`0` for the identity). -/
+theorem to_montgomery_batch (Ps : Slice EdwardsPoint) (hPs : ∀ i < Ps.length, Ps[i]!.OnCurve)
+    (hPs' : ∀ i < Ps.length, Ps[i]!.IsBounded) :
+    to_montgomery_batch Ps ⦃ (r : alloc.vec.Vec montgomery.MontgomeryPoint) =>
+      r.length = Ps.length ∧
+        ∀ i < Ps.length,
+          r[i]!.toVector = encodeUCoordinate (edwardsToMontgomery Ps[i]!.toPoint).u ⦄ :=
+  to_montgomery_batch_spec Ps hPs' hPs
+
+/-- `EdwardsPoint::compress` is RFC 8032's encoding of the represented point. -/
+theorem compress (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
+    compress P ⦃ (r : CompressedEdwardsY) => r.toVector = encode P.toPoint ⦄ :=
+  compress_spec P hP' hP
+
+/-- `EdwardsPoint::compress_batch`: entry `i` is RFC 8032's encoding of point `i`. -/
+theorem compress_batch {N : Usize} (Ps : Array EdwardsPoint N) (hPs : ∀ i < N.val, Ps[i]!.OnCurve)
+    (hPs' : ∀ i < N.val, Ps[i]!.IsBounded) :
+    compress_batch Ps ⦃ (r : Array CompressedEdwardsY N) =>
+      ∀ i < N.val, r[i]!.toVector = encode Ps[i]!.toPoint ⦄ :=
+  compress_batch_spec Ps hPs' hPs
+
+/-- `EdwardsPoint::compress_batch_alloc`: entry `i` is RFC 8032's encoding of point `i`. -/
+theorem compress_batch_alloc (Ps : Slice EdwardsPoint) (hPs : ∀ i < Ps.length, Ps[i]!.OnCurve)
+    (hPs' : ∀ i < Ps.length, Ps[i]!.IsBounded) :
+    compress_batch_alloc Ps ⦃ (r : alloc.vec.Vec CompressedEdwardsY) =>
+      r.length = Ps.length ∧ ∀ i < Ps.length, r[i]!.toVector = encode Ps[i]!.toPoint ⦄ :=
+  compress_batch_alloc_spec Ps hPs' hPs
+
+end EdwardsPoint
+
+/-- `impl Add<&EdwardsPoint> for &EdwardsPoint` -/
+abbrev «&P + &Q» := open «Shared0EdwardsPoint64bit-tables».Insts in
+  «CoreOpsArithAddSharedAEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».add
+/-- `impl Add<&EdwardsPoint> for EdwardsPoint` -/
+abbrev «P + &Q» := open edwards.EdwardsPoint.«64bit-tables».Insts in
+  «CoreOpsArithAddSharedBEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».add
+/-- `impl Add<EdwardsPoint> for &EdwardsPoint` -/
+abbrev «&P + Q» := open «SharedAEdwardsPoint64bit-tables».Insts in
+  «CoreOpsArithAddEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».add
+/-- `impl Add<EdwardsPoint> for EdwardsPoint` -/
+abbrev «P + Q» := open edwards.EdwardsPoint.«64bit-tables».Insts in
+  «CoreOpsArithAddEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».add
+/-- `impl AddAssign<&EdwardsPoint> for EdwardsPoint` -/
+abbrev «P += &Q» := open edwards.EdwardsPoint.«64bit-tables».Insts in
+  «CoreOpsArithAddAssignSharedAEdwardsPoint64bit-tables».add_assign
+/-- `impl AddAssign<EdwardsPoint> for EdwardsPoint` -/
+abbrev «P += Q» := open edwards.EdwardsPoint.«64bit-tables».Insts in
+  «CoreOpsArithAddAssignEdwardsPoint64bit-tables».add_assign
+
+/-- `impl Sub<&EdwardsPoint> for &EdwardsPoint` -/
+abbrev «&P - &Q» := open «Shared0EdwardsPoint64bit-tables».Insts in
+  «CoreOpsArithSubSharedAEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».sub
+/-- `impl Sub<&EdwardsPoint> for EdwardsPoint` -/
+abbrev «P - &Q» := open edwards.EdwardsPoint.«64bit-tables».Insts in
+  «CoreOpsArithSubSharedBEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».sub
+/-- `impl Sub<EdwardsPoint> for &EdwardsPoint` -/
+abbrev «&P - Q» := open «SharedAEdwardsPoint64bit-tables».Insts in
+  «CoreOpsArithSubEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».sub
+/-- `impl Sub<EdwardsPoint> for EdwardsPoint` -/
+abbrev «P - Q» := open edwards.EdwardsPoint.«64bit-tables».Insts in
+  «CoreOpsArithSubEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».sub
+/-- `impl SubAssign<&EdwardsPoint> for EdwardsPoint` -/
+abbrev «P -= &Q» := open edwards.EdwardsPoint.«64bit-tables».Insts in
+  «CoreOpsArithSubAssignSharedAEdwardsPoint64bit-tables».sub_assign
+/-- `impl SubAssign<EdwardsPoint> for EdwardsPoint` -/
+abbrev «P -= Q» := open edwards.EdwardsPoint.«64bit-tables».Insts in
+  «CoreOpsArithSubAssignEdwardsPoint64bit-tables».sub_assign
+
+/-- `impl Neg for &EdwardsPoint` -/
+abbrev «-&P» := open «Shared0EdwardsPoint64bit-tables».Insts in
+  «CoreOpsArithNegEdwardsPoint64bit-tables».neg
+/-- `impl Neg for EdwardsPoint` -/
+abbrev «-P» := open edwards.EdwardsPoint.«64bit-tables».Insts in
+  «CoreOpsArithNegEdwardsPoint64bit-tables».neg
+
+/-- `impl Mul<&Scalar> for &EdwardsPoint` -/
+abbrev «&P * &s» := open «Shared0EdwardsPoint64bit-tables».Insts in
+  «CoreOpsArithMulSharedAScalarEdwardsPoint64bit-tables».mul
+/-- `impl Mul<&Scalar> for EdwardsPoint` -/
+abbrev «P * &s» := open edwards.EdwardsPoint.«64bit-tables».Insts in
+  «CoreOpsArithMulSharedBScalarEdwardsPoint64bit-tables».mul
+/-- `impl Mul<Scalar> for &EdwardsPoint` -/
+abbrev «&P * s» := open «SharedAEdwardsPoint64bit-tables».Insts in
+  «CoreOpsArithMulScalarEdwardsPoint64bit-tables».mul
+/-- `impl Mul<Scalar> for EdwardsPoint` -/
+abbrev «P * s» := open edwards.EdwardsPoint.«64bit-tables».Insts in
+  «CoreOpsArithMulScalarEdwardsPoint64bit-tables».mul
+/-- `impl MulAssign<&Scalar> for EdwardsPoint` -/
+abbrev «P *= &s» :=
+  edwards.EdwardsPoint.«64bit-tables».Insts.CoreOpsArithMulAssignSharedAScalar.mul_assign
+/-- `impl MulAssign<Scalar> for EdwardsPoint` -/
+abbrev «P *= s» :=
+  edwards.EdwardsPoint.«64bit-tables».Insts.CoreOpsArithMulAssignScalar.mul_assign
+
+/-- `impl Mul<&EdwardsPoint> for &Scalar` -/
+abbrev «&s * &P» := open Shared0Scalar.Insts in
+  «CoreOpsArithMulSharedAEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».mul
+/-- `impl Mul<&EdwardsPoint> for Scalar` -/
+abbrev «s * &P» := open scalar.Scalar.Insts in
+  «CoreOpsArithMulSharedBEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».mul
+/-- `impl Mul<EdwardsPoint> for &Scalar` -/
+abbrev «&s * P» := open SharedAScalar.Insts in
+  «CoreOpsArithMulEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».mul
+/-- `impl Mul<EdwardsPoint> for Scalar` -/
+abbrev «s * P» := open scalar.Scalar.Insts in
+  «CoreOpsArithMulEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».mul
+
+namespace EdwardsPoint
+
+/-- `Add<&EdwardsPoint> for &EdwardsPoint` on the represented points. -/
+theorem add (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
+    (hQ' : Q.IsBounded) :
+    ∀ add ∈ [«&P + &Q», «P + &Q», «&P + Q», «P + Q», «P += &Q», «P += Q»],
+      add P Q ⦃ (r : EdwardsPoint) =>
+        r.OnCurve ∧ r.toPoint = P.toPoint + Q.toPoint ∧ r.IsBounded ⦄ := by
+  open «Shared0EdwardsPoint64bit-tables».Insts in
+  variants [«CoreOpsArithAddSharedAEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».add_spec]
+
+/-- `Sub<&EdwardsPoint> for &EdwardsPoint` on the represented points. -/
+theorem sub (P Q : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) (hQ : Q.OnCurve)
+    (hQ' : Q.IsBounded) :
+    ∀ sub ∈ [«&P - &Q», «P - &Q», «&P - Q», «P - Q», «P -= &Q», «P -= Q»],
+      sub P Q ⦃ (r : EdwardsPoint) =>
+        r.OnCurve ∧ r.toPoint = P.toPoint - Q.toPoint ∧ r.IsBounded ⦄ := by
+  open «Shared0EdwardsPoint64bit-tables».Insts in
+  variants [«CoreOpsArithSubSharedAEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».sub_spec]
+
+/-- `Sum for EdwardsPoint`: the sum of the points yielded by the iterator (through `borrow`). -/
+theorem sum {T I : Type} (borrowInst : core.borrow.Borrow T EdwardsPoint)
+    (iterInst : core.iter.traits.iterator.Iterator I T) (iter : I) (xs : List T)
+    (Ps : List EdwardsPoint) (hiter : iterInst.Yields iter xs)
+    (hborrow : List.Forall₂
+      (fun x P => borrowInst.borrow x ⦃ (P' : EdwardsPoint) => P' = P ⦄) xs Ps)
+    (hPs : ∀ P ∈ Ps, P.OnCurve) (hPs' : ∀ P ∈ Ps, P.IsBounded) :
+    edwards.EdwardsPoint.«64bit-tables».Insts.CoreIterTraitsAccumSum.sum borrowInst iterInst iter
+      ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = (Ps.map (·.toPoint)).sum ∧ r.IsBounded ⦄ :=
+  edwards.EdwardsPoint.«64bit-tables».Insts.CoreIterTraitsAccumSum.sum_spec borrowInst iterInst
+    iter xs Ps hiter hborrow hPs' hPs
+
+/-- `Neg for EdwardsPoint` (by value) negates the represented point. -/
+theorem neg (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
+    ∀ neg ∈ [«-&P», «-P»],
+      neg P ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = -P.toPoint ∧ r.IsBounded ⦄ := by
+  open «Shared0EdwardsPoint64bit-tables».Insts in
+  variants [«CoreOpsArithNegEdwardsPoint64bit-tables».neg_spec]
+
+/-- `Mul<&Scalar> for &EdwardsPoint`: `s • P` (unreduced, `< 2^255`). -/
+theorem mul (P : EdwardsPoint) (s : Scalar) (hP : P.OnCurve) (hP' : P.IsBounded)
+    (hs : s.asNat < 2 ^ 255) :
+    ∀ mul ∈ [«&P * &s», «P * &s», «&P * s», «P * s», «P *= &s», «P *= s»],
+      mul P s ⦃ (r : EdwardsPoint) =>
+        r.OnCurve ∧ r.toPoint = s.asNat • P.toPoint ∧ r.IsBounded ⦄ := by
+  open «Shared0EdwardsPoint64bit-tables».Insts in
+  variants [«CoreOpsArithMulSharedAScalarEdwardsPoint64bit-tables».mul_spec]
+
+/-- `Mul<&EdwardsPoint> for &Scalar`: as `&EdwardsPoint * &Scalar`. -/
+theorem mul_left (s : Scalar) (P : EdwardsPoint) (hs : s.asNat < 2 ^ 255) (hP : P.OnCurve)
+    (hP' : P.IsBounded) :
+    ∀ mul ∈ [«&s * &P», «s * &P», «&s * P», «s * P»],
+      mul s P ⦃ (r : EdwardsPoint) =>
+        r.OnCurve ∧ r.toPoint = s.asNat • P.toPoint ∧ r.IsBounded ⦄ := by
+  open Shared0Scalar.Insts in
+  variants [«CoreOpsArithMulSharedAEdwardsPoint64bit-tablesEdwardsPoint64bit-tables».mul_spec]
+
+open edwards.«EdwardsPoint64bit-tables»
+
+/-- `EdwardsPoint::mul_base`: `s • B` for the basepoint `B` (unreduced, `< 2^255`). -/
+theorem mul_base (s : Scalar) (hs : s.asNat < 2 ^ 255) :
+    mul_base s ⦃ (r : EdwardsPoint) =>
+      r.OnCurve ∧ r.toPoint = s.asNat • basepoint ∧ r.IsBounded ⦄ :=
+  mul_base_spec s hs
+
+/-- `EdwardsPoint::mul_clamped`: `clamp bytes • P`, with RFC 7748's clamping of the little-endian
+value of `bytes`. -/
+theorem mul_clamped (P : EdwardsPoint) (bytes : Array U8 32#usize) (hP : P.OnCurve)
+    (hP' : P.IsBounded) :
+    mul_clamped P bytes ⦃ (r : EdwardsPoint) =>
+      r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • P.toPoint ∧ r.IsBounded ⦄ :=
+  mul_clamped_spec P bytes hP' hP
+
+/-- `EdwardsPoint::mul_base_clamped`: `clamp bytes • B`, with RFC 7748's clamping of the
+little-endian value of `bytes`. -/
+theorem mul_base_clamped (bytes : Array U8 32#usize) :
+    mul_base_clamped bytes ⦃ (r : EdwardsPoint) =>
+      r.OnCurve ∧ r.toPoint = decodeScalar25519 bytes.toVector • basepoint ∧ r.IsBounded ⦄ :=
+  mul_base_clamped_spec bytes
+
+end EdwardsPoint
+
+namespace EdwardsPoint
+
+open edwards.EdwardsPoint.«64bit-tables».Insts
+
+/-- `MultiscalarMul::multiscalar_mul` for `EdwardsPoint`: `∑ s_i • P_i` over the scalars and points
+the two inputs yield, which must be equally many (the patched `assert_eq!`; unreduced scalars `<
+2^255`). -/
+theorem multiscalar_mul
+    {I J Clause0_Item Clause0_IntoIter Clause2_Item Clause2_IntoIter : Type}
+    (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
+    (borrowScalarInst : core.borrow.Borrow Clause0_Item Scalar)
+    (pointsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
+    (borrowPointInst : core.borrow.Borrow Clause2_Item EdwardsPoint)
+    (scalars : I) (points : J) (xs : List Clause0_Item) (ys : List Clause2_Item)
+    (ss : List Scalar) (Ps : List EdwardsPoint)
+    (hscalars : scalarsInst.Yields scalars xs) (hpoints : pointsInst.Yields points ys)
+    (hborrow_scalars : List.Forall₂
+      (fun x s => borrowScalarInst.borrow x ⦃ (s' : Scalar) => s' = s ⦄) xs ss)
+    (hborrow_points : List.Forall₂
+      (fun y P => borrowPointInst.borrow y ⦃ (P' : EdwardsPoint) => P' = P ⦄) ys Ps)
+    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hPs : ∀ P ∈ Ps, P.OnCurve)
+    (hPs' : ∀ P ∈ Ps, P.IsBounded) (hxs : xs.length ≤ Usize.max) (hlen : xs.length = ys.length) :
+    «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint64bit-tables».multiscalar_mul
+      scalarsInst borrowScalarInst pointsInst borrowPointInst scalars points
+      ⦃ (r : EdwardsPoint) => r.OnCurve ∧
+        r.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss Ps).sum ∧ r.IsBounded ⦄ := by
+  apply «Curve25519_dalekTraitsMultiscalarMulEdwardsPoint64bit-tables».multiscalar_mul_spec <;>
+    assumption
+
+/-- `VartimeMultiscalarMul::optional_multiscalar_mul` for `EdwardsPoint`: `none` iff some point is
+`none`; otherwise `∑ s_i • P_i` over the scalars and points, which must be equally many (the patched
+`assert_eq!`; Straus below `190` points, Pippenger from `190` on; unreduced scalars `< 2^255`). -/
+theorem optional_multiscalar_mul {I J Clause0_Item Clause0_IntoIter Clause2_IntoIter : Type}
+    (scalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
+    (borrowScalarInst : core.borrow.Borrow Clause0_Item Scalar)
+    (pointsInst : core.iter.traits.collect.IntoIterator J (Option EdwardsPoint) Clause2_IntoIter)
+    (scalars : I) (points : J) (xs : List Clause0_Item) (ops : List (Option EdwardsPoint))
+    (ss : List Scalar) (hscalars : scalarsInst.Yields scalars xs)
+    (hpoints : pointsInst.Yields points ops)
+    (hborrow_scalars : List.Forall₂
+      (fun x s => borrowScalarInst.borrow x ⦃ (s' : Scalar) => s' = s ⦄) xs ss)
+    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hPs : ∀ P, some P ∈ ops → P.OnCurve)
+    (hPs' : ∀ P, some P ∈ ops → P.IsBounded) (hxs : xs.length ≤ Usize.max)
+    (hlen : xs.length = ops.length) :
+    «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint64bit-tables».optional_multiscalar_mul
+      scalarsInst borrowScalarInst pointsInst scalars points
+      ⦃ (r : Option EdwardsPoint) => (none ∈ ops → r = none) ∧
+        ∀ Ps, ops = Ps.map some → ∃ R, r = some R ∧ R.OnCurve ∧
+          R.toPoint = (List.zipWith (fun s P => s.asNat • P.toPoint) ss Ps).sum ∧
+          R.IsBounded ⦄ := by
+  open «Curve25519_dalekTraitsVartimeMultiscalarMulEdwardsPoint64bit-tables» in
+  apply optional_multiscalar_mul_spec <;> assumption
+
+end EdwardsPoint
+
+namespace VartimeEdwardsPrecomputation
+
+open edwards.VartimeEdwardsPrecomputation.«64bit-tables».Insts
+open «Curve25519_dalekTraitsVartimePrecomputedMultiscalarMulEdwardsPoint64bit-tables»
+
+/-- `VartimePrecomputedMultiscalarMul::new` for `VartimeEdwardsPrecomputation`: a precomputation of
+the points the input yields (through `borrow`). -/
+theorem new {I Clause0_Item Clause0_IntoIter : Type}
+    (pointsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
+    (borrowInst : core.borrow.Borrow Clause0_Item EdwardsPoint)
+    (static_points : I) (ys : List Clause0_Item) (Ps : List EdwardsPoint)
+    (hstatic_points : pointsInst.Yields static_points ys)
+    (hborrow : List.Forall₂
+      (fun y P => borrowInst.borrow y ⦃ (P' : EdwardsPoint) => P' = P ⦄) ys Ps)
+    (hPs : ∀ P ∈ Ps, P.OnCurve) (hPs' : ∀ P ∈ Ps, P.IsBounded) (hys : ys.length ≤ Usize.max) :
+    new pointsInst borrowInst static_points ⦃ (r : VartimeEdwardsPrecomputation) =>
+      r.IsValid ∧ r.points = Ps.map (·.toPoint) ∧ r.IsBounded ⦄ := by
+  apply new_spec <;> assumption
+
+/-- `VartimePrecomputedMultiscalarMul::len` for `VartimeEdwardsPrecomputation`: the number of static
+points. -/
+theorem len (pre : VartimeEdwardsPrecomputation) :
+    len pre ⦃ (r : Usize) => r.val = pre.points.length ⦄ :=
+  len_spec pre
+
+/-- `VartimePrecomputedMultiscalarMul::is_empty` for `VartimeEdwardsPrecomputation`: whether there
+are no static points. -/
+theorem is_empty (pre : VartimeEdwardsPrecomputation) :
+    is_empty pre ⦃ (r : Bool) => r = true ↔ pre.points = [] ⦄ :=
+  is_empty_spec pre
+
+/-- `VartimePrecomputedMultiscalarMul::optional_mixed_multiscalar_mul` for
+`VartimeEdwardsPrecomputation` (static points `pre.points`): `none` iff some dynamic point is
+`none`; otherwise `∑ s_i • P_i + ∑ d_i • Q_i`, missing static scalars counting as `0` (if no point
+is `none`, at most `|pre.points|` static scalars and as many dynamic scalars as dynamic points). -/
+theorem optional_mixed_multiscalar_mul
+    {I J K Clause0_Item Clause0_IntoIter Clause2_Item Clause2_IntoIter Clause4_IntoIter : Type}
+    (staticScalarsInst : core.iter.traits.collect.IntoIterator I Clause0_Item Clause0_IntoIter)
+    (borrowStaticInst : core.borrow.Borrow Clause0_Item Scalar)
+    (dynamicScalarsInst : core.iter.traits.collect.IntoIterator J Clause2_Item Clause2_IntoIter)
+    (borrowDynamicInst : core.borrow.Borrow Clause2_Item Scalar)
+    (dynamicPointsInst : core.iter.traits.collect.IntoIterator K (Option EdwardsPoint)
+      Clause4_IntoIter)
+    (pre : VartimeEdwardsPrecomputation)
+    (static_scalars : I) (dynamic_scalars : J) (dynamic_points : K) (xs : List Clause0_Item)
+    (ss : List Scalar) (ys : List Clause2_Item) (ds : List Scalar)
+    (qops : List (Option EdwardsPoint))
+    (hpre : pre.IsValid) (hpre' : pre.IsBounded)
+    (hstatic_scalars : staticScalarsInst.Yields static_scalars xs)
+    (hdynamic_scalars : dynamicScalarsInst.Yields dynamic_scalars ys)
+    (hdynamic_points : dynamicPointsInst.Yields dynamic_points qops)
+    (hborrow_static : List.Forall₂
+      (fun x s => borrowStaticInst.borrow x ⦃ (s' : Scalar) => s' = s ⦄) xs ss)
+    (hborrow_dynamic : List.Forall₂
+      (fun y s => borrowDynamicInst.borrow y ⦃ (s' : Scalar) => s' = s ⦄) ys ds)
+    (hss : ∀ s ∈ ss, s.asNat < 2 ^ 255) (hds : ∀ s ∈ ds, s.asNat < 2 ^ 255)
+    (hQs : ∀ Q, some Q ∈ qops → Q.OnCurve) (hQs' : ∀ Q, some Q ∈ qops → Q.IsBounded)
+    (hxs : xs.length ≤ Usize.max) (hys : ys.length ≤ Usize.max)
+    (hqops : qops.length ≤ Usize.max) (hstatic : none ∉ qops → ss.length ≤ pre.points.length)
+    (hdynamic : none ∉ qops → ds.length = qops.length) :
+    optional_mixed_multiscalar_mul staticScalarsInst borrowStaticInst dynamicScalarsInst
+      borrowDynamicInst dynamicPointsInst pre static_scalars dynamic_scalars dynamic_points
+      ⦃ (r : Option EdwardsPoint) => (none ∈ qops → r = none) ∧
+        ∀ Qs, qops = Qs.map some → ∃ R, r = some R ∧ R.OnCurve ∧
+          R.toPoint = (List.zipWith (fun s P => s.asNat • P) ss pre.points).sum +
+            (List.zipWith (fun s Q => s.asNat • Q.toPoint) ds Qs).sum ∧
+          R.IsBounded ⦄ := by
+  apply optional_mixed_multiscalar_mul_spec <;> assumption
+
+end VartimeEdwardsPrecomputation
+
+namespace EdwardsPoint
+
+open edwards.«EdwardsPoint64bit-tables»
+
+/-- `EdwardsPoint::vartime_double_scalar_mul_basepoint`: `a • A + b • B` for the basepoint `B`
+(unreduced scalars `< 2^255`). -/
+theorem vartime_double_scalar_mul_basepoint (a : Scalar) (A : EdwardsPoint) (b : Scalar)
+    (ha : a.asNat < 2 ^ 255) (hA : A.OnCurve) (hA' : A.IsBounded) (hb : b.asNat < 2 ^ 255) :
+    vartime_double_scalar_mul_basepoint a A b ⦃ (r : EdwardsPoint) =>
+      r.OnCurve ∧ r.toPoint = a.asNat • A.toPoint + b.asNat • basepoint ∧ r.IsBounded ⦄ :=
+  vartime_double_scalar_mul_basepoint_spec a A b ha hA' hA hb
+
+/-- `EdwardsPoint::vartime_triple_scalar_mul_basepoint`: `a1 • A1 + a2 • A2 + b • B` for the
+basepoint `B` (any `b`, which the code splits into two `128`-bit halves). -/
+theorem vartime_triple_scalar_mul_basepoint (a1 : HalfWidthScalar) (A1 : EdwardsPoint)
+    (a2 : HalfWidthScalar) (A2 : EdwardsPoint) (b : Scalar) (ha1 : a1.asNat < 2 ^ 128)
+    (hA1 : A1.OnCurve) (hA1' : A1.IsBounded) (ha2 : a2.asNat < 2 ^ 128) (hA2 : A2.OnCurve)
+    (hA2' : A2.IsBounded) :
+    vartime_triple_scalar_mul_basepoint a1 A1 a2 A2 b ⦃ (r : EdwardsPoint) =>
+      r.OnCurve ∧ r.toPoint = a1.asNat • A1.toPoint + a2.asNat • A2.toPoint + b.asNat • basepoint ∧
+        r.IsBounded ⦄ :=
+  vartime_triple_scalar_mul_basepoint_spec a1 A1 a2 A2 b ha1 hA1' hA1 ha2 hA2' hA2
+
+end EdwardsPoint
+
+-- BEGIN TABLES-ONLY
+/-- `EdwardsBasepointTable` (radix `2^4`) in this configuration. -/
+abbrev EdwardsBasepointTable := edwards.EdwardsBasepointTable.«64bit-tables»
+
+/-- `EdwardsBasepointTableRadix32` (radix `2^5`) in this configuration. -/
+abbrev EdwardsBasepointTableRadix32 := edwards.EdwardsBasepointTableRadix32.«64bit-tables»
+
+/-- `EdwardsBasepointTableRadix64` (radix `2^6`) in this configuration. -/
+abbrev EdwardsBasepointTableRadix64 := edwards.EdwardsBasepointTableRadix64.«64bit-tables»
+
+/-- `EdwardsBasepointTableRadix128` (radix `2^7`) in this configuration. -/
+abbrev EdwardsBasepointTableRadix128 := edwards.EdwardsBasepointTableRadix128.«64bit-tables»
+
+/-- `EdwardsBasepointTableRadix256` (radix `2^8`) in this configuration. -/
+abbrev EdwardsBasepointTableRadix256 := edwards.EdwardsBasepointTableRadix256.«64bit-tables»
+
+namespace EdwardsBasepointTable
+
+open edwards.EdwardsBasepointTable.«64bit-tables».Insts
+open «Curve25519_dalekTraitsBasepointTableEdwardsPoint64bit-tables»
+
+/-- `impl Mul<&Scalar> for &EdwardsBasepointTable` -/
+abbrev «&t * &s» := open «SharedAEdwardsBasepointTable64bit-tables».Insts in
+  «CoreOpsArithMulSharedBScalarEdwardsPoint64bit-tables».mul
+/-- `impl Mul<&EdwardsBasepointTable> for &Scalar` -/
+abbrev «&s * &t» := open SharedBScalar.Insts in
+  «CoreOpsArithMulSharedAEdwardsBasepointTable64bit-tablesEdwardsPoint64bit-tables».mul
+
+/-- `BasepointTable::create` (radix `2^4`): row `i` is the lookup table of `2^(8 i) • B`. -/
+theorem create (B : EdwardsPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
+    create B ⦃ (t : EdwardsBasepointTable) => t.IsTable ∧ t.point = B.toPoint ∧ t.IsBounded ⦄ := by
+  apply create_spec <;> assumption
+
+/-- `BasepointTable::basepoint` (radix `2^4`): the table's point `t.point`. -/
+theorem basepoint (t : EdwardsBasepointTable) (ht : t.IsTable) (ht' : t.IsBounded) :
+    basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
+  apply basepoint_spec <;> assumption
+
+/-- `Clone`: the table itself. -/
+theorem clone (t : EdwardsBasepointTable) :
+    edwards.EdwardsBasepointTable.«64bit-tables».Insts.CoreCloneClone.clone t
+      ⦃ (r : EdwardsBasepointTable) => r = t ⦄ :=
+  edwards.EdwardsBasepointTable.«64bit-tables».Insts.CoreCloneClone.clone_spec t
+
+/-- `BasepointTable::mul_base` (radix `2^4`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
+theorem mul_base (t : EdwardsBasepointTable) (s : Scalar) (ht : t.IsTable)
+    (ht' : t.IsBounded) (hs : s.asNat < 2 ^ 255) :
+    ∀ ts ∈ [mul_base t s, «&t * &s» t s, «&s * &t» s t],
+      ts ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = s.asNat • t.point ∧ r.IsBounded ⦄ := by
+  variants [mul_base_spec]
+
+open edwards.EdwardsBasepointTable.«64bit-tables».Insts in
+/-- `From<&EdwardsBasepointTableRadix32> for EdwardsBasepointTable`: a table of the same point. -/
+theorem «from» :
+    (∀ t : EdwardsBasepointTableRadix32, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3264bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTable) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix64, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6464bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTable) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix128, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12864bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTable) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix256, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25664bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTable) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) :=
+  ⟨fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3264bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6464bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12864bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25664bit-tables».from_spec t ht' ht⟩
+
+end EdwardsBasepointTable
+
+namespace EdwardsBasepointTableRadix32
+
+open edwards.EdwardsBasepointTableRadix32.«64bit-tables».Insts
+open «Curve25519_dalekTraitsBasepointTableEdwardsPoint64bit-tables»
+
+/-- `impl Mul<&Scalar> for &EdwardsBasepointTableRadix32` -/
+abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix3264bit-tables».Insts in
+  «CoreOpsArithMulSharedBScalarEdwardsPoint64bit-tables».mul
+/-- `impl Mul<&EdwardsBasepointTableRadix32> for &Scalar` -/
+abbrev «&s * &t» := open SharedBScalar.Insts in
+  «CoreOpsArithMulSharedAEdwardsBasepointTableRadix3264bit-tablesEdwardsPoint64bit-tables».mul
+
+/-- `BasepointTable::create` (radix `2^5`): row `i` is the lookup table of `2^(10 i) • B`.
+-/
+theorem create (B : EdwardsPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
+    create B ⦃ (t : EdwardsBasepointTableRadix32) =>
+      t.IsTable ∧ t.point = B.toPoint ∧ t.IsBounded ⦄ := by
+  apply create_spec <;> assumption
+
+/-- `BasepointTable::basepoint` (radix `2^5`): the table's point `t.point`. -/
+theorem basepoint (t : EdwardsBasepointTableRadix32) (ht : t.IsTable) (ht' : t.IsBounded) :
+    basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
+  apply basepoint_spec <;> assumption
+
+/-- `Clone`: the table itself. -/
+theorem clone (t : EdwardsBasepointTableRadix32) :
+    edwards.EdwardsBasepointTableRadix32.«64bit-tables».Insts.CoreCloneClone.clone t
+      ⦃ (r : EdwardsBasepointTableRadix32) => r = t ⦄ :=
+  edwards.EdwardsBasepointTableRadix32.«64bit-tables».Insts.CoreCloneClone.clone_spec t
+
+/-- `BasepointTable::mul_base` (radix `2^5`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
+theorem mul_base (t : EdwardsBasepointTableRadix32) (s : Scalar) (ht : t.IsTable)
+    (ht' : t.IsBounded) (hs : s.asNat < 2 ^ 255) :
+    ∀ ts ∈ [mul_base t s, «&t * &s» t s, «&s * &t» s t],
+      ts ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = s.asNat • t.point ∧ r.IsBounded ⦄ := by
+  variants [mul_base_spec]
+
+open edwards.EdwardsBasepointTableRadix32.«64bit-tables».Insts in
+/-- `From<&EdwardsBasepointTable> for EdwardsBasepointTableRadix32`: a table of the same point. -/
+theorem «from» :
+    (∀ t : EdwardsBasepointTable, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTable64bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix32) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix64, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6464bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix32) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix128, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12864bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix32) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix256, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25664bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix32) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) :=
+  ⟨fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTable64bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6464bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12864bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25664bit-tables».from_spec t ht' ht⟩
+
+end EdwardsBasepointTableRadix32
+
+namespace EdwardsBasepointTableRadix64
+
+open edwards.EdwardsBasepointTableRadix64.«64bit-tables».Insts
+open «Curve25519_dalekTraitsBasepointTableEdwardsPoint64bit-tables»
+
+/-- `impl Mul<&Scalar> for &EdwardsBasepointTableRadix64` -/
+abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix6464bit-tables».Insts in
+  «CoreOpsArithMulSharedBScalarEdwardsPoint64bit-tables».mul
+/-- `impl Mul<&EdwardsBasepointTableRadix64> for &Scalar` -/
+abbrev «&s * &t» := open SharedBScalar.Insts in
+  «CoreOpsArithMulSharedAEdwardsBasepointTableRadix6464bit-tablesEdwardsPoint64bit-tables».mul
+
+/-- `BasepointTable::create` (radix `2^6`): row `i` is the lookup table of `2^(12 i) • B`.
+-/
+theorem create (B : EdwardsPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
+    create B ⦃ (t : EdwardsBasepointTableRadix64) =>
+      t.IsTable ∧ t.point = B.toPoint ∧ t.IsBounded ⦄ := by
+  apply create_spec <;> assumption
+
+/-- `BasepointTable::basepoint` (radix `2^6`): the table's point `t.point`. -/
+theorem basepoint (t : EdwardsBasepointTableRadix64) (ht : t.IsTable) (ht' : t.IsBounded) :
+    basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
+  apply basepoint_spec <;> assumption
+
+/-- `Clone`: the table itself. -/
+theorem clone (t : EdwardsBasepointTableRadix64) :
+    edwards.EdwardsBasepointTableRadix64.«64bit-tables».Insts.CoreCloneClone.clone t
+      ⦃ (r : EdwardsBasepointTableRadix64) => r = t ⦄ :=
+  edwards.EdwardsBasepointTableRadix64.«64bit-tables».Insts.CoreCloneClone.clone_spec t
+
+/-- `BasepointTable::mul_base` (radix `2^6`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
+theorem mul_base (t : EdwardsBasepointTableRadix64) (s : Scalar) (ht : t.IsTable)
+    (ht' : t.IsBounded) (hs : s.asNat < 2 ^ 255) :
+    ∀ ts ∈ [mul_base t s, «&t * &s» t s, «&s * &t» s t],
+      ts ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = s.asNat • t.point ∧ r.IsBounded ⦄ := by
+  variants [mul_base_spec]
+
+open edwards.EdwardsBasepointTableRadix64.«64bit-tables».Insts in
+/-- `From<&EdwardsBasepointTable> for EdwardsBasepointTableRadix64`: a table of the same point. -/
+theorem «from» :
+    (∀ t : EdwardsBasepointTable, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTable64bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix64) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix32, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3264bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix64) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix128, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12864bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix64) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix256, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25664bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix64) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) :=
+  ⟨fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTable64bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3264bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12864bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25664bit-tables».from_spec t ht' ht⟩
+
+end EdwardsBasepointTableRadix64
+
+namespace EdwardsBasepointTableRadix128
+
+open edwards.EdwardsBasepointTableRadix128.«64bit-tables».Insts
+open «Curve25519_dalekTraitsBasepointTableEdwardsPoint64bit-tables»
+
+/-- `impl Mul<&Scalar> for &EdwardsBasepointTableRadix128` -/
+abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix12864bit-tables».Insts in
+  «CoreOpsArithMulSharedBScalarEdwardsPoint64bit-tables».mul
+/-- `impl Mul<&EdwardsBasepointTableRadix128> for &Scalar` -/
+abbrev «&s * &t» := open SharedBScalar.Insts in
+  «CoreOpsArithMulSharedAEdwardsBasepointTableRadix12864bit-tablesEdwardsPoint64bit-tables».mul
+
+/-- `BasepointTable::create` (radix `2^7`): row `i` is the lookup table of `2^(14 i) • B`.
+-/
+theorem create (B : EdwardsPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
+    create B ⦃ (t : EdwardsBasepointTableRadix128) =>
+      t.IsTable ∧ t.point = B.toPoint ∧ t.IsBounded ⦄ := by
+  apply create_spec <;> assumption
+
+/-- `BasepointTable::basepoint` (radix `2^7`): the table's point `t.point`. -/
+theorem basepoint (t : EdwardsBasepointTableRadix128) (ht : t.IsTable) (ht' : t.IsBounded) :
+    basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
+  apply basepoint_spec <;> assumption
+
+/-- `Clone`: the table itself. -/
+theorem clone (t : EdwardsBasepointTableRadix128) :
+    edwards.EdwardsBasepointTableRadix128.«64bit-tables».Insts.CoreCloneClone.clone t
+      ⦃ (r : EdwardsBasepointTableRadix128) => r = t ⦄ :=
+  edwards.EdwardsBasepointTableRadix128.«64bit-tables».Insts.CoreCloneClone.clone_spec t
+
+/-- `BasepointTable::mul_base` (radix `2^7`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
+theorem mul_base (t : EdwardsBasepointTableRadix128) (s : Scalar) (ht : t.IsTable)
+    (ht' : t.IsBounded) (hs : s.asNat < 2 ^ 255) :
+    ∀ ts ∈ [mul_base t s, «&t * &s» t s, «&s * &t» s t],
+      ts ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = s.asNat • t.point ∧ r.IsBounded ⦄ := by
+  variants [mul_base_spec]
+
+open edwards.EdwardsBasepointTableRadix128.«64bit-tables».Insts in
+/-- `From<&EdwardsBasepointTable> for EdwardsBasepointTableRadix128`: a table of the same point. -/
+theorem «from» :
+    (∀ t : EdwardsBasepointTable, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTable64bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix128) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix32, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3264bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix128) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix64, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6464bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix128) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix256, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25664bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix128) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) :=
+  ⟨fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTable64bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3264bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6464bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix25664bit-tables».from_spec t ht' ht⟩
+
+end EdwardsBasepointTableRadix128
+
+namespace EdwardsBasepointTableRadix256
+
+open edwards.EdwardsBasepointTableRadix256.«64bit-tables».Insts
+open «Curve25519_dalekTraitsBasepointTableEdwardsPoint64bit-tables»
+
+/-- `impl Mul<&Scalar> for &EdwardsBasepointTableRadix256` -/
+abbrev «&t * &s» := open «SharedAEdwardsBasepointTableRadix25664bit-tables».Insts in
+  «CoreOpsArithMulSharedBScalarEdwardsPoint64bit-tables».mul
+/-- `impl Mul<&EdwardsBasepointTableRadix256> for &Scalar` -/
+abbrev «&s * &t» := open SharedBScalar.Insts in
+  «CoreOpsArithMulSharedAEdwardsBasepointTableRadix25664bit-tablesEdwardsPoint64bit-tables».mul
+
+/-- `BasepointTable::create` (radix `2^8`): row `i` is the lookup table of `2^(16 i) • B`.
+-/
+theorem create (B : EdwardsPoint) (hB : B.OnCurve) (hB' : B.IsBounded) :
+    create B ⦃ (t : EdwardsBasepointTableRadix256) =>
+      t.IsTable ∧ t.point = B.toPoint ∧ t.IsBounded ⦄ := by
+  apply create_spec <;> assumption
+
+/-- `BasepointTable::basepoint` (radix `2^8`): the table's point `t.point`. -/
+theorem basepoint (t : EdwardsBasepointTableRadix256) (ht : t.IsTable) (ht' : t.IsBounded) :
+    basepoint t ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = t.point ∧ r.IsBounded ⦄ := by
+  apply basepoint_spec <;> assumption
+
+/-- `Clone`: the table itself. -/
+theorem clone (t : EdwardsBasepointTableRadix256) :
+    edwards.EdwardsBasepointTableRadix256.«64bit-tables».Insts.CoreCloneClone.clone t
+      ⦃ (r : EdwardsBasepointTableRadix256) => r = t ⦄ :=
+  edwards.EdwardsBasepointTableRadix256.«64bit-tables».Insts.CoreCloneClone.clone_spec t
+
+/-- `BasepointTable::mul_base` (radix `2^8`): `s • t.point` (unreduced, `s.asNat < 2^255`). -/
+theorem mul_base (t : EdwardsBasepointTableRadix256) (s : Scalar) (ht : t.IsTable)
+    (ht' : t.IsBounded) (hs : s.asNat < 2 ^ 255) :
+    ∀ ts ∈ [mul_base t s, «&t * &s» t s, «&s * &t» s t],
+      ts ⦃ (r : EdwardsPoint) => r.OnCurve ∧ r.toPoint = s.asNat • t.point ∧ r.IsBounded ⦄ := by
+  variants [mul_base_spec]
+
+open edwards.EdwardsBasepointTableRadix256.«64bit-tables».Insts in
+/-- `From<&EdwardsBasepointTable> for EdwardsBasepointTableRadix256`: a table of the same point. -/
+theorem «from» :
+    (∀ t : EdwardsBasepointTable, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTable64bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix256) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix32, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3264bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix256) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix64, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6464bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix256) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) ∧
+    (∀ t : EdwardsBasepointTableRadix128, t.IsTable → t.IsBounded →
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12864bit-tables».«from» t
+        ⦃ (r : EdwardsBasepointTableRadix256) => r.IsTable ∧ r.point = t.point ∧ r.IsBounded ⦄) :=
+  ⟨fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTable64bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix3264bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix6464bit-tables».from_spec t ht' ht,
+    fun t ht ht' =>
+      «CoreConvertFromSharedAEdwardsBasepointTableRadix12864bit-tables».from_spec t ht' ht⟩
+
+end EdwardsBasepointTableRadix256
+
+-- END TABLES-ONLY
+
+
+namespace EdwardsPoint
+
+open edwards.«EdwardsPoint64bit-tables»
+
+/-- `EdwardsPoint::mul_by_cofactor`: `8 • P`. -/
+theorem mul_by_cofactor (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
+    mul_by_cofactor P ⦃ (r : EdwardsPoint) =>
+      r.OnCurve ∧ r.toPoint = 8 • P.toPoint ∧ r.IsBounded ⦄ :=
+  mul_by_cofactor_spec P hP' hP
+
+/-- `EdwardsPoint::is_small_order`: `8 • P = 0`. -/
+theorem is_small_order (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
+    is_small_order P ⦃ (r : Bool) => r = true ↔ 8 • P.toPoint = 0 ⦄ :=
+  is_small_order_spec P hP' hP
+
+/-- `EdwardsPoint::is_torsion_free`: `L • P = 0` (multiplication by the unreduced
+`BASEPOINT_ORDER`). -/
+theorem is_torsion_free (P : EdwardsPoint) (hP : P.OnCurve) (hP' : P.IsBounded) :
+    is_torsion_free P ⦃ (r : Bool) => r = true ↔ L • P.toPoint = 0 ⦄ :=
+  is_torsion_free_spec P hP' hP
+
+end EdwardsPoint
+
+end Theorems.edwards.«64bit-tables»
+-- END PER-CONFIG
